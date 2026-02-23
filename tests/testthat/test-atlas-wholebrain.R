@@ -780,7 +780,7 @@ describe("wholebrain_run_cortical verbose logging", {
       wholebrain_run_cortical(
         config, dirs, projection, split, views = "lateral"
       ),
-      "cortical pipeline"
+      "Cortical pipeline"
     )
   })
 })
@@ -826,7 +826,7 @@ describe("wholebrain_run_subcortical verbose logging", {
         colortable = colortable,
         views = NULL, decimate = 0.5
       ),
-      "subcortical pipeline"
+      "Subcortical pipeline"
     )
   })
 

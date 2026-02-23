@@ -353,7 +353,8 @@ wholebrain_resolve_projection <- function(config, dirs) {
 
   if (!cached$run) {
     if (config$verbose) {
-      cli::cli_alert_success("1/4 Loaded existing surface projection")
+      cli::cli_h2("Surface projection")
+      cli::cli_alert_success("Loaded existing surface projection")
     }
     return(list(
       atlas_data = cached$data[["atlas_data.rds"]],
@@ -362,7 +363,8 @@ wholebrain_resolve_projection <- function(config, dirs) {
   }
 
   if (config$verbose) {
-    cli::cli_progress_step("1/4 Projecting volume onto surface")
+    cli::cli_h2("Surface projection")
+    cli::cli_progress_step("Projecting volume onto surface")
   }
 
   colortable <- if (is.null(config$input_lut)) {
@@ -540,13 +542,15 @@ wholebrain_resolve_split <- function(
 
   if (!cached$run) {
     if (config$verbose) {
-      cli::cli_alert_success("2/4 Loaded existing label classification")
+      cli::cli_h2("Label classification")
+      cli::cli_alert_success("Loaded existing label classification")
     }
     return(cached$data[["label_split.rds"]])
   }
 
   if (config$verbose) {
-    cli::cli_progress_step("2/4 Classifying cortical vs subcortical labels")
+    cli::cli_h2("Label classification")
+    cli::cli_progress_step("Classifying cortical vs subcortical labels")
   }
 
   split <- wholebrain_classify_labels(
@@ -744,8 +748,8 @@ wholebrain_run_cortical <- function(
   config, dirs, projection, split, views
 ) {
   if (config$verbose) {
-    cli::cli_progress_step(
-      "3/4 Running cortical pipeline ({length(split$cortical_labels)} regions)"
+    cli::cli_h2(
+      "Cortical pipeline ({length(split$cortical_labels)} regions)"
     )
   }
 
@@ -797,7 +801,6 @@ wholebrain_run_cortical <- function(
     start_time = Sys.time()
   )
 
-  if (config$verbose) cli::cli_progress_done()
   atlas
 }
 
@@ -809,11 +812,8 @@ wholebrain_run_subcortical <- function(
   config, dirs, split, colortable, views, decimate
 ) {
   if (config$verbose) {
-    cli::cli_progress_step(
-      paste(
-        "4/4 Running subcortical pipeline",
-        "({length(split$subcortical_labels)} regions)"
-      )
+    cli::cli_h2(
+      "Subcortical pipeline ({length(split$subcortical_labels)} regions)"
     )
   }
 
@@ -859,7 +859,6 @@ wholebrain_run_subcortical <- function(
     skip_existing = config$skip_existing
   )
 
-  if (config$verbose) cli::cli_progress_done()
   atlas
 }
 
