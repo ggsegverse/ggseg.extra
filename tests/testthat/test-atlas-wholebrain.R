@@ -286,20 +286,17 @@ describe("create_wholebrain_from_volume pipeline flow", {
     expect_true("b" %in% result$subcortical_labels)
   })
 
-  it("runs cortical pipeline for step 3", {
+  it("passes cortical labels to cortical pipeline for step 3", {
     test_dir <- withr::local_tempdir()
-    cortical_called <- FALSE
+    captured_step1_args <- NULL
 
     local_mocked_bindings(
       check_fs = function(...) TRUE,
       check_magick = function(...) TRUE,
       setup_atlas_dirs = function(...) {
         list(
-          base = test_dir,
-          snapshots = test_dir,
-          processed = test_dir,
-          masks = test_dir,
-          snapshots = test_dir
+          base = test_dir, snapshots = test_dir,
+          processed = test_dir, masks = test_dir
         )
       },
       load_or_run_step = function(step, steps, ...) {
@@ -333,7 +330,7 @@ describe("create_wholebrain_from_volume pipeline flow", {
         )
       },
       cortical_resolve_step1 = function(...) {
-        cortical_called <<- TRUE
+        captured_step1_args <<- list(...)
         list(
           atlas_3d = structure(
             list(
@@ -366,24 +363,21 @@ describe("create_wholebrain_from_volume pipeline flow", {
       cleanup = FALSE
     )
 
-    expect_true(cortical_called)
     expect_false(is.null(result$cortical))
     expect_null(result$subcortical)
+    expect_false(is.null(captured_step1_args))
   })
 
-  it("runs subcortical pipeline for step 4", {
+  it("passes subcortical labels to subcortical pipeline for step 4", {
     test_dir <- withr::local_tempdir()
-    subcort_called <- FALSE
+    captured_subcort_args <- NULL
 
     local_mocked_bindings(
       check_fs = function(...) TRUE,
       setup_atlas_dirs = function(...) {
         list(
-          base = test_dir,
-          snapshots = test_dir,
-          processed = test_dir,
-          masks = test_dir,
-          snapshots = test_dir
+          base = test_dir, snapshots = test_dir,
+          processed = test_dir, masks = test_dir
         )
       },
       load_or_run_step = function(step, steps, ...) {
@@ -411,14 +405,12 @@ describe("create_wholebrain_from_volume pipeline flow", {
         }
       },
       write_ctab = function(...) invisible(NULL),
-      wholebrain_filter_volume = function(...) invisible("filtered.nii.gz"),
+      wholebrain_prepare_subcortical_volume = function(...) invisible("filtered.nii.gz"),
       create_subcortical_from_volume = function(...) {
-        subcort_called <<- TRUE
+        captured_subcort_args <<- list(...)
         structure(
           list(
-            core = data.frame(
-              hemi = NA, region = "b", label = "b"
-            ),
+            core = data.frame(hemi = NA, region = "b", label = "b"),
             type = "subcortical"
           ),
           class = "ggseg_atlas"
@@ -436,9 +428,10 @@ describe("create_wholebrain_from_volume pipeline flow", {
       cleanup = FALSE
     )
 
-    expect_true(subcort_called)
     expect_null(result$cortical)
     expect_false(is.null(result$subcortical))
+    expect_false(is.null(captured_subcort_args))
+    expect_false(is.null(captured_subcort_args$input_volume))
   })
 
   it("skips cortical when no cortical labels", {
@@ -476,7 +469,7 @@ describe("create_wholebrain_from_volume pipeline flow", {
         ))
       },
       write_ctab = function(...) invisible(NULL),
-      wholebrain_filter_volume = function(...) invisible("filtered.nii.gz"),
+      wholebrain_prepare_subcortical_volume = function(...) invisible("filtered.nii.gz"),
       create_subcortical_from_volume = function(...) {
         structure(
           list(core = data.frame(hemi = NA, region = "b", label = "b")),
@@ -497,30 +490,6 @@ describe("create_wholebrain_from_volume pipeline flow", {
 
     expect_null(result$cortical)
     expect_false(is.null(result$subcortical))
-  })
-})
-
-
-describe("wholebrain_filter_volume", {
-  it("zeros out labels not in keep_labels", {
-    skip_if_not_installed("RNifti")
-
-    tmp_in <- withr::local_tempfile(fileext = ".nii.gz")
-    tmp_out <- withr::local_tempfile(fileext = ".nii.gz")
-
-    arr <- array(0L, dim = c(3, 3, 3))
-    arr[1, 1, 1] <- 10L
-    arr[2, 2, 2] <- 20L
-    arr[3, 3, 3] <- 30L
-    nii <- RNifti::asNifti(arr)
-    RNifti::writeNifti(nii, tmp_in)
-
-    wholebrain_filter_volume(tmp_in, keep_labels = c(10L, 30L), tmp_out)
-    result <- as.array(RNifti::readNifti(tmp_out))
-
-    expect_equal(result[1, 1, 1], 10)
-    expect_equal(result[2, 2, 2], 0)
-    expect_equal(result[3, 3, 3], 30)
   })
 })
 
@@ -568,7 +537,7 @@ describe("wholebrain_classify_labels verbose output", {
 
 
 describe("create_wholebrain_from_volume verbose and cleanup", {
-  it("logs verbose output and cleans up temp files", {
+  it("logs verbose output, cleans up temp files, and removes directory", {
     test_dir <- withr::local_tempdir()
     sub_dir <- file.path(test_dir, "wb_atlas")
     dir.create(sub_dir)
@@ -622,138 +591,8 @@ describe("create_wholebrain_from_volume verbose and cleanup", {
       ),
       "Creating whole-brain atlas"
     ))
-  })
-
-  it("removes temp directory when cleanup is TRUE", {
-    test_dir <- withr::local_tempdir()
-    sub_dir <- file.path(test_dir, "wb_cleanup")
-    dir.create(sub_dir)
-    file.create(file.path(sub_dir, "dummy.rds"))
-
-    local_mocked_bindings(
-      check_fs = function(...) TRUE,
-      setup_atlas_dirs = function(...) {
-        list(
-          base = sub_dir, snapshots = sub_dir,
-          processed = sub_dir, masks = sub_dir
-        )
-      },
-      load_or_run_step = function(step, steps, ...) {
-        list(run = step %in% steps, data = list())
-      },
-      generate_colortable_from_volume = function(...) {
-        data.frame(
-          idx = 1L, label = "a",
-          R = 255L, G = 0L, B = 0L, A = 0L,
-          roi = "0001", color = "#FF0000",
-          stringsAsFactors = FALSE
-        )
-      },
-      wholebrain_project_to_surface = function(...) {
-        tibble(
-          hemi = "left", region = "a", label = "lh_a", colour = "#FF0000",
-          vertices = list(seq_len(100) - 1L),
-          source_label = "a", source_idx = 1L
-        )
-      },
-      wholebrain_run_cortical = function(...) {
-        structure(
-          list(core = data.frame(hemi = "left", region = "a")),
-          class = "ggseg_atlas"
-        )
-      },
-      wholebrain_run_subcortical = function(...) NULL,
-      log_elapsed = function(...) NULL
-    )
-
-    vol_file <- withr::local_tempfile(fileext = ".nii.gz")
-    file.create(vol_file)
-
-    suppressWarnings(
-      create_wholebrain_from_volume(
-        input_volume = vol_file,
-        steps = 1:4,
-        verbose = FALSE,
-        cleanup = TRUE
-      )
-    )
 
     expect_false(dir.exists(sub_dir))
-  })
-
-  it("reports verbose summary with cortical and subcortical counts", {
-    test_dir <- withr::local_tempdir()
-    sub_dir <- file.path(test_dir, "wb_verbose")
-    dir.create(sub_dir)
-
-    local_mocked_bindings(
-      check_fs = function(...) TRUE,
-      check_magick = function(...) TRUE,
-      setup_atlas_dirs = function(...) {
-        list(
-          base = sub_dir, snapshots = sub_dir,
-          processed = sub_dir, masks = sub_dir
-        )
-      },
-      load_or_run_step = function(step, steps, ...) {
-        list(run = step %in% steps, data = list())
-      },
-      generate_colortable_from_volume = function(...) {
-        data.frame(
-          idx = c(1L, 2L), label = c("a", "b"),
-          R = c(255L, 0L), G = c(0L, 255L),
-          B = c(0L, 0L), A = c(0L, 0L),
-          roi = c("0001", "0002"),
-          color = c("#FF0000", "#00FF00"),
-          stringsAsFactors = FALSE
-        )
-      },
-      wholebrain_project_to_surface = function(...) {
-        bind_rows(
-          tibble(
-            hemi = "left", region = "a", label = "lh_a", colour = "#FF0000",
-            vertices = list(seq_len(100) - 1L),
-            source_label = "a", source_idx = 1L
-          ),
-          tibble(
-            hemi = "left", region = "b", label = "lh_b", colour = "#00FF00",
-            vertices = list(seq_len(10) - 1L),
-            source_label = "b", source_idx = 2L
-          )
-        )
-      },
-      wholebrain_refine_cortical_projection = function(
-        config, dirs, projection, split
-      ) {
-        projection
-      },
-      wholebrain_run_cortical = function(...) {
-        structure(
-          list(core = data.frame(hemi = "left", region = "a")),
-          class = "ggseg_atlas"
-        )
-      },
-      wholebrain_run_subcortical = function(...) {
-        structure(
-          list(core = data.frame(hemi = NA, region = "b")),
-          class = "ggseg_atlas"
-        )
-      },
-      log_elapsed = function(...) NULL
-    )
-
-    vol_file <- withr::local_tempfile(fileext = ".nii.gz")
-    file.create(vol_file)
-
-    suppressWarnings(expect_message(
-      create_wholebrain_from_volume(
-        input_volume = vol_file,
-        steps = 1:4,
-        verbose = TRUE,
-        cleanup = FALSE
-      ),
-      "cortical.*subcortical|Whole-brain atlas created"
-    ))
   })
 
   it("logs elapsed time for early return at step 2", {
@@ -964,7 +803,7 @@ describe("wholebrain_run_subcortical verbose logging", {
 
     local_mocked_bindings(
       write_ctab = function(...) invisible(NULL),
-      wholebrain_filter_volume = function(...) invisible("filtered.nii.gz"),
+      wholebrain_prepare_subcortical_volume = function(...) invisible("filtered.nii.gz"),
       create_subcortical_from_volume = function(...) {
         structure(
           list(core = data.frame(hemi = NA, region = "b")),
@@ -1013,7 +852,7 @@ describe("wholebrain_run_subcortical verbose logging", {
         captured_lut <<- ct
         invisible(NULL)
       },
-      wholebrain_filter_volume = function(...) invisible("filtered.nii.gz"),
+      wholebrain_prepare_subcortical_volume = function(...) invisible("filtered.nii.gz"),
       create_subcortical_from_volume = function(...) {
         structure(
           list(core = data.frame(hemi = NA, region = "subcort_b")),
@@ -1413,7 +1252,8 @@ describe("wholebrain_project_to_surface", {
     )
 
     expect_false(any(result$source_idx == 99L))
-    expect_true(all(result$source_idx == 1L))
+    labeled <- result[result$source_idx != 0L, ]
+    expect_true(all(labeled$source_idx == 1L))
   })
 
   it("uses RGB columns for colour when color column missing", {

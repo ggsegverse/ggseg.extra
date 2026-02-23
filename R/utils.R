@@ -1,7 +1,18 @@
 # General utilities ----
 
+fsaverage5_nverts <- 10242L
+
 mkdir <- function(path, ...) {
   dir.create(path, recursive = TRUE, showWarnings = FALSE, ...)
+}
+
+
+#' @noRd
+load_rda <- function(path, envir = parent.frame()) {
+  if (!file.exists(path)) {
+    cli::cli_abort("Required file not found: {.file {path}}")
+  }
+  load(path, envir = envir)
 }
 
 

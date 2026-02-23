@@ -80,7 +80,7 @@
 #'   tolerance = 0.5
 #' )
 #' }
-create_cortical_from_annotation <- function(
+create_cortical_from_annotation <- function( # nolint: object_length_linter.
   input_annot,
   atlas_name = NULL,
   output_dir = NULL,
@@ -94,7 +94,9 @@ create_cortical_from_annotation <- function(
   skip_existing = NULL,
   steps = NULL
 ) {
-  start_time <- Sys.time()
+  if (length(input_annot) == 0) {
+    cli::cli_abort("{.arg input_annot} must not be empty")
+  }
 
   config <- validate_cortical_config(
     output_dir, verbose, cleanup, skip_existing,
@@ -107,18 +109,60 @@ create_cortical_from_annotation <- function(
   }
 
   if (is.null(atlas_name)) {
-    atlas_name <- input_annot[1] |>
-      basename() |>
-      tools::file_path_sans_ext() |>
-      gsub("^[lr]h\\.", "", x = _) |>
-      gsub("\\.", "_", x = _)
+    atlas_name <- derive_atlas_name(input_annot[1])
   }
 
+  run_cortical_creation(
+    atlas_name = atlas_name,
+    config = config,
+    read_fn = function() read_annotation_data(input_annot),
+    step_label = "1/8 Reading annotation files",
+    cache_label = "Step 1 (Read annotations)",
+    header_msg = "Creating brain atlas {.val {atlas_name}}",
+    input_files = input_annot,
+    hemisphere = hemisphere,
+    views = views
+  )
+}
+
+
+#' Run the standard cortical atlas creation sequence
+#'
+#' Shared by annotation, GIFTI, CIFTI, and neuromaps entry points.
+#' Handles directory setup, logging, step 1 resolution, early return,
+#' and full pipeline execution.
+#'
+#' @param atlas_name Atlas name string
+#' @param config Validated cortical config
+#' @param read_fn Zero-arg function returning atlas_data tibble
+#' @param step_label Progress label for step 1
+#' @param cache_label Cache label for step 1
+#' @param header_msg CLI header message (glue string with `atlas_name`)
+#' @param input_files Character vector for "Input files:" log line
+#' @param hemisphere Hemisphere codes for pipeline
+#' @param views View names for pipeline
+#' @param region_snapshot_fn Snapshot function (default: cortical_region_snapshots)
+#' @return ggseg_atlas object
+#' @noRd
+run_cortical_creation <- function(
+  atlas_name,
+  config,
+  read_fn,
+  step_label,
+  cache_label,
+  header_msg,
+  input_files,
+  hemisphere = c("rh", "lh"),
+  hemisphere_fn = NULL,
+  views = c("lateral", "medial", "superior", "inferior"),
+  region_snapshot_fn = cortical_region_snapshots
+) {
+  start_time <- Sys.time()
   dirs <- setup_atlas_dirs(config$output_dir, atlas_name, type = "cortical")
 
   if (config$verbose) {
-    cli::cli_h1("Creating brain atlas {.val {atlas_name}}")
-    cli::cli_alert_info("Input files: {.path {input_annot}}")
+    cli::cli_h1(header_msg)
+    cli::cli_alert_info("Input files: {.path {input_files}}")
     cli::cli_alert_info(
       "Setting output directory to {.path {config$output_dir}}"
     )
@@ -126,15 +170,17 @@ create_cortical_from_annotation <- function(
 
   step1 <- cortical_resolve_step1(
     config, dirs, atlas_name,
-    read_fn = function() read_annotation_data(input_annot),
-    step_label = "1/8 Reading annotation files",
-    cache_label = "Step 1 (Read annotations)"
+    read_fn = read_fn,
+    step_label = step_label,
+    cache_label = cache_label
   )
 
   if (max(config$steps) == 1L) {
-    return(cortical_finalize(
-      step1$atlas_3d, config, dirs, start_time
-    ))
+    return(cortical_finalize(step1$atlas_3d, config, dirs, start_time))
+  }
+
+  if (!is.null(hemisphere_fn)) {
+    hemisphere <- hemisphere_fn(step1)
   }
 
   cortical_pipeline(
@@ -143,7 +189,7 @@ create_cortical_from_annotation <- function(
     atlas_name = atlas_name,
     hemisphere = hemisphere,
     views = views,
-    region_snapshot_fn = cortical_region_snapshots,
+    region_snapshot_fn = region_snapshot_fn,
     config = config,
     dirs = dirs,
     start_time = start_time
@@ -424,8 +470,6 @@ create_cortical_from_labels <- function(
   skip_existing = NULL,
   steps = NULL
 ) {
-  start_time <- Sys.time()
-
   config <- validate_cortical_config(
     output_dir, verbose, cleanup, skip_existing,
     tolerance, smoothness, snapshot_dim, steps
@@ -443,28 +487,25 @@ create_cortical_from_labels <- function(
   }
 
   if (is.null(atlas_name)) {
-    atlas_name <- label_files[1] |>
-      basename() |>
-      file_path_sans_ext() |>
-      gsub("^[lr]h\\.", "", x = _) |>
-      gsub("\\.", "_", x = _)
-  }
-
-  dirs <- setup_atlas_dirs(config$output_dir, atlas_name, type = "cortical")
-
-  if (config$verbose) {
-    cli::cli_h1("Creating brain atlas {.val {atlas_name}}")
-    cli::cli_alert_info("Input files: {.path {label_files}}")
-    cli::cli_alert_info(
-      "Setting output directory to {.path {config$output_dir}}"
-    )
+    atlas_name <- derive_atlas_name(label_files[1])
   }
 
   lut_result <- parse_lut_colours(input_lut)
   default_colours <- rep(NA_character_, length(label_files))
 
-  step1 <- cortical_resolve_step1(
-    config, dirs, atlas_name,
+  derive_hemisphere <- function(step1) {
+    hemisphere <- unique(
+      step1$components$core$hemi[!is.na(step1$components$core$hemi)]
+    )
+    hemi_short <- vapply(hemisphere, hemi_to_short, character(1),
+      USE.NAMES = FALSE
+    )
+    if (length(hemi_short) == 0) c("lh", "rh") else hemi_short
+  }
+
+  run_cortical_creation(
+    atlas_name = atlas_name,
+    config = config,
     read_fn = function() {
       labels_read_files(
         label_files, lut_result$region_names,
@@ -472,37 +513,12 @@ create_cortical_from_labels <- function(
       )
     },
     step_label = paste("1/8 Reading", length(label_files), "label files"),
-    cache_label = "Step 1 (Read labels)"
-  )
-
-  if (max(config$steps) == 1L) {
-    return(cortical_finalize(
-      step1$atlas_3d, config, dirs, start_time
-    ))
-  }
-
-  hemisphere <- unique(
-    step1$components$core$hemi[!is.na(step1$components$core$hemi)]
-  )
-  hemi_short <- ifelse(
-    hemisphere == "left",
-    "lh",
-    ifelse(hemisphere == "right", "rh", hemisphere)
-  )
-  if (length(hemi_short) == 0) {
-    hemi_short <- c("lh", "rh")
-  }
-
-  cortical_pipeline(
-    atlas_3d = step1$atlas_3d,
-    components = step1$components,
-    atlas_name = atlas_name,
-    hemisphere = hemi_short,
+    cache_label = "Step 1 (Read labels)",
+    header_msg = "Creating brain atlas {.val {atlas_name}}",
+    input_files = label_files,
+    hemisphere_fn = derive_hemisphere,
     views = views,
-    region_snapshot_fn = labels_region_snapshots,
-    config = config,
-    dirs = dirs,
-    start_time = start_time
+    region_snapshot_fn = labels_region_snapshots
   )
 }
 
@@ -535,8 +551,9 @@ create_cortical_from_labels <- function(
 #' @template cleanup
 #' @template verbose
 #' @template skip_existing
-#' @param steps Which pipeline steps to run. See [create_cortical_from_annotation()]
-#'   for step descriptions. Use `steps = 1` for 3D-only atlas.
+#' @param steps Which pipeline steps to run.
+#'   See [create_cortical_from_annotation()] for step descriptions.
+#'   Use `steps = 1` for 3D-only atlas.
 #'
 #' @return A `ggseg_atlas` object.
 #' @export
@@ -563,7 +580,9 @@ create_cortical_from_gifti <- function(
   skip_existing = NULL,
   steps = NULL
 ) {
-  start_time <- Sys.time()
+  if (length(gifti_files) == 0) {
+    cli::cli_abort("{.arg gifti_files} must not be empty")
+  }
 
   config <- validate_cortical_config(
     output_dir, verbose, cleanup, skip_existing,
@@ -576,44 +595,19 @@ create_cortical_from_gifti <- function(
   }
 
   if (is.null(atlas_name)) {
-    atlas_name <- gifti_files[1] |>
-      basename() |>
-      tools::file_path_sans_ext() |>
-      tools::file_path_sans_ext() |>
-      gsub("^[lr]h\\.|\\.[LR]\\.", "", x = _) |>
-      gsub("\\.", "_", x = _)
+    atlas_name <- derive_atlas_name(gifti_files[1])
   }
 
-  dirs <- setup_atlas_dirs(config$output_dir, atlas_name, type = "cortical")
-
-  if (config$verbose) {
-    cli::cli_h1("Creating brain atlas {.val {atlas_name}} from GIFTI")
-    cli::cli_alert_info("Input files: {.path {gifti_files}}")
-  }
-
-  step1 <- cortical_resolve_step1(
-    config, dirs, atlas_name,
+  run_cortical_creation(
+    atlas_name = atlas_name,
+    config = config,
     read_fn = function() read_gifti_annotation(gifti_files),
     step_label = "1/8 Reading GIFTI annotation files",
-    cache_label = "Step 1 (Read GIFTI)"
-  )
-
-  if (max(config$steps) == 1L) {
-    return(cortical_finalize(
-      step1$atlas_3d, config, dirs, start_time
-    ))
-  }
-
-  cortical_pipeline(
-    atlas_3d = step1$atlas_3d,
-    components = step1$components,
-    atlas_name = atlas_name,
+    cache_label = "Step 1 (Read GIFTI)",
+    header_msg = "Creating brain atlas {.val {atlas_name}} from GIFTI",
+    input_files = gifti_files,
     hemisphere = hemisphere,
-    views = views,
-    region_snapshot_fn = cortical_region_snapshots,
-    config = config,
-    dirs = dirs,
-    start_time = start_time
+    views = views
   )
 }
 
@@ -643,8 +637,9 @@ create_cortical_from_gifti <- function(
 #' @template cleanup
 #' @template verbose
 #' @template skip_existing
-#' @param steps Which pipeline steps to run. See [create_cortical_from_annotation()]
-#'   for step descriptions. Use `steps = 1` for 3D-only atlas.
+#' @param steps Which pipeline steps to run.
+#'   See [create_cortical_from_annotation()] for step descriptions.
+#'   Use `steps = 1` for 3D-only atlas.
 #'
 #' @return A `ggseg_atlas` object.
 #' @export
@@ -671,7 +666,9 @@ create_cortical_from_cifti <- function(
   skip_existing = NULL,
   steps = NULL
 ) {
-  start_time <- Sys.time()
+  if (!file.exists(cifti_file)) {
+    cli::cli_abort("CIFTI file not found: {.path {cifti_file}}")
+  }
 
   config <- validate_cortical_config(
     output_dir, verbose, cleanup, skip_existing,
@@ -684,43 +681,19 @@ create_cortical_from_cifti <- function(
   }
 
   if (is.null(atlas_name)) {
-    atlas_name <- cifti_file |>
-      basename() |>
-      tools::file_path_sans_ext() |>
-      tools::file_path_sans_ext() |>
-      gsub("\\.", "_", x = _)
+    atlas_name <- derive_atlas_name(cifti_file)
   }
 
-  dirs <- setup_atlas_dirs(config$output_dir, atlas_name, type = "cortical")
-
-  if (config$verbose) {
-    cli::cli_h1("Creating brain atlas {.val {atlas_name}} from CIFTI")
-    cli::cli_alert_info("Input file: {.path {cifti_file}}")
-  }
-
-  step1 <- cortical_resolve_step1(
-    config, dirs, atlas_name,
+  run_cortical_creation(
+    atlas_name = atlas_name,
+    config = config,
     read_fn = function() read_cifti_annotation(cifti_file),
     step_label = "1/8 Reading CIFTI file",
-    cache_label = "Step 1 (Read CIFTI)"
-  )
-
-  if (max(config$steps) == 1L) {
-    return(cortical_finalize(
-      step1$atlas_3d, config, dirs, start_time
-    ))
-  }
-
-  cortical_pipeline(
-    atlas_3d = step1$atlas_3d,
-    components = step1$components,
-    atlas_name = atlas_name,
+    cache_label = "Step 1 (Read CIFTI)",
+    header_msg = "Creating brain atlas {.val {atlas_name}} from CIFTI",
+    input_files = cifti_file,
     hemisphere = hemisphere,
-    views = views,
-    region_snapshot_fn = cortical_region_snapshots,
-    config = config,
-    dirs = dirs,
-    start_time = start_time
+    views = views
   )
 }
 
@@ -761,7 +734,7 @@ create_cortical_from_cifti <- function(
 #'   auto-named.
 #' @param n_bins Number of quantile bins for continuous brain maps.
 #'   When `NULL` (default), auto-detected via Sturges' rule
-#'   (`1 + log2(n)`, clamped to 5–20). Ignored for integer parcellation
+#'   (`1 + log2(n)`, clamped to 5--20). Ignored for integer parcellation
 #'   data. See [read_neuromaps_annotation()].
 #' @template atlas_name
 #' @template output_dir
@@ -774,8 +747,9 @@ create_cortical_from_cifti <- function(
 #' @template cleanup
 #' @template verbose
 #' @template skip_existing
-#' @param steps Which pipeline steps to run. See [create_cortical_from_annotation()]
-#'   for step descriptions. Use `steps = 1` for 3D-only atlas.
+#' @param steps Which pipeline steps to run.
+#'   See [create_cortical_from_annotation()] for step descriptions.
+#'   Use `steps = 1` for 3D-only atlas.
 #'
 #' @return A `ggseg_atlas` object.
 #' @export
@@ -813,8 +787,6 @@ create_cortical_from_neuromaps <- function(
     "neuromapr",
     reason = "to download neuromaps annotations"
   )
-
-  start_time <- Sys.time()
 
   config <- validate_cortical_config(
     output_dir, verbose, cleanup, skip_existing,
@@ -859,7 +831,10 @@ create_cortical_from_neuromaps <- function(
     check_fs(abort = TRUE)
     if (config$verbose) {
       cli::cli_alert_info(
-        "Volume annotation detected — projecting to fsaverage5 surface via mri_vol2surf"
+        paste(
+          "Volume annotation detected --",
+          "projecting to fsaverage5 surface via mri_vol2surf"
+        )
       )
     }
   }
@@ -868,42 +843,26 @@ create_cortical_from_neuromaps <- function(
     atlas_name <- paste(source, desc, sep = "_")
   }
 
-  dirs <- setup_atlas_dirs(config$output_dir, atlas_name, type = "cortical")
-
-  if (config$verbose) {
-    cli::cli_h1("Creating brain atlas {.val {atlas_name}} from neuromaps")
-    cli::cli_alert_info("Input files: {.path {gifti_files}}")
-  }
+  output_base <- file.path(
+    config$output_dir, atlas_name
+  )
+  mkdir(output_base)
 
   read_fn <- if (is_volume) {
-    function() read_neuromaps_volume(gifti_files[1], n_bins, dirs$base)
+    function() read_neuromaps_volume(gifti_files[1], n_bins, output_base)
   } else {
     function() read_neuromaps_annotation(gifti_files, label_table, n_bins)
   }
 
-  step1 <- cortical_resolve_step1(
-    config, dirs, atlas_name,
+  run_cortical_creation(
+    atlas_name = atlas_name,
+    config = config,
     read_fn = read_fn,
     step_label = "1/8 Reading neuromaps annotation",
-    cache_label = "Step 1 (Read neuromaps)"
-  )
-
-  if (max(config$steps) == 1L) {
-    return(cortical_finalize(
-      step1$atlas_3d, config, dirs, start_time
-    ))
-  }
-
-  cortical_pipeline(
-    atlas_3d = step1$atlas_3d,
-    components = step1$components,
-    atlas_name = atlas_name,
+    cache_label = "Step 1 (Read neuromaps)",
+    header_msg = "Creating brain atlas {.val {atlas_name}} from neuromaps",
+    input_files = gifti_files,
     hemisphere = hemisphere,
-    views = views,
-    region_snapshot_fn = cortical_region_snapshots,
-    config = config,
-    dirs = dirs,
-    start_time = start_time
+    views = views
   )
 }
-

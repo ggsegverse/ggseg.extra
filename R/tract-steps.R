@@ -113,7 +113,7 @@ tract_build_core <- function(meshes_list, colours, tract_names) {
 
   core <- do.call(rbind, core_rows)
 
-  raw_colours <- colours[seq_along(meshes_list)]
+  raw_colours <- colours[names(meshes_list)]
   palette <- if (all(is.na(raw_colours))) {
     NULL
   } else {
@@ -371,5 +371,7 @@ resolve_tube_radius <- function(
     )
   }
 
-  rep(0.5, n_points)
+  cli::cli_abort(
+    "{.arg tube_radius} must be numeric or the string {.val density}, not {.val {tube_radius}}"
+  )
 }

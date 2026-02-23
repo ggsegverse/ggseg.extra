@@ -4,21 +4,50 @@
 # Camera positions from ggseg3d::camera_preset_to_position
 # Each vector is the camera position; it looks at the origin.
 camera_presets <- list(
-  lh_lateral  = c(-350,    0,    0),
-  lh_medial   = c( 350,    0,    0),
-  lh_superior = c(-120,    0,  330),
-  lh_inferior = c(-120,    0, -330),
-  rh_lateral  = c( 350,    0,    0),
-  rh_medial   = c(-350,    0,    0),
-  rh_superior = c( 120,    0,  330),
-  rh_inferior = c( 120,    0, -330)
+  lh_lateral  = c(-350,   0,    0),
+  lh_medial   = c(350,    0,    0),
+  lh_superior = c(-120,   0,  330),
+  lh_inferior = c(-120,   0, -330),
+  rh_lateral  = c(350,    0,    0),
+  rh_medial   = c(-350,   0,    0),
+  rh_superior = c(120,    0,  330),
+  rh_inferior = c(120,    0, -330)
 )
 
 
 #' @noRd
-region_faces_camera <- function(vertex_positions, camera_pos, centroid) {
-  centered <- sweep(vertex_positions, 2, centroid)
-  dots <- centered %*% camera_pos
+compute_vertex_normals <- function(mesh) {
+  verts <- as.matrix(mesh$vertices)
+  faces <- as.matrix(mesh$faces) + 1L
+  normals <- matrix(0, nrow = nrow(verts), ncol = 3)
+
+  v0 <- verts[faces[, 1], , drop = FALSE]
+  v1 <- verts[faces[, 2], , drop = FALSE]
+  v2 <- verts[faces[, 3], , drop = FALSE]
+  e1 <- v1 - v0
+  e2 <- v2 - v0
+  fn <- cbind(
+    e1[, 2] * e2[, 3] - e1[, 3] * e2[, 2],
+    e1[, 3] * e2[, 1] - e1[, 1] * e2[, 3],
+    e1[, 1] * e2[, 2] - e1[, 2] * e2[, 1]
+  )
+
+  for (j in 1:3) {
+    for (col in 1:3) {
+      acc <- tapply(fn[, col], faces[, j], sum)
+      vi <- as.integer(names(acc))
+      normals[vi, col] <- normals[vi, col] + as.numeric(acc)
+    }
+  }
+
+  norms <- sqrt(rowSums(normals^2))
+  norms[norms == 0] <- 1
+  normals / norms
+}
+
+#' @noRd
+region_faces_camera <- function(vertex_normals, camera_pos) {
+  dots <- vertex_normals %*% camera_pos
   any(dots > 0)
 }
 
@@ -29,7 +58,7 @@ filter_visible_regions <- function(region_grid, vertices_df) {
   mesh_rh <- ggseg.formats::get_brain_mesh("rh", "inflated")
 
   meshes <- list(lh = mesh_lh, rh = mesh_rh)
-  centroids <- lapply(meshes, function(m) colMeans(as.matrix(m$vertices)))
+  vnormals <- lapply(meshes, compute_vertex_normals)
 
   keep <- vapply(seq_len(nrow(region_grid)), function(i) {
     label <- region_grid$region_label[i]
@@ -46,10 +75,8 @@ filter_visible_regions <- function(region_grid, vertices_df) {
     v_indices <- vertices_df$vertices[[idx[1]]]
     if (length(v_indices) == 0) return(TRUE)
 
-    mesh_verts <- as.matrix(meshes[[hemi]]$vertices)
-    positions <- mesh_verts[v_indices + 1L, , drop = FALSE]
-
-    region_faces_camera(positions, cam, centroids[[hemi]])
+    region_normals <- vnormals[[hemi]][v_indices + 1L, , drop = FALSE]
+    region_faces_camera(region_normals, cam)
   }, logical(1))
 
   region_grid[keep, , drop = FALSE]

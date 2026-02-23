@@ -4,17 +4,9 @@
 #' @importFrom sf st_geometry st_bbox st_transform
 correct_coords_sf <- function(data, by) {
   geom <- st_geometry(data)
+  ymin <- st_bbox(geom)["ymin"]
 
-  bbox <- st_bbox(geom)
-  ymin <- bbox["ymin"]
-
-  transformed_geom <- geom + c(by, 0) - c(0, ymin)
-
-  tmp <- mutate(
-    data,
-    geometry = transformed_geom
-  )
-  tmp
+  mutate(data, geometry = geom + c(by, 0) - c(0, ymin))
 }
 
 
@@ -99,20 +91,27 @@ count_vertices <- function(x) {
 #' @importFrom dplyr as_tibble group_by mutate row_number ungroup
 #' @importFrom sf st_combine st_coordinates
 to_coords <- function(x, n) {
-  if (nrow(x) != 0) {
-    k <- st_combine(st_geometry(x))
-    k <- st_coordinates(k)
-    k <- as_tibble(k)
-    k$L2 <- n * 10000 + k$L2
-
-    k <- group_by(k, L2)
-    k <- mutate(k, .order = row_number())
-    k <- ungroup(k)
-  } else {
-    k <- data.frame(matrix(nrow = 0, ncol = 6))
+  if (nrow(x) == 0) {
+    coords <- data.frame(matrix(nrow = 0, ncol = 6))
+    names(coords) <- c(".long", ".lat", ".subid", ".id", ".poly", ".order")
+    return(coords)
   }
-  names(k) <- c(".long", ".lat", ".subid", ".id", ".poly", ".order")
-  k
+
+  coords <- x |>
+    sf::st_geometry() |>
+    st_combine() |>
+    st_coordinates() |>
+    as_tibble()
+
+  coords$L2 <- n * 10000 + coords$L2
+
+  coords <- coords |>
+    group_by(L2) |>
+    mutate(.order = row_number()) |>
+    ungroup()
+
+  names(coords) <- c(".long", ".lat", ".subid", ".id", ".poly", ".order")
+  coords
 }
 
 
@@ -168,45 +167,45 @@ gather_geometry <- function(df) {
 
 
 center_coord <- function(x) {
-  cent <- range_coord(x)
-  cent <- apply(cent, 2, mean)
-  cent
+  apply(range_coord(x), 2, mean)
 }
 
 
 #' @importFrom sf st_coordinates
 range_coord <- function(x) {
-  cent <- st_coordinates(x)
-  cent <- apply(cent, 2, range)
-  cent[, 1:2]
+  coords <- st_coordinates(x)
+  apply(coords, 2, range)[, 1:2]
 }
 
 
 #' @importFrom sf st_bbox
 #' @importFrom stats sd
-restack <- function(df) {
-  rr <- lapply(df, range_coord)
+restack <- function(views) {
+  ranges <- lapply(views, range_coord)
 
-  max_extent <- max(vapply(rr, function(r) max(abs(r[, 2])), numeric(1)))
-  widths <- vapply(rr, function(r) diff(r[, 1]), numeric(1))
-  half_widths <- vapply(rr, function(r) max(abs(r[, 1])), numeric(1))
+  max_extent <- max(vapply(ranges, function(r) max(abs(r[, 2])), numeric(1)))
+  widths <- vapply(ranges, function(r) diff(r[, 1]), numeric(1))
+  half_widths <- vapply(ranges, function(r) max(abs(r[, 1])), numeric(1))
   gap <- max(widths) * 0.15
 
-  df2 <- list()
+  positioned <- list()
   x_pos <- 0
 
-  for (k in seq_along(df)) {
-    x_offset <- x_pos + half_widths[k]
-    df2[[k]] <- df[[k]]
-    df2[[k]]$geometry <- df2[[k]]$geometry + c(x_offset, max_extent)
-    x_pos <- x_pos + widths[k] + gap
+  for (idx in seq_along(views)) {
+    x_offset <- x_pos + half_widths[idx]
+    positioned[[idx]] <- views[[idx]]
+    positioned[[idx]]$geometry <- views[[idx]]$geometry + c(x_offset, max_extent)
+    x_pos <- x_pos + widths[idx] + gap
   }
 
-  bx <- do.call(rbind, lapply(df2, function(x) st_bbox(x$geometry)))
-  bx <- apply(bx, 2, min)
+  bboxes <- do.call(rbind, lapply(positioned, function(v) st_bbox(v$geometry)))
+  combined_bbox <- c(
+    xmin = min(bboxes[, "xmin"]), ymin = min(bboxes[, "ymin"]),
+    xmax = max(bboxes[, "xmax"]), ymax = max(bboxes[, "ymax"])
+  )
 
   list(
-    df = do.call(rbind, df2),
-    box = bx
+    df = do.call(rbind, positioned),
+    box = combined_bbox
   )
 }

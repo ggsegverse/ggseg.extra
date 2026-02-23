@@ -2,12 +2,10 @@
 
     Code
       cortical_pipeline(atlas_3d = structure(list(), class = "ggseg_atlas"),
-      components = components, atlas_name = "test", hemisphere = "lh", views = "lateral",
+      components = mock_components(), atlas_name = "test", hemisphere = "lh", views = "lateral",
       region_snapshot_fn = function(...) NULL, config = list(steps = 2:8,
       skip_existing = FALSE, tolerance = 1, smoothness = 5, cleanup = FALSE, verbose = TRUE),
-      dirs = list(base = withr::local_tempdir(), snapshots = withr::local_tempdir(),
-      processed = withr::local_tempdir(), masks = withr::local_tempdir()),
-      start_time = Sys.time())
+      dirs = mock_dirs(), start_time = Sys.time())
     Message
       i 2/8 Taking full brain snapshots
       v 2/8 Taking full brain snapshots [<TIME>]

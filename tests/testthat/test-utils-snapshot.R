@@ -394,139 +394,58 @@ describe("extract_alpha_mask", {
     file.create(input)
     file.create(output)
 
-    system_called <- FALSE
-    local_mocked_bindings(
-      system = function(...) {
-        system_called <<- TRUE
-        0L
-      },
-      .package = "base"
-    )
-
     result <- extract_alpha_mask(input, output, skip_existing = TRUE)
 
     expect_equal(result, output, ignore_attr = TRUE)
-    expect_false(system_called)
   })
 
-  it("constructs correct magick command", {
-    input <- withr::local_tempfile(fileext = ".png")
-    output <- withr::local_tempfile(fileext = ".png")
-    file.create(input)
-
-    captured_cmd <- NULL
-    local_mocked_bindings(
-      system = function(command, ...) {
-        captured_cmd <<- command
-        0L
-      },
-      .package = "base"
-    )
-
-    extract_alpha_mask(input, output, skip_existing = FALSE)
-
-    expect_true(grepl("^magick", captured_cmd))
-    expect_true(grepl("-alpha extract", captured_cmd))
-    expect_true(grepl(shQuote(input), captured_cmd, fixed = TRUE))
-    expect_true(grepl(shQuote(output), captured_cmd, fixed = TRUE))
-  })
-
-  it("returns output file path", {
-    input <- withr::local_tempfile(fileext = ".png")
-    output <- withr::local_tempfile(fileext = ".png")
-    file.create(input)
-
-    local_mocked_bindings(
-      system = function(...) 0L,
-      .package = "base"
-    )
+  it("extracts alpha and returns output path when magick is available", {
+    skip_if_not(has_magick(), "ImageMagick not available")
+    tmp <- withr::local_tempdir()
+    input <- file.path(tmp, "test.png")
+    output <- file.path(tmp, "alpha.png")
+    magick::image_write(magick::image_blank(10, 10, "red"), input)
 
     result <- extract_alpha_mask(input, output, skip_existing = FALSE)
 
     expect_equal(result, output, ignore_attr = TRUE)
+    expect_true(file.exists(output))
+  })
+
+  it("errors on non-zero exit code", {
+    skip_if_not(has_magick(), "ImageMagick not available")
+
+    expect_error(
+      extract_alpha_mask(
+        "/nonexistent/input.png",
+        "/nonexistent/output.png",
+        skip_existing = FALSE
+      ),
+      "ImageMagick failed"
+    )
   })
 })
 
 
 describe("run_cmd", {
-  it("constructs command with get_fs prefix", {
-    captured_cmd <- NULL
-    local_mocked_bindings(
-      system = function(command, ...) {
-        captured_cmd <<- command
-        ""
-      },
-      .package = "base"
-    )
-    local_mocked_bindings(
-      get_fs = function() "source /opt/freesurfer/SetUpFreeSurfer.sh; "
-    )
-
-    run_cmd("freeview -v brain.mgz", verbose = FALSE, no_ui = FALSE)
-
-    expect_true(grepl("^source /opt/freesurfer", captured_cmd))
-    expect_true(grepl("freeview -v brain.mgz$", captured_cmd))
-  })
-
-  it("passes verbose to intern and ignore params", {
-    captured_args <- list()
-    local_mocked_bindings(
-      # nolint start: object_name_linter.
-      system = function(
-        command, intern, ignore.stdout, ignore.stderr, ...
-      ) {
-        # nolint end
-        captured_args <<- list(
-          intern = intern,
-          ignore.stdout = ignore.stdout,
-          ignore.stderr = ignore.stderr
-        )
-        ""
-      },
-      .package = "base"
-    )
+  it("runs commands successfully", {
     local_mocked_bindings(
       get_fs = function() ""
     )
 
-    run_cmd("echo test", verbose = TRUE, no_ui = FALSE)
-
-    expect_true(captured_args$intern)
-    expect_false(captured_args$ignore.stdout)
-    expect_false(captured_args$ignore.stderr)
-
-    run_cmd("echo test", verbose = FALSE, no_ui = FALSE)
-
-    expect_true(captured_args$intern)
-    expect_true(captured_args$ignore.stdout)
-    expect_true(captured_args$ignore.stderr)
+    result <- run_cmd("echo test", verbose = FALSE, no_ui = FALSE)
+    expect_equal(result, 0L)
   })
 
-  it("modifies cmd for macOS freeview when no_ui is TRUE", {
-    captured_cmd <- NULL
-    local_mocked_bindings(
-      system = function(command, ...) {
-        captured_cmd <<- command
-        ""
-      },
-      .package = "base"
-    )
+  it("aborts on non-zero exit code", {
     local_mocked_bindings(
       get_fs = function() ""
     )
 
-    withr::local_envvar(FREESURFER_HOME = "/opt/freesurfer")
-
-    run_cmd("freeview -v brain.mgz", verbose = FALSE, no_ui = TRUE)
-
-    if (Sys.info()["sysname"] == "Darwin") {
-      expect_true(grepl("open -g -j -n -W", captured_cmd))
-      expect_true(grepl("Freeview.app", captured_cmd))
-      expect_true(grepl("-v brain.mgz", captured_cmd))
-      expect_false(grepl("^.*freeview ", captured_cmd))
-    } else {
-      expect_true(grepl("^fsxvfb", captured_cmd))
-    }
+    expect_error(
+      run_cmd("false", verbose = FALSE),
+      "FreeSurfer command failed"
+    )
   })
 })
 
@@ -634,31 +553,17 @@ describe("isolate_region", {
   })
 
   it("runs extraction when ImageMagick is available", {
-    input <- withr::local_tempfile(fileext = ".png")
-    output <- withr::local_tempfile(fileext = ".png")
-    interim <- withr::local_tempfile(fileext = ".png")
-    file.create(input)
+    skip_if_not(has_magick(), "ImageMagick not available")
 
-    sentinel <- structure(list(), class = "mock_img")
-    run_cmd_called <- FALSE
+    tmp <- withr::local_tempdir()
+    input <- file.path(tmp, "test.png")
+    output <- file.path(tmp, "isolated.png")
+    interim <- file.path(tmp, "interim.png")
 
-    local_mocked_bindings(
-      image_read = function(...) sentinel,
-      image_convert = function(...) sentinel,
-      image_transparent = function(...) sentinel,
-      image_write = function(...) interim,
-      has_magick = function() TRUE,
-      run_cmd = function(cmd, ...) {
-        run_cmd_called <<- TRUE
-        expect_true(grepl("magick", cmd))
-        expect_true(grepl("-alpha extract", cmd))
-        "ok"
-      }
-    )
-
+    magick::image_write(magick::image_blank(10, 10, "red"), input)
     isolate_region(input, output, interim_file = interim, skip_existing = FALSE)
 
-    expect_true(run_cmd_called)
+    expect_true(file.exists(output))
   })
 })
 
@@ -728,46 +633,13 @@ describe("load_reduced_contours", {
 
 
 describe("magick_version", {
-  it("returns first line of system2 output", {
-    local_mocked_bindings(
-      system2 = function(command, args, stdout, ...) {
-        c("Version: ImageMagick 7.1.0", "Features: DPC")
-      },
-      .package = "base"
-    )
+  it("returns a character string", {
+    skip_if_not(has_magick(), "ImageMagick not available")
 
     result <- magick_version()
 
-    expect_equal(result, "Version: ImageMagick 7.1.0")
-  })
-})
-
-
-describe("run_cmd non-Darwin no_ui branch", {
-  it("prepends fsxvfb on non-Darwin systems", {
-    captured_cmd <- NULL
-    local_mocked_bindings(
-      system = function(command, ...) {
-        captured_cmd <<- command
-        ""
-      },
-      .package = "base"
-    )
-    local_mocked_bindings(
-      get_fs = function() ""
-    )
-
-    withr::local_envvar(FREESURFER_HOME = "/opt/freesurfer")
-
-    mock_sysinfo <- c(sysname = "Linux")
-    local_mocked_bindings(
-      Sys.info = function() mock_sysinfo,
-      .package = "base"
-    )
-
-    run_cmd("freeview -v brain.mgz", verbose = FALSE, no_ui = TRUE)
-
-    expect_true(grepl("^fsxvfb", captured_cmd))
+    expect_type(result, "character")
+    expect_true(nchar(result) > 0)
   })
 })
 

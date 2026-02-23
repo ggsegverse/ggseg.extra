@@ -62,7 +62,7 @@ describe("tract_build_core", {
         )
       )
     )
-    colours <- c("#FF0000", "#00FF00")
+    colours <- c(cst_left = "#FF0000", cst_right = "#00FF00")
 
     result <- tract_build_core(
       meshes_list,
@@ -90,7 +90,7 @@ describe("tract_build_core", {
       )
     )
 
-    result <- tract_build_core(meshes_list, "#FF0000", "cst")
+    result <- tract_build_core(meshes_list, c(cst = "#FF0000"), "cst")
 
     expect_equal(result$atlas_name, "cst")
   })
@@ -487,19 +487,14 @@ describe("resolve_tube_radius", {
     expect_true(all(result == 0.6))
   })
 
-  it("returns default radius for unknown string", {
+  it("errors for unknown string", {
     centerline <- matrix(c(1:5, rep(0, 10)), ncol = 3)
     streamlines <- list(centerline)
 
-    result <- resolve_tube_radius(
-      "unknown",
-      streamlines,
-      centerline,
-      c(0.2, 1.0)
+    expect_error(
+      resolve_tube_radius("unknown", streamlines, centerline, c(0.2, 1.0)),
+      "must be numeric"
     )
-
-    expect_length(result, 5)
-    expect_true(all(result == 0.5))
   })
 })
 
@@ -646,7 +641,10 @@ describe("tract_log_header", {
   it("prints info when verbose", {
     config <- list(verbose = TRUE)
 
-    expect_message(tract_log_header(config, "tract.trk", "aseg.mgz"), "tractography")
+    expect_message(
+      tract_log_header(config, "tract.trk", "aseg.mgz"),
+      "tractography"
+    )
   })
 
   it("is silent when verbose is FALSE", {

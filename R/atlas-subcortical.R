@@ -190,19 +190,17 @@ validate_subcort_config <- function(
     tolerance, smoothness, steps, max_step = 9L
   )
 
-  if (!is.null(decimate)) {
-    if (
-      !is.numeric(decimate) ||
-        length(decimate) != 1 ||
-        decimate <= 0 ||
-        decimate >= 1
-    ) {
-      cli::cli_abort(c(
-        "{.arg decimate} must be a single number between 0 and 1 (exclusive)",
-        "x" = "Got {.val {decimate}}",
-        "i" = "Use {.code NULL} to skip mesh decimation"
-      ))
-    }
+  if (!is.null(decimate) && (
+    !is.numeric(decimate) ||
+      length(decimate) != 1 ||
+      decimate <= 0 ||
+      decimate >= 1
+  )) {
+    cli::cli_abort(c(
+      "{.arg decimate} must be a single number between 0 and 1 (exclusive)",
+      "x" = "Got {.val {decimate}}",
+      "i" = "Use {.code NULL} to skip mesh decimation"
+    ))
   }
 
   check_fs(abort = TRUE)
@@ -481,6 +479,12 @@ subcort_assemble_full <- function(
     components$meshes_df <- components$meshes_df[
       !components$meshes_df$label %in% missing,
     ]
+  }
+
+  if (nrow(components$core) == 0) {
+    cli::cli_abort(
+      "No labels with valid contour data remain. Cannot build atlas."
+    )
   }
 
   atlas <- ggseg_atlas(

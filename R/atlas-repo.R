@@ -238,7 +238,8 @@ template_replace <- function(file, atlas_name) {
       writeLines(output, file)
     },
     error = function(e) {
-      NULL
+      cli::cli_warn("Failed to process template {.file {file}}: {e$message}")
+      invisible(NULL)
     }
   )
 }
@@ -273,7 +274,7 @@ write_gitignore <- function(path) {
     "inst/doc"
   )
 
-  writeLines(content, file.path(path, ".gitignore"))
+  invisible(writeLines(content, file.path(path, ".gitignore")))
 }
 
 
@@ -293,7 +294,7 @@ write_rbuildignore <- function(path) {
     "^codecov\\.yml$"
   )
 
-  writeLines(content, file.path(path, ".Rbuildignore"))
+  invisible(writeLines(content, file.path(path, ".Rbuildignore")))
 }
 
 
@@ -427,10 +428,10 @@ write_github_workflows <- function(path) {
     "          branch: gh-pages",
     "          folder: docs"
   )
-  writeLines(
+  invisible(writeLines(
     pkgdown_workflow,
     file.path(path, ".github", "workflows", "pkgdown.yaml")
-  )
+  ))
 }
 
 

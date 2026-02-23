@@ -262,6 +262,7 @@ tract_resolve_step1 <- function(
   if (is.null(colours)) {
     colours <- rep(NA_character_, length(streamlines_data))
   }
+  names(colours) <- tract_names
 
   if (config$verbose) {
     cli::cli_progress_step(

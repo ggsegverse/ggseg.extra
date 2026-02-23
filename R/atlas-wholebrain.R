@@ -5,17 +5,40 @@
 #' @description
 #' `r lifecycle::badge("experimental")`
 #'
-#' Build a brain atlas from a volumetric parcellation (NIfTI/MGZ) that
+#' Build a brain atlas from a single volumetric parcellation (NIfTI/MGZ) that
 #' contains both cortical and subcortical regions. Cortical regions are
 #' projected onto the fsaverage5 surface via FreeSurfer's `mri_vol2surf`
 #' and rendered as surface views, while subcortical regions go through
 #' the mesh-based subcortical pipeline.
 #'
-#' The function automatically classifies regions as cortical or subcortical
-#' based on vertex coverage on the surface projection, or you can manually
-#' specify the split via `cortical_labels` and `subcortical_labels`.
-#'
 #' Requires FreeSurfer.
+#'
+#' @section Label classification:
+#' The pipeline must know which labels are cortical (rendered on the surface)
+#' and which are subcortical (rendered as 3D meshes / 2D slices). Three
+#' mechanisms are available, applied in priority order:
+#'
+#' 1. **Function arguments** (highest priority): `cortical_labels` and
+#'    `subcortical_labels` override everything for the specified labels.
+#' 2. **LUT `type` column**: If the colour lookup table has a `type` column
+#'    with values `"cortical"` or `"subcortical"`, that classification is
+#'    used for any labels not covered by the function arguments. This is the
+#'    recommended approach for reproducible atlas creation.
+#' 3. **Vertex-count heuristic** (fallback): Labels with at least
+#'    `min_vertices` vertices on the surface projection are classified as
+#'    cortical; the rest as subcortical.
+#'
+#' @section Volume pre-processing:
+#' Before surface projection, the volume is filtered so that only voxel IDs
+#' listed in the LUT are kept; all other non-zero voxels are zeroed out.
+#' This prevents unlisted structures (e.g. white matter, ventricle masks)
+#' from bleeding onto the cortical surface during label dilation.
+#'
+#' Cortical voxels are also used to generate the brain-outline reference
+#' geometry for the subcortical pipeline. The volume's orientation matrix
+#' (`xform`) is used to split cortical voxels by hemisphere: left-hemisphere
+#' voxels map to FreeSurfer label 3 (left cortex) and right-hemisphere to
+#' label 42 (right cortex).
 #'
 #' @section Human oversight:
 #' This is the most complex pipeline in ggsegExtra and the one most likely
@@ -23,7 +46,8 @@
 #'
 #' 1. Run `steps = 1:2` first to project the volume and classify labels.
 #' 2. Inspect `result$cortical_labels` and `result$subcortical_labels`.
-#'    Override with `cortical_labels` / `subcortical_labels` if needed.
+#'    If the automatic split is wrong, either add a `type` column to the
+#'    LUT or use `cortical_labels` / `subcortical_labels` to override.
 #' 3. Run the full pipeline once you are satisfied with the split.
 #' 4. Visually inspect the resulting atlas with `ggseg()` / `ggseg3d()`.
 #'
@@ -35,6 +59,10 @@
 #'   (.mgz, .nii, .nii.gz).
 #' @param input_lut Path to FreeSurfer-style colour lookup table, or a
 #'   data.frame with columns `idx`, `label`, `R`, `G`, `B`, `A`.
+#'   An optional `type` column with values `"cortical"` or `"subcortical"`
+#'   controls label classification (see **Label classification**). Voxel IDs
+#'   not listed in the LUT are automatically zeroed out before surface
+#'   projection (see **Volume pre-processing**).
 #'   If NULL, generic names and no palette.
 #' @template atlas_name
 #' @template output_dir
@@ -51,12 +79,16 @@
 #'   MNI152-space volumes. If FALSE, uses FreeSurfer's `--mni152reg`
 #'   registration (may produce noisy results due to surf2surf resampling).
 #' @param min_vertices Minimum total vertex count across hemispheres for a
-#'   label to be classified as cortical. Default 50.
+#'   label to be classified as cortical by the vertex-count heuristic (see
+#'   **Label classification**). Ignored when `type` column or explicit label
+#'   vectors are provided. Default 50.
 #' @param cortical_labels Character vector of label names to force as cortical.
+#'   Highest priority; overrides LUT `type` and the vertex-count heuristic.
 #' @param subcortical_labels Character vector of label names to force as
-#'   subcortical.
+#'   subcortical. Highest priority; overrides LUT `type` and the vertex-count
+#'   heuristic.
 #' @param cortical_views Views for cortical sub-pipeline.
-#'   Default `c("lateral", "medial")`.
+#'   Default `c("lateral", "medial", "superior", "inferior")`.
 #' @param subcortical_views Views for subcortical sub-pipeline. Default NULL
 #'   (auto-detected).
 #' @param decimate Mesh decimation ratio for subcortical meshes (0-1).
@@ -86,21 +118,42 @@
 #'
 #' @examples
 #' \dontrun{
-#' # Create from MNI152-space NIfTI with LUT
+#' # --- Recommended: LUT with type column ---
+#' lut <- data.frame(
+#'   idx   = c(10, 11, 49, 50, 101:148),
+#'   label = c("Left-Thalamus", "Left-Caudate",
+#'             "Right-Thalamus", "Right-Caudate",
+#'             paste0("cortical_region_", 1:48)),
+#'   type  = c(rep("subcortical", 4), rep("cortical", 48)),
+#'   R = sample(50:220, 52, TRUE),
+#'   G = sample(50:220, 52, TRUE),
+#'   B = sample(50:220, 52, TRUE),
+#'   A = 255L
+#' )
+#'
 #' result <- create_wholebrain_from_volume(
-#'   input_volume = "shen_268.nii.gz",
-#'   input_lut = "shen_268_LUT.txt",
-#'   atlas_name = "shen268"
+#'   input_volume = "my_atlas.nii.gz",
+#'   input_lut = lut,
+#'   atlas_name = "my_atlas"
 #' )
 #' result$cortical   # surface-based cortical atlas
 #' result$subcortical # mesh-based subcortical atlas
 #'
-#' # Projection + split only (inspect classification)
+#' # --- Without type column: automatic classification ---
+#' result <- create_wholebrain_from_volume(
+#'   input_volume = "atlas.nii.gz",
+#'   input_lut = "atlas_LUT.txt",
+#'   atlas_name = "auto_atlas"
+#' )
+#'
+#' # --- Inspect classification before full run ---
 #' result <- create_wholebrain_from_volume(
 #'   input_volume = "atlas.nii.gz",
 #'   input_lut = "atlas_LUT.txt",
 #'   steps = 1:2
 #' )
+#' result$cortical_labels
+#' result$subcortical_labels
 #' }
 create_wholebrain_from_volume <- function(
   input_volume,
@@ -114,7 +167,7 @@ create_wholebrain_from_volume <- function(
   min_vertices = 50L,
   cortical_labels = NULL,
   subcortical_labels = NULL,
-  cortical_views = c("lateral", "medial"),
+  cortical_views = c("lateral", "medial", "superior", "inferior"),
   subcortical_views = NULL,
   decimate = 0.5,
   tolerance = NULL,
@@ -343,8 +396,14 @@ wholebrain_resolve_projection <- function(config, dirs) {
 
 
 #' Convert a filled overlay vector to atlas_data rows for one hemisphere
+#'
+#' @param include_unknown If TRUE, unlabeled vertices (value 0) are included
+#'   as an "unknown" region. This provides the brain outline context geometry
+#'   needed for medial wall rendering.
 #' @noRd
-overlay_to_atlas_data <- function(overlay, hemi_short, colortable) {
+overlay_to_atlas_data <- function(
+  overlay, hemi_short, colortable, include_unknown = FALSE
+) {
   hemi <- hemi_to_long(hemi_short)
   unique_labels <- sort(unique(overlay[overlay != 0L]))
 
@@ -375,7 +434,24 @@ overlay_to_atlas_data <- function(overlay, hemi_short, colortable) {
     )
   })
 
-  bind_rows(Filter(Negate(is.null), rows))
+  result <- bind_rows(Filter(Negate(is.null), rows))
+
+  if (include_unknown) {
+    unknown_verts <- which(overlay == 0L) - 1L
+    if (length(unknown_verts) > 0) {
+      result <- bind_rows(result, tibble(
+        hemi = hemi,
+        region = "unknown",
+        label = paste0(hemi_short, "_unknown"),
+        colour = "#BEBEBE",
+        vertices = list(unknown_verts),
+        source_label = "unknown",
+        source_idx = 0L
+      ))
+    }
+  }
+
+  result
 }
 
 
@@ -440,7 +516,7 @@ wholebrain_project_to_surface <- function(
     }
 
     all_data[[hemi_short]] <- overlay_to_atlas_data(
-      overlay, hemi_short, colortable
+      overlay, hemi_short, colortable, include_unknown = TRUE
     )
   }
 
@@ -475,6 +551,7 @@ wholebrain_resolve_split <- function(
 
   split <- wholebrain_classify_labels(
     atlas_data = projection$atlas_data,
+    colortable = projection$colortable,
     min_vertices = config$min_vertices,
     cortical_labels = cortical_labels,
     subcortical_labels = subcortical_labels,
@@ -490,11 +567,16 @@ wholebrain_resolve_split <- function(
 
 #' Classify volume labels as cortical or subcortical
 #'
-#' Uses vertex coverage on the surface projection to decide which labels
-#' should be treated as cortical (surface views) vs subcortical (mesh views).
+#' Classification priority:
+#' 1. `cortical_labels`/`subcortical_labels` function arguments (highest)
+#' 2. `type` column on the colortable (`"cortical"` or `"subcortical"`)
+#' 3. Vertex-count heuristic: labels with >= `min_vertices` on the surface
+#'    projection are cortical, the rest subcortical (lowest)
 #'
 #' @param atlas_data Tibble from `wholebrain_project_to_surface()` with
 #'   `source_label` and `vertices` columns.
+#' @param colortable Colortable data.frame. If it has a `type` column with
+#'   values `"cortical"` / `"subcortical"`, that is used for classification.
 #' @param min_vertices Minimum total vertex count for cortical classification.
 #' @param cortical_labels Manual override: force these labels as cortical.
 #' @param subcortical_labels Manual override: force these labels as subcortical.
@@ -505,6 +587,7 @@ wholebrain_resolve_split <- function(
 #' @noRd
 wholebrain_classify_labels <- function(
   atlas_data,
+  colortable = NULL,
   min_vertices = 50L,
   cortical_labels = NULL,
   subcortical_labels = NULL,
@@ -524,6 +607,12 @@ wholebrain_classify_labels <- function(
     classified_cortical <- intersect(cortical_labels, all_labels)
   }
   if (!is.null(subcortical_labels)) {
+    unmatched <- setdiff(subcortical_labels, all_labels)
+    if (length(unmatched) > 0) {
+      cli::cli_warn(
+        "Subcortical labels not found in data: {.val {unmatched}}"
+      )
+    }
     classified_subcortical <- subcortical_labels
   }
 
@@ -532,11 +621,35 @@ wholebrain_classify_labels <- function(
     c(classified_cortical, classified_subcortical)
   )
 
-  auto_cortical <- remaining[vertex_counts[remaining] >= min_vertices]
-  auto_subcortical <- remaining[vertex_counts[remaining] < min_vertices]
+  has_type <- !is.null(colortable) && "type" %in% names(colortable)
+  if (has_type && length(remaining) > 0) {
+    lut_cortical <- colortable$label[colortable$type == "cortical"]
+    lut_subcortical <- colortable$label[colortable$type == "subcortical"]
+    classified_cortical <- c(
+      classified_cortical, intersect(remaining, lut_cortical)
+    )
+    classified_subcortical <- c(
+      classified_subcortical, intersect(remaining, lut_subcortical)
+    )
+    remaining <- setdiff(
+      remaining, c(classified_cortical, classified_subcortical)
+    )
+  }
 
-  classified_cortical <- c(classified_cortical, auto_cortical)
-  classified_subcortical <- c(classified_subcortical, auto_subcortical)
+  if (length(remaining) > 0) {
+    if (verbose && !has_type) {
+      cli::cli_alert_info(
+        paste(
+          "No {.field type} column in LUT;",
+          "classifying {length(remaining)} labels by vertex count"
+        )
+      )
+    }
+    auto_cortical <- remaining[vertex_counts[remaining] >= min_vertices]
+    auto_subcortical <- remaining[vertex_counts[remaining] < min_vertices]
+    classified_cortical <- c(classified_cortical, auto_cortical)
+    classified_subcortical <- c(classified_subcortical, auto_subcortical)
+  }
 
   if (verbose) {
     cli::cli_alert_info(
@@ -602,10 +715,17 @@ wholebrain_refine_cortical_projection <- function(
 
   all_data <- lapply(c("lh", "rh"), function(hemi_short) {
     overlay_file <- file.path(surf_dir, paste0(hemi_short, "_overlay.nii.gz"))
+    if (!file.exists(overlay_file)) {
+      cli::cli_abort(
+        "Overlay file missing: {.path {overlay_file}}. Re-run step 1."
+      )
+    }
     overlay <- as.integer(c(RNifti::readNifti(overlay_file)))
     overlay[overlay %in% subcort_idx] <- 0L
     overlay <- fill_surface_labels(overlay, hemi_short, config$subject)
-    overlay_to_atlas_data(overlay, hemi_short, colortable)
+    overlay_to_atlas_data(
+      overlay, hemi_short, colortable, include_unknown = TRUE
+    )
   })
 
   if (config$verbose) cli::cli_progress_done()
@@ -659,11 +779,6 @@ wholebrain_run_cortical <- function(
     cache_label = "Cortical step 1"
   )
 
-  if (max(cortical_config$steps) == 1L) {
-    if (config$verbose) cli::cli_progress_done()
-    return(step1$atlas_3d)
-  }
-
   hemisphere <- unique(cortical_data$hemi)
   hemi_short <- vapply(
     hemisphere, hemi_to_short, character(1),
@@ -707,12 +822,24 @@ wholebrain_run_subcortical <- function(
   ]
 
   subcort_lut <- file.path(dirs$base, "subcort_lut.txt")
-  write_ctab(subcort_ct[, c("idx", "label", "R", "G", "B", "A")], subcort_lut)
+  required_cols <- c("idx", "label", "R", "G", "B", "A")
+  missing_cols <- setdiff(required_cols, names(subcort_ct))
+  if (length(missing_cols) > 0) {
+    cli::cli_abort(
+      "Colortable missing required columns: {.val {missing_cols}}"
+    )
+  }
+  write_ctab(subcort_ct[, required_cols], subcort_lut)
+
+  cortical_idx <- colortable$idx[
+    colortable$label %in% split$cortical_labels
+  ]
 
   filtered_vol <- file.path(dirs$base, "subcort_volume.nii.gz")
-  wholebrain_filter_volume(
+  wholebrain_prepare_subcortical_volume(
     input_volume = config$input_volume,
-    keep_labels = subcort_ct$idx,
+    subcortical_idx = subcort_ct$idx,
+    cortical_idx = cortical_idx,
     output_file = filtered_vol
   )
 
@@ -737,13 +864,37 @@ wholebrain_run_subcortical <- function(
 }
 
 
+#' Prepare volume for subcortical pipeline with cortex reference
+#'
+#' Keeps subcortical labels unchanged and remaps cortical labels to FS cortex
+#' reference, so the subcortical pipeline can generate brain outline context
+#' geometry via `detect_cortex_labels()`. Cortical labels are split by
+#' hemisphere using the volume midpoint: left hemisphere voxels map to label 3
+#' (FS left cortex), right hemisphere to label 42 (FS right cortex).
+#' All other labels are zeroed.
 #' @noRd
-wholebrain_filter_volume <- function(input_volume, keep_labels, output_file) {
+wholebrain_prepare_subcortical_volume <- function(
+  input_volume, subcortical_idx, cortical_idx, output_file
+) {
   vol <- read_volume(input_volume, reorient = FALSE)
   arr <- as.array(vol)
-  arr[!arr %in% keep_labels] <- 0L
-  filtered <- RNifti::asNifti(arr, reference = vol)
-  RNifti::writeNifti(filtered, output_file)
+  result <- array(0L, dim = dim(arr))
+  for (idx in subcortical_idx) {
+    result[arr == idx] <- idx
+  }
+  cortical_mask <- arr %in% cortical_idx
+  xform <- RNifti::xform(vol)
+  x0_voxel <- round(solve(xform, c(0, 0, 0, 1))[1])
+  x_idx <- slice.index(arr, 1)
+  left_is_high <- xform[1, 1] < 0
+  if (left_is_high) {
+    result[cortical_mask & x_idx > x0_voxel] <- 3L
+    result[cortical_mask & x_idx <= x0_voxel] <- 42L
+  } else {
+    result[cortical_mask & x_idx <= x0_voxel] <- 3L
+    result[cortical_mask & x_idx > x0_voxel] <- 42L
+  }
+  RNifti::writeNifti(RNifti::asNifti(result, reference = vol), output_file)
   invisible(output_file)
 }
 
@@ -826,7 +977,8 @@ fill_surface_labels <- function(overlay, hemi, subject = "fsaverage5") {
   unlabeled <- intersect(which(result == 0L), which(cortex_mask))
 
   while (length(unlabeled) > 0L) {
-    newly_labeled <- integer(0)
+    newly_labeled <- integer(length(unlabeled))
+    n_new <- 0L
 
     for (idx in unlabeled) {
       neighbor_labels <- result[adj[[idx]]]
@@ -834,12 +986,13 @@ fill_surface_labels <- function(overlay, hemi, subject = "fsaverage5") {
       if (length(neighbor_labels) > 0L) {
         tbl <- tabulate(neighbor_labels, nbins = max(neighbor_labels))
         result[idx] <- which.max(tbl)
-        newly_labeled <- c(newly_labeled, idx)
+        n_new <- n_new + 1L
+        newly_labeled[n_new] <- idx
       }
     }
 
-    if (length(newly_labeled) == 0L) break
-    unlabeled <- setdiff(unlabeled, newly_labeled)
+    if (n_new == 0L) break
+    unlabeled <- setdiff(unlabeled, newly_labeled[seq_len(n_new)])
   }
 
   result
@@ -852,14 +1005,17 @@ fill_surface_labels <- function(overlay, hemi, subject = "fsaverage5") {
 #' @return list of integer vectors, one per vertex
 #' @noRd
 build_adjacency <- function(faces, n_vertices) {
+  f1 <- faces[, 1]
+  f2 <- faces[, 2]
+  f3 <- faces[, 3]
+
+  from <- c(f1, f1, f2, f2, f3, f3)
+  to   <- c(f2, f3, f1, f3, f1, f2)
+
+  edges <- split(to, from)
+
   adj <- vector("list", n_vertices)
-
-  for (i in seq_len(nrow(faces))) {
-    v <- faces[i, ]
-    adj[[v[1]]] <- c(adj[[v[1]]], v[2], v[3])
-    adj[[v[2]]] <- c(adj[[v[2]]], v[1], v[3])
-    adj[[v[3]]] <- c(adj[[v[3]]], v[1], v[2])
-  }
-
-  lapply(adj, function(x) unique.default(x))
+  idx <- as.integer(names(edges))
+  adj[idx] <- lapply(edges, unique.default)
+  adj
 }

@@ -55,13 +55,17 @@ extract_alpha_mask <- function(
     return(invisible(output_file))
   }
 
-  cmd <- paste(
+  exit_code <- system2(
     "magick",
-    shQuote(input_file),
-    "-alpha extract",
-    shQuote(output_file)
+    args = c(input_file, "-alpha", "extract", output_file),
+    stdout = FALSE,
+    stderr = FALSE
   )
-  system(cmd, intern = FALSE, ignore.stdout = TRUE, ignore.stderr = TRUE)
+  if (exit_code != 0) {
+    cli::cli_abort(
+      "ImageMagick failed to extract alpha from {.path {input_file}}"
+    )
+  }
   invisible(output_file)
 }
 
@@ -121,7 +125,7 @@ process_and_mask_images <- function(
 #' @return sf object with view, hemi_short, hemi, label columns added
 #' @noRd
 load_reduced_contours <- function(base_dir) {
-  load(file.path(base_dir, "contours_reduced.rda"))
+  load_rda(file.path(base_dir, "contours_reduced.rda"))
   contours <- terra::vect(contours) |>
     terra::flip() |>
     sf::st_as_sf()
@@ -149,6 +153,12 @@ load_reduced_contours <- function(base_dir) {
 parse_contour_filenames <- function(filenames) {
   filenames_no_ext <- tools::file_path_sans_ext(filenames)
   fn_parts <- strsplit(filenames_no_ext, "_")
+  too_short <- vapply(fn_parts, length, integer(1)) < 3
+  if (any(too_short)) {
+    cli::cli_abort(
+      "Contour filenames must have at least 3 underscore-separated parts: {.val {filenames[too_short]}}"
+    )
+  }
 
   result <- data.frame(
     filenm = filenames,
@@ -215,12 +225,17 @@ run_cmd <- function(cmd, verbose = get_verbose(), no_ui = FALSE) {
       cmd <- paste("fsxvfb", cmd)
     }
   }
-  system(
-    paste0(get_fs(), cmd),
-    intern = TRUE,
-    ignore.stdout = !verbose,
-    ignore.stderr = !verbose
+  full_cmd <- paste0(get_fs(), cmd)
+  exit_code <- system2(
+    "bash",
+    args = c("-c", full_cmd),
+    stdout = if (verbose) "" else FALSE,
+    stderr = if (verbose) "" else FALSE
   )
+  if (exit_code != 0) {
+    cli::cli_abort("FreeSurfer command failed (exit {exit_code}): {cmd}")
+  }
+  exit_code
 }
 
 
@@ -241,10 +256,10 @@ get_contours <- function(
     return(NULL)
   }
 
-  tmp.rst <- raster_object # nolint: object_name_linter
-  tmp.rst[tmp.rst == 0] <- NA # nolint: object_name_linter
+  tmp_rst <- raster_object
+  tmp_rst[tmp_rst == 0] <- NA
 
-  contours_raw <- as.polygons(tmp.rst, values = TRUE, na.rm = TRUE)
+  contours_raw <- as.polygons(tmp_rst, values = TRUE, na.rm = TRUE)
 
   coords <- st_as_sf(contours_raw)
 
@@ -280,13 +295,15 @@ isolate_region <- function(
   tmp <- image_convert(tmp, "png")
 
   tmp <- image_transparent(tmp, "white", fuzz = 30)
-  k <- image_write(tmp, interim_file)
+  image_write(tmp, interim_file)
 
   if (has_magick()) {
-    cmd <- paste("magick", shQuote(interim_file), "-alpha extract", shQuote(output_file))
-
-    k <- run_cmd(cmd)
-    invisible(k)
+    system2(
+      "magick",
+      args = c(interim_file, "-alpha", "extract", output_file),
+      stdout = FALSE,
+      stderr = FALSE
+    )
   } else {
     cli::cli_abort(paste(
       "Cannot complete last extraction step,",
