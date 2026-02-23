@@ -77,6 +77,10 @@
       i Input files: 'testdata/cortical/lh.region1.label', 'testdata/cortical/lh.region2.label', and 'testdata/cortical/rh.region1.label'
       i Setting output directory to '<TMPDIR>
       i 1/8 Reading 3 label files
+    Condition
+      Warning in `serializedSize()`:
+      'package:grDevices' may not be available when loading
+    Message
       v 1/8 Reading 3 label files [<TIME>]
       
       v Temporary files removed

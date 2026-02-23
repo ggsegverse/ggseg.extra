@@ -39,7 +39,7 @@ extract_contours <- function(
     steps = length(regions),
     label = paste(step, "Extracting contours")
   )
-  contourobjs <- furrr::future_map(
+  contourobjs <- safe_future_map(
     regions,
     function(region_file) {
       r <- suppressWarnings(rast(region_file))

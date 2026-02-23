@@ -4,15 +4,34 @@ fsaverage5_nverts <- 10242L
 
 #' @importFrom future plan sequential
 #' @noRd
-safe_future_pmap <- function(.l, .f, ..., .options = furrr::furrr_options()) {
-  if (inherits(plan(), "multicore")) {
-    old_plan <- plan(sequential)
-    on.exit(plan(old_plan), add = TRUE)
-    cli::cli_alert_info(
-      "Switching to sequential for browser-based snapshots (multicore not supported)"
-    )
-  }
-  furrr::future_pmap(.l, .f, ..., .options = .options)
+warn_and_switch_multicore <- function() {
+  if (!inherits(plan(), "multicore")) return(NULL)
+  old_plan <- plan(sequential)
+  cli::cli_alert_info(
+    "Switching to sequential (multicore fork is not supported)"
+  )
+  old_plan
+}
+
+#' @noRd
+safe_future_pmap <- function(.l, .f, ..., .options = furrr_options(seed = NULL)) {
+  old <- warn_and_switch_multicore()
+  if (!is.null(old)) on.exit(plan(old), add = TRUE)
+  future_pmap(.l, .f, ..., .options = .options)
+}
+
+#' @noRd
+safe_future_map <- function(.x, .f, ..., .options = furrr_options(seed = NULL)) {
+  old <- warn_and_switch_multicore()
+  if (!is.null(old)) on.exit(plan(old), add = TRUE)
+  future_map(.x, .f, ..., .options = .options)
+}
+
+#' @noRd
+safe_future_map2 <- function(.x, .y, .f, ..., .options = furrr_options(seed = NULL)) {
+  old <- warn_and_switch_multicore()
+  if (!is.null(old)) on.exit(plan(old), add = TRUE)
+  future_map2(.x, .y, .f, ..., .options = .options)
 }
 
 mkdir <- function(path, ...) {

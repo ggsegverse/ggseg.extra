@@ -308,7 +308,7 @@ create_subcortical_geometry_projection <- function(
 
   p <- progressor(steps = nrow(snapshot_grid))
 
-  invisible(future_pmap(
+  invisible(safe_future_pmap(
     list(
       label_id = colortable$idx[snapshot_grid$struct_idx],
       label_name = colortable$label[snapshot_grid$struct_idx],

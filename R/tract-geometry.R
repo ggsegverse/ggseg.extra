@@ -577,7 +577,7 @@ tract_create_volumes <- function(
 
   p <- progressor(steps = length(tract_labels))
 
-  tract_volumes <- future_pmap(
+  tract_volumes <- safe_future_pmap(
     list(
       label = tract_labels,
       i = seq_along(tract_labels)
@@ -640,7 +640,7 @@ tract_snapshot_projections <- function(
 
   p <- progressor(steps = nrow(snapshot_grid))
 
-  invisible(future_pmap(
+  invisible(safe_future_pmap(
     list(
       view_type = views$type[snapshot_grid$view_idx],
       view_start = views$start[snapshot_grid$view_idx],
@@ -675,7 +675,7 @@ tract_snapshot_projections <- function(
 
   p2 <- progressor(steps = nrow(cortex_slices))
 
-  invisible(future_pmap(
+  invisible(safe_future_pmap(
     list(
       x = cortex_slices$x,
       y = cortex_slices$y,

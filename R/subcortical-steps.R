@@ -11,7 +11,7 @@ subcort_create_meshes <- function(
 ) {
   p <- progressor(steps = nrow(colortable))
 
-  meshes_list <- future_map2(
+  meshes_list <- safe_future_map2(
     colortable$idx,
     colortable$label,
     function(label_id, label_name) {
@@ -127,7 +127,7 @@ subcort_create_snapshots <- function(
 
   p <- progressor(steps = nrow(snapshot_grid))
 
-  invisible(future_pmap(
+  invisible(safe_future_pmap(
     list(
       label_id = colortable$idx[snapshot_grid$struct_idx],
       label_name = colortable$label[snapshot_grid$struct_idx],

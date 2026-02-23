@@ -21,7 +21,7 @@ tract_read_input <- function(input_tracts, tract_names) {
       tract_names <- file_path_sans_ext(basename(input_tracts))
     }
 
-    streamlines_data <- furrr::future_map(
+    streamlines_data <- safe_future_map(
       input_tracts,
       read_tractography,
       .options = furrr_options(packages = "ggseg.extra")
@@ -49,7 +49,7 @@ tract_create_meshes <- function(
 ) {
   p <- progressor(steps = length(streamlines_data))
 
-  meshes_list <- future_map2(
+  meshes_list <- safe_future_map2(
     streamlines_data,
     tract_names,
     function(streamlines, tract_name) {
@@ -170,7 +170,7 @@ tract_create_snapshots <- function(
 
   p <- progressor(steps = length(tract_labels))
 
-  tract_volumes <- future_pmap(
+  tract_volumes <- safe_future_pmap(
     list(label = tract_labels, i = seq_along(tract_labels)),
     function(label, i) {
       centerline <- streamlines_data[[label]]
@@ -221,7 +221,7 @@ tract_create_snapshots <- function(
 
   p <- progressor(steps = nrow(snapshot_grid))
 
-  invisible(future_pmap(
+  invisible(safe_future_pmap(
     list(
       view_type = views$type[snapshot_grid$view_idx],
       view_start = views$start[snapshot_grid$view_idx],
@@ -259,7 +259,7 @@ tract_create_snapshots <- function(
 
   p2 <- progressor(steps = nrow(cortex_slices))
 
-  invisible(future_pmap(
+  invisible(safe_future_pmap(
     list(
       x = cortex_slices$x,
       y = cortex_slices$y,

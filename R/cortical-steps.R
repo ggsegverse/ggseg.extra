@@ -187,7 +187,7 @@ cortical_isolate_regions <- function(dirs, skip_existing) {
   )
 
   p <- progressor(steps = nrow(file_grid))
-  invisible(future_pmap(
+  invisible(safe_future_pmap(
     file_grid,
     function(input_file, output_file, interim_file) {
       isolate_region(
@@ -229,7 +229,7 @@ labels_read_files <- function(
 ) {
   p <- progressor(steps = length(label_files))
 
-  all_data <- future_pmap(
+  all_data <- safe_future_pmap(
     list(
       label_file = label_files,
       i = seq_along(label_files)
