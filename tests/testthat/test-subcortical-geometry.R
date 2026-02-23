@@ -700,7 +700,9 @@ describe("create_subcortical_geometry_projection image processing loop", {
       progressor = function(...) function(...) NULL,
       future_pmap = mock_future_pmap,
       furrr_options = function(...) list(),
-      snapshot_partial_projection = function(..., output_dir, label, view_name) {
+      snapshot_partial_projection = function( # nolint: line_length_linter.
+        ..., output_dir, label, view_name
+      ) {
         f <- file.path(output_dir, paste0(view_name, "_", label, ".png"))
         file.create(f)
         invisible(NULL)

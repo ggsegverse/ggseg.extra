@@ -130,39 +130,49 @@ read_ply_mesh <- function(ply, ...) {
 
 # Annotation reading ----
 
+#' Extract vertex-to-region mapping into atlas tibble rows
+#'
+#' Shared helper for annotation, GIFTI, and CIFTI readers. Iterates
+#' over regions, finds matching vertices, and collects tibble rows.
+#' Unlabeled vertices are assigned to an "unknown" region.
+#'
+#' @param vertex_codes Integer vector of per-vertex label codes (one per vertex)
+#' @param regions Data.frame with columns: code (integer key), name (character),
+#'   colour (hex string)
+#' @param hemi Long hemisphere name ("left" or "right")
+#' @param hemi_short Short hemisphere code ("lh" or "rh")
+#' @return List of tibble rows
 #' @noRd
-annot_to_atlas_data <- function(annot, hemi, hemi_short) {
-  ct <- annot$colortable_df
-  ct <- ct[!is.na(ct$r), ]
+extract_vertex_regions <- function(
+  vertex_codes, regions, hemi, hemi_short
+) {
+  all_data <- vector("list", nrow(regions))
+  labeled <- vector("list", nrow(regions))
+  n_regions <- 0L
 
-  all_data <- list()
-  labeled_vertices <- integer(0)
+  for (i in seq_len(nrow(regions))) {
+    region_vertices <- which(vertex_codes == regions$code[i]) - 1L
+    if (length(region_vertices) == 0) next
 
-  for (i in seq_len(nrow(ct))) {
-    region_name <- ct$struct_name[i]
-    region_code <- ct$code[i]
-
-    region_vertices <- which(annot$label_codes == region_code) - 1L
-    if (length(region_vertices) == 0) {
-      next
-    }
-
-    labeled_vertices <- c(labeled_vertices, region_vertices)
-
-    all_data[[length(all_data) + 1]] <- tibble(
+    n_regions <- n_regions + 1L
+    labeled[[n_regions]] <- region_vertices
+    all_data[[n_regions]] <- tibble(
       hemi = hemi,
-      region = region_name,
-      label = paste(hemi_short, region_name, sep = "_"),
-      colour = ct$hex_color_string_rgb[i],
+      region = regions$name[i],
+      label = paste(hemi_short, regions$name[i], sep = "_"),
+      colour = regions$colour[i],
       vertices = list(region_vertices)
     )
   }
 
-  all_vertex_indices <- seq_along(annot$label_codes) - 1L
+  all_data <- all_data[seq_len(n_regions)]
+  labeled_vertices <- unlist(labeled[seq_len(n_regions)])
+
+  all_vertex_indices <- seq_along(vertex_codes) - 1L
   unlabeled_vertices <- setdiff(all_vertex_indices, labeled_vertices)
 
   if (length(unlabeled_vertices) > 0) {
-    all_data[[length(all_data) + 1]] <- tibble(
+    all_data[[n_regions + 1L]] <- tibble(
       hemi = hemi,
       region = "unknown",
       label = paste(hemi_short, "unknown", sep = "_"),
@@ -172,6 +182,22 @@ annot_to_atlas_data <- function(annot, hemi, hemi_short) {
   }
 
   all_data
+}
+
+
+#' @noRd
+annot_to_atlas_data <- function(annot, hemi, hemi_short) {
+  ct <- annot$colortable_df
+  ct <- ct[!is.na(ct$r), ]
+
+  regions <- data.frame(
+    code = ct$code,
+    name = ct$struct_name,
+    colour = ct$hex_color_string_rgb,
+    stringsAsFactors = FALSE
+  )
+
+  extract_vertex_regions(annot$label_codes, regions, hemi, hemi_short)
 }
 
 
@@ -210,17 +236,15 @@ read_annotation_data <- function(annot_files) {
 
   for (annot_file in annot_files) {
     filename <- basename(annot_file)
-    hemi_short <- if (grepl("^lh\\.", filename)) {
-      "lh"
-    } else if (grepl("^rh\\.", filename)) {
-      "rh"
-    } else {
+    hemi_short <- detect_hemi_from_gifti_filename(filename)
+
+    if (is.na(hemi_short)) {
       cli::cli_warn(
         "Cannot detect hemisphere from filename: {.file {filename}}"
       )
       next
     }
-    hemi <- if (hemi_short == "lh") "left" else "right"
+    hemi <- hemi_to_long(hemi_short)
 
     annot <- freesurferformats::read.fs.annot(annot_file)
     all_data <- c(all_data, annot_to_atlas_data(annot, hemi, hemi_short))
@@ -266,17 +290,14 @@ write_dpv <- function(path, vertices, faces) {
     faces <- faces - 1
   }
 
-  vertices <- cbind(vertices, r = rep(0, nrow(vertices)))
-  faces <- cbind(faces, r = rep(0, nrow(faces)))
-
-  vertices <- within(vertices, l <- sprintf(paste("%f %f %f %g"), x, y, z, r)) # nolint: object_usage_linter
-  faces <- within(faces, l <- sprintf(paste("%g %g %g %g"), i, j, k, r))
+  vert_lines <- sprintf("%f %f %f %g", vertices$x, vertices$y, vertices$z, 0)
+  face_lines <- sprintf("%g %g %g %g", faces$i, faces$j, faces$k, 0)
 
   file_content <- c(
     "#!ascii",
     sprintf("%g %g", nrow(vertices), nrow(faces)),
-    vertices$l,
-    faces$l
+    vert_lines,
+    face_lines
   )
 
   con <- file(path)
@@ -357,7 +378,7 @@ read_ctab <- function(path) {
 #' @seealso [read_ctab()], [is_ctab()]
 #' @export
 write_ctab <- function(x, path) {
-  lls <- apply(x, 1, function(c) ctab_line(c[1], c[2], c[3], c[4], c[5], c[6]))
+  lls <- apply(x, 1, function(row) ctab_line(row[1], row[2], row[3], row[4], row[5], row[6]))
   lls[length(lls) + 1] <- ""
   writeLines(lls, path)
   invisible(lls)
@@ -497,7 +518,7 @@ read_gifti_annotation <- function(gifti_files) {
       )
       next
     }
-    hemi <- if (hemi_short == "lh") "left" else "right"
+    hemi <- hemi_to_long(hemi_short)
 
     annot <- freesurferformats::read.fs.annot.gii(gifti_file)
     all_data <- c(all_data, annot_to_atlas_data(annot, hemi, hemi_short))
@@ -542,7 +563,6 @@ read_cifti_annotation <- function(cifti_file) {
 
   cii <- ciftiTools::read_cifti(cifti_file)
 
-  fsaverage5_nverts <- 10242L
   all_data <- list()
 
   hemi_info <- list(
@@ -562,10 +582,20 @@ read_cifti_annotation <- function(cifti_file) {
 
   label_table <- cii$meta$cifti$labels[[1]]
 
+  regions <- data.frame(
+    code = label_table$Key,
+    name = label_table$Label,
+    colour = rgb(
+      label_table$Red,
+      label_table$Green,
+      label_table$Blue,
+      maxColorValue = 1
+    ),
+    stringsAsFactors = FALSE
+  )
+
   for (hi in hemi_info) {
-    if (is.null(hi$data)) {
-      next
-    }
+    if (is.null(hi$data)) next
 
     vertex_labels <- as.integer(hi$data[, 1])
     n_verts <- length(vertex_labels)
@@ -583,45 +613,10 @@ read_cifti_annotation <- function(cifti_file) {
       ))
     }
 
-    labeled_vertices <- integer(0)
-
-    for (i in seq_len(nrow(label_table))) {
-      region_key <- label_table$Key[i]
-      region_name <- label_table$Label[i]
-
-      region_vertices <- which(vertex_labels == region_key) - 1L
-      if (length(region_vertices) == 0) {
-        next
-      }
-
-      labeled_vertices <- c(labeled_vertices, region_vertices)
-
-      all_data[[length(all_data) + 1]] <- tibble(
-        hemi = hi$hemi,
-        region = region_name,
-        label = paste(hi$hemi_short, region_name, sep = "_"),
-        colour = rgb(
-          label_table$Red[i],
-          label_table$Green[i],
-          label_table$Blue[i],
-          maxColorValue = 1
-        ),
-        vertices = list(region_vertices)
-      )
-    }
-
-    all_vertex_indices <- seq_len(n_verts) - 1L
-    unlabeled_vertices <- setdiff(all_vertex_indices, labeled_vertices)
-
-    if (length(unlabeled_vertices) > 0) {
-      all_data[[length(all_data) + 1]] <- tibble(
-        hemi = hi$hemi,
-        region = "unknown",
-        label = paste(hi$hemi_short, "unknown", sep = "_"),
-        colour = "#BEBEBE",
-        vertices = list(unlabeled_vertices)
-      )
-    }
+    all_data <- c(
+      all_data,
+      extract_vertex_regions(vertex_labels, regions, hi$hemi, hi$hemi_short)
+    )
   }
 
   bind_rows(all_data)
@@ -705,7 +700,6 @@ read_neuromaps_annotation <- function(
     }
   }
 
-  fsaverage5_nverts <- 10242L
   all_data <- list()
 
   for (gifti_file in gifti_files) {
@@ -718,7 +712,7 @@ read_neuromaps_annotation <- function(
       )
       next
     }
-    hemi <- if (hemi_short == "lh") "left" else "right"
+    hemi <- hemi_to_long(hemi_short)
 
     gii <- gifti::read_gifti(gifti_file)
     values <- as.numeric(gii$data[[1]])
@@ -910,11 +904,10 @@ read_neuromaps_volume <- function(
   surf_dir <- file.path(output_dir, "surface_overlays")
   mkdir(surf_dir)
 
-  fsaverage5_nverts <- 10242L
   all_data <- list()
 
   for (hemi_short in c("lh", "rh")) {
-    hemi <- if (hemi_short == "lh") "left" else "right"
+    hemi <- hemi_to_long(hemi_short)
     output_nii <- file.path(surf_dir, paste0(hemi_short, "_overlay.nii.gz"))
 
     mri_vol2surf(
@@ -964,9 +957,8 @@ read_neuromaps_volume <- function(
 }
 
 
-# nolint start
 #' @noRd
-ctab_line <- function(idx, name, R, G, B, A) {
+ctab_line <- function(idx, name, red, green, blue, alpha) {
   if (nchar(name) > 29) {
     name <- substr(name, 1, 29)
   }
@@ -974,10 +966,9 @@ ctab_line <- function(idx, name, R, G, B, A) {
     "% 3s  % -30s  % 3s % 3s % 3s % 3s",
     idx,
     name,
-    R,
-    G,
-    B,
-    A
+    red,
+    green,
+    blue,
+    alpha
   )
 }
-# nolint end

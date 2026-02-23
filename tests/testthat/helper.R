@@ -97,6 +97,97 @@ expect_warnings <- function(expr, regexp) {
   invisible(result)
 }
 
+# Pipeline test helpers ----
+
+mock_dirs <- function() {
+  list(
+    base = withr::local_tempdir(.local_envir = parent.frame()),
+    snapshots = withr::local_tempdir(.local_envir = parent.frame()),
+    processed = withr::local_tempdir(.local_envir = parent.frame()),
+    masks = withr::local_tempdir(.local_envir = parent.frame())
+  )
+}
+
+mock_components <- function(
+  label = "lh_r",
+  hemi = "left",
+  region = "r",
+  colour = "#FF0000"
+) {
+  list(
+    core = data.frame(
+      hemi = hemi,
+      region = region,
+      label = label,
+      stringsAsFactors = FALSE
+    ),
+    palette = stats::setNames(colour, label),
+    vertices_df = data.frame(
+      label = label,
+      vertices = I(list(1:5))
+    )
+  )
+}
+
+mock_sf_polygon <- function(label = "test", view = "lateral") {
+  sf::st_sf(
+    label = label,
+    view = view,
+    geometry = sf::st_sfc(sf::st_polygon(list(matrix(
+      c(0, 0, 1, 0, 1, 1, 0, 0),
+      ncol = 2,
+      byrow = TRUE
+    ))))
+  )
+}
+
+mock_cortical_pipeline_bindings <- function(captured = NULL) {
+  mocks <- list(
+    cortical_brain_snapshots = function(...) NULL,
+    cortical_isolate_regions = function(...) NULL,
+    extract_contours = function(...) NULL,
+    smooth_contours = function(...) NULL,
+    reduce_vertex = function(...) NULL,
+    cortical_build_sf = function(...) mock_sf_polygon(),
+    ggseg_atlas = function(...) structure(list(...), class = "ggseg_atlas"),
+    ggseg_data_cortical = function(...) list(...),
+    warn_if_large_atlas = function(...) NULL,
+    preview_atlas = function(...) NULL,
+    log_elapsed = function(...) NULL
+  )
+
+  if (!is.null(captured)) {
+    for (fn_name in names(captured)) {
+      env <- captured[[fn_name]]
+      mocks[[fn_name]] <- (function(e, nm) {
+        function(...) {
+          e[[nm]] <<- list(...)
+          if (nm == "cortical_build_sf") {
+            return(mock_sf_polygon())
+          }
+          if (nm %in% c("ggseg_atlas", "ggseg_data_cortical")) {
+            return(structure(list(...), class = "ggseg_atlas"))
+          }
+          NULL
+        }
+      })(env, fn_name)
+    }
+  }
+
+  mocks
+}
+
+mock_subcort_dirs <- function() {
+  pf <- parent.frame()
+  list(
+    base = withr::local_tempdir(.local_envir = pf),
+    snapshots = withr::local_tempdir(.local_envir = pf),
+    processed = withr::local_tempdir(.local_envir = pf),
+    masks = withr::local_tempdir(.local_envir = pf),
+    meshes = withr::local_tempdir(.local_envir = pf)
+  )
+}
+
 # Helper to skip tests requiring internet
 skip_if_offline <- function() {
   tryCatch(

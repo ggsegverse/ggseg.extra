@@ -642,7 +642,11 @@ describe("parse_continuous_values", {
     values <- c(rep(NaN, 10240), 0.5, 9.5)
     result <- parse_continuous_values(values, "left", "lh", n_bins = 10)
     bin_regions <- vapply(
-      result[vapply(result, function(x) grepl("^bin_", x$region[1]), logical(1))],
+      result[vapply(
+        result,
+        function(x) grepl("^bin_", x$region[1]),
+        logical(1)
+      )],
       function(x) x$region[1],
       character(1)
     )

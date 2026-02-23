@@ -2,7 +2,10 @@ describe("detect_hemi_from_neuromaps_filename", {
   it("detects left from hemi-L BIDS pattern", {
     expect_equal(
       detect_hemi_from_neuromaps_filename(
-        "source-abagen_desc-genepc1_space-fsaverage_den-10k_hemi-L_feature.func.gii"
+        paste0(
+          "source-abagen_desc-genepc1_space-",
+          "fsaverage_den-10k_hemi-L_feature.func.gii"
+        )
       ),
       "lh"
     )
@@ -11,7 +14,10 @@ describe("detect_hemi_from_neuromaps_filename", {
   it("detects right from hemi-R BIDS pattern", {
     expect_equal(
       detect_hemi_from_neuromaps_filename(
-        "source-abagen_desc-genepc1_space-fsaverage_den-10k_hemi-R_feature.func.gii"
+        paste0(
+          "source-abagen_desc-genepc1_space-",
+          "fsaverage_den-10k_hemi-R_feature.func.gii"
+        )
       ),
       "rh"
     )

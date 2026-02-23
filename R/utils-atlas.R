@@ -1,3 +1,22 @@
+# Atlas name derivation ----
+
+#' @noRd
+#' @importFrom tools file_ext file_path_sans_ext
+derive_atlas_name <- function(filepath) {
+  if (length(filepath) == 0 || is.na(filepath)) {
+    cli::cli_abort("No input file provided to derive atlas name from")
+  }
+  name <- basename(filepath)
+  ext <- tools::file_ext(name)
+  name <- tools::file_path_sans_ext(name)
+  if (ext %in% c("gii", "nii")) {
+    name <- tools::file_path_sans_ext(name)
+  }
+  name <- gsub("^[lr]h\\.|\\.[LR]\\.", "", name)
+  gsub("\\.", "_", name)
+}
+
+
 # Hemisphere utilities ----
 
 #' Detect hemisphere from label name
@@ -106,7 +125,7 @@ clean_region_name <- function(
   region <- label_name
 
   if (remove_hemi) {
-    region <- gsub("^(Left|Right|left|right|lh|rh|L|R)[- _.]?", "", region)
+    region <- gsub("^(Left|Right|left|right|lh|rh)[- _.]?", "", region)
   }
 
   if (normalize) {

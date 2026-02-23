@@ -14,10 +14,9 @@ install_ggseg_atlas(
 \item{package}{Package name (e.g., \code{"ggsegYeo2011"}, \code{"ggsegDKT"}).
 Use \code{\link[ggseg.hub:ggseg_atlas_repos]{ggseg_atlas_repos()}} to see available packages.}
 
-\item{repos}{Repositories to install from. Defaults to the ggseg
-r-universe plus your current CRAN mirror.}
+\item{repos}{Repository URLs to install from.}
 
-\item{...}{Additional arguments passed to \code{\link[utils:install.packages]{utils::install.packages()}}.}
+\item{...}{Additional arguments passed to \code{\link[pak:pak]{pak::pak()}}.}
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}}

@@ -18,7 +18,7 @@ named \code{parcel_1}, \code{parcel_2}, etc. (parcellation) or
 
 \item{n_bins}{Number of quantile bins for continuous data. When \code{NULL}
 (default), auto-detected via Sturges' rule (\code{1 + log2(n)}, clamped
-to 5–20). Ignored for integer parcellation data.}
+to 5--20). Ignored for integer parcellation data.}
 }
 \value{
 A tibble with columns: hemi, region, label, colour, vertices

@@ -342,7 +342,9 @@ describe("parse_continuous_values", {
     expect_true("bin_5" %in% region_names)
     expect_true("unknown" %in% region_names)
 
-    total_verts <- sum(vapply(result, function(r) length(r$vertices[[1]]), integer(1)))
+    total_verts <- sum(vapply(
+      result, function(r) length(r$vertices[[1]]), integer(1)
+    ))
     expect_equal(total_verts, 102)
   })
 
@@ -377,7 +379,9 @@ describe("parse_continuous_values", {
 describe("parse_parcellation_values", {
   it("creates regions from integer IDs", {
     values <- c(1, 1, 2, 2, 0)
-    result <- parse_parcellation_values(values, "left", "lh", label_table = NULL)
+    result <- parse_parcellation_values(
+      values, "left", "lh", label_table = NULL
+    )
 
     region_names <- vapply(result, function(r) r$region[1], character(1))
     expect_true("parcel_1" %in% region_names)
@@ -387,7 +391,9 @@ describe("parse_parcellation_values", {
 
   it("treats NaN as medial wall", {
     values <- c(1, 2, NaN)
-    result <- parse_parcellation_values(values, "left", "lh", label_table = NULL)
+    result <- parse_parcellation_values(
+      values, "left", "lh", label_table = NULL
+    )
 
     unknown <- Filter(function(r) r$region[1] == "unknown", result)
     expect_length(unknown, 1)

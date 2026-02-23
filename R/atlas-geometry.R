@@ -22,17 +22,17 @@ extract_contours <- function(
   regions <- list.files(input_dir, full.names = TRUE)
   region_names <- file_path_sans_ext(basename(regions))
 
-  maks <- 0
+  max_val <- 0
   for (f in regions[seq_len(min(10, length(regions)))]) {
     r <- suppressWarnings(rast(f))
     m <- global(r, fun = "max", na.rm = TRUE)[1, 1]
-    if (m > maks) {
-      maks <- m
+    if (m > max_val) {
+      max_val <- m
     }
-    if (maks > 0) break
+    if (max_val > 0) break
   }
-  if (maks == 0) {
-    maks <- 1
+  if (max_val == 0) {
+    max_val <- 1
   }
 
   p <- progressor(
@@ -45,7 +45,7 @@ extract_contours <- function(
       r <- suppressWarnings(rast(region_file))
       result <- get_contours(
         r,
-        max_val = maks,
+        max_val = max_val,
         vertex_size_limits = vertex_size_limits,
         verbose = get_verbose() # nolint: object_usage_linter
       )
@@ -54,7 +54,7 @@ extract_contours <- function(
     },
     .options = furrr::furrr_options(
       packages = c("terra", "ggseg.extra"),
-      globals = c("maks", "vertex_size_limits", "p")
+      globals = c("max_val", "vertex_size_limits", "p")
     )
   )
   names(contourobjs) <- region_names
@@ -86,7 +86,7 @@ smooth_contours <- function(
   step,
   verbose = get_verbose() # nolint: object_usage_linter
 ) {
-  load(file.path(dir, "contours.rda"))
+  load_rda(file.path(dir, "contours.rda"))
 
   if (verbose) {
     cli::cli_progress_step(
@@ -124,7 +124,7 @@ reduce_vertex <- function(
       "{step} Reducing vertices (tolerance = {.val {tolerance}})"
     )
   }
-  load(file.path(dir, "contours_smoothed.rda"))
+  load_rda(file.path(dir, "contours_smoothed.rda"))
 
   contours <- filter_valid_geometries(contours)
   if (nrow(contours) == 0) {
@@ -197,6 +197,78 @@ filter_valid_geometries <- function(sf_obj) {
 }
 
 
+# Atlas geometry post-processing ----
+
+#' Smooth atlas 2D contours
+#'
+#' Apply kernel smoothing to the sf geometry of a `ggseg_atlas` object.
+#' Higher `smoothness` values produce rounder region boundaries.
+#' This avoids re-running the full atlas creation pipeline.
+#'
+#' @param atlas A `ggseg_atlas` object with sf data.
+#' @param smoothness Smoothing bandwidth passed to
+#'   [smoothr::smooth(method = "ksmooth")][smoothr::smooth]. Default 5.
+#'
+#' @return A modified `ggseg_atlas` with smoothed sf geometry.
+#' @export
+#' @importFrom smoothr smooth
+#' @importFrom sf st_make_valid
+#'
+#' @examples
+#' \dontrun{
+#' atlas <- atlas_smooth(my_atlas, smoothness = 10)
+#' plot(atlas)
+#' }
+atlas_smooth <- function(atlas, smoothness = 5) {
+  if (is.null(atlas$data$sf)) {
+    cli::cli_warn("Atlas has no sf data, nothing to smooth")
+    return(atlas)
+  }
+
+  new_sf <- smoothr::smooth(atlas$data$sf, method = "ksmooth",
+                            smoothness = smoothness)
+  new_sf <- sf::st_make_valid(new_sf)
+
+  atlas$data$sf <- new_sf
+  atlas
+}
+
+
+#' Simplify atlas 2D contours
+#'
+#' Reduce vertex count in the sf geometry of a `ggseg_atlas` object using
+#' Douglas-Peucker simplification. Higher `tolerance` values produce simpler
+#' shapes with fewer vertices. This avoids re-running the full atlas creation
+#' pipeline.
+#'
+#' @param atlas A `ggseg_atlas` object with sf data.
+#' @param tolerance Simplification tolerance passed to
+#'   [sf::st_simplify(dTolerance)][sf::st_simplify]. Default 0.5.
+#'
+#' @return A modified `ggseg_atlas` with simplified sf geometry.
+#' @export
+#' @importFrom sf st_simplify st_make_valid
+#'
+#' @examples
+#' \dontrun{
+#' atlas <- atlas_simplify(my_atlas, tolerance = 1)
+#' plot(atlas)
+#' }
+atlas_simplify <- function(atlas, tolerance = 0.5) {
+  if (is.null(atlas$data$sf)) {
+    cli::cli_warn("Atlas has no sf data, nothing to simplify")
+    return(atlas)
+  }
+
+  new_sf <- sf::st_simplify(atlas$data$sf, preserveTopology = TRUE,
+                            dTolerance = tolerance)
+  new_sf <- sf::st_make_valid(new_sf)
+
+  atlas$data$sf <- new_sf
+  atlas
+}
+
+
 #' Build sf geometry from volumetric contours
 #'
 #' Shared by subcortical and tract pipelines. Loads reduced contours,
@@ -240,6 +312,7 @@ build_contour_sf <- function(contours_file, views, cortex_slices = NULL) {
 
   conts <- layout_volumetric_views(conts) # nolint: object_usage_linter.
 
+  filenm_base <- sub("\\.png$", "", conts$filenm)
   conts$label <- vapply(
     seq_along(filenm_base),
     function(i) {
@@ -265,38 +338,33 @@ build_contour_sf <- function(contours_file, views, cortex_slices = NULL) {
 
 
 #' @noRd
-#' @importFrom dplyr group_by summarise ungroup as_tibble
+#' @importFrom dplyr group_by summarise ungroup
 #' @importFrom sf st_combine st_coordinates st_geometry
-#' @importFrom tidyr gather
 make_multipolygon <- function(contourfile) {
-  load(contourfile)
+  load_rda(contourfile)
 
-  contours <- group_by(contours, filenm)
-  contours <- summarise(contours, geometry = st_combine(geometry))
-  contours <- ungroup(contours)
+  contours <- contours |>
+    group_by(filenm) |>
+    summarise(geometry = st_combine(geometry)) |>
+    ungroup()
 
-  # recalc bbox
-  bbx1 <- data.frame(
-    filenm = contours$filenm,
-    xmin = NA,
-    ymin = NA,
-    xmax = NA,
-    ymax = NA
+  bounds <- vapply(seq_len(nrow(contours)), function(i) {
+    coords <- st_coordinates(contours[i, ])
+    c(
+      xmin = min(coords[, "X"]),
+      ymin = min(coords[, "Y"]),
+      xmax = max(coords[, "X"]),
+      ymax = max(coords[, "Y"])
+    )
+  }, numeric(4))
+
+  new_bb <- c(
+    xmin = min(bounds["xmin", ]),
+    ymin = min(bounds["ymin", ]),
+    xmax = max(bounds["xmax", ]),
+    ymax = max(bounds["ymax", ])
   )
-
-  for (i in seq_len(nrow(contours))) {
-    j <- as_tibble(st_coordinates(contours[i, ]))
-    j <- gather(j, key, val, X, Y)
-    j <- group_by(j, key)
-    j <- summarise(j, Min = min(val), Max = max(val))
-
-    bbx1[i, 2:5] <- c(j$Min[1], j$Min[2], j$Max[1], j$Max[2])
-  }
-
-  new_bb <- c(min(bbx1$xmin), min(bbx1$ymin), max(bbx1$xmax), max(bbx1$ymax))
-  names(new_bb) <- c("xmin", "ymin", "xmax", "ymax")
   attr(new_bb, "class") <- "bbox"
-
   attr(sf::st_geometry(contours), "bbox") <- new_bb
 
   contours

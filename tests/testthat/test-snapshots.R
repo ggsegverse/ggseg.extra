@@ -617,46 +617,59 @@ describe("snapshot_region", {
 
 
 describe("region_faces_camera", {
-  it("returns TRUE when vertices face the camera", {
-    positions <- matrix(c(-5, 0, 0, -4, 1, 0), nrow = 2, byrow = TRUE)
+  it("returns TRUE when normals face the camera", {
+    normals <- matrix(c(-1, 0, 0, -1, 0, 0), nrow = 2, byrow = TRUE)
     camera <- c(-350, 0, 0)
-    centroid <- c(0, 0, 0)
 
-    expect_true(region_faces_camera(positions, camera, centroid))
+    expect_true(region_faces_camera(normals, camera))
   })
 
-  it("returns FALSE when vertices face away", {
-    positions <- matrix(c(5, 0, 0, 4, 1, 0), nrow = 2, byrow = TRUE)
+  it("returns FALSE when normals face away", {
+    normals <- matrix(c(1, 0, 0, 1, 0, 0), nrow = 2, byrow = TRUE)
     camera <- c(-350, 0, 0)
-    centroid <- c(0, 0, 0)
 
-    expect_false(region_faces_camera(positions, camera, centroid))
+    expect_false(region_faces_camera(normals, camera))
   })
 
-  it("returns TRUE when at least one vertex faces camera", {
-    positions <- matrix(
-      c(-5, 0, 0, 5, 0, 0),
+  it("returns TRUE when at least one normal faces camera", {
+    normals <- matrix(
+      c(-1, 0, 0, 1, 0, 0),
       nrow = 2, byrow = TRUE
     )
     camera <- c(-350, 0, 0)
-    centroid <- c(0, 0, 0)
 
-    expect_true(region_faces_camera(positions, camera, centroid))
+    expect_true(region_faces_camera(normals, camera))
   })
 })
 
 
 describe("filter_visible_regions", {
+  make_mesh <- function(n) {
+    n <- max(n, 4L)
+    list(
+      vertices = data.frame(
+        x = seq_len(n), y = seq_len(n), z = rep(0, n)
+      ),
+      faces = data.frame(
+        i = rep(0L, n - 2L),
+        j = seq_len(n - 2L),
+        k = seq_len(n - 2L) + 1L
+      )
+    )
+  }
+
   it("removes regions that face away from camera", {
     local_mocked_bindings(
-      get_brain_mesh = function(hemi, surface, ...) {
-        verts <- data.frame(
-          x = c(-5, -4, -3, 3, 4, 5),
-          y = c(0, 1, -1, 0, 1, -1),
-          z = c(0, 0, 0, 0, 0, 0)
-        )
-        list(vertices = verts)
-      },
+      compute_vertex_normals = function(mesh) {
+        n <- nrow(mesh$vertices)
+        normals <- matrix(0, nrow = n, ncol = 3)
+        normals[1:3, 1] <- -1
+        normals[4:6, 1] <- 1
+        normals
+      }
+    )
+    local_mocked_bindings(
+      get_brain_mesh = function(hemi, surface, ...) make_mesh(6),
       .package = "ggseg.formats"
     )
 
@@ -680,9 +693,7 @@ describe("filter_visible_regions", {
 
   it("keeps all regions for unknown view", {
     local_mocked_bindings(
-      get_brain_mesh = function(hemi, surface, ...) {
-        list(vertices = data.frame(x = 0, y = 0, z = 0))
-      },
+      get_brain_mesh = function(hemi, surface, ...) make_mesh(3),
       .package = "ggseg.formats"
     )
 

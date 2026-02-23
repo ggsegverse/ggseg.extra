@@ -180,25 +180,7 @@ snapshot_slice <- function(
 
   pos <- switch(view, "axial" = z, "coronal" = y, "sagittal" = x)
   slice_data <- extract_slice_2d(vol, view, pos)
-
-  slice_data[slice_data == 0] <- NA
-
-  if (!any(is.finite(slice_data))) {
-    return(invisible(NULL))
-  }
-
-  png(outfile, width = width, height = height, bg = "black")
-  par(mar = c(0, 0, 0, 0))
-  image(
-    slice_data,
-    col = "red",
-    useRaster = TRUE,
-    axes = FALSE,
-    asp = 1
-  )
-  dev.off()
-
-  invisible(NULL)
+  render_slice_png(slice_data, outfile, width = width, height = height)
 }
 
 
@@ -230,7 +212,8 @@ snapshot_brain_helper <- function(
   colour = "colour",
   na_colour = "#CCCCCC",
   skip_existing = get_skip_existing(),
-  snapshot_dim = 800
+  snapshot_dim = 800,
+  max_retries = 2
 ) {
   if (skip_existing && file.exists(outfile)) {
     return(invisible(NULL))
@@ -238,24 +221,37 @@ snapshot_brain_helper <- function(
 
   hemi_long <- hemi_to_long(hemisphere)
 
-  ggseg3d(
-    .data = .data,
-    atlas = atlas,
-    hemisphere = hemi_long,
-    surface = surface,
-    colour = colour,
-    na_colour = na_colour
-  ) |>
-    set_flat_shading() |>
-    set_orthographic() |>
-    pan_camera(paste(hemi_long, view)) |>
-    set_background("white") |>
-    set_legend(show = FALSE) |>
-    snapshot_brain(
-      outfile,
-      width = snapshot_dim,
-      height = snapshot_dim
-    )
+  take_snapshot <- function() {
+    ggseg3d(
+      .data = .data,
+      atlas = atlas,
+      hemisphere = hemi_long,
+      surface = surface,
+      colour = colour,
+      na_colour = na_colour
+    ) |>
+      set_flat_shading() |>
+      set_orthographic() |>
+      pan_camera(paste(hemi_long, view)) |>
+      set_background("white") |>
+      set_legend(show = FALSE) |>
+      snapshot_brain(
+        outfile,
+        width = snapshot_dim,
+        height = snapshot_dim
+      )
+  }
+
+  for (attempt in seq_len(max_retries + 1L)) {
+    result <- tryCatch(take_snapshot(), error = function(e) e)
+    if (!inherits(result, "error")) break
+    if (attempt <= max_retries) {
+      try(chromote::default_chromote_object()$close(), silent = TRUE)
+      Sys.sleep(2)
+    } else {
+      stop(result)
+    }
+  }
 
   invisible(outfile)
 }
@@ -377,6 +373,47 @@ snapshot_na_regions <- function(
 #'
 #' @return Invisible path to output file, or NULL if no voxels
 #' @keywords internal
+#' Render a 2D matrix to PNG
+#'
+#' Shared rendering logic for all volumetric snapshot functions.
+#' Writes a matrix as a single-colour image on a black background.
+#'
+#' @param slice_data 2D numeric matrix (zeros treated as transparent)
+#' @param outfile Output PNG path
+#' @param colour Colour for non-zero values
+#' @param width,height Image dimensions in pixels
+#' @return Invisible outfile path, or NULL if slice has no data
+#' @noRd
+#' @importFrom grDevices png dev.off
+#' @importFrom graphics par image
+render_slice_png <- function(
+  slice_data,
+  outfile,
+  colour = "red",
+  width = 400,
+  height = 400
+) {
+  if (is.null(slice_data)) return(invisible(NULL))
+
+  slice_data[slice_data == 0] <- NA
+  if (!any(is.finite(slice_data))) return(invisible(NULL))
+
+  png(outfile, width = width, height = height, bg = "black")
+  on.exit(dev.off())
+  par(mar = c(0, 0, 0, 0))
+
+  image(
+    slice_data,
+    col = colour,
+    useRaster = TRUE,
+    axes = FALSE,
+    asp = 1
+  )
+
+  invisible(outfile)
+}
+
+
 snapshot_cortex_slice <- function(
   vol,
   x,
@@ -391,9 +428,7 @@ snapshot_cortex_slice <- function(
   skip_existing = get_skip_existing()
 ) {
   output_dir <- path.expand(output_dir)
-
-  filenm <- paste0(view_name, "_cortex_", hemi, ".png")
-  outfile <- file.path(output_dir, filenm)
+  outfile <- file.path(output_dir, paste0(view_name, "_cortex_", hemi, ".png"))
 
   if (skip_existing && file.exists(outfile)) {
     return(invisible(outfile))
@@ -401,31 +436,7 @@ snapshot_cortex_slice <- function(
 
   pos <- switch(slice_view, "axial" = z, "coronal" = y, "sagittal" = x)
   slice <- extract_slice_2d(vol, slice_view, pos, hemi = hemi)
-
-  if (is.null(slice)) {
-    return(invisible(NULL))
-  }
-
-  slice[slice == 0] <- NA
-
-  if (!any(is.finite(slice))) {
-    return(invisible(NULL))
-  }
-
-  png(outfile, width = width, height = height, bg = "black")
-  par(mar = c(0, 0, 0, 0))
-
-  image(
-    slice,
-    col = "red",
-    useRaster = TRUE,
-    axes = FALSE,
-    asp = 1
-  )
-
-  dev.off()
-
-  invisible(outfile)
+  render_slice_png(slice, outfile, width = width, height = height)
 }
 
 
@@ -444,8 +455,6 @@ snapshot_cortex_slice <- function(
 #'
 #' @return Invisible path to output file, or NULL if no voxels in slice
 #' @keywords internal
-#' @importFrom grDevices png dev.off rgb
-#' @importFrom graphics par image
 snapshot_volume_slice <- function(
   vol,
   x,
@@ -463,14 +472,10 @@ snapshot_volume_slice <- function(
   coords <- sprintf(c(x, y, z), fmt = "%03d")
   vv <- paste0(strsplit(view, "")[[1]][1:5], collapse = "")
 
-  filenm <- paste0(
-    paste(c(coords, vv), collapse = "_"),
-    "_",
-    label,
-    ".png"
+  outfile <- file.path(
+    output_dir,
+    paste0(paste(c(coords, vv), collapse = "_"), "_", label, ".png")
   )
-
-  outfile <- file.path(output_dir, filenm)
 
   if (skip_existing && file.exists(outfile)) {
     return(invisible(outfile))
@@ -478,27 +483,7 @@ snapshot_volume_slice <- function(
 
   pos <- switch(view, "axial" = z, "coronal" = y, "sagittal" = x)
   slice <- extract_slice_2d(vol, view, pos)
-
-  slice[slice == 0] <- NA
-
-  if (!any(is.finite(slice))) {
-    return(invisible(NULL))
-  }
-
-  png(outfile, width = width, height = height, bg = "black")
-  par(mar = c(0, 0, 0, 0))
-
-  image(
-    slice,
-    col = colour,
-    useRaster = TRUE,
-    axes = FALSE,
-    asp = 1
-  )
-
-  dev.off()
-
-  invisible(outfile)
+  render_slice_png(slice, outfile, colour = colour, width = width, height = height)
 }
 
 
@@ -535,33 +520,12 @@ snapshot_partial_projection <- function(
   skip_existing = get_skip_existing()
 ) {
   output_dir <- path.expand(output_dir)
-
-  filenm <- paste0(view_name, "_", label, ".png")
-  outfile <- file.path(output_dir, filenm)
+  outfile <- file.path(output_dir, paste0(view_name, "_", label, ".png"))
 
   if (skip_existing && file.exists(outfile)) {
     return(invisible(outfile))
   }
 
   proj <- volume_projection(vol, view, start, end, hemi = hemi)
-  proj[proj == 0] <- NA
-
-  if (!any(is.finite(proj))) {
-    return(invisible(NULL))
-  }
-
-  png(outfile, width = width, height = height, bg = "black")
-  par(mar = c(0, 0, 0, 0))
-
-  image(
-    proj,
-    col = colour,
-    useRaster = TRUE,
-    axes = FALSE,
-    asp = 1
-  )
-
-  dev.off()
-
-  invisible(outfile)
+  render_slice_png(proj, outfile, colour = colour, width = width, height = height)
 }

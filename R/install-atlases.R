@@ -28,10 +28,14 @@ ggseg_atlas_repos <- function(pattern = NULL, ...) {
 #' [ggseg.hub::install_ggseg_atlas()] instead.
 #'
 #' @inheritParams ggseg.hub::install_ggseg_atlas
+#' @param repos Repository URLs to install from.
 #' @export
 install_ggseg_atlas <- function(
   package,
-  repos = c(ggsegverse = "https://ggsegverse.r-universe.dev", getOption("repos")),
+  repos = c(
+    ggsegverse = "https://ggsegverse.r-universe.dev",
+    getOption("repos")
+  ),
   ...
 ) {
   lifecycle::deprecate_warn(
@@ -39,7 +43,10 @@ install_ggseg_atlas <- function(
     "ggseg.extra::install_ggseg_atlas()",
     "ggseg.hub::install_ggseg_atlas()"
   )
-  rlang::check_installed("ggseg.hub", reason = "for atlas installation functions")
+  rlang::check_installed(
+    "ggseg.hub",
+    reason = "for atlas installation functions"
+  )
   ggseg.hub::install_ggseg_atlas(package = package, repos = repos, ...)
 }
 
@@ -53,9 +60,13 @@ install_ggseg_atlas <- function(
 #' [ggseg.hub::install_ggseg_atlas_all()] instead.
 #'
 #' @inheritParams ggseg.hub::install_ggseg_atlas_all
+#' @param repos Repository URLs to install from.
 #' @export
 install_ggseg_atlas_all <- function(
-  repos = c(ggsegverse = "https://ggsegverse.r-universe.dev", getOption("repos")),
+  repos = c(
+    ggsegverse = "https://ggsegverse.r-universe.dev",
+    getOption("repos")
+  ),
   ...
 ) {
   lifecycle::deprecate_warn(
@@ -63,6 +74,9 @@ install_ggseg_atlas_all <- function(
     "ggseg.extra::install_ggseg_atlas_all()",
     "ggseg.hub::install_ggseg_atlas_all()"
   )
-  rlang::check_installed("ggseg.hub", reason = "for atlas installation functions")
+  rlang::check_installed(
+    "ggseg.hub",
+    reason = "for atlas installation functions"
+  )
   ggseg.hub::install_ggseg_atlas_all(repos = repos, ...)
 }

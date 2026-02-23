@@ -24,3 +24,5 @@ _brand.yml
 ^\.lintr$
 ^vignettes/tutorial-.*\.Rmd$
 ^vignettes/.*\.Rmd\.orig$
+^vignettes/\.quarto$
+^figure$

@@ -8,6 +8,8 @@
 #' @return A [ggseg.formats::ggseg_atlas] object.
 #' @export
 #' @family ggseg_atlases
+#' @import ggseg.formats
 #' @examples
 #' {GGSEG}()
+# fmt: skip
 {GGSEG} <- function() .{GGSEG}

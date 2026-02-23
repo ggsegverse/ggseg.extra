@@ -246,7 +246,7 @@ describe("extract_contours", {
     expect_true(file.exists(file.path(output_dir, "contours.rda")))
   })
 
-  it("defaults maks to 1 when all rasters have max 0", {
+  it("defaults max_val to 1 when all rasters have max 0", {
     input_dir <- withr::local_tempdir("masks_")
     output_dir <- withr::local_tempdir("output_")
     file.create(file.path(input_dir, "region1.png"))

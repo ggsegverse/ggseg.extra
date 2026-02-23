@@ -16,7 +16,7 @@ create_wholebrain_from_volume(
   min_vertices = 50L,
   cortical_labels = NULL,
   subcortical_labels = NULL,
-  cortical_views = c("lateral", "medial"),
+  cortical_views = c("lateral", "medial", "superior", "inferior"),
   subcortical_views = NULL,
   decimate = 0.5,
   tolerance = NULL,
@@ -33,6 +33,10 @@ create_wholebrain_from_volume(
 
 \item{input_lut}{Path to FreeSurfer-style colour lookup table, or a
 data.frame with columns \code{idx}, \code{label}, \code{R}, \code{G}, \code{B}, \code{A}.
+An optional \code{type} column with values \code{"cortical"} or \code{"subcortical"}
+controls label classification (see \strong{Label classification}). Voxel IDs
+not listed in the LUT are automatically zeroed out before surface
+projection (see \strong{Volume pre-processing}).
 If NULL, generic names and no palette.}
 
 \item{atlas_name}{Name for the atlas. If NULL, derived from the input
@@ -58,15 +62,19 @@ MNI152-space volumes. If FALSE, uses FreeSurfer's \code{--mni152reg}
 registration (may produce noisy results due to surf2surf resampling).}
 
 \item{min_vertices}{Minimum total vertex count across hemispheres for a
-label to be classified as cortical. Default 50.}
+label to be classified as cortical by the vertex-count heuristic (see
+\strong{Label classification}). Ignored when \code{type} column or explicit label
+vectors are provided. Default 50.}
 
-\item{cortical_labels}{Character vector of label names to force as cortical.}
+\item{cortical_labels}{Character vector of label names to force as cortical.
+Highest priority; overrides LUT \code{type} and the vertex-count heuristic.}
 
 \item{subcortical_labels}{Character vector of label names to force as
-subcortical.}
+subcortical. Highest priority; overrides LUT \code{type} and the vertex-count
+heuristic.}
 
 \item{cortical_views}{Views for cortical sub-pipeline.
-Default \code{c("lateral", "medial")}.}
+Default \code{c("lateral", "medial", "superior", "inferior")}.}
 
 \item{subcortical_views}{Views for subcortical sub-pipeline. Default NULL
 (auto-detected).}
@@ -115,34 +123,101 @@ A named list with elements \code{cortical} and \code{subcortical}, each a
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
 
-Build a brain atlas from a volumetric parcellation (NIfTI/MGZ) that
+Build a brain atlas from a single volumetric parcellation (NIfTI/MGZ) that
 contains both cortical and subcortical regions. Cortical regions are
 projected onto the fsaverage5 surface via FreeSurfer's \code{mri_vol2surf}
 and rendered as surface views, while subcortical regions go through
 the mesh-based subcortical pipeline.
 
-The function automatically classifies regions as cortical or subcortical
-based on vertex coverage on the surface projection, or you can manually
-specify the split via \code{cortical_labels} and \code{subcortical_labels}.
-
 Requires FreeSurfer.
 }
+\section{Label classification}{
+
+The pipeline must know which labels are cortical (rendered on the surface)
+and which are subcortical (rendered as 3D meshes / 2D slices). Three
+mechanisms are available, applied in priority order:
+\enumerate{
+\item \strong{Function arguments} (highest priority): \code{cortical_labels} and
+\code{subcortical_labels} override everything for the specified labels.
+\item \strong{LUT \code{type} column}: If the colour lookup table has a \code{type} column
+with values \code{"cortical"} or \code{"subcortical"}, that classification is
+used for any labels not covered by the function arguments. This is the
+recommended approach for reproducible atlas creation.
+\item \strong{Vertex-count heuristic} (fallback): Labels with at least
+\code{min_vertices} vertices on the surface projection are classified as
+cortical; the rest as subcortical.
+}
+}
+
+\section{Volume pre-processing}{
+
+Before surface projection, the volume is filtered so that only voxel IDs
+listed in the LUT are kept; all other non-zero voxels are zeroed out.
+This prevents unlisted structures (e.g. white matter, ventricle masks)
+from bleeding onto the cortical surface during label dilation.
+
+Cortical voxels are also used to generate the brain-outline reference
+geometry for the subcortical pipeline. The volume's orientation matrix
+(\code{xform}) is used to split cortical voxels by hemisphere: left-hemisphere
+voxels map to FreeSurfer label 3 (left cortex) and right-hemisphere to
+label 42 (right cortex).
+}
+
+\section{Human oversight}{
+
+This is the most complex pipeline in ggsegExtra and the one most likely
+to need manual correction. Recommended workflow:
+\enumerate{
+\item Run \code{steps = 1:2} first to project the volume and classify labels.
+\item Inspect \code{result$cortical_labels} and \code{result$subcortical_labels}.
+If the automatic split is wrong, either add a \code{type} column to the
+LUT or use \code{cortical_labels} / \code{subcortical_labels} to override.
+\item Run the full pipeline once you are satisfied with the split.
+\item Visually inspect the resulting atlas with \code{ggseg()} / \code{ggseg3d()}.
+}
+
+The cortical surface projection uses FreeSurfer's cortex label
+(\verb{\{hemi\}.cortex.label}) to prevent label dilation into the medial wall.
+This file ships with fsaverage5 and is always required.
+}
+
 \examples{
 \dontrun{
-# Create from MNI152-space NIfTI with LUT
+# --- Recommended: LUT with type column ---
+lut <- data.frame(
+  idx   = c(10, 11, 49, 50, 101:148),
+  label = c("Left-Thalamus", "Left-Caudate",
+            "Right-Thalamus", "Right-Caudate",
+            paste0("cortical_region_", 1:48)),
+  type  = c(rep("subcortical", 4), rep("cortical", 48)),
+  R = sample(50:220, 52, TRUE),
+  G = sample(50:220, 52, TRUE),
+  B = sample(50:220, 52, TRUE),
+  A = 255L
+)
+
 result <- create_wholebrain_from_volume(
-  input_volume = "shen_268.nii.gz",
-  input_lut = "shen_268_LUT.txt",
-  atlas_name = "shen268"
+  input_volume = "my_atlas.nii.gz",
+  input_lut = lut,
+  atlas_name = "my_atlas"
 )
 result$cortical   # surface-based cortical atlas
 result$subcortical # mesh-based subcortical atlas
 
-# Projection + split only (inspect classification)
+# --- Without type column: automatic classification ---
+result <- create_wholebrain_from_volume(
+  input_volume = "atlas.nii.gz",
+  input_lut = "atlas_LUT.txt",
+  atlas_name = "auto_atlas"
+)
+
+# --- Inspect classification before full run ---
 result <- create_wholebrain_from_volume(
   input_volume = "atlas.nii.gz",
   input_lut = "atlas_LUT.txt",
   steps = 1:2
 )
+result$cortical_labels
+result$subcortical_labels
 }
 }

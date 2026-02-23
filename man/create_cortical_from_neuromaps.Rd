@@ -42,7 +42,7 @@ auto-named.}
 
 \item{n_bins}{Number of quantile bins for continuous brain maps.
 When \code{NULL} (default), auto-detected via Sturges' rule
-(\code{1 + log2(n)}, clamped to 5–20). Ignored for integer parcellation
+(\code{1 + log2(n)}, clamped to 5--20). Ignored for integer parcellation
 data. See \code{\link[=read_neuromaps_annotation]{read_neuromaps_annotation()}}.}
 
 \item{atlas_name}{Name for the atlas. If NULL, derived from the input
@@ -85,8 +85,9 @@ allowing interrupted atlas creation to resume. If not specified, uses
 \code{options("ggseg.extra.skip_existing")} or the \code{GGSEG_EXTRA_SKIP_EXISTING}
 environment variable. Default is TRUE.}
 
-\item{steps}{Which pipeline steps to run. See \code{\link[=create_cortical_from_annotation]{create_cortical_from_annotation()}}
-for step descriptions. Use \code{steps = 1} for 3D-only atlas.}
+\item{steps}{Which pipeline steps to run.
+See \code{\link[=create_cortical_from_annotation]{create_cortical_from_annotation()}} for step descriptions.
+Use \code{steps = 1} for 3D-only atlas.}
 }
 \value{
 A \code{ggseg_atlas} object.

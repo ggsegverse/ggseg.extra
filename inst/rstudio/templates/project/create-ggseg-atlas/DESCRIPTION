@@ -18,10 +18,10 @@ URL: https://github.com/ggsegverse/{REPO}, https://ggsegverse.github.io/{REPO}/
 BugReports: https://github.com/ggsegverse/{REPO}/issues
 Depends:
     R (>= 4.1.0),
-    ggseg.formats
 Suggests:
     ggseg,
-    ggseg3d,
+    ggseg3d
+    ggseg.formats,
     ggplot2,
     testthat (>= 3.0.0),
     vdiffr

@@ -8,7 +8,7 @@
 \description{
 \if{html}{\figure{logo.png}{options: style='float: right' alt='logo' width='120'}}
 
-Contains functions to create new data sets compatible with the 'ggseg' and 'ggseg3d' packages for plotting brain segmentations through R. Requires several external software to be installed on the system for atlas creations to work, and most of these are not available for windows. But atlas creation tools exist for 2d simple features data, and also 3d tri-surface mesh plots. Also has a list of compatible data sets and functions for easy installation of these.
+Contains functions to create new data sets compatible with the 'ggsegverse' ecosystem for plotting brain segmentations through R. Requires several external softwares to be installed on the system for atlas creations to work, and most of these are not available for windows. But atlas creation tools exist for 2d simple features data, and also 3d tri-surface mesh plots.
 }
 \seealso{
 Useful links:
