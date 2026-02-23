@@ -10,12 +10,11 @@ Authors@R: c(
            comment = c(ORCID = "0000-0001-6469-1750"))
   )
 Description: Contains functions to create new data sets compatible with
-    the 'ggseg' and 'ggseg3d' packages for plotting brain segmentations
-    through R. Requires several external software to be installed on the
+    the 'ggsegverse' ecosystem for plotting brain segmentations
+    through R. Requires several external softwares to be installed on the
     system for atlas creations to work, and most of these are not
     available for windows.  But atlas creation tools exist for 2d simple
-    features data, and also 3d tri-surface mesh plots. Also has a list of
-    compatible data sets and functions for easy installation of these.
+    features data, and also 3d tri-surface mesh plots.
 License: MIT + file LICENSE
 URL: https://github.com/ggsegverse/ggseg.extra
 BugReports: https://github.com/ggsegverse/ggseg.extra/issues
@@ -25,7 +24,6 @@ Imports:
     cli,
     dplyr,
     freesurfer,
-    future,
     furrr,
     ggseg.formats,
     ggseg3d (>= 1.6.0),
@@ -39,17 +37,19 @@ Imports:
     smoothr,
     stats,
     terra,
-    tidyr,
     tools,
     utils
 Suggests:
+    chromote,
     ciftiTools,
     freesurferformats,
+    future,
     ggplot2,
     gifti,
     ggseg,
     ggseg.hub,
     neuromapr,
+    tibble,
     ggsegDKT,
     hexSticker,
     knitr,

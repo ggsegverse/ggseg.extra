@@ -527,11 +527,13 @@ detect_coords_are_voxels <- function(streamlines, dims = NULL) {
 #' projects tract centerlines onto slice views (coronal, axial) and extracts
 #' contours. Also creates cortex outlines for anatomical context.
 #'
-#' This is typically called automatically by [create_tract_from_tractography()] when
-#' `include_geometry = TRUE`, but you can call it separately if you want
-#' custom views or need to regenerate geometry.
+#' This is typically called automatically by
+#' [create_tract_from_tractography()] when
+#' `include_geometry = TRUE`, but you can call it separately
+#' if you want custom views or need to regenerate geometry.
 #'
-#' @param atlas A `ggseg_atlas` of type `"tract"` (from [create_tract_from_tractography()]).
+#' @param atlas A `ggseg_atlas` of type `"tract"`
+#'   (from [create_tract_from_tractography()]).
 #' @param aseg_file Path to a segmentation volume (`.mgz`, `.nii`) used to
 #'   draw cortex outlines for anatomical context.
 #' @param streamlines Named list of streamline matrices (Nx3 with x, y, z).
@@ -563,7 +565,189 @@ detect_coords_are_voxels <- function(streamlines, dims = NULL) {
 #' @importFrom dplyr bind_rows left_join select
 #' @importFrom furrr future_pmap furrr_options
 #' @importFrom progressr progressor
-#' @importFrom tidyr separate
+
+#' @noRd
+tract_create_volumes <- function(
+  tract_labels, streamlines, aseg_file,
+  tract_radius, coords_are_voxels, verbose
+) {
+  if (verbose) {
+    cli::cli_alert_info("Converting tracts to volumes")
+  }
+
+  p <- progressor(steps = length(tract_labels))
+
+  tract_volumes <- future_pmap(
+    list(
+      label = tract_labels,
+      i = seq_along(tract_labels)
+    ),
+    function(label, i) {
+      centerline <- streamlines[[label]]
+
+      if (is.list(centerline) && !is.matrix(centerline)) {
+        centerline <- extract_centerline(centerline, n_points = 50)
+      }
+
+      vol <- streamlines_to_volume(
+        centerline = centerline,
+        template_file = aseg_file,
+        label_value = i,
+        radius = tract_radius,
+        coords_are_voxels = coords_are_voxels
+      )
+
+      p()
+      vol
+    },
+    .options = furrr_options(
+      packages = "ggseg.extra",
+      globals = c(
+        "streamlines",
+        "aseg_file",
+        "tract_radius",
+        "coords_are_voxels",
+        "p"
+      )
+    )
+  )
+  names(tract_volumes) <- tract_labels
+  tract_volumes
+}
+
+
+#' @noRd
+tract_snapshot_projections <- function(
+  tract_volumes, tract_labels, aseg_vol, dims,
+  views, cortex_slices, dirs, skip_existing, verbose
+) {
+  if (verbose) {
+    cli::cli_alert_info("Creating projections")
+  }
+
+  cortex_labels <- detect_cortex_labels(aseg_vol)
+
+  cortex_vol <- array(0L, dim = dims)
+  for (lbl in c(cortex_labels$left, cortex_labels$right)) {
+    cortex_vol[aseg_vol == lbl] <- 1L
+  }
+
+  snapshot_grid <- expand.grid(
+    view_idx = seq_len(nrow(views)),
+    label = tract_labels,
+    stringsAsFactors = FALSE
+  )
+
+  p <- progressor(steps = nrow(snapshot_grid))
+
+  invisible(future_pmap(
+    list(
+      view_type = views$type[snapshot_grid$view_idx],
+      view_start = views$start[snapshot_grid$view_idx],
+      view_end = views$end[snapshot_grid$view_idx],
+      view_name = views$name[snapshot_grid$view_idx],
+      label = snapshot_grid$label
+    ),
+    function(view_type, view_start, view_end, view_name, label) {
+      tract_vol <- tract_volumes[[label]]
+      hemi <- extract_hemi_from_view(view_type, view_name)
+
+      snapshot_partial_projection(
+        vol = tract_vol,
+        view = view_type,
+        start = view_start,
+        end = view_end,
+        view_name = view_name,
+        label = label,
+        output_dir = dirs$snapshots,
+        colour = "red",
+        hemi = hemi,
+        skip_existing = skip_existing
+      )
+      p()
+      NULL
+    },
+    .options = furrr_options(
+      packages = "ggseg.extra",
+      globals = c("tract_volumes", "dirs", "skip_existing", "p")
+    )
+  ))
+
+  p2 <- progressor(steps = nrow(cortex_slices))
+
+  invisible(future_pmap(
+    list(
+      x = cortex_slices$x,
+      y = cortex_slices$y,
+      z = cortex_slices$z,
+      slice_view = cortex_slices$view,
+      view_name = cortex_slices$name
+    ),
+    function(x, y, z, slice_view, view_name) {
+      hemi <- extract_hemi_from_view(slice_view, view_name)
+
+      snapshot_cortex_slice(
+        vol = cortex_vol,
+        x = x,
+        y = y,
+        z = z,
+        slice_view = slice_view,
+        view_name = view_name,
+        hemi = hemi,
+        output_dir = dirs$snapshots,
+        skip_existing = skip_existing
+      )
+      p2()
+      NULL
+    },
+    .options = furrr_options(
+      packages = "ggseg.extra",
+      globals = c("cortex_vol", "dirs", "skip_existing", "p2")
+    )
+  ))
+}
+
+
+#' @noRd
+tract_process_and_extract <- function(
+  dirs, dilate, skip_existing, verbose,
+  vertex_size_limits, smoothness, tolerance
+) {
+  if (verbose) {
+    cli::cli_alert_info("Processing images")
+  }
+
+  files <- list.files(dirs$snapshots, full.names = TRUE, pattern = "\\.png$")
+
+  for (f in files) {
+    process_snapshot_image(
+      input_file = f,
+      output_file = file.path(dirs$processed, basename(f)),
+      dilate = dilate,
+      skip_existing = skip_existing
+    )
+  }
+
+  for (f in list.files(dirs$processed, full.names = TRUE)) {
+    extract_alpha_mask(
+      f,
+      file.path(dirs$masks, basename(f)),
+      skip_existing = skip_existing
+    )
+  }
+
+  extract_contours(
+    dirs$masks,
+    dirs$base,
+    step = NULL,
+    verbose = verbose,
+    vertex_size_limits = vertex_size_limits
+  )
+  smooth_contours(dirs$base, smoothness, step = NULL, verbose = verbose)
+  reduce_vertex(dirs$base, tolerance, step = NULL, verbose = verbose)
+}
+
+
 create_tract_geometry_volumetric <- function( # nolint: object_length_linter.
   atlas,
   aseg_file,
@@ -674,218 +858,31 @@ create_tract_geometry_volumetric <- function( # nolint: object_length_linter.
         )
       }
     } else {
-      if (verbose) {
-        cli::cli_alert_info("Converting tracts to volumes")
-      }
-
-      p <- progressor(steps = length(tract_labels))
-
-      tract_volumes <- future_pmap(
-        list(
-          label = tract_labels,
-          i = seq_along(tract_labels)
-        ),
-        function(label, i) {
-          centerline <- streamlines[[label]]
-
-          if (is.list(centerline) && !is.matrix(centerline)) {
-            centerline <- extract_centerline(centerline, n_points = 50)
-          }
-
-          vol <- streamlines_to_volume(
-            centerline = centerline,
-            template_file = aseg_file,
-            label_value = i,
-            radius = tract_radius,
-            coords_are_voxels = coords_are_voxels
-          )
-
-          p()
-          vol
-        },
-        .options = furrr_options(
-          packages = "ggseg.extra",
-          globals = c(
-            "streamlines",
-            "aseg_file",
-            "tract_radius",
-            "coords_are_voxels",
-            "p"
-          )
-        )
-      )
-      names(tract_volumes) <- tract_labels
-
-      if (verbose) {
-        cli::cli_alert_info("Creating projections")
-      }
-
-      cortex_labels <- detect_cortex_labels(aseg_vol)
-
-      cortex_vol <- array(0L, dim = dims)
-      for (lbl in c(cortex_labels$left, cortex_labels$right)) {
-        cortex_vol[aseg_vol == lbl] <- 1L
-      }
-
-      snapshot_grid <- expand.grid(
-        view_idx = seq_len(nrow(views)),
-        label = tract_labels,
-        stringsAsFactors = FALSE
+      tract_volumes <- tract_create_volumes(
+        tract_labels, streamlines, aseg_file,
+        tract_radius, coords_are_voxels, verbose
       )
 
-      p <- progressor(steps = nrow(snapshot_grid))
-
-      invisible(future_pmap(
-        list(
-          view_type = views$type[snapshot_grid$view_idx],
-          view_start = views$start[snapshot_grid$view_idx],
-          view_end = views$end[snapshot_grid$view_idx],
-          view_name = views$name[snapshot_grid$view_idx],
-          label = snapshot_grid$label
-        ),
-        function(view_type, view_start, view_end, view_name, label) {
-          tract_vol <- tract_volumes[[label]]
-          hemi <- extract_hemi_from_view(view_type, view_name)
-
-          snapshot_partial_projection(
-            vol = tract_vol,
-            view = view_type,
-            start = view_start,
-            end = view_end,
-            view_name = view_name,
-            label = label,
-            output_dir = dirs$snapshots,
-            colour = "red",
-            hemi = hemi,
-            skip_existing = skip_existing
-          )
-          p()
-          NULL
-        },
-        .options = furrr_options(
-          packages = "ggseg.extra",
-          globals = c("tract_volumes", "dirs", "skip_existing", "p")
-        )
-      ))
-
-      p2 <- progressor(steps = nrow(cortex_slices))
-
-      invisible(future_pmap(
-        list(
-          x = cortex_slices$x,
-          y = cortex_slices$y,
-          z = cortex_slices$z,
-          slice_view = cortex_slices$view,
-          view_name = cortex_slices$name
-        ),
-        function(x, y, z, slice_view, view_name) {
-          hemi <- extract_hemi_from_view(slice_view, view_name)
-
-          snapshot_cortex_slice(
-            vol = cortex_vol,
-            x = x,
-            y = y,
-            z = z,
-            slice_view = slice_view,
-            view_name = view_name,
-            hemi = hemi,
-            output_dir = dirs$snapshots,
-            skip_existing = skip_existing
-          )
-          p2()
-          NULL
-        },
-        .options = furrr_options(
-          packages = "ggseg.extra",
-          globals = c("cortex_vol", "dirs", "skip_existing", "p2")
-        )
-      ))
-    }
-
-    if (verbose) {
-      cli::cli_alert_info("Processing images")
-    }
-
-    files <- list.files(dirs$snapshots, full.names = TRUE, pattern = "\\.png$")
-
-    for (f in files) {
-      process_snapshot_image(
-        input_file = f,
-        output_file = file.path(dirs$processed, basename(f)),
-        dilate = dilate,
-        skip_existing = skip_existing
+      tract_snapshot_projections(
+        tract_volumes, tract_labels, aseg_vol, dims,
+        views, cortex_slices, dirs, skip_existing, verbose
       )
     }
 
-    for (f in list.files(dirs$processed, full.names = TRUE)) {
-      extract_alpha_mask(
-        f,
-        file.path(dirs$masks, basename(f)),
-        skip_existing = skip_existing
-      )
-    }
-
-    extract_contours(
-      dirs$masks,
-      dirs$base,
-      step = NULL,
-      verbose = verbose,
-      vertex_size_limits = vertex_size_limits
+    tract_process_and_extract(
+      dirs, dilate, skip_existing, verbose,
+      vertex_size_limits, smoothness, tolerance
     )
-    smooth_contours(dirs$base, smoothness, step = NULL, verbose = verbose)
-    reduce_vertex(dirs$base, tolerance, step = NULL, verbose = verbose)
   }
 
   if (verbose) {
     cli::cli_alert_info("Building sf geometry")
   }
 
-  conts <- make_multipolygon(file.path(dirs$base, "contours_reduced.rda"))
-
-  filenm_base <- sub("\\.png$", "", conts$filenm)
-
-  all_view_names <- if (!is.null(cortex_slices)) {
-    c(views$name, cortex_slices$name)
-  } else {
-    views$name
-  }
-
-  conts$view <- vapply(
-    filenm_base,
-    function(fn) {
-      for (vn in all_view_names) {
-        if (startsWith(fn, paste0(vn, "_"))) {
-          return(vn)
-        }
-      }
-      NA_character_
-    },
-    character(1)
-  )
-
-  conts$geometry <- conts$geometry * matrix(c(1, 0, 0, -1), 2, 2)
-
-  conts <- layout_volumetric_views(conts) # nolint: object_usage_linter.
-
-  filenm_base <- sub("\\.png$", "", conts$filenm)
-  conts$label <- vapply(
-    seq_along(filenm_base),
-    function(i) {
-      fn <- filenm_base[i]
-      vn <- conts$view[i]
-      if (is.na(vn)) {
-        return(fn)
-      }
-      sub(paste0("^", vn, "_"), "", fn)
-    },
-    character(1)
-  )
-
-  sf_data <- dplyr::select(conts, label, view, geometry)
-  sf_data <- sf::st_as_sf(sf_data)
-  sf_data <- dplyr::arrange(
-    sf_data,
-    dplyr::desc(grepl("cortex", label, ignore.case = TRUE))
+  sf_data <- build_contour_sf(
+    file.path(dirs$base, "contours_reduced.rda"),
+    views,
+    cortex_slices
   )
 
   if (cleanup) {
