@@ -99,7 +99,7 @@ cortical_brain_snapshots <- function(
   )
 
   p <- progressor(steps = nrow(snapshot_grid))
-  invisible(future_pmap(
+  invisible(safe_future_pmap(
     snapshot_grid,
     function(hemisphere, view) {
       snapshot_brain_full(
@@ -112,7 +112,11 @@ cortical_brain_snapshots <- function(
         snapshot_dim = snapshot_dim
       )
       p()
-    }
+    },
+    .options = furrr_options(
+      packages = "ggseg.extra",
+      globals = c("atlas_3d", "dirs", "skip_existing", "snapshot_dim", "p")
+    )
   ))
 }
 
@@ -148,7 +152,7 @@ cortical_region_snapshots <- function(
   region_grid <- filter_visible_regions(region_grid, components$vertices_df)
 
   p <- progressor(steps = nrow(region_grid))
-  invisible(future_pmap(
+  invisible(safe_future_pmap(
     region_grid,
     function(region_label, hemisphere, view) {
       snapshot_region(
@@ -162,7 +166,13 @@ cortical_region_snapshots <- function(
         snapshot_dim = snapshot_dim
       )
       p()
-    }
+    },
+    .options = furrr_options(
+      packages = "ggseg.extra",
+      globals = c(
+        "atlas_3d", "dirs", "skip_existing", "snapshot_dim", "p"
+      )
+    )
   ))
 }
 
@@ -187,7 +197,11 @@ cortical_isolate_regions <- function(dirs, skip_existing) {
         skip_existing = skip_existing
       )
       p()
-    }
+    },
+    .options = furrr_options(
+      packages = "ggseg.extra",
+      globals = c("skip_existing", "p")
+    )
   ))
 }
 
@@ -295,7 +309,7 @@ labels_region_snapshots <- function(
   region_grid <- filter_visible_regions(region_grid, components$vertices_df)
 
   p <- progressor(steps = nrow(region_grid))
-  invisible(future_pmap(
+  invisible(safe_future_pmap(
     region_grid,
     function(region_label, hemisphere, view) {
       snapshot_region(
@@ -309,7 +323,13 @@ labels_region_snapshots <- function(
         snapshot_dim = snapshot_dim
       )
       p()
-    }
+    },
+    .options = furrr_options(
+      packages = "ggseg.extra",
+      globals = c(
+        "atlas_3d", "dirs", "skip_existing", "snapshot_dim", "p"
+      )
+    )
   ))
 
   na_grid <- expand.grid(
@@ -317,7 +337,7 @@ labels_region_snapshots <- function(
     view = views,
     stringsAsFactors = FALSE
   )
-  invisible(future_pmap(
+  invisible(safe_future_pmap(
     na_grid,
     function(hemisphere, view) {
       snapshot_na_regions(
@@ -329,6 +349,10 @@ labels_region_snapshots <- function(
         skip_existing = skip_existing,
         snapshot_dim = snapshot_dim
       )
-    }
+    },
+    .options = furrr_options(
+      packages = "ggseg.extra",
+      globals = c("atlas_3d", "dirs", "skip_existing", "snapshot_dim")
+    )
   ))
 }

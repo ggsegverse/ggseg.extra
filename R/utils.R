@@ -2,6 +2,19 @@
 
 fsaverage5_nverts <- 10242L
 
+#' @importFrom future plan sequential
+#' @noRd
+safe_future_pmap <- function(.l, .f, ..., .options = furrr::furrr_options()) {
+  if (inherits(plan(), "multicore")) {
+    old_plan <- plan(sequential)
+    on.exit(plan(old_plan), add = TRUE)
+    cli::cli_alert_info(
+      "Switching to sequential for browser-based snapshots (multicore not supported)"
+    )
+  }
+  furrr::future_pmap(.l, .f, ..., .options = .options)
+}
+
 mkdir <- function(path, ...) {
   dir.create(path, recursive = TRUE, showWarnings = FALSE, ...)
 }

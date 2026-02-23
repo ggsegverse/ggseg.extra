@@ -21,7 +21,11 @@ tract_read_input <- function(input_tracts, tract_names) {
       tract_names <- file_path_sans_ext(basename(input_tracts))
     }
 
-    streamlines_data <- furrr::future_map(input_tracts, read_tractography)
+    streamlines_data <- furrr::future_map(
+      input_tracts,
+      read_tractography,
+      .options = furrr_options(packages = "ggseg.extra")
+    )
     names(streamlines_data) <- tract_names
   }
 
