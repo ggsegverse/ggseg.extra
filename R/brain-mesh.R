@@ -45,11 +45,13 @@ read_fs_mesh <- function(
   tmp_dir <- tempdir()
   tmp_asc <- file.path(tmp_dir, paste0(hemisphere, ".", surface, ".asc"))
 
-  # Convert to ascii using FreeSurfer
+  old_fs_verbose <- options(freesurfer.verbose = (get_verbose() >= 2))
+  on.exit(options(old_fs_verbose), add = TRUE)
+
   freesurfer::mris_convert(
     infile = surf_file,
     outfile = tmp_asc,
-    verbose = get_verbose() # nolint: object_usage_linter
+    verbose = (get_verbose() >= 2)
   )
 
   # Read ascii file

@@ -52,10 +52,11 @@ If not specified, uses \code{options("ggseg.extra.snapshot_dim")} or the
 specified, uses \code{options("ggseg.extra.cleanup")} or the \code{GGSEG_EXTRA_CLEANUP}
 environment variable. Default is TRUE.}
 
-\item{verbose}{Logical. If not specified, uses the value from
-\code{options("ggseg.extra.verbose")} or the \code{GGSEG_EXTRA_VERBOSE}
-environment variable. Defaults to \code{TRUE}.
-Use \code{options(ggseg.extra.verbose = FALSE)} to suppress output globally.}
+\item{verbose}{Verbosity level: \code{0} (silent), \code{1} (standard progress,
+default), or \code{2} (debug, includes FreeSurfer output). Logical values
+are accepted (\code{TRUE} = 1, \code{FALSE} = 0). If not specified, uses the
+value from \code{options("ggseg.extra.verbose")} or the \code{GGSEG_EXTRA_VERBOSE}
+environment variable.}
 
 \item{skip_existing}{Skip generating output files that already exist,
 allowing interrupted atlas creation to resume. If not specified, uses

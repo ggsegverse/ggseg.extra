@@ -252,7 +252,8 @@ tract_resolve_step1 <- function(
 
   input_result <- tract_read_input(input_tracts, tract_names)
   streamlines_data <- input_result$streamlines_data
-  tract_names <- input_result$tract_names
+  tract_names <- sanitize_label(input_result$tract_names)
+  names(streamlines_data) <- tract_names
 
   coords_are_voxels <- detect_tract_coord_space(
     streamlines_data,

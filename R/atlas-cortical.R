@@ -80,7 +80,8 @@
 #'   tolerance = 0.5
 #' )
 #' }
-create_cortical_from_annotation <- function( # nolint: object_length_linter.
+create_cortical_from_annotation <- function(
+  # nolint: object_length_linter.
   input_annot,
   atlas_name = NULL,
   output_dir = NULL,
@@ -90,7 +91,7 @@ create_cortical_from_annotation <- function( # nolint: object_length_linter.
   smoothness = NULL,
   snapshot_dim = NULL,
   cleanup = NULL,
-  verbose = get_verbose(), # nolint: object_usage_linter
+  verbose = get_verbose(),
   skip_existing = NULL,
   steps = NULL
 ) {
@@ -99,8 +100,14 @@ create_cortical_from_annotation <- function( # nolint: object_length_linter.
   }
 
   config <- validate_cortical_config(
-    output_dir, verbose, cleanup, skip_existing,
-    tolerance, smoothness, snapshot_dim, steps
+    output_dir,
+    verbose,
+    cleanup,
+    skip_existing,
+    tolerance,
+    smoothness,
+    snapshot_dim,
+    steps
   )
 
   if (any(config$steps > 1L)) {
@@ -169,7 +176,9 @@ run_cortical_creation <- function(
   }
 
   step1 <- cortical_resolve_step1(
-    config, dirs, atlas_name,
+    config,
+    dirs,
+    atlas_name,
     read_fn = read_fn,
     step_label = step_label,
     cache_label = cache_label
@@ -201,12 +210,24 @@ run_cortical_creation <- function(
 
 #' @noRd
 validate_cortical_config <- function(
-  output_dir, verbose, cleanup, skip_existing,
-  tolerance, smoothness, snapshot_dim, steps
+  output_dir,
+  verbose,
+  cleanup,
+  skip_existing,
+  tolerance,
+  smoothness,
+  snapshot_dim,
+  steps
 ) {
   config <- resolve_common_config(
-    output_dir, verbose, cleanup, skip_existing,
-    tolerance, smoothness, steps, max_step = 8L
+    output_dir,
+    verbose,
+    cleanup,
+    skip_existing,
+    tolerance,
+    smoothness,
+    steps,
+    max_step = 8L
   )
   config$snapshot_dim <- get_snapshot_dim(snapshot_dim)
   config
@@ -215,25 +236,38 @@ validate_cortical_config <- function(
 
 #' @noRd
 cortical_resolve_step1 <- function(
-  config, dirs, atlas_name, read_fn, step_label, cache_label
+  config,
+  dirs,
+  atlas_name,
+  read_fn,
+  step_label,
+  cache_label
 ) {
   files <- c(
     file.path(dirs$base, "atlas_3d.rds"),
     file.path(dirs$base, "components.rds")
   )
   cached <- load_or_run_step(
-    1L, config$steps, files, config$skip_existing, cache_label
+    1L,
+    config$steps,
+    files,
+    config$skip_existing,
+    cache_label
   )
 
   if (!cached$run) {
-    if (config$verbose) cli::cli_alert_success("1/8 Loaded existing atlas data")
+    if (config$verbose) {
+      cli::cli_alert_success("1/8 Loaded existing atlas data")
+    }
     return(list(
       atlas_3d = cached$data[["atlas_3d.rds"]],
       components = cached$data[["components.rds"]]
     ))
   }
 
-  if (config$verbose) cli::cli_progress_step(step_label)
+  if (config$verbose) {
+    cli::cli_progress_step(step_label)
+  }
 
   atlas_data <- read_fn()
   if (nrow(atlas_data) == 0) {
@@ -259,20 +293,36 @@ cortical_resolve_step1 <- function(
 
 #' @noRd
 cortical_pipeline <- function(
-  atlas_3d, components, atlas_name, hemisphere, views,
-  region_snapshot_fn, config, dirs, start_time
+  atlas_3d,
+  components,
+  atlas_name,
+  hemisphere,
+  views,
+  region_snapshot_fn,
+  config,
+  dirs,
+  start_time
 ) {
   cortical_run_snapshot_steps(
-    atlas_3d, components, hemisphere, views,
-    region_snapshot_fn, config, dirs
+    atlas_3d,
+    components,
+    hemisphere,
+    views,
+    region_snapshot_fn,
+    config,
+    dirs
   )
 
   cortical_run_contour_steps(config, dirs)
 
   if (8L %in% config$steps) {
-    if (config$verbose) cli::cli_progress_step("8/8 Building final atlas")
+    if (config$verbose) {
+      cli::cli_progress_step("8/8 Building final atlas")
+    }
     atlas <- cortical_assemble_full(atlas_name, components, dirs)
-    if (config$verbose) cli::cli_progress_done()
+    if (config$verbose) {
+      cli::cli_progress_done()
+    }
     return(cortical_finalize(atlas, config, dirs, start_time))
   }
 
@@ -282,8 +332,13 @@ cortical_pipeline <- function(
 
 #' @noRd
 cortical_run_snapshot_steps <- function(
-  atlas_3d, components, hemisphere, views,
-  region_snapshot_fn, config, dirs
+  atlas_3d,
+  components,
+  hemisphere,
+  views,
+  region_snapshot_fn,
+  config,
+  dirs
 ) {
   snapshot_dim <- config$snapshot_dim
 
@@ -292,7 +347,12 @@ cortical_run_snapshot_steps <- function(
       cli::cli_progress_step("2/8 Taking full brain snapshots")
     }
     cortical_brain_snapshots(
-      atlas_3d, hemisphere, views, dirs, config$skip_existing, snapshot_dim
+      atlas_3d,
+      hemisphere,
+      views,
+      dirs,
+      config$skip_existing,
+      snapshot_dim
     )
     if (config$verbose) cli::cli_progress_done()
   }
@@ -302,11 +362,18 @@ cortical_run_snapshot_steps <- function(
       cli::cli_progress_step("3/8 Taking region snapshots")
     }
     region_snapshot_fn(
-      atlas_3d, components, hemisphere, views, dirs, config$skip_existing,
+      atlas_3d,
+      components,
+      hemisphere,
+      views,
+      dirs,
+      config$skip_existing,
       snapshot_dim
     )
     if (config$verbose) cli::cli_progress_done()
   }
+
+  close_chromote_workers()
 
   if (4L %in% config$steps) {
     if (config$verbose) {
@@ -322,19 +389,26 @@ cortical_run_snapshot_steps <- function(
 cortical_run_contour_steps <- function(config, dirs) {
   if (5L %in% config$steps) {
     extract_contours(
-      dirs$masks, dirs$base, step = "5/8", verbose = config$verbose
+      dirs$masks,
+      dirs$base,
+      step = "5/8",
+      verbose = config$verbose
     )
   }
   if (6L %in% config$steps) {
     smooth_contours(
-      dirs$base, config$smoothness,
-      step = "6/8", verbose = config$verbose
+      dirs$base,
+      config$smoothness,
+      step = "6/8",
+      verbose = config$verbose
     )
   }
   if (7L %in% config$steps) {
     reduce_vertex(
-      dirs$base, config$tolerance,
-      step = "7/8", verbose = config$verbose
+      dirs$base,
+      config$tolerance,
+      step = "7/8",
+      verbose = config$verbose
     )
   }
 }
@@ -358,7 +432,11 @@ cortical_assemble_full <- function(atlas_name, components, dirs) {
 
 #' @noRd
 cortical_finalize <- function(
-  atlas, config, dirs, start_time, partial = FALSE
+  atlas,
+  config,
+  dirs,
+  start_time,
+  partial = FALSE
 ) {
   if (config$cleanup && !partial) {
     unlink(dirs$base, recursive = TRUE)
@@ -471,8 +549,14 @@ create_cortical_from_labels <- function(
   steps = NULL
 ) {
   config <- validate_cortical_config(
-    output_dir, verbose, cleanup, skip_existing,
-    tolerance, smoothness, snapshot_dim, steps
+    output_dir,
+    verbose,
+    cleanup,
+    skip_existing,
+    tolerance,
+    smoothness,
+    snapshot_dim,
+    steps
   )
 
   if (any(config$steps > 1L)) {
@@ -497,7 +581,10 @@ create_cortical_from_labels <- function(
     hemisphere <- unique(
       step1$components$core$hemi[!is.na(step1$components$core$hemi)]
     )
-    hemi_short <- vapply(hemisphere, hemi_to_short, character(1),
+    hemi_short <- vapply(
+      hemisphere,
+      hemi_to_short,
+      character(1),
       USE.NAMES = FALSE
     )
     if (length(hemi_short) == 0) c("lh", "rh") else hemi_short
@@ -508,8 +595,10 @@ create_cortical_from_labels <- function(
     config = config,
     read_fn = function() {
       labels_read_files(
-        label_files, lut_result$region_names,
-        lut_result$colours, default_colours
+        label_files,
+        lut_result$region_names,
+        lut_result$colours,
+        default_colours
       )
     },
     step_label = paste("1/8 Reading", length(label_files), "label files"),
@@ -585,8 +674,14 @@ create_cortical_from_gifti <- function(
   }
 
   config <- validate_cortical_config(
-    output_dir, verbose, cleanup, skip_existing,
-    tolerance, smoothness, snapshot_dim, steps
+    output_dir,
+    verbose,
+    cleanup,
+    skip_existing,
+    tolerance,
+    smoothness,
+    snapshot_dim,
+    steps
   )
 
   if (any(config$steps > 1L)) {
@@ -671,8 +766,14 @@ create_cortical_from_cifti <- function(
   }
 
   config <- validate_cortical_config(
-    output_dir, verbose, cleanup, skip_existing,
-    tolerance, smoothness, snapshot_dim, steps
+    output_dir,
+    verbose,
+    cleanup,
+    skip_existing,
+    tolerance,
+    smoothness,
+    snapshot_dim,
+    steps
   )
 
   if (any(config$steps > 1L)) {
@@ -789,8 +890,14 @@ create_cortical_from_neuromaps <- function(
   )
 
   config <- validate_cortical_config(
-    output_dir, verbose, cleanup, skip_existing,
-    tolerance, smoothness, snapshot_dim, steps
+    output_dir,
+    verbose,
+    cleanup,
+    skip_existing,
+    tolerance,
+    smoothness,
+    snapshot_dim,
+    steps
   )
 
   if (any(config$steps > 1L)) {
@@ -824,7 +931,9 @@ create_cortical_from_neuromaps <- function(
   )
 
   is_volume <- any(grepl(
-    "\\.(nii|nii\\.gz)$", gifti_files, ignore.case = TRUE
+    "\\.(nii|nii\\.gz)$",
+    gifti_files,
+    ignore.case = TRUE
   ))
 
   if (is_volume) {
@@ -844,7 +953,8 @@ create_cortical_from_neuromaps <- function(
   }
 
   output_base <- file.path(
-    config$output_dir, atlas_name
+    config$output_dir,
+    atlas_name
   )
   mkdir(output_base)
 

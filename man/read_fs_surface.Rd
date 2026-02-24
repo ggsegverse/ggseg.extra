@@ -4,10 +4,12 @@
 \alias{read_fs_surface}
 \title{Read FreeSurfer surface file}
 \usage{
-read_fs_surface(file)
+read_fs_surface(file, verbose = get_verbose())
 }
 \arguments{
 \item{file}{Path to FreeSurfer surface file}
+
+\item{verbose}{Verbosity level (0/1/2)}
 }
 \value{
 list with vertices and faces data.frames (faces are 1-indexed)

@@ -1,11 +1,11 @@
 describe("cortical_brain_snapshots", {
-  it("dispatches snapshot_brain_full for each hemi x view combination", {
+  it("dispatches snapshot_brain_full_batch for each hemisphere", {
     captured <- list()
     local_mocked_bindings(
-      snapshot_brain_full = function(atlas, hemisphere, view, ...) {
+      snapshot_brain_full_batch = function(atlas, hemisphere, views, ...) {
         captured[[length(captured) + 1]] <<- list(
           hemisphere = hemisphere,
-          view = view
+          views = views
         )
       },
       progressor = function(...) function(...) NULL
@@ -22,9 +22,10 @@ describe("cortical_brain_snapshots", {
       skip_existing = FALSE
     )
 
-    expect_equal(length(captured), 4)
+    expect_equal(length(captured), 2)
     hemis <- vapply(captured, `[[`, character(1), "hemisphere")
     expect_true(all(c("lh", "rh") %in% hemis))
+    expect_equal(captured[[1]]$views, c("lateral", "medial"))
   })
 })
 
@@ -33,11 +34,14 @@ describe("cortical_region_snapshots", {
   it("filters grid to matching hemi-label pairs", {
     captured <- list()
     local_mocked_bindings(
-      snapshot_region = function(atlas, region_label, hemisphere, view, ...) {
+      snapshot_region_batch = function(atlas, region_label, hemisphere, views, ...) {
         captured[[length(captured) + 1]] <<- list(
           region_label = region_label,
           hemisphere = hemisphere
         )
+      },
+      filter_visible_regions = function(region_grid, vertices_df) {
+        region_grid
       },
       progressor = function(...) function(...) NULL
     )
@@ -46,7 +50,8 @@ describe("cortical_region_snapshots", {
       core = data.frame(
         label = c("lh_frontal", "rh_frontal"),
         stringsAsFactors = FALSE
-      )
+      ),
+      vertices_df = data.frame(label = character(0))
     )
     atlas_3d <- structure(list(), class = "ggseg_atlas")
     dirs <- list(snapshots = tempdir())
@@ -193,11 +198,14 @@ describe("labels_region_snapshots", {
     region_captured <- list()
     na_captured <- list()
     local_mocked_bindings(
-      snapshot_region = function(...) {
+      snapshot_region_batch = function(...) {
         region_captured[[length(region_captured) + 1]] <<- TRUE
       },
-      snapshot_na_regions = function(...) {
+      snapshot_na_regions_batch = function(...) {
         na_captured[[length(na_captured) + 1]] <<- TRUE
+      },
+      filter_visible_regions = function(region_grid, vertices_df) {
+        region_grid
       },
       progressor = function(...) function(...) NULL
     )

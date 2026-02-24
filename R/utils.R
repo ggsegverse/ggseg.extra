@@ -2,40 +2,61 @@
 
 fsaverage5_nverts <- 10242L
 
-#' @importFrom future plan sequential
+#' @importFrom future plan sequential multisession
 #' @noRd
-warn_and_switch_multicore <- function() {
-  if (!inherits(plan(), "multicore")) return(NULL)
-  old_plan <- plan(sequential)
-  cli::cli_alert_info(
-    "Switching to sequential (multicore fork is not supported)"
-  )
-  old_plan
+with_safe_plan <- function(expr) {
+  if (inherits(plan(), "multicore")) {
+    old_plan <- plan(multisession)
+    on.exit(plan(old_plan), add = TRUE)
+    cli::cli_alert_info(
+      "Switching from multicore to multisession: fork is incompatible with chromote."
+    )
+  }
+  force(expr)
 }
 
 #' @noRd
-safe_future_pmap <- function(.l, .f, ..., .options = furrr_options(seed = NULL)) {
-  old <- warn_and_switch_multicore()
-  if (!is.null(old)) on.exit(plan(old), add = TRUE)
-  future_pmap(.l, .f, ..., .options = .options)
+safe_future_pmap <- function(
+  .l,
+  .f,
+  ...,
+  .options = furrr_options(seed = NULL)
+) {
+  with_safe_plan(future_pmap(.l, .f, ..., .options = .options))
 }
 
 #' @noRd
-safe_future_map <- function(.x, .f, ..., .options = furrr_options(seed = NULL)) {
-  old <- warn_and_switch_multicore()
-  if (!is.null(old)) on.exit(plan(old), add = TRUE)
-  future_map(.x, .f, ..., .options = .options)
+safe_future_map <- function(
+  .x,
+  .f,
+  ...,
+  .options = furrr_options(seed = NULL)
+) {
+  with_safe_plan(future_map(.x, .f, ..., .options = .options))
 }
 
 #' @noRd
-safe_future_map2 <- function(.x, .y, .f, ..., .options = furrr_options(seed = NULL)) {
-  old <- warn_and_switch_multicore()
-  if (!is.null(old)) on.exit(plan(old), add = TRUE)
-  future_map2(.x, .y, .f, ..., .options = .options)
+safe_future_map2 <- function(
+  .x,
+  .y,
+  .f,
+  ...,
+  .options = furrr_options(seed = NULL)
+) {
+  with_safe_plan(future_map2(.x, .y, .f, ..., .options = .options))
 }
 
 mkdir <- function(path, ...) {
   dir.create(path, recursive = TRUE, showWarnings = FALSE, ...)
+}
+
+#' @noRd
+close_chromote_workers <- function() {
+  if (!requireNamespace("chromote", quietly = TRUE)) {
+    return(invisible(NULL))
+  }
+  try(chromote::default_chromote_object()$close(), silent = TRUE)
+  invisible(NULL)
 }
 
 
@@ -132,38 +153,68 @@ preview_atlas <- function(atlas) {
 
 # Verbosity control ----
 
+#' Coerce a value to a verbosity level
+#'
+#' Converts logical, numeric, or character input to an integer verbosity
+#' level: `0L` (silent), `1L` (standard), or `2L` (debug).
+#'
+#' @param x Value to coerce. Logical `FALSE` becomes `0L`, `TRUE` becomes
+#'   `1L`. Numeric values are clamped to 0--2. Invalid input defaults to `1L`.
+#' @return Integer `0L`, `1L`, or `2L`
+#' @export
+#' @examples
+#' as_verbosity(FALSE)
+#' as_verbosity(TRUE)
+#' as_verbosity(2)
+as_verbosity <- function(x) {
+  if (is.logical(x) && !is.na(x)) return(as.integer(x))
+  x <- suppressWarnings(as.integer(x))
+  if (is.na(x) || x < 0L) return(1L)
+  min(x, 2L)
+}
+
 #' Get verbose setting
 #'
-#' Returns the verbose setting from option, environment variable, or default.
+#' Returns the verbosity level from option, environment variable, or default.
 #' Checks in order: `ggseg.extra.verbose` option, `GGSEG_EXTRA_VERBOSE` env var,
-#' then defaults to TRUE.
+#' then defaults to `1L`.
 #'
-#' Used as default argument in verbose parameters throughout the package.
-#' Set `options(ggseg.extra.verbose = FALSE)` or
-#' `Sys.setenv(GGSEG_EXTRA_VERBOSE = "false")` to suppress output globally.
+#' Verbosity levels:
+#' - `0` — Silent: no console output
+#' - `1` — Standard (default): pipeline progress and step summaries
+#' - `2` — Debug: includes FreeSurfer command output
 #'
-#' @return Logical TRUE/FALSE
+#' Logical values are accepted for backward compatibility
+#' (`FALSE` = 0, `TRUE` = 1).
+#'
+#' @return Integer `0L`, `1L`, or `2L`
 #' @export
 #' @examples
 #' get_verbose()
+#' options(ggseg.extra.verbose = 0)
+#' get_verbose()
+#' options(ggseg.extra.verbose = NULL)
 get_verbose <- function() {
-  get_bool_option(NULL, "ggseg.extra.verbose", "GGSEG_EXTRA_VERBOSE", TRUE)
+  val <- getOption("ggseg.extra.verbose")
+  if (!is.null(val)) return(as_verbosity(val))
+  env <- Sys.getenv("GGSEG_EXTRA_VERBOSE", unset = NA)
+  if (!is.na(env)) return(as_verbosity(env))
+  1L
 }
 
-#' Check if verbose output is enabled
+#' Get verbosity level
 #'
 #' @param verbose Optional explicit value. If NULL, reads from
-#'   option/env via [get_verbose()].
-#' @return Logical
+#'   option/env via [get_verbose()]. Accepts logical or integer (0/1/2).
+#' @return Integer `0L`, `1L`, or `2L`
 #' @export
 #' @examples
 #' is_verbose()
 #' is_verbose(FALSE)
+#' is_verbose(2)
 is_verbose <- function(verbose = NULL) {
-  if (is.null(verbose)) {
-    return(get_verbose())
-  }
-  isTRUE(as.logical(verbose))
+  if (is.null(verbose)) return(get_verbose())
+  as_verbosity(verbose)
 }
 
 #' Log elapsed pipeline time

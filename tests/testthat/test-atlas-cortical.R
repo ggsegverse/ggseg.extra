@@ -1242,11 +1242,11 @@ describe("cortical_region_snapshots invisible-region filtering", {
   it("skips regions that face away from the camera", {
     captured <- list()
     local_mocked_bindings(
-      snapshot_region = function(atlas, region_label, hemisphere, view, ...) {
+      snapshot_region_batch = function(atlas, region_label, hemisphere, views, ...) {
         captured[[length(captured) + 1]] <<- list(
           region_label = region_label,
           hemisphere = hemisphere,
-          view = view
+          view = views[1]
         )
       },
       progressor = function(...) function(...) NULL,

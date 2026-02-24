@@ -213,6 +213,7 @@ snapshot_brain_helper <- function(
   na_colour = "#CCCCCC",
   skip_existing = get_skip_existing(),
   snapshot_dim = 800,
+  delay = 2,
   max_retries = 2
 ) {
   if (skip_existing && file.exists(outfile)) {
@@ -238,7 +239,8 @@ snapshot_brain_helper <- function(
       snapshot_brain(
         outfile,
         width = snapshot_dim,
-        height = snapshot_dim
+        height = snapshot_dim,
+        delay = delay
       )
   }
 
@@ -354,6 +356,225 @@ snapshot_na_regions <- function(
     na_colour = "#FF0000",
     skip_existing = skip_existing,
     snapshot_dim = snapshot_dim
+  )
+}
+
+
+# Batch snapshot engine ----
+
+#' @importFrom chromote ChromoteSession default_chromote_object
+#' @noRd
+snapshot_widget_batch <- function(
+  widget,
+  views,
+  files,
+  width = 800,
+  height = 800,
+  zoom = 2,
+  delay = 1,
+  render_delay = 0.3,
+  max_retries = 2
+) {
+  tmphtml <- tempfile(fileext = ".html")
+  libdir <- paste0(tools::file_path_sans_ext(tmphtml), "_files")
+  on.exit(unlink(c(tmphtml, libdir), recursive = TRUE), add = TRUE)
+
+  htmlwidgets::saveWidget(widget, tmphtml, selfcontained = FALSE)
+
+  take_batch <- function() {
+    session <- ChromoteSession$new()
+    on.exit(session$close(), add = TRUE)
+
+    session$Emulation$setDeviceMetricsOverride(
+      width = as.integer(width),
+      height = as.integer(height),
+      deviceScaleFactor = 1,
+      mobile = FALSE
+    )
+    session$Emulation$setScrollbarsHidden(hidden = TRUE)
+
+    session$Page$navigate(url = paste0("file://", tmphtml))
+    session$Page$loadEventFired()
+    Sys.sleep(delay)
+
+    js_tpl <- paste0(
+      "document.querySelector('.ggseg3d.html-widget')",
+      "._ggseg3d_renderer.setCamera('%s')"
+    )
+
+    for (i in seq_along(views)) {
+      session$Runtime$evaluate(sprintf(js_tpl, views[i]))
+      Sys.sleep(render_delay)
+      session$screenshot(filename = files[i], scale = zoom)
+    }
+
+    session$Runtime$evaluate(
+      "var el = document.querySelector('.ggseg3d.html-widget'); if (el && el._ggseg3d_renderer) { cancelAnimationFrame(el._ggseg3d_renderer.animationId); }"
+    )
+  }
+
+  for (attempt in seq_len(max_retries + 1L)) {
+    result <- tryCatch(take_batch(), error = function(e) e)
+    if (!inherits(result, "error")) break
+    if (attempt <= max_retries) {
+      try(default_chromote_object()$close(), silent = TRUE)
+      Sys.sleep(2)
+    } else {
+      stop(result)
+    }
+  }
+
+  invisible(files)
+}
+
+
+#' @noRd
+build_brain_widget <- function(
+  atlas,
+  hemisphere,
+  surface,
+  .data = NULL,
+  colour = "colour",
+  na_colour = "#CCCCCC"
+) {
+  hemi_long <- hemi_to_long(hemisphere)
+
+  ggseg3d(
+    .data = .data,
+    atlas = atlas,
+    hemisphere = hemi_long,
+    surface = surface,
+    colour = colour,
+    na_colour = na_colour
+  ) |>
+    set_flat_shading() |>
+    set_orthographic() |>
+    set_background("white") |>
+    set_legend(show = FALSE)
+}
+
+
+#' @noRd
+snapshot_brain_full_batch <- function(
+  atlas,
+  hemisphere,
+  views,
+  surface,
+  output_dir,
+  skip_existing = get_skip_existing(),
+  snapshot_dim = 800
+) {
+  hemi_long <- hemi_to_long(hemisphere)
+  files <- file.path(output_dir, sprintf("full_%s_%s.png", hemisphere, views))
+
+  if (skip_existing) {
+    needed <- !file.exists(files)
+    if (!any(needed)) return(invisible(files))
+    views <- views[needed]
+    files <- files[needed]
+  }
+
+  widget <- build_brain_widget(atlas, hemisphere, surface, na_colour = "#CCCCCC")
+
+  snapshot_widget_batch(
+    widget,
+    views = paste(hemi_long, views),
+    files = files,
+    width = snapshot_dim,
+    height = snapshot_dim
+  )
+}
+
+
+#' @noRd
+snapshot_region_batch <- function(
+  atlas,
+  region_label,
+  hemisphere,
+  views,
+  surface,
+  output_dir,
+  skip_existing = get_skip_existing(),
+  snapshot_dim = 800
+) {
+  hemi_long <- hemi_to_long(hemisphere)
+  files <- file.path(
+    output_dir,
+    sprintf("%s_%s_%s.png", region_label, hemisphere, views)
+  )
+
+  if (skip_existing) {
+    needed <- !file.exists(files)
+    if (!any(needed)) return(invisible(files))
+    views <- views[needed]
+    files <- files[needed]
+  }
+
+  highlight_data <- data.frame(
+    label = atlas$core$label,
+    highlight = ifelse(atlas$core$label == region_label, "#FF0000", "#FFFFFF"),
+    stringsAsFactors = FALSE
+  )
+
+  widget <- build_brain_widget(
+    atlas, hemisphere, surface,
+    .data = highlight_data,
+    colour = "highlight",
+    na_colour = "#FFFFFF"
+  )
+
+  snapshot_widget_batch(
+    widget,
+    views = paste(hemi_long, views),
+    files = files,
+    width = snapshot_dim,
+    height = snapshot_dim
+  )
+}
+
+
+#' @noRd
+snapshot_na_regions_batch <- function(
+  atlas,
+  hemisphere,
+  views,
+  surface,
+  output_dir,
+  skip_existing = get_skip_existing(),
+  snapshot_dim = 800
+) {
+  hemi_long <- hemi_to_long(hemisphere)
+  files <- file.path(
+    output_dir,
+    sprintf("%s____nolabel____%s_%s.png", hemisphere, hemisphere, views)
+  )
+
+  if (skip_existing) {
+    needed <- !file.exists(files)
+    if (!any(needed)) return(invisible(files))
+    views <- views[needed]
+    files <- files[needed]
+  }
+
+  white_data <- data.frame(
+    label = atlas$core$label,
+    highlight = rep("#FFFFFF", nrow(atlas$core)),
+    stringsAsFactors = FALSE
+  )
+
+  widget <- build_brain_widget(
+    atlas, hemisphere, surface,
+    .data = white_data,
+    colour = "highlight",
+    na_colour = "#FF0000"
+  )
+
+  snapshot_widget_batch(
+    widget,
+    views = paste(hemi_long, views),
+    files = files,
+    width = snapshot_dim,
+    height = snapshot_dim
   )
 }
 
@@ -520,6 +741,7 @@ snapshot_partial_projection <- function(
   skip_existing = get_skip_existing()
 ) {
   output_dir <- path.expand(output_dir)
+  label <- sanitize_label(label)
   outfile <- file.path(output_dir, paste0(view_name, "_", label, ".png"))
 
   if (skip_existing && file.exists(outfile)) {

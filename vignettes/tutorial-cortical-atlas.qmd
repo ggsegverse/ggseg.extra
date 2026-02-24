@@ -351,7 +351,7 @@ Enable parallel processing before running:
 
 ``` r
 library(future)
-plan(multicore, workers = 4)
+plan(multisession, workers = 4)
 
 library(progressr)
 handlers("cli")

@@ -233,7 +233,7 @@ subcort_log_header <- function(config) {
   }
   cli::cli_h1("Creating subcortical atlas {.val {config$atlas_name}}")
   cli::cli_alert_info("Volume: {.path {config$input_volume}}")
-  if (!is.null(config$input_lut)) {
+  if (!is.null(config$input_lut) && is.character(config$input_lut)) {
     cli::cli_alert_info("Color LUT: {.path {config$input_lut}}")
   }
   cli::cli_alert_info(
@@ -285,6 +285,8 @@ subcort_resolve_labels <- function(config, dirs) {
   vol_labels <- unique(c(vol))
   vol_labels <- vol_labels[vol_labels != 0]
   colortable <- colortable[colortable$idx %in% vol_labels, ]
+
+  colortable$label <- sanitize_label(colortable$label)
 
   if (nrow(colortable) == 0) {
     cli::cli_abort("No matching labels found in volume and color table")

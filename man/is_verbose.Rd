@@ -2,21 +2,22 @@
 % Please edit documentation in R/utils.R
 \name{is_verbose}
 \alias{is_verbose}
-\title{Check if verbose output is enabled}
+\title{Get verbosity level}
 \usage{
 is_verbose(verbose = NULL)
 }
 \arguments{
 \item{verbose}{Optional explicit value. If NULL, reads from
-option/env via \code{\link[=get_verbose]{get_verbose()}}.}
+option/env via \code{\link[=get_verbose]{get_verbose()}}. Accepts logical or integer (0/1/2).}
 }
 \value{
-Logical
+Integer \code{0L}, \code{1L}, or \code{2L}
 }
 \description{
-Check if verbose output is enabled
+Get verbosity level
 }
 \examples{
 is_verbose()
 is_verbose(FALSE)
+is_verbose(2)
 }

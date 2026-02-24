@@ -51,8 +51,8 @@ describe("create_tract_from_tractography", {
       verbose = FALSE
     )
 
-    expect_true("Tract A" %in% atlas$core$label)
-    expect_true("Tract B" %in% atlas$core$label)
+    expect_true("Tract_A" %in% atlas$core$label)
+    expect_true("Tract_B" %in% atlas$core$label)
     expect_true("#FF0000" %in% atlas$palette)
     expect_true("#00FF00" %in% atlas$palette)
   })
@@ -245,7 +245,7 @@ describe("create_tract_from_tractography pipeline flow", {
     )
 
     expect_s3_class(atlas, "ggseg_atlas")
-    expect_true("Tract A" %in% atlas$core$label)
+    expect_true("Tract_A" %in% atlas$core$label)
   })
 
   it("loads cached data for skipped steps and proceeds", {

@@ -19,15 +19,11 @@ Useful links:
 
 }
 \author{
-\strong{Maintainer}: Athanasia Mo Mowinckel \email{a.m.mowinckel@psykologi.uio.no} (\href{https://orcid.org/0000-0002-5756-0223}{ORCID})
-
-Authors:
-\itemize{
-  \item Didac Vidal-Piñeiro \email{d.v.pineiro@psykologi.uio.no} (\href{https://orcid.org/0000-0001-9997-9156}{ORCID})
-}
+\strong{Maintainer}: Athanasia Mo Mowinckel \email{a.m.mowinckel@psykologi.uio.no} (\href{https://orcid.org/0000-0002-5756-0223}{ORCID}) (drmowinckels)
 
 Other contributors:
 \itemize{
+  \item Didac Vidal-Piñeiro \email{d.v.pineiro@psykologi.uio.no} (\href{https://orcid.org/0000-0001-9997-9156}{ORCID}) [contributor]
   \item John Muschelli \email{muschellij2@gmail.com} (\href{https://orcid.org/0000-0001-6469-1750}{ORCID}) [contributor]
 }
 

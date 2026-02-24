@@ -23,49 +23,76 @@ describe("mkdir", {
 })
 
 
+describe("as_verbosity", {
+  it("converts logical to integer", {
+    expect_equal(as_verbosity(FALSE), 0L)
+    expect_equal(as_verbosity(TRUE), 1L)
+  })
+
+  it("clamps numeric to 0-2", {
+    expect_equal(as_verbosity(0), 0L)
+    expect_equal(as_verbosity(1), 1L)
+    expect_equal(as_verbosity(2), 2L)
+    expect_equal(as_verbosity(5), 2L)
+  })
+
+  it("defaults to 1 for invalid input", {
+    expect_equal(as_verbosity(-1), 1L)
+    expect_equal(as_verbosity(NA), 1L)
+    expect_equal(as_verbosity("bad"), 1L)
+  })
+})
+
 describe("get_verbose", {
-  it("returns TRUE by default", {
+  it("returns 1L by default", {
     withr::local_options(ggseg.extra.verbose = NULL)
     withr::local_envvar(GGSEG_EXTRA_VERBOSE = NA)
-    expect_true(get_verbose())
+    expect_equal(get_verbose(), 1L)
   })
 
   it("reads from option", {
     withr::local_options(ggseg.extra.verbose = FALSE)
-    expect_false(get_verbose())
+    expect_equal(get_verbose(), 0L)
+
+    withr::local_options(ggseg.extra.verbose = 2)
+    expect_equal(get_verbose(), 2L)
   })
 
   it("reads from environment variable when option is NULL", {
     withr::local_options(ggseg.extra.verbose = NULL)
-    withr::local_envvar(GGSEG_EXTRA_VERBOSE = "false")
-    expect_false(get_verbose())
+    withr::local_envvar(GGSEG_EXTRA_VERBOSE = "0")
+    expect_equal(get_verbose(), 0L)
   })
 
   it("option takes precedence over envvar", {
     withr::local_options(ggseg.extra.verbose = TRUE)
-    withr::local_envvar(GGSEG_EXTRA_VERBOSE = "false")
-    expect_true(get_verbose())
+    withr::local_envvar(GGSEG_EXTRA_VERBOSE = "0")
+    expect_equal(get_verbose(), 1L)
   })
 })
 
 
 describe("is_verbose", {
-  it("returns TRUE for truthy values", {
-    expect_true(is_verbose(1))
-    expect_true(is_verbose(TRUE))
+  it("returns integer levels", {
+    expect_equal(is_verbose(1), 1L)
+    expect_equal(is_verbose(TRUE), 1L)
+    expect_equal(is_verbose(2), 2L)
   })
 
-  it("returns FALSE for falsy values", {
-    expect_false(is_verbose(0))
-    expect_false(is_verbose(FALSE))
+  it("returns 0 for silent", {
+    expect_equal(is_verbose(0), 0L)
+    expect_equal(is_verbose(FALSE), 0L)
   })
 
   it("delegates to get_verbose when NULL", {
     withr::local_options(ggseg.extra.verbose = FALSE)
-    expect_false(is_verbose())
+    expect_equal(is_verbose(), 0L)
 
     withr::local_options(ggseg.extra.verbose = TRUE)
-    expect_true(is_verbose())
+    expect_equal(is_verbose(), 1L)
+
+    withr::local_options(ggseg.extra.verbose = 2)
+    expect_equal(is_verbose(), 2L)
   })
 })
 

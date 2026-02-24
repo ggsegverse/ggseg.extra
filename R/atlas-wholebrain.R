@@ -210,7 +210,7 @@ create_wholebrain_from_volume <- function(
       "inspect the label split before committing to the full pipeline."
     ))
     cli::cli_alert_info("Volume: {.path {config$input_volume}}")
-    if (!is.null(config$input_lut)) {
+    if (!is.null(config$input_lut) && is.character(config$input_lut)) {
       cli::cli_alert_info("Color LUT: {.path {config$input_lut}}")
     }
     cli::cli_alert_info(
@@ -414,9 +414,7 @@ overlay_to_atlas_data <- function(
     if (nrow(ct_row) == 0) return(NULL)
 
     label_name <- ct_row$label[1]
-    safe_name <- gsub("\\(", "_", label_name)
-    safe_name <- gsub(")", "", safe_name)
-    safe_name <- gsub("/", "-", safe_name)
+    safe_name <- sanitize_label(label_name)
     colour <- if ("color" %in% names(ct_row)) {
       ct_row$color[1]
     } else if (all(c("R", "G", "B") %in% names(ct_row))) {
@@ -706,7 +704,9 @@ wholebrain_refine_cortical_projection <- function(
   if (length(subcort_idx) == 0) return(projection)
 
   surf_dir <- file.path(dirs$base, "surface_overlays")
-  colortable <- projection$colortable
+  colortable <- projection$colortable[
+    projection$colortable$label %in% split$cortical_labels,
+  ]
 
   if (config$verbose) {
     cli::cli_progress_step(
@@ -762,11 +762,11 @@ wholebrain_run_cortical <- function(
 
   cortical_name <- paste0(config$atlas_name, "_cortical")
   cortical_dirs <- setup_atlas_dirs(
-    config$output_dir, cortical_name, type = "cortical"
+    dirs$base, "cortical", type = "cortical"
   )
 
   cortical_config <- validate_cortical_config(
-    output_dir = config$output_dir,
+    output_dir = dirs$base,
     verbose = config$verbose,
     cleanup = FALSE,
     skip_existing = config$skip_existing,
@@ -848,9 +848,9 @@ wholebrain_run_subcortical <- function(
   atlas <- create_subcortical_from_volume(
     input_volume = filtered_vol,
     input_lut = subcort_lut,
-    atlas_name = subcort_name,
+    atlas_name = "subcortical",
     views = views,
-    output_dir = config$output_dir,
+    output_dir = dirs$base,
     decimate = decimate,
     tolerance = config$tolerance,
     smoothness = config$smoothness,
@@ -859,6 +859,7 @@ wholebrain_run_subcortical <- function(
     skip_existing = config$skip_existing
   )
 
+  atlas$atlas <- subcort_name
   atlas
 }
 
@@ -893,7 +894,11 @@ wholebrain_prepare_subcortical_volume <- function(
     result[cortical_mask & x_idx <= x0_voxel] <- 3L
     result[cortical_mask & x_idx > x0_voxel] <- 42L
   }
-  RNifti::writeNifti(RNifti::asNifti(result, reference = vol), output_file)
+  out <- RNifti::asNifti(result, reference = vol)
+  if (RNifti::orientation(out) != "RAS") {
+    RNifti::orientation(out) <- "RAS"
+  }
+  RNifti::writeNifti(out, output_file)
   invisible(output_file)
 }
 

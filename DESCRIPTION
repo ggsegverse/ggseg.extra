@@ -2,12 +2,26 @@ Package: ggseg.extra
 Title: Extra Utilities for the 'ggseg' and 'ggseg3d' Plotting Tools
 Version: 2.0.0
 Authors@R: c(
-    person("Athanasia Mo", "Mowinckel", , "a.m.mowinckel@psykologi.uio.no", role = c("aut", "cre"),
-           comment = c(ORCID = "0000-0002-5756-0223")),
-    person("Didac", "Vidal-Piñeiro", , "d.v.pineiro@psykologi.uio.no", role = "aut",
-           comment = c(ORCID = "0000-0001-9997-9156")),
-    person("John", "Muschelli", , "muschellij2@gmail.com", role = "ctb",
-           comment = c(ORCID = "0000-0001-6469-1750"))
+    person(
+        given = "Athanasia Mo", 
+        family = "Mowinckel",
+        email = "a.m.mowinckel@psykologi.uio.no", 
+        role = c("aut", "cre"),
+        comment = c(
+            ORCID = "0000-0002-5756-0223",
+            Github = "drmowinckels")),
+    person(
+        given = "Didac",
+        family = "Vidal-Piñeiro", 
+        email = "d.v.pineiro@psykologi.uio.no", 
+        role = "ctb",
+        comment = c(ORCID = "0000-0001-9997-9156")),
+    person(
+        given = "John", 
+        family = "Muschelli",
+        email =  "muschellij2@gmail.com", 
+        role = "ctb",
+        comment = c(ORCID = "0000-0001-6469-1750"))
   )
 Description: Contains functions to create new data sets compatible with
     the 'ggsegverse' ecosystem for plotting brain segmentations
@@ -21,14 +35,16 @@ BugReports: https://github.com/ggsegverse/ggseg.extra/issues
 Depends:
     R (>= 4.2.0)
 Imports:
+    chromote,
     cli,
     dplyr,
     freesurfer,
     future,
     furrr,
     ggseg.formats,
-    ggseg3d (>= 1.6.0),
+    ggseg3d (>= 2.0.0),
     grDevices,
+    htmlwidgets,
     lifecycle,
     magick,
     progressr,
@@ -41,7 +57,6 @@ Imports:
     tools,
     utils
 Suggests:
-    chromote,
     ciftiTools,
     freesurferformats,
     ggplot2,
@@ -58,6 +73,7 @@ Suggests:
     Rvcg,
     spelling,
     testthat (>= 3.0.0),
+    tidyr,
     withr
 VignetteBuilder:
     knitr

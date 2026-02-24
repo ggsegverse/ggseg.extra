@@ -133,7 +133,7 @@ describe("tessellate_label", {
 
     local_mocked_bindings(
       check_fs = function(abort = FALSE) invisible(TRUE),
-      read_fs_surface = function(f) {
+      read_fs_surface = function(f, verbose = 0L) {
         list(
           vertices = data.frame(x = 1:3, y = 1:3, z = 1:3),
           faces = data.frame(i = 1, j = 2, k = 3)
@@ -161,7 +161,7 @@ describe("tessellate_label", {
       mri_smooth = function(...) {
         writeLines("ok", file.path(tmp_dir, "0010_smooth"))
       },
-      read_fs_surface = function(f) {
+      read_fs_surface = function(f, verbose = 0L) {
         list(
           vertices = data.frame(x = 1:3, y = 1:3, z = 1:3),
           faces = data.frame(i = 1, j = 2, k = 3)

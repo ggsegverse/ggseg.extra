@@ -67,12 +67,15 @@ To enable parallel processing, set up a `future` plan before running atlas creat
 #| eval: false
 library(future)
 
-plan(multicore, workers = 4)
+plan(multisession, workers = 4)
 ```
 
-`multicore` uses forking, which shares memory and avoids serializing large
-volumes to each worker.
-On Windows where forking is not supported, use `plan(multisession)` instead.
+**Use `multisession`, not `multicore`.**
+The atlas pipeline uses [chromote](https://rstudio.github.io/chromote/) to take 3D brain screenshots via headless Chrome.
+`multicore` relies on process forking, which corrupts chromote's websocket connections and causes crashes.
+`multisession` spawns independent R worker processes that each get their own clean Chrome instance.
+
+If `plan(multicore)` is active when the pipeline runs, it will automatically switch to `multisession` and warn you.
 
 To return to sequential processing:
 

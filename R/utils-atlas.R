@@ -194,12 +194,38 @@ setup_atlas_dirs <- function(output_dir, atlas_name = NULL, type = "cortical") {
 }
 
 
+# Label sanitization ----
+
+#' Make labels filesystem-safe
+#'
+#' Replaces spaces, parentheses, slashes, and other problematic characters
+#' so labels can be safely used in filenames and as machine identifiers.
+#' Human-readable names belong in the `region` column, not `label`.
+#'
+#' @param x Character vector of labels
+#' @return Sanitized character vector
+#' @noRd
+sanitize_label <- function(x) {
+  x <- trimws(x)
+  x <- gsub("\\s+", "_", x)
+  x <- gsub("\\(", "_", x)
+  x <- gsub("\\)", "", x)
+  x <- gsub("/", "-", x)
+  x <- gsub("_+", "_", x)
+  x <- gsub("^_|_$", "", x)
+  x
+}
+
+
 # Atlas data construction ----
 
 #' Build core, palette, and vertices/meshes from atlas data
 #'
 #' Consolidates the repeated pattern of building atlas components from a
 #' data frame containing hemi, region, label, colour, and vertices/mesh columns.
+#'
+#' Labels are sanitized to be filesystem-safe (spaces, parentheses, and
+#' slashes are replaced). Human-readable names are kept in the `region` column.
 #'
 #' Labels with empty vertices are filtered out (these are context-only regions
 #' like the medial wall that will only appear in sf geometry).
@@ -210,6 +236,8 @@ setup_atlas_dirs <- function(output_dir, atlas_name = NULL, type = "cortical") {
 #' @noRd
 #' @importFrom dplyr distinct bind_rows
 build_atlas_components <- function(atlas_data) {
+  atlas_data$label <- sanitize_label(atlas_data$label)
+
   if ("vertices" %in% names(atlas_data)) {
     vertex_lengths <- vapply(atlas_data$vertices, length, integer(1))
     atlas_data <- atlas_data[vertex_lengths > 0, , drop = FALSE]

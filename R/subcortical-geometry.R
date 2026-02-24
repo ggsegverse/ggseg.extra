@@ -30,7 +30,7 @@ tessellate_label <- function(
   smooth_file <- paste0(base_name, "_smooth")
 
   if (skip_existing && file.exists(smooth_file)) {
-    return(read_fs_surface(smooth_file))
+    return(read_fs_surface(smooth_file, verbose = verbose))
   }
 
   if (!skip_existing || !file.exists(pretess_file)) {
@@ -71,7 +71,7 @@ tessellate_label <- function(
     cli::cli_abort("Smoothing failed for label {label_id}")
   }
 
-  read_fs_surface(smooth_file)
+  read_fs_surface(smooth_file, verbose = verbose)
 }
 
 
@@ -123,14 +123,15 @@ decimate_mesh <- function(mesh, percent = 0.5) {
 #' Uses FreeSurfer's mris_convert for robust handling of all surface formats.
 #'
 #' @param file Path to FreeSurfer surface file
+#' @param verbose Verbosity level (0/1/2)
 #' @return list with vertices and faces data.frames (faces are 1-indexed)
 #' @keywords internal
-read_fs_surface <- function(file) {
+read_fs_surface <- function(file, verbose = get_verbose()) {
   dpv_file <- paste0(file, ".dpv")
 
   result <- tryCatch(
     {
-      surf2asc(file, dpv_file, verbose = get_verbose()) # nolint: object_usage_linter
+      surf2asc(file, dpv_file, verbose = verbose)
       mesh <- read_dpv(dpv_file)
 
       vertices <- mesh$vertices

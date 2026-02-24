@@ -7,18 +7,27 @@
 get_verbose()
 }
 \value{
-Logical TRUE/FALSE
+Integer \code{0L}, \code{1L}, or \code{2L}
 }
 \description{
-Returns the verbose setting from option, environment variable, or default.
+Returns the verbosity level from option, environment variable, or default.
 Checks in order: \code{ggseg.extra.verbose} option, \code{GGSEG_EXTRA_VERBOSE} env var,
-then defaults to TRUE.
+then defaults to \code{1L}.
 }
 \details{
-Used as default argument in verbose parameters throughout the package.
-Set \code{options(ggseg.extra.verbose = FALSE)} or
-\code{Sys.setenv(GGSEG_EXTRA_VERBOSE = "false")} to suppress output globally.
+Verbosity levels:
+\itemize{
+\item \code{0} — Silent: no console output
+\item \code{1} — Standard (default): pipeline progress and step summaries
+\item \code{2} — Debug: includes FreeSurfer command output
+}
+
+Logical values are accepted for backward compatibility
+(\code{FALSE} = 0, \code{TRUE} = 1).
 }
 \examples{
 get_verbose()
+options(ggseg.extra.verbose = 0)
+get_verbose()
+options(ggseg.extra.verbose = NULL)
 }

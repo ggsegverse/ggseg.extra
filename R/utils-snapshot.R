@@ -57,7 +57,9 @@ extract_alpha_mask <- function(
 
   exit_code <- system2(
     "magick",
-    args = c(input_file, "-alpha", "extract", output_file),
+    args = c(
+      shQuote(input_file), "-alpha", "extract", shQuote(output_file)
+    ),
     stdout = FALSE,
     stderr = FALSE
   )
@@ -226,11 +228,11 @@ run_cmd <- function(cmd, verbose = get_verbose(), no_ui = FALSE) {
     }
   }
   full_cmd <- paste0(get_fs(), cmd)
-  exit_code <- system2(
-    "bash",
-    args = c("-c", full_cmd),
-    stdout = if (verbose) "" else FALSE,
-    stderr = if (verbose) "" else FALSE
+  suppress <- verbose < 2
+  exit_code <- system(
+    paste("bash -c", shQuote(full_cmd)),
+    ignore.stdout = suppress,
+    ignore.stderr = suppress
   )
   if (exit_code != 0) {
     cli::cli_abort("FreeSurfer command failed (exit {exit_code}): {cmd}")
@@ -300,7 +302,9 @@ isolate_region <- function(
   if (has_magick()) {
     system2(
       "magick",
-      args = c(interim_file, "-alpha", "extract", output_file),
+      args = c(
+        shQuote(interim_file), "-alpha", "extract", shQuote(output_file)
+      ),
       stdout = FALSE,
       stderr = FALSE
     )

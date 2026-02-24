@@ -280,7 +280,7 @@ describe("surf2asc", {
     expect_null(result)
   })
 
-  it("shows alert when verbose is TRUE and file exists", {
+  it("converts surface file when verbose is TRUE and file exists", {
     tmp <- withr::local_tempdir()
     input <- file.path(tmp, "lh.white")
     writeLines("fake surface", input)
@@ -306,10 +306,7 @@ describe("surf2asc", {
       .package = "freesurfer"
     )
 
-    expect_message(
-      result <- surf2asc(input, output, verbose = TRUE),
-      "Saving"
-    )
+    result <- surf2asc(input, output, verbose = 1L)
     expect_s3_class(result, "data.frame")
   })
 

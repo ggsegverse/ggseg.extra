@@ -61,10 +61,11 @@ smoother region boundaries. Passed to \code{\link[smoothr:smooth]{smoothr::smoot
 specified, uses \code{options("ggseg.extra.smoothness")} or the
 \code{GGSEG_EXTRA_SMOOTHNESS} environment variable. Default is 5.}
 
-\item{verbose}{Logical. If not specified, uses the value from
-\code{options("ggseg.extra.verbose")} or the \code{GGSEG_EXTRA_VERBOSE}
-environment variable. Defaults to \code{TRUE}.
-Use \code{options(ggseg.extra.verbose = FALSE)} to suppress output globally.}
+\item{verbose}{Verbosity level: \code{0} (silent), \code{1} (standard progress,
+default), or \code{2} (debug, includes FreeSurfer output). Logical values
+are accepted (\code{TRUE} = 1, \code{FALSE} = 0). If not specified, uses the
+value from \code{options("ggseg.extra.verbose")} or the \code{GGSEG_EXTRA_VERBOSE}
+environment variable.}
 
 \item{cleanup}{Remove intermediate files after atlas creation. If not
 specified, uses \code{options("ggseg.extra.cleanup")} or the \code{GGSEG_EXTRA_CLEANUP}

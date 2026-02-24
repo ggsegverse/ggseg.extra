@@ -62,10 +62,11 @@ selects the single most representative streamline.}
 \item{output_dir}{Directory to store intermediate files (screenshots, masks,
 contours). Defaults to \code{\link[=tempdir]{tempdir()}}.}
 
-\item{verbose}{Logical. If not specified, uses the value from
-\code{options("ggseg.extra.verbose")} or the \code{GGSEG_EXTRA_VERBOSE}
-environment variable. Defaults to \code{TRUE}.
-Use \code{options(ggseg.extra.verbose = FALSE)} to suppress output globally.}
+\item{verbose}{Verbosity level: \code{0} (silent), \code{1} (standard progress,
+default), or \code{2} (debug, includes FreeSurfer output). Logical values
+are accepted (\code{TRUE} = 1, \code{FALSE} = 0). If not specified, uses the
+value from \code{options("ggseg.extra.verbose")} or the \code{GGSEG_EXTRA_VERBOSE}
+environment variable.}
 
 \item{tolerance}{Simplification tolerance for 2D polygons. Higher values
 produce simpler shapes with fewer vertices. Passed to \code{\link[sf:geos_unary]{sf::st_simplify()}}.

@@ -263,14 +263,13 @@ surf2asc <- function(input_file, output_file, verbose = get_verbose()) {
     return(invisible(NULL))
   }
 
-  if (verbose) {
-    cli::cli_alert("Saving {.file {output_file}}")
-  }
+  old_fs_verbose <- options(freesurfer.verbose = (verbose >= 2))
+  on.exit(options(old_fs_verbose), add = TRUE)
 
   freesurfer::mris_convert(
     infile = input_file,
     outfile = gsub("\\.dpv", "\\.asc", output_file),
-    verbose = verbose
+    verbose = (verbose >= 2)
   )
 
   asc_path <- gsub("\\.dpv", "\\.asc", output_file)

@@ -3,6 +3,9 @@ library(tidyr, quietly = TRUE, warn.conflicts = FALSE)
 library(ggseg, quietly = TRUE, warn.conflicts = FALSE)
 library(ggseg3d, quietly = TRUE, warn.conflicts = FALSE)
 
+# terra::describe masks testthat::describe in parallel workers
+describe <- testthat::describe
+
 options(
   ggseg.extra.verbose = FALSE,
   freesurfer.verbose = FALSE

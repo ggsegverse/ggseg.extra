@@ -92,20 +92,14 @@ cortical_brain_snapshots <- function(
   skip_existing,
   snapshot_dim = 800
 ) {
-  snapshot_grid <- expand.grid(
-    hemisphere = hemisphere,
-    view = views,
-    stringsAsFactors = FALSE
-  )
-
-  p <- progressor(steps = nrow(snapshot_grid))
-  invisible(safe_future_pmap(
-    snapshot_grid,
-    function(hemisphere, view) {
-      snapshot_brain_full(
+  p <- progressor(steps = length(hemisphere))
+  invisible(safe_future_map(
+    hemisphere,
+    function(hemi) {
+      snapshot_brain_full_batch(
         atlas = atlas_3d,
-        hemisphere = hemisphere,
-        view = view,
+        hemisphere = hemi,
+        views = views,
         surface = "inflated",
         output_dir = dirs$base,
         skip_existing = skip_existing,
@@ -151,15 +145,21 @@ cortical_region_snapshots <- function(
 
   region_grid <- filter_visible_regions(region_grid, components$vertices_df)
 
-  p <- progressor(steps = nrow(region_grid))
+  batch_grid <- unique(region_grid[, c("region_label", "hemisphere")])
+
+  p <- progressor(steps = nrow(batch_grid))
   invisible(safe_future_pmap(
-    region_grid,
-    function(region_label, hemisphere, view) {
-      snapshot_region(
+    batch_grid,
+    function(region_label, hemisphere) {
+      batch_views <- region_grid$view[
+        region_grid$region_label == region_label &
+          region_grid$hemisphere == hemisphere
+      ]
+      snapshot_region_batch(
         atlas = atlas_3d,
         region_label = region_label,
         hemisphere = hemisphere,
-        view = view,
+        views = batch_views,
         surface = "inflated",
         output_dir = dirs$snapshots,
         skip_existing = skip_existing,
@@ -170,7 +170,8 @@ cortical_region_snapshots <- function(
     .options = furrr_options(
       packages = "ggseg.extra",
       globals = c(
-        "atlas_3d", "dirs", "skip_existing", "snapshot_dim", "p"
+        "atlas_3d", "region_grid", "dirs",
+        "skip_existing", "snapshot_dim", "p"
       )
     )
   ))
@@ -308,15 +309,21 @@ labels_region_snapshots <- function(
 
   region_grid <- filter_visible_regions(region_grid, components$vertices_df)
 
-  p <- progressor(steps = nrow(region_grid))
+  batch_grid <- unique(region_grid[, c("region_label", "hemisphere")])
+
+  p <- progressor(steps = nrow(batch_grid))
   invisible(safe_future_pmap(
-    region_grid,
-    function(region_label, hemisphere, view) {
-      snapshot_region(
+    batch_grid,
+    function(region_label, hemisphere) {
+      batch_views <- region_grid$view[
+        region_grid$region_label == region_label &
+          region_grid$hemisphere == hemisphere
+      ]
+      snapshot_region_batch(
         atlas = atlas_3d,
         region_label = region_label,
         hemisphere = hemisphere,
-        view = view,
+        views = batch_views,
         surface = "inflated",
         output_dir = dirs$snapshots,
         skip_existing = skip_existing,
@@ -327,23 +334,19 @@ labels_region_snapshots <- function(
     .options = furrr_options(
       packages = "ggseg.extra",
       globals = c(
-        "atlas_3d", "dirs", "skip_existing", "snapshot_dim", "p"
+        "atlas_3d", "region_grid", "dirs",
+        "skip_existing", "snapshot_dim", "p"
       )
     )
   ))
 
-  na_grid <- expand.grid(
-    hemisphere = hemi_short,
-    view = views,
-    stringsAsFactors = FALSE
-  )
-  invisible(safe_future_pmap(
-    na_grid,
-    function(hemisphere, view) {
-      snapshot_na_regions(
+  invisible(safe_future_map(
+    hemi_short,
+    function(hemi) {
+      snapshot_na_regions_batch(
         atlas = atlas_3d,
-        hemisphere = hemisphere,
-        view = view,
+        hemisphere = hemi,
+        views = views,
         surface = "inflated",
         output_dir = dirs$snapshots,
         skip_existing = skip_existing,
