@@ -10,6 +10,10 @@
 #'   (points along the streamline) and 3 columns (x, y, z coordinates).
 #' @seealso [read_trk()], [read_tck()] for format-specific readers
 #' @export
+#' @examples
+#' \dontrun{
+#' streamlines <- read_tractography("bundle.trk")
+#' }
 read_tractography <- function(file) {
   ext <- tolower(tools::file_ext(file))
 

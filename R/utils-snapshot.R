@@ -220,7 +220,9 @@ run_cmd <- function(cmd, verbose = get_verbose(), no_ui = FALSE) {
     if (Sys.info()["sysname"] == "Darwin") {
       fv_args <- sub("^freeview[[:space:]]*", "", cmd)
       cmd <- paste(
-        "open -g -j -n -W $FREESURFER_HOME/Freeview.app --args",
+        "open -g -j -n -W",
+        shQuote(paste0(Sys.getenv("FREESURFER_HOME"), "/Freeview.app")),
+        "--args",
         fv_args
       )
     } else {

@@ -22,3 +22,8 @@ Projects an MNI152-space NIfTI volume onto the fsaverage5 surface via
 FreeSurfer's \code{mri_vol2surf}, then discretizes the projected per-vertex
 values using the same binning logic as \code{\link[=read_neuromaps_annotation]{read_neuromaps_annotation()}}.
 }
+\examples{
+\dontrun{
+atlas_data <- read_neuromaps_volume("map.nii.gz", n_bins = 7)
+}
+}

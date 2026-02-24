@@ -26,3 +26,4 @@ _brand.yml
 ^vignettes/.*\.Rmd\.orig$
 ^vignettes/\.quarto$
 ^figure$
+^cran-comments\.md$

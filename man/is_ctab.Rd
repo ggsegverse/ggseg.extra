@@ -15,3 +15,11 @@ TRUE if x is a data.frame with the required color table columns.
 \description{
 Check if object is a color table
 }
+\examples{
+ct <- data.frame(
+  idx = 0L, label = "Unknown",
+  R = 0L, G = 0L, B = 0L, A = 0L
+)
+is_ctab(ct)
+is_ctab(data.frame(x = 1))
+}

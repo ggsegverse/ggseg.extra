@@ -4,11 +4,11 @@
 \name{ggseg.extra-package}
 \alias{ggseg.extra}
 \alias{ggseg.extra-package}
-\title{ggseg.extra: Extra Utilities for the 'ggseg' and 'ggseg3d' Plotting Tools}
+\title{ggseg.extra: Atlas Creation Utilities for the 'ggseg' Brain Plotting Ecosystem}
 \description{
 \if{html}{\figure{logo.png}{options: style='float: right' alt='logo' width='120'}}
 
-Contains functions to create new data sets compatible with the 'ggsegverse' ecosystem for plotting brain segmentations through R. Requires several external softwares to be installed on the system for atlas creations to work, and most of these are not available for windows. But atlas creation tools exist for 2d simple features data, and also 3d tri-surface mesh plots.
+Create brain atlas data sets compatible with the 'ggseg' and 'ggseg3d' plotting packages in 'R'. Provides pipelines for building cortical, subcortical, and white-matter tract atlases from 'FreeSurfer' annotation files, 'GIFTI' and 'CIFTI' surface formats, neuromaps, and volumetric 'NIfTI' images. Most atlas creation workflows require 'FreeSurfer' and are not available on Windows.
 }
 \seealso{
 Useful links:
@@ -19,11 +19,11 @@ Useful links:
 
 }
 \author{
-\strong{Maintainer}: Athanasia Mo Mowinckel \email{a.m.mowinckel@psykologi.uio.no} (\href{https://orcid.org/0000-0002-5756-0223}{ORCID}) (drmowinckels)
+\strong{Maintainer}: Athanasia Mo Mowinckel \email{a.m.mowinckel@psykologi.uio.no} (\href{https://orcid.org/0000-0002-5756-0223}{ORCID}) (drmowinckels) [copyright holder]
 
 Other contributors:
 \itemize{
-  \item Didac Vidal-Piñeiro \email{d.v.pineiro@psykologi.uio.no} (\href{https://orcid.org/0000-0001-9997-9156}{ORCID}) [contributor]
+  \item Didac Vidal-Piñeiro \email{d.v.pineiro@psykologi.uio.no} (\href{https://orcid.org/0000-0001-9997-9156}{ORCID}) [contributor, copyright holder]
   \item John Muschelli \email{muschellij2@gmail.com} (\href{https://orcid.org/0000-0001-6469-1750}{ORCID}) [contributor]
 }
 

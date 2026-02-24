@@ -17,6 +17,14 @@ Read a FreeSurfer color lookup table file (e.g., \code{FreeSurferColorLUT.txt}
 or \code{ASegStatsLUT.txt}). These files map label indices to region names
 and RGBA colours.
 }
+\examples{
+ctab_file <- tempfile()
+writeLines(c(
+  "  0  Unknown                         0   0   0   0",
+  "  1  Left-Cerebral-Cortex          205 130 176   0"
+), ctab_file)
+read_ctab(ctab_file)
+}
 \seealso{
 \code{\link[=get_ctab]{get_ctab()}} to read and add hex colours, \code{\link[=write_ctab]{write_ctab()}} to write
 }

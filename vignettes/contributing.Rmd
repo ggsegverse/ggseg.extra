@@ -185,7 +185,7 @@ Once your package is ready and hosted publicly, submit it to the ggsegverse r-un
 
 ### 1. Fork the r-universe repository
 
-Go to [github.com/ggsegverse/universe](https://github.com/ggsegverse/universe) and fork the repository.
+Go to [source repository for r-universe setup](https://github.com/ggsegverse/ggsegverse.r-universe.dev) and fork the repository.
 
 ### 2. Edit packages.json
 

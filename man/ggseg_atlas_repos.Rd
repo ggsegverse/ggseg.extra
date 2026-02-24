@@ -12,6 +12,9 @@ to find Yeo atlas packages).}
 
 \item{...}{Additional arguments passed to \code{\link[base:grep]{base::grep()}}.}
 }
+\value{
+A data.frame of available atlas packages.
+}
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}}
 

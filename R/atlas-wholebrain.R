@@ -615,7 +615,7 @@ wholebrain_classify_labels <- function(
         "Subcortical labels not found in data: {.val {unmatched}}"
       )
     }
-    classified_subcortical <- subcortical_labels
+    classified_subcortical <- intersect(subcortical_labels, all_labels)
   }
 
   remaining <- setdiff(

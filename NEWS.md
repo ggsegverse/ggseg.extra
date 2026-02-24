@@ -1,3 +1,21 @@
+# ggseg.extra 2.0.0
+
+- Major rewrite of atlas creation pipelines with modular step-based architecture
+- Added GIFTI (`.label.gii`) and CIFTI (`.dlabel.nii`) annotation support
+- Added neuromaps surface and volume annotation pipelines
+- Added whole-brain atlas creation from volumetric parcellations
+- Added white-matter tract atlas creation from tractography files
+- Added three-level verbosity control (silent/standard/debug)
+- Deprecated `ggseg_atlas_repos()`, `install_ggseg_atlas()`, and
+  `install_ggseg_atlas_all()` in favour of 'ggseg.hub'
+- Moved `convert_legacy_brain_atlas()` to 'ggseg.formats' (re-exported)
+- Removed rgdal, purrr, reticulate, and tidyr dependencies
+- Replaced reticulate/kaleido snapshots with chromote
+- Protected all parallel operations against multicore fork crashes
+- Removed dead FreeSurfer wrapper functions
+- Fixed read_ctab for multi-word labels
+- Fixed subcortical label classification in whole-brain pipeline
+
 # ggseg.extra 1.6
 
 ## 1.6.0

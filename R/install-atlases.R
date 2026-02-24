@@ -7,6 +7,7 @@
 #' [ggseg.hub::ggseg_atlas_repos()] instead.
 #'
 #' @inheritParams ggseg.hub::ggseg_atlas_repos
+#' @return A data.frame of available atlas packages.
 #' @export
 ggseg_atlas_repos <- function(pattern = NULL, ...) {
   lifecycle::deprecate_warn(
@@ -29,6 +30,7 @@ ggseg_atlas_repos <- function(pattern = NULL, ...) {
 #'
 #' @inheritParams ggseg.hub::install_ggseg_atlas
 #' @param repos Repository URLs to install from.
+#' @return None, called for side effects (package installation).
 #' @export
 install_ggseg_atlas <- function(
   package,
@@ -61,6 +63,7 @@ install_ggseg_atlas <- function(
 #'
 #' @inheritParams ggseg.hub::install_ggseg_atlas_all
 #' @param repos Repository URLs to install from.
+#' @return None, called for side effects (package installation).
 #' @export
 install_ggseg_atlas_all <- function(
   repos = c(

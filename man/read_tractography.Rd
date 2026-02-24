@@ -17,6 +17,11 @@ A list of matrices, one per streamline. Each matrix has N rows
 Load streamlines from a tractography file. Supports TrackVis (\code{.trk}) and
 MRtrix (\code{.tck}) formats. The file format is detected from the extension.
 }
+\examples{
+\dontrun{
+streamlines <- read_tractography("bundle.trk")
+}
+}
 \seealso{
 \code{\link[=read_trk]{read_trk()}}, \code{\link[=read_tck]{read_tck()}} for format-specific readers
 }

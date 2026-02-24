@@ -206,12 +206,9 @@ tract_create_snapshots <- function(
   cortex_labels <- detect_cortex_labels(aseg_vol)
 
   cortex_vol <- array(0L, dim = dims)
-  invisible(lapply(
-    c(cortex_labels$left, cortex_labels$right),
-    function(lbl) {
-      cortex_vol[aseg_vol == lbl] <<- 1L
-    }
-  ))
+  for (lbl in c(cortex_labels$left, cortex_labels$right)) {
+    cortex_vol[aseg_vol == lbl] <- 1L
+  }
 
   snapshot_grid <- expand.grid(
     view_idx = seq_len(nrow(views)),

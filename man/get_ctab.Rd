@@ -18,6 +18,13 @@ index) and \code{color} (hex colour code).
 Reads a FreeSurfer color lookup table and adds hex colour codes for
 use in plotting.
 }
+\examples{
+ct <- data.frame(
+  idx = 0:1, label = c("Unknown", "Region1"),
+  R = c(0L, 205L), G = c(0L, 130L), B = c(0L, 176L), A = c(0L, 0L)
+)
+get_ctab(ct)
+}
 \seealso{
 \code{\link[=read_ctab]{read_ctab()}}, \code{\link[=is_ctab]{is_ctab()}}
 }

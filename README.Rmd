@@ -13,47 +13,42 @@ knitr::opts_chunk$set(
   out.width = "100%",
   echo = TRUE
 )
-library(ggseg.extra)
-atlases <- ggseg_atlas_repos()
-atlases <- atlases[
-  grep("ggseg$|ggseg.extra$|ggseg3d$", atlases$Package, invert = TRUE),
-]
 ```
 
 
-# ggseg.extra <img src="man/figures/logo.png" align="right" alt="" width="120" />  
+# ggseg.extra <img src="man/figures/logo.png" align="right" alt="" width="120" />
 
 <!-- badges: start -->
 [![Coverage Status](https://raw.githubusercontent.com/ggsegverse/ggseg.extra/coverage/badges/coverage.svg)](https://github.com/ggsegverse/ggseg.extra/actions/workflows/test-coverage.yaml)
 [![CRAN status](https://www.r-pkg.org/badges/version/ggseg.extra)](https://CRAN.R-project.org/package=ggseg.extra)
-[![Lifecycle: stable](https://img.shields.io/badge/lifecycle-stable-brightgreen.svg)](https://www.tidyverse.org/lifecycle/#stable)
+[![Lifecycle: stable](https://img.shields.io/badge/lifecycle-stable-brightgreen.svg)](https://lifecycle.r-lib.org/articles/stages.html)
 [![R-CMD-check](https://github.com/ggsegverse/ggseg.extra/workflows/R-CMD-check/badge.svg)](https://github.com/ggsegverse/ggseg.extra/actions)
-[![code-quality](https://github.com/ggsegverse/ggseg.extra/actions/workflows/code-quality.yaml/badge.svg)](https://github.com/ggsegverse/ggseg.extra/actions/workflows/code-quality.yaml)
-[![pkgcheck](https://github.com/ggsegverse/ggseg.extra/workflows/pkgcheck/badge.svg)](https://github.com/ggsegverse/ggseg.extra/actions?query=workflow%3Apkgcheck)
 <!-- badges: end -->
 
 
-This package contains information on verified atlases compatible for use in [ggseg](https://ggsegverse.github.io/ggseg) and [ggseg3d](https://ggsegverse.github.io/ggseg3d) plotting packages in R.
-It also contains functions and pipelines to create custom atlases.
+This package provides pipelines for creating brain atlas data sets compatible with the [ggseg](https://ggsegverse.github.io/ggseg/) and [ggseg3d](https://ggsegverse.github.io/ggseg3d/) plotting packages in R.
 
-## Installing 
+## Installing
 
-We recommend installing this package from its [r-universe](https://ggsegverse.r-universe.dev/#builds) build:
+Install from CRAN:
 
 ```{r, eval = FALSE}
-# Enable this universe
+install.packages("ggseg.extra")
+```
+
+Or install the development version from [r-universe](https://ggsegverse.r-universe.dev/#builds):
+
+```{r, eval = FALSE}
 options(
   repos = c(
     ggsegverse = "https://ggsegverse.r-universe.dev",
     CRAN = "https://cloud.r-project.org"
   )
 )
-
-# Install some packages
 install.packages("ggseg.extra")
 ```
 
-Alternatively, install the package with the remotes package from github.
+Or from GitHub:
 
 ```{r, eval = FALSE}
 # install.packages("remotes")
@@ -70,63 +65,24 @@ pak::pak("drmowinckels/freesurfer@refactor")
 ```
 
 ## Create custom atlases
-We have tutorials on how to make atlases available in the `Articles` of the [package documentation page](https://ggsegverse.github.io/ggseg.extra/). 
+
+We have tutorials on how to make atlases available in the `Articles` of the [package documentation page](https://ggsegverse.github.io/ggseg.extra/).
 Currently, the pipeline for making 3d atlases needs FreeSurfer to be installed on your system and a ready `.annot` file to use for the conversions.
 Improvements to the pipeline in creating cortical atlases both for ggseg and ggseg3d is still being developed.
-Pipelines for creating sub-cortical atlases of any kind are still in their infancy, and we do not yet have good solutions for their creation. 
+Pipelines for creating sub-cortical atlases of any kind are still in their infancy, and we do not yet have good solutions for their creation.
 Suggestions for improvement are welcome through GH issues or direct Pull requests.
-
-## Available atlases
-There are currently `r nrow(atlases)` available atlases across `r length(unique(atlases$Package))` packages. 
-The packages, their repository name and location can be found with:
-
-```{r, echo = FALSE, results='asis'}
-for (i in 1:nrow(atlases)) {
-  atl <- as.character(atlases[i, "Package"])
-
-  # find doi
-  readmeurl <- sprintf(
-    "https://raw.githubusercontent.com/ggsegverse/%s/main/README.Rmd",
-    atl
-  )
-  if (httr::http_error(readmeurl)) {
-    readmeurl <- sprintf(
-      "https://raw.githubusercontent.com/ggsegverse/%s/master/README.Rmd",
-      atl
-    )
-  }
-
-  readme <- readLines(readmeurl)
-  idx <- grep("badges: ", readme)
-  badges <- readme[(idx[1] + 1):(idx[2] - 1)]
-  badges <- c(
-    "",
-    badges[c(grep("\\[!\\[R", badges), grep("\\[!\\[DOI", badges))]
-  )
-
-  cat(
-    sprintf("### [%s](%s)", atl, atlases[i, "RemoteUrl"]),
-    sprintf(
-      '<img src="%s/raw/HEAD/man/figures/logo.png" align="right" alt="%s logo" width="120"/>',
-      atlases[i, "RemoteUrl"],
-      atl
-    ),
-    badges,
-    sprintf("\n%s\n%s\n", atlases[i, "Title"], atlases[i, "Description"]),
-    sep = "\n"
-  )
-}
-```
 
 ## Code of Conduct
 
 Please note that the ggseg.extra project is released with a [Contributor Code of Conduct](https://www.contributor-covenant.org/version/1/0/0/code-of-conduct.html). By contributing to this project, you agree to abide by its terms.
 
-### Report bugs or requests  
-Don't hesitate to ask for support using [github issues](https://github.com/ggsegverse/ggseg.extra/issues), or requesting new atlases. 
-While we would love getting help in creating new atlases, you may also request atlases through the issues, and we will try to get to it. 
+### Report bugs or requests
+
+Don't hesitate to ask for support using [github issues](https://github.com/ggsegverse/ggseg.extra/issues), or requesting new atlases.
+While we would love getting help in creating new atlases, you may also request atlases through the issues, and we will try to get to it.
 
 # Funding
+
 This work is funded by **EU Horizon 2020 Grant** _'Healthy minds 0-100 years: Optimizing the use of European brain imaging cohorts (Lifebrain)'_, with grant agreement `732592`.
 The project has also received funding from the **European Research Council**'s _Starting grant_ (grant agreements `283634`, to Anders Martin Fjell and `313440` to Kristine Beate Walhovd) and _Consolidator Grant_ (grant agreement `771355` to Kristine Beate Walhovd and `725025` to Anders Martin Fjell).
-The project has received funding through multiple grants from the Norwegian Research Council. 
+The project has received funding through multiple grants from the Norwegian Research Council.

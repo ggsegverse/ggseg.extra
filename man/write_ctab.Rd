@@ -17,6 +17,14 @@ Invisibly returns the lines written.
 \description{
 Write a color table to file in FreeSurfer format.
 }
+\examples{
+ct <- data.frame(
+  idx = 0:1, label = c("Unknown", "Region1"),
+  R = c(0L, 205L), G = c(0L, 130L), B = c(0L, 176L), A = c(0L, 0L)
+)
+out <- tempfile()
+write_ctab(ct, out)
+}
 \seealso{
 \code{\link[=read_ctab]{read_ctab()}}, \code{\link[=is_ctab]{is_ctab()}}
 }

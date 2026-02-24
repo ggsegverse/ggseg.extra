@@ -52,7 +52,14 @@ read_volume <- function(file, reorient = TRUE) {
   }
 
   vol <- as.array(vol)
-  drop(vol)
+  vol <- drop(vol)
+  if (length(dim(vol)) != 3L) {
+    cli::cli_abort(c(
+      "Expected a 3D volume, got {length(dim(vol))}D.",
+      "i" = "File: {.path {file}}"
+    ))
+  }
+  vol
 }
 
 #' Read mesh data from PLY file
@@ -345,6 +352,13 @@ read_dpv <- function(path) {
 #' @seealso [get_ctab()] to read and add hex colours, [write_ctab()] to write
 #' @export
 #' @importFrom utils read.table
+#' @examples
+#' ctab_file <- tempfile()
+#' writeLines(c(
+#'   "  0  Unknown                         0   0   0   0",
+#'   "  1  Left-Cerebral-Cortex          205 130 176   0"
+#' ), ctab_file)
+#' read_ctab(ctab_file)
 read_ctab <- function(path) {
   lines <- trimws(readLines(path))
   lines <- lines[nzchar(lines)]
@@ -377,6 +391,13 @@ read_ctab <- function(path) {
 #' @return Invisibly returns the lines written.
 #' @seealso [read_ctab()], [is_ctab()]
 #' @export
+#' @examples
+#' ct <- data.frame(
+#'   idx = 0:1, label = c("Unknown", "Region1"),
+#'   R = c(0L, 205L), G = c(0L, 130L), B = c(0L, 176L), A = c(0L, 0L)
+#' )
+#' out <- tempfile()
+#' write_ctab(ct, out)
 write_ctab <- function(x, path) {
   lls <- apply(x, 1, function(row) ctab_line(row[1], row[2], row[3], row[4], row[5], row[6]))
   lls[length(lls) + 1] <- ""
@@ -390,6 +411,13 @@ write_ctab <- function(x, path) {
 #' @param x Object to check.
 #' @return TRUE if x is a data.frame with the required color table columns.
 #' @export
+#' @examples
+#' ct <- data.frame(
+#'   idx = 0L, label = "Unknown",
+#'   R = 0L, G = 0L, B = 0L, A = 0L
+#' )
+#' is_ctab(ct)
+#' is_ctab(data.frame(x = 1))
 is_ctab <- function(x) {
   if (!is.data.frame(x)) {
     return(FALSE)
@@ -411,6 +439,12 @@ is_ctab <- function(x) {
 #' @seealso [read_ctab()], [is_ctab()]
 #' @export
 #' @importFrom grDevices rgb
+#' @examples
+#' ct <- data.frame(
+#'   idx = 0:1, label = c("Unknown", "Region1"),
+#'   R = c(0L, 205L), G = c(0L, 130L), B = c(0L, 176L), A = c(0L, 0L)
+#' )
+#' get_ctab(ct)
 get_ctab <- function(color_lut) {
   colourtable <- if (is.character(color_lut)) {
     read_ctab(color_lut)
@@ -893,6 +927,10 @@ parse_continuous_values <- function(values, hemi, hemi_short, n_bins) {
 #' @export
 #' @importFrom dplyr tibble bind_rows
 #' @importFrom grDevices hcl.colors
+#' @examples
+#' \dontrun{
+#' atlas_data <- read_neuromaps_volume("map.nii.gz", n_bins = 7)
+#' }
 read_neuromaps_volume <- function(
   nifti_file,
   n_bins = NULL,

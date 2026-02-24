@@ -679,6 +679,10 @@ describe("get_contours full processing path", {
     rast_obj <- structure(list(), class = "mock_rast2")
     assign("[<-.mock_rast2", function(x, i, value) x, envir = globalenv())
     assign("[.mock_rast2", function(x, i) x, envir = globalenv())
+    withr::defer({
+      rm("[<-.mock_rast2", envir = globalenv())
+      rm("[.mock_rast2", envir = globalenv())
+    })
 
     local_mocked_bindings(
       global = function(x, ...) data.frame(max = 255),
@@ -695,9 +699,6 @@ describe("get_contours full processing path", {
     result <- get_contours(rast_obj, max_val = 255)
 
     expect_s3_class(result, "sf")
-
-    rm("[<-.mock_rast2", envir = globalenv())
-    rm("[.mock_rast2", envir = globalenv())
   })
 
   it("returns NULL when all contours are empty geometries", {
@@ -709,6 +710,10 @@ describe("get_contours full processing path", {
     rast_obj <- structure(list(), class = "mock_rast3")
     assign("[<-.mock_rast3", function(x, i, value) x, envir = globalenv())
     assign("[.mock_rast3", function(x, i) x, envir = globalenv())
+    withr::defer({
+      rm("[<-.mock_rast3", envir = globalenv())
+      rm("[.mock_rast3", envir = globalenv())
+    })
 
     local_mocked_bindings(
       global = function(x, ...) data.frame(max = 255),
@@ -723,8 +728,5 @@ describe("get_contours full processing path", {
     result <- get_contours(rast_obj, max_val = 255)
 
     expect_null(result)
-
-    rm("[<-.mock_rast3", envir = globalenv())
-    rm("[.mock_rast3", envir = globalenv())
   })
 })

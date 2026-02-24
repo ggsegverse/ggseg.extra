@@ -172,9 +172,9 @@ subcort_create_snapshots <- function(
   ))
 
   cortex_vol <- array(0L, dim = dims)
-  invisible(lapply(c(cortex_labels$left, cortex_labels$right), function(lbl) {
-    cortex_vol[vol == lbl] <<- 1L
-  }))
+  for (lbl in c(cortex_labels$left, cortex_labels$right)) {
+    cortex_vol[vol == lbl] <- 1L
+  }
 
   invisible(lapply(seq_len(nrow(cortex_slices)), function(i) {
     cs <- cortex_slices[i, ]

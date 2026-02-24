@@ -59,6 +59,7 @@ filter_visible_regions <- function(region_grid, vertices_df) {
 
   meshes <- list(lh = mesh_lh, rh = mesh_rh)
   vnormals <- lapply(meshes, compute_vertex_normals)
+  verbose <- is_verbose(2)
 
   keep <- vapply(seq_len(nrow(region_grid)), function(i) {
     label <- region_grid$region_label[i]
@@ -70,12 +71,31 @@ filter_visible_regions <- function(region_grid, vertices_df) {
     if (is.null(cam)) return(TRUE)
 
     idx <- which(vertices_df$label == label)
-    if (length(idx) == 0) return(TRUE)
+    if (length(idx) == 0) {
+      if (verbose) {
+        cli::cli_alert_info(
+          "No vertex data for {.val {label}}, keeping"
+        )
+      }
+      return(TRUE)
+    }
 
     v_indices <- vertices_df$vertices[[idx[1]]]
-    if (length(v_indices) == 0) return(TRUE)
+    if (length(v_indices) == 0) {
+      if (verbose) {
+        cli::cli_alert_info(
+          "Empty vertices for {.val {label}}, keeping"
+        )
+      }
+      return(TRUE)
+    }
 
-    region_normals <- vnormals[[hemi]][v_indices + 1L, , drop = FALSE]
+    n_verts <- nrow(vnormals[[hemi]])
+    r_indices <- v_indices + 1L
+    r_indices <- r_indices[r_indices >= 1L & r_indices <= n_verts]
+    if (length(r_indices) == 0) return(TRUE)
+
+    region_normals <- vnormals[[hemi]][r_indices, , drop = FALSE]
     region_faces_camera(region_normals, cam)
   }, logical(1))
 

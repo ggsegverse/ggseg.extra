@@ -14,6 +14,9 @@ install_ggseg_atlas_all(
 
 \item{...}{Additional arguments passed to \code{\link[pak:pak]{pak::pak()}}.}
 }
+\value{
+None, called for side effects (package installation).
+}
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}}
 

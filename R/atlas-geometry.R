@@ -308,6 +308,7 @@ build_contour_sf <- function(contours_file, views, cortex_slices = NULL) {
     character(1)
   )
 
+  # Flip y-axis: snapshot PNGs have origin top-left, sf expects bottom-left
   conts$geometry <- conts$geometry * matrix(c(1, 0, 0, -1), 2, 2)
 
   conts <- layout_volumetric_views(conts) # nolint: object_usage_linter.
