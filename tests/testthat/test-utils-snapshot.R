@@ -429,6 +429,7 @@ describe("extract_alpha_mask", {
 
 describe("run_cmd", {
   it("runs commands successfully", {
+    skip_on_os("windows")
     local_mocked_bindings(
       get_fs = function() ""
     )
@@ -438,6 +439,7 @@ describe("run_cmd", {
   })
 
   it("aborts on non-zero exit code", {
+    skip_on_os("windows")
     local_mocked_bindings(
       get_fs = function() ""
     )

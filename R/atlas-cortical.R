@@ -80,8 +80,8 @@
 #'   tolerance = 0.5
 #' )
 #' }
+# nolint next: object_length_linter.
 create_cortical_from_annotation <- function(
-  # nolint: object_length_linter.
   input_annot,
   atlas_name = NULL,
   output_dir = NULL,

@@ -209,7 +209,11 @@ check_magick <- function() {
 
 #' @noRd
 magick_version <- function() {
-  system2("magick", "--version", stdout = TRUE)[1]
+  tryCatch(
+    system2("magick", "--version", stdout = TRUE)[1],
+    error = function(e) "",
+    warning = function(w) ""
+  )
 }
 
 

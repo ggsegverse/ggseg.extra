@@ -52,8 +52,8 @@ describe("mri_vol2surf", {
     )
 
     expect_match(captured_cmd, "mri_vol2surf")
-    expect_match(captured_cmd, "--mov 'input.mgz'", fixed = TRUE)
-    expect_match(captured_cmd, "--o 'output.mgz'", fixed = TRUE)
+    expect_match(captured_cmd, paste("--mov", shQuote("input.mgz")))
+    expect_match(captured_cmd, paste("--o", shQuote("output.mgz")))
     expect_match(captured_cmd, "--hemi lh")
     expect_match(captured_cmd, "--projfrac 0.5")
   })
@@ -243,8 +243,8 @@ describe("mri_surf2surf_rereg", {
     )
 
     expect_match(captured_cmd, "mri_surf2surf")
-    expect_match(captured_cmd, "--srcsubject 'bert'")
-    expect_match(captured_cmd, "--sval-annot 'aparc.DKTatlas'")
+    expect_match(captured_cmd, paste("--srcsubject", shQuote("bert")))
+    expect_match(captured_cmd, paste("--sval-annot", shQuote("aparc.DKTatlas")))
     expect_match(captured_cmd, "--hemi lh")
   })
 })

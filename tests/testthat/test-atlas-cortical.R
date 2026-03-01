@@ -407,7 +407,8 @@ describe("create_cortical_from_labels", {
 
   it("errors when label files not found", {
     local_mocked_bindings(
-      check_fs = function(abort = FALSE) invisible(TRUE)
+      check_fs = function(abort = FALSE) invisible(TRUE),
+      check_magick = function() invisible(TRUE)
     )
     expect_error(
       create_cortical_from_labels(
@@ -554,7 +555,8 @@ describe("cortical_pipeline verbose and cleanup paths", {
 
     scrub <- function(x) {
       x <- gsub("\\[\\d+ms\\]", "[<TIME>]", x)
-      gsub("/tmp/Rtmp[^ ]*|/var/folders[^ ]*", "<TMPDIR>", x)
+      x <- gsub("/tmp/Rtmp[^ ']*|/var/folders[^ ']*", "<TMPDIR>", x)
+      gsub("[A-Za-z]:[^ ']*Rtmp[^ ']*", "<TMPDIR>", x)
     }
     expect_snapshot(
       cortical_pipeline(
@@ -710,7 +712,8 @@ describe("create_cortical_from_annotation verbose output", {
 
     scrub <- function(x) {
       x <- gsub("\\[\\d+ms\\]", "[<TIME>]", x)
-      gsub("/tmp/Rtmp[^ ]*|/var/folders[^ ]*", "<TMPDIR>", x)
+      x <- gsub("/tmp/Rtmp[^ ']*|/var/folders[^ ']*", "<TMPDIR>", x)
+      gsub("[A-Za-z]:[^ ']*Rtmp[^ ']*", "<TMPDIR>", x)
     }
     expect_snapshot(
       create_cortical_from_annotation(
@@ -877,7 +880,8 @@ describe("create_cortical_from_labels verbose and LUT paths", {
 
     scrub <- function(x) {
       x <- gsub("\\[\\d+ms\\]", "[<TIME>]", x)
-      gsub("/tmp/Rtmp[^ ]*|/var/folders[^ ]*", "<TMPDIR>", x)
+      x <- gsub("/tmp/Rtmp[^ ']*|/var/folders[^ ']*", "<TMPDIR>", x)
+      gsub("[A-Za-z]:[^ ']*Rtmp[^ ']*", "<TMPDIR>", x)
     }
     expect_snapshot(
       create_cortical_from_labels(
