@@ -144,6 +144,7 @@ mock_sf_polygon <- function(label = "test", view = "lateral") {
   )
 }
 
+# nolint next: object_length_linter.
 mock_cortical_pipeline_bindings <- function(captured = NULL) {
   mocks <- list(
     cortical_brain_snapshots = function(...) NULL,

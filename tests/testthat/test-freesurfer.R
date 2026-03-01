@@ -340,5 +340,3 @@ describe("surf2asc", {
     expect_s3_class(result, "data.frame")
   })
 })
-
-

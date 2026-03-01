@@ -364,7 +364,10 @@ read_ctab <- function(path) {
   lines <- lines[nzchar(lines)]
   parsed <- regmatches(
     lines,
-    regexec("^\\s*(\\d+)\\s+(.+?)\\s+(\\d+)\\s+(\\d+)\\s+(\\d+)\\s+(\\d+)\\s*$", lines)
+    regexec(
+      "^\\s*(\\d+)\\s+(.+?)\\s+(\\d+)\\s+(\\d+)\\s+(\\d+)\\s+(\\d+)\\s*$",
+      lines
+    )
   )
   rows <- lapply(parsed, function(m) {
     if (length(m) == 0) return(NULL)
@@ -399,7 +402,9 @@ read_ctab <- function(path) {
 #' out <- tempfile()
 #' write_ctab(ct, out)
 write_ctab <- function(x, path) {
-  lls <- apply(x, 1, function(row) ctab_line(row[1], row[2], row[3], row[4], row[5], row[6]))
+  lls <- apply(x, 1, function(row) {
+    ctab_line(row[1], row[2], row[3], row[4], row[5], row[6])
+  })
   lls[length(lls) + 1] <- ""
   writeLines(lls, path)
   invisible(lls)

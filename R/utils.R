@@ -8,9 +8,10 @@ with_safe_plan <- function(expr) {
   if (inherits(plan(), "multicore")) {
     old_plan <- plan(multisession)
     on.exit(plan(old_plan), add = TRUE)
-    cli::cli_alert_info(
-      "Switching from multicore to multisession: fork is incompatible with chromote."
-    )
+    cli::cli_alert_info(paste0(
+      "Switching from multicore to multisession:",
+      " fork is incompatible with chromote."
+    ))
   }
   force(expr)
 }

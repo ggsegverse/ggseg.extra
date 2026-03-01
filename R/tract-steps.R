@@ -372,7 +372,9 @@ resolve_tube_radius <- function(
     )
   }
 
-  cli::cli_abort(
-    "{.arg tube_radius} must be numeric or the string {.val density}, not {.val {tube_radius}}"
-  )
+  cli::cli_abort(paste(
+    "{.arg tube_radius} must be numeric or",
+    "the string {.val density},",
+    "not {.val {tube_radius}}"
+  ))
 }

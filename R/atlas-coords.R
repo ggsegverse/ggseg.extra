@@ -194,7 +194,8 @@ restack <- function(views) {
   for (idx in seq_along(views)) {
     x_offset <- x_pos + half_widths[idx]
     positioned[[idx]] <- views[[idx]]
-    positioned[[idx]]$geometry <- views[[idx]]$geometry + c(x_offset, max_extent)
+    positioned[[idx]]$geometry <-
+      views[[idx]]$geometry + c(x_offset, max_extent)
     x_pos <- x_pos + widths[idx] + gap
   }
 

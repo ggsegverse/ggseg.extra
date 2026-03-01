@@ -112,7 +112,10 @@ mri_pretess <- function(
   }
 
   label <- as.integer(label)
-  cmd <- paste(fscmd, shQuote(template), label, shQuote(template), shQuote(output_file))
+  cmd <- paste(
+    fscmd, shQuote(template), label,
+    shQuote(template), shQuote(output_file)
+  )
 
   run_cmd(cmd, verbose = verbose)
 }
@@ -274,10 +277,10 @@ surf2asc <- function(input_file, output_file, verbose = get_verbose()) {
 
   asc_path <- gsub("\\.dpv", "\\.asc", output_file)
   if (!file.rename(asc_path, output_file)) {
-    cli::cli_abort("Failed to rename {.path {asc_path}} to {.path {output_file}}")
+    cli::cli_abort(
+      "Failed to rename {.path {asc_path}} to {.path {output_file}}"
+    )
   }
 
   read_dpv(output_file)
 }
-
-

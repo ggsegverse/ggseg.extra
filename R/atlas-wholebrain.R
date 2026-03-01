@@ -466,7 +466,7 @@ wholebrain_project_to_surface <- function(
   all_data <- list()
 
   for (hemi_short in c("lh", "rh")) {
-    hemi <- hemi_to_long(hemi_short)
+    hemi <- hemi_to_long(hemi_short) # nolint: object_usage_linter
     output_mgz <- file.path(surf_dir, paste0(hemi_short, "_overlay.nii.gz"))
 
     reg_opts <- paste0(
@@ -693,6 +693,7 @@ wholebrain_classify_labels <- function(
 #' @param split Classification result from step 2 (needs `subcortical_labels`).
 #' @return A list with `atlas_data` (refined) and `colortable` (unchanged).
 #' @noRd
+# nolint next: object_length_linter.
 wholebrain_refine_cortical_projection <- function(
   config, dirs, projection, split
 ) {
@@ -873,6 +874,7 @@ wholebrain_run_subcortical <- function(
 #' (FS left cortex), right hemisphere to label 42 (FS right cortex).
 #' All other labels are zeroed.
 #' @noRd
+# nolint next: object_length_linter.
 wholebrain_prepare_subcortical_volume <- function(
   input_volume, subcortical_idx, cortical_idx, output_file
 ) {

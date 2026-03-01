@@ -148,7 +148,8 @@ create_cortical_from_annotation <- function(
 #' @param input_files Character vector for "Input files:" log line
 #' @param hemisphere Hemisphere codes for pipeline
 #' @param views View names for pipeline
-#' @param region_snapshot_fn Snapshot function (default: cortical_region_snapshots)
+#' @param region_snapshot_fn Snapshot function
+#'   (default: cortical_region_snapshots)
 #' @return ggseg_atlas object
 #' @noRd
 run_cortical_creation <- function(

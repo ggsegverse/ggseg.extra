@@ -405,7 +405,9 @@ describe("create_wholebrain_from_volume pipeline flow", {
         }
       },
       write_ctab = function(...) invisible(NULL),
-      wholebrain_prepare_subcortical_volume = function(...) invisible("filtered.nii.gz"),
+      wholebrain_prepare_subcortical_volume = function(...) {
+        invisible("filtered.nii.gz")
+      },
       create_subcortical_from_volume = function(...) {
         captured_subcort_args <<- list(...)
         structure(
@@ -469,7 +471,9 @@ describe("create_wholebrain_from_volume pipeline flow", {
         ))
       },
       write_ctab = function(...) invisible(NULL),
-      wholebrain_prepare_subcortical_volume = function(...) invisible("filtered.nii.gz"),
+      wholebrain_prepare_subcortical_volume = function(...) {
+        invisible("filtered.nii.gz")
+      },
       create_subcortical_from_volume = function(...) {
         structure(
           list(core = data.frame(hemi = NA, region = "b", label = "b")),
@@ -803,7 +807,9 @@ describe("wholebrain_run_subcortical verbose logging", {
 
     local_mocked_bindings(
       write_ctab = function(...) invisible(NULL),
-      wholebrain_prepare_subcortical_volume = function(...) invisible("filtered.nii.gz"),
+      wholebrain_prepare_subcortical_volume = function(...) {
+        invisible("filtered.nii.gz")
+      },
       create_subcortical_from_volume = function(...) {
         structure(
           list(core = data.frame(hemi = NA, region = "b")),
@@ -852,7 +858,9 @@ describe("wholebrain_run_subcortical verbose logging", {
         captured_lut <<- ct
         invisible(NULL)
       },
-      wholebrain_prepare_subcortical_volume = function(...) invisible("filtered.nii.gz"),
+      wholebrain_prepare_subcortical_volume = function(...) {
+        invisible("filtered.nii.gz")
+      },
       create_subcortical_from_volume = function(...) {
         structure(
           list(core = data.frame(hemi = NA, region = "subcort_b")),

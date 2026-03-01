@@ -406,6 +406,9 @@ describe("create_cortical_from_labels", {
   })
 
   it("errors when label files not found", {
+    local_mocked_bindings(
+      check_fs = function(abort = FALSE) invisible(TRUE)
+    )
     expect_error(
       create_cortical_from_labels(
         c("nonexistent.label"),
@@ -769,7 +772,10 @@ describe("create_cortical_from_annotation full pipeline path", {
 
     expect_s3_class(result, "ggseg_atlas")
     expect_equal(captured_pipeline_args$atlas_name, "test")
-    expect_equal(captured_pipeline_args$components$palette, c(lh_frontal = "#FF0000"))
+    expect_equal(
+      captured_pipeline_args$components$palette,
+      c(lh_frontal = "#FF0000")
+    )
     expect_s3_class(captured_pipeline_args$atlas_3d, "ggseg_atlas")
   })
 })
@@ -1242,7 +1248,9 @@ describe("cortical_region_snapshots invisible-region filtering", {
   it("skips regions that face away from the camera", {
     captured <- list()
     local_mocked_bindings(
-      snapshot_region_batch = function(atlas, region_label, hemisphere, views, ...) {
+      snapshot_region_batch = function(
+        atlas, region_label, hemisphere, views, ...
+      ) {
         captured[[length(captured) + 1]] <<- list(
           region_label = region_label,
           hemisphere = hemisphere,

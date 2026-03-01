@@ -409,7 +409,11 @@ snapshot_widget_batch <- function(
     }
 
     session$Runtime$evaluate(
-      "var el = document.querySelector('.ggseg3d.html-widget'); if (el && el._ggseg3d_renderer) { cancelAnimationFrame(el._ggseg3d_renderer.animationId); }"
+      paste0(
+        "var el = document.querySelector('.ggseg3d.html-widget');",
+        " if (el && el._ggseg3d_renderer) {",
+        " cancelAnimationFrame(el._ggseg3d_renderer.animationId); }"
+      )
     )
   }
 
@@ -474,7 +478,9 @@ snapshot_brain_full_batch <- function(
     files <- files[needed]
   }
 
-  widget <- build_brain_widget(atlas, hemisphere, surface, na_colour = "#CCCCCC")
+  widget <- build_brain_widget(
+    atlas, hemisphere, surface, na_colour = "#CCCCCC"
+  )
 
   snapshot_widget_batch(
     widget,
@@ -704,7 +710,9 @@ snapshot_volume_slice <- function(
 
   pos <- switch(view, "axial" = z, "coronal" = y, "sagittal" = x)
   slice <- extract_slice_2d(vol, view, pos)
-  render_slice_png(slice, outfile, colour = colour, width = width, height = height)
+  render_slice_png(
+    slice, outfile, colour = colour, width = width, height = height
+  )
 }
 
 
@@ -749,5 +757,7 @@ snapshot_partial_projection <- function(
   }
 
   proj <- volume_projection(vol, view, start, end, hemi = hemi)
-  render_slice_png(proj, outfile, colour = colour, width = width, height = height)
+  render_slice_png(
+    proj, outfile, colour = colour, width = width, height = height
+  )
 }

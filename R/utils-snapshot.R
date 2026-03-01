@@ -157,9 +157,11 @@ parse_contour_filenames <- function(filenames) {
   fn_parts <- strsplit(filenames_no_ext, "_")
   too_short <- vapply(fn_parts, length, integer(1)) < 3
   if (any(too_short)) {
-    cli::cli_abort(
-      "Contour filenames must have at least 3 underscore-separated parts: {.val {filenames[too_short]}}"
-    )
+    cli::cli_abort(paste(
+      "Contour filenames must have at least",
+      "3 underscore-separated parts:",
+      "{.val {filenames[too_short]}}"
+    ))
   }
 
   result <- data.frame(
