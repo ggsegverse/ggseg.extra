@@ -62,7 +62,6 @@ Suggests:
     ggplot2,
     gifti,
     ggseg,
-    ggseg.hub,
     neuromapr,
     tibble,
     hexSticker,

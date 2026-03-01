@@ -13,85 +13,21 @@ vignette: >
 library(ggseg.extra)
 ```
 
-ggseg.extra does two things: it helps you find and install brain atlases that work with ggseg and ggseg3d, and it provides the tools to create your own from neuroimaging data.
-
-## Finding and installing atlases
-
-Atlases live in their own packages, distributed through the [ggsegverse r-universe](https://ggsegverse.r-universe.dev).
-Browse what's available:
-
-```{r}
-#| label: list-repos
-ggseg_atlas_repos()
-```
-
-Search by name:
-
-```{r}
-#| label: search-repos
-ggseg_atlas_repos("yeo", ignore.case = TRUE)
-```
-
-Install directly from r-universe:
-
-```{r}
-#| label: install-atlas
-#| eval: false
-install_ggseg_atlas("ggsegDKT")
-```
-
-## Plotting with ggseg (2D)
-
-Once installed, atlases work directly with ggseg:
-
-```{r}
-#| label: ggseg-example
-#| eval: false
-library(ggplot2)
-library(ggseg)
-library(ggsegDKT)
-
-ggplot() +
-  geom_brain(atlas = dkt)
-```
-
-Most atlases include colour palettes from their original publications:
-
-```{r}
-#| label: ggseg-scale
-#| eval: false
-ggplot() +
-  geom_brain(atlas = dkt) +
-  scale_fill_brain("dkt", package = "ggsegDKT")
-```
-
-## Plotting with ggseg3d (3D)
-
-The same atlas works with ggseg3d for interactive 3D visualisation:
-
-```{r}
-#| label: ggseg3d-example
-#| eval: false
-library(ggseg3d)
-
-ggseg3d(atlas = dkt) |>
-  pan_camera("right lateral")
-```
-
-One atlas, both packages.
-
-## Creating your own atlases
-
-ggseg.extra provides four functions to create brain atlases from different neuroimaging inputs:
+ggseg.extra provides pipelines for creating brain atlas data sets compatible with the ggseg and ggseg3d plotting packages.
+It supports multiple neuroimaging input formats:
 
 | Function | Input | Use case |
 |----------|-------|----------|
-| `create_cortical_from_annotation()` | FreeSurfer annotation files | Cortical parcellations (DK, DKT, Yeo networks) |
+| `create_cortical_from_annotation()` | FreeSurfer `.annot` files | Cortical parcellations (DK, DKT, Yeo networks) |
+| `create_cortical_from_labels()` | Individual `.label` files | Custom region combinations |
+| `create_cortical_from_gifti()` | GIFTI `.label.gii` files | Cortical parcellations in GIFTI format |
+| `create_cortical_from_cifti()` | CIFTI `.dlabel.nii` files | HCP-style cortical parcellations |
+| `create_cortical_from_neuromaps()` | Neuromaps `.func.gii` or `.nii` files | Brain maps and parcellations from neuromaps |
 | `create_subcortical_from_volume()` | Volumetric segmentation | Subcortical structures (thalamus, amygdala) |
-| `create_tract_from_tractography()` | Tractography files (TRK, TCK) | White matter tracts |
-| `create_cortical_from_labels()` | Individual label files | Custom region combinations |
+| `create_wholebrain_from_volume()` | Volumetric parcellation with colour table | Combined cortical + subcortical atlases |
+| `create_tract_from_tractography()` | Tractography files (`.trk`, `.tck`) | White matter tracts |
 
-All four produce a `ggseg_atlas` object that works with both ggseg and ggseg3d.
+All functions produce a `ggseg_atlas` object that works with both ggseg (2D) and ggseg3d (3D).
 
 ### What's inside a ggseg_atlas
 
@@ -112,7 +48,10 @@ The full pipeline (`steps = 1:8`) adds 2D polygon extraction, which requires Fre
 #| label: steps-example
 #| eval: false
 annot_files <- file.path(
-  freesurfer::fs_dir(), "subjects", "fsaverage5", "label",
+  freesurfer::fs_dir(),
+  "subjects",
+  "fsaverage5",
+  "label",
   c("lh.aparc.annot", "rh.aparc.annot")
 )
 
@@ -144,13 +83,16 @@ Creating atlases (as opposed to using pre-built ones) requires:
 - [ImageMagick](https://imagemagick.org/) for 2D geometry extraction
 - Chrome or Chromium for 3D screenshots
 
-See `vignette("system-setup")` for installation details and parallel processing setup.
+Run `setup_sitrep()` to check your setup, or see `vignette("system-setup")` for installation details and parallel processing setup.
 
 ## Tutorials
 
 The package includes step-by-step tutorials that walk through complete atlas creation pipelines:
 
 - [Cortical atlas](tutorial-cortical-atlas.html) --- from FreeSurfer annotation files
+- [Label-based atlas](tutorial-label-atlas.html) --- from individual label files
+- [Neuromaps atlas](tutorial-neuromaps-atlas.html) --- from neuromaps surface or volume data
 - [Subcortical atlas](tutorial-subcortical-atlas.html) --- from volumetric segmentation
 - [Tract atlas](tutorial-tract-atlas.html) --- from tractography data
-- [Label-based atlas](tutorial-label-atlas.html) --- from individual label files
+
+See also `vignette("pipeline-configuration")` for controlling verbosity, parallelism, and output directories.
