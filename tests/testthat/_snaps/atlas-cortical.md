@@ -45,7 +45,7 @@
       
       -- Creating brain atlas "test" -------------------------------------------------
       i Input files: 'lh.test.annot'
-      i Setting output directory to '<TMPDIR>
+      i Setting output directory to '<TMPDIR>'
       i 1/8 Reading annotation files
       v 1/8 Reading annotation files [<TIME>]
       
@@ -75,7 +75,7 @@
       
       -- Creating brain atlas "test_atlas" -------------------------------------------
       i Input files: 'testdata/cortical/lh.region1.label', 'testdata/cortical/lh.region2.label', and 'testdata/cortical/rh.region1.label'
-      i Setting output directory to '<TMPDIR>
+      i Setting output directory to '<TMPDIR>'
       i 1/8 Reading 3 label files
     Condition
       Warning in `serializedSize()`:
