@@ -283,18 +283,7 @@ aseg
 
 
 ``` r
-brain_labels(aseg)
-#> Warning: `brain_labels()` was deprecated in
-#> ggseg.formats 0.1.0.
-#> ℹ Please use `atlas_labels()` instead.
-#> ℹ The deprecated feature was likely used
-#>   in the ggseg.extra package.
-#>   Please report the issue at
-#>   <]8;;https://github.com/ggsegverse/ggseg.extra/issueshttps://github.com/ggsegverse/ggseg.extra/issues]8;;>.
-#> This warning is displayed once per
-#> session.
-#> Call ]8;;x-r-run:lifecycle::last_lifecycle_warnings()lifecycle::last_lifecycle_warnings()]8;;
-#> to see where this warning was generated.
+atlas_labels(aseg)
 #>  [1] "Brain-Stem"          
 #>  [2] "CC_Anterior"         
 #>  [3] "CC_Central"          

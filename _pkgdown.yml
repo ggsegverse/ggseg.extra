@@ -18,6 +18,8 @@ navbar:
         - text: Getting Started
         - text: Introduction
           href: articles/ggseg.extra.html
+        - text: Atlas Creation Workflows
+          href: articles/atlas-workflows.html
         - text: System Setup
           href: articles/system-setup.html
         - text: -------
@@ -34,6 +36,8 @@ navbar:
           href: articles/tutorial-neuromaps-atlas.html
         - text: Subcortical Atlas
           href: articles/tutorial-subcortical-atlas.html
+        - text: Whole-Brain Atlas
+          href: articles/tutorial-wholebrain-atlas.html
         - text: Tract Atlas
           href: articles/tutorial-tract-atlas.html
         - text: Label Atlas
@@ -50,6 +54,7 @@ articles:
     navbar: ~
     contents:
       - ggseg.extra
+      - atlas-workflows
       - system-setup
 
   - title: How-To
@@ -64,6 +69,7 @@ articles:
       - tutorial-cortical-atlas
       - tutorial-neuromaps-atlas
       - tutorial-subcortical-atlas
+      - tutorial-wholebrain-atlas
       - tutorial-tract-atlas
       - tutorial-label-atlas
 
@@ -78,18 +84,16 @@ reference:
     contents:
       - starts_with("create_")
 
+  - title: Atlas Manipulation
+    desc: Functions to manipulate and manage brain atlases
+    contents:
+      - starts_with("atlas_")
+
   - title: Atlas Repository
     desc: Create and manage ggseg atlas packages
     contents:
       - setup_atlas_repo
       - setup_sitrep
-
-  - title: Atlas Discovery & Installation
-    desc: Find and install ggseg atlas packages
-    contents:
-      - ggseg_atlas_repos
-      - install_ggseg_atlas
-      - install_ggseg_atlas_all
 
   - title: Color Tables
     desc: Read, write, and manipulate FreeSurfer color tables
@@ -112,3 +116,4 @@ reference:
       - mri_surf2surf_rereg
       - get_verbose
       - is_verbose
+      - as_verbosity

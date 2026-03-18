@@ -1,0 +1,300 @@
+---
+title: "Tutorial: Creating a whole-brain atlas"
+format: html
+---
+
+Most volumetric brain parcellations don't care about the cortical/subcortical boundary.
+They label everything in one file — gyri, nuclei, white matter tracts, ventricles — using a single set of integer IDs.
+The Harvard-Oxford atlas is a classic example: 48 cortical regions and 17 subcortical structures packed into one NIfTI volume.
+
+That's convenient for the parcellation, but awkward for visualization.
+Cortical regions look best projected onto a surface mesh.
+Subcortical structures need 3D volumetric rendering.
+`create_wholebrain_from_volume()` handles both in a single pipeline call, but the setup demands more care than the purely cortical or subcortical tutorials.
+
+This tutorial walks through the real Harvard-Oxford atlas creation pipeline — the same code that produces the ggsegHO package.
+It covers the parts that trip people up: label ID conflicts, the cortical/subcortical classification, and the two-pass verification workflow.
+
+## What you need
+
+- FreeSurfer installed with the `fsaverage5` subject
+- ImageMagick for 2D geometry extraction
+- Chrome/Chromium for 3D screenshots
+- The Harvard-Oxford combined atlas volume (available from [NeuroVault collection 262](https://neurovault.org/collections/262/))
+
+``` r
+library(ggseg.extra)
+library(RNifti)
+library(dplyr)
+```
+
+## The label ID problem
+
+Here is the thing that will silently ruin your atlas if you don't catch it.
+
+The Harvard-Oxford combined volume uses IDs 3–11 for left subcortical structures (3 = Left Lateral Ventricle, 4 = Left Thalamus, etc.).
+FreeSurfer's subcortical pipeline uses label 3 internally as a reference for left cortex outline geometry.
+If your atlas also has a label 3, the pipeline can't tell which is which, and the brain outline gets contaminated with ventricle voxels.
+
+The fix is straightforward: remap subcortical IDs to a range that doesn't collide with FreeSurfer's reserved labels.
+Adding 200 to every subcortical ID puts them safely out of the way:
+
+``` r
+vol <- readNifti("data-raw/HarvardOxford-cort_and_sub-maxprob-thr25-1mm.nii.gz")
+arr <- as.array(vol)
+
+subcort_orig_ids <- c(3:11, 14:21)
+subcort_remapped_ids <- subcort_orig_ids + 200L
+
+remapped <- array(0L, dim = dim(arr))
+for (i in seq_along(subcort_orig_ids)) {
+  remapped[arr == subcort_orig_ids[i]] <- subcort_remapped_ids[i]
+}
+for (idx in 101:148) {
+  remapped[arr == idx] <- idx
+}
+
+remapped_path <- "data-raw/ho_combined_remapped.nii.gz"
+writeNifti(asNifti(remapped, reference = vol), remapped_path)
+```
+
+Two things to notice.
+First, the cortical IDs (101–148) are copied as-is because they're already well above FreeSurfer's reserved range.
+Second, the original white matter labels (IDs 1 and 12) are deliberately left out — they get zeroed, which is exactly what you want.
+Unlisted IDs are automatically excluded from the atlas.
+
+## Building a lookup table with type classification
+
+The wholebrain pipeline needs to know which labels are cortical and which are subcortical.
+There are three ways to tell it (see the function documentation for the full priority system), but the most reliable is a `type` column in the lookup table:
+
+``` r
+subcortical_labels <- c(
+  "Left Lateral Ventricle", "Left Thalamus", "Left Caudate",
+  "Left Putamen", "Left Pallidum", "Brain-Stem",
+  "Left Hippocampus", "Left Amygdala", "Left Accumbens",
+  "Right Lateral Ventricle", "Right Thalamus", "Right Caudate",
+  "Right Putamen", "Right Pallidum", "Right Hippocampus",
+  "Right Amygdala", "Right Accumbens"
+)
+
+cortical_labels <- c(
+  "Frontal Pole", "Insular Cortex",
+  "Superior Frontal Gyrus", "Middle Frontal Gyrus",
+  "Inferior Frontal Gyrus pars triangularis",
+  "Inferior Frontal Gyrus pars opercularis",
+  "Precentral Gyrus", "Temporal Pole",
+  "Superior Temporal Gyrus anterior",
+  "Superior Temporal Gyrus posterior",
+  "Middle Temporal Gyrus anterior",
+  "Middle Temporal Gyrus posterior",
+  "Middle Temporal Gyrus temporooccipital",
+  "Inferior Temporal Gyrus anterior",
+  "Inferior Temporal Gyrus posterior",
+  "Inferior Temporal Gyrus temporooccipital",
+  "Postcentral Gyrus", "Superior Parietal Lobule",
+  "Supramarginal Gyrus anterior", "Supramarginal Gyrus posterior",
+  "Angular Gyrus",
+  "Lateral Occipital Cortex superior",
+  "Lateral Occipital Cortex inferior",
+  "Intracalcarine Cortex", "Frontal Medial Cortex",
+  "Juxtapositional Lobule Cortex", "Subcallosal Cortex",
+  "Paracingulate Gyrus",
+  "Cingulate Gyrus anterior", "Cingulate Gyrus posterior",
+  "Precuneous Cortex", "Cuneal Cortex",
+  "Frontal Orbital Cortex",
+  "Parahippocampal Gyrus anterior",
+  "Parahippocampal Gyrus posterior",
+  "Lingual Gyrus",
+  "Temporal Fusiform Cortex anterior",
+  "Temporal Fusiform Cortex posterior",
+  "Temporal Occipital Fusiform Cortex",
+  "Occipital Fusiform Gyrus",
+  "Frontal Operculum Cortex", "Central Opercular Cortex",
+  "Parietal Operculum Cortex", "Planum Polare",
+  "Heschls Gyrus", "Planum Temporale",
+  "Supracalcarine Cortex", "Occipital Pole"
+)
+
+set.seed(42)
+n <- length(cortical_labels) + length(subcortical_labels)
+
+lut <- data.frame(
+  idx = c(subcort_remapped_ids, 101:148),
+  label = c(subcortical_labels, cortical_labels),
+  R = sample(50:220, n, replace = TRUE),
+  G = sample(50:220, n, replace = TRUE),
+  B = sample(50:220, n, replace = TRUE),
+  A = rep(255L, n),
+  type = c(
+    rep("subcortical", length(subcortical_labels)),
+    rep("cortical", length(cortical_labels))
+  ),
+  stringsAsFactors = FALSE
+)
+```
+
+The `type` column is the key piece.
+Without it, the pipeline falls back to a vertex-count heuristic — counting how many surface vertices each label covers after volume-to-surface projection — which works for clear-cut cases but gets unreliable for regions near the cortical/subcortical boundary.
+If you know which labels belong where (and you usually do), spell it out.
+
+## The two-pass verification workflow
+
+The wholebrain pipeline is the most complex pipeline in ggseg.extra, and the one most likely to need manual correction.
+Running the full pipeline blind is asking for trouble.
+Instead, run steps 1–2 first to project the volume onto the surface and classify labels, then inspect the result before committing to the expensive steps:
+
+``` r
+result <- create_wholebrain_from_volume(
+  input_volume = remapped_path,
+  input_lut = lut,
+  atlas_name = "ho",
+  output_dir = "data-raw",
+  steps = 1:2
+)
+
+result$cortical_labels
+result$subcortical_labels
+```
+
+Check that every cortical region you expect is in `cortical_labels` and every subcortical structure is in `subcortical_labels`.
+If the automatic classification got something wrong — a small cortical region classified as subcortical because it has few surface vertices, or a large subcortical structure bleeding onto the surface — you have three options:
+
+1. Add or fix the `type` column in your LUT (recommended for reproducibility)
+2. Pass `cortical_labels` and `subcortical_labels` arguments to override specific labels
+3. Adjust `min_vertices` if using the heuristic fallback
+
+Once the split looks right, run the full pipeline.
+
+## Running the full pipeline
+
+``` r
+library(progressr)
+library(future)
+
+plan(multisession, workers = 4)
+handlers("cli")
+handlers(global = TRUE)
+
+ho <- create_wholebrain_from_volume(
+  input_volume = remapped_path,
+  input_lut = lut,
+  atlas_name = "ho",
+  output_dir = "data-raw",
+  skip_existing = FALSE,
+  cleanup = FALSE
+)
+
+plan(sequential)
+```
+
+The pipeline does four things in sequence:
+
+1. **Project volume onto surface** — `mri_vol2surf` samples the volume at multiple cortical depths (default 0–1 in 0.1 steps) and takes the maximum label at each vertex. Unlabeled vertices are filled by mesh-neighbor dilation, constrained to the cortex mask so labels don't bleed into the medial wall.
+2. **Classify labels** — Splits labels into cortical and subcortical using the priority system described above.
+3. **Run the cortical pipeline** — Takes the projected cortical labels through the same 8-step pipeline used by `create_cortical_from_annotation()`: screenshots, contour extraction, smoothing, and polygon conversion.
+4. **Run the subcortical pipeline** — Tessellates subcortical voxels into 3D meshes and creates projection views. Cortical labels are remapped to FreeSurfer's reference IDs (3 for left cortex, 42 for right) so the subcortical pipeline can generate brain outline context geometry.
+
+The result is a list with `$cortical` and `$subcortical` — two separate `ggseg_atlas` objects.
+
+## What makes this tricky
+
+Three things conspire to make whole-brain atlases harder than their single-type counterparts.
+
+**Label bleeding.**
+When a combined volume gets projected onto the cortical surface, subcortical voxels that sit near the cortical ribbon can "steal" surface vertices.
+The thalamus, for instance, is close enough to the medial surface that its voxels sometimes end up on cortical vertices during projection.
+The pipeline handles this with a refinement step — after classification, it re-projects the volume with subcortical labels zeroed out, then re-fills using only cortical labels.
+But if your subcortical structures are unusually large or your cortical regions are thin, you may still see artifacts.
+
+**The medial wall boundary.**
+Dilation fills unlabeled vertices by spreading neighboring labels across the mesh.
+Without a constraint, labels would spread across the medial wall — the flat cut surface between hemispheres where there's no cortex.
+The pipeline uses FreeSurfer's `{hemi}.cortex.label` file to mask the medial wall, but this only works if the label file exists for your target subject (it ships with fsaverage5 by default).
+
+**Hemisphere splitting for subcortical context.**
+The subcortical pipeline needs brain outline geometry to provide spatial context — a faint cortex outline behind the subcortical structures.
+For purely subcortical volumes, this is straightforward because FreeSurfer's segmentation already includes cortex labels.
+For combined volumes, the pipeline has to synthesize this: it uses the volume's orientation matrix to determine which side of the midline each cortical voxel sits on, then remaps them to FreeSurfer's reference cortex labels.
+This works reliably for standard MNI152 volumes, but can break with unusual orientations.
+
+## Post-processing
+
+The raw atlas usually needs cleanup.
+Smooth the contours and reduce vertex count for faster plotting:
+
+``` r
+ho_cort <- ho$cortical |>
+  atlas_smooth(smoothness = 5) |>
+  atlas_simplify(tolerance = 0.5)
+
+ho_sub <- ho$subcortical |>
+  atlas_smooth(smoothness = 5) |>
+  atlas_simplify(tolerance = 0.5)
+```
+
+Higher smoothness values produce rounder contours.
+Higher tolerance values produce simpler polygons with fewer vertices — important for keeping atlas file sizes manageable.
+The right values depend on your atlas: parcellations with many small regions need gentler settings than those with a few large ones.
+
+You can also remove unwanted regions from the subcortical atlas (ventricles, white matter) and set context regions, just like in the [subcortical tutorial](tutorial-subcortical-atlas.html):
+
+``` r
+ho_sub <- ho_sub |>
+  atlas_region_remove("Ventricle", match_on = "label")
+```
+
+## Structuring atlas metadata
+
+Before saving, clean up region names and add grouping columns.
+The [post-processing vignette](post-processing.html) covers this in detail — the key idea is that `label` stays machine-readable (matching the source parcellation) while `region` becomes human-readable for plot legends.
+
+The Harvard-Oxford atlas is a good example of both:
+
+``` r
+ho_cort <- ho_cort |>
+  atlas_region_rename("Left |Right ", "", match_on = "region") |>
+  atlas_region_rename("-", " ", match_on = "region")
+
+subcort_metadata <- data.frame(
+  region = c("thalamus", "caudate", "putamen", "pallidum",
+             "hippocampus", "amygdala", "accumbens",
+             "brain stem"),
+  structure = c("diencephalon", "basal ganglia", "basal ganglia",
+                "basal ganglia", "limbic", "limbic",
+                "basal ganglia", "brainstem")
+)
+
+ho_sub <- ho_sub |>
+  atlas_core_add(subcort_metadata, by = "region")
+```
+
+`atlas_core_add()` (from ggseg.formats) does a left join into `$core` and rebuilds the atlas in one step — no need to manually reconstruct with `ggseg_atlas()`.
+
+## Saving
+
+The conventional pattern for atlas packages is to save cortical and subcortical atlases as separate internal data objects:
+
+``` r
+.hoCort <- ho_cort
+.hoSub <- ho_sub
+
+save(
+  list = c(".hoCort", ".hoSub"),
+  file = "R/sysdata.rda",
+  compress = "xz"
+)
+```
+
+Prefixing with `.` keeps the objects hidden from the package namespace — users access them through wrapper functions like `hoCort()` and `hoSub()` that load and return the data on demand.
+See `setup_atlas_repo()` for scaffolding an atlas package with the right structure.
+
+## When to use wholebrain versus separate pipelines
+
+`create_wholebrain_from_volume()` is the right choice when you have a single volume containing both cortical and subcortical labels and you want the pipeline to handle the split.
+If you already have cortical annotations as surface files (`.annot`, `.label.gii`, `.dlabel.nii`) and subcortical segmentations as separate volumes, you're better off running `create_cortical_from_annotation()` and `create_subcortical_from_volume()` independently.
+The separate pipelines skip the volume-to-surface projection step entirely, which means fewer failure modes and faster execution.
+
+The wholebrain pipeline exists because many standard atlases — Harvard-Oxford, Brainnetome, Schaefer+Melbourne — ship as single volumetric files.
+Converting them manually would mean splitting the volume, projecting cortical labels by hand, and managing the subcortical reference geometry yourself.
+The pipeline automates all of that, but it's still the most opinionated part of ggseg.extra and the one most likely to need human intervention.

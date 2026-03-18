@@ -80,10 +80,10 @@
 #'   input_lut = "path/to/ASegStatsLUT.txt"
 #' )
 #'
-#' # Post-process to remove/modify regions
+#' # Post-process to remove/modify regions (functions from ggseg.formats)
 #' atlas <- atlas |>
-#'   atlas_remove_regions("White-Matter") |>
-#'   atlas_set_context("Cortex")
+#'   atlas_region_remove("White-Matter") |>
+#'   atlas_region_contextual("Cortex")
 #' }
 create_subcortical_from_volume <- function(
   input_volume,

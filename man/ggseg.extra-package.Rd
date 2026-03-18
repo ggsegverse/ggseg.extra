@@ -4,11 +4,11 @@
 \name{ggseg.extra-package}
 \alias{ggseg.extra}
 \alias{ggseg.extra-package}
-\title{ggseg.extra: Atlas Creation Utilities for the 'ggseg' Brain Plotting Ecosystem}
+\title{ggseg.extra: Create Brain Atlases for the 'ggsegverse' Plotting Ecosystem}
 \description{
 \if{html}{\figure{logo.png}{options: style='float: right' alt='logo' width='120'}}
 
-Create brain atlas data sets compatible with the 'ggseg' and 'ggseg3d' plotting packages in 'R'. Provides pipelines for building cortical, subcortical, and white-matter tract atlases from 'FreeSurfer' annotation files, 'GIFTI' and 'CIFTI' surface formats, neuromaps, and volumetric 'NIfTI' images. Most atlas creation workflows require 'FreeSurfer' and are not available on Windows.
+Create brain atlas data sets compatible with the 'ggseg' and 'ggseg3d' plotting packages in 'R'. Provides pipelines for building cortical, subcortical, and white-matter tract atlases from 'FreeSurfer' annotation files, 'GIFTI' and 'CIFTI' surface formats, 'neuromaps', and volumetric 'NIfTI' images. Most atlas creation workflows require 'FreeSurfer' and are not available on Windows.
 }
 \seealso{
 Useful links:

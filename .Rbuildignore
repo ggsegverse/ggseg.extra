@@ -25,5 +25,6 @@ _brand.yml
 ^vignettes/tutorial-.*\.Rmd$
 ^vignettes/.*\.Rmd\.orig$
 ^vignettes/\.quarto$
+^vignettes/atlas-workflows\.qmd$
 ^figure$
 ^cran-comments\.md$

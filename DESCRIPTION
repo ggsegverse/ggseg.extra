@@ -1,5 +1,5 @@
 Package: ggseg.extra
-Title: Atlas Creation Utilities for the 'ggseg' Brain Plotting Ecosystem
+Title: Create Brain Atlases for the 'ggsegverse' Plotting Ecosystem
 Version: 1.9.9.9000
 Authors@R: c(
     person(
@@ -26,7 +26,7 @@ Authors@R: c(
 Description: Create brain atlas data sets compatible with the 'ggseg' and
     'ggseg3d' plotting packages in 'R'. Provides pipelines for building
     cortical, subcortical, and white-matter tract atlases from 'FreeSurfer'
-    annotation files, 'GIFTI' and 'CIFTI' surface formats, neuromaps, and
+    annotation files, 'GIFTI' and 'CIFTI' surface formats, 'neuromaps', and
     volumetric 'NIfTI' images. Most atlas creation workflows require
     'FreeSurfer' and are not available on Windows.
 License: MIT + file LICENSE

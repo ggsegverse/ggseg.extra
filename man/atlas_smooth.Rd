@@ -10,7 +10,8 @@ atlas_smooth(atlas, smoothness = 5)
 \item{atlas}{A \code{ggseg_atlas} object with sf data.}
 
 \item{smoothness}{Smoothing bandwidth passed to
-\link[smoothr:smooth]{smoothr::smooth(method = "ksmooth")}. Default 5.}
+\link[smoothr:smooth]{smoothr::smooth(method = "ksmooth")}. Typical range
+3--15. Default 5.}
 }
 \value{
 A modified \code{ggseg_atlas} with smoothed sf geometry.

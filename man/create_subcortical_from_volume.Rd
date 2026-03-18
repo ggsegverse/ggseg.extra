@@ -52,14 +52,16 @@ filtered out. Default NULL applies no limits.}
 gaps between structures.}
 
 \item{tolerance}{Simplification tolerance for 2D polygons. Higher values
-produce simpler shapes with fewer vertices. Passed to \code{\link[sf:geos_unary]{sf::st_simplify()}}.
+produce simpler shapes with fewer vertices (typical range: 0.1--2).
+Passed to \code{\link[sf:geos_unary]{sf::st_simplify()}}.
 If not specified, uses \code{options("ggseg.extra.tolerance")} or the
-\code{GGSEG_EXTRA_TOLERANCE} environment variable. Default is 0 (no simplification).}
+\code{GGSEG_EXTRA_TOLERANCE} environment variable. Default is 1.}
 
 \item{smoothness}{Smoothing factor for 2D contours. Higher values produce
-smoother region boundaries. Passed to \code{\link[smoothr:smooth]{smoothr::smooth()}}. If not
-specified, uses \code{options("ggseg.extra.smoothness")} or the
-\code{GGSEG_EXTRA_SMOOTHNESS} environment variable. Default is 5.}
+smoother region boundaries (typical range: 3--15). Passed to
+\code{\link[smoothr:smooth]{smoothr::smooth()}}. If not specified, uses
+\code{options("ggseg.extra.smoothness")} or the \code{GGSEG_EXTRA_SMOOTHNESS}
+environment variable. Default is 5.}
 
 \item{verbose}{Verbosity level: \code{0} (silent), \code{1} (standard progress,
 default), or \code{2} (debug, includes FreeSurfer output). Logical values
@@ -131,9 +133,9 @@ atlas <- create_subcortical_from_volume(
   input_lut = "path/to/ASegStatsLUT.txt"
 )
 
-# Post-process to remove/modify regions
+# Post-process to remove/modify regions (functions from ggseg.formats)
 atlas <- atlas |>
-  atlas_remove_regions("White-Matter") |>
-  atlas_set_context("Cortex")
+  atlas_region_remove("White-Matter") |>
+  atlas_region_contextual("Cortex")
 }
 }

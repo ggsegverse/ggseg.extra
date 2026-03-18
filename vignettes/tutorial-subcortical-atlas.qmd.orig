@@ -192,7 +192,7 @@ aseg
 ```{r}
 #| label: inspect
 #| eval: !expr can_run
-brain_labels(aseg)
+atlas_labels(aseg)
 
 table(aseg$core$structure)
 ```

@@ -207,7 +207,8 @@ filter_valid_geometries <- function(sf_obj) {
 #'
 #' @param atlas A `ggseg_atlas` object with sf data.
 #' @param smoothness Smoothing bandwidth passed to
-#'   [smoothr::smooth(method = "ksmooth")][smoothr::smooth]. Default 5.
+#'   [smoothr::smooth(method = "ksmooth")][smoothr::smooth]. Typical range
+#'   3--15. Default 5.
 #'
 #' @return A modified `ggseg_atlas` with smoothed sf geometry.
 #' @export
@@ -243,7 +244,8 @@ atlas_smooth <- function(atlas, smoothness = 5) {
 #'
 #' @param atlas A `ggseg_atlas` object with sf data.
 #' @param tolerance Simplification tolerance passed to
-#'   [sf::st_simplify(dTolerance)][sf::st_simplify]. Default 0.5.
+#'   [sf::st_simplify(dTolerance)][sf::st_simplify]. Typical range 0.1--2.
+#'   Default 0.5.
 #'
 #' @return A modified `ggseg_atlas` with simplified sf geometry.
 #' @export

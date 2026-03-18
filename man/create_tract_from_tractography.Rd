@@ -69,14 +69,16 @@ value from \code{options("ggseg.extra.verbose")} or the \code{GGSEG_EXTRA_VERBOS
 environment variable.}
 
 \item{tolerance}{Simplification tolerance for 2D polygons. Higher values
-produce simpler shapes with fewer vertices. Passed to \code{\link[sf:geos_unary]{sf::st_simplify()}}.
+produce simpler shapes with fewer vertices (typical range: 0.1--2).
+Passed to \code{\link[sf:geos_unary]{sf::st_simplify()}}.
 If not specified, uses \code{options("ggseg.extra.tolerance")} or the
-\code{GGSEG_EXTRA_TOLERANCE} environment variable. Default is 0 (no simplification).}
+\code{GGSEG_EXTRA_TOLERANCE} environment variable. Default is 1.}
 
 \item{smoothness}{Smoothing factor for 2D contours. Higher values produce
-smoother region boundaries. Passed to \code{\link[smoothr:smooth]{smoothr::smooth()}}. If not
-specified, uses \code{options("ggseg.extra.smoothness")} or the
-\code{GGSEG_EXTRA_SMOOTHNESS} environment variable. Default is 5.}
+smoother region boundaries (typical range: 3--15). Passed to
+\code{\link[smoothr:smooth]{smoothr::smooth()}}. If not specified, uses
+\code{options("ggseg.extra.smoothness")} or the \code{GGSEG_EXTRA_SMOOTHNESS}
+environment variable. Default is 5.}
 
 \item{cleanup}{Remove intermediate files after atlas creation. If not
 specified, uses \code{options("ggseg.extra.cleanup")} or the \code{GGSEG_EXTRA_CLEANUP}

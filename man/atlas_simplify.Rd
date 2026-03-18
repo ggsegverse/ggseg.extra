@@ -10,7 +10,8 @@ atlas_simplify(atlas, tolerance = 0.5)
 \item{atlas}{A \code{ggseg_atlas} object with sf data.}
 
 \item{tolerance}{Simplification tolerance passed to
-\link[sf:geos_unary]{sf::st_simplify(dTolerance)}. Default 0.5.}
+\link[sf:geos_unary]{sf::st_simplify(dTolerance)}. Typical range 0.1--2.
+Default 0.5.}
 }
 \value{
 A modified \code{ggseg_atlas} with simplified sf geometry.

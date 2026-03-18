@@ -312,7 +312,7 @@ tracula
 
 
 ``` r
-brain_labels(tracula)
+atlas_labels(tracula)
 #>  [1] "acomm.bbr.prep"      
 #>  [2] "cc.bodyc.bbr.prep"   
 #>  [3] "cc.bodyp.bbr.prep"   

@@ -115,9 +115,14 @@ yeo7_raw <- create_cortical_from_annotation(
 #> ℹ Input files: ']8;;file:///Applications/freesurfer/7.4.1/subjects/fsaverage5/label/lh.Yeo2011_7Networks_N1000.annot/Applications/freesurfer/7.4.1/subjects/fsaverage5/label/lh.Yeo2011_7Networks_N1000.annot]8;;' and ']8;;file:///Applications/freesurfer/7.4.1/subjects/fsaverage5/label/rh.Yeo2011_7Networks_N1000.annot/Applications/freesurfer/7.4.1/subjects/fsaverage5/label/rh.Yeo2011_7Networks_N1000.annot]8;;'
 #> ℹ Setting output directory to ']8;;file:///var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T//Rtmpwix4Bl/yeo7_tutorial/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T//Rtmpwix4Bl/yeo7_tutorial]8;;'
 #> ✔ 1/8 Loaded existing atlas data
-#> ℹ 2/8 Taking full brain snapshotsfile:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22465346108a.html screenshot completed
-#> ✔ 2/8 Taking full brain snapshots [2.8s]
-#> ℹ 3/8 Taking region snapshotsfile:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22464304f777.html screenshot completed
+#> 
+ℹ 2/8 Taking full brain snapshots
+file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22465346108a.html screenshot completed
+#> 
+✔ 2/8 Taking full brain snapshots [2.8s]
+#> 
+ℹ 3/8 Taking region snapshots
+file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22464304f777.html screenshot completed
 #> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file2246e08b720.html screenshot completed
 #> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file2246464a390c.html screenshot completed
 #> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file2246761357e2.html screenshot completed
@@ -177,12 +182,28 @@ yeo7_raw <- create_cortical_from_annotation(
 #> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22467507eee8.html screenshot completed
 #> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22463ded556c.html screenshot completed
 #> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file2246423532a8.html screenshot completed
-#> ✔ 3/8 Taking region snapshots [2m 10.8s]
-#> ℹ 4/8 Isolating regions✔ 4/8 Isolating regions [21.8s]
-#> ℹ 5/8 Extracting contours✔ 5/8 Extracting contours [6.8s]
-#> ℹ 6/8 Smoothing contours (smoothness = 2)✔ 6/8 Smoothing contours (smoothness = 2)…
-#> ℹ 7/8 Reducing vertices (tolerance = 1)✔ 7/8 Reducing vertices (tolerance = 1) […
-#> ℹ 8/8 Building final atlas✔ 8/8 Building final atlas [93ms]
+#> 
+✔ 3/8 Taking region snapshots [2m 10.8s]
+#> 
+ℹ 4/8 Isolating regions
+
+✔ 4/8 Isolating regions [21.8s]
+#> 
+ℹ 5/8 Extracting contours
+
+✔ 5/8 Extracting contours [6.8s]
+#> 
+ℹ 6/8 Smoothing contours (smoothness = 2)
+
+✔ 6/8 Smoothing contours (smoothness = 2)…
+#> 
+ℹ 7/8 Reducing vertices (tolerance = 1)
+
+✔ 7/8 Reducing vertices (tolerance = 1) […
+#> 
+ℹ 8/8 Building final atlas
+
+✔ 8/8 Building final atlas [93ms]
 #> ✔ Brain atlas created with 16 regions
 #> ℹ Pipeline completed in 2.8 minutes
 
@@ -313,18 +334,7 @@ yeo7
 
 
 ``` r
-brain_regions(yeo7) |> sort()
-#> Warning: `brain_regions()` was deprecated in
-#> ggseg.formats 0.1.0.
-#> ℹ Please use `atlas_regions()` instead.
-#> ℹ The deprecated feature was likely used
-#>   in the ggseg.extra package.
-#>   Please report the issue at
-#>   <]8;;https://github.com/ggsegverse/ggseg.extra/issueshttps://github.com/ggsegverse/ggseg.extra/issues]8;;>.
-#> This warning is displayed once per
-#> session.
-#> Call ]8;;x-r-run:lifecycle::last_lifecycle_warnings()lifecycle::last_lifecycle_warnings()]8;;
-#> to see where this warning was generated.
+atlas_regions(yeo7) |> sort()
 #> [1] "7Networks_1" "7Networks_2"
 #> [3] "7Networks_3" "7Networks_4"
 #> [5] "7Networks_5" "7Networks_6"

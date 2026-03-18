@@ -201,7 +201,7 @@ tracula
 ```{r}
 #| label: inspect
 #| eval: !expr can_run
-brain_labels(tracula)
+atlas_labels(tracula)
 
 table(tracula$core$group, useNA = "ifany")
 ```

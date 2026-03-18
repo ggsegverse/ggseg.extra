@@ -163,7 +163,7 @@ yeo7
 ```{r}
 #| label: inspect
 #| eval: !expr can_run
-brain_regions(yeo7) |> sort()
+atlas_regions(yeo7) |> sort()
 ```
 
 
