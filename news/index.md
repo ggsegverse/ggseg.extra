@@ -1,12 +1,34 @@
 # Changelog
 
-## ggsegExtra 1.6
+## ggseg.extra 2.0.0
+
+- Major rewrite of atlas creation pipelines with modular step-based
+  architecture
+- Added GIFTI (`.label.gii`) and CIFTI (`.dlabel.nii`) annotation
+  support
+- Added neuromaps surface and volume annotation pipelines
+- Added whole-brain atlas creation from volumetric parcellations
+- Added white-matter tract atlas creation from tractography files
+- Added three-level verbosity control (silent/standard/debug)
+- Deprecated `ggseg_atlas_repos()`, `install_ggseg_atlas()`, and
+  `install_ggseg_atlas_all()` in favour of ‘ggseg.hub’
+- Moved
+  [`convert_legacy_brain_atlas()`](https://ggsegverse.github.io/ggseg.formats/reference/convert_legacy_brain_atlas.html)
+  to ‘ggseg.formats’ (re-exported)
+- Removed rgdal, purrr, reticulate, and tidyr dependencies
+- Replaced reticulate/kaleido snapshots with chromote
+- Protected all parallel operations against multicore fork crashes
+- Removed dead FreeSurfer wrapper functions
+- Fixed read_ctab for multi-word labels
+- Fixed subcortical label classification in whole-brain pipeline
+
+## ggseg.extra 1.6
 
 ### 1.6.0
 
 - Removed rgdal dependency, replaced with sf/terra
-  ([\#49](https://github.com/ggseg/ggsegExtra/issues/49),
-  [\#59](https://github.com/ggseg/ggsegExtra/issues/59))
+  ([\#49](https://github.com/ggsegverse/ggseg.extra/issues/49),
+  [\#59](https://github.com/ggsegverse/ggseg.extra/issues/59))
 - Fixed r-universe API calls (JSON array format change)
 - Fixed vignette build issues with conditional evaluation for suggested
   packages
@@ -18,26 +40,26 @@
 - Updated pkgdown site with ggseg brand styling
 - Fixed mris_label2annot example documentation
 
-## ggsegExtra 1.5
+## ggseg.extra 1.5
 
 ### 1.5.33.003
 
 - small bug fix that prevented calls to FreeSurfer
 - Possibility to initiate new atlas project from the RStudio Project GUI
 
-### ggsegExtra 1.5.33
+### ggseg.extra 1.5.33
 
 - removes purrr dependency
-- used ggseg [r-universe](https://ggseg.r-universe.dev/#builds) as
+- used ggseg [r-universe](https://ggsegverse.r-universe.dev/#builds) as
   install repo for install functions
 
-### ggsegExtra 1.5.32
+### ggseg.extra 1.5.32
 
 - non-standard columns in 3d atlas are retained in 2d atlas
 - Freesurfer annotation file custom S3 class implemented
 - progressbar for region snapshots
 
-### ggsegExtra 1.5.3
+### ggseg.extra 1.5.3
 
 - Added pipeline functions for:
   - creating ggseg3d-atlas from annotation files

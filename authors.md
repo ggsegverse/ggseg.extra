@@ -2,10 +2,11 @@
 
 ## Authors
 
-- **Athanasia Mo Mowinckel**. Author, maintainer.
-  [](https://orcid.org/0000-0002-5756-0223)
+- **Athanasia Mo Mowinckel**. Author, maintainer, copyright holder.
+  [](https://orcid.org/0000-0002-5756-0223)  
+  drmowinckels
 
-- **Didac Vidal-Piñeiro**. Author.
+- **Didac Vidal-Piñeiro**. Contributor, copyright holder.
   [](https://orcid.org/0000-0001-9997-9156)
 
 - **John Muschelli**. Contributor.
@@ -14,7 +15,7 @@
 ## Citation
 
 Source:
-[`inst/CITATION`](https://github.com/ggseg/ggsegExtra/blob/main/inst/CITATION)
+[`inst/CITATION`](https://github.com/ggsegverse/ggseg.extra/blob/main/inst/CITATION)
 
 Mowinckel A, Vidal-Piñeiro D (2019). “Visualisation of Brain Statistics
 with R-packages ggseg and ggseg3d.” 1912.08200.

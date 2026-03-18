@@ -14,7 +14,7 @@ mri_surf2surf_rereg(
   hemi = c("lh", "rh"),
   target_subject = "fsaverage5",
   output_dir = file.path(fs_subj_dir(), subject, "label"),
-  verbose = TRUE
+  verbose = get_verbose()
 )
 ```
 
@@ -38,11 +38,16 @@ mri_surf2surf_rereg(
 
 - output_dir:
 
-  output directory path
+  Directory to store intermediate files (screenshots, masks, contours).
+  Defaults to [`tempdir()`](https://rdrr.io/r/base/tempfile.html).
 
 - verbose:
 
-  logical indicating to be verbose or not
+  Verbosity level: `0` (silent), `1` (standard progress, default), or
+  `2` (debug, includes FreeSurfer output). Logical values are accepted
+  (`TRUE` = 1, `FALSE` = 0). If not specified, uses the value from
+  `options("ggseg.extra.verbose")` or the `GGSEG_EXTRA_VERBOSE`
+  environment variable.
 
 ## Value
 
@@ -55,8 +60,10 @@ if (FALSE) { # \dontrun{
 # For help see:
 freesurfer::fs_help("mri_surf2surf")
 
-mri_surf2surf_rereg(subject = "bert",
-                    annot = "aparc.DKTatlas",
-                    target_subject = "fsaverage5")
+mri_surf2surf_rereg(
+  subject = "bert",
+  annot = "aparc.DKTatlas",
+  target_subject = "fsaverage5"
+)
 } # }
 ```

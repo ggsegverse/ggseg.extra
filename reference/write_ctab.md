@@ -1,7 +1,6 @@
-# Write colourtab
+# Write FreeSurfer color table
 
-write a colortab to file, will be in a format that is accessible by
-FreeSurfer.
+Write a color table to file in FreeSurfer format.
 
 ## Usage
 
@@ -13,12 +12,28 @@ write_ctab(x, path)
 
 - x:
 
-  colourtab data
+  A data.frame with columns: idx, label, R, G, B, A.
 
 - path:
 
-  path to write to
+  Path to write to.
 
 ## Value
 
-returns nothing, writes file
+Invisibly returns the lines written.
+
+## See also
+
+[`read_ctab()`](https://ggsegverse.github.io/ggseg.extra/reference/read_ctab.md),
+[`is_ctab()`](https://ggsegverse.github.io/ggseg.extra/reference/is_ctab.md)
+
+## Examples
+
+``` r
+ct <- data.frame(
+  idx = 0:1, label = c("Unknown", "Region1"),
+  R = c(0L, 205L), G = c(0L, 130L), B = c(0L, 176L), A = c(0L, 0L)
+)
+out <- tempfile()
+write_ctab(ct, out)
+```

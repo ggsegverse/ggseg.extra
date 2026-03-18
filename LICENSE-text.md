@@ -1,4 +1,4 @@
 # License
 
-    YEAR: 2020
-    COPYRIGHT HOLDER: Athanasia Monika Mowinckel & Didac Videl-Piñeiro
+    YEAR: 2026
+    COPYRIGHT HOLDER: Athanasia Monika Mowinckel & Didac Vidal-Piñeiro

@@ -5,30 +5,30 @@
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<title>Extra Utilities for the ggseg and ggseg3d Plotting Tools • ggsegExtra</title>
-<!-- favicons --><link rel="icon" type="image/png" sizes="96x96" href="favicon-96x96.png">
-<link rel="icon" type="”image/svg+xml”" href="favicon.svg">
-<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
-<link rel="icon" sizes="any" href="favicon.ico">
-<link rel="manifest" href="site.webmanifest">
-<script src="deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<title>Create Brain Atlases for the ggsegverse Plotting Ecosystem • ggseg.extra</title>
+<script src="lightswitch.js"></script><script src="deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
-<script src="deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
+<script src="deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="deps/Inter-0.4.10/font.css" rel="stylesheet">
+<link href="deps/Fira_Code-0.4.10/font.css" rel="stylesheet">
+<link href="deps/Montserrat-0.4.10/font.css" rel="stylesheet">
+<link href="deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
-<script src="deps/headroom-0.11.0/headroom.min.js"></script><script src="deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="deps/search-1.0.0/fuse.min.js"></script><script src="deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="pkgdown.js"></script><meta property="og:title" content="Extra Utilities for the ggseg and ggseg3d Plotting Tools">
-<meta name="description" content="Contains functions to create new data sets compatible with the ggseg and ggseg3d packages for plotting brain segmentations through R. Requires several external software to be installed on the system for atlas creations to work, and most of these are not available for windows. But atlas creation tools exist for 2d simple features data, and also 3d tri-surface mesh plots. Also has a list of compatible data sets and functions for easy installation of these.">
-<meta property="og:description" content="Contains functions to create new data sets compatible with the ggseg and ggseg3d packages for plotting brain segmentations through R. Requires several external software to be installed on the system for atlas creations to work, and most of these are not available for windows. But atlas creation tools exist for 2d simple features data, and also 3d tri-surface mesh plots. Also has a list of compatible data sets and functions for easy installation of these.">
-<meta property="og:image" content="https://ggseg.github.io/ggsegExtra/logo.png">
+<script src="deps/headroom-0.11.0/headroom.min.js"></script><script src="deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="deps/search-1.0.0/fuse.min.js"></script><script src="deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="pkgdown.js"></script><meta property="og:title" content="Create Brain Atlases for the ggsegverse Plotting Ecosystem">
+<meta name="description" content="Create brain atlas data sets compatible with the ggseg and ggseg3d plotting packages in R. Provides pipelines for building cortical, subcortical, and white-matter tract atlases from FreeSurfer annotation files, GIFTI and CIFTI surface formats, neuromaps, and volumetric NIfTI images. Most atlas creation workflows require FreeSurfer and are not available on Windows.">
+<meta property="og:description" content="Create brain atlas data sets compatible with the ggseg and ggseg3d plotting packages in R. Provides pipelines for building cortical, subcortical, and white-matter tract atlases from FreeSurfer annotation files, GIFTI and CIFTI surface formats, neuromaps, and volumetric NIfTI images. Most atlas creation workflows require FreeSurfer and are not available on Windows.">
+<meta property="og:image" content="https://ggsegverse.github.io/ggseg.extra/logo.svg">
 </head>
 <body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
-    <nav class="navbar navbar-expand-lg fixed-top bg-light" data-bs-theme="light" aria-label="Site navigation"><div class="container">
+    <nav class="navbar navbar-expand-lg fixed-top " aria-label="Site navigation"><div class="container">
+    <a href="https://ggsegverse.github.io" class="external-link">
+  <img src="ggsegverse-logo.png" id="ggsegverse-logo" alt="ggsegverse"></a>
 
-    <a class="navbar-brand me-2" href="index.html">ggsegExtra</a>
+    <a class="navbar-brand me-2" href="index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.6.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -37,13 +37,29 @@
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto">
-<li class="nav-item"><a class="nav-link" href="articles/ggsegExtra.html">Get started</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
-<li><a class="dropdown-item" href="articles/system_setup.html">System Setup</a></li>
+<li><h6 class="dropdown-header" data-toc-skip>Getting Started</h6></li>
+    <li><a class="dropdown-item" href="articles/ggseg.extra.html">Introduction</a></li>
+    <li><a class="dropdown-item" href="articles/atlas-workflows.html">Atlas Creation Workflows</a></li>
+    <li><a class="dropdown-item" href="articles/system-setup.html">System Setup</a></li>
     <li><hr class="dropdown-divider"></li>
-    <li><a class="dropdown-item" href="articles/index.html">More articles...</a></li>
+    <li><h6 class="dropdown-header" data-toc-skip>How-To</h6></li>
+    <li><a class="dropdown-item" href="articles/pipeline-configuration.html">Pipeline Configuration</a></li>
+    <li><a class="dropdown-item" href="articles/post-processing.html">Post-Processing</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Tutorials: Creating Atlases</h6></li>
+    <li><a class="dropdown-item" href="articles/tutorial-cortical-atlas.html">Cortical Atlas</a></li>
+    <li><a class="dropdown-item" href="articles/tutorial-neuromaps-atlas.html">Neuromaps Atlas</a></li>
+    <li><a class="dropdown-item" href="articles/tutorial-subcortical-atlas.html">Subcortical Atlas</a></li>
+    <li><a class="dropdown-item" href="articles/tutorial-wholebrain-atlas.html">Whole-Brain Atlas</a></li>
+    <li><a class="dropdown-item" href="articles/tutorial-tract-atlas.html">Tract Atlas</a></li>
+    <li><a class="dropdown-item" href="articles/tutorial-label-atlas.html">Label Atlas</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Legacy &amp; Contributing</h6></li>
+    <li><a class="dropdown-item" href="articles/legacy-conversion.html">Legacy Conversion</a></li>
+    <li><a class="dropdown-item" href="articles/contributing.html">Contributing</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="reference/index.html">Reference</a></li>
@@ -53,7 +69,15 @@
 <li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="search.json">
 </form></li>
-<li class="nav-item"><a class="external-link nav-link" href="https://github.com/ggseg/ggsegExtra/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
+<li class="nav-item"><a class="external-link nav-link" href="https://github.com/ggsegverse/ggseg.extra" aria-label="GitHub"><span class="fa fa-github"></span></a></li>
+<li class="nav-item dropdown">
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-lightswitch" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true" aria-label="Light switch"><span class="fa fa-sun"></span></button>
+  <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdown-lightswitch">
+<li><button class="dropdown-item" data-bs-theme-value="light"><span class="fa fa-sun"></span> Light</button></li>
+    <li><button class="dropdown-item" data-bs-theme-value="dark"><span class="fa fa-moon"></span> Dark</button></li>
+    <li><button class="dropdown-item" data-bs-theme-value="auto"><span class="fa fa-adjust"></span> Auto</button></li>
+  </ul>
+</li>
       </ul>
 </div>
 
@@ -63,238 +87,52 @@
 <div class="row">
   <main id="main" class="col-md-9"><div class="section level1">
 <div class="page-header">
-<img src="logo.png" class="logo" alt=""><h1 id="ggsegextra-">ggsegExtra <a class="anchor" aria-label="anchor" href="#ggsegextra-"></a>
+<img src="logo.svg" class="logo" alt=""><h1 id="ggsegextra-">ggseg.extra <a class="anchor" aria-label="anchor" href="#ggsegextra-"></a>
 </h1>
 </div>
 <!-- badges: start -->
 
-<p>This package contains information on verified atlases compatible for use in <a href="https://ggseg.github.io/ggseg" class="external-link">ggseg</a> and <a href="https://ggseg.github.io/ggseg3d" class="external-link">ggseg3d</a> plotting packages in R. It also contains functions and pipelines to create custom atlases.</p>
+<p>This package provides pipelines for creating brain atlas data sets compatible with the <a href="https://ggsegverse.github.io/ggseg/" class="external-link">ggseg</a> and <a href="https://ggsegverse.github.io/ggseg3d/" class="external-link">ggseg3d</a> plotting packages in R.</p>
 <div class="section level2">
 <h2 id="installing">Installing<a class="anchor" aria-label="anchor" href="#installing"></a>
 </h2>
-<p>We recommend installing this package from its <a href="https://ggseg.r-universe.dev/#builds" class="external-link">r-universe</a> build:</p>
+<p>Install from CRAN:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Enable this universe</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>repos <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
-<span>  ggseg <span class="op">=</span> <span class="st">'https://ggseg.r-universe.dev'</span>,</span>
-<span>  CRAN <span class="op">=</span> <span class="st">'https://cloud.r-project.org'</span><span class="op">)</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Install some packages</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">'ggsegExtra'</span><span class="op">)</span></span></code></pre></div>
-<p>Alternatively, install the package with the remotes package from github.</p>
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"ggseg.extra"</span><span class="op">)</span></span></code></pre></div>
+<p>Or install the development version from <a href="https://ggsegverse.r-universe.dev/#builds" class="external-link">r-universe</a>:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span></span>
+<span>  repos <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
+<span>    ggsegverse <span class="op">=</span> <span class="st">"https://ggsegverse.r-universe.dev"</span>,</span>
+<span>    CRAN <span class="op">=</span> <span class="st">"https://cloud.r-project.org"</span></span>
+<span>  <span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"ggseg.extra"</span><span class="op">)</span></span></code></pre></div>
+<p>Or from GitHub:</p>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># install.packages("remotes")</span></span>
-<span><span class="fu">remotes</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"ggseg/ggsegExtra"</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu">remotes</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"ggsegverse/ggseg.extra"</span><span class="op">)</span></span></code></pre></div>
 <div class="section level3">
 <h3 id="development-version-of-freesurfer">Development version of freesurfer<a class="anchor" aria-label="anchor" href="#development-version-of-freesurfer"></a>
 </h3>
 <p>The atlas creation functions require a development version of the freesurfer R package that is not yet on CRAN. Until the <a href="https://github.com/muschellij2/freesurfer/pull/28" class="external-link">PR is merged</a>, install from:</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu">pak</span><span class="fu">::</span><span class="fu"><a href="https://pak.r-lib.org/reference/pak.html" class="external-link">pak</a></span><span class="op">(</span><span class="st">"drmowinckels/freesurfer@refactor"</span><span class="op">)</span> </span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu">pak</span><span class="fu">::</span><span class="fu"><a href="https://pak.r-lib.org/reference/pak.html" class="external-link">pak</a></span><span class="op">(</span><span class="st">"drmowinckels/freesurfer@refactor"</span><span class="op">)</span></span></code></pre></div>
 </div>
 </div>
 <div class="section level2">
 <h2 id="create-custom-atlases">Create custom atlases<a class="anchor" aria-label="anchor" href="#create-custom-atlases"></a>
 </h2>
-<p>We have tutorials on how to make atlases available in the <code>Articles</code> of the <a href="https://ggseg.github.io/ggsegExtra/">package documentation page</a>. Currently, the pipeline for making 3d atlases needs FreeSufer to be installed on your system and a ready <code>.annot</code> file to use for the conversions. Improvements to the pipeline in creating cortical atlases both for ggseg and ggseg3d is still being developed. Pipelines for creating sub-cortical atlases of any kind are still in their infancy, and we do not yet have good solutions for their creation. Suggestions for improvement are welcome through GH issues or direct Pull requests.</p>
-</div>
-<div class="section level2">
-<h2 id="available-atlases">Available atlases<a class="anchor" aria-label="anchor" href="#available-atlases"></a>
-</h2>
-<p>There are currently 23 available atlases across 23 packages. The packages, their repository name and location can be found with:</p>
-<div class="section level3">
-<h3 id="ggsegeconomo">
-<a href="https://github.com/ggseg/ggsegEconomo" class="external-link">ggsegEconomo</a><a class="anchor" aria-label="anchor" href="#ggsegeconomo"></a>
-</h3>
-<p><img src="https://github.com/ggseg/ggsegEconomo/raw/HEAD/man/figures/logo.png" align="right" alt="ggsegEconomo logo" width="120"></p>
-<p><a href="https://github.com/ggseg/ggsegEconomo/actions" class="external-link"><img src="https://github.com/ggseg/ggsegEconomo/workflows/R-CMD-check/badge.svg" alt="R-CMD-check"></a> <a href="https://zenodo.org/badge/latestdoi/424723872" class="external-link"><img src="https://zenodo.org/badge/424723872.svg" alt="DOI"></a></p>
-<p>economo datasets for the ggseg-plotting tool This is a support package for the ggseg, and ggseg3d packages. It contains the economo atlases to plot using functions from those two packages.</p>
-</div>
-<div class="section level3">
-<h3 id="ggsegflechsig">
-<a href="https://github.com/ggseg/ggsegFlechsig" class="external-link">ggsegFlechsig</a><a class="anchor" aria-label="anchor" href="#ggsegflechsig"></a>
-</h3>
-<p><img src="https://github.com/ggseg/ggsegFlechsig/raw/HEAD/man/figures/logo.png" align="right" alt="ggsegFlechsig logo" width="120"></p>
-<p><a href="https://github.com/ggseg/ggsegFlechsig/actions" class="external-link"><img src="https://github.com/ggseg/ggsegFlechsig/workflows/R-CMD-check/badge.svg" alt="R-CMD-check"></a> <a href="https://zenodo.org/badge/latestdoi/425033264" class="external-link"><img src="https://zenodo.org/badge/425033264.svg" alt="DOI"></a></p>
-<p>Flechsig datasets for the ggseg-plotting tool This is a support package for the ggseg, and ggseg3d packages. It contains the Flechsig atlases to plot using functions from those two packages.</p>
-</div>
-<div class="section level3">
-<h3 id="ggsegkleist">
-<a href="https://github.com/ggseg/ggsegKleist" class="external-link">ggsegKleist</a><a class="anchor" aria-label="anchor" href="#ggsegkleist"></a>
-</h3>
-<p><img src="https://github.com/ggseg/ggsegKleist/raw/HEAD/man/figures/logo.png" align="right" alt="ggsegKleist logo" width="120"></p>
-<p><a href="https://github.com/ggseg/ggsegKleist/actions" class="external-link"><img src="https://github.com/ggseg/ggsegKleist/workflows/R-CMD-check/badge.svg" alt="R-CMD-check"></a> <a href="https://zenodo.org/badge/latestdoi/425006974" class="external-link"><img src="https://zenodo.org/badge/425006974.svg" alt="DOI"></a></p>
-<p>Kleist datasets for the ggseg-plotting tool This is a support package for the ggseg, and ggseg3d packages. It contains the historical Kleist atlases to plot using functions from those two packages.</p>
-</div>
-<div class="section level3">
-<h3 id="ggsegbrodmann">
-<a href="https://github.com/ggseg/ggsegBrodmann" class="external-link">ggsegBrodmann</a><a class="anchor" aria-label="anchor" href="#ggsegbrodmann"></a>
-</h3>
-<p><img src="https://github.com/ggseg/ggsegBrodmann/raw/HEAD/man/figures/logo.png" align="right" alt="ggsegBrodmann logo" width="120"></p>
-<p><a href="https://github.com/ggseg/ggsegBrodmann/actions" class="external-link"><img src="https://github.com/ggseg/ggsegBrodmann/workflows/R-CMD-check/badge.svg" alt="R-CMD-check"></a> <a href="https://zenodo.org/badge/latestdoi/424723872" class="external-link"><img src="https://zenodo.org/badge/424723872.svg" alt="DOI"></a></p>
-<p>brodmann datasets for the ggseg-plotting tool This is a support package for the ggseg, and ggseg3d packages. It contains the brodmann area atlases to plot using functions from those two packages.</p>
-</div>
-<div class="section level3">
-<h3 id="ggsegcampbell">
-<a href="https://github.com/ggseg/ggsegCampbell" class="external-link">ggsegCampbell</a><a class="anchor" aria-label="anchor" href="#ggsegcampbell"></a>
-</h3>
-<p><img src="https://github.com/ggseg/ggsegCampbell/raw/HEAD/man/figures/logo.png" align="right" alt="ggsegCampbell logo" width="120"></p>
-<p><a href="https://github.com/ggseg/ggsegCampbell/actions" class="external-link"><img src="https://github.com/ggseg/ggsegCampbell/workflows/R-CMD-check/badge.svg" alt="R-CMD-check"></a> <a href="https://zenodo.org/badge/latestdoi/424732644" class="external-link"><img src="https://zenodo.org/badge/424732644.svg" alt="DOI"></a></p>
-<p>Campbell(1905) datasets for the ggseg-plotting tool This is a support package for the ggseg, and ggseg3d packages. It contains the Campbell (1905) atlases to plot using functions from those two packages.</p>
-</div>
-<div class="section level3">
-<h3 id="ggsegica">
-<a href="https://github.com/ggseg/ggsegIca" class="external-link">ggsegIca</a><a class="anchor" aria-label="anchor" href="#ggsegica"></a>
-</h3>
-<p><img src="https://github.com/ggseg/ggsegIca/raw/HEAD/man/figures/logo.png" align="right" alt="ggsegIca logo" width="120"></p>
-<p><a href="https://github.com/ggseg/ggsegIca/actions" class="external-link"><img src="https://github.com/ggseg/ggsegIca/workflows/R-CMD-check/badge.svg" alt="R-CMD-check"></a> <a href="https://zenodo.org/badge/latestdoi/417492385" class="external-link"><img src="https://zenodo.org/badge/417492385.svg" alt="DOI"></a></p>
-<p>ica datasets for the ggseg-plotting tool This is a support package for the ggseg, and ggseg3d packages. It contains the ica atlases to plot using functions from those two packages.</p>
-</div>
-<div class="section level3">
-<h3 id="ggsegarslan">
-<a href="https://github.com/ggseg/ggsegArslan" class="external-link">ggsegArslan</a><a class="anchor" aria-label="anchor" href="#ggsegarslan"></a>
-</h3>
-<p><img src="https://github.com/ggseg/ggsegArslan/raw/HEAD/man/figures/logo.png" align="right" alt="ggsegArslan logo" width="120"></p>
-<p><a href="https://github.com/ggseg/ggsegArslan/actions" class="external-link"><img src="https://github.com/ggseg/ggsegArslan/workflows/R-CMD-check/badge.svg" alt="R-CMD-check"></a> <a href="https://zenodo.org/badge/latestdoi/417483567" class="external-link"><img src="https://zenodo.org/badge/417483567.svg" alt="DOI"></a></p>
-<p>arslan datasets for the ggseg-plotting tool This is a support package for the ggseg, and ggseg3d packages. It contains the arslan atlases to plot using functions from those two packages.</p>
-</div>
-<div class="section level3">
-<h3 id="ggseggordon">
-<a href="https://github.com/ggseg/ggsegGordon" class="external-link">ggsegGordon</a><a class="anchor" aria-label="anchor" href="#ggseggordon"></a>
-</h3>
-<p><img src="https://github.com/ggseg/ggsegGordon/raw/HEAD/man/figures/logo.png" align="right" alt="ggsegGordon logo" width="120"></p>
-<p><a href="https://github.com/ggseg/ggsegGordon/actions" class="external-link"><img src="https://github.com/ggseg/ggsegGordon/workflows/R-CMD-check/badge.svg" alt="R-CMD-check"></a> <a href="https://zenodo.org/badge/latestdoi/417531585" class="external-link"><img src="https://zenodo.org/badge/417531585.svg" alt="DOI"></a></p>
-<p>gordon datasets for the ggseg-plotting tool This is a support package for the ggseg, and ggseg3d packages. It contains the gordon atlases to plot using functions from those two packages.</p>
-</div>
-<div class="section level3">
-<h3 id="ggsegaicha">
-<a href="https://github.com/ggseg/ggsegAicha" class="external-link">ggsegAicha</a><a class="anchor" aria-label="anchor" href="#ggsegaicha"></a>
-</h3>
-<p><img src="https://github.com/ggseg/ggsegAicha/raw/HEAD/man/figures/logo.png" align="right" alt="ggsegAicha logo" width="120"></p>
-<p><a href="https://github.com/ggseg/ggsegAicha/actions" class="external-link"><img src="https://github.com/ggseg/ggsegAicha/workflows/R-CMD-check/badge.svg" alt="R-CMD-check"></a> <a href="https://zenodo.org/badge/latestdoi/417476540" class="external-link"><img src="https://zenodo.org/badge/417476540.svg" alt="DOI"></a></p>
-<p>aicha datasets for the ggseg-plotting tool This is a support package for the ggseg, and ggseg3d packages. It contains the aicha atlases to plot using functions from those two packages.</p>
-</div>
-<div class="section level3">
-<h3 id="ggsegaal">
-<a href="https://github.com/ggseg/ggsegAal" class="external-link">ggsegAal</a><a class="anchor" aria-label="anchor" href="#ggsegaal"></a>
-</h3>
-<p><img src="https://github.com/ggseg/ggsegAal/raw/HEAD/man/figures/logo.png" align="right" alt="ggsegAal logo" width="120"></p>
-<p><a href="https://github.com/ggseg/ggsegAal/actions" class="external-link"><img src="https://github.com/ggseg/ggsegAal/workflows/R-CMD-check/badge.svg" alt="R-CMD-check"></a> <a href="https://zenodo.org/badge/latestdoi/417464916" class="external-link"><img src="https://zenodo.org/badge/417464916.svg" alt="DOI"></a></p>
-<p>aal datasets for the ggseg-plotting tool This is a support package for the ggseg, and ggseg3d packages. It contains the aal atlases to plot using functions from those two packages.</p>
-</div>
-<div class="section level3">
-<h3 id="ggsegpower">
-<a href="https://github.com/ggseg/ggsegPower" class="external-link">ggsegPower</a><a class="anchor" aria-label="anchor" href="#ggsegpower"></a>
-</h3>
-<p><img src="https://github.com/ggseg/ggsegPower/raw/HEAD/man/figures/logo.png" align="right" alt="ggsegPower logo" width="120"></p>
-<p><a href="https://github.com/ggseg/ggsegPower/actions" class="external-link"><img src="https://github.com/ggseg/ggsegPower/workflows/R-CMD-check/badge.svg" alt="R-CMD-check"></a> <a href="https://zenodo.org/badge/latestdoi/417497619" class="external-link"><img src="https://zenodo.org/badge/417497619.svg" alt="DOI"></a></p>
-<p>power datasets for the ggseg-plotting tool This is a support package for the ggseg, and ggseg3d packages. It contains the power atlases to plot using functions from those two packages.</p>
-</div>
-<div class="section level3">
-<h3 id="ggsegbrainnetome">
-<a href="https://github.com/ggseg/ggsegBrainnetome" class="external-link">ggsegBrainnetome</a><a class="anchor" aria-label="anchor" href="#ggsegbrainnetome"></a>
-</h3>
-<p><img src="https://github.com/ggseg/ggsegBrainnetome/raw/HEAD/man/figures/logo.png" align="right" alt="ggsegBrainnetome logo" width="120"></p>
-<p><a href="https://github.com/ggseg/ggsegBrainnetome/actions" class="external-link"><img src="https://github.com/ggseg/ggsegBrainnetome/workflows/R-CMD-check/badge.svg" alt="R-CMD-check"></a> <a href="https://zenodo.org/badge/latestdoi/416644902" class="external-link"><img src="https://zenodo.org/badge/416644902.svg" alt="DOI"></a></p>
-<p>Brainnetome datasets for the ggseg-plotting tool This is a support package for the ggseg, and ggseg3d packages. It contains the Brainnetome atlases to plot using functions from those two packages.</p>
-</div>
-<div class="section level3">
-<h3 id="ggsegjhu">
-<a href="https://github.com/ggseg/ggsegJHU" class="external-link">ggsegJHU</a><a class="anchor" aria-label="anchor" href="#ggsegjhu"></a>
-</h3>
-<p><img src="https://github.com/ggseg/ggsegJHU/raw/HEAD/man/figures/logo.png" align="right" alt="ggsegJHU logo" width="120"></p>
-<p><a href="https://github.com/LCBC-UiO/ggsegJHU/actions" class="external-link"><img src="https://github.com/LCBC-UiO/ggsegJHU/workflows/R-CMD-check/badge.svg" alt="R build status"></a> <a href="https://zenodo.org/badge/latestdoi/250280074" class="external-link"><img src="https://zenodo.org/badge/250280074.svg" alt="DOI"></a></p>
-<p>JHU datasets for the ggseg-plotting tool This is a support package for the ggseg, and ggseg3d packages. It contains the JHU atlases to plot using functions from those two packages.</p>
-</div>
-<div class="section level3">
-<h3 id="ggsegho">
-<a href="https://github.com/ggseg/ggsegHO" class="external-link">ggsegHO</a><a class="anchor" aria-label="anchor" href="#ggsegho"></a>
-</h3>
-<p><img src="https://github.com/ggseg/ggsegHO/raw/HEAD/man/figures/logo.png" align="right" alt="ggsegHO logo" width="120"></p>
-<p><a href="https://github.com/ggseg/ggsegHO/actions" class="external-link"><img src="https://github.com/ggseg/ggsegHO/workflows/R-CMD-check/badge.svg" alt="R-CMD-check"></a> <a href="https://zenodo.org/badge/latestdoi/250284032" class="external-link"><img src="https://zenodo.org/badge/250284032.svg" alt="DOI"></a></p>
-<p>Harvard-Oxford datasets for the ggseg-plotting tool This is a support package for the ggseg, and ggseg3d packages. It contains the Harvard-Oxford cortical atlases to plot using functions from those two packages.</p>
-</div>
-<div class="section level3">
-<h3 id="ggsegicbm">
-<a href="https://github.com/ggseg/ggsegICBM" class="external-link">ggsegICBM</a><a class="anchor" aria-label="anchor" href="#ggsegicbm"></a>
-</h3>
-<p><img src="https://github.com/ggseg/ggsegICBM/raw/HEAD/man/figures/logo.png" align="right" alt="ggsegICBM logo" width="120"></p>
-<p><a href="https://github.com/ggseg/ggsegICBM/actions" class="external-link"><img src="https://github.com/ggseg/ggsegICBM/workflows/R-CMD-check/badge.svg" alt="R-CMD-check"></a> <a href="https://zenodo.org/badge/latestdoi/250281676" class="external-link"><img src="https://zenodo.org/badge/250281676.svg" alt="DOI"></a></p>
-<p>ICBM datasets for the ggseg-plotting tool This is a support package for the ggseg, and ggseg3d packages. It contains the ICBM atlases to plot using functions from those two packages.</p>
-</div>
-<div class="section level3">
-<h3 id="ggsegdefaultextra">
-<a href="https://github.com/ggseg/ggsegDefaultExtra" class="external-link">ggsegDefaultExtra</a><a class="anchor" aria-label="anchor" href="#ggsegdefaultextra"></a>
-</h3>
-<p><img src="https://github.com/ggseg/ggsegDefaultExtra/raw/HEAD/man/figures/logo.png" align="right" alt="ggsegDefaultExtra logo" width="120"></p>
-<p><a href="https://github.com/LCBC-UiO/ggsegDefaultExtra/actions" class="external-link"><img src="https://github.com/LCBC-UiO/ggsegDefaultExtra/workflows/R-CMD-check/badge.svg" alt="R build status"></a> <a href="https://zenodo.org/badge/latestdoi/250292657" class="external-link"><img src="https://zenodo.org/badge/250292657.svg" alt="DOI"></a></p>
-<p>Extra dk and aseg datasets for the ggseg-plotting tool This is a support package for the ggseg, and ggseg3d packages. It contains the extra dk and aseg, with some minor differences from the original atlases to plot using functions from those two packages.</p>
-</div>
-<div class="section level3">
-<h3 id="ggsegdkt">
-<a href="https://github.com/ggseg/ggsegDKT" class="external-link">ggsegDKT</a><a class="anchor" aria-label="anchor" href="#ggsegdkt"></a>
-</h3>
-<p><img src="https://github.com/ggseg/ggsegDKT/raw/HEAD/man/figures/logo.png" align="right" alt="ggsegDKT logo" width="120"></p>
-<p><a href="https://github.com/LCBC-UiO/ggsegDKT/actions" class="external-link"><img src="https://github.com/LCBC-UiO/ggsegDKT/workflows/R-CMD-check/badge.svg" alt="R build status"></a> <a href="https://zenodo.org/badge/latestdoi/314486110" class="external-link"><img src="https://zenodo.org/badge/314486110.svg" alt="DOI"></a></p>
-<p>Desikan-Killiany-Tourville datasets for the ggseg-plotting tool This is a support package for the ggseg, and ggseg3d packages. It contains the DKT atlases to plot using functions from those two packages.</p>
-</div>
-<div class="section level3">
-<h3 id="ggsegtracula">
-<a href="https://github.com/ggseg/ggsegTracula" class="external-link">ggsegTracula</a><a class="anchor" aria-label="anchor" href="#ggsegtracula"></a>
-</h3>
-<p><img src="https://github.com/ggseg/ggsegTracula/raw/HEAD/man/figures/logo.png" align="right" alt="ggsegTracula logo" width="120"></p>
-<p><a href="https://github.com/LCBC-UiO/ggsegTracula/actions" class="external-link"><img src="https://github.com/LCBC-UiO/ggsegTracula/workflows/R-CMD-check/badge.svg" alt="R build status"></a> <a href="https://zenodo.org/badge/latestdoi/250281064" class="external-link"><img src="https://zenodo.org/badge/250281064.svg" alt="DOI"></a></p>
-<p>Tracula datasets for the ggseg-plotting tool This is a support package for the ggseg, and ggseg3d packages. It contains the Tracula atlases to plot using functions from those two packages.</p>
-</div>
-<div class="section level3">
-<h3 id="ggsegchen">
-<a href="https://github.com/ggseg/ggsegChen" class="external-link">ggsegChen</a><a class="anchor" aria-label="anchor" href="#ggsegchen"></a>
-</h3>
-<p><img src="https://github.com/ggseg/ggsegChen/raw/HEAD/man/figures/logo.png" align="right" alt="ggsegChen logo" width="120"></p>
-<p><a href="https://github.com/LCBC-UiO/ggsegChen/actions" class="external-link"><img src="https://github.com/LCBC-UiO/ggsegChen/workflows/R-CMD-check/badge.svg" alt="R build status"></a> <a href="https://zenodo.org/badge/latestdoi/250277410" class="external-link"><img src="https://zenodo.org/badge/250277410.svg" alt="DOI"></a></p>
-<p>Chen datasets for the ggseg-plotting tool This is a support package for the ggseg, and ggseg3d packages. It contains the Chen atlases to plot using functions from those two packages.</p>
-</div>
-<div class="section level3">
-<h3 id="ggsegdesterieux">
-<a href="https://github.com/ggseg/ggsegDesterieux" class="external-link">ggsegDesterieux</a><a class="anchor" aria-label="anchor" href="#ggsegdesterieux"></a>
-</h3>
-<p><img src="https://github.com/ggseg/ggsegDesterieux/raw/HEAD/man/figures/logo.png" align="right" alt="ggsegDesterieux logo" width="120"></p>
-<p><a href="https://github.com/LCBC-UiO/ggsegDesterieux/actions" class="external-link"><img src="https://github.com/LCBC-UiO/ggsegDesterieux/workflows/R-CMD-check/badge.svg" alt="R build status"></a> <a href="https://zenodo.org/badge/latestdoi/250272332" class="external-link"><img src="https://zenodo.org/badge/250272332.svg" alt="DOI"></a></p>
-<p>Desterieux datasets for the ggseg-plotting tool This is a support package for the ggseg, and ggseg3d packages. It contains the Desterieux atlases to plot using functions from those two packages.</p>
-</div>
-<div class="section level3">
-<h3 id="ggsegschaefer">
-<a href="https://github.com/ggseg/ggsegSchaefer" class="external-link">ggsegSchaefer</a><a class="anchor" aria-label="anchor" href="#ggsegschaefer"></a>
-</h3>
-<p><img src="https://github.com/ggseg/ggsegSchaefer/raw/HEAD/man/figures/logo.png" align="right" alt="ggsegSchaefer logo" width="120"></p>
-<p><a href="https://github.com/ggseg/ggsegSchaefer/actions" class="external-link"><img src="https://github.com/ggseg/ggsegSchaefer/workflows/R-CMD-check/badge.svg" alt="R-CMD-check"></a> <a href="https://zenodo.org/badge/latestdoi/250276444" class="external-link"><img src="https://zenodo.org/badge/250276444.svg" alt="DOI"></a></p>
-<p>Schaefer datasets for the ggseg-plotting tool This is a support package for the ggseg, and ggseg3d packages. It contains the Schaefer atlases to plot using functions from those two packages.</p>
-</div>
-<div class="section level3">
-<h3 id="ggsegglasser">
-<a href="https://github.com/ggseg/ggsegGlasser" class="external-link">ggsegGlasser</a><a class="anchor" aria-label="anchor" href="#ggsegglasser"></a>
-</h3>
-<p><img src="https://github.com/ggseg/ggsegGlasser/raw/HEAD/man/figures/logo.png" align="right" alt="ggsegGlasser logo" width="120"></p>
-<p><a href="https://github.com/LCBC-UiO/ggsegGlasser/actions" class="external-link"><img src="https://github.com/LCBC-UiO/ggsegGlasser/workflows/R-CMD-check/badge.svg" alt="R build status"></a> <a href="https://zenodo.org/badge/latestdoi/250278991" class="external-link"><img src="https://zenodo.org/badge/250278991.svg" alt="DOI"></a></p>
-<p>Glasser datasets for the ggseg-plotting tool This is a support package for the ggseg, and ggseg3d packages. It contains the Glasser atlases to plot using functions from those two packages.</p>
-</div>
-<div class="section level3">
-<h3 id="ggsegyeo2011">
-<a href="https://github.com/ggseg/ggsegYeo2011" class="external-link">ggsegYeo2011</a><a class="anchor" aria-label="anchor" href="#ggsegyeo2011"></a>
-</h3>
-<p><img src="https://github.com/ggseg/ggsegYeo2011/raw/HEAD/man/figures/logo.png" align="right" alt="ggsegYeo2011 logo" width="120"></p>
-<p><a href="https://github.com/LCBC-UiO/ggsegYeo2011/actions" class="external-link"><img src="https://github.com/LCBC-UiO/ggsegYeo2011/workflows/R-CMD-check/badge.svg" alt="R build status"></a> <a href="https://zenodo.org/badge/latestdoi/250192046" class="external-link"><img src="https://zenodo.org/badge/250192046.svg" alt="DOI"></a></p>
-<p>Yeo 2011 Datasets for the ‘ggseg’-Package This is a support package for the ggseg, and ggseg3d packages. It contains the Yeo 2011 atlases to plot using functions from those two packages.</p>
-</div>
+<p>We have tutorials on how to make atlases available in the <code>Articles</code> of the <a href="https://ggsegverse.github.io/ggseg.extra/">package documentation page</a>. Currently, the pipeline for making 3d atlases needs FreeSurfer to be installed on your system and a ready <code>.annot</code> file to use for the conversions. Improvements to the pipeline in creating cortical atlases both for ggseg and ggseg3d is still being developed. Pipelines for creating sub-cortical atlases of any kind are still in their infancy, and we do not yet have good solutions for their creation. Suggestions for improvement are welcome through GH issues or direct Pull requests.</p>
 </div>
 <div class="section level2">
 <h2 id="code-of-conduct">Code of Conduct<a class="anchor" aria-label="anchor" href="#code-of-conduct"></a>
 </h2>
-<p>Please note that the ggsegExtra project is released with a <a href="https://www.contributor-covenant.org/version/1/0/0/code-of-conduct.html" class="external-link">Contributor Code of Conduct</a>. By contributing to this project, you agree to abide by its terms.</p>
+<p>Please note that the ggseg.extra project is released with a <a href="https://www.contributor-covenant.org/version/1/0/0/code-of-conduct.html" class="external-link">Contributor Code of Conduct</a>. By contributing to this project, you agree to abide by its terms.</p>
 <div class="section level3">
 <h3 id="report-bugs-or-requests">Report bugs or requests<a class="anchor" aria-label="anchor" href="#report-bugs-or-requests"></a>
 </h3>
-<p>Don’t hesitate to ask for support using <a href="https://github.com/ggseg/ggsegExtra/issues" class="external-link">github issues</a>, or requesting new atlases. While we would love getting help in creating new atlases, you may also request atlases through the issues, and we will try to get to it.</p>
+<p>Don’t hesitate to ask for support using <a href="https://github.com/ggsegverse/ggseg.extra/issues" class="external-link">github issues</a>, or requesting new atlases. While we would love getting help in creating new atlases, you may also request atlases through the issues, and we will try to get to it.</p>
 </div>
 </div>
 </div>
@@ -307,8 +145,8 @@
   </main><aside class="col-md-3"><div class="links">
 <h2 data-toc-skip>Links</h2>
 <ul class="list-unstyled">
-<li><a href="https://github.com/ggseg/ggsegExtra/" class="external-link">Browse source code</a></li>
-<li><a href="https://github.com/ggseg/ggsegExtra/issues" class="external-link">Report a bug</a></li>
+<li><a href="https://github.com/ggsegverse/ggseg.extra/" class="external-link">Browse source code</a></li>
+<li><a href="https://github.com/ggsegverse/ggseg.extra/issues" class="external-link">Report a bug</a></li>
 </ul>
 </div>
 
@@ -320,25 +158,18 @@
 </ul>
 </div>
 
-<div class="community">
-<h2 data-toc-skip>Community</h2>
-<ul class="list-unstyled">
-<li><a href="CODE_OF_CONDUCT.html">Code of conduct</a></li>
-</ul>
-</div>
 
 <div class="citation">
 <h2 data-toc-skip>Citation</h2>
 <ul class="list-unstyled">
-<li><a href="authors.html#citation">Citing ggsegExtra</a></li>
+<li><a href="authors.html#citation">Citing ggseg.extra</a></li>
 </ul>
 </div>
 
 <div class="developers">
 <h2 data-toc-skip>Developers</h2>
 <ul class="list-unstyled">
-<li>Athanasia Mo Mowinckel <br><small class="roles"> Author, maintainer </small> <a href="https://orcid.org/0000-0002-5756-0223" target="orcid.widget" aria-label="ORCID" class="external-link"><span class="fab fa-orcid orcid" aria-hidden="true"></span></a>  </li>
-<li>Didac Vidal-Piñeiro <br><small class="roles"> Author </small> <a href="https://orcid.org/0000-0001-9997-9156" target="orcid.widget" aria-label="ORCID" class="external-link"><span class="fab fa-orcid orcid" aria-hidden="true"></span></a>  </li>
+<li>Athanasia Mo Mowinckel <br><small class="roles"> Author, maintainer, copyright holder </small> <a href="https://orcid.org/0000-0002-5756-0223" target="orcid.widget" aria-label="ORCID" class="external-link"><span class="fab fa-orcid orcid" aria-hidden="true"></span></a>  </li>
 <li><a href="authors.html">More about authors...</a></li>
 </ul>
 </div>
@@ -346,10 +177,10 @@
 <div class="dev-status">
 <h2 data-toc-skip>Dev status</h2>
 <ul class="list-unstyled">
-<li><a href="https://github.com/ggseg/ggsegExtra/actions/workflows/test-coverage.yaml" class="external-link"><img src="https://raw.githubusercontent.com/ggseg/ggsegExtra/coverage/badges/coverage.svg" alt="Coverage Status"></a></li>
-<li><a href="https://CRAN.R-project.org/package=ggsegExtra" class="external-link"><img src="https://www.r-pkg.org/badges/version/ggsegExtra" alt="CRAN status"></a></li>
-<li><a href="https://www.tidyverse.org/lifecycle/#stable" class="external-link"><img src="https://img.shields.io/badge/lifecycle-stable-brightgreen.svg" alt="Lifecycle: stable"></a></li>
-<li><a href="https://github.com/ggseg/ggsegExtra/actions" class="external-link"><img src="https://github.com/ggseg/ggsegExtra/workflows/R-CMD-check/badge.svg" alt="R-CMD-check"></a></li>
+<li><a href="https://github.com/ggsegverse/ggseg.extra/actions/workflows/test-coverage.yaml" class="external-link"><img src="https://raw.githubusercontent.com/ggsegverse/ggseg.extra/coverage/badges/coverage.svg" alt="Coverage Status"></a></li>
+<li><a href="https://CRAN.R-project.org/package=ggseg.extra" class="external-link"><img src="https://www.r-pkg.org/badges/version/ggseg.extra" alt="CRAN status"></a></li>
+<li><a href="https://lifecycle.r-lib.org/articles/stages.html" class="external-link"><img src="https://img.shields.io/badge/lifecycle-stable-brightgreen.svg" alt="Lifecycle: stable"></a></li>
+<li><a href="https://github.com/ggsegverse/ggseg.extra/actions" class="external-link"><img src="https://github.com/ggsegverse/ggseg.extra/workflows/R-CMD-check/badge.svg" alt="R-CMD-check"></a></li>
 </ul>
 </div>
 
@@ -357,12 +188,21 @@
 </div>
 
 
-    <footer><div class="pkgdown-footer-left">
-  <p>Developed by Athanasia Mo Mowinckel, Didac Vidal-Piñeiro.</p>
-</div>
+    <footer><div class="ggsegverse-footer py-3">
+  <div class="container d-flex justify-content-between align-items-center flex-wrap">
+    <div class="d-flex align-items-center">
+      <a href="https://ggsegverse.github.io" class="external-link me-3">
+        <img src="ggsegverse-logo.png" alt="ggsegverse" height="40"></a>
+      <span class="text-muted">
+        Part of the <a href="https://ggsegverse.github.io" class="external-link"><strong>ggsegverse</strong></a>
+        — Gross Geometry Brain Segmentation Universe
+      </span>
+    </div>
+    <div class="text-muted">
+      Built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a>
 
-<div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+    </div>
+  </div>
 </div>
 
     </footer>
@@ -370,7 +210,15 @@
 
 
 
-
-
-  </body>
+  <script>
+  document.addEventListener("DOMContentLoaded", function() {
+    var brand = document.querySelector(".navbar-brand");
+    if (!brand) return;
+    var root = brand.getAttribute("href").replace("index.html", "");
+    document.querySelectorAll(
+      '#ggsegverse-logo, .ggsegverse-footer img[alt="ggsegverse"]'
+    ).forEach(function(img) { img.src = root + "ggsegverse-logo.png"; });
+  });
+</script>
+</body>
 </html>

@@ -1,0 +1,318 @@
+# Post-processing atlases
+
+Raw atlases come with everything: white matter, ventricles, unknown
+labels, cortex outlines, and views that may not show your structures
+well. The `atlas_region_*` and `atlas_view_*` families let you curate an
+atlas without rebuilding from scratch.
+
+Most of the functions in this vignette come from ggseg.formats and are
+re-exported by ggseg.extra for convenience. The geometry adjustment
+functions
+([`atlas_smooth()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_smooth.md),
+[`atlas_simplify()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_simplify.md))
+are native to ggseg.extra.
+
+## Inspecting an atlas
+
+Before changing anything, understand what you have:
+
+``` r
+library(ggseg.formats)
+
+atlas_labels(atlas)
+
+atlas_regions(atlas)
+
+atlas_views(atlas)
+
+atlas_sf(atlas)
+
+atlas_meshes(atlas)
+```
+
+[`atlas_labels()`](https://ggsegverse.github.io/ggseg.formats/reference/atlas_labels.html)
+returns the annotation-level identifiers.
+[`atlas_regions()`](https://ggsegverse.github.io/ggseg.formats/reference/atlas_regions.html)
+returns the display names stored in `$core`.
+[`atlas_views()`](https://ggsegverse.github.io/ggseg.formats/reference/atlas_views.html)
+lists the available 2D views.
+[`atlas_sf()`](https://ggsegverse.github.io/ggseg.formats/reference/atlas_sf.html)
+returns the sf geometry used for 2D plotting.
+[`atlas_meshes()`](https://ggsegverse.github.io/ggseg.formats/reference/atlas_meshes.html)
+returns the 3D mesh data for each region.
+
+## Removing regions
+
+The most common post-processing step is removing structures you don’t
+need.
+[`atlas_region_remove()`](https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html)
+matches against labels by default:
+
+``` r
+atlas <- atlas |>
+  atlas_region_remove("White-Matter") |>
+  atlas_region_remove("WM-hypointensities") |>
+  atlas_region_remove("-Ventricle") |>
+  atlas_region_remove("-Vent$") |>
+  atlas_region_remove("CSF")
+```
+
+Patterns are regular expressions, so `-Vent$` matches “3rd-Vent” and
+“4th-Vent” but not “Ventral-DC”.
+
+This removes the region from `$core`, `$palette`, and all geometry data.
+
+## Keeping regions
+
+The inverse operation — keep only regions that match:
+
+``` r
+atlas <- atlas |>
+  atlas_region_keep("Thalamus|Caudate|Putamen|Pallidum")
+```
+
+Everything that doesn’t match gets dropped.
+
+## Context regions
+
+Some regions work better as background outlines than as filled areas.
+The cerebral cortex in a subcortical atlas is the classic example — you
+want to see where it is for spatial reference, but you don’t want it
+competing with the subcortical structures for colour.
+
+[`atlas_region_contextual()`](https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html)
+keeps the geometry in `$data$sf` but removes the region from `$core`.
+The region renders as an outline, not a filled polygon:
+
+``` r
+atlas <- atlas |>
+  atlas_region_contextual("cortex", match_on = "label") |>
+  atlas_region_contextual("unknown", match_on = "label") |>
+  atlas_region_contextual("corpuscallosum", match_on = "label")
+```
+
+The `match_on` parameter controls whether patterns match against `label`
+(annotation identifiers) or `region` (display names).
+
+## Labels versus regions
+
+Every ggseg atlas carries two columns that describe the same parcels in
+different ways, and keeping them distinct matters.
+
+The `label` column is the machine-readable identifier — the string that
+traces directly back to the source parcellation. It should be
+unambiguous, stable across versions, and safe to use in programmatic
+joins: `"Left-Thalamus"`, `"lh_7Networks_3"`,
+`"ctx-lh-superiorfrontal"`. When you merge external data (effect sizes,
+p-values, cortical thickness) onto the atlas, `label` is the column you
+match against.
+
+The `region` column in `$core` is for humans. It appears in plot legends
+and figure labels, so it should be readable, lowercase, and stripped of
+hemisphere prefixes and technical notation: `"thalamus"`,
+`"dorsal attention"`, `"superior frontal gyrus"`. Hemispheres are
+already tracked in the `hemi` column — repeating them in `region` is
+redundant.
+
+The pipeline generates both from the source annotation, but the defaults
+are rarely publication-ready.
+[`atlas_region_rename()`](https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html)
+cleans up the `region` column without touching `label`:
+
+``` r
+atlas <- atlas |>
+  atlas_region_rename("Left-", "", match_on = "region") |>
+  atlas_region_rename("Right-", "", match_on = "region") |>
+  atlas_region_rename("-", " ", match_on = "region")
+```
+
+## Adding metadata columns
+
+The `$core` data frame only requires three columns: `hemi`, `region`,
+and `label`. Everything else is yours to add, and this is where atlases
+go from functional to genuinely useful.
+
+Neuroscientists think in networks, lobes, and functional systems — not
+individual parcels. Adding grouping columns lets users facet plots by
+system, color by network, or filter to structures they care about:
+
+``` r
+metadata <- data.frame(
+  region = c("thalamus", "caudate", "putamen", "hippocampus", "amygdala"),
+  structure = c("diencephalon", "basal ganglia", "basal ganglia",
+                "limbic", "limbic")
+)
+
+atlas <- atlas |>
+  atlas_core_add(metadata, by = "region")
+```
+
+This merges new columns into `$core` via a left join.
+
+You can add as many columns as you need. A Schaefer atlas might carry
+`network` and `parcel_order`. A Brainnetome atlas might include
+`cytoarchitectonic_area` and `connectivity_profile`. The atlas machinery
+ignores anything beyond the three required columns — extra columns are
+carried through plotting, subsetting, and serialization without
+interference. The more semantic structure you encode, the more your
+users can do downstream without looking up region names in a separate
+table.
+
+## View management
+
+New subcortical and tract atlases have many slices that are selected by
+default to provide options of which slices give the best overall
+coverage of the atlas. You will likely want to reduce the atlas to just
+views you see as necessary and provide the best general coverage.
+
+### Keeping specific views
+
+``` r
+atlas <- atlas |>
+  atlas_view_keep("axial_3|axial_5|coronal_2|sagittal")
+```
+
+### Removing views
+
+``` r
+atlas <- atlas |>
+  atlas_view_remove("axial_1|axial_2")
+```
+
+### Reordering views
+
+``` r
+atlas <- atlas |>
+  atlas_view_reorder(
+    c("sagittal_left", "sagittal_right", "coronal_3", "axial_4")
+  )
+```
+
+## Removing small regions from views
+
+After filtering views, some regions may appear as tiny slivers that add
+clutter without information. Remove them by minimum area:
+
+``` r
+atlas <- atlas |>
+  atlas_view_remove_region_small(
+    min_area = 500,
+    views = c("axial", "coronal")
+  ) |>
+  atlas_view_remove_region_small(min_area = 50)
+```
+
+The first call targets specific view types with a higher threshold. The
+second call applies a lower threshold across all views.
+
+## Gathering views
+
+Raw atlas views often have large gaps between panels.
+[`atlas_view_gather()`](https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html)
+repositions views into a compact layout:
+
+``` r
+atlas <- atlas |>
+  atlas_view_gather()
+```
+
+This is typically the last step before saving.
+
+## Adjusting geometry after the fact
+
+The atlas creation pipeline bakes in two geometry parameters early:
+smoothing bandwidth and vertex count. Getting these right on the first
+pass is rare — you usually need to see the result before you know
+whether the contours are too jagged, too blobby, or carrying more
+vertices than the plot actually needs.
+
+[`atlas_smooth()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_smooth.md)
+and
+[`atlas_simplify()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_simplify.md)
+let you adjust both without re-running the pipeline.
+
+### Smoothing rough contours
+
+Region boundaries from volumetric or surface-based extraction tend to
+have staircase artefacts.
+[`atlas_smooth()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_smooth.md)
+applies kernel smoothing to the sf geometry:
+
+``` r
+atlas <- atlas |>
+  atlas_smooth(smoothness = 5)
+```
+
+The `smoothness` parameter controls the bandwidth — higher values
+produce rounder boundaries. Start around 5 and increase if the edges
+still look noisy.
+
+### Reducing vertex count
+
+Dense contours slow down rendering and inflate file size without visible
+benefit at typical plot resolutions.
+[`atlas_simplify()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_simplify.md)
+reduces vertices using Douglas-Peucker simplification:
+
+``` r
+atlas <- atlas |>
+  atlas_simplify(tolerance = 0.5)
+```
+
+Higher `tolerance` values remove more vertices. Topology is preserved,
+so regions won’t collapse or overlap — but push the value too high and
+small structures lose their shape.
+
+### Combining both
+
+These compose naturally in a pipe. Smooth first to remove noise, then
+simplify to drop redundant points:
+
+``` r
+atlas <- atlas |>
+  atlas_smooth(smoothness = 8) |>
+  atlas_simplify(tolerance = 1)
+```
+
+Both functions return a modified `ggseg_atlas`, so you can inspect the
+result with `plot(atlas)` at any step and adjust parameters before
+moving on. The goal is an atlas that plots fast, looks neat, and shows
+regions correctly.
+
+## Rebuilding the atlas
+
+After modifying components directly (e.g., editing `$core` by hand),
+reconstruct the atlas to ensure consistency:
+
+``` r
+atlas <- ggseg_atlas(
+  atlas = atlas$atlas,
+  type = atlas$type,
+  palette = atlas$palette,
+  core = modified_core,
+  data = atlas$data
+)
+```
+
+The constructor validates that core, palette, and geometry data are
+consistent.
+
+## Putting it together
+
+A typical post-processing pipeline for a subcortical atlas:
+
+``` r
+atlas <- atlas_raw |>
+  atlas_region_remove("White-Matter", match_on = "label") |>
+  atlas_region_remove("-Ventricle", match_on = "label") |>
+  atlas_region_remove("CSF", match_on = "label") |>
+  atlas_region_contextual("Cortex", match_on = "label") |>
+  atlas_view_keep("axial_3|axial_5|coronal_3|sagittal") |>
+  atlas_view_remove_region_small(min_area = 100) |>
+  atlas_smooth(smoothness = 5) |>
+  atlas_simplify(tolerance = 0.5) |>
+  atlas_view_gather()
+```
+
+Each step is a pure transformation — pipe them together, inspect the
+result, adjust as needed.

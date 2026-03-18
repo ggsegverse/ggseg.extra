@@ -2,30 +2,42 @@
 
 ### Getting Started
 
-- [Using ggsegExtra
-  atlases](https://ggseg.github.io/ggsegExtra/articles/ggsegExtra.md):
+- [Getting started with
+  ggseg.extra](https://ggsegverse.github.io/ggseg.extra/articles/ggseg.extra.md):
+- [Atlas Creation
+  Workflows](https://ggsegverse.github.io/ggseg.extra/articles/atlas-workflows.md):
 - [System
-  Setup](https://ggseg.github.io/ggsegExtra/articles/system_setup.md):
+  setup](https://ggsegverse.github.io/ggseg.extra/articles/system-setup.md):
 
-### Creating Atlases
+### How-To
 
-Step-by-step guides for creating custom brain atlases
+Understanding package functionality
 
-- [Contributing: creating new tridimensional
-  ggseg3d-atlases](https://ggseg.github.io/ggsegExtra/articles/customatlas3d.md):
-- [Contributing: creating new polygon
-  ggseg-atlases](https://ggseg.github.io/ggsegExtra/articles/customatlas.md):
+- [Pipeline
+  configuration](https://ggsegverse.github.io/ggseg.extra/articles/pipeline-configuration.md):
+- [Post-processing
+  atlases](https://ggsegverse.github.io/ggseg.extra/articles/post-processing.md):
 
-### Tutorials
+### Tutorials: Creating Atlases
 
-Complete worked examples
+Step-by-step atlas creation with full pipelines
 
-- [Example creation: the DKT cortical
-  atlas](https://ggseg.github.io/ggsegExtra/articles/createdkt.md):
-- [Example creation: the aseg subcortical
-  atlas](https://ggseg.github.io/ggsegExtra/articles/createaseg.md):
+- [Tutorial: Creating a cortical
+  atlas](https://ggsegverse.github.io/ggseg.extra/articles/tutorial-cortical-atlas.md):
+- [Tutorial: Creating an atlas from
+  neuromaps](https://ggsegverse.github.io/ggseg.extra/articles/tutorial-neuromaps-atlas.md):
+- [Tutorial: Creating a subcortical
+  atlas](https://ggsegverse.github.io/ggseg.extra/articles/tutorial-subcortical-atlas.md):
+- [Tutorial: Creating a whole-brain
+  atlas](https://ggsegverse.github.io/ggseg.extra/articles/tutorial-wholebrain-atlas.md):
+- [Tutorial: Creating a tract
+  atlas](https://ggsegverse.github.io/ggseg.extra/articles/tutorial-tract-atlas.md):
+- [Tutorial: Creating an atlas from label
+  files](https://ggsegverse.github.io/ggseg.extra/articles/tutorial-label-atlas.md):
 
-### Contributing
+### Legacy & Contributing
 
-- [Contributing: prepare a repository for the
-  atlas](https://ggseg.github.io/ggsegExtra/articles/ggsegrepo.md):
+- [Converting legacy
+  atlases](https://ggsegverse.github.io/ggseg.extra/articles/legacy-conversion.md):
+- [Contributing an atlas
+  package](https://ggsegverse.github.io/ggseg.extra/articles/contributing.md):

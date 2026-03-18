@@ -1,0 +1,609 @@
+# Tutorial: Creating an atlas from neuromaps
+
+The [neuromaps](https://github.com/netneurolab/neuromaps) project
+provides standardized brain maps from published studies — PET receptor
+densities, gene expression gradients, cortical thickness, and hundreds
+of other measures. These brain maps are continuous: each vertex on the
+cortical surface has a floating-point value rather than a parcel label.
+
+[`create_cortical_from_neuromaps()`](https://ggsegverse.github.io/ggseg.extra/reference/create_cortical_from_neuromaps.md)
+turns any neuromaps annotation into a ggseg atlas by discretizing the
+continuous values into quantile bins, each becoming a plottable region.
+This tutorial walks through the full workflow, from fetching an
+annotation to fine-tuning the binning.
+
+## What you need
+
+- The [neuromapr](https://github.com/ggsegverse/neuromapr) package (for
+  fetching neuromaps annotations)
+- FreeSurfer installed with the `fsaverage5` subject (for volume
+  annotations and the full 2D pipeline)
+- ImageMagick and Chrome/Chromium (for 2D geometry extraction)
+
+For a 3D-only atlas (`steps = 1`), FreeSurfer is only needed if the
+annotation is a volume file.
+
+``` r
+library(ggseg.extra)
+library(ggseg.formats)
+library(dplyr)
+library(ggplot2)
+```
+
+## Fetching a neuromaps annotation
+
+The `source` and `desc` arguments identify the brain map in the
+neuromaps registry. For this tutorial we use the first principal
+component of gene expression from the Allen Human Brain Atlas, provided
+by [abagen](https://abagen.readthedocs.io/).
+
+``` r
+atlas_auto <- create_cortical_from_neuromaps(
+  source = "abagen",
+  desc = "genepc1",
+  atlas_name = "abagen_genepc1",
+  steps = 1
+)
+
+atlas_auto
+#> 
+#> ── abagen_genepc1 ggseg atlas ────────────
+#> Type: cortical
+#> Regions: 16
+#> Hemispheres: left, right
+#> Palette: ✔
+#> Rendering: ✖ ggseg
+#> ✔ ggseg3d (vertices)
+#> ──────────────────────────────────────────
+#> # A tibble: 32 × 3
+#>    hemi  region  label     
+#>    <chr> <chr>   <chr>     
+#>  1 left  bin_1   lh_bin_1  
+#>  2 left  bin_2   lh_bin_2  
+#>  3 left  bin_3   lh_bin_3  
+#>  4 left  bin_4   lh_bin_4  
+#>  5 left  bin_5   lh_bin_5  
+#>  6 left  bin_6   lh_bin_6  
+#>  7 left  bin_7   lh_bin_7  
+#>  8 left  bin_8   lh_bin_8  
+#>  9 left  bin_9   lh_bin_9  
+#> 10 left  bin_10  lh_bin_10 
+#> 11 left  bin_11  lh_bin_11 
+#> 12 left  bin_12  lh_bin_12 
+#> 13 left  bin_13  lh_bin_13 
+#> 14 left  bin_14  lh_bin_14 
+#> 15 left  bin_15  lh_bin_15 
+#> 16 left  unknown lh_unknown
+#> 17 right bin_1   rh_bin_1  
+#> 18 right bin_2   rh_bin_2  
+#> 19 right bin_3   rh_bin_3  
+#> 20 right bin_4   rh_bin_4  
+#> 21 right bin_5   rh_bin_5  
+#> 22 right bin_6   rh_bin_6  
+#> 23 right bin_7   rh_bin_7  
+#> 24 right bin_8   rh_bin_8  
+#> 25 right bin_9   rh_bin_9  
+#> 26 right bin_10  rh_bin_10 
+#> 27 right bin_11  rh_bin_11 
+#> 28 right bin_12  rh_bin_12 
+#> 29 right bin_13  rh_bin_13 
+#> 30 right bin_14  rh_bin_14 
+#> 31 right bin_15  rh_bin_15 
+#> 32 right unknown rh_unknown
+```
+
+`steps = 1` reads the annotation and builds a 3D-only atlas — no
+screenshots, no 2D geometry. This finishes in seconds and gives you a
+quick sanity check before committing to the full pipeline.
+
+The regions listed are the quantile bins the pipeline created
+automatically. Each bin corresponds to a range of gene expression values
+and covers roughly the same number of vertices.
+
+## How binning works
+
+Neuromaps annotations are continuous — every vertex has a value like
+0.42 or −1.73 rather than a label like “precuneus.” To turn these into
+plottable atlas regions, the pipeline discretizes the values into bins.
+Each bin becomes a region colored along a spectral gradient from low to
+high values.
+
+### Auto-detection: parcellation vs. continuous
+
+When the pipeline reads the annotation data, it first checks whether the
+vertex values are integers or floating-point:
+
+- **Integer values** → treated as a parcellation. Each unique ID becomes
+  a region. Value 0 is the medial wall. No binning.
+- **Floating-point values** → treated as a continuous brain map. NaN
+  vertices are the medial wall. Remaining values are binned.
+
+This detection is automatic. If you have a parcellation map from
+neuromaps (like Schaefer parcels), the pipeline will handle it as
+discrete regions without binning.
+
+### The `n_bins` parameter
+
+`n_bins` controls how many quantile bins continuous data is split into.
+
+**NULL (the default)** uses Sturges’ rule to auto-detect the bin count.
+The formula is `1 + log2(n)` where *n* is the number of valid (non-NaN)
+vertices, clamped to the range 5–20. For fsaverage5 with 10,242 vertices
+per hemisphere, this gives `1 + log2(10242) ≈ 14` bins.
+
+``` r
+nrow(atlas_auto$core)
+#> [1] 32
+atlas_auto$core |> filter(region != "unknown") |> distinct(region)
+#> # A tibble: 15 × 1
+#>    region
+#>    <chr> 
+#>  1 bin_1 
+#>  2 bin_2 
+#>  3 bin_3 
+#>  4 bin_4 
+#>  5 bin_5 
+#>  6 bin_6 
+#>  7 bin_7 
+#>  8 bin_8 
+#>  9 bin_9 
+#> 10 bin_10
+#> 11 bin_11
+#> 12 bin_12
+#> 13 bin_13
+#> 14 bin_14
+#> 15 bin_15
+```
+
+**An explicit integer** overrides auto-detection. Use fewer bins for a
+cleaner, more schematic look; more bins for finer spatial resolution.
+
+``` r
+atlas_5 <- create_cortical_from_neuromaps(
+  source = "abagen",
+  desc = "genepc1",
+  n_bins = 5,
+  atlas_name = "abagen_5bin",
+  steps = 1
+)
+
+atlas_5$core |> filter(region != "unknown") |> distinct(region)
+#> # A tibble: 5 × 1
+#>   region
+#>   <chr> 
+#> 1 bin_1 
+#> 2 bin_2 
+#> 3 bin_3 
+#> 4 bin_4 
+#> 5 bin_5
+```
+
+``` r
+atlas_20 <- create_cortical_from_neuromaps(
+  source = "abagen",
+  desc = "genepc1",
+  n_bins = 20,
+  atlas_name = "abagen_20bin",
+  steps = 1
+)
+
+atlas_20$core |> filter(region != "unknown") |> distinct(region)
+#> # A tibble: 20 × 1
+#>    region
+#>    <chr> 
+#>  1 bin_1 
+#>  2 bin_2 
+#>  3 bin_3 
+#>  4 bin_4 
+#>  5 bin_5 
+#>  6 bin_6 
+#>  7 bin_7 
+#>  8 bin_8 
+#>  9 bin_9 
+#> 10 bin_10
+#> 11 bin_11
+#> 12 bin_12
+#> 13 bin_13
+#> 14 bin_14
+#> 15 bin_15
+#> 16 bin_16
+#> 17 bin_17
+#> 18 bin_18
+#> 19 bin_19
+#> 20 bin_20
+```
+
+### Quantile-based breaks
+
+Bins are created using quantile breaks, not equal-width intervals. This
+means each bin contains approximately the same number of vertices.
+
+Equal-width bins would leave most vertices in a few central bins when
+the distribution is skewed, which is common for brain maps. Quantile
+binning ensures every bin contributes visible surface area to the atlas,
+making the resulting plot informative regardless of the data
+distribution.
+
+### Color palette
+
+Bins are colored using the HCL Spectral palette. Bin 1 (lowest values)
+gets the cool end of the spectrum, and the last bin (highest values)
+gets the warm end. The medial wall is always grey (`#BEBEBE`) and
+labeled “unknown.”
+
+``` r
+atlas_auto$palette
+#>   lh_bin_1   lh_bin_2   lh_bin_3 
+#>  "#A71B4B"  "#C84040"  "#E5610A" 
+#>   lh_bin_4   lh_bin_5   lh_bin_6 
+#>  "#EF8913"  "#F6AD3E"  "#FBCC6B" 
+#>   lh_bin_7   lh_bin_8   lh_bin_9 
+#>  "#FDE896"  "#FEFDBE"  "#D0F4B1" 
+#>  lh_bin_10  lh_bin_11  lh_bin_12 
+#>  "#96E4AD"  "#52CFB0"  "#00B6B5" 
+#>  lh_bin_13  lh_bin_14  lh_bin_15 
+#>  "#0099B5"  "#2275AF"  "#584B9F" 
+#> lh_unknown   rh_bin_1   rh_bin_2 
+#>  "#BEBEBE"  "#A71B4B"  "#C84040" 
+#>   rh_bin_3   rh_bin_4   rh_bin_5 
+#>  "#E5610A"  "#EF8913"  "#F6AD3E" 
+#>   rh_bin_6   rh_bin_7   rh_bin_8 
+#>  "#FBCC6B"  "#FDE896"  "#FEFDBE" 
+#>   rh_bin_9  rh_bin_10  rh_bin_11 
+#>  "#D0F4B1"  "#96E4AD"  "#52CFB0" 
+#>  rh_bin_12  rh_bin_13  rh_bin_14 
+#>  "#00B6B5"  "#0099B5"  "#2275AF" 
+#>  rh_bin_15 rh_unknown 
+#>  "#584B9F"  "#BEBEBE"
+```
+
+## Visualizing the effect of bin count
+
+Comparing the 3D rendering across different bin counts makes it easy to
+choose the right level of detail:
+
+``` r
+ggseg3d::ggseg3d(atlas = atlas_5, hemisphere = "left")
+```
+
+![3D rendering of the left hemisphere coloured by 5 quantile bins of
+gene expression values, showing broad spatial
+patterns.](figures/tutorial-neuromaps-atlas-compare-3d-5-1.png)
+
+3D brain rendering with 5 quantile bins.
+
+``` r
+ggseg3d::ggseg3d(atlas = atlas_auto, hemisphere = "left")
+```
+
+![3D rendering of the left hemisphere coloured by approximately 14
+auto-detected quantile bins, showing finer spatial detail than the 5-bin
+version.](figures/tutorial-neuromaps-atlas-compare-3d-auto-1.png)
+
+3D brain rendering with auto-detected bins (Sturges’ rule).
+
+``` r
+ggseg3d::ggseg3d(atlas = atlas_20, hemisphere = "left")
+```
+
+![3D rendering of the left hemisphere coloured by 20 quantile bins,
+showing fine-grained spatial
+gradients.](figures/tutorial-neuromaps-atlas-compare-3d-20-1.png)
+
+3D brain rendering with 20 quantile bins.
+
+## Full 2D atlas pipeline
+
+Once you’re happy with the binning, run the full pipeline to generate 2D
+polygon geometry for plotting with ggseg. We use 7 bins here for a
+balance between clarity and resolution:
+
+``` r
+output_dir <- file.path(tempdir(), "neuromaps_tutorial")
+
+atlas_full <- create_cortical_from_neuromaps(
+  source = "abagen",
+  desc = "genepc1",
+  n_bins = 7,
+  atlas_name = "abagen_genepc1",
+  output_dir = output_dir,
+  tolerance = 1,
+  smoothness = 5,
+  skip_existing = TRUE,
+  cleanup = FALSE,
+  verbose = TRUE
+)
+#> ℹ Fetching neuromaps: source="abagen", desc="genepc1"
+#> ℹ Using cached ']8;;file:///Users/athanasm/workspace/ggseg/ggsegExtra/vignettes/source-abagen_desc-genepc1_space-fsaverage_den-10k_hemi-L_feature.func.giisource-abagen_desc-genepc1_space-fsaverage_den-10k_hemi-L_feature.func.gii]8;;'
+#> ℹ Using cached ']8;;file:///Users/athanasm/workspace/ggseg/ggsegExtra/vignettes/source-abagen_desc-genepc1_space-fsaverage_den-10k_hemi-R_feature.func.giisource-abagen_desc-genepc1_space-fsaverage_den-10k_hemi-R_feature.func.gii]8;;'
+#> 
+#> ── Creating brain atlas "abagen_genepc1" f
+#> ℹ Input files: ']8;;file:///Users/athanasm/Library/Caches/org.R-project.R/R/neuromapr/annotations/abagen/genepc1/fsaverage//source-abagen_desc-genepc1_space-fsaverage_den-10k_hemi-L_feature.func.gii/Users/athanasm/Library/Caches/org.R-project.R/R/neuromapr/annotations/abagen/genepc1/fsaverage//source-abagen_desc-genepc1_space-fsaverage_den-10k_hemi-L_feature.func.gii]8;;' and ']8;;file:///Users/athanasm/Library/Caches/org.R-project.R/R/neuromapr/annotations/abagen/genepc1/fsaverage//source-abagen_desc-genepc1_space-fsaverage_den-10k_hemi-R_feature.func.gii/Users/athanasm/Library/Caches/org.R-project.R/R/neuromapr/annotations/abagen/genepc1/fsaverage//source-abagen_desc-genepc1_space-fsaverage_den-10k_hemi-R_feature.func.gii]8;;'
+#> ℹ 1/8 Reading neuromaps annotation✔ 1/8 Reading neuromaps annotation [74ms]
+#> ℹ 2/8 Taking full brain snapshotsfile:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22464c76e8a1.html screenshot completed
+#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22467d4a50a7.html screenshot completed
+#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22463550bf3c.html screenshot completed
+#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22461f82f2f0.html screenshot completed
+#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22466e162fbe.html screenshot completed
+#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file2246103039f.html screenshot completed
+#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file224619b480a4.html screenshot completed
+#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file2246648bd815.html screenshot completed
+#> ✔ 2/8 Taking full brain snapshots [26.8s]
+#> ℹ 3/8 Taking region snapshotsfile:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22465562f0e1.html screenshot completed
+#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file2246440904a9.html screenshot completed
+#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file224615c4ac16.html screenshot completed
+#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22464a64010e.html screenshot completed
+#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22467bdf2bc2.html screenshot completed
+#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file224671795d41.html screenshot completed
+#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file224665a49b01.html screenshot completed
+#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22462b48d752.html screenshot completed
+#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22466498d4d2.html screenshot completed
+#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file224668df6622.html screenshot completed
+#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file224665aa4c8f.html screenshot completed
+#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22464793e9b9.html screenshot completed
+#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22465f433aa0.html screenshot completed
+#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file224677da4837.html screenshot completed
+#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file2246269852ef.html screenshot completed
+#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file2246210ddbcd.html screenshot completed
+#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file2246538f6bda.html screenshot completed
+#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22467badb3f7.html screenshot completed
+#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22463a0b1762.html screenshot completed
+#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22465b4bbf73.html screenshot completed
+#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file224661d38ddf.html screenshot completed
+#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22461b954168.html screenshot completed
+#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file224678e4f551.html screenshot completed
+#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file224660bc4060.html screenshot completed
+#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file224614c7c9b3.html screenshot completed
+#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file224622253050.html screenshot completed
+#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22467952673f.html screenshot completed
+#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22463096d2d9.html screenshot completed
+#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file2246418bd52c.html screenshot completed
+#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22465e56d508.html screenshot completed
+#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22461d1b1bc6.html screenshot completed
+#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file224626281b98.html screenshot completed
+#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file224618174a2b.html screenshot completed
+#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file224627d7cbc8.html screenshot completed
+#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file224644bfcfe2.html screenshot completed
+#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22461da2f216.html screenshot completed
+#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22461388db0b.html screenshot completed
+#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file2246333a8089.html screenshot completed
+#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22464751870.html screenshot completed
+#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file224627fb7a50.html screenshot completed
+#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file224661969f73.html screenshot completed
+#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22465e451f4.html screenshot completed
+#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file2246940d562.html screenshot completed
+#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22466784ac95.html screenshot completed
+#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file2246252c1153.html screenshot completed
+#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22462aaed618.html screenshot completed
+#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file224648c64750.html screenshot completed
+#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22461543d83c.html screenshot completed
+#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file224668d03abb.html screenshot completed
+#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22462f711bc8.html screenshot completed
+#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file224693401b4.html screenshot completed
+#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file2246200649da.html screenshot completed
+#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file224673194cb7.html screenshot completed
+#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file224636507b2a.html screenshot completed
+#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file224679ec6d7f.html screenshot completed
+#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file2246609577aa.html screenshot completed
+#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22467ea2805c.html screenshot completed
+#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file2246259ff0a6.html screenshot completed
+#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file224637ce1f14.html screenshot completed
+#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22467e24f404.html screenshot completed
+#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22466c025e22.html screenshot completed
+#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file2246162f6378.html screenshot completed
+#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22464860e1d8.html screenshot completed
+#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22466a74cbe0.html screenshot completed
+#> ✔ 3/8 Taking region snapshots [3m 14.7s]
+#> ℹ 4/8 Isolating regions✔ 4/8 Isolating regions [36.1s]
+#> ℹ 5/8 Extracting contours✔ 5/8 Extracting contours [11.2s]
+#> ℹ 6/8 Smoothing contours (smoothness = 5)✔ 6/8 Smoothing contours (smoothness = 5)…
+#> ℹ 7/8 Reducing vertices (tolerance = 1)✔ 7/8 Reducing vertices (tolerance = 1) […
+#> ℹ 8/8 Building final atlas✔ 8/8 Building final atlas [109ms]
+#> ✔ Brain atlas created with 16 regions
+#> ℹ Pipeline completed in 4.8 minutes
+#> Warning: Atlas has 20983 vertices (threshold:
+#> 10000)
+#> ℹ Large atlases may be slow to plot and
+#>   increase package size
+#> ℹ Re-run with higher `tolerance` to
+#>   reduce vertices
+
+atlas_full
+#> 
+#> ── abagen_genepc1 ggseg atlas ────────────
+#> Type: cortical
+#> Regions: 8
+#> Hemispheres: left, right
+#> Views: inferior, lateral, medial,
+#> superior
+#> Palette: ✔
+#> Rendering: ✔ ggseg
+#> ✔ ggseg3d (vertices)
+#> ──────────────────────────────────────────
+#> # A tibble: 16 × 3
+#>    hemi  region  label     
+#>    <chr> <chr>   <chr>     
+#>  1 left  bin_1   lh_bin_1  
+#>  2 left  bin_2   lh_bin_2  
+#>  3 left  bin_3   lh_bin_3  
+#>  4 left  bin_4   lh_bin_4  
+#>  5 left  bin_5   lh_bin_5  
+#>  6 left  bin_6   lh_bin_6  
+#>  7 left  bin_7   lh_bin_7  
+#>  8 left  unknown lh_unknown
+#>  9 right bin_1   rh_bin_1  
+#> 10 right bin_2   rh_bin_2  
+#> 11 right bin_3   rh_bin_3  
+#> 12 right bin_4   rh_bin_4  
+#> 13 right bin_5   rh_bin_5  
+#> 14 right bin_6   rh_bin_6  
+#> 15 right bin_7   rh_bin_7  
+#> 16 right unknown rh_unknown
+```
+
+The pipeline steps are:
+
+| Step | Description                              |
+|------|------------------------------------------|
+| 1    | Read neuromaps annotation and bin values |
+| 2    | Take full brain screenshots              |
+| 3    | Take per-region screenshots              |
+| 4    | Isolate region masks                     |
+| 5    | Extract contours                         |
+| 6    | Smooth contours                          |
+| 7    | Reduce vertices                          |
+| 8    | Build final atlas geometry               |
+
+Use `skip_existing = TRUE` and `cleanup = FALSE` during development so
+you can re-run later steps without repeating the slow screenshot
+capture.
+
+## Post-processing
+
+The “unknown” region (medial wall) renders as a filled region by
+default. Convert it to a background outline with
+[`atlas_region_contextual()`](https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html):
+
+``` r
+atlas_clean <- atlas_full |>
+  atlas_region_contextual("unknown", match_on = "label")
+```
+
+## Rendering the final atlas
+
+``` r
+plot(atlas_clean, show.legend = FALSE) +
+  theme_void()
+```
+
+![2D brain atlas plot showing gene expression quantile bins across
+lateral, medial, inferior, and superior views without
+legend.](figures/tutorial-neuromaps-atlas-plot-2d-1.png)
+
+2D gene expression atlas plotted with ggseg.
+
+``` r
+ggseg3d::ggseg3d(atlas = atlas_clean, hemisphere = "left")
+```
+
+![3D rendering of the left hemisphere showing the final gene expression
+atlas with 7 quantile bins coloured along a spectral
+gradient.](figures/tutorial-neuromaps-atlas-plot-3d-1.png)
+
+3D rendering of the final gene expression atlas.
+
+## Working with parcellation maps
+
+Not all neuromaps annotations are continuous. Some contain integer
+vertex labels where each value maps to a brain region. The pipeline
+detects this automatically and skips binning entirely.
+
+For parcellations, you can provide a `label_table` to map the numeric
+IDs to human-readable region names and custom colors:
+
+``` r
+labels <- data.frame(
+  id = c(1, 2, 3),
+  region = c("visual", "somatomotor", "dorsal_attention"),
+  colour = c("#781286", "#4682B4", "#00760E")
+)
+
+atlas <- create_cortical_from_neuromaps(
+  source = "schaefer",
+  desc = "400Parcels7Networks",
+  label_table = labels,
+  steps = 1
+)
+```
+
+Parcels not listed in `label_table` are auto-named as `parcel_1`,
+`parcel_2`, etc. and assigned colors from the Set2 palette.
+
+## Volume annotations
+
+Some neuromaps annotations are volumetric NIfTI files in MNI152 space
+rather than surface GIFTI files. The pipeline detects this from the file
+extension (`.nii` or `.nii.gz`) and projects the volume onto the
+fsaverage5 surface using FreeSurfer’s `mri_vol2surf`.
+
+``` r
+atlas_vol <- create_cortical_from_neuromaps(
+  source = "pet",
+  desc = "5HT1a",
+  atlas_name = "serotonin_5ht1a",
+  n_bins = 10,
+  steps = 1
+)
+```
+
+The volume-to-surface projection samples across cortical depth (0% to
+100% in 10% steps) and takes the maximum value at each vertex, giving
+robust coverage even for thin cortical signals. FreeSurfer is always
+required for volume annotations.
+
+## Reading annotation files directly
+
+If you already have GIFTI files on disk — from neuromaps, Connectome
+Workbench, or another source — you can bypass the fetching step and read
+them directly with
+[`read_neuromaps_annotation()`](https://ggsegverse.github.io/ggseg.extra/reference/read_neuromaps_annotation.md):
+
+``` r
+files <- neuromapr::fetch_neuromaps_annotation(
+  source = "abagen",
+  desc = "genepc1",
+  space = "fsaverage",
+  density = "10k",
+  verbose = FALSE
+)
+
+annot_data <- read_neuromaps_annotation(files, n_bins = 7)
+annot_data
+#> # A tibble: 16 × 5
+#>    hemi  region  label     colour vertices
+#>    <chr> <chr>   <chr>     <chr>  <list>  
+#>  1 left  bin_1   lh_bin_1  #A71B… <int>   
+#>  2 left  bin_2   lh_bin_2  #E96F… <int>   
+#>  3 left  bin_3   lh_bin_3  #F9C2… <int>   
+#>  4 left  bin_4   lh_bin_4  #FEFD… <int>   
+#>  5 left  bin_5   lh_bin_5  #81DE… <int>   
+#>  6 left  bin_6   lh_bin_6  #00A3… <int>   
+#>  7 left  bin_7   lh_bin_7  #584B… <int>   
+#>  8 left  unknown lh_unkno… #BEBE… <int>   
+#>  9 right bin_1   rh_bin_1  #A71B… <int>   
+#> 10 right bin_2   rh_bin_2  #E96F… <int>   
+#> 11 right bin_3   rh_bin_3  #F9C2… <int>   
+#> 12 right bin_4   rh_bin_4  #FEFD… <int>   
+#> 13 right bin_5   rh_bin_5  #81DE… <int>   
+#> 14 right bin_6   rh_bin_6  #00A3… <int>   
+#> 15 right bin_7   rh_bin_7  #584B… <int>   
+#> 16 right unknown rh_unkno… #BEBE… <int>
+```
+
+For volume files in MNI152 space, use
+[`read_neuromaps_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/read_neuromaps_volume.md)
+instead.
+
+## Choosing the right number of bins
+
+| n_bins     | Use case                                                       |
+|------------|----------------------------------------------------------------|
+| 3–5        | High-level overview, schematic figures, publication thumbnails |
+| 7–10       | Balanced detail, good for most visualizations                  |
+| ~14 (auto) | Default; maximum spatial detail from Sturges’ rule             |
+| 15–20      | Dense gradients where fine differences matter                  |
+
+More bins means more regions, more screenshots, and longer pipeline
+runtime for the full 2D extraction. Start with `steps = 1` to preview
+the binning in 3D, then run the full pipeline once you’re satisfied.
+
+## Saving
+
+Once you’re happy with the atlas, save it as package data:
+
+``` r
+usethis::use_data(abagen_genepc1, overwrite = TRUE, compress = "xz")
+```
+
+The `compress = "xz"` flag gives the best compression for sf geometry
+data.

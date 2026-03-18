@@ -5,14 +5,10 @@ Check if FS can be run
 ## Usage
 
 ``` r
-check_fs(msg = NULL, abort = FALSE)
+check_fs(abort = FALSE)
 ```
 
 ## Arguments
-
-- msg:
-
-  message to print on error
 
 - abort:
 

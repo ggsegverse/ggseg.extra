@@ -1,0 +1,103 @@
+# System setup
+
+Using pre-built atlases requires nothing beyond R. Creating your own
+atlases requires external software. This vignette covers what you need
+and how to set it up.
+
+## FreeSurfer
+
+[FreeSurfer](https://surfer.nmr.mgh.harvard.edu/fswiki/DownloadAndInstall)
+handles neuroimaging file formats and provides the surface
+reconstruction tools that atlas creation depends on.
+
+On macOS, you also need:
+
+- [XQuartz](https://www.xquartz.org/)
+- [Xcode](https://developer.apple.com/xcode/) command line tools
+
+Verify your installation:
+
+``` r
+freesurfer::fs_dir()
+```
+
+## ImageMagick
+
+[ImageMagick](https://imagemagick.org/) handles the image processing
+steps in the 2D geometry pipeline — isolating regions from screenshots,
+tracing contours, and converting them to polygons.
+
+Install via your package manager:
+
+``` bash
+# macOS
+brew install imagemagick
+
+# Ubuntu/Debian
+sudo apt-get install imagemagick
+```
+
+## Chrome / Chromium
+
+ggseg.extra takes screenshots of 3D visualisations using the webshot2
+package, which needs Google Chrome or Chromium. Chrome is typically
+already installed. If not, chromote will attempt to download a suitable
+version automatically.
+
+## Parallel processing
+
+Atlas creation can be slow, especially for cortical atlases with many
+regions. ggseg.extra uses the [furrr](https://furrr.futureverse.org/)
+package for parallel processing. By default, processing runs
+sequentially.
+
+To enable parallel processing, set up a `future` plan before running
+atlas creation functions:
+
+``` r
+library(future)
+
+plan(multisession, workers = 4)
+```
+
+**Use `multisession`, not `multicore`.** The atlas pipeline uses
+[chromote](https://rstudio.github.io/chromote/) to take 3D brain
+screenshots via headless Chrome. `multicore` relies on process forking,
+which corrupts chromote’s websocket connections and causes crashes.
+`multisession` spawns independent R worker processes that each get their
+own clean Chrome instance.
+
+If `plan(multicore)` is active when the pipeline runs, it will
+automatically switch to `multisession` and warn you.
+
+To return to sequential processing:
+
+``` r
+plan(sequential)
+```
+
+## Progress bars
+
+ggseg.extra uses [progressr](https://progressr.futureverse.org/) to
+report progress during long-running operations. Progress reporting is
+disabled by default.
+
+To enable progress bars:
+
+``` r
+library(progressr)
+
+handlers("cli")
+handlers(global = TRUE)
+```
+
+This gives you a cli-style progress bar that updates as each region or
+step completes. It works with both sequential and parallel execution.
+
+## Checking your setup
+
+Run the setup report to verify everything is in place:
+
+``` r
+setup_sitrep()
+```

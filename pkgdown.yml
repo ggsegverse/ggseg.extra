@@ -2,14 +2,20 @@ pandoc: 3.1.11
 pkgdown: 2.2.0
 pkgdown_sha: ~
 articles:
-  createaseg: createaseg.html
-  createdkt: createdkt.html
-  customatlas: customatlas.html
-  customatlas3d: customatlas3d.html
-  ggsegExtra: ggsegExtra.html
-  ggsegrepo: ggsegrepo.html
-  system_setup: system_setup.html
-last_built: 2026-01-31T15:59Z
+  atlas-workflows: atlas-workflows.html
+  contributing: contributing.html
+  ggseg.extra: ggseg.extra.html
+  legacy-conversion: legacy-conversion.html
+  pipeline-configuration: pipeline-configuration.html
+  post-processing: post-processing.html
+  system-setup: system-setup.html
+  tutorial-cortical-atlas: tutorial-cortical-atlas.html
+  tutorial-label-atlas: tutorial-label-atlas.html
+  tutorial-neuromaps-atlas: tutorial-neuromaps-atlas.html
+  tutorial-subcortical-atlas: tutorial-subcortical-atlas.html
+  tutorial-tract-atlas: tutorial-tract-atlas.html
+  tutorial-wholebrain-atlas: tutorial-wholebrain-atlas.html
+last_built: 2026-03-18T20:14Z
 urls:
-  reference: https://ggseg.github.io/ggsegExtra/reference
-  article: https://ggseg.github.io/ggsegExtra/articles
+  reference: https://ggsegverse.github.io/ggseg.extra/reference
+  article: https://ggsegverse.github.io/ggseg.extra/articles
