@@ -14,14 +14,12 @@ annotation to fine-tuning the binning.
 
 ## What you need
 
-- The [neuromapr](https://github.com/ggsegverse/neuromapr) package (for
-  fetching neuromaps annotations)
-- FreeSurfer installed with the `fsaverage5` subject (for volume
-  annotations and the full 2D pipeline)
-- ImageMagick and Chrome/Chromium (for 2D geometry extraction)
-
-For a 3D-only atlas (`steps = 1`), FreeSurfer is only needed if the
-annotation is a volume file.
+- The [neuromapr](https://github.com/ggsegverse/neuromapr) R package
+  (for fetching neuromaps annotations)
+- For **surface** annotations (GIFTI): no system tools needed
+- For **volume** annotations (NIfTI): FreeSurfer installed with
+  `fsaverage5` (uses `mri_vol2surf` to project the volume onto the
+  cortical surface)
 
 ``` r
 library(ggseg.extra)
@@ -41,18 +39,18 @@ by [abagen](https://abagen.readthedocs.io/).
 atlas_auto <- create_cortical_from_neuromaps(
   source = "abagen",
   desc = "genepc1",
-  atlas_name = "abagen_genepc1",
-  steps = 1
+  atlas_name = "abagen_genepc1"
 )
 
 atlas_auto
-#> 
+#>
 #> ── abagen_genepc1 ggseg atlas ────────────
 #> Type: cortical
 #> Regions: 16
 #> Hemispheres: left, right
+#> Views: inferior, lateral, medial, superior
 #> Palette: ✔
-#> Rendering: ✖ ggseg
+#> Rendering: ✔ ggseg
 #> ✔ ggseg3d (vertices)
 #> ──────────────────────────────────────────
 #> # A tibble: 32 × 3
@@ -92,9 +90,8 @@ atlas_auto
 #> 32 right unknown rh_unknown
 ```
 
-`steps = 1` reads the annotation and builds a 3D-only atlas — no
-screenshots, no 2D geometry. This finishes in seconds and gives you a
-quick sanity check before committing to the full pipeline.
+The pipeline reads the annotation, bins the values, and projects the
+mesh to 2D polygons — all in seconds.
 
 The regions listed are the quantile bins the pipeline created
 automatically. Each bin corresponds to a range of gene expression values
@@ -163,8 +160,7 @@ atlas_5 <- create_cortical_from_neuromaps(
   source = "abagen",
   desc = "genepc1",
   n_bins = 5,
-  atlas_name = "abagen_5bin",
-  steps = 1
+  atlas_name = "abagen_5bin"
 )
 
 atlas_5$core |> filter(region != "unknown") |> distinct(region)
@@ -183,8 +179,7 @@ atlas_20 <- create_cortical_from_neuromaps(
   source = "abagen",
   desc = "genepc1",
   n_bins = 20,
-  atlas_name = "abagen_20bin",
-  steps = 1
+  atlas_name = "abagen_20bin"
 )
 
 atlas_20$core |> filter(region != "unknown") |> distinct(region)
@@ -292,177 +287,34 @@ gradients.](figures/tutorial-neuromaps-atlas-compare-3d-20-1.png)
 
 3D brain rendering with 20 quantile bins.
 
-## Full 2D atlas pipeline
+## Tuning tolerance
 
-Once you’re happy with the binning, run the full pipeline to generate 2D
-polygon geometry for plotting with ggseg. We use 7 bins here for a
-balance between clarity and resolution:
+The `tolerance` parameter controls polygon simplification. We use 7 bins
+here with a tolerance of 0.5 for a balance between clarity and file
+size:
 
 ``` r
-output_dir <- file.path(tempdir(), "neuromaps_tutorial")
-
 atlas_full <- create_cortical_from_neuromaps(
   source = "abagen",
   desc = "genepc1",
   n_bins = 7,
   atlas_name = "abagen_genepc1",
-  output_dir = output_dir,
-  tolerance = 1,
-  smoothness = 5,
-  skip_existing = TRUE,
-  cleanup = FALSE,
+  tolerance = 0.5,
   verbose = TRUE
 )
-#> ℹ Fetching neuromaps: source="abagen", desc="genepc1"
-#> ℹ Using cached ']8;;file:///Users/athanasm/workspace/ggseg/ggsegExtra/vignettes/source-abagen_desc-genepc1_space-fsaverage_den-10k_hemi-L_feature.func.giisource-abagen_desc-genepc1_space-fsaverage_den-10k_hemi-L_feature.func.gii]8;;'
-#> ℹ Using cached ']8;;file:///Users/athanasm/workspace/ggseg/ggsegExtra/vignettes/source-abagen_desc-genepc1_space-fsaverage_den-10k_hemi-R_feature.func.giisource-abagen_desc-genepc1_space-fsaverage_den-10k_hemi-R_feature.func.gii]8;;'
-#> 
-#> ── Creating brain atlas "abagen_genepc1" f
-#> ℹ Input files: ']8;;file:///Users/athanasm/Library/Caches/org.R-project.R/R/neuromapr/annotations/abagen/genepc1/fsaverage//source-abagen_desc-genepc1_space-fsaverage_den-10k_hemi-L_feature.func.gii/Users/athanasm/Library/Caches/org.R-project.R/R/neuromapr/annotations/abagen/genepc1/fsaverage//source-abagen_desc-genepc1_space-fsaverage_den-10k_hemi-L_feature.func.gii]8;;' and ']8;;file:///Users/athanasm/Library/Caches/org.R-project.R/R/neuromapr/annotations/abagen/genepc1/fsaverage//source-abagen_desc-genepc1_space-fsaverage_den-10k_hemi-R_feature.func.gii/Users/athanasm/Library/Caches/org.R-project.R/R/neuromapr/annotations/abagen/genepc1/fsaverage//source-abagen_desc-genepc1_space-fsaverage_den-10k_hemi-R_feature.func.gii]8;;'
-#> ℹ 1/8 Reading neuromaps annotation✔ 1/8 Reading neuromaps annotation [74ms]
-#> ℹ 2/8 Taking full brain snapshotsfile:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22464c76e8a1.html screenshot completed
-#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22467d4a50a7.html screenshot completed
-#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22463550bf3c.html screenshot completed
-#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22461f82f2f0.html screenshot completed
-#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22466e162fbe.html screenshot completed
-#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file2246103039f.html screenshot completed
-#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file224619b480a4.html screenshot completed
-#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file2246648bd815.html screenshot completed
-#> ✔ 2/8 Taking full brain snapshots [26.8s]
-#> ℹ 3/8 Taking region snapshotsfile:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22465562f0e1.html screenshot completed
-#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file2246440904a9.html screenshot completed
-#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file224615c4ac16.html screenshot completed
-#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22464a64010e.html screenshot completed
-#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22467bdf2bc2.html screenshot completed
-#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file224671795d41.html screenshot completed
-#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file224665a49b01.html screenshot completed
-#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22462b48d752.html screenshot completed
-#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22466498d4d2.html screenshot completed
-#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file224668df6622.html screenshot completed
-#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file224665aa4c8f.html screenshot completed
-#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22464793e9b9.html screenshot completed
-#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22465f433aa0.html screenshot completed
-#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file224677da4837.html screenshot completed
-#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file2246269852ef.html screenshot completed
-#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file2246210ddbcd.html screenshot completed
-#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file2246538f6bda.html screenshot completed
-#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22467badb3f7.html screenshot completed
-#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22463a0b1762.html screenshot completed
-#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22465b4bbf73.html screenshot completed
-#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file224661d38ddf.html screenshot completed
-#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22461b954168.html screenshot completed
-#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file224678e4f551.html screenshot completed
-#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file224660bc4060.html screenshot completed
-#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file224614c7c9b3.html screenshot completed
-#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file224622253050.html screenshot completed
-#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22467952673f.html screenshot completed
-#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22463096d2d9.html screenshot completed
-#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file2246418bd52c.html screenshot completed
-#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22465e56d508.html screenshot completed
-#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22461d1b1bc6.html screenshot completed
-#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file224626281b98.html screenshot completed
-#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file224618174a2b.html screenshot completed
-#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file224627d7cbc8.html screenshot completed
-#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file224644bfcfe2.html screenshot completed
-#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22461da2f216.html screenshot completed
-#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22461388db0b.html screenshot completed
-#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file2246333a8089.html screenshot completed
-#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22464751870.html screenshot completed
-#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file224627fb7a50.html screenshot completed
-#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file224661969f73.html screenshot completed
-#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22465e451f4.html screenshot completed
-#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file2246940d562.html screenshot completed
-#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22466784ac95.html screenshot completed
-#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file2246252c1153.html screenshot completed
-#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22462aaed618.html screenshot completed
-#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file224648c64750.html screenshot completed
-#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22461543d83c.html screenshot completed
-#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file224668d03abb.html screenshot completed
-#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22462f711bc8.html screenshot completed
-#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file224693401b4.html screenshot completed
-#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file2246200649da.html screenshot completed
-#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file224673194cb7.html screenshot completed
-#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file224636507b2a.html screenshot completed
-#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file224679ec6d7f.html screenshot completed
-#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file2246609577aa.html screenshot completed
-#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22467ea2805c.html screenshot completed
-#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file2246259ff0a6.html screenshot completed
-#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file224637ce1f14.html screenshot completed
-#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22467e24f404.html screenshot completed
-#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22466c025e22.html screenshot completed
-#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file2246162f6378.html screenshot completed
-#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22464860e1d8.html screenshot completed
-#> file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22466a74cbe0.html screenshot completed
-#> ✔ 3/8 Taking region snapshots [3m 14.7s]
-#> ℹ 4/8 Isolating regions✔ 4/8 Isolating regions [36.1s]
-#> ℹ 5/8 Extracting contours✔ 5/8 Extracting contours [11.2s]
-#> ℹ 6/8 Smoothing contours (smoothness = 5)✔ 6/8 Smoothing contours (smoothness = 5)…
-#> ℹ 7/8 Reducing vertices (tolerance = 1)✔ 7/8 Reducing vertices (tolerance = 1) […
-#> ℹ 8/8 Building final atlas✔ 8/8 Building final atlas [109ms]
+#>
+#> ── Creating brain atlas "abagen_genepc1" ──
+#> ℹ Reading neuromaps annotation
+#> ✔ Reading neuromaps annotation
+#> ℹ Projecting mesh to 2D polygons
+#> ✔ Projecting mesh to 2D polygons
 #> ✔ Brain atlas created with 16 regions
-#> ℹ Pipeline completed in 4.8 minutes
-#> Warning: Atlas has 20983 vertices (threshold:
-#> 10000)
-#> ℹ Large atlases may be slow to plot and
-#>   increase package size
-#> ℹ Re-run with higher `tolerance` to
-#>   reduce vertices
-
-atlas_full
-#> 
-#> ── abagen_genepc1 ggseg atlas ────────────
-#> Type: cortical
-#> Regions: 8
-#> Hemispheres: left, right
-#> Views: inferior, lateral, medial,
-#> superior
-#> Palette: ✔
-#> Rendering: ✔ ggseg
-#> ✔ ggseg3d (vertices)
-#> ──────────────────────────────────────────
-#> # A tibble: 16 × 3
-#>    hemi  region  label     
-#>    <chr> <chr>   <chr>     
-#>  1 left  bin_1   lh_bin_1  
-#>  2 left  bin_2   lh_bin_2  
-#>  3 left  bin_3   lh_bin_3  
-#>  4 left  bin_4   lh_bin_4  
-#>  5 left  bin_5   lh_bin_5  
-#>  6 left  bin_6   lh_bin_6  
-#>  7 left  bin_7   lh_bin_7  
-#>  8 left  unknown lh_unknown
-#>  9 right bin_1   rh_bin_1  
-#> 10 right bin_2   rh_bin_2  
-#> 11 right bin_3   rh_bin_3  
-#> 12 right bin_4   rh_bin_4  
-#> 13 right bin_5   rh_bin_5  
-#> 14 right bin_6   rh_bin_6  
-#> 15 right bin_7   rh_bin_7  
-#> 16 right unknown rh_unknown
-```
-
-The pipeline steps are:
-
-| Step | Description                              |
-|------|------------------------------------------|
-| 1    | Read neuromaps annotation and bin values |
-| 2    | Take full brain screenshots              |
-| 3    | Take per-region screenshots              |
-| 4    | Isolate region masks                     |
-| 5    | Extract contours                         |
-| 6    | Smooth contours                          |
-| 7    | Reduce vertices                          |
-| 8    | Build final atlas geometry               |
-
-Use `skip_existing = TRUE` and `cleanup = FALSE` during development so
-you can re-run later steps without repeating the slow screenshot
-capture.
 
 ## Post-processing
 
-The “unknown” region (medial wall) renders as a filled region by
-default. Convert it to a background outline with
-[`atlas_region_contextual()`](https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html):
+The "unknown" region (medial wall) renders as a filled region by default.
+Convert it to a background outline with `atlas_region_contextual()`:
+
 
 ``` r
 atlas_clean <- atlas_full |>
@@ -511,8 +363,7 @@ labels <- data.frame(
 atlas <- create_cortical_from_neuromaps(
   source = "schaefer",
   desc = "400Parcels7Networks",
-  label_table = labels,
-  steps = 1
+  label_table = labels
 )
 ```
 
@@ -531,8 +382,7 @@ atlas_vol <- create_cortical_from_neuromaps(
   source = "pet",
   desc = "5HT1a",
   atlas_name = "serotonin_5ht1a",
-  n_bins = 10,
-  steps = 1
+  n_bins = 10
 )
 ```
 
@@ -593,9 +443,8 @@ instead.
 | ~14 (auto) | Default; maximum spatial detail from Sturges’ rule             |
 | 15–20      | Dense gradients where fine differences matter                  |
 
-More bins means more regions, more screenshots, and longer pipeline
-runtime for the full 2D extraction. Start with `steps = 1` to preview
-the binning in 3D, then run the full pipeline once you’re satisfied.
+More bins means more regions and larger atlas objects. The pipeline is
+fast regardless of bin count, so experiment freely.
 
 ## Saving
 

@@ -4,9 +4,7 @@
 
 Build an atlas from individual FreeSurfer `.label` files rather than a
 complete annotation. Each label file defines a single region by listing
-which surface vertices belong to it. Useful when you have analysis
-results saved as labels, or when you want to combine regions from
-different sources into a custom atlas.
+which surface vertices belong to it.
 
 The function detects hemisphere from filename prefixes (`lh.` or `rh.`)
 and derives region names from the rest of the filename.
@@ -21,12 +19,10 @@ create_cortical_from_labels(
   output_dir = NULL,
   views = c("lateral", "medial"),
   tolerance = NULL,
-  smoothness = NULL,
-  snapshot_dim = NULL,
+  smooth_refinements = NULL,
   cleanup = NULL,
   verbose = get_verbose(),
-  skip_existing = NULL,
-  steps = NULL
+  skip_existing = NULL
 )
 ```
 
@@ -44,9 +40,7 @@ create_cortical_from_labels(
 - input_lut:
 
   Path to a color lookup table (LUT) file, or a data.frame with columns
-  `region` and colour columns (R, G, B or hex). Use this to provide
-  region names and colours. If NULL, names are derived from filenames
-  and the atlas will have no palette.
+  `region` and colour columns (R, G, B or hex).
 
 - output_dir:
 
@@ -65,20 +59,13 @@ create_cortical_from_labels(
   If not specified, uses `options("ggseg.extra.tolerance")` or the
   `GGSEG_EXTRA_TOLERANCE` environment variable. Default is 1.
 
-- smoothness:
+- smooth_refinements:
 
-  Smoothing factor for 2D contours. Higher values produce smoother
-  region boundaries (typical range: 3–15). Passed to
-  [`smoothr::smooth()`](https://strimas.com/smoothr/reference/smooth.html).
-  If not specified, uses `options("ggseg.extra.smoothness")` or the
-  `GGSEG_EXTRA_SMOOTHNESS` environment variable. Default is 5.
-
-- snapshot_dim:
-
-  Width and height (in pixels) for brain surface snapshots. Higher
-  values capture more detail for dense parcellations. If not specified,
-  uses `options("ggseg.extra.snapshot_dim")` or the
-  `GGSEG_EXTRA_SNAPSHOT_DIM` environment variable. Default is 800.
+  Number of Chaikin corner-cutting refinements to apply to 2D polygons.
+  Higher values produce smoother region boundaries (typical range: 0–3).
+  0 disables smoothing. If not specified, uses
+  `options("ggseg.extra.smooth_refinements")` or the
+  `GGSEG_EXTRA_SMOOTH_REFINEMENTS` environment variable. Default is 2.
 
 - cleanup:
 
@@ -101,47 +88,15 @@ create_cortical_from_labels(
   `options("ggseg.extra.skip_existing")` or the
   `GGSEG_EXTRA_SKIP_EXISTING` environment variable. Default is TRUE.
 
-- steps:
-
-  Which pipeline steps to run. Default NULL runs all steps. Steps are:
-
-  - 1: Read label files and build 3D atlas
-
-  - 2: Take full brain snapshots
-
-  - 3: Take region snapshots
-
-  - 4: Isolate regions from images
-
-  - 5: Extract contours
-
-  - 6: Smooth contours
-
-  - 7: Reduce vertices
-
-  - 8: Build final atlas with 2D geometry
-
-  Use `steps = 1` for 3D-only atlas. Use `steps = 6:7` to iterate on
-  smoothing and reduction parameters.
-
 ## Value
 
-A `ggseg_atlas` object containing region metadata, vertex indices,
-colours, and optionally sf geometry for 2D plots.
+A `ggseg_atlas` object.
 
 ## Examples
 
 ``` r
 if (FALSE) { # \dontrun{
-# Create 3D-only atlas from label files
 labels <- c("lh.region1.label", "lh.region2.label", "rh.region1.label")
-atlas <- create_cortical_from_labels(labels, steps = 1)
-ggseg3d(atlas = atlas)
-
-# Full atlas with 2D geometry
 atlas <- create_cortical_from_labels(labels)
-
-# Iterate on smoothing parameters
-atlas <- create_cortical_from_labels(labels, steps = 6:8, smoothness = 10)
 } # }
 ```

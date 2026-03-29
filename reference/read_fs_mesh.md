@@ -13,7 +13,7 @@ read_fs_mesh(
   subject = "fsaverage5",
   hemisphere = c("lh", "rh"),
   surface = c("inflated", "white", "pial"),
-  subjects_dir = fs_subj_dir()
+  subjects_dir = freesurfer::fs_subj_dir()
 )
 ```
 

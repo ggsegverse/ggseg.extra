@@ -28,7 +28,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9001</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -105,11 +105,10 @@
 <section class="level2"><h2 id="what-you-need">What you need<a class="anchor" aria-label="anchor" href="#what-you-need"></a>
 </h2>
 <ul>
-<li>The <a href="https://github.com/ggsegverse/neuromapr" class="external-link">neuromapr</a> package (for fetching neuromaps annotations)</li>
-<li>FreeSurfer installed with the <code>fsaverage5</code> subject (for volume annotations and the full 2D pipeline)</li>
-<li>ImageMagick and Chrome/Chromium (for 2D geometry extraction)</li>
+<li>The <a href="https://github.com/ggsegverse/neuromapr" class="external-link">neuromapr</a> R package (for fetching neuromaps annotations)</li>
+<li>For <strong>surface</strong> annotations (GIFTI): no system tools needed</li>
+<li>For <strong>volume</strong> annotations (NIfTI): FreeSurfer installed with <code>fsaverage5</code> (uses <code>mri_vol2surf</code> to project the volume onto the cortical surface)</li>
 </ul>
-<p>For a 3D-only atlas (<code>steps = 1</code>), FreeSurfer is only needed if the annotation is a volume file.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/ggsegverse/ggseg.extra" class="external-link">ggseg.extra</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/ggsegverse/ggseg.formats" class="external-link">ggseg.formats</a></span><span class="op">)</span></span>
@@ -122,18 +121,18 @@
 <code class="sourceCode R"><span><span class="va">atlas_auto</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/create_cortical_from_neuromaps.html">create_cortical_from_neuromaps</a></span><span class="op">(</span></span>
 <span>  source <span class="op">=</span> <span class="st">"abagen"</span>,</span>
 <span>  desc <span class="op">=</span> <span class="st">"genepc1"</span>,</span>
-<span>  atlas_name <span class="op">=</span> <span class="st">"abagen_genepc1"</span>,</span>
-<span>  steps <span class="op">=</span> <span class="fl">1</span></span>
+<span>  atlas_name <span class="op">=</span> <span class="st">"abagen_genepc1"</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">atlas_auto</span></span>
-<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt;</span></span>
 <span><span class="co">#&gt; ── abagen_genepc1 ggseg atlas ────────────</span></span>
 <span><span class="co">#&gt; Type: cortical</span></span>
 <span><span class="co">#&gt; Regions: 16</span></span>
 <span><span class="co">#&gt; Hemispheres: left, right</span></span>
+<span><span class="co">#&gt; Views: inferior, lateral, medial, superior</span></span>
 <span><span class="co">#&gt; Palette: ✔</span></span>
-<span><span class="co">#&gt; Rendering: ✖ ggseg</span></span>
+<span><span class="co">#&gt; Rendering: ✔ ggseg</span></span>
 <span><span class="co">#&gt; ✔ ggseg3d (vertices)</span></span>
 <span><span class="co">#&gt; ──────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; # A tibble: 32 × 3</span></span>
@@ -171,7 +170,7 @@
 <span><span class="co">#&gt; 30 right bin_14  rh_bin_14 </span></span>
 <span><span class="co">#&gt; 31 right bin_15  rh_bin_15 </span></span>
 <span><span class="co">#&gt; 32 right unknown rh_unknown</span></span></code></pre></div>
-<p><code>steps = 1</code> reads the annotation and builds a 3D-only atlas — no screenshots, no 2D geometry. This finishes in seconds and gives you a quick sanity check before committing to the full pipeline.</p>
+<p>The pipeline reads the annotation, bins the values, and projects the mesh to 2D polygons — all in seconds.</p>
 <p>The regions listed are the quantile bins the pipeline created automatically. Each bin corresponds to a range of gene expression values and covers roughly the same number of vertices.</p>
 </section><section class="level2"><h2 id="how-binning-works">How binning works<a class="anchor" aria-label="anchor" href="#how-binning-works"></a>
 </h2>
@@ -218,8 +217,7 @@
 <span>  source <span class="op">=</span> <span class="st">"abagen"</span>,</span>
 <span>  desc <span class="op">=</span> <span class="st">"genepc1"</span>,</span>
 <span>  n_bins <span class="op">=</span> <span class="fl">5</span>,</span>
-<span>  atlas_name <span class="op">=</span> <span class="st">"abagen_5bin"</span>,</span>
-<span>  steps <span class="op">=</span> <span class="fl">1</span></span>
+<span>  atlas_name <span class="op">=</span> <span class="st">"abagen_5bin"</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">atlas_5</span><span class="op">$</span><span class="va">core</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">region</span> <span class="op">!=</span> <span class="st">"unknown"</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/distinct.html" class="external-link">distinct</a></span><span class="op">(</span><span class="va">region</span><span class="op">)</span></span>
@@ -236,8 +234,7 @@
 <span>  source <span class="op">=</span> <span class="st">"abagen"</span>,</span>
 <span>  desc <span class="op">=</span> <span class="st">"genepc1"</span>,</span>
 <span>  n_bins <span class="op">=</span> <span class="fl">20</span>,</span>
-<span>  atlas_name <span class="op">=</span> <span class="st">"abagen_20bin"</span>,</span>
-<span>  steps <span class="op">=</span> <span class="fl">1</span></span>
+<span>  atlas_name <span class="op">=</span> <span class="st">"abagen_20bin"</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">atlas_20</span><span class="op">$</span><span class="va">core</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">region</span> <span class="op">!=</span> <span class="st">"unknown"</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/distinct.html" class="external-link">distinct</a></span><span class="op">(</span><span class="va">region</span><span class="op">)</span></span>
@@ -319,201 +316,37 @@
 3D brain rendering with 20 quantile bins.
 </p>
 </div>
-</section><section class="level2"><h2 id="full-2d-atlas-pipeline">Full 2D atlas pipeline<a class="anchor" aria-label="anchor" href="#full-2d-atlas-pipeline"></a>
+</section><section class="level2"><h2 id="tuning-tolerance">Tuning tolerance<a class="anchor" aria-label="anchor" href="#tuning-tolerance"></a>
 </h2>
-<p>Once you’re happy with the binning, run the full pipeline to generate 2D polygon geometry for plotting with ggseg. We use 7 bins here for a balance between clarity and resolution:</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">output_dir</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span>, <span class="st">"neuromaps_tutorial"</span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">atlas_full</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/create_cortical_from_neuromaps.html">create_cortical_from_neuromaps</a></span><span class="op">(</span></span>
-<span>  source <span class="op">=</span> <span class="st">"abagen"</span>,</span>
-<span>  desc <span class="op">=</span> <span class="st">"genepc1"</span>,</span>
-<span>  n_bins <span class="op">=</span> <span class="fl">7</span>,</span>
-<span>  atlas_name <span class="op">=</span> <span class="st">"abagen_genepc1"</span>,</span>
-<span>  output_dir <span class="op">=</span> <span class="va">output_dir</span>,</span>
-<span>  tolerance <span class="op">=</span> <span class="fl">1</span>,</span>
-<span>  smoothness <span class="op">=</span> <span class="fl">5</span>,</span>
-<span>  skip_existing <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  cleanup <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  verbose <span class="op">=</span> <span class="cn">TRUE</span></span>
-<span><span class="op">)</span></span>
-<span><span class="co">#&gt; ℹ Fetching neuromaps: source="abagen", desc="genepc1"</span></span>
-<span><span class="co">#&gt; ℹ Using cached ']8;;file:///Users/athanasm/workspace/ggseg/ggsegExtra/vignettes/source-abagen_desc-genepc1_space-fsaverage_den-10k_hemi-L_feature.func.giisource-abagen_desc-genepc1_space-fsaverage_den-10k_hemi-L_feature.func.gii]8;;'</span></span>
-<span><span class="co">#&gt; ℹ Using cached ']8;;file:///Users/athanasm/workspace/ggseg/ggsegExtra/vignettes/source-abagen_desc-genepc1_space-fsaverage_den-10k_hemi-R_feature.func.giisource-abagen_desc-genepc1_space-fsaverage_den-10k_hemi-R_feature.func.gii]8;;'</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; ── Creating brain atlas "abagen_genepc1" f</span></span>
-<span><span class="co">#&gt; ℹ Input files: ']8;;file:///Users/athanasm/Library/Caches/org.R-project.R/R/neuromapr/annotations/abagen/genepc1/fsaverage//source-abagen_desc-genepc1_space-fsaverage_den-10k_hemi-L_feature.func.gii/Users/athanasm/Library/Caches/org.R-project.R/R/neuromapr/annotations/abagen/genepc1/fsaverage//source-abagen_desc-genepc1_space-fsaverage_den-10k_hemi-L_feature.func.gii]8;;' and ']8;;file:///Users/athanasm/Library/Caches/org.R-project.R/R/neuromapr/annotations/abagen/genepc1/fsaverage//source-abagen_desc-genepc1_space-fsaverage_den-10k_hemi-R_feature.func.gii/Users/athanasm/Library/Caches/org.R-project.R/R/neuromapr/annotations/abagen/genepc1/fsaverage//source-abagen_desc-genepc1_space-fsaverage_den-10k_hemi-R_feature.func.gii]8;;'</span></span>
-<span><span class="co">#&gt; ℹ 1/8 Reading neuromaps annotation✔ 1/8 Reading neuromaps annotation [74ms]</span></span>
-<span><span class="co">#&gt; ℹ 2/8 Taking full brain snapshotsfile:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22464c76e8a1.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22467d4a50a7.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22463550bf3c.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22461f82f2f0.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22466e162fbe.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file2246103039f.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file224619b480a4.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file2246648bd815.html screenshot completed</span></span>
-<span><span class="co">#&gt; ✔ 2/8 Taking full brain snapshots [26.8s]</span></span>
-<span><span class="co">#&gt; ℹ 3/8 Taking region snapshotsfile:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22465562f0e1.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file2246440904a9.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file224615c4ac16.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22464a64010e.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22467bdf2bc2.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file224671795d41.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file224665a49b01.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22462b48d752.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22466498d4d2.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file224668df6622.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file224665aa4c8f.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22464793e9b9.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22465f433aa0.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file224677da4837.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file2246269852ef.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file2246210ddbcd.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file2246538f6bda.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22467badb3f7.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22463a0b1762.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22465b4bbf73.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file224661d38ddf.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22461b954168.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file224678e4f551.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file224660bc4060.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file224614c7c9b3.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file224622253050.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22467952673f.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22463096d2d9.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file2246418bd52c.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22465e56d508.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22461d1b1bc6.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file224626281b98.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file224618174a2b.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file224627d7cbc8.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file224644bfcfe2.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22461da2f216.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22461388db0b.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file2246333a8089.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22464751870.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file224627fb7a50.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file224661969f73.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22465e451f4.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file2246940d562.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22466784ac95.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file2246252c1153.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22462aaed618.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file224648c64750.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22461543d83c.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file224668d03abb.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22462f711bc8.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file224693401b4.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file2246200649da.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file224673194cb7.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file224636507b2a.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file224679ec6d7f.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file2246609577aa.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22467ea2805c.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file2246259ff0a6.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file224637ce1f14.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22467e24f404.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22466c025e22.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file2246162f6378.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22464860e1d8.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22466a74cbe0.html screenshot completed</span></span>
-<span><span class="co">#&gt; ✔ 3/8 Taking region snapshots [3m 14.7s]</span></span>
-<span><span class="co">#&gt; ℹ 4/8 Isolating regions✔ 4/8 Isolating regions [36.1s]</span></span>
-<span><span class="co">#&gt; ℹ 5/8 Extracting contours✔ 5/8 Extracting contours [11.2s]</span></span>
-<span><span class="co">#&gt; ℹ 6/8 Smoothing contours (smoothness = 5)✔ 6/8 Smoothing contours (smoothness = 5)…</span></span>
-<span><span class="co">#&gt; ℹ 7/8 Reducing vertices (tolerance = 1)✔ 7/8 Reducing vertices (tolerance = 1) […</span></span>
-<span><span class="co">#&gt; ℹ 8/8 Building final atlas✔ 8/8 Building final atlas [109ms]</span></span>
-<span><span class="co">#&gt; ✔ Brain atlas created with 16 regions</span></span>
-<span><span class="co">#&gt; ℹ Pipeline completed in 4.8 minutes</span></span>
-<span><span class="co">#&gt; Warning: Atlas has 20983 vertices (threshold:</span></span>
-<span><span class="co">#&gt; 10000)</span></span>
-<span><span class="co">#&gt; ℹ Large atlases may be slow to plot and</span></span>
-<span><span class="co">#&gt;   increase package size</span></span>
-<span><span class="co">#&gt; ℹ Re-run with higher `tolerance` to</span></span>
-<span><span class="co">#&gt;   reduce vertices</span></span>
-<span></span>
-<span><span class="va">atlas_full</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; ── abagen_genepc1 ggseg atlas ────────────</span></span>
-<span><span class="co">#&gt; Type: cortical</span></span>
-<span><span class="co">#&gt; Regions: 8</span></span>
-<span><span class="co">#&gt; Hemispheres: left, right</span></span>
-<span><span class="co">#&gt; Views: inferior, lateral, medial,</span></span>
-<span><span class="co">#&gt; superior</span></span>
-<span><span class="co">#&gt; Palette: ✔</span></span>
-<span><span class="co">#&gt; Rendering: ✔ ggseg</span></span>
-<span><span class="co">#&gt; ✔ ggseg3d (vertices)</span></span>
-<span><span class="co">#&gt; ──────────────────────────────────────────</span></span>
-<span><span class="co">#&gt; # A tibble: 16 × 3</span></span>
-<span><span class="co">#&gt;    hemi  region  label     </span></span>
-<span><span class="co">#&gt;    &lt;chr&gt; &lt;chr&gt;   &lt;chr&gt;     </span></span>
-<span><span class="co">#&gt;  1 left  bin_1   lh_bin_1  </span></span>
-<span><span class="co">#&gt;  2 left  bin_2   lh_bin_2  </span></span>
-<span><span class="co">#&gt;  3 left  bin_3   lh_bin_3  </span></span>
-<span><span class="co">#&gt;  4 left  bin_4   lh_bin_4  </span></span>
-<span><span class="co">#&gt;  5 left  bin_5   lh_bin_5  </span></span>
-<span><span class="co">#&gt;  6 left  bin_6   lh_bin_6  </span></span>
-<span><span class="co">#&gt;  7 left  bin_7   lh_bin_7  </span></span>
-<span><span class="co">#&gt;  8 left  unknown lh_unknown</span></span>
-<span><span class="co">#&gt;  9 right bin_1   rh_bin_1  </span></span>
-<span><span class="co">#&gt; 10 right bin_2   rh_bin_2  </span></span>
-<span><span class="co">#&gt; 11 right bin_3   rh_bin_3  </span></span>
-<span><span class="co">#&gt; 12 right bin_4   rh_bin_4  </span></span>
-<span><span class="co">#&gt; 13 right bin_5   rh_bin_5  </span></span>
-<span><span class="co">#&gt; 14 right bin_6   rh_bin_6  </span></span>
-<span><span class="co">#&gt; 15 right bin_7   rh_bin_7  </span></span>
-<span><span class="co">#&gt; 16 right unknown rh_unknown</span></span></code></pre></div>
-<p>The pipeline steps are:</p>
-<table class="table caption-top">
-<thead><tr class="header">
-<th>Step</th>
-<th>Description</th>
-</tr></thead>
-<tbody>
-<tr class="odd">
-<td>1</td>
-<td>Read neuromaps annotation and bin values</td>
-</tr>
-<tr class="even">
-<td>2</td>
-<td>Take full brain screenshots</td>
-</tr>
-<tr class="odd">
-<td>3</td>
-<td>Take per-region screenshots</td>
-</tr>
-<tr class="even">
-<td>4</td>
-<td>Isolate region masks</td>
-</tr>
-<tr class="odd">
-<td>5</td>
-<td>Extract contours</td>
-</tr>
-<tr class="even">
-<td>6</td>
-<td>Smooth contours</td>
-</tr>
-<tr class="odd">
-<td>7</td>
-<td>Reduce vertices</td>
-</tr>
-<tr class="even">
-<td>8</td>
-<td>Build final atlas geometry</td>
-</tr>
-</tbody>
-</table>
-<p>Use <code>skip_existing = TRUE</code> and <code>cleanup = FALSE</code> during development so you can re-run later steps without repeating the slow screenshot capture.</p>
-</section><section class="level2"><h2 id="post-processing">Post-processing<a class="anchor" aria-label="anchor" href="#post-processing"></a>
-</h2>
-<p>The “unknown” region (medial wall) renders as a filled region by default. Convert it to a background outline with <code><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_contextual()</a></code>:</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">atlas_clean</span> <span class="op">&lt;-</span> <span class="va">atlas_full</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_contextual</a></span><span class="op">(</span><span class="st">"unknown"</span>, match_on <span class="op">=</span> <span class="st">"label"</span><span class="op">)</span></span></code></pre></div>
+<p>The <code>tolerance</code> parameter controls polygon simplification. We use 7 bins here with a tolerance of 0.5 for a balance between clarity and file size:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>atlas_full <span class="ot">&lt;-</span> <span class="fu">create_cortical_from_neuromaps</span>(</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">source =</span> <span class="st">"abagen"</span>,</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">desc =</span> <span class="st">"genepc1"</span>,</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">n_bins =</span> <span class="dv">7</span>,</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">atlas_name =</span> <span class="st">"abagen_genepc1"</span>,</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">tolerance =</span> <span class="fl">0.5</span>,</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">verbose =</span> <span class="cn">TRUE</span></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;</span></span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ── Creating brain atlas "abagen_genepc1" ──</span></span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ Reading neuromaps annotation</span></span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ✔ Reading neuromaps annotation</span></span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ Projecting mesh to 2D polygons</span></span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ✔ Projecting mesh to 2D polygons</span></span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ✔ Brain atlas created with 16 regions</span></span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a><span class="do">## Post-processing</span></span>
+<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-19"><a href="#cb10-19" aria-hidden="true" tabindex="-1"></a>The <span class="st">"unknown"</span> <span class="fu">region</span> (medial wall) renders as a filled region by default.</span>
+<span id="cb10-20"><a href="#cb10-20" aria-hidden="true" tabindex="-1"></a>Convert it to a background outline with <span class="st">`</span><span class="at">atlas_region_contextual()</span><span class="st">`</span><span class="sc">:</span></span>
+<span id="cb10-21"><a href="#cb10-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-22"><a href="#cb10-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-23"><a href="#cb10-23" aria-hidden="true" tabindex="-1"></a><span class="st">```</span><span class="at"> r</span></span>
+<span id="cb10-24"><a href="#cb10-24" aria-hidden="true" tabindex="-1"></a><span class="at">atlas_clean &lt;- atlas_full |&gt;</span></span>
+<span id="cb10-25"><a href="#cb10-25" aria-hidden="true" tabindex="-1"></a><span class="at">  atlas_region_contextual("unknown", match_on = "label")</span></span></code></pre></div>
 </section><section class="level2"><h2 id="rendering-the-final-atlas">Rendering the final atlas<a class="anchor" aria-label="anchor" href="#rendering-the-final-atlas"></a>
 </h2>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">atlas_clean</span>, show.legend <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_void</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <div class="figure">
@@ -521,7 +354,7 @@
 2D gene expression atlas plotted with ggseg.
 </p>
 </div>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">ggseg3d</span><span class="fu">::</span><span class="fu"><a href="https://ggsegverse.github.io/ggseg3d/reference/ggseg3d.html" class="external-link">ggseg3d</a></span><span class="op">(</span>atlas <span class="op">=</span> <span class="va">atlas_clean</span>, hemisphere <span class="op">=</span> <span class="st">"left"</span><span class="op">)</span></span></code></pre></div>
 <div class="figure">
 <img src="figures/tutorial-neuromaps-atlas-plot-3d-1.png" alt="3D rendering of the left hemisphere showing the final gene expression atlas with 7 quantile bins coloured along a spectral gradient." width="672"><p class="caption">
@@ -532,7 +365,7 @@
 </h2>
 <p>Not all neuromaps annotations are continuous. Some contain integer vertex labels where each value maps to a brain region. The pipeline detects this automatically and skips binning entirely.</p>
 <p>For parcellations, you can provide a <code>label_table</code> to map the numeric IDs to human-readable region names and custom colors:</p>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">labels</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
 <span>  id <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span>, <span class="fl">3</span><span class="op">)</span>,</span>
 <span>  region <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"visual"</span>, <span class="st">"somatomotor"</span>, <span class="st">"dorsal_attention"</span><span class="op">)</span>,</span>
@@ -542,26 +375,24 @@
 <span><span class="va">atlas</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/create_cortical_from_neuromaps.html">create_cortical_from_neuromaps</a></span><span class="op">(</span></span>
 <span>  source <span class="op">=</span> <span class="st">"schaefer"</span>,</span>
 <span>  desc <span class="op">=</span> <span class="st">"400Parcels7Networks"</span>,</span>
-<span>  label_table <span class="op">=</span> <span class="va">labels</span>,</span>
-<span>  steps <span class="op">=</span> <span class="fl">1</span></span>
+<span>  label_table <span class="op">=</span> <span class="va">labels</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 <p>Parcels not listed in <code>label_table</code> are auto-named as <code>parcel_1</code>, <code>parcel_2</code>, etc. and assigned colors from the Set2 palette.</p>
 </section><section class="level2"><h2 id="volume-annotations">Volume annotations<a class="anchor" aria-label="anchor" href="#volume-annotations"></a>
 </h2>
 <p>Some neuromaps annotations are volumetric NIfTI files in MNI152 space rather than surface GIFTI files. The pipeline detects this from the file extension (<code>.nii</code> or <code>.nii.gz</code>) and projects the volume onto the fsaverage5 surface using FreeSurfer’s <code>mri_vol2surf</code>.</p>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">atlas_vol</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/create_cortical_from_neuromaps.html">create_cortical_from_neuromaps</a></span><span class="op">(</span></span>
 <span>  source <span class="op">=</span> <span class="st">"pet"</span>,</span>
 <span>  desc <span class="op">=</span> <span class="st">"5HT1a"</span>,</span>
 <span>  atlas_name <span class="op">=</span> <span class="st">"serotonin_5ht1a"</span>,</span>
-<span>  n_bins <span class="op">=</span> <span class="fl">10</span>,</span>
-<span>  steps <span class="op">=</span> <span class="fl">1</span></span>
+<span>  n_bins <span class="op">=</span> <span class="fl">10</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 <p>The volume-to-surface projection samples across cortical depth (0% to 100% in 10% steps) and takes the maximum value at each vertex, giving robust coverage even for thin cortical signals. FreeSurfer is always required for volume annotations.</p>
 </section><section class="level2"><h2 id="reading-annotation-files-directly">Reading annotation files directly<a class="anchor" aria-label="anchor" href="#reading-annotation-files-directly"></a>
 </h2>
 <p>If you already have GIFTI files on disk — from neuromaps, Connectome Workbench, or another source — you can bypass the fetching step and read them directly with <code><a href="../reference/read_neuromaps_annotation.html">read_neuromaps_annotation()</a></code>:</p>
-<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">files</span> <span class="op">&lt;-</span> <span class="fu">neuromapr</span><span class="fu">::</span><span class="fu"><a href="https://lcbc-uio.github.io/neuromapr/reference/fetch_neuromaps_annotation.html" class="external-link">fetch_neuromaps_annotation</a></span><span class="op">(</span></span>
 <span>  source <span class="op">=</span> <span class="st">"abagen"</span>,</span>
 <span>  desc <span class="op">=</span> <span class="st">"genepc1"</span>,</span>
@@ -622,11 +453,11 @@
 </tr>
 </tbody>
 </table>
-<p>More bins means more regions, more screenshots, and longer pipeline runtime for the full 2D extraction. Start with <code>steps = 1</code> to preview the binning in 3D, then run the full pipeline once you’re satisfied.</p>
+<p>More bins means more regions and larger atlas objects. The pipeline is fast regardless of bin count, so experiment freely.</p>
 </section><section class="level2"><h2 id="saving">Saving<a class="anchor" aria-label="anchor" href="#saving"></a>
 </h2>
 <p>Once you’re happy with the atlas, save it as package data:</p>
-<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">usethis</span><span class="fu">::</span><span class="fu">use_data</span><span class="op">(</span><span class="va">abagen_genepc1</span>, overwrite <span class="op">=</span> <span class="cn">TRUE</span>, compress <span class="op">=</span> <span class="st">"xz"</span><span class="op">)</span></span></code></pre></div>
 <p>The <code>compress = "xz"</code> flag gives the best compression for sf geometry data.</p>
 </section><script id="quarto-html-after-body" type="application/javascript">

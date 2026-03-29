@@ -1,5 +1,77 @@
 # Changelog
 
+## ggseg.extra (development version)
+
+### Boundary triangle splitting
+
+Boundary triangles (where vertices belong to different atlas regions)
+are now split into sub-polygons along edge midpoints instead of being
+assigned wholesale to a single region. This eliminates the sawtooth
+artifacts at region borders that resulted from the triangular mesh
+geometry.
+
+- **2-region boundaries**: triangle is split at the midpoints of the two
+  cross-boundary edges — the majority region gets a quadrilateral, the
+  minority region gets a triangle.
+- **3-region boundaries**: triangle is divided into three quadrilaterals
+  meeting at the centroid.
+- Default `tolerance` increased from 0.5 to 1 — the smoother borders
+  tolerate higher simplification without visible degradation.
+
+### Bug fixes
+
+- `ensure_fs_compatible_nifti()` no longer errors when the NIfTI header
+  cannot be read (e.g. `.mgz` files or nonexistent paths). It now falls
+  through gracefully and lets downstream FreeSurfer commands handle the
+  file.
+
+## ggseg.extra 2.0.1
+
+### Cortical pipeline: mesh projection
+
+The cortical atlas pipeline now projects inflated mesh triangles
+directly to 2D polygons via orthographic projection, replacing the
+screenshot-based contour extraction from v2.0.0.
+
+- **Much faster** — atlas creation completes in ~5 seconds instead of
+  minutes.
+- **Cleaner geometry** — no pixel staircase artifacts from
+  rasterisation.
+- **Fewer dependencies** — no FreeSurfer rendering, ImageMagick, or
+  Chrome needed for 2D geometry (FreeSurfer is still required to *read*
+  annotation files).
+- **Better small-region visibility** — boundary faces are assigned to
+  the smallest neighbouring region so tiny parcels are not swallowed by
+  their neighbours.
+- **Smooth region borders** — boundary triangles (vertices in different
+  regions) are split along edge midpoints so each region gets a clean
+  polygon slice, eliminating the sawtooth artifacts from whole-triangle
+  assignment.
+
+### Breaking changes
+
+- Removed `method`, `snapshot_dim`, `smoothness`, and `steps` parameters
+  from all `create_cortical_from_*()` functions. The pipeline always
+  reads data and projects to 2D in one pass — no step-based control
+  needed.
+- Changed default `tolerance` from 0.5 to 1 — the triangle-splitting
+  approach produces smoother borders that tolerate higher
+  simplification.
+
+### Lighter dependency footprint
+
+- Moved `chromote`, `htmlwidgets`, `magick`, `smoothr`, `terra`,
+  `RNifti`, and `freesurfer` from Imports to Suggests. Users who only
+  need the cortical pipeline no longer need these packages installed.
+  They are checked at runtime and requested when needed (subcortical,
+  tract, and volumetric pipelines).
+
+### New internals
+
+- Added `R/mesh-projection.R` with the full geometric projection
+  algorithm: orthonormal view basis computation, backface culling,
+  per-face label assignment, and triangle-to-polygon union via sf.
+
 ## ggseg.extra 2.0.0
 
 - Major rewrite of atlas creation pipelines with modular step-based

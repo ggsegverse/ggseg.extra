@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9001</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -97,14 +97,83 @@
     
     
 <p>Using pre-built atlases requires nothing beyond R. Creating your own
-atlases requires external software. This vignette covers what you need
-and how to set it up.</p>
+atlases may require external software depending on the pipeline.</p>
+<div class="section level2">
+<h2 id="what-each-pipeline-needs">What each pipeline needs<a class="anchor" aria-label="anchor" href="#what-each-pipeline-needs"></a>
+</h2>
+<table class="table">
+<colgroup>
+<col width="28%">
+<col width="31%">
+<col width="40%">
+</colgroup>
+<thead><tr class="header">
+<th>Pipeline</th>
+<th>R packages</th>
+<th>System tools</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>
+<strong>Cortical</strong> (annotation, labels)</td>
+<td><code>freesurferformats</code></td>
+<td>None</td>
+</tr>
+<tr class="even">
+<td>
+<strong>Cortical</strong> (neuromaps volume)</td>
+<td>
+<code>freesurfer</code>, <code>neuromapr</code>
+</td>
+<td>FreeSurfer</td>
+</tr>
+<tr class="odd">
+<td><strong>Subcortical</strong></td>
+<td>
+<code>freesurfer</code>, <code>magick</code>, <code>chromote</code>,
+<code>htmlwidgets</code>, <code>terra</code>, <code>smoothr</code>
+</td>
+<td>FreeSurfer, ImageMagick</td>
+</tr>
+<tr class="even">
+<td><strong>Whole-brain</strong></td>
+<td>
+<code>freesurfer</code>, <code>RNifti</code>, <code>magick</code>,
+<code>chromote</code>, <code>htmlwidgets</code>, <code>terra</code>,
+<code>smoothr</code>
+</td>
+<td>FreeSurfer, ImageMagick</td>
+</tr>
+<tr class="odd">
+<td><strong>Tract</strong></td>
+<td>
+<code>RNifti</code>, <code>Rvcg</code>
+</td>
+<td>None</td>
+</tr>
+<tr class="even">
+<td><strong>GIFTI / CIFTI</strong></td>
+<td>
+<code>gifti</code> or <code>ciftiTools</code>
+</td>
+<td>Connectome Workbench (CIFTI only)</td>
+</tr>
+</tbody>
+</table>
+<p>The cortical mesh-projection pipeline is the lightest — it runs in
+seconds with no system tools and minimal R dependencies. All heavier
+packages (<code>freesurfer</code>, <code>magick</code>,
+<code>chromote</code>, <code>terra</code>, etc.) are in Suggests and
+only loaded when a pipeline actually needs them.</p>
+</div>
 <div class="section level2">
 <h2 id="freesurfer">FreeSurfer<a class="anchor" aria-label="anchor" href="#freesurfer"></a>
 </h2>
 <p><a href="https://surfer.nmr.mgh.harvard.edu/fswiki/DownloadAndInstall" class="external-link">FreeSurfer</a>
-handles neuroimaging file formats and provides the surface
-reconstruction tools that atlas creation depends on.</p>
+is needed by the subcortical, whole-brain, and neuromaps volume
+pipelines. The cortical annotation pipeline needs the
+<code>freesurferformats</code> R package (not FreeSurfer itself) to read
+<code>.annot</code> and <code>.label</code> files.</p>
 <p>On macOS, you also need:</p>
 <ul>
 <li><a href="https://www.xquartz.org/" class="external-link">XQuartz</a></li>
@@ -119,9 +188,11 @@ tools</li>
 <div class="section level2">
 <h2 id="imagemagick">ImageMagick<a class="anchor" aria-label="anchor" href="#imagemagick"></a>
 </h2>
-<p><a href="https://imagemagick.org/" class="external-link">ImageMagick</a> handles the image
-processing steps in the 2D geometry pipeline — isolating regions from
-screenshots, tracing contours, and converting them to polygons.</p>
+<p><a href="https://imagemagick.org/" class="external-link">ImageMagick</a> is used by the
+subcortical and whole-brain pipelines for image processing — isolating
+regions from screenshots, tracing contours, and converting them to
+polygons.</p>
+<p><strong>Not needed for cortical or tract pipelines.</strong></p>
 <p>Install via your package manager:</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="co"># macOS</span></span>
 <span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a><span class="ex">brew</span> install imagemagick</span>
@@ -132,16 +203,17 @@ screenshots, tracing contours, and converting them to polygons.</p>
 <div class="section level2">
 <h2 id="chrome-chromium">Chrome / Chromium<a class="anchor" aria-label="anchor" href="#chrome-chromium"></a>
 </h2>
-<p>ggseg.extra takes screenshots of 3D visualisations using the webshot2
-package, which needs Google Chrome or Chromium. Chrome is typically
-already installed. If not, chromote will attempt to download a suitable
-version automatically.</p>
+<p>The subcortical and whole-brain pipelines take 3D screenshots using
+the <code>chromote</code> package, which needs Google Chrome or
+Chromium. Chrome is typically already installed. If not,
+<code>chromote</code> will attempt to download a suitable version
+automatically.</p>
+<p><strong>Not needed for cortical or tract pipelines.</strong></p>
 </div>
 <div class="section level2">
 <h2 id="parallel-processing">Parallel processing<a class="anchor" aria-label="anchor" href="#parallel-processing"></a>
 </h2>
-<p>Atlas creation can be slow, especially for cortical atlases with many
-regions. ggseg.extra uses the <a href="https://furrr.futureverse.org/" class="external-link">furrr</a> package for parallel
+<p>ggseg.extra uses the <a href="https://furrr.futureverse.org/" class="external-link">furrr</a> package for parallel
 processing. By default, processing runs sequentially.</p>
 <p>To enable parallel processing, set up a <code>future</code> plan
 before running atlas creation functions:</p>
@@ -150,7 +222,7 @@ before running atlas creation functions:</p>
 <span></span>
 <span><span class="fu"><a href="https://future.futureverse.org/reference/plan.html" class="external-link">plan</a></span><span class="op">(</span><span class="va">multisession</span>, workers <span class="op">=</span> <span class="fl">4</span><span class="op">)</span></span></code></pre></div>
 <p><strong>Use <code>multisession</code>, not
-<code>multicore</code>.</strong> The atlas pipeline uses <a href="https://rstudio.github.io/chromote/" class="external-link">chromote</a> to take 3D brain
+<code>multicore</code>.</strong> The subcortical pipeline uses <a href="https://rstudio.github.io/chromote/" class="external-link">chromote</a> to take 3D brain
 screenshots via headless Chrome. <code>multicore</code> relies on
 process forking, which corrupts chromote’s websocket connections and
 causes crashes. <code>multisession</code> spawns independent R worker

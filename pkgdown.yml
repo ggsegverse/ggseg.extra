@@ -15,7 +15,7 @@ articles:
   tutorial-subcortical-atlas: tutorial-subcortical-atlas.html
   tutorial-tract-atlas: tutorial-tract-atlas.html
   tutorial-wholebrain-atlas: tutorial-wholebrain-atlas.html
-last_built: 2026-03-18T20:30Z
+last_built: 2026-03-29T18:42Z
 urls:
   reference: https://ggsegverse.github.io/ggseg.extra/reference
   article: https://ggsegverse.github.io/ggseg.extra/articles

@@ -28,7 +28,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9001</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -105,9 +105,8 @@
 <section class="level2"><h2 id="what-you-need">What you need<a class="anchor" aria-label="anchor" href="#what-you-need"></a>
 </h2>
 <ul>
-<li>FreeSurfer installed with the <code>fsaverage5</code> subject</li>
-<li>ImageMagick for 2D geometry extraction</li>
-<li>Chrome/Chromium for 3D screenshots</li>
+<li>The <code>freesurferformats</code> R package (reads <code>.annot</code> files; no FreeSurfer installation required)</li>
+<li>The <code>fsaverage5</code> subject directory (ships with a FreeSurfer install, or can be downloaded separately)</li>
 </ul>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/ggsegverse/ggseg.extra" class="external-link">ggseg.extra</a></span><span class="op">)</span></span>
@@ -128,24 +127,41 @@
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/all.html" class="external-link">all</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/files.html" class="external-link">file.exists</a></span><span class="op">(</span><span class="va">annot_files</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] TRUE</span></span></code></pre></div>
-</section><section class="level2"><h2 id="step-1-3d-only-atlas-for-fast-iteration">Step 1: 3D-only atlas for fast iteration<a class="anchor" aria-label="anchor" href="#step-1-3d-only-atlas-for-fast-iteration"></a>
+</section><section class="level2"><h2 id="creating-the-atlas">Creating the atlas<a class="anchor" aria-label="anchor" href="#creating-the-atlas"></a>
 </h2>
-<p>Before committing to the full 2D extraction pipeline, verify your annotation looks right with a 3D-only atlas. This reads the annotation file, extracts vertex assignments, and returns in seconds:</p>
+<p>The pipeline reads the annotation, extracts vertex-to-region assignments, and projects the inflated mesh triangles directly to 2D polygons via orthographic projection. This is fast (seconds, not minutes) and requires no external dependencies beyond FreeSurfer for reading the annotation:</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">yeo7_3d</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/create_cortical_from_annotation.html">create_cortical_from_annotation</a></span><span class="op">(</span></span>
+<code class="sourceCode R"><span><span class="va">output_dir</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span>, <span class="st">"yeo7_tutorial"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">yeo7_raw</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/create_cortical_from_annotation.html">create_cortical_from_annotation</a></span><span class="op">(</span></span>
 <span>  input_annot <span class="op">=</span> <span class="va">annot_files</span>,</span>
 <span>  atlas_name <span class="op">=</span> <span class="st">"yeo7"</span>,</span>
-<span>  steps <span class="op">=</span> <span class="fl">1</span></span>
+<span>  output_dir <span class="op">=</span> <span class="va">output_dir</span>,</span>
+<span>  tolerance <span class="op">=</span> <span class="fl">0.5</span>,</span>
+<span>  skip_existing <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  cleanup <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  verbose <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span>
+<span><span class="co">#&gt;</span></span>
+<span><span class="co">#&gt; ── Creating brain atlas "yeo7" ───────────</span></span>
+<span><span class="co">#&gt; ℹ Input files: …</span></span>
+<span><span class="co">#&gt; ℹ Setting output directory to …</span></span>
+<span><span class="co">#&gt; ✔ 1/2 Loaded existing atlas data</span></span>
+<span><span class="co">#&gt; ℹ 2/2 Projecting mesh to 2D polygons</span></span>
+<span><span class="co">#&gt; ✔ 2/2 Projecting mesh to 2D polygons</span></span>
+<span><span class="co">#&gt; ✔ Brain atlas created with 16 regions</span></span>
+<span><span class="co">#&gt; ℹ Pipeline completed in 4.2 seconds</span></span>
 <span></span>
-<span><span class="va">yeo7_3d</span></span>
-<span><span class="co">#&gt; </span></span>
+<span><span class="va">yeo7_raw</span></span>
+<span><span class="co">#&gt;</span></span>
 <span><span class="co">#&gt; ── yeo7 ggseg atlas ──────────────────────</span></span>
 <span><span class="co">#&gt; Type: cortical</span></span>
 <span><span class="co">#&gt; Regions: 8</span></span>
 <span><span class="co">#&gt; Hemispheres: left, right</span></span>
+<span><span class="co">#&gt; Views: inferior, lateral, medial,</span></span>
+<span><span class="co">#&gt; superior</span></span>
 <span><span class="co">#&gt; Palette: ✔</span></span>
-<span><span class="co">#&gt; Rendering: ✖ ggseg</span></span>
+<span><span class="co">#&gt; Rendering: ✔ ggseg</span></span>
 <span><span class="co">#&gt; ✔ ggseg3d (vertices)</span></span>
 <span><span class="co">#&gt; ──────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; # A tibble: 16 × 3</span></span>
@@ -167,165 +183,19 @@
 <span><span class="co">#&gt; 14 right 7Networks_5                 rh_7…</span></span>
 <span><span class="co">#&gt; 15 right 7Networks_6                 rh_7…</span></span>
 <span><span class="co">#&gt; 16 right 7Networks_7                 rh_7…</span></span></code></pre></div>
-<p><code>steps = 1</code> tells the pipeline to stop after reading annotation data. The result works with ggseg3d but has no 2D geometry yet.</p>
-</section><section class="level2"><h2 id="step-2-full-pipeline-with-2d-geometry">Step 2: Full pipeline with 2D geometry<a class="anchor" aria-label="anchor" href="#step-2-full-pipeline-with-2d-geometry"></a>
-</h2>
-<p>The full pipeline takes screenshots of each region from multiple view angles, extracts contours, and converts them to sf polygons. This is the slow part — it needs FreeSurfer, Chrome, and ImageMagick:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>output_dir <span class="ot">&lt;-</span> <span class="fu">file.path</span>(<span class="fu">tempdir</span>(), <span class="st">"yeo7_tutorial"</span>)</span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>yeo7_raw <span class="ot">&lt;-</span> <span class="fu">create_cortical_from_annotation</span>(</span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">input_annot =</span> annot_files,</span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">atlas_name =</span> <span class="st">"yeo7"</span>,</span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">output_dir =</span> output_dir,</span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">tolerance =</span> <span class="dv">1</span>,</span>
-<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">smoothness =</span> <span class="dv">2</span>,</span>
-<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">skip_existing =</span> <span class="cn">TRUE</span>,</span>
-<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">cleanup =</span> <span class="cn">FALSE</span>,</span>
-<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">verbose =</span> <span class="cn">TRUE</span></span>
-<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ── Creating brain atlas "yeo7" ───────────</span></span>
-<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ Input files: ']8;;file:///Applications/freesurfer/7.4.1/subjects/fsaverage5/label/lh.Yeo2011_7Networks_N1000.annot/Applications/freesurfer/7.4.1/subjects/fsaverage5/label/lh.Yeo2011_7Networks_N1000.annot]8;;' and ']8;;file:///Applications/freesurfer/7.4.1/subjects/fsaverage5/label/rh.Yeo2011_7Networks_N1000.annot/Applications/freesurfer/7.4.1/subjects/fsaverage5/label/rh.Yeo2011_7Networks_N1000.annot]8;;'</span></span>
-<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ Setting output directory to ']8;;file:///var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T//Rtmpwix4Bl/yeo7_tutorial/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T//Rtmpwix4Bl/yeo7_tutorial]8;;'</span></span>
-<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ✔ 1/8 Loaded existing atlas data</span></span>
-<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>ℹ <span class="dv">2</span><span class="sc">/</span><span class="dv">8</span> Taking full brain snapshots</span>
-<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>file<span class="sc">:</span><span class="er">////</span>private<span class="sc">/</span>var<span class="sc">/</span>folders<span class="sc">/</span>y5<span class="sc">/</span>zlbbcqn56gx1tcg6xfb425100000gp<span class="sc">/</span>T<span class="sc">/</span>Rtmpwix4Bl<span class="sc">/</span>file22465346108a.html screenshot completed</span>
-<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a>✔ <span class="dv">2</span><span class="sc">/</span><span class="dv">8</span> Taking full brain snapshots [<span class="fl">2.8</span>s]</span>
-<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a>ℹ <span class="dv">3</span><span class="sc">/</span><span class="dv">8</span> Taking region snapshots</span>
-<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a>file<span class="sc">:</span><span class="er">////</span>private<span class="sc">/</span>var<span class="sc">/</span>folders<span class="sc">/</span>y5<span class="sc">/</span>zlbbcqn56gx1tcg6xfb425100000gp<span class="sc">/</span>T<span class="sc">/</span>Rtmpwix4Bl<span class="sc">/</span>file22464304f777.html screenshot completed</span>
-<span id="cb4-26"><a href="#cb4-26" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file2246e08b720.html screenshot completed</span></span>
-<span id="cb4-27"><a href="#cb4-27" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file2246464a390c.html screenshot completed</span></span>
-<span id="cb4-28"><a href="#cb4-28" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file2246761357e2.html screenshot completed</span></span>
-<span id="cb4-29"><a href="#cb4-29" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22463092f974.html screenshot completed</span></span>
-<span id="cb4-30"><a href="#cb4-30" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file2246543cc979.html screenshot completed</span></span>
-<span id="cb4-31"><a href="#cb4-31" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22461919aa83.html screenshot completed</span></span>
-<span id="cb4-32"><a href="#cb4-32" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22462e9a6b1b.html screenshot completed</span></span>
-<span id="cb4-33"><a href="#cb4-33" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22461a563f6f.html screenshot completed</span></span>
-<span id="cb4-34"><a href="#cb4-34" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22464fd1b9bf.html screenshot completed</span></span>
-<span id="cb4-35"><a href="#cb4-35" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file224668aef16a.html screenshot completed</span></span>
-<span id="cb4-36"><a href="#cb4-36" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22462bc45ba7.html screenshot completed</span></span>
-<span id="cb4-37"><a href="#cb4-37" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file224643f9ea1c.html screenshot completed</span></span>
-<span id="cb4-38"><a href="#cb4-38" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file224619a8bec0.html screenshot completed</span></span>
-<span id="cb4-39"><a href="#cb4-39" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22465af31c87.html screenshot completed</span></span>
-<span id="cb4-40"><a href="#cb4-40" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22468250cfd.html screenshot completed</span></span>
-<span id="cb4-41"><a href="#cb4-41" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22463c62cf7e.html screenshot completed</span></span>
-<span id="cb4-42"><a href="#cb4-42" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file2246174d4c8f.html screenshot completed</span></span>
-<span id="cb4-43"><a href="#cb4-43" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file224665b82227.html screenshot completed</span></span>
-<span id="cb4-44"><a href="#cb4-44" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22464103fac.html screenshot completed</span></span>
-<span id="cb4-45"><a href="#cb4-45" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22467c09bdea.html screenshot completed</span></span>
-<span id="cb4-46"><a href="#cb4-46" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22466c1f9e6e.html screenshot completed</span></span>
-<span id="cb4-47"><a href="#cb4-47" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file224651d5fc02.html screenshot completed</span></span>
-<span id="cb4-48"><a href="#cb4-48" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file224659fa68d2.html screenshot completed</span></span>
-<span id="cb4-49"><a href="#cb4-49" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22463bde26e2.html screenshot completed</span></span>
-<span id="cb4-50"><a href="#cb4-50" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file224659bdc698.html screenshot completed</span></span>
-<span id="cb4-51"><a href="#cb4-51" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22469845086.html screenshot completed</span></span>
-<span id="cb4-52"><a href="#cb4-52" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22462112a1cf.html screenshot completed</span></span>
-<span id="cb4-53"><a href="#cb4-53" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22461296e87a.html screenshot completed</span></span>
-<span id="cb4-54"><a href="#cb4-54" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file2246292a78c5.html screenshot completed</span></span>
-<span id="cb4-55"><a href="#cb4-55" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22462a708884.html screenshot completed</span></span>
-<span id="cb4-56"><a href="#cb4-56" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file224656cb8503.html screenshot completed</span></span>
-<span id="cb4-57"><a href="#cb4-57" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22463da79aad.html screenshot completed</span></span>
-<span id="cb4-58"><a href="#cb4-58" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file2246288df2cd.html screenshot completed</span></span>
-<span id="cb4-59"><a href="#cb4-59" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22462357a355.html screenshot completed</span></span>
-<span id="cb4-60"><a href="#cb4-60" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22467e36203a.html screenshot completed</span></span>
-<span id="cb4-61"><a href="#cb4-61" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file224635577b3d.html screenshot completed</span></span>
-<span id="cb4-62"><a href="#cb4-62" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file224665490ca6.html screenshot completed</span></span>
-<span id="cb4-63"><a href="#cb4-63" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file224666b92a9f.html screenshot completed</span></span>
-<span id="cb4-64"><a href="#cb4-64" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file2246466637e3.html screenshot completed</span></span>
-<span id="cb4-65"><a href="#cb4-65" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22465fe8a4ff.html screenshot completed</span></span>
-<span id="cb4-66"><a href="#cb4-66" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file2246692cb3cc.html screenshot completed</span></span>
-<span id="cb4-67"><a href="#cb4-67" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22463e2f18b0.html screenshot completed</span></span>
-<span id="cb4-68"><a href="#cb4-68" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file2246613c1425.html screenshot completed</span></span>
-<span id="cb4-69"><a href="#cb4-69" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file224659d79891.html screenshot completed</span></span>
-<span id="cb4-70"><a href="#cb4-70" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file2246118ecb65.html screenshot completed</span></span>
-<span id="cb4-71"><a href="#cb4-71" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22463a3f9853.html screenshot completed</span></span>
-<span id="cb4-72"><a href="#cb4-72" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22464b6ca452.html screenshot completed</span></span>
-<span id="cb4-73"><a href="#cb4-73" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file224624f9161a.html screenshot completed</span></span>
-<span id="cb4-74"><a href="#cb4-74" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22465c18b6b4.html screenshot completed</span></span>
-<span id="cb4-75"><a href="#cb4-75" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file2246533e0204.html screenshot completed</span></span>
-<span id="cb4-76"><a href="#cb4-76" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file2246641fe004.html screenshot completed</span></span>
-<span id="cb4-77"><a href="#cb4-77" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file2246b465b2a.html screenshot completed</span></span>
-<span id="cb4-78"><a href="#cb4-78" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file2246647b00c0.html screenshot completed</span></span>
-<span id="cb4-79"><a href="#cb4-79" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file224623aec0c2.html screenshot completed</span></span>
-<span id="cb4-80"><a href="#cb4-80" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file2246760cfb52.html screenshot completed</span></span>
-<span id="cb4-81"><a href="#cb4-81" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file2246593c5fac.html screenshot completed</span></span>
-<span id="cb4-82"><a href="#cb4-82" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22467507eee8.html screenshot completed</span></span>
-<span id="cb4-83"><a href="#cb4-83" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file22463ded556c.html screenshot completed</span></span>
-<span id="cb4-84"><a href="#cb4-84" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/Rtmpwix4Bl/file2246423532a8.html screenshot completed</span></span>
-<span id="cb4-85"><a href="#cb4-85" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb4-86"><a href="#cb4-86" aria-hidden="true" tabindex="-1"></a>✔ <span class="dv">3</span><span class="sc">/</span><span class="dv">8</span> Taking region snapshots [<span class="dv">2</span>m <span class="fl">10.8</span>s]</span>
-<span id="cb4-87"><a href="#cb4-87" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb4-88"><a href="#cb4-88" aria-hidden="true" tabindex="-1"></a>ℹ <span class="dv">4</span><span class="sc">/</span><span class="dv">8</span> Isolating regions</span>
-<span id="cb4-89"><a href="#cb4-89" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-90"><a href="#cb4-90" aria-hidden="true" tabindex="-1"></a>✔ <span class="dv">4</span><span class="sc">/</span><span class="dv">8</span> Isolating regions [<span class="fl">21.8</span>s]</span>
-<span id="cb4-91"><a href="#cb4-91" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb4-92"><a href="#cb4-92" aria-hidden="true" tabindex="-1"></a>ℹ <span class="dv">5</span><span class="sc">/</span><span class="dv">8</span> Extracting contours</span>
-<span id="cb4-93"><a href="#cb4-93" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-94"><a href="#cb4-94" aria-hidden="true" tabindex="-1"></a>✔ <span class="dv">5</span><span class="sc">/</span><span class="dv">8</span> Extracting contours [<span class="fl">6.8</span>s]</span>
-<span id="cb4-95"><a href="#cb4-95" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb4-96"><a href="#cb4-96" aria-hidden="true" tabindex="-1"></a>ℹ <span class="dv">6</span><span class="sc">/</span><span class="dv">8</span> Smoothing <span class="fu">contours</span> (<span class="at">smoothness =</span> <span class="dv">2</span>)</span>
-<span id="cb4-97"><a href="#cb4-97" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-98"><a href="#cb4-98" aria-hidden="true" tabindex="-1"></a>✔ <span class="dv">6</span><span class="sc">/</span><span class="dv">8</span> Smoothing <span class="fu">contours</span> (<span class="at">smoothness =</span> <span class="dv">2</span>)…</span>
-<span id="cb4-99"><a href="#cb4-99" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb4-100"><a href="#cb4-100" aria-hidden="true" tabindex="-1"></a>ℹ <span class="dv">7</span><span class="sc">/</span><span class="dv">8</span> Reducing <span class="fu">vertices</span> (<span class="at">tolerance =</span> <span class="dv">1</span>)</span>
-<span id="cb4-101"><a href="#cb4-101" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-102"><a href="#cb4-102" aria-hidden="true" tabindex="-1"></a>✔ <span class="dv">7</span><span class="sc">/</span><span class="dv">8</span> Reducing <span class="fu">vertices</span> (<span class="at">tolerance =</span> <span class="dv">1</span>) […</span>
-<span id="cb4-103"><a href="#cb4-103" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb4-104"><a href="#cb4-104" aria-hidden="true" tabindex="-1"></a>ℹ <span class="dv">8</span><span class="sc">/</span><span class="dv">8</span> Building final atlas</span>
-<span id="cb4-105"><a href="#cb4-105" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-106"><a href="#cb4-106" aria-hidden="true" tabindex="-1"></a>✔ <span class="dv">8</span><span class="sc">/</span><span class="dv">8</span> Building final atlas [<span class="dv">93</span>ms]</span>
-<span id="cb4-107"><a href="#cb4-107" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ✔ Brain atlas created with 16 regions</span></span>
-<span id="cb4-108"><a href="#cb4-108" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ Pipeline completed in 2.8 minutes</span></span>
-<span id="cb4-109"><a href="#cb4-109" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-110"><a href="#cb4-110" aria-hidden="true" tabindex="-1"></a>yeo7_raw</span>
-<span id="cb4-111"><a href="#cb4-111" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb4-112"><a href="#cb4-112" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ── yeo7 ggseg atlas ──────────────────────</span></span>
-<span id="cb4-113"><a href="#cb4-113" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Type: cortical</span></span>
-<span id="cb4-114"><a href="#cb4-114" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Regions: 8</span></span>
-<span id="cb4-115"><a href="#cb4-115" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Hemispheres: left, right</span></span>
-<span id="cb4-116"><a href="#cb4-116" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Views: inferior, lateral, medial,</span></span>
-<span id="cb4-117"><a href="#cb4-117" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; superior</span></span>
-<span id="cb4-118"><a href="#cb4-118" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Palette: ✔</span></span>
-<span id="cb4-119"><a href="#cb4-119" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Rendering: ✔ ggseg</span></span>
-<span id="cb4-120"><a href="#cb4-120" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ✔ ggseg3d (vertices)</span></span>
-<span id="cb4-121"><a href="#cb4-121" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ──────────────────────────────────────────</span></span>
-<span id="cb4-122"><a href="#cb4-122" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; # A tibble: 16 × 3</span></span>
-<span id="cb4-123"><a href="#cb4-123" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;    hemi  region                      label</span></span>
-<span id="cb4-124"><a href="#cb4-124" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;    &lt;chr&gt; &lt;chr&gt;                       &lt;chr&gt;</span></span>
-<span id="cb4-125"><a href="#cb4-125" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  1 left  FreeSurfer_Defined_Medial_… lh_F…</span></span>
-<span id="cb4-126"><a href="#cb4-126" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  2 left  7Networks_1                 lh_7…</span></span>
-<span id="cb4-127"><a href="#cb4-127" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  3 left  7Networks_2                 lh_7…</span></span>
-<span id="cb4-128"><a href="#cb4-128" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  4 left  7Networks_3                 lh_7…</span></span>
-<span id="cb4-129"><a href="#cb4-129" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  5 left  7Networks_4                 lh_7…</span></span>
-<span id="cb4-130"><a href="#cb4-130" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  6 left  7Networks_5                 lh_7…</span></span>
-<span id="cb4-131"><a href="#cb4-131" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  7 left  7Networks_6                 lh_7…</span></span>
-<span id="cb4-132"><a href="#cb4-132" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  8 left  7Networks_7                 lh_7…</span></span>
-<span id="cb4-133"><a href="#cb4-133" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  9 right FreeSurfer_Defined_Medial_… rh_F…</span></span>
-<span id="cb4-134"><a href="#cb4-134" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 10 right 7Networks_1                 rh_7…</span></span>
-<span id="cb4-135"><a href="#cb4-135" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 11 right 7Networks_2                 rh_7…</span></span>
-<span id="cb4-136"><a href="#cb4-136" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 12 right 7Networks_3                 rh_7…</span></span>
-<span id="cb4-137"><a href="#cb4-137" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 13 right 7Networks_4                 rh_7…</span></span>
-<span id="cb4-138"><a href="#cb4-138" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 14 right 7Networks_5                 rh_7…</span></span>
-<span id="cb4-139"><a href="#cb4-139" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 15 right 7Networks_6                 rh_7…</span></span>
-<span id="cb4-140"><a href="#cb4-140" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 16 right 7Networks_7                 rh_7…</span></span></code></pre></div>
 <p>A few things to note about the parameters:</p>
 <ul>
 <li>
-<strong><code>tolerance</code></strong> controls vertex reduction in the output polygons. Higher values mean simpler polygons with fewer vertices.</li>
+<strong><code>tolerance</code></strong> controls vertex simplification in the output polygons. Higher values mean simpler polygons with fewer vertices. Default is 0.5; use 0 for maximum fidelity.</li>
 <li>
-<strong><code>smoothness</code></strong> controls contour smoothing. Higher values produce rounder edges.</li>
-<li>
-<strong><code>cleanup = FALSE</code></strong> keeps intermediate files (screenshots, contour images) so you can re-run later steps without redoing the slow screenshot capture.</li>
+<strong><code>cleanup = FALSE</code></strong> keeps intermediate files (cached step 1 data) so you can re-run without re-reading annotations.</li>
 <li>
 <strong><code>skip_existing = TRUE</code></strong> reuses existing intermediate files when resuming an interrupted run.</li>
 </ul></section><section class="level2"><h2 id="step-3-post-processing">Step 3: Post-processing<a class="anchor" aria-label="anchor" href="#step-3-post-processing"></a>
 </h2>
 <p>The raw atlas contains every region from the annotation, including labels like “unknown” and “corpuscallosum” that you typically want as background outlines rather than filled regions.</p>
 <p><code><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_contextual()</a></code> keeps the geometry for spatial reference but removes the region from <code>$core</code>, so it renders as an outline:</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">yeo7_raw</span> <span class="op">&lt;-</span> <span class="va">yeo7_raw</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_contextual</a></span><span class="op">(</span><span class="st">"cortex"</span>, match_on <span class="op">=</span> <span class="st">"label"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_contextual</a></span><span class="op">(</span><span class="st">"unknown"</span>, match_on <span class="op">=</span> <span class="st">"label"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
@@ -334,7 +204,7 @@
 </section><section class="level2"><h2 id="step-4-adding-metadata">Step 4: Adding metadata<a class="anchor" aria-label="anchor" href="#step-4-adding-metadata"></a>
 </h2>
 <p>The raw atlas has region names derived from the annotation file. For the Yeo atlas, the annotation labels are numeric network IDs. We can map them to descriptive network names:</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">yeo7_metadata</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
 <span>  label <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
 <span>    <span class="st">"7Networks_1"</span>, <span class="st">"7Networks_2"</span>, <span class="st">"7Networks_3"</span>, <span class="st">"7Networks_4"</span>,</span>
@@ -353,7 +223,7 @@
 </section><section class="level2"><h2 id="step-5-rebuilding-the-atlas">Step 5: Rebuilding the atlas<a class="anchor" aria-label="anchor" href="#step-5-rebuilding-the-atlas"></a>
 </h2>
 <p>Construct the final atlas from the modified core:</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">yeo7</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/ggseg_atlas.html" class="external-link">ggseg_atlas</a></span><span class="op">(</span></span>
 <span>  atlas <span class="op">=</span> <span class="va">yeo7_raw</span><span class="op">$</span><span class="va">atlas</span>,</span>
 <span>  type <span class="op">=</span> <span class="va">yeo7_raw</span><span class="op">$</span><span class="va">type</span>,</span>
@@ -363,7 +233,7 @@
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">yeo7</span></span>
-<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt;</span></span>
 <span><span class="co">#&gt; ── yeo7 ggseg atlas ──────────────────────</span></span>
 <span><span class="co">#&gt; Type: cortical</span></span>
 <span><span class="co">#&gt; Regions: 7</span></span>
@@ -375,8 +245,8 @@
 <span><span class="co">#&gt; ✔ ggseg3d (vertices)</span></span>
 <span><span class="co">#&gt; ──────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; # A tibble: 14 × 3</span></span>
-<span><span class="co">#&gt;    hemi  region      label         </span></span>
-<span><span class="co">#&gt;    &lt;chr&gt; &lt;chr&gt;       &lt;chr&gt;         </span></span>
+<span><span class="co">#&gt;    hemi  region      label</span></span>
+<span><span class="co">#&gt;    &lt;chr&gt; &lt;chr&gt;       &lt;chr&gt;</span></span>
 <span><span class="co">#&gt;  1 left  7Networks_1 lh_7Networks_1</span></span>
 <span><span class="co">#&gt;  2 left  7Networks_2 lh_7Networks_2</span></span>
 <span><span class="co">#&gt;  3 left  7Networks_3 lh_7Networks_3</span></span>
@@ -391,13 +261,13 @@
 <span><span class="co">#&gt; 12 right 7Networks_5 rh_7Networks_5</span></span>
 <span><span class="co">#&gt; 13 right 7Networks_6 rh_7Networks_6</span></span>
 <span><span class="co">#&gt; 14 right 7Networks_7 rh_7Networks_7</span></span></code></pre></div>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_regions.html" class="external-link">atlas_regions</a></span><span class="op">(</span><span class="va">yeo7</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://rdrr.io/r/base/sort.html" class="external-link">sort</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "7Networks_1" "7Networks_2"</span></span>
 <span><span class="co">#&gt; [3] "7Networks_3" "7Networks_4"</span></span>
 <span><span class="co">#&gt; [5] "7Networks_5" "7Networks_6"</span></span>
 <span><span class="co">#&gt; [7] "7Networks_7"</span></span></code></pre></div>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">yeo7</span><span class="op">)</span></span></code></pre></div>
 <div class="figure">
 <img src="figures/tutorial-cortical-atlas-plot-1.png" alt="2D brain atlas plot showing the Yeo 7-network cortical parcellation with seven coloured regions across lateral, medial, inferior, and superior views." width="960"><p class="caption">
@@ -406,16 +276,9 @@ Yeo 7-network cortical parcellation plotted with ggseg.
 </div>
 </section><section class="level2"><h2 id="applying-the-same-pattern-to-larger-atlases">Applying the same pattern to larger atlases<a class="anchor" aria-label="anchor" href="#applying-the-same-pattern-to-larger-atlases"></a>
 </h2>
-<p>The Yeo 7-network atlas runs in minutes because it has few regions. Larger atlases like aparc (34 regions/hemisphere) or aparc.a2009s (75 regions/hemisphere) take longer but follow the same pattern. Enable parallel processing before running:</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://future.futureverse.org" class="external-link">future</a></span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://future.futureverse.org/reference/plan.html" class="external-link">plan</a></span><span class="op">(</span><span class="va">multisession</span>, workers <span class="op">=</span> <span class="fl">4</span><span class="op">)</span></span>
-<span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://progressr.futureverse.org" class="external-link">progressr</a></span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://progressr.futureverse.org/reference/handlers.html" class="external-link">handlers</a></span><span class="op">(</span><span class="st">"cli"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://progressr.futureverse.org/reference/handlers.html" class="external-link">handlers</a></span><span class="op">(</span>global <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">dk_annots</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span></span>
+<p>The Yeo 7-network atlas runs in seconds because it has few regions. Larger atlases like aparc (34 regions/hemisphere) or Glasser (180 regions/hemisphere) take a bit longer but follow the same pattern and still complete in under a minute:</p>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">dk_annots</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span></span>
 <span>  <span class="va">subjects_dir</span>, <span class="st">"fsaverage5"</span>, <span class="st">"label"</span>,</span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"lh.aparc.annot"</span>, <span class="st">"rh.aparc.annot"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
@@ -424,14 +287,11 @@ Yeo 7-network cortical parcellation plotted with ggseg.
 <span>  input_annot <span class="op">=</span> <span class="va">dk_annots</span>,</span>
 <span>  atlas_name <span class="op">=</span> <span class="st">"dk"</span>,</span>
 <span>  output_dir <span class="op">=</span> <span class="st">"data-raw"</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="fu"><a href="https://future.futureverse.org/reference/plan.html" class="external-link">plan</a></span><span class="op">(</span><span class="va">sequential</span><span class="op">)</span></span></code></pre></div>
-<p>The screenshot and contour extraction steps parallelize across regions, so more workers means faster completion — up to a point. Four workers is a reasonable default for most machines.</p>
+<span><span class="op">)</span></span></code></pre></div>
 </section><section class="level2"><h2 id="saving">Saving<a class="anchor" aria-label="anchor" href="#saving"></a>
 </h2>
 <p>Once you’re satisfied with the atlas, save it as package data:</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">usethis</span><span class="fu">::</span><span class="fu">use_data</span><span class="op">(</span><span class="va">yeo7</span>, overwrite <span class="op">=</span> <span class="cn">TRUE</span>, compress <span class="op">=</span> <span class="st">"xz"</span><span class="op">)</span></span></code></pre></div>
 <p>The <code>compress = "xz"</code> flag gives the best compression for sf geometry data.</p>
 </section><script id="quarto-html-after-body" type="application/javascript">

@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9001</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -65,19 +65,19 @@
 
 <div class="section level3">
 <h3 id="quick-orientation--what-this-repo-is">Quick orientation — what this repo is<a class="anchor" aria-label="anchor" href="#quick-orientation--what-this-repo-is"></a></h3>
-<ul><li>This is an R package that provides atlas creation pipelines and datasets for the <code>ggseg</code> / <code>ggseg3d</code> plotting ecosystem. See <code>DESCRIPTION</code> for package dependencies and system requirements (notably: FreeSurfer, GDAL, ImageMagick, orca). The user-facing documentation and tutorials live in <code>vignettes/</code> and <code>docs/</code>.</li>
+<ul><li>This is an R package that provides atlas creation pipelines and datasets for the <code>ggseg</code> / <code>ggseg3d</code> plotting ecosystem. See <code>DESCRIPTION</code> for package dependencies and system requirements (notably: FreeSurfer for annotation reading, ImageMagick for subcortical/tract pipelines). The user-facing documentation and tutorials live in <code>vignettes/</code> and <code>docs/</code>.</li>
 </ul></div>
 <div class="section level3">
 <h3 id="big-picture-architecture">Big-picture architecture<a class="anchor" aria-label="anchor" href="#big-picture-architecture"></a></h3>
-<ul><li>Core R code lives in <code>R/</code> (e.g. <code>R/create-ggseg-atlas.R</code>, <code>R/create-ggseg3d-atlas.R</code>). These files implement multi-step pipelines that operate on disk (image snapshots, masks, interim files) and return <code>brain_atlas</code> objects used by <code>ggseg</code>.</li>
+<ul><li>Core R code lives in <code>R/</code> (e.g. <code>R/atlas-cortical.R</code>, <code>R/atlas-subcortical.R</code>, <code>R/mesh-projection.R</code>). Cortical pipelines use direct mesh-to-polygon projection (no screenshots/external rendering). Subcortical and tract pipelines still use multi-step disk-based workflows. All return <code>ggseg_atlas</code> objects.</li>
 <li>Data and generated surfaces are under <code>inst/</code> and <code>data-raw/</code>.</li>
 <li>Documentation is generated with <code>pkgdown</code> into <code>docs/</code> (see <code>_pkgdown.yml</code>). CI builds and renders on macOS (see <code>.github/workflows/*.yaml</code>).</li>
 </ul></div>
 <div class="section level3">
 <h3 id="important-conventions--patterns-an-ai-should-follow">Important conventions &amp; patterns an AI should follow<a class="anchor" aria-label="anchor" href="#important-conventions--patterns-an-ai-should-follow"></a></h3>
-<ul><li>Pipeline steps: many functions accept a <code>steps</code> numeric vector (e.g. <code>steps = 1:7</code> in <code>make_ggseg3d_2_ggseg</code>) and write files to an <code>output_dir</code>. Do not assume in-memory-only flows — these functions read/write many intermediate files.</li>
+<ul><li>Pipeline steps: subcortical/tract/wholebrain functions accept a <code>steps</code> numeric vector and write files to an <code>output_dir</code>. Cortical functions (<code>create_cortical_from_*()</code>) do NOT have a <code>steps</code> parameter — they always read data and project to 2D in one pass.</li>
 <li>Atlas naming: ggseg3d atlases often use <code>_3d</code> suffixes and palettes are created with <code>make_palette_ggseg()</code> (see <code>R/create-ggseg-atlas.R</code>). When generating atlases, ensure names and palette keys match repository conventions (see usage of <code>brain_atlas()</code> in the R code).</li>
-<li>External binaries: functions call system tools (ImageMagick, GDAL, FreeSurfer, orca). Guard changes that call or parse their outputs and add clear error messages if binaries are missing. See <code>DESCRIPTION</code> SystemRequirements and checks such as <code>check_magick()</code> and <code><a href="reference/check_fs.html">check_fs()</a></code> present in the code.</li>
+<li>External binaries: subcortical/tract functions call system tools (ImageMagick, FreeSurfer). Cortical functions only need FreeSurfer to read annotations. Guard changes that call or parse external tool outputs and add clear error messages if binaries are missing.</li>
 <li>Reporting/progress: code uses <code>cli</code>, <code>progressr</code> and verbose text output. Preserve this behaviour in edits (use <code>cli::cli_*</code> and <code><a href="https://progressr.futureverse.org/reference/progress.html" class="external-link">progressr::progress()</a></code> patterns).</li>
 </ul></div>
 <div class="section level3">
@@ -103,8 +103,9 @@
 </ul></div>
 <div class="section level3">
 <h3 id="integration-points--gotchas">Integration points &amp; gotchas<a class="anchor" aria-label="anchor" href="#integration-points--gotchas"></a></h3>
-<ul><li>Many real runs require external tools not available on Linux CI by default — CI forks install them via Homebrew on macOS. Running the pipeline on other OS may fail unless those tools are present.</li>
-<li>Code uses <code>terra</code>, and <code>sf</code> — watch for platform specific binary issues and prefer high-level R APIs when possible.</li>
+<ul><li>Heavy dependencies (<code>freesurfer</code>, <code>magick</code>, <code>chromote</code>, <code>terra</code>, <code>smoothr</code>, <code>RNifti</code>, <code>htmlwidgets</code>) are in Suggests, not Imports. They are loaded at runtime via <code><a href="https://rlang.r-lib.org/reference/is_installed.html" class="external-link">rlang::check_installed()</a></code>. The cortical pipeline needs only base Imports (<code>sf</code>, <code>dplyr</code>, <code>cli</code>, <code>ggseg.formats</code>, <code>furrr</code>). Subcortical/tract pipelines need the full set.</li>
+<li>Subcortical/wholebrain pipelines require FreeSurfer and ImageMagick as system tools — CI installs them via Homebrew on macOS.</li>
+<li>Code uses <code>terra</code> and <code>sf</code> — watch for platform-specific binary issues and prefer high-level R APIs when possible.</li>
 <li>Intermediate files have expected directory layout (e.g. <code>output_dir/&lt;atlas&gt;/{img,regions,masks}</code>). If you change file naming, update all downstream readers (contour extraction, smoothing, vertex reduction).</li>
 </ul></div>
 <div class="section level3">

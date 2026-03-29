@@ -1,11 +1,10 @@
 # ggseg.extra: Create Brain Atlases for the 'ggsegverse' Plotting Ecosystem
 
-Create brain atlas data sets compatible with the 'ggseg' and 'ggseg3d'
-plotting packages in 'R'. Provides pipelines for building cortical,
-subcortical, and white-matter tract atlases from 'FreeSurfer' annotation
-files, 'GIFTI' and 'CIFTI' surface formats, 'neuromaps', and volumetric
-'NIfTI' images. Most atlas creation workflows require 'FreeSurfer' and
-are not available on Windows.
+Create brain atlas data sets compatible with the 'ggsegverse' plotting
+packages in 'R'. Provides pipelines for building cortical, subcortical,
+and white-matter tract atlases from 'FreeSurfer' annotation files,
+'GIFTI' and 'CIFTI' surface formats, 'neuromaps', and volumetric 'NIfTI'
+images.
 
 ## See also
 

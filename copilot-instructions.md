@@ -5,15 +5,17 @@
 - This is an R package that provides atlas creation pipelines and
   datasets for the `ggseg` / `ggseg3d` plotting ecosystem. See
   `DESCRIPTION` for package dependencies and system requirements
-  (notably: FreeSurfer, GDAL, ImageMagick, orca). The user-facing
-  documentation and tutorials live in `vignettes/` and `docs/`.
+  (notably: FreeSurfer for annotation reading, ImageMagick for
+  subcortical/tract pipelines). The user-facing documentation and
+  tutorials live in `vignettes/` and `docs/`.
 
 ### Big-picture architecture
 
-- Core R code lives in `R/` (e.g. `R/create-ggseg-atlas.R`,
-  `R/create-ggseg3d-atlas.R`). These files implement multi-step
-  pipelines that operate on disk (image snapshots, masks, interim files)
-  and return `brain_atlas` objects used by `ggseg`.
+- Core R code lives in `R/` (e.g. `R/atlas-cortical.R`,
+  `R/atlas-subcortical.R`, `R/mesh-projection.R`). Cortical pipelines
+  use direct mesh-to-polygon projection (no screenshots/external
+  rendering). Subcortical and tract pipelines still use multi-step
+  disk-based workflows. All return `ggseg_atlas` objects.
 - Data and generated surfaces are under `inst/` and `data-raw/`.
 - Documentation is generated with `pkgdown` into `docs/` (see
   `_pkgdown.yml`). CI builds and renders on macOS (see
@@ -21,21 +23,19 @@
 
 ### Important conventions & patterns an AI should follow
 
-- Pipeline steps: many functions accept a `steps` numeric vector
-  (e.g. `steps = 1:7` in `make_ggseg3d_2_ggseg`) and write files to an
-  `output_dir`. Do not assume in-memory-only flows — these functions
-  read/write many intermediate files.
+- Pipeline steps: subcortical/tract/wholebrain functions accept a
+  `steps` numeric vector and write files to an `output_dir`. Cortical
+  functions (`create_cortical_from_*()`) do NOT have a `steps` parameter
+  — they always read data and project to 2D in one pass.
 - Atlas naming: ggseg3d atlases often use `_3d` suffixes and palettes
   are created with `make_palette_ggseg()` (see
   `R/create-ggseg-atlas.R`). When generating atlases, ensure names and
   palette keys match repository conventions (see usage of
   `brain_atlas()` in the R code).
-- External binaries: functions call system tools (ImageMagick, GDAL,
-  FreeSurfer, orca). Guard changes that call or parse their outputs and
-  add clear error messages if binaries are missing. See `DESCRIPTION`
-  SystemRequirements and checks such as `check_magick()` and
-  [`check_fs()`](https://ggsegverse.github.io/ggseg.extra/reference/check_fs.md)
-  present in the code.
+- External binaries: subcortical/tract functions call system tools
+  (ImageMagick, FreeSurfer). Cortical functions only need FreeSurfer to
+  read annotations. Guard changes that call or parse external tool
+  outputs and add clear error messages if binaries are missing.
 - Reporting/progress: code uses `cli`, `progressr` and verbose text
   output. Preserve this behaviour in edits (use `cli::cli_*` and
   [`progressr::progress()`](https://progressr.futureverse.org/reference/progress.html)
@@ -71,11 +71,17 @@
 
 ### Integration points & gotchas
 
-- Many real runs require external tools not available on Linux CI by
-  default — CI forks install them via Homebrew on macOS. Running the
-  pipeline on other OS may fail unless those tools are present.
-- Code uses `terra`, and `sf` — watch for platform specific binary
-  issues and prefer high-level R APIs when possible.
+- Heavy dependencies (`freesurfer`, `magick`, `chromote`, `terra`,
+  `smoothr`, `RNifti`, `htmlwidgets`) are in Suggests, not Imports. They
+  are loaded at runtime via
+  [`rlang::check_installed()`](https://rlang.r-lib.org/reference/is_installed.html).
+  The cortical pipeline needs only base Imports (`sf`, `dplyr`, `cli`,
+  `ggseg.formats`, `furrr`). Subcortical/tract pipelines need the full
+  set.
+- Subcortical/wholebrain pipelines require FreeSurfer and ImageMagick as
+  system tools — CI installs them via Homebrew on macOS.
+- Code uses `terra` and `sf` — watch for platform-specific binary issues
+  and prefer high-level R APIs when possible.
 - Intermediate files have expected directory layout (e.g.
   `output_dir/<atlas>/{img,regions,masks}`). If you change file naming,
   update all downstream readers (contour extraction, smoothing, vertex

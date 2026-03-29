@@ -25,8 +25,12 @@ specific calls.
 | `verbose`       | `ggseg.extra.verbose`       | `GGSEG_EXTRA_VERBOSE`       | `TRUE`  |
 | `cleanup`       | `ggseg.extra.cleanup`       | `GGSEG_EXTRA_CLEANUP`       | `TRUE`  |
 | `skip_existing` | `ggseg.extra.skip_existing` | `GGSEG_EXTRA_SKIP_EXISTING` | `TRUE`  |
-| `tolerance`     | `ggseg.extra.tolerance`     | `GGSEG_EXTRA_TOLERANCE`     | `1`     |
+| `tolerance`     | `ggseg.extra.tolerance`     | `GGSEG_EXTRA_TOLERANCE`     | `0.5`   |
 | `smoothness`    | `ggseg.extra.smoothness`    | `GGSEG_EXTRA_SMOOTHNESS`    | `5`     |
+
+Note: `smoothness` applies only to subcortical and tract pipelines.
+Cortical atlases use direct mesh projection and do not require
+smoothing.
 
 ## Setting options in R
 
@@ -36,7 +40,6 @@ for your R session:
 ``` r
 options(
   ggseg.extra.tolerance = 0.5,
-  ggseg.extra.smoothness = 10,
   ggseg.extra.cleanup = FALSE
 )
 
@@ -59,9 +62,8 @@ Sys.setenv(GGSEG_EXTRA_VERBOSE = "false")
 
 ### Cleanup
 
-The `cleanup` parameter controls whether intermediate files
-(screenshots, contour images) are removed after pipeline completion. Set
-it to `FALSE` to keep them for debugging:
+The `cleanup` parameter controls whether intermediate files are removed
+after pipeline completion. Set it to `FALSE` to keep them for debugging:
 
 ``` r
 options(ggseg.extra.cleanup = FALSE)
@@ -85,15 +87,17 @@ options(ggseg.extra.skip_existing = TRUE)
 
 ### Geometry parameters
 
-The `tolerance` and `smoothness` parameters control the quality of 2D
-polygon geometry.
-
+The `tolerance` parameter controls the quality of 2D polygon geometry.
 Higher tolerance means fewer vertices — smaller file size, less detail.
-Higher smoothness means rounder region boundaries.
+
+For subcortical and tract pipelines, `smoothness` controls kernel
+smoothing of contour boundaries. Higher smoothness means rounder region
+boundaries.
 
 ``` r
-options(ggseg.extra.tolerance = 1.0)
+options(ggseg.extra.tolerance = 0.5)
 
+# smoothness only applies to subcortical/tract pipelines
 options(ggseg.extra.smoothness = 15)
 ```
 
@@ -108,7 +112,6 @@ In `.Renviron`:
     GGSEG_EXTRA_CLEANUP=true
     GGSEG_EXTRA_SKIP_EXISTING=true
     GGSEG_EXTRA_TOLERANCE=0.5
-    GGSEG_EXTRA_SMOOTHNESS=10
 
 In a shell:
 
@@ -160,31 +163,25 @@ options(
 )
 ```
 
-### Iterating on geometry
+### Iterating on tolerance
 
-When fine-tuning `tolerance` and `smoothness`, disable cleanup and use
-step-based execution. Run the full pipeline once to generate
-screenshots, then re-run only the geometry steps with different
-parameters:
+For cortical atlases, adjusting `tolerance` is the main tuning knob. Use
+0 for maximum mesh fidelity, or higher values for smaller file sizes:
 
 ``` r
-options(ggseg.extra.cleanup = FALSE)
-
 annot_files <- c("lh.myatlas.annot", "rh.myatlas.annot")
 
-atlas <- create_cortical_from_annotation(
-  input_annot = annot_files,
-  output_dir = "atlas_workdir"
-)
-
+# High fidelity (no simplification)
 atlas <- create_cortical_from_annotation(
   input_annot = annot_files,
   output_dir = "atlas_workdir",
-  steps = 6:8,
-  smoothness = 8,
-  tolerance = 0.3
+  tolerance = 0
+)
+
+# Compact (more simplification)
+atlas <- create_cortical_from_annotation(
+  input_annot = annot_files,
+  output_dir = "atlas_workdir",
+  tolerance = 1
 )
 ```
-
-This skips the slow screenshot steps and only regenerates polygons from
-existing contour images.

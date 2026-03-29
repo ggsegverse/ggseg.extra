@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9001</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -159,7 +159,7 @@ for specific calls.</p>
 <td><code>tolerance</code></td>
 <td><code>ggseg.extra.tolerance</code></td>
 <td><code>GGSEG_EXTRA_TOLERANCE</code></td>
-<td><code>1</code></td>
+<td><code>0.5</code></td>
 </tr>
 <tr class="odd">
 <td><code>smoothness</code></td>
@@ -169,6 +169,9 @@ for specific calls.</p>
 </tr>
 </tbody>
 </table>
+<p>Note: <code>smoothness</code> applies only to subcortical and tract
+pipelines. Cortical atlases use direct mesh projection and do not
+require smoothing.</p>
 </div>
 <div class="section level2">
 <h2 id="setting-options-in-r">Setting options in R<a class="anchor" aria-label="anchor" href="#setting-options-in-r"></a>
@@ -177,7 +180,6 @@ for specific calls.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span></span>
 <span>  ggseg.extra.tolerance <span class="op">=</span> <span class="fl">0.5</span>,</span>
-<span>  ggseg.extra.smoothness <span class="op">=</span> <span class="fl">10</span>,</span>
 <span>  ggseg.extra.cleanup <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span>
 <span></span>
@@ -199,8 +201,8 @@ pipeline execution.</p>
 <h3 id="cleanup">Cleanup<a class="anchor" aria-label="anchor" href="#cleanup"></a>
 </h3>
 <p>The <code>cleanup</code> parameter controls whether intermediate
-files (screenshots, contour images) are removed after pipeline
-completion. Set it to <code>FALSE</code> to keep them for debugging:</p>
+files are removed after pipeline completion. Set it to
+<code>FALSE</code> to keep them for debugging:</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>ggseg.extra.cleanup <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span></span>
@@ -222,13 +224,16 @@ pipeline runs by reusing existing intermediate files:</p>
 <div class="section level3">
 <h3 id="geometry-parameters">Geometry parameters<a class="anchor" aria-label="anchor" href="#geometry-parameters"></a>
 </h3>
-<p>The <code>tolerance</code> and <code>smoothness</code> parameters
-control the quality of 2D polygon geometry.</p>
-<p>Higher tolerance means fewer vertices — smaller file size, less
-detail. Higher smoothness means rounder region boundaries.</p>
+<p>The <code>tolerance</code> parameter controls the quality of 2D
+polygon geometry. Higher tolerance means fewer vertices — smaller file
+size, less detail.</p>
+<p>For subcortical and tract pipelines, <code>smoothness</code> controls
+kernel smoothing of contour boundaries. Higher smoothness means rounder
+region boundaries.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>ggseg.extra.tolerance <span class="op">=</span> <span class="fl">1.0</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>ggseg.extra.tolerance <span class="op">=</span> <span class="fl">0.5</span><span class="op">)</span></span>
 <span></span>
+<span><span class="co"># smoothness only applies to subcortical/tract pipelines</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>ggseg.extra.smoothness <span class="op">=</span> <span class="fl">15</span><span class="op">)</span></span></code></pre></div>
 </div>
 </div>
@@ -241,8 +246,7 @@ or settings that should persist across R sessions.</p>
 <pre><code><span><span class="va">GGSEG_EXTRA_VERBOSE</span><span class="op">=</span><span class="va">false</span></span>
 <span><span class="va">GGSEG_EXTRA_CLEANUP</span><span class="op">=</span><span class="va">true</span></span>
 <span><span class="va">GGSEG_EXTRA_SKIP_EXISTING</span><span class="op">=</span><span class="va">true</span></span>
-<span><span class="va">GGSEG_EXTRA_TOLERANCE</span><span class="op">=</span><span class="fl">0.5</span></span>
-<span><span class="va">GGSEG_EXTRA_SMOOTHNESS</span><span class="op">=</span><span class="fl">10</span></span></code></pre>
+<span><span class="va">GGSEG_EXTRA_TOLERANCE</span><span class="op">=</span><span class="fl">0.5</span></span></code></pre>
 <p>In a shell:</p>
 <div class="sourceCode" id="cb7"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="bu">export</span> <span class="va">GGSEG_EXTRA_VERBOSE</span><span class="op">=</span>false</span>
 <span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a><span class="bu">export</span> <span class="va">GGSEG_EXTRA_TOLERANCE</span><span class="op">=</span>0.5</span>
@@ -287,31 +291,27 @@ or settings that should persist across R sessions.</p>
 <span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level3">
-<h3 id="iterating-on-geometry">Iterating on geometry<a class="anchor" aria-label="anchor" href="#iterating-on-geometry"></a>
+<h3 id="iterating-on-tolerance">Iterating on tolerance<a class="anchor" aria-label="anchor" href="#iterating-on-tolerance"></a>
 </h3>
-<p>When fine-tuning <code>tolerance</code> and <code>smoothness</code>,
-disable cleanup and use step-based execution. Run the full pipeline once
-to generate screenshots, then re-run only the geometry steps with
-different parameters:</p>
+<p>For cortical atlases, adjusting <code>tolerance</code> is the main
+tuning knob. Use 0 for maximum mesh fidelity, or higher values for
+smaller file sizes:</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>ggseg.extra.cleanup <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">annot_files</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"lh.myatlas.annot"</span>, <span class="st">"rh.myatlas.annot"</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">annot_files</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"lh.myatlas.annot"</span>, <span class="st">"rh.myatlas.annot"</span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">atlas</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/create_cortical_from_annotation.html">create_cortical_from_annotation</a></span><span class="op">(</span></span>
-<span>  input_annot <span class="op">=</span> <span class="va">annot_files</span>,</span>
-<span>  output_dir <span class="op">=</span> <span class="st">"atlas_workdir"</span></span>
-<span><span class="op">)</span></span>
-<span></span>
+<span><span class="co"># High fidelity (no simplification)</span></span>
 <span><span class="va">atlas</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/create_cortical_from_annotation.html">create_cortical_from_annotation</a></span><span class="op">(</span></span>
 <span>  input_annot <span class="op">=</span> <span class="va">annot_files</span>,</span>
 <span>  output_dir <span class="op">=</span> <span class="st">"atlas_workdir"</span>,</span>
-<span>  steps <span class="op">=</span> <span class="fl">6</span><span class="op">:</span><span class="fl">8</span>,</span>
-<span>  smoothness <span class="op">=</span> <span class="fl">8</span>,</span>
-<span>  tolerance <span class="op">=</span> <span class="fl">0.3</span></span>
+<span>  tolerance <span class="op">=</span> <span class="fl">0</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Compact (more simplification)</span></span>
+<span><span class="va">atlas</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/create_cortical_from_annotation.html">create_cortical_from_annotation</a></span><span class="op">(</span></span>
+<span>  input_annot <span class="op">=</span> <span class="va">annot_files</span>,</span>
+<span>  output_dir <span class="op">=</span> <span class="st">"atlas_workdir"</span>,</span>
+<span>  tolerance <span class="op">=</span> <span class="fl">1</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-<p>This skips the slow screenshot steps and only regenerates polygons
-from existing contour images.</p>
 </div>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

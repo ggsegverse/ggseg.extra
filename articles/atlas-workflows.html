@@ -29,7 +29,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9001</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -148,73 +148,32 @@ Figure 1: All atlas creation pathways in ggseg.extra
 </div>
 </section><section class="level2"><h2 id="how-cortical-atlases-get-built">How cortical atlases get built<a class="anchor" aria-label="anchor" href="#how-cortical-atlases-get-built"></a>
 </h2>
-<p>Every cortical creation function — whether you’re starting with FreeSurfer annotations, GIFTI labels, CIFTI parcellations, or neuromaps data — follows the same underlying pipeline. The trick is the <code>steps</code> parameter, which lets you bail out early or run the full gauntlet depending on what you need.</p>
-<p>Step 1 reads your input file and maps it to 3D vertices on the brain surface. That’s fast, takes about five seconds, and gives you enough to visualize in 3D. If that’s all you need, you’re done.</p>
-<p>The full pipeline — steps 1 through 8 — adds 2D polygon extraction. This is where things get slower (think minutes, not seconds) because it requires FreeSurfer and Chrome to render contours from the inflated brain surface and flatten them into plottable geometries. The payoff is that you get both 2D flat plots and 3D interactive visualizations from the same atlas object.</p>
-<p>Here’s what that fork in the road looks like:</p>
+<p>Every cortical creation function — whether you’re starting with FreeSurfer annotations, GIFTI labels, CIFTI parcellations, or neuromaps data — follows the same two-step pipeline.</p>
+<p>Step 1 reads your input file and maps it to 3D vertices on the brain surface. Step 2 projects the inflated mesh triangles directly to 2D polygons via orthographic projection. Both steps complete in seconds and require no external rendering dependencies — just FreeSurfer to read the annotation files.</p>
 <div class="cell" data-fig-width="10" data-layout-align="default">
 <div class="cell-output-display">
 <div id="fig-cortical-fork" class="quarto-float quarto-figure quarto-figure-center">
 <figure class="quarto-float quarto-float-fig"><div aria-describedby="fig-cortical-fork-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 <div>
 <pre class="mermaid mermaid-js" data-label="fig-cortical-fork">flowchart LR
-    A[Input File] --&gt; B["Step 1&lt;br/&gt;Read annotation&lt;br/&gt;&amp;&lt;br/&gt;Extract vertices"]
-    B --&gt; C{Full pipeline?}
-    C --&gt;|steps = 1| D[Return 3D atlas&lt;br/&gt;Fast ⚡]
-    C --&gt;|steps = 1:8| E["Step 2-8&lt;br/&gt;Extract 2D polygons&lt;br/&gt;Requires FreeSurfer&lt;br/&gt;+ Chrome"]
-    E --&gt; F[Complete atlas&lt;br/&gt;3D + 2D]
+    A[Input File] --&gt; S1["Step 1&lt;br/&gt;Read annotation&lt;br/&gt;&amp; extract vertices"]
+    S1 --&gt; S2["Step 2&lt;br/&gt;Project mesh to&lt;br/&gt;2D polygons"]
+    S2 --&gt; F[Complete atlas&lt;br/&gt;3D + 2D ⚡]
 
-    style D fill:#c8e6c9
+    style S1 fill:#fff9c4
+    style S2 fill:#c8e6c9
     style F fill:#e1f5ff
 </pre>
 </div>
 </div>
 <figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-cortical-fork-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-Figure 2: Decision point in cortical atlas creation
+Figure 2: Cortical atlas creation pipeline
 </figcaption></figure>
 </div>
 </div>
 </div>
-<section class="level3"><h3 id="what-happens-in-the-full-pipeline">What happens in the full pipeline<a class="anchor" aria-label="anchor" href="#what-happens-in-the-full-pipeline"></a>
-</h3>
-<p>When you run <code>steps = 1:8</code>, you’re committing to the full eight-step process. Each step builds on the previous one, transforming your annotation file into a complete atlas with both 3D vertex mappings and 2D polygon outlines.</p>
-<p>Steps 1-2 handle the initial read and surface projection, making sure your parcellation is mapped to the standard fsaverage template. Step 3 scrubs the region labels — cleaning up names, handling duplicates, making everything consistent. Steps 4-5 extract and smooth contours on the inflated surface, which is where the actual polygon boundaries get defined. Step 6 flattens those 3D contours into 2D coordinates. Steps 7-8 add the medial wall (background regions) and combine everything into the final atlas object.</p>
-<p>The whole sequence looks like this:</p>
-<div class="cell" data-fig-width="12" data-layout-align="default">
-<div class="cell-output-display">
-<div id="fig-cortical-steps" class="quarto-float quarto-figure quarto-figure-center">
-<figure class="quarto-float quarto-float-fig"><div aria-describedby="fig-cortical-steps-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-<div>
-<pre class="mermaid mermaid-js" data-label="fig-cortical-steps">flowchart TB
-    Start[Input annotation] --&gt; S1["Step 1: Read &amp; Extract&lt;br/&gt;Read annotation labels&lt;br/&gt;Map to brain vertices"]
-    S1 --&gt; S2["Step 2: Project to Surface&lt;br/&gt;mri_surf2surf reregistration&lt;br/&gt;Map to fsaverage"]
-    S2 --&gt; S3["Step 3: Scrub Labels&lt;br/&gt;Clean region names&lt;br/&gt;Handle duplicates"]
-    S3 --&gt; S4["Step 4: Create Contours&lt;br/&gt;Extract region boundaries&lt;br/&gt;on inflated surface"]
-    S4 --&gt; S5["Step 5: Smooth Contours&lt;br/&gt;Simplify polygon geometry&lt;br/&gt;Reduce vertices"]
-    S5 --&gt; S6["Step 6: Convert to 2D&lt;br/&gt;Flatten 3D coordinates&lt;br/&gt;to x-y plane"]
-    S6 --&gt; S7["Step 7: Medial Wall&lt;br/&gt;Add background regions&lt;br/&gt;for complete coverage"]
-    S7 --&gt; S8["Step 8: Finalize&lt;br/&gt;Combine hemispheres&lt;br/&gt;Add metadata"]
-    S8 --&gt; Output[ggseg_atlas&lt;br/&gt;3D + 2D]
-
-    style S1 fill:#fff9c4
-    style S2 fill:#fff9c4
-    style S3 fill:#ffe0b2
-    style S4 fill:#ffe0b2
-    style S5 fill:#ffe0b2
-    style S6 fill:#c8e6c9
-    style S7 fill:#c8e6c9
-    style S8 fill:#e1f5ff
-    style Output fill:#e1f5ff
-</pre>
-</div>
-</div>
-<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-cortical-steps-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-Figure 3: Complete eight-step cortical atlas pipeline
-</figcaption></figure>
-</div>
-</div>
-</div>
-</section></section><section class="level2"><h2 id="subcortical-and-volumetric-atlases-work-differently">Subcortical and volumetric atlases work differently<a class="anchor" aria-label="anchor" href="#subcortical-and-volumetric-atlases-work-differently"></a>
+<p>The projection uses orthographic cameras placed at standard viewpoints (lateral, medial, superior, inferior), culls back-facing triangles, and unions the front-facing triangles per region into sf polygons. Boundary faces are assigned to the smallest neighbouring region so small parcels stay visible. The <code>tolerance</code> parameter controls polygon simplification — use 0 for maximum fidelity, higher values for smaller file sizes.</p>
+</section><section class="level2"><h2 id="subcortical-and-volumetric-atlases-work-differently">Subcortical and volumetric atlases work differently<a class="anchor" aria-label="anchor" href="#subcortical-and-volumetric-atlases-work-differently"></a>
 </h2>
 <p>Cortical atlases are all about surface vertices — mapping regions to points on the brain’s outer layer. Subcortical structures live inside the brain, so the approach changes. Instead of vertex indices, you’re extracting 3D meshes directly from volumetric segmentations.</p>
 <p>The pipeline reads your volume file (typically a <code>.mgz</code> or <code>.nii</code> segmentation) along with its color table, identifies each unique structure, and generates a mesh for it. Each mesh becomes a distinct 3D object you can visualize, but there’s no 2D equivalent here — subcortical atlases are 3D-only.</p>
@@ -241,7 +200,7 @@ Figure 3: Complete eight-step cortical atlas pipeline
 </div>
 </div>
 <figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-subcortical-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-Figure 4: Subcortical and whole-brain volumetric atlas pipeline
+Figure 3: Subcortical and whole-brain volumetric atlas pipeline
 </figcaption></figure>
 </div>
 </div>
@@ -272,7 +231,7 @@ Figure 4: Subcortical and whole-brain volumetric atlas pipeline
 </div>
 </div>
 <figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-tracts-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-Figure 5: White matter tract atlas pipeline
+Figure 4: White matter tract atlas pipeline
 </figcaption></figure>
 </div>
 </div>
@@ -302,44 +261,18 @@ Figure 5: White matter tract atlas pipeline
 </div>
 </div>
 <figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-output-compatibility-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-Figure 6: Atlas compatibility with ggseg plotting packages
+Figure 5: Atlas compatibility with ggseg plotting packages
 </figcaption></figure>
 </div>
 </div>
 </div>
-</section><section class="level2"><h2 id="the-speed-versus-completeness-tradeoff">The speed-versus-completeness tradeoff<a class="anchor" aria-label="anchor" href="#the-speed-versus-completeness-tradeoff"></a>
+</section><section class="level2"><h2 id="performance">Performance<a class="anchor" aria-label="anchor" href="#performance"></a>
 </h2>
-<p>The neat thing about the <code>steps</code> parameter is you get to pick how much work the pipeline does. The annoying thing about the <code>steps</code> parameter is you get to pick.</p>
-<p>If you only need 3D visualization, running <code>steps = 1</code> gets you there in seconds. The atlas object you get back is complete for 3D purposes — it has all the vertex mappings, all the region labels, all the metadata. It just doesn’t have 2D polygon outlines, which means ggseg can’t use it for flat brain plots.</p>
-<p>If you need 2D plots, you have to run the full <code>steps = 1:8</code> pipeline, which means you need FreeSurfer and Chrome installed, and you need to wait a couple of minutes while the pipeline extracts, smooths, and flattens contours. It’s slower because it’s doing real geometric computation — tracing region boundaries on a 3D surface and projecting them onto a 2D plane.</p>
-<p>Most of the time, you’ll know which one you need. If you’re prototyping or exploring data interactively, start with step 1. If you’re preparing publication-quality figures that need flat brain diagrams, bite the bullet and run the full pipeline.</p>
-<div class="cell" data-fig-width="10" data-layout-align="default">
-<div class="cell-output-display">
-<div id="fig-performance" class="quarto-float quarto-figure quarto-figure-center">
-<figure class="quarto-float quarto-float-fig"><div aria-describedby="fig-performance-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-<div>
-<pre class="mermaid mermaid-js" data-label="fig-performance">flowchart TB
-    A{Need 2D plots?} --&gt;|No| B["Use steps = 1&lt;br/&gt;⚡ Fast: ~5 seconds&lt;br/&gt;✓ 3D visualization only"]
-    A --&gt;|Yes| C{Have FreeSurfer&lt;br/&gt;+ Chrome?}
-    C --&gt;|No| D[Install dependencies&lt;br/&gt;See system-setup vignette]
-    C --&gt;|Yes| E["Use steps = 1:8&lt;br/&gt;⏱️ Slow: ~2-5 minutes&lt;br/&gt;✓ Full 2D + 3D"]
-
-    D --&gt; E
-
-    style B fill:#c8e6c9
-    style E fill:#fff9c4
-</pre>
-</div>
-</div>
-<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-performance-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-Figure 7: Performance decision tree for cortical atlases
-</figcaption></figure>
-</div>
-</div>
-</div>
+<p>Cortical atlas creation is fast — the full pipeline (read + project) completes in seconds because the mesh projection is pure geometry with no external rendering. The <code>tolerance</code> parameter is the main tuning knob: 0 gives maximum fidelity, 0.5 (the default) is a good balance, and higher values trade detail for smaller file sizes.</p>
+<p>For subcortical and tract pipelines, the <code>steps</code> parameter lets you control how much of the pipeline runs. Use a low step count for fast 3D-only iteration, then run the full pipeline when you need 2D geometry.</p>
 </section><section class="level2"><h2 id="where-to-go-from-here">Where to go from here<a class="anchor" aria-label="anchor" href="#where-to-go-from-here"></a>
 </h2>
-<p>If you’re new to ggseg.extra, start with the <a href="ggseg.extra.html">Getting Started</a> guide for installation and basic usage. Before running the full pipeline for any cortical atlas, check <a href="system-setup.html">System Setup</a> to make sure you have FreeSurfer and Chrome configured correctly — those dependencies are required for 2D polygon extraction.</p>
+<p>If you’re new to ggseg.extra, start with the <a href="ggseg.extra.html">Getting Started</a> guide for installation and basic usage. The cortical pipeline has no system dependencies — it only needs the <code>freesurferformats</code> R package to read annotation files. Subcortical and whole-brain pipelines need FreeSurfer and ImageMagick; see <a href="system-setup.html">System Setup</a> for details.</p>
 <p>The <a href="pipeline-configuration.html">Pipeline Configuration</a> article covers how to customize the creation process, including options for controlling smoothing, contour extraction, and other pipeline parameters. When you’re ready to build a specific atlas type, the individual tutorials under “Tutorials: Creating Atlases” walk through complete examples with real data.</p>
 </section><script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {

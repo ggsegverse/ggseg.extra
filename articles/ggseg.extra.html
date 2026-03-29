@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9001</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -175,13 +175,11 @@ flat brain plots.</li>
 </ul>
 </div>
 <div class="section level3">
-<h3 id="fast-iteration-vs--full-pipeline">Fast iteration vs. full pipeline<a class="anchor" aria-label="anchor" href="#fast-iteration-vs--full-pipeline"></a>
+<h3 id="cortical-pipeline">Cortical pipeline<a class="anchor" aria-label="anchor" href="#cortical-pipeline"></a>
 </h3>
-<p>Each creation function uses a <code>steps</code> parameter to control
-how much of the pipeline runs. For cortical atlases,
-<code>steps = 1</code> reads the annotation and returns 3D vertex data
-in seconds. The full pipeline (<code>steps = 1:8</code>) adds 2D polygon
-extraction, which requires FreeSurfer and Chrome and takes longer.</p>
+<p>The cortical pipeline reads annotation data and projects inflated
+mesh triangles directly to 2D polygons via orthographic projection. This
+completes in seconds and needs no external rendering dependencies:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">annot_files</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span></span>
 <span>  <span class="fu">freesurfer</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/freesurfer/man/fs_dir.html" class="external-link">fs_dir</a></span><span class="op">(</span><span class="op">)</span>,</span>
@@ -191,18 +189,18 @@ extraction, which requires FreeSurfer and Chrome and takes longer.</p>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"lh.aparc.annot"</span>, <span class="st">"rh.aparc.annot"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">atlas_3d_only</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/create_cortical_from_annotation.html">create_cortical_from_annotation</a></span><span class="op">(</span></span>
+<span><span class="va">atlas</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/create_cortical_from_annotation.html">create_cortical_from_annotation</a></span><span class="op">(</span></span>
 <span>  input_annot <span class="op">=</span> <span class="va">annot_files</span>,</span>
-<span>  steps <span class="op">=</span> <span class="fl">1</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">atlas_full</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/create_cortical_from_annotation.html">create_cortical_from_annotation</a></span><span class="op">(</span></span>
-<span>  input_annot <span class="op">=</span> <span class="va">annot_files</span>,</span>
-<span>  output_dir <span class="op">=</span> <span class="st">"my_atlas"</span>,</span>
-<span>  steps <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">8</span></span>
+<span>  output_dir <span class="op">=</span> <span class="st">"my_atlas"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-<p>Start with 3D-only to verify your inputs look right, then run the
-full pipeline when you’re ready for 2D geometry.</p>
+</div>
+<div class="section level3">
+<h3 id="subcortical-and-tract-pipelines">Subcortical and tract pipelines<a class="anchor" aria-label="anchor" href="#subcortical-and-tract-pipelines"></a>
+</h3>
+<p>The subcortical and tract pipelines use a <code>steps</code>
+parameter to control how much of the pipeline runs. Use a low step count
+for fast 3D-only iteration, then run the full pipeline when you’re ready
+for 2D geometry.</p>
 </div>
 <div class="section level3">
 <h3 id="post-processing">Post-processing<a class="anchor" aria-label="anchor" href="#post-processing"></a>
@@ -217,19 +215,26 @@ toolkit.</p>
 <div class="section level2">
 <h2 id="system-requirements">System requirements<a class="anchor" aria-label="anchor" href="#system-requirements"></a>
 </h2>
-<p>Creating atlases (as opposed to using pre-built ones) requires:</p>
+<p>Using pre-built atlases requires nothing beyond R. Creating your own
+atlases may require additional R packages and system tools depending on
+the pipeline:</p>
 <ul>
 <li>
-<a href="https://surfer.nmr.mgh.harvard.edu/" class="external-link">FreeSurfer</a> for
-reading neuroimaging formats</li>
+<strong>Cortical</strong> (annotation/label files) — no system tools
+needed; uses the <code>freesurferformats</code> R package to read files
+and projects mesh to 2D directly.</li>
 <li>
-<a href="https://imagemagick.org/" class="external-link">ImageMagick</a> for 2D geometry
-extraction</li>
-<li>Chrome or Chromium for 3D screenshots</li>
+<strong>Subcortical / whole-brain</strong> — <a href="https://surfer.nmr.mgh.harvard.edu/" class="external-link">FreeSurfer</a>, <a href="https://imagemagick.org/" class="external-link">ImageMagick</a>, and Chrome/Chromium for
+screenshot-based 2D extraction.</li>
+<li>
+<strong>Tract</strong> — no system tools; reads tractography files
+with R packages.</li>
 </ul>
+<p>All heavier dependencies (<code>freesurfer</code>,
+<code>magick</code>, <code>chromote</code>, <code>terra</code>, etc.)
+are in Suggests and only loaded when needed.</p>
 <p>Run <code><a href="../reference/setup_sitrep.html">setup_sitrep()</a></code> to check your setup, or see
-<code><a href="../articles/system-setup.html">vignette("system-setup")</a></code> for installation details and
-parallel processing setup.</p>
+<code><a href="../articles/system-setup.html">vignette("system-setup")</a></code> for details.</p>
 </div>
 <div class="section level2">
 <h2 id="tutorials">Tutorials<a class="anchor" aria-label="anchor" href="#tutorials"></a>

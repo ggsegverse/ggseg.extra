@@ -56,79 +56,33 @@ Figure 1: All atlas creation pathways in ggseg.extra
 
 Every cortical creation function — whether you’re starting with
 FreeSurfer annotations, GIFTI labels, CIFTI parcellations, or neuromaps
-data — follows the same underlying pipeline. The trick is the `steps`
-parameter, which lets you bail out early or run the full gauntlet
-depending on what you need.
+data — follows the same two-step pipeline.
 
 Step 1 reads your input file and maps it to 3D vertices on the brain
-surface. That’s fast, takes about five seconds, and gives you enough to
-visualize in 3D. If that’s all you need, you’re done.
-
-The full pipeline — steps 1 through 8 — adds 2D polygon extraction. This
-is where things get slower (think minutes, not seconds) because it
-requires FreeSurfer and Chrome to render contours from the inflated
-brain surface and flatten them into plottable geometries. The payoff is
-that you get both 2D flat plots and 3D interactive visualizations from
-the same atlas object.
-
-Here’s what that fork in the road looks like:
+surface. Step 2 projects the inflated mesh triangles directly to 2D
+polygons via orthographic projection. Both steps complete in seconds and
+require no external rendering dependencies — just FreeSurfer to read the
+annotation files.
 
 ``` mermaid
 flowchart LR
-    A[Input File] --> B["Step 1<br/>Read annotation<br/>&<br/>Extract vertices"]
-    B --> C{Full pipeline?}
-    C -->|steps = 1| D[Return 3D atlas<br/>Fast ⚡]
-    C -->|steps = 1:8| E["Step 2-8<br/>Extract 2D polygons<br/>Requires FreeSurfer<br/>+ Chrome"]
-    E --> F[Complete atlas<br/>3D + 2D]
+    A[Input File] --> S1["Step 1<br/>Read annotation<br/>& extract vertices"]
+    S1 --> S2["Step 2<br/>Project mesh to<br/>2D polygons"]
+    S2 --> F[Complete atlas<br/>3D + 2D ⚡]
 
-    style D fill:#c8e6c9
+    style S1 fill:#fff9c4
+    style S2 fill:#c8e6c9
     style F fill:#e1f5ff
 ```
 
-Figure 2: Decision point in cortical atlas creation
+Figure 2: Cortical atlas creation pipeline
 
-### What happens in the full pipeline
-
-When you run `steps = 1:8`, you’re committing to the full eight-step
-process. Each step builds on the previous one, transforming your
-annotation file into a complete atlas with both 3D vertex mappings and
-2D polygon outlines.
-
-Steps 1-2 handle the initial read and surface projection, making sure
-your parcellation is mapped to the standard fsaverage template. Step 3
-scrubs the region labels — cleaning up names, handling duplicates,
-making everything consistent. Steps 4-5 extract and smooth contours on
-the inflated surface, which is where the actual polygon boundaries get
-defined. Step 6 flattens those 3D contours into 2D coordinates. Steps
-7-8 add the medial wall (background regions) and combine everything into
-the final atlas object.
-
-The whole sequence looks like this:
-
-``` mermaid
-flowchart TB
-    Start[Input annotation] --> S1["Step 1: Read & Extract<br/>Read annotation labels<br/>Map to brain vertices"]
-    S1 --> S2["Step 2: Project to Surface<br/>mri_surf2surf reregistration<br/>Map to fsaverage"]
-    S2 --> S3["Step 3: Scrub Labels<br/>Clean region names<br/>Handle duplicates"]
-    S3 --> S4["Step 4: Create Contours<br/>Extract region boundaries<br/>on inflated surface"]
-    S4 --> S5["Step 5: Smooth Contours<br/>Simplify polygon geometry<br/>Reduce vertices"]
-    S5 --> S6["Step 6: Convert to 2D<br/>Flatten 3D coordinates<br/>to x-y plane"]
-    S6 --> S7["Step 7: Medial Wall<br/>Add background regions<br/>for complete coverage"]
-    S7 --> S8["Step 8: Finalize<br/>Combine hemispheres<br/>Add metadata"]
-    S8 --> Output[ggseg_atlas<br/>3D + 2D]
-
-    style S1 fill:#fff9c4
-    style S2 fill:#fff9c4
-    style S3 fill:#ffe0b2
-    style S4 fill:#ffe0b2
-    style S5 fill:#ffe0b2
-    style S6 fill:#c8e6c9
-    style S7 fill:#c8e6c9
-    style S8 fill:#e1f5ff
-    style Output fill:#e1f5ff
-```
-
-Figure 3: Complete eight-step cortical atlas pipeline
+The projection uses orthographic cameras placed at standard viewpoints
+(lateral, medial, superior, inferior), culls back-facing triangles, and
+unions the front-facing triangles per region into sf polygons. Boundary
+faces are assigned to the smallest neighbouring region so small parcels
+stay visible. The `tolerance` parameter controls polygon simplification
+— use 0 for maximum fidelity, higher values for smaller file sizes.
 
 ## Subcortical and volumetric atlases work differently
 
@@ -166,7 +120,7 @@ flowchart TB
     style H fill:#e1f5ff
 ```
 
-Figure 4: Subcortical and whole-brain volumetric atlas pipeline
+Figure 3: Subcortical and whole-brain volumetric atlas pipeline
 
 ## Tracts are a special case
 
@@ -199,7 +153,7 @@ flowchart TB
     style H fill:#e1f5ff
 ```
 
-Figure 5: White matter tract atlas pipeline
+Figure 4: White matter tract atlas pipeline
 
 ## Where your atlas can go
 
@@ -229,56 +183,30 @@ flowchart LR
     style D fill:#c8e6c9
 ```
 
-Figure 6: Atlas compatibility with ggseg plotting packages
+Figure 5: Atlas compatibility with ggseg plotting packages
 
-## The speed-versus-completeness tradeoff
+## Performance
 
-The neat thing about the `steps` parameter is you get to pick how much
-work the pipeline does. The annoying thing about the `steps` parameter
-is you get to pick.
+Cortical atlas creation is fast — the full pipeline (read + project)
+completes in seconds because the mesh projection is pure geometry with
+no external rendering. The `tolerance` parameter is the main tuning
+knob: 0 gives maximum fidelity, 0.5 (the default) is a good balance, and
+higher values trade detail for smaller file sizes.
 
-If you only need 3D visualization, running `steps = 1` gets you there in
-seconds. The atlas object you get back is complete for 3D purposes — it
-has all the vertex mappings, all the region labels, all the metadata. It
-just doesn’t have 2D polygon outlines, which means ggseg can’t use it
-for flat brain plots.
-
-If you need 2D plots, you have to run the full `steps = 1:8` pipeline,
-which means you need FreeSurfer and Chrome installed, and you need to
-wait a couple of minutes while the pipeline extracts, smooths, and
-flattens contours. It’s slower because it’s doing real geometric
-computation — tracing region boundaries on a 3D surface and projecting
-them onto a 2D plane.
-
-Most of the time, you’ll know which one you need. If you’re prototyping
-or exploring data interactively, start with step 1. If you’re preparing
-publication-quality figures that need flat brain diagrams, bite the
-bullet and run the full pipeline.
-
-``` mermaid
-flowchart TB
-    A{Need 2D plots?} -->|No| B["Use steps = 1<br/>⚡ Fast: ~5 seconds<br/>✓ 3D visualization only"]
-    A -->|Yes| C{Have FreeSurfer<br/>+ Chrome?}
-    C -->|No| D[Install dependencies<br/>See system-setup vignette]
-    C -->|Yes| E["Use steps = 1:8<br/>⏱️ Slow: ~2-5 minutes<br/>✓ Full 2D + 3D"]
-
-    D --> E
-
-    style B fill:#c8e6c9
-    style E fill:#fff9c4
-```
-
-Figure 7: Performance decision tree for cortical atlases
+For subcortical and tract pipelines, the `steps` parameter lets you
+control how much of the pipeline runs. Use a low step count for fast
+3D-only iteration, then run the full pipeline when you need 2D geometry.
 
 ## Where to go from here
 
 If you’re new to ggseg.extra, start with the [Getting
 Started](https://ggsegverse.github.io/ggseg.extra/articles/ggseg.extra.md)
-guide for installation and basic usage. Before running the full pipeline
-for any cortical atlas, check [System
+guide for installation and basic usage. The cortical pipeline has no
+system dependencies — it only needs the `freesurferformats` R package to
+read annotation files. Subcortical and whole-brain pipelines need
+FreeSurfer and ImageMagick; see [System
 Setup](https://ggsegverse.github.io/ggseg.extra/articles/system-setup.md)
-to make sure you have FreeSurfer and Chrome configured correctly — those
-dependencies are required for 2D polygon extraction.
+for details.
 
 The [Pipeline
 Configuration](https://ggsegverse.github.io/ggseg.extra/articles/pipeline-configuration.md)

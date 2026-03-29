@@ -45,16 +45,13 @@ pak::pak("drmowinckels/freesurfer@refactor")
 
 ## Create custom atlases
 
-We have tutorials on how to make atlases available in the `Articles` of
-the [package documentation
-page](https://ggsegverse.github.io/ggseg.extra/). Currently, the
-pipeline for making 3d atlases needs FreeSurfer to be installed on your
-system and a ready `.annot` file to use for the conversions.
-Improvements to the pipeline in creating cortical atlases both for ggseg
-and ggseg3d is still being developed. Pipelines for creating
-sub-cortical atlases of any kind are still in their infancy, and we do
-not yet have good solutions for their creation. Suggestions for
-improvement are welcome through GH issues or direct Pull requests.
+Tutorials are available in the `Articles` of the [package documentation
+page](https://ggsegverse.github.io/ggseg.extra/). The cortical pipeline
+projects inflated mesh triangles directly to 2D polygons — atlas
+creation takes seconds and needs only FreeSurfer to read annotation
+files (no rendering, ImageMagick, or Chrome). Subcortical and tract
+pipelines are also available. Suggestions for improvement are welcome
+through GH issues or direct Pull requests.
 
 ## Code of Conduct
 

@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9001</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -62,6 +62,53 @@
       <small>Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="development version" id="ggsegextra-development-version">ggseg.extra (development version)<a class="anchor" aria-label="anchor" href="#ggsegextra-development-version"></a></h2>
+<div class="section level3">
+<h3 id="boundary-triangle-splitting-development-version">Boundary triangle splitting<a class="anchor" aria-label="anchor" href="#boundary-triangle-splitting-development-version"></a></h3>
+<p>Boundary triangles (where vertices belong to different atlas regions) are now split into sub-polygons along edge midpoints instead of being assigned wholesale to a single region. This eliminates the sawtooth artifacts at region borders that resulted from the triangular mesh geometry.</p>
+<ul><li>
+<strong>2-region boundaries</strong>: triangle is split at the midpoints of the two cross-boundary edges — the majority region gets a quadrilateral, the minority region gets a triangle.</li>
+<li>
+<strong>3-region boundaries</strong>: triangle is divided into three quadrilaterals meeting at the centroid.</li>
+<li>Default <code>tolerance</code> increased from 0.5 to 1 — the smoother borders tolerate higher simplification without visible degradation.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="bug-fixes-development-version">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-development-version"></a></h3>
+<ul><li>
+<code>ensure_fs_compatible_nifti()</code> no longer errors when the NIfTI header cannot be read (e.g. <code>.mgz</code> files or nonexistent paths). It now falls through gracefully and lets downstream FreeSurfer commands handle the file.</li>
+</ul></div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="2.0.1" id="ggsegextra-201">ggseg.extra 2.0.1<a class="anchor" aria-label="anchor" href="#ggsegextra-201"></a></h2>
+<div class="section level3">
+<h3 id="cortical-pipeline-mesh-projection-2-0-1">Cortical pipeline: mesh projection<a class="anchor" aria-label="anchor" href="#cortical-pipeline-mesh-projection-2-0-1"></a></h3>
+<p>The cortical atlas pipeline now projects inflated mesh triangles directly to 2D polygons via orthographic projection, replacing the screenshot-based contour extraction from v2.0.0.</p>
+<ul><li>
+<strong>Much faster</strong> — atlas creation completes in ~5 seconds instead of minutes.</li>
+<li>
+<strong>Cleaner geometry</strong> — no pixel staircase artifacts from rasterisation.</li>
+<li>
+<strong>Fewer dependencies</strong> — no FreeSurfer rendering, ImageMagick, or Chrome needed for 2D geometry (FreeSurfer is still required to <em>read</em> annotation files).</li>
+<li>
+<strong>Better small-region visibility</strong> — boundary faces are assigned to the smallest neighbouring region so tiny parcels are not swallowed by their neighbours.</li>
+<li>
+<strong>Smooth region borders</strong> — boundary triangles (vertices in different regions) are split along edge midpoints so each region gets a clean polygon slice, eliminating the sawtooth artifacts from whole-triangle assignment.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="breaking-changes-2-0-1">Breaking changes<a class="anchor" aria-label="anchor" href="#breaking-changes-2-0-1"></a></h3>
+<ul><li>Removed <code>method</code>, <code>snapshot_dim</code>, <code>smoothness</code>, and <code>steps</code> parameters from all <code>create_cortical_from_*()</code> functions. The pipeline always reads data and projects to 2D in one pass — no step-based control needed.</li>
+<li>Changed default <code>tolerance</code> from 0.5 to 1 — the triangle-splitting approach produces smoother borders that tolerate higher simplification.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="lighter-dependency-footprint-2-0-1">Lighter dependency footprint<a class="anchor" aria-label="anchor" href="#lighter-dependency-footprint-2-0-1"></a></h3>
+<ul><li>Moved <code>chromote</code>, <code>htmlwidgets</code>, <code>magick</code>, <code>smoothr</code>, <code>terra</code>, <code>RNifti</code>, and <code>freesurfer</code> from Imports to Suggests. Users who only need the cortical pipeline no longer need these packages installed. They are checked at runtime and requested when needed (subcortical, tract, and volumetric pipelines).</li>
+</ul></div>
+<div class="section level3">
+<h3 id="new-internals-2-0-1">New internals<a class="anchor" aria-label="anchor" href="#new-internals-2-0-1"></a></h3>
+<ul><li>Added <code>R/mesh-projection.R</code> with the full geometric projection algorithm: orthonormal view basis computation, backface culling, per-face label assignment, and triangle-to-polygon union via sf.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="2.0.0" id="ggsegextra-200">ggseg.extra 2.0.0<a class="anchor" aria-label="anchor" href="#ggsegextra-200"></a></h2>
 <ul><li>Major rewrite of atlas creation pipelines with modular step-based architecture</li>

@@ -13,7 +13,7 @@ mri_surf2surf_rereg(
   annot,
   hemi = c("lh", "rh"),
   target_subject = "fsaverage5",
-  output_dir = file.path(fs_subj_dir(), subject, "label"),
+  output_dir = file.path(freesurfer::fs_subj_dir(), subject, "label"),
   verbose = get_verbose()
 )
 ```

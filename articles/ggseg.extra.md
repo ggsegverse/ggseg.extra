@@ -30,13 +30,11 @@ Every atlas contains:
   subcortical and tract atlases.
 - **2D geometry** (optional) — sf polygon outlines for flat brain plots.
 
-### Fast iteration vs. full pipeline
+### Cortical pipeline
 
-Each creation function uses a `steps` parameter to control how much of
-the pipeline runs. For cortical atlases, `steps = 1` reads the
-annotation and returns 3D vertex data in seconds. The full pipeline
-(`steps = 1:8`) adds 2D polygon extraction, which requires FreeSurfer
-and Chrome and takes longer.
+The cortical pipeline reads annotation data and projects inflated mesh
+triangles directly to 2D polygons via orthographic projection. This
+completes in seconds and needs no external rendering dependencies:
 
 ``` r
 annot_files <- file.path(
@@ -47,20 +45,17 @@ annot_files <- file.path(
   c("lh.aparc.annot", "rh.aparc.annot")
 )
 
-atlas_3d_only <- create_cortical_from_annotation(
+atlas <- create_cortical_from_annotation(
   input_annot = annot_files,
-  steps = 1
-)
-
-atlas_full <- create_cortical_from_annotation(
-  input_annot = annot_files,
-  output_dir = "my_atlas",
-  steps = 1:8
+  output_dir = "my_atlas"
 )
 ```
 
-Start with 3D-only to verify your inputs look right, then run the full
-pipeline when you’re ready for 2D geometry.
+### Subcortical and tract pipelines
+
+The subcortical and tract pipelines use a `steps` parameter to control
+how much of the pipeline runs. Use a low step count for fast 3D-only
+iteration, then run the full pipeline when you’re ready for 2D geometry.
 
 ### Post-processing
 
@@ -73,18 +68,27 @@ for the full toolkit.
 
 ## System requirements
 
-Creating atlases (as opposed to using pre-built ones) requires:
+Using pre-built atlases requires nothing beyond R. Creating your own
+atlases may require additional R packages and system tools depending on
+the pipeline:
 
-- [FreeSurfer](https://surfer.nmr.mgh.harvard.edu/) for reading
-  neuroimaging formats
-- [ImageMagick](https://imagemagick.org/) for 2D geometry extraction
-- Chrome or Chromium for 3D screenshots
+- **Cortical** (annotation/label files) — no system tools needed; uses
+  the `freesurferformats` R package to read files and projects mesh to
+  2D directly.
+- **Subcortical / whole-brain** —
+  [FreeSurfer](https://surfer.nmr.mgh.harvard.edu/),
+  [ImageMagick](https://imagemagick.org/), and Chrome/Chromium for
+  screenshot-based 2D extraction.
+- **Tract** — no system tools; reads tractography files with R packages.
+
+All heavier dependencies (`freesurfer`, `magick`, `chromote`, `terra`,
+etc.) are in Suggests and only loaded when needed.
 
 Run
 [`setup_sitrep()`](https://ggsegverse.github.io/ggseg.extra/reference/setup_sitrep.md)
 to check your setup, or see
 [`vignette("system-setup")`](https://ggsegverse.github.io/ggseg.extra/articles/system-setup.md)
-for installation details and parallel processing setup.
+for details.
 
 ## Tutorials
 

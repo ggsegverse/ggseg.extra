@@ -2,13 +2,8 @@
 
 **\[experimental\]**
 
-Build a brain atlas from GIFTI label files (`.label.gii`). This is the
-entry point for parcellations distributed in GIFTI format, such as those
-from the Human Connectome Project or neuromaps.
-
-The function assumes fsaverage5 surface space (10,242 vertices per
-hemisphere). No FreeSurfer installation is needed for 3D-only atlases
-(`steps = 1`).
+Build a brain atlas from GIFTI label files (`.label.gii`). Assumes
+fsaverage5 surface space (10,242 vertices per hemisphere).
 
 ## Usage
 
@@ -20,12 +15,10 @@ create_cortical_from_gifti(
   hemisphere = c("rh", "lh"),
   views = c("lateral", "medial", "superior", "inferior"),
   tolerance = NULL,
-  smoothness = NULL,
-  snapshot_dim = NULL,
+  smooth_refinements = NULL,
   cleanup = NULL,
   verbose = get_verbose(),
-  skip_existing = NULL,
-  steps = NULL
+  skip_existing = NULL
 )
 ```
 
@@ -61,20 +54,13 @@ create_cortical_from_gifti(
   If not specified, uses `options("ggseg.extra.tolerance")` or the
   `GGSEG_EXTRA_TOLERANCE` environment variable. Default is 1.
 
-- smoothness:
+- smooth_refinements:
 
-  Smoothing factor for 2D contours. Higher values produce smoother
-  region boundaries (typical range: 3–15). Passed to
-  [`smoothr::smooth()`](https://strimas.com/smoothr/reference/smooth.html).
-  If not specified, uses `options("ggseg.extra.smoothness")` or the
-  `GGSEG_EXTRA_SMOOTHNESS` environment variable. Default is 5.
-
-- snapshot_dim:
-
-  Width and height (in pixels) for brain surface snapshots. Higher
-  values capture more detail for dense parcellations. If not specified,
-  uses `options("ggseg.extra.snapshot_dim")` or the
-  `GGSEG_EXTRA_SNAPSHOT_DIM` environment variable. Default is 800.
+  Number of Chaikin corner-cutting refinements to apply to 2D polygons.
+  Higher values produce smoother region boundaries (typical range: 0–3).
+  0 disables smoothing. If not specified, uses
+  `options("ggseg.extra.smooth_refinements")` or the
+  `GGSEG_EXTRA_SMOOTH_REFINEMENTS` environment variable. Default is 2.
 
 - cleanup:
 
@@ -97,12 +83,6 @@ create_cortical_from_gifti(
   `options("ggseg.extra.skip_existing")` or the
   `GGSEG_EXTRA_SKIP_EXISTING` environment variable. Default is TRUE.
 
-- steps:
-
-  Which pipeline steps to run. See
-  [`create_cortical_from_annotation()`](https://ggsegverse.github.io/ggseg.extra/reference/create_cortical_from_annotation.md)
-  for step descriptions. Use `steps = 1` for 3D-only atlas.
-
 ## Value
 
 A `ggseg_atlas` object.
@@ -112,9 +92,7 @@ A `ggseg_atlas` object.
 ``` r
 if (FALSE) { # \dontrun{
 atlas <- create_cortical_from_gifti(
-  gifti_files = c("lh.aparc.label.gii", "rh.aparc.label.gii"),
-  steps = 1
+  gifti_files = c("lh.aparc.label.gii", "rh.aparc.label.gii")
 )
-ggseg3d::ggseg3d(atlas = atlas)
 } # }
 ```
