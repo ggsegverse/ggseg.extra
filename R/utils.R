@@ -13,7 +13,14 @@ with_safe_plan <- function(expr) {
       " fork is incompatible with chromote."
     ))
   }
-  force(expr)
+  withCallingHandlers(
+    force(expr),
+    warning = function(w) {
+      if (grepl("may not be available when loading", conditionMessage(w))) {
+        invokeRestart("muffleWarning")
+      }
+    }
+  )
 }
 
 #' @noRd

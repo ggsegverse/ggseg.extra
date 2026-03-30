@@ -178,8 +178,36 @@ describe("read_ctab", {
     result <- read_ctab(lut_file)
 
     expect_s3_class(result, "data.frame")
-    expect_equal(names(result), c("idx", "label", "R", "G", "B", "A"))
+    expect_true(all(c("idx", "label", "R", "G", "B", "A") %in% names(result)))
     expect_true(nrow(result) > 0)
+  })
+
+  it("reads optional type column when present", {
+    tmp <- withr::local_tempfile(fileext = ".txt")
+    writeLines(c(
+      "  0  Unknown          0   0   0   0",
+      "  1  Lobule-I        205 130 176   0  Anterior",
+      "  2  Lobule-II       100  50  25   0  Posterior"
+    ), tmp)
+
+    result <- read_ctab(tmp)
+
+    expect_s3_class(result, "data.frame")
+    expect_equal(nrow(result), 3)
+    expect_true("type" %in% names(result))
+    expect_equal(result$type, c(NA, "Anterior", "Posterior"))
+  })
+
+  it("omits type column when no rows have it", {
+    tmp <- withr::local_tempfile(fileext = ".txt")
+    writeLines(c(
+      "  0  Unknown          0   0   0   0",
+      "  1  Region1        205 130 176   0"
+    ), tmp)
+
+    result <- read_ctab(tmp)
+
+    expect_equal(names(result), c("idx", "label", "R", "G", "B", "A"))
   })
 })
 

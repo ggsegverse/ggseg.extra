@@ -41,7 +41,7 @@ describe("decimate_mesh", {
       )
     )
 
-    result <- decimate_mesh(mesh, percent = 0.5)
+    result <- suppressWarnings(decimate_mesh(mesh, percent = 0.5))
 
     expect_true(nrow(result$faces) <= nrow(mesh$faces))
     expect_true(nrow(result$vertices) <= nrow(mesh$vertices))
@@ -202,7 +202,7 @@ describe("tessellate_label", {
     )
   })
 
-  it("errors when smoothing fails", {
+  it("falls back to unsmoothed mesh when smoothing fails", {
     tmp_dir <- withr::local_tempdir()
     local_mocked_bindings(
       check_fs = function(abort = FALSE) invisible(TRUE),
@@ -212,13 +212,23 @@ describe("tessellate_label", {
       mri_tessellate = function(...) {
         writeLines("ok", file.path(tmp_dir, "0010_tess"))
       },
-      mri_smooth = function(...) NULL
+      mri_smooth = function(...) stop("smooth failed"),
+      read_fs_surface = function(file, ...) {
+        list(
+          vertices = data.frame(x = 1:3, y = 1:3, z = 1:3),
+          faces = data.frame(i = 1L, j = 2L, k = 3L)
+        )
+      }
     )
 
-    expect_error(
-      tessellate_label("vol.mgz", 10, tmp_dir, skip_existing = FALSE),
-      "Smoothing failed"
+    expect_warnings(
+      result <- tessellate_label(
+        "vol.mgz", 10, tmp_dir, skip_existing = FALSE
+      ),
+      "Smoothing failed.*using unsmoothed"
     )
+    expect_true(is.list(result))
+    expect_true("vertices" %in% names(result))
   })
 })
 

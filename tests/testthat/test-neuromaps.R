@@ -241,12 +241,15 @@ describe("create_cortical_from_neuromaps", {
       preview_atlas = function(atlas) invisible(atlas)
     )
 
-    result <- create_cortical_from_neuromaps(
-      source = "test",
-      desc = "testdesc",
-      atlas_name = "test_neuromaps",
-      verbose = FALSE,
-      cleanup = FALSE
+    expect_warning(
+      result <- create_cortical_from_neuromaps(
+        source = "test",
+        desc = "testdesc",
+        atlas_name = "test_neuromaps",
+        verbose = FALSE,
+        cleanup = FALSE
+      ),
+      "Large atlases"
     )
 
     expect_s3_class(result, "ggseg_atlas")
@@ -287,11 +290,14 @@ describe("create_cortical_from_neuromaps", {
       preview_atlas = function(atlas) invisible(atlas)
     )
 
-    result <- create_cortical_from_neuromaps(
-      source = "abagen",
-      desc = "genepc1",
-      verbose = FALSE,
-      cleanup = FALSE
+    expect_warning(
+      result <- create_cortical_from_neuromaps(
+        source = "abagen",
+        desc = "genepc1",
+        verbose = FALSE,
+        cleanup = FALSE
+      ),
+      "Large atlases"
     )
 
     expect_equal(result$atlas, "abagen_genepc1")
@@ -377,7 +383,7 @@ describe("create_cortical_from_neuromaps", {
       preview_atlas = function(atlas) invisible(atlas)
     )
 
-    expect_warning(
+    expect_warnings(
       create_cortical_from_neuromaps(
         source = "test",
         desc = "test",
@@ -386,7 +392,7 @@ describe("create_cortical_from_neuromaps", {
         verbose = FALSE,
         cleanup = FALSE
       ),
-      "Non-default space/density"
+      "Non-default space/density|Large atlases"
     )
   })
 

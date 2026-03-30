@@ -86,8 +86,8 @@ expect_warnings <- function(expr, regexp) {
       if (grepl(regexp, conditionMessage(w))) {
         warnings_caught[[length(warnings_caught) + 1L]] <<-
           conditionMessage(w)
-        invokeRestart("muffleWarning")
       }
+      invokeRestart("muffleWarning")
     }
   )
   testthat::expect_true(

@@ -83,10 +83,6 @@
       -- Creating brain atlas "test_atlas" -------------------------------------------
       i Input files: 'testdata/cortical/lh.region1.label', 'testdata/cortical/lh.region2.label', and 'testdata/cortical/rh.region1.label'
       i Reading 3 label files
-    Condition
-      Warning in `serializedSize()`:
-      'package:grDevices' may not be available when loading
-    Message
       v Reading 3 label files [<TIME>]
       
       i Projecting mesh to 2D polygons

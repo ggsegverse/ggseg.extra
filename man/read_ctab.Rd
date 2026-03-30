@@ -10,7 +10,8 @@ read_ctab(path)
 \item{path}{Path to the color table file.}
 }
 \value{
-A data.frame with columns: idx, label, R, G, B, A.
+A data.frame with columns: idx, label, R, G, B, A, and
+optionally type when a 7th field is present.
 }
 \description{
 Read a FreeSurfer color lookup table file (e.g., \code{FreeSurferColorLUT.txt}

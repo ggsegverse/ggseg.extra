@@ -13,7 +13,7 @@
 ensure_fs_compatible_nifti <- function(volume_file, output_dir) {
   rlang::check_installed("RNifti", reason = "to read NIfTI headers")
   hdr <- tryCatch(
-    RNifti::niftiHeader(volume_file),
+    suppressWarnings(RNifti::niftiHeader(volume_file)),
     error = function(e) NULL
   )
   if (is.null(hdr) || length(hdr$datatype) == 0) return(volume_file)
@@ -98,18 +98,22 @@ tessellate_label <- function(
   }
 
   if (!skip_existing || !file.exists(smooth_file)) {
-    mri_smooth(
-      input_file = tess_file,
-      output_file = smooth_file,
-      verbose = verbose
+    tryCatch(
+      mri_smooth(
+        input_file = tess_file,
+        output_file = smooth_file,
+        verbose = verbose
+      ),
+      error = function(e) {
+        cli::cli_warn(
+          "Smoothing failed for label {label_id}, using unsmoothed mesh"
+        )
+      }
     )
   }
 
-  if (!file.exists(smooth_file)) {
-    cli::cli_abort("Smoothing failed for label {label_id}")
-  }
-
-  read_fs_surface(smooth_file, verbose = verbose)
+  surf_file <- if (file.exists(smooth_file)) smooth_file else tess_file
+  read_fs_surface(surf_file, verbose = verbose)
 }
 
 

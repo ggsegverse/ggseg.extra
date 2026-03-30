@@ -543,11 +543,14 @@ describe("create_cortical_from_cifti", {
     tmp <- withr::local_tempfile(fileext = ".dlabel.nii")
     writeLines("mock", tmp)
 
-    result <- create_cortical_from_cifti(
-      cifti_file = tmp,
-      atlas_name = "test_cifti",
-      verbose = FALSE,
-      cleanup = FALSE
+    expect_warning(
+      result <- create_cortical_from_cifti(
+        cifti_file = tmp,
+        atlas_name = "test_cifti",
+        verbose = FALSE,
+        cleanup = FALSE
+      ),
+      "Large atlases"
     )
 
     expect_s3_class(result, "ggseg_atlas")
@@ -593,8 +596,11 @@ describe("create_cortical_from_cifti", {
     tmp <- withr::local_tempfile(pattern = "my.atlas", fileext = ".dlabel.nii")
     writeLines("mock", tmp)
 
-    result <- create_cortical_from_cifti(
-      cifti_file = tmp, verbose = FALSE, cleanup = FALSE
+    expect_warning(
+      result <- create_cortical_from_cifti(
+        cifti_file = tmp, verbose = FALSE, cleanup = FALSE
+      ),
+      "Large atlases"
     )
     expect_true(grepl("my_atlas", result$atlas))
   })

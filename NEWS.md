@@ -1,5 +1,28 @@
 # ggseg.extra (development version)
 
+## Cerebellar atlas type and SUIT flatmap pipeline
+
+New "cerebellar" atlas type added across the ggseg ecosystem (ggseg.formats,
+ggseg, ggseg3d). Cerebellar atlases use SUIT flatmap sf polygons for 2D
+rendering and per-region meshes for 3D (like subcortical).
+
+Three creation pipelines:
+
+- `create_cerebellar_from_gifti()` creates from GIFTI label files + SUIT
+  flatmap surface.
+- `create_cerebellar_from_annotation()` creates from FreeSurfer `.annot`
+  files on the SUIT cerebellar surface + SUIT flatmap.
+- `create_cerebellar_from_volume()` creates from a NIfTI cerebellar
+  segmentation volume + SUIT 3D surface (for vol-to-surf sampling) + SUIT
+  flatmap. Includes per-region 3D mesh tessellation.
+
+Supporting functions:
+
+- `read_suit_parcellation()` reads SUIT-format GIFTI labels with automatic
+  hemisphere detection (Left/Right/Vermis).
+- `ggseg_data_cerebellar()` (ggseg.formats) creates the data container.
+- `is_cerebellar_atlas()` (ggseg.formats) type predicate.
+
 ## Boundary triangle splitting
 
 Boundary triangles (where vertices belong to different atlas regions) are now

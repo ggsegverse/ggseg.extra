@@ -24,9 +24,9 @@ Authors@R: c(
         comment = c(ORCID = "0000-0001-6469-1750"))
   )
 Description: Create brain atlas data sets compatible with the 'ggsegverse' plotting packages in 'R'. Provides pipelines for building
-    cortical, subcortical, and white-matter tract atlases from 'FreeSurfer'
-    annotation files, 'GIFTI' and 'CIFTI' surface formats, 'neuromaps', and
-    volumetric 'NIfTI' images.
+    cortical, subcortical, white-matter tract, and cerebellar atlases from
+    'FreeSurfer' annotation files, 'GIFTI' and 'CIFTI' surface formats,
+    'neuromaps', 'SUIT' flatmap surfaces, and volumetric 'NIfTI' images.
 License: MIT + file LICENSE
 URL: https://github.com/ggsegverse/ggseg.extra
 BugReports: https://github.com/ggsegverse/ggseg.extra/issues

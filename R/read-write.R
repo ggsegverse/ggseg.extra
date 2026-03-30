@@ -351,7 +351,8 @@ read_dpv <- function(path) {
 #' and RGBA colours.
 #'
 #' @param path Path to the color table file.
-#' @return A data.frame with columns: idx, label, R, G, B, A.
+#' @return A data.frame with columns: idx, label, R, G, B, A, and
+#'   optionally type when a 7th field is present.
 #' @seealso [get_ctab()] to read and add hex colours, [write_ctab()] to write
 #' @export
 #' @importFrom utils read.table
@@ -368,7 +369,7 @@ read_ctab <- function(path) {
   parsed <- regmatches(
     lines,
     regexec(
-      "^\\s*(\\d+)\\s+(.+?)\\s+(\\d+)\\s+(\\d+)\\s+(\\d+)\\s+(\\d+)\\s*$",
+      "^\\s*(\\d+)\\s+(.+?)\\s+(\\d+)\\s+(\\d+)\\s+(\\d+)\\s+(\\d+)(?:\\s+(\\w+))?\\s*$",
       lines
     )
   )
@@ -381,10 +382,13 @@ read_ctab <- function(path) {
       G = as.integer(m[5]),
       B = as.integer(m[6]),
       A = as.integer(m[7]),
+      type = if (nzchar(m[8])) m[8] else NA_character_,
       stringsAsFactors = FALSE
     )
   })
-  do.call(rbind, Filter(Negate(is.null), rows))
+  result <- do.call(rbind, Filter(Negate(is.null), rows))
+  if (all(is.na(result$type))) result$type <- NULL
+  result
 }
 
 

@@ -130,7 +130,7 @@ describe("create_subcortical_from_volume", {
     vol_file <- test_mgz_file()
     skip_if(!file.exists(vol_file), "Test volume file not found")
 
-    expect_warning(
+    expect_warnings(
       atlas <- create_subcortical_from_volume(
         input_volume = vol_file,
         input_lut = NULL,
@@ -157,12 +157,12 @@ describe("create_subcortical_from_volume with meshes", {
   lut_file <- test_lut_file()
   skip_if(!file.exists(lut_file), "Test LUT file not found")
 
-  atlas <- create_subcortical_from_volume(
+  atlas <- suppressWarnings(create_subcortical_from_volume(
     input_volume = vol_file,
     input_lut = lut_file,
     steps = 1:3,
     verbose = FALSE
-  )
+  ))
 
   it("creates atlas with meshes component", {
     expect_s3_class(atlas, "ggseg_atlas")

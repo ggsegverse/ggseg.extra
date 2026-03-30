@@ -16,6 +16,7 @@ create_wholebrain_from_volume(
   min_vertices = 50L,
   cortical_labels = NULL,
   subcortical_labels = NULL,
+  cerebellar_labels = NULL,
   cortical_views = c("lateral", "medial", "superior", "inferior"),
   subcortical_views = NULL,
   decimate = 0.5,
@@ -73,14 +74,19 @@ Highest priority; overrides LUT \code{type} and the vertex-count heuristic.}
 subcortical. Highest priority; overrides LUT \code{type} and the vertex-count
 heuristic.}
 
+\item{cerebellar_labels}{Character vector of label names to force as
+cerebellar. These go through the cerebellar SUIT flatmap pipeline instead
+of cortical or subcortical. Uses the bundled SUIT surfaces from
+\code{\link[=suit_flatmap_path]{suit_flatmap_path()}} and \code{\link[=suit_3d_path]{suit_3d_path()}}.}
+
 \item{cortical_views}{Views for cortical sub-pipeline.
 Default \code{c("lateral", "medial", "superior", "inferior")}.}
 
 \item{subcortical_views}{Views for subcortical sub-pipeline. Default NULL
 (auto-detected).}
 
-\item{decimate}{Mesh decimation ratio for subcortical meshes (0-1).
-Default 0.5.}
+\item{decimate}{Mesh decimation ratio for subcortical/cerebellar meshes
+(0-1). Default 0.5.}
 
 \item{tolerance}{Simplification tolerance for 2D polygons. Higher values
 produce simpler shapes with fewer vertices (typical range: 0.1--2).
@@ -113,15 +119,17 @@ environment variable. Default is TRUE.}
 Steps are:
 \itemize{
 \item 1: Project volume onto surface
-\item 2: Split labels into cortical/subcortical
+\item 2: Split labels into cortical/subcortical/cerebellar
 \item 3: Run cortical pipeline
 \item 4: Run subcortical pipeline
+\item 5: Run cerebellar pipeline
 }
 Use \code{steps = 1:2} to run projection and split only.}
 }
 \value{
-A named list with elements \code{cortical} and \code{subcortical}, each a
-\code{ggseg_atlas} object (or NULL if no regions of that type exist).
+A named list with elements \code{cortical}, \code{subcortical}, and
+\code{cerebellar}, each a \code{ggseg_atlas} object (or NULL if no regions of
+that type exist).
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}

@@ -127,6 +127,121 @@ describe("wholebrain_classify_labels", {
     result <- wholebrain_classify_labels(ad, min_vertices = 50L)
     expect_length(result$cortical_labels, 0)
     expect_length(result$subcortical_labels, 0)
+    expect_length(result$cerebellar_labels, 0)
+  })
+
+  it("respects manual cerebellar_labels override", {
+    ad <- make_atlas_data(
+      c("cortex_a", "cerebellum_left", "cerebellum_right"),
+      c(100, 80, 80)
+    )
+    result <- wholebrain_classify_labels(
+      ad,
+      min_vertices = 50L,
+      cerebellar_labels = c("cerebellum_left", "cerebellum_right")
+    )
+    expect_true("cortex_a" %in% result$cortical_labels)
+    expect_setequal(
+      result$cerebellar_labels,
+      c("cerebellum_left", "cerebellum_right")
+    )
+    expect_length(result$subcortical_labels, 0)
+  })
+
+  it("uses LUT type column for cerebellar classification", {
+    ad <- make_atlas_data(
+      c("cortex_a", "thalamus", "lobule_I"),
+      c(100, 10, 60)
+    )
+    ct <- data.frame(
+      idx = 1:3,
+      label = c("cortex_a", "thalamus", "lobule_I"),
+      type = c("cortical", "subcortical", "cerebellar"),
+      stringsAsFactors = FALSE
+    )
+    result <- wholebrain_classify_labels(
+      ad, colortable = ct, min_vertices = 50L
+    )
+    expect_equal(result$cortical_labels, "cortex_a")
+    expect_equal(result$subcortical_labels, "thalamus")
+    expect_equal(result$cerebellar_labels, "lobule_I")
+  })
+
+  it("cerebellar_labels override takes precedence over LUT type", {
+    ad <- make_atlas_data(c("lobule_I", "lobule_II"), c(100, 100))
+    ct <- data.frame(
+      idx = 1:2,
+      label = c("lobule_I", "lobule_II"),
+      type = c("cortical", "cortical"),
+      stringsAsFactors = FALSE
+    )
+    result <- wholebrain_classify_labels(
+      ad,
+      colortable = ct,
+      min_vertices = 50L,
+      cerebellar_labels = c("lobule_I", "lobule_II")
+    )
+    expect_length(result$cortical_labels, 0)
+    expect_setequal(
+      result$cerebellar_labels,
+      c("lobule_I", "lobule_II")
+    )
+  })
+
+  it("returns cerebellar_labels in result", {
+    ad <- make_atlas_data(c("a", "b"), c(100, 10))
+    result <- wholebrain_classify_labels(
+      ad, min_vertices = 50L, cerebellar_labels = "b"
+    )
+    expect_true("cerebellar_labels" %in% names(result))
+    expect_equal(result$cerebellar_labels, "b")
+  })
+
+  it("finds volume-only labels via LUT type column", {
+    ad <- make_atlas_data(c("cortex_a"), c(100))
+    ct <- data.frame(
+      idx = 1:3,
+      label = c("cortex_a", "thalamus", "lobule_I"),
+      type = c("cortical", "subcortical", "cerebellar"),
+      stringsAsFactors = FALSE
+    )
+    result <- wholebrain_classify_labels(
+      ad, colortable = ct, min_vertices = 50L
+    )
+    expect_equal(result$cortical_labels, "cortex_a")
+    expect_equal(result$subcortical_labels, "thalamus")
+    expect_equal(result$cerebellar_labels, "lobule_I")
+  })
+
+  it("defaults volume-only labels without type to subcortical", {
+    ad <- make_atlas_data(c("cortex_a"), c(100))
+    ct <- data.frame(
+      idx = 1:2,
+      label = c("cortex_a", "deep_nucleus"),
+      stringsAsFactors = FALSE
+    )
+    result <- wholebrain_classify_labels(
+      ad, colortable = ct, min_vertices = 50L
+    )
+    expect_equal(result$cortical_labels, "cortex_a")
+    expect_true("deep_nucleus" %in% result$subcortical_labels)
+    expect_length(result$cerebellar_labels, 0)
+  })
+
+  it("manual cerebellar override works for volume-only labels", {
+    ad <- make_atlas_data(c("cortex_a"), c(100))
+    ct <- data.frame(
+      idx = 1:3,
+      label = c("cortex_a", "lobule_I", "lobule_II"),
+      stringsAsFactors = FALSE
+    )
+    result <- wholebrain_classify_labels(
+      ad, colortable = ct, min_vertices = 50L,
+      cerebellar_labels = c("lobule_I", "lobule_II")
+    )
+    expect_equal(result$cortical_labels, "cortex_a")
+    expect_setequal(result$cerebellar_labels, c("lobule_I", "lobule_II"))
+    expect_length(result$subcortical_labels, 0)
   })
 })
 
@@ -206,6 +321,7 @@ describe("create_wholebrain_from_volume validation", {
         list(
           cortical_labels = character(),
           subcortical_labels = character(),
+          cerebellar_labels = character(),
           vertex_counts = integer()
         )
       }
@@ -282,6 +398,7 @@ describe("create_wholebrain_from_volume pipeline flow", {
 
     expect_true("cortical_labels" %in% names(result))
     expect_true("subcortical_labels" %in% names(result))
+    expect_true("cerebellar_labels" %in% names(result))
     expect_true("a" %in% result$cortical_labels)
     expect_true("b" %in% result$subcortical_labels)
   })
@@ -911,8 +1028,10 @@ describe("create_wholebrain_from_volume integration", {
 
     expect_true("cortical_labels" %in% names(result))
     expect_true("subcortical_labels" %in% names(result))
+    expect_true("cerebellar_labels" %in% names(result))
     expect_true(
-      length(result$cortical_labels) + length(result$subcortical_labels) > 0
+      length(result$cortical_labels) + length(result$subcortical_labels) +
+        length(result$cerebellar_labels) > 0
     )
   })
 })

@@ -178,7 +178,7 @@ setup_atlas_dirs <- function(output_dir, atlas_name = NULL, type = "cortical") {
     masks = file.path(base, "masks")
   )
 
-  if (type == "subcortical") {
+  if (type %in% c("subcortical", "cerebellar")) {
     dirs$meshes <- file.path(base, "meshes")
   }
 
