@@ -1,13 +1,15 @@
 #' Check ggseg.extra setup status
 #'
 #' Performs diagnostic checks to verify that system dependencies
-#' and environment variables required by ggseg.extra are properly
-#' configured. Shows per-pipeline readiness so you can see which
-#' atlas creation workflows are available.
+#' and R packages required by ggseg.extra are properly configured.
+#' Shows per-pipeline readiness so you can see which atlas creation
+#' workflows are available and what to install for the ones that aren't.
 #'
 #' @param detail Character. Level of detail to display:
-#'   - `"simple"` (default): Quick pass/fail overview
-#'   - `"full"`: Detailed diagnostics including [freesurfer::fs_sitrep()]
+#'   - `"minimal"`: Just the pipeline readiness summary
+#'   - `"simple"` (default): System checks + pipeline readiness
+#'   - `"full"`: Everything above + install commands, paths, options,
+#'     and FreeSurfer diagnostics
 #'
 #' @return Invisibly returns a list with check results.
 #' @export
@@ -15,19 +17,25 @@
 #' @examples
 #' setup_sitrep()
 #' setup_sitrep("full")
-setup_sitrep <- function(detail = c("simple", "full")) {
+setup_sitrep <- function(detail = c("simple", "minimal", "full")) {
   detail <- match.arg(detail)
 
   results <- list()
   results$freesurfer <- check_freesurfer(detail)
   results$system <- check_other_system_deps(detail)
   results$fsaverage <- check_fsaverage(detail)
-  results$packages <- check_optional_packages()
-  results$suit <- check_suit_surfaces()
+  results$packages <- check_optional_packages(detail)
+  results$suit <- check_suit_surfaces(detail)
 
-  cli::cli_text("")
-  check_pipeline_options(detail)
-  cli::cli_text("")
+  if (detail != "minimal") {
+    cli::cli_text("")
+  }
+
+  if (detail == "full") {
+    check_pipeline_options(detail)
+    cli::cli_text("")
+  }
+
   summarize_pipelines(results, detail)
 
   invisible(results)
@@ -36,14 +44,21 @@ setup_sitrep <- function(detail = c("simple", "full")) {
 
 check_freesurfer <- function(detail = "simple") {
   if (!rlang::is_installed("freesurfer")) {
-    cli::cli_alert_danger("freesurfer R package not installed")
+    if (detail != "minimal") {
+      cli::cli_alert_danger("freesurfer R package not installed")
+      if (detail == "full") {
+        cli::cli_bullets(c(
+          "i" = 'Install with: {.code install.packages("freesurfer")}'
+        ))
+      }
+    }
     return(list(available = FALSE))
   }
   has_fs <- freesurfer::have_fs()
 
   if (detail == "full") {
     freesurfer::fs_sitrep()
-  } else {
+  } else if (detail == "simple") {
     if (has_fs) {
       cli::cli_alert_success("FreeSurfer")
     } else {
@@ -59,31 +74,39 @@ check_other_system_deps <- function(detail = "simple") {
   results <- list()
 
   results$imagemagick <- has_magick()
-  if (results$imagemagick) {
-    cli::cli_alert_success("ImageMagick")
-  } else {
-    cli::cli_alert_danger("ImageMagick not found")
-    if (detail == "full") {
-      cli::cli_bullets(c(
-        "i" = "Install from {.url https://imagemagick.org/script/download.php}"
-      ))
+  if (detail != "minimal") {
+    if (results$imagemagick) {
+      cli::cli_alert_success("ImageMagick")
+    } else {
+      cli::cli_alert_danger("ImageMagick not found")
+      if (detail == "full") {
+        cli::cli_bullets(c(
+          "i" = paste(
+            "Install from",
+            "{.url https://imagemagick.org/script/download.php}"
+          ),
+          "i" = "macOS: {.code brew install imagemagick}"
+        ))
+      }
     }
   }
 
   chrome_path <- find_chrome_path()
   results$chrome <- !is.null(chrome_path)
-  if (results$chrome) {
-    if (detail == "full") {
-      cli::cli_alert_success("Chrome/Chromium: {.path {chrome_path}}")
+  if (detail != "minimal") {
+    if (results$chrome) {
+      if (detail == "full") {
+        cli::cli_alert_success("Chrome/Chromium: {.path {chrome_path}}")
+      } else {
+        cli::cli_alert_success("Chrome/Chromium")
+      }
     } else {
-      cli::cli_alert_success("Chrome/Chromium")
-    }
-  } else {
-    cli::cli_alert_danger("Chrome/Chromium not found")
-    if (detail == "full") {
-      cli::cli_bullets(c(
-        "i" = "Install Chrome, Chromium, or Edge for webshot functionality"
-      ))
+      cli::cli_alert_danger("Chrome/Chromium not found")
+      if (detail == "full") {
+        cli::cli_bullets(c(
+          "i" = "Install Chrome, Chromium, or Edge for webshot functionality"
+        ))
+      }
     }
   }
 
@@ -103,38 +126,102 @@ check_fsaverage <- function(detail = "simple") {
   subj <- "fsaverage5"
   subj_path <- file.path(subj_dir, subj)
   results[[subj]] <- dir.exists(subj_path)
-  if (results[[subj]]) {
-    cli::cli_alert_success("{subj}")
-  } else {
-    cli::cli_alert_danger("{subj} not found")
+  if (detail != "minimal") {
+    if (results[[subj]]) {
+      if (detail == "full") {
+        cli::cli_alert_success("{subj}: {.path {subj_path}}")
+      } else {
+        cli::cli_alert_success("{subj}")
+      }
+    } else {
+      cli::cli_alert_danger("{subj} not found")
+      if (detail == "full") {
+        cli::cli_bullets(c(
+          "i" = "Ships with FreeSurfer in $SUBJECTS_DIR"
+        ))
+      }
+    }
   }
 
   results
 }
 
 
-check_optional_packages <- function() {
+check_optional_packages <- function(detail = "simple") {
   pkgs <- c(
     "freesurferformats", "gifti", "ciftiTools",
     "RNifti", "smoothr", "Rvcg", "neuromapr"
   )
 
   results <- list()
+  installed <- character()
+  missing <- character()
+
   for (pkg in pkgs) {
     results[[pkg]] <- rlang::is_installed(pkg)
+    if (results[[pkg]]) {
+      installed <- c(installed, pkg)
+    } else {
+      missing <- c(missing, pkg)
+    }
   }
+
+  if (detail != "minimal") {
+    if (length(installed) > 0) {
+      installed_str <- paste0("{.pkg ", installed, "}", collapse = ", ")
+      cli::cli_alert_success(
+        "R packages: {installed_str}"
+      )
+    }
+    if (length(missing) > 0) {
+      missing_str <- paste0("{.pkg ", missing, "}", collapse = ", ")
+      cli::cli_alert_danger(
+        "Missing R packages: {missing_str}"
+      )
+      if (detail == "full") {
+        install_cmd <- paste0(
+          'install.packages(c("',
+          paste(missing, collapse = '", "'),
+          '"))'
+        )
+        cli::cli_bullets(c(
+          "i" = "Install with: {.code {install_cmd}}"
+        ))
+      }
+    }
+  }
+
   results
 }
 
 
-check_suit_surfaces <- function() {
+check_suit_surfaces <- function(detail = "simple") {
   flatmap <- tryCatch(suit_flatmap_path(), error = function(e) "")
   surface_3d <- tryCatch(suit_3d_path(), error = function(e) "")
 
-  list(
-    flatmap = nzchar(flatmap) && file.exists(flatmap),
-    surface_3d = nzchar(surface_3d) && file.exists(surface_3d)
-  )
+  has_flatmap <- nzchar(flatmap) && file.exists(flatmap)
+  has_3d <- nzchar(surface_3d) && file.exists(surface_3d)
+
+  if (detail != "minimal") {
+    if (has_flatmap && has_3d) {
+      cli::cli_alert_success("SUIT surfaces (bundled)")
+    } else {
+      if (!has_flatmap) {
+        cli::cli_alert_danger("SUIT flatmap surface missing")
+      }
+      if (!has_3d) {
+        cli::cli_alert_danger("SUIT 3D surface missing")
+      }
+      if (detail == "full") {
+        cli::cli_bullets(c(
+          "i" = "These should be bundled with the package.",
+          "i" = "Try reinstalling: {.code remotes::install_github(\"ggsegverse/ggseg.extra\")}"
+        ))
+      }
+    }
+  }
+
+  list(flatmap = has_flatmap, surface_3d = has_3d)
 }
 
 
@@ -158,16 +245,14 @@ check_pipeline_options <- function(detail = "simple") {
     output_dir = "{.path {opts$output_dir}}"
   ))
 
-  if (detail == "full") {
-    cli::cli_text("")
-    cli::cli_bullets(c(
-      "i" = paste(
-        "Set via {.code options(ggseg.extra.<name> = value)} or",
-        "environment variables {.envvar GGSEG_EXTRA_<NAME>}"
-      ),
-      "i" = "See {.code vignette(\"pipeline-configuration\")} for details"
-    ))
-  }
+  cli::cli_text("")
+  cli::cli_bullets(c(
+    "i" = paste(
+      "Set via {.code options(ggseg.extra.<name> = value)} or",
+      "environment variables {.envvar GGSEG_EXTRA_<NAME>}"
+    ),
+    "i" = "See {.code vignette(\"pipeline-configuration\")} for details"
+  ))
 
   opts
 }
@@ -192,143 +277,175 @@ find_chrome_path <- function() {
 }
 
 
-summarize_pipelines <- function(results, detail = "simple") {
+#' @noRd
+pipeline_registry <- function(results) {
   has_fs <- isTRUE(results$freesurfer$available)
-  has_magick <- isTRUE(results$system$imagemagick)
-  has_chrome <- isTRUE(results$system$chrome)
   has_fsavg <- isTRUE(results$fsaverage$fsaverage5)
   has_gifti <- isTRUE(results$packages$gifti)
   has_fsformats <- isTRUE(results$packages$freesurferformats)
   has_rnifti <- isTRUE(results$packages$RNifti)
-  has_smoothr <- isTRUE(results$packages$smoothr)
-  has_rvcg <- isTRUE(results$packages$Rvcg)
   has_cifti <- isTRUE(results$packages$ciftiTools)
   has_neuromapr <- isTRUE(results$packages$neuromapr)
   has_flatmap <- isTRUE(results$suit$flatmap)
   has_3d <- isTRUE(results$suit$surface_3d)
 
-  cli::cli_h3("Pipeline readiness")
+  make_pipeline <- function(name, fn, needs, install_hints = NULL) {
+    checks <- vapply(needs, function(n) n$ok, logical(1))
+    missing <- lapply(needs[!checks], function(n) {
+      list(label = n$label, hint = n$hint)
+    })
+    list(
+      name = name, fn = fn,
+      ready = all(checks),
+      missing = missing,
+      install_hints = install_hints
+    )
+  }
 
-  pipelines <- list(
-    list(
-      name = "Cortical from annotation",
-      fn = "create_cortical_from_annotation()",
-      ready = has_fs && has_fsavg && has_fsformats,
-      missing = c(
-        if (!has_fs) "FreeSurfer",
-        if (!has_fsavg) "fsaverage5",
-        if (!has_fsformats) "{freesurferformats}"
+  fs_need <- list(ok = has_fs, label = "FreeSurfer",
+    hint = "Install from https://surfer.nmr.mgh.harvard.edu/")
+  fsavg_need <- list(ok = has_fsavg, label = "fsaverage5",
+    hint = "Ships with FreeSurfer ($SUBJECTS_DIR/fsaverage5)")
+  gifti_need <- list(ok = has_gifti, label = "{gifti}",
+    hint = 'install.packages("gifti")')
+  fsf_need <- list(ok = has_fsformats, label = "{freesurferformats}",
+    hint = 'install.packages("freesurferformats")')
+  rnifti_need <- list(ok = has_rnifti, label = "{RNifti}",
+    hint = 'install.packages("RNifti")')
+  cifti_need <- list(ok = has_cifti, label = "{ciftiTools}",
+    hint = 'install.packages("ciftiTools")')
+  neuromapr_need <- list(ok = has_neuromapr, label = "{neuromapr}",
+    hint = 'remotes::install_github("ggseg/neuromapr")')
+  flatmap_need <- list(ok = has_flatmap, label = "SUIT flatmap",
+    hint = "Bundled; reinstall ggseg.extra")
+  surf3d_need <- list(ok = has_3d, label = "SUIT 3D surface",
+    hint = "Bundled; reinstall ggseg.extra")
+
+  list(
+    cortical = list(
+      header = "Cortical",
+      pipelines = list(
+        make_pipeline(
+          "from annotation", "create_cortical_from_annotation()",
+          list(fs_need, fsavg_need, fsf_need)
+        ),
+        make_pipeline(
+          "from GIFTI", "create_cortical_from_gifti()",
+          list(fsf_need)
+        ),
+        make_pipeline(
+          "from CIFTI", "create_cortical_from_cifti()",
+          list(cifti_need)
+        ),
+        make_pipeline(
+          "from neuromaps", "create_cortical_from_neuromaps()",
+          list(gifti_need, neuromapr_need)
+        ),
+        make_pipeline(
+          "from labels", "create_cortical_from_labels()",
+          list(fsf_need)
+        )
       )
     ),
-    list(
-      name = "Cortical from GIFTI",
-      fn = "create_cortical_from_gifti()",
-      ready = has_fsformats,
-      missing = c(
-        if (!has_fsformats) "{freesurferformats}"
+    subcortical = list(
+      header = "Subcortical",
+      pipelines = list(
+        make_pipeline(
+          "from volume", "create_subcortical_from_volume()",
+          list(fs_need, rnifti_need)
+        )
       )
     ),
-    list(
-      name = "Cortical from CIFTI",
-      fn = "create_cortical_from_cifti()",
-      ready = has_cifti,
-      missing = c(
-        if (!has_cifti) "{ciftiTools}"
+    tract = list(
+      header = "Tract",
+      pipelines = list(
+        make_pipeline(
+          "from tractography", "create_tract_from_tractography()",
+          list(rnifti_need)
+        )
       )
     ),
-    list(
-      name = "Cortical from neuromaps",
-      fn = "create_cortical_from_neuromaps()",
-      ready = has_gifti && has_neuromapr,
-      missing = c(
-        if (!has_gifti) "{gifti}",
-        if (!has_neuromapr) "{neuromapr}"
+    wholebrain = list(
+      header = "Whole-brain",
+      pipelines = list(
+        make_pipeline(
+          "from volume", "create_wholebrain_from_volume()",
+          list(fs_need, fsavg_need, rnifti_need)
+        )
       )
     ),
-    list(
-      name = "Cortical from labels",
-      fn = "create_cortical_from_labels()",
-      ready = has_fsformats,
-      missing = c(
-        if (!has_fsformats) "{freesurferformats}"
-      )
-    ),
-    list(
-      name = "Subcortical from volume",
-      fn = "create_subcortical_from_volume()",
-      ready = has_fs && has_rnifti,
-      missing = c(
-        if (!has_fs) "FreeSurfer",
-        if (!has_rnifti) "{RNifti}"
-      )
-    ),
-    list(
-      name = "Tract from tractography",
-      fn = "create_tract_from_tractography()",
-      ready = has_rnifti,
-      missing = c(
-        if (!has_rnifti) "{RNifti}"
-      )
-    ),
-    list(
-      name = "Whole-brain from volume",
-      fn = "create_wholebrain_from_volume()",
-      ready = has_fs && has_fsavg && has_rnifti,
-      missing = c(
-        if (!has_fs) "FreeSurfer",
-        if (!has_fsavg) "fsaverage5",
-        if (!has_rnifti) "{RNifti}"
-      )
-    ),
-    list(
-      name = "Cerebellar from GIFTI",
-      fn = "create_cerebellar_from_gifti()",
-      ready = has_gifti && has_flatmap,
-      missing = c(
-        if (!has_gifti) "{gifti}",
-        if (!has_flatmap) "SUIT flatmap (bundled)"
-      )
-    ),
-    list(
-      name = "Cerebellar from annotation",
-      fn = "create_cerebellar_from_annotation()",
-      ready = has_fsformats && has_flatmap,
-      missing = c(
-        if (!has_fsformats) "{freesurferformats}",
-        if (!has_flatmap) "SUIT flatmap (bundled)"
-      )
-    ),
-    list(
-      name = "Cerebellar from volume",
-      fn = "create_cerebellar_from_volume()",
-      ready = has_fs && has_rnifti && has_gifti && has_flatmap && has_3d,
-      missing = c(
-        if (!has_fs) "FreeSurfer",
-        if (!has_rnifti) "{RNifti}",
-        if (!has_gifti) "{gifti}",
-        if (!has_flatmap) "SUIT flatmap (bundled)",
-        if (!has_3d) "SUIT 3D surface (bundled)"
-      )
-    ),
-    list(
-      name = "MNI to SUIT transform",
-      fn = "transform_mni_to_suit()",
-      ready = has_rnifti,
-      missing = c(
-        if (!has_rnifti) "{RNifti}"
+    cerebellar = list(
+      header = "Cerebellar",
+      pipelines = list(
+        make_pipeline(
+          "from GIFTI", "create_cerebellar_from_gifti()",
+          list(gifti_need, flatmap_need)
+        ),
+        make_pipeline(
+          "from annotation", "create_cerebellar_from_annotation()",
+          list(fsf_need, flatmap_need)
+        ),
+        make_pipeline(
+          "from volume", "create_cerebellar_from_volume()",
+          list(fs_need, rnifti_need, gifti_need, flatmap_need, surf3d_need)
+        ),
+        make_pipeline(
+          "MNI to SUIT transform", "transform_mni_to_suit()",
+          list(rnifti_need)
+        )
       )
     )
   )
+}
 
-  n_ready <- sum(vapply(pipelines, function(p) p$ready, logical(1)))
-  n_total <- length(pipelines)
 
-  for (p in pipelines) {
-    if (p$ready) {
-      cli::cli_alert_success("{p$name}")
-    } else {
-      missing_str <- paste(p$missing, collapse = ", ")
-      cli::cli_alert_danger("{p$name}: needs {missing_str}")
+summarize_pipelines <- function(results, detail = "simple") {
+  registry <- pipeline_registry(results)
+
+  all_pipelines <- unlist(
+    lapply(registry, function(g) g$pipelines), recursive = FALSE
+  )
+  n_ready <- sum(vapply(all_pipelines, function(p) p$ready, logical(1)))
+  n_total <- length(all_pipelines)
+
+  cli::cli_h3("Pipeline readiness ({n_ready}/{n_total})")
+
+  for (group in registry) {
+    group_ready <- vapply(
+      group$pipelines, function(p) p$ready, logical(1)
+    )
+
+    if (detail == "minimal" && all(group_ready)) {
+      cli::cli_alert_success(
+        "{group$header}: all {length(group$pipelines)} ready"
+      )
+      next
+    }
+
+    if (detail != "minimal") {
+      cli::cli_text("{.strong {group$header}}")
+    }
+
+    for (p in group$pipelines) {
+      if (p$ready) {
+        if (detail == "minimal") {
+          next
+        }
+        cli::cli_alert_success("{p$name}")
+      } else {
+        missing_labels <- vapply(
+          p$missing, function(m) m$label, character(1)
+        )
+        missing_str <- paste(missing_labels, collapse = ", ")
+        cli::cli_alert_danger("{p$name}: needs {missing_str}")
+
+        if (detail == "full") {
+          hints <- vapply(p$missing, function(m) m$hint, character(1))
+          for (h in hints) {
+            cli::cli_bullets(c("i" = "{.code {h}}"))
+          }
+        }
+      }
     }
   }
 
@@ -336,12 +453,17 @@ summarize_pipelines <- function(results, detail = "simple") {
   if (n_ready == n_total) {
     cli::cli_alert_success("All {n_total} pipelines ready")
   } else {
-    cli::cli_alert_info(
-      "{n_ready}/{n_total} pipelines ready"
-    )
-    if (detail == "simple") {
+    cli::cli_alert_info("{n_ready}/{n_total} pipelines ready")
+    if (detail == "minimal") {
       cli::cli_bullets(c(
-        "i" = "Run {.code setup_sitrep(\"full\")} for details"
+        "i" = "Run {.code setup_sitrep()} for details"
+      ))
+    } else if (detail == "simple") {
+      cli::cli_bullets(c(
+        "i" = paste(
+          "Run {.code setup_sitrep(\"full\")} for",
+          "install instructions"
+        )
       ))
     }
   }

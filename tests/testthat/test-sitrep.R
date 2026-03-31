@@ -115,40 +115,57 @@ describe("check_fsaverage", {
 
 
 describe("summarize_pipelines", {
-  it("shows all pipelines ready when deps are met", {
-    results <- list(
-      freesurfer = list(available = TRUE),
+  make_results <- function(
+    fs = TRUE, fsavg = TRUE, gifti = TRUE, fsf = TRUE,
+    rnifti = TRUE, cifti = TRUE, neuromapr = TRUE,
+    flatmap = TRUE, surface_3d = TRUE
+  ) {
+    list(
+      freesurfer = list(available = fs),
       system = list(imagemagick = TRUE, chrome = TRUE),
-      fsaverage = list(fsaverage5 = TRUE),
+      fsaverage = list(fsaverage5 = fsavg),
       packages = list(
-        freesurferformats = TRUE, gifti = TRUE, ciftiTools = TRUE,
-        RNifti = TRUE, smoothr = TRUE, Rvcg = TRUE, neuromapr = TRUE
+        freesurferformats = fsf, gifti = gifti, ciftiTools = cifti,
+        RNifti = rnifti, smoothr = TRUE, Rvcg = TRUE, neuromapr = neuromapr
       ),
-      suit = list(flatmap = TRUE, surface_3d = TRUE)
+      suit = list(flatmap = flatmap, surface_3d = surface_3d)
     )
+  }
 
+  it("shows all pipelines ready when deps are met", {
     expect_message(
-      summarize_pipelines(results, "simple"),
+      summarize_pipelines(make_results(), "simple"),
       "All 12 pipelines ready"
     )
   })
 
   it("shows missing deps per pipeline", {
-    results <- list(
-      freesurfer = list(available = FALSE),
-      system = list(imagemagick = TRUE, chrome = TRUE),
-      fsaverage = list(fsaverage5 = FALSE),
-      packages = list(
-        freesurferformats = TRUE, gifti = FALSE, ciftiTools = FALSE,
-        RNifti = TRUE, smoothr = TRUE, Rvcg = TRUE, neuromapr = FALSE
-      ),
-      suit = list(flatmap = TRUE, surface_3d = TRUE)
-    )
-
     expect_message(
-      summarize_pipelines(results, "simple"),
+      summarize_pipelines(
+        make_results(gifti = FALSE, cifti = FALSE),
+        "simple"
+      ),
       "pipelines ready"
     )
+  })
+
+  it("minimal collapses ready groups", {
+    expect_message(
+      summarize_pipelines(make_results(), "minimal"),
+      "All 12 pipelines ready"
+    )
+  })
+
+  it("full shows install hints for missing deps", {
+    out <- capture.output(
+      summarize_pipelines(
+        make_results(gifti = FALSE),
+        "full"
+      ),
+      type = "message"
+    )
+    combined <- paste(out, collapse = "\n")
+    expect_true(grepl("install.packages", combined))
   })
 })
 
