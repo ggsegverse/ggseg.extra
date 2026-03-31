@@ -3,6 +3,7 @@ Athanasia
 Beate
 Brainnetome
 Brodmann
+Chaikin
 CIFTI
 CMD
 CSF
@@ -11,8 +12,10 @@ Colour
 Connectome
 DK
 DKT
+Diedrichsen
 FS
 Fjell
+FSL
 FreeSurfer
 FreeSurfer's
 Freesurfer
@@ -20,8 +23,11 @@ Frenet
 GH
 GIFTI
 GitLab
+Glasser
 HCL
+HCP
 ImageMagick
+Infratentorial
 LUT
 Lifebrain
 Lifecycle
@@ -29,7 +35,9 @@ MGZ
 MNI
 MRtrix
 NIfTI
+NeuroVault
 Neuromaps
+Neuroscientists
 Nx
 ORCID
 Peucker
@@ -50,6 +58,7 @@ TRACULA
 TRK
 TrackVis
 Tractography
+Vermis
 Walhovd
 XQuartz
 Xcode
@@ -57,8 +66,11 @@ Yeo
 abagen
 annot
 aparc
+artefacts
 aseg
+backface
 behaviour
+blobby
 bibentry
 binormals
 caudate
@@ -77,12 +89,16 @@ entorhinal
 env
 favour
 fibres
+flatmap
 freesurfer
 fsaverage
 furrr
 ggseg
 ggsegExtra
+ggsegHO
 ggsegverse
+ggplot
+gyri
 github
 grey
 gyrus
@@ -95,9 +111,12 @@ labelled
 lh
 medoid
 mgz
+midline
 minimises
 mri
 mris
+neighbouring
+neighbours
 neuroimaging
 neuromapr
 neuromaps
@@ -116,6 +135,7 @@ progressr
 purrr
 putamen
 quadric
+rasterisation
 ras
 rda
 renderers
@@ -126,6 +146,7 @@ rh
 roi
 roxygen
 sagittal
+sawtooth
 segmentations
 subcortical
 summarises
@@ -141,5 +162,6 @@ visualising
 vox
 webshot
 websocket
+wholebrain
 ’
 ’s
