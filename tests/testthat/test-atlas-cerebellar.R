@@ -961,3 +961,43 @@ describe("transform_mni_to_suit", {
     expect_true(all(drop(as.array(result)) == 1L))
   })
 })
+
+
+describe("suit_deformation_field", {
+  it("errors without internet when not cached", {
+    local_mocked_bindings(has_internet = function() FALSE)
+
+    tmp <- withr::local_tempdir()
+    expect_error(
+      suit_deformation_field(cache_dir = tmp),
+      "No internet"
+    )
+  })
+
+  it("returns cached path without downloading", {
+    tmp <- withr::local_tempdir()
+    cached <- file.path(
+      tmp, "tpl-SUIT_from-MNI152NLin6AsymC_mode-image_xfm.nii"
+    )
+    writeBin(raw(1e6 + 1), cached)
+
+    result <- suit_deformation_field(cache_dir = tmp)
+    expect_equal(result, cached)
+  })
+
+  it("accepts both MNI template options", {
+    expect_error(
+      suit_deformation_field(template = "invalid"),
+      "arg.*should be one of"
+    )
+  })
+})
+
+
+describe("has_internet", {
+  it("returns TRUE or FALSE", {
+    result <- has_internet()
+    expect_type(result, "logical")
+    expect_length(result, 1)
+  })
+})

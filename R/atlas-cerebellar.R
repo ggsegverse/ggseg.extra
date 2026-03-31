@@ -47,6 +47,106 @@ suit_3d_path <- function() {
 }
 
 
+#' Download SUIT deformation field for MNI-to-SUIT transforms
+#'
+#' @description
+#' `r lifecycle::badge("experimental")`
+#'
+#' Downloads the nonlinear deformation field needed to transform volumes
+#' from MNI152 space to SUIT cerebellar space. The files are cached in
+#' the user's data directory so they only need to be downloaded once.
+#'
+#' Two MNI templates are supported:
+#' - `"MNI152NLin6AsymC"`: FSL MNI152 template (used by FreeSurfer).
+#'   Use this for FreeSurfer's Buckner cerebellar atlases.
+#' - `"MNI152NLin2009cSymC"`: ICBM 2009c symmetric template.
+#'
+#' @param template Which MNI template the source volume is in.
+#'   Default `"MNI152NLin6AsymC"` (FreeSurfer/FSL).
+#' @param cache_dir Directory for caching downloaded files. Defaults to
+#'   `tools::R_user_dir("ggseg.extra", "data")`.
+#'
+#' @return Path to the downloaded deformation field NIfTI file.
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' xfm <- suit_deformation_field()
+#' suit_vol <- transform_mni_to_suit(mni_volume, xfm)
+#' }
+suit_deformation_field <- function(
+  template = c("MNI152NLin6AsymC", "MNI152NLin2009cSymC"),
+  cache_dir = NULL
+) {
+  template <- match.arg(template)
+
+  if (is.null(cache_dir)) {
+    cache_dir <- tools::R_user_dir("ggseg.extra", "data")
+  }
+  dir.create(cache_dir, recursive = TRUE, showWarnings = FALSE)
+
+  filename <- paste0(
+    "tpl-SUIT_from-", template, "_mode-image_xfm.nii"
+  )
+  cached_path <- file.path(cache_dir, filename)
+
+  if (file.exists(cached_path)) {
+    return(cached_path)
+  }
+
+  if (!has_internet()) {
+    cli::cli_abort(c(
+      "No internet connection available",
+      "i" = "The deformation field {.file {filename}} is not cached",
+      "i" = "Connect to the internet and try again"
+    ))
+  }
+
+  url <- paste0(
+    "https://raw.githubusercontent.com/DiedrichsenLab/",
+    "cerebellar_atlases/master/tpl-SUIT/", filename
+  )
+
+  cli::cli_alert_info("Downloading {.file {filename}} (~13 MB)")
+
+  tryCatch(
+    utils::download.file(url, cached_path, mode = "wb", quiet = TRUE),
+    error = function(e) {
+      unlink(cached_path)
+      cli::cli_abort(c(
+        "Failed to download deformation field",
+        "i" = "URL: {.url {url}}",
+        "x" = "{conditionMessage(e)}"
+      ))
+    }
+  )
+
+  if (!file.exists(cached_path) || file.size(cached_path) < 1e6) {
+    unlink(cached_path)
+    cli::cli_abort(
+      "Download appears incomplete. Please try again."
+    )
+  }
+
+  cli::cli_alert_success("Cached at {.path {cached_path}}")
+  cached_path
+}
+
+
+#' Check internet connectivity
+#' @noRd
+has_internet <- function() {
+  tryCatch(
+    {
+      con <- url("https://raw.githubusercontent.com", open = "r")
+      close(con)
+      TRUE
+    },
+    error = function(e) FALSE
+  )
+}
+
+
 # MNI to SUIT transform ----
 
 #' Transform a volume from MNI space to SUIT cerebellar space
