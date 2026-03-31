@@ -48,6 +48,7 @@ Imports:
     tools,
     utils
 Suggests:
+    base64enc,
     chromote,
     ciftiTools,
     freesurfer,

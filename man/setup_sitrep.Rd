@@ -4,13 +4,15 @@
 \alias{setup_sitrep}
 \title{Check ggseg.extra setup status}
 \usage{
-setup_sitrep(detail = c("simple", "full"))
+setup_sitrep(detail = c("simple", "minimal", "full"))
 }
 \arguments{
 \item{detail}{Character. Level of detail to display:
 \itemize{
-\item \code{"simple"} (default): Quick pass/fail overview
-\item \code{"full"}: Detailed diagnostics including \code{\link[freesurfer:fs_sitrep]{freesurfer::fs_sitrep()}}
+\item \code{"minimal"}: Just the pipeline readiness summary
+\item \code{"simple"} (default): System checks + pipeline readiness
+\item \code{"full"}: Everything above + install commands, paths, options,
+and FreeSurfer diagnostics
 }}
 }
 \value{
@@ -18,8 +20,9 @@ Invisibly returns a list with check results.
 }
 \description{
 Performs diagnostic checks to verify that system dependencies
-and environment variables required by ggseg.extra are properly
-configured.
+and R packages required by ggseg.extra are properly configured.
+Shows per-pipeline readiness so you can see which atlas creation
+workflows are available and what to install for the ones that aren't.
 }
 \examples{
 setup_sitrep()

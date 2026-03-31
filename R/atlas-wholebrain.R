@@ -704,7 +704,8 @@ wholebrain_classify_labels <- function(
       )
     }
     auto_cortical <- projected_remaining[
-      vertex_counts[projected_remaining] >= min_vertices]
+      vertex_counts[projected_remaining] >= min_vertices
+    ]
     auto_subcortical <- c(
       projected_remaining[vertex_counts[projected_remaining] < min_vertices],
       volume_only

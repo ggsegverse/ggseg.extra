@@ -366,13 +366,11 @@ read_dpv <- function(path) {
 read_ctab <- function(path) {
   lines <- trimws(readLines(path))
   lines <- lines[nzchar(lines)]
-  parsed <- regmatches(
-    lines,
-    regexec(
-      "^\\s*(\\d+)\\s+(.+?)\\s+(\\d+)\\s+(\\d+)\\s+(\\d+)\\s+(\\d+)(?:\\s+(\\w+))?\\s*$",
-      lines
-    )
+  lut_pattern <- paste0(
+    "^\\s*(\\d+)\\s+(.+?)\\s+(\\d+)\\s+(\\d+)",
+    "\\s+(\\d+)\\s+(\\d+)(?:\\s+(\\w+))?\\s*$"
   )
+  parsed <- regmatches(lines, regexec(lut_pattern, lines))
   rows <- lapply(parsed, function(m) {
     if (length(m) == 0) return(NULL)
     data.frame(

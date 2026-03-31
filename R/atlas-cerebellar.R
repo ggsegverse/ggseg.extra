@@ -248,12 +248,17 @@ transform_mni_to_suit <- function(
     for (i in seq_len(nrow(vox_coords))) {
       vi <- vox_coords[i, ]
       if (any(vi < 1) || vi[1] > mni_dims[1] ||
-          vi[2] > mni_dims[2] || vi[3] > mni_dims[3]) next
+            vi[2] > mni_dims[2] || vi[3] > mni_dims[3]) next
 
-      x0 <- floor(vi[1]); x1 <- min(x0 + 1L, mni_dims[1])
-      y0 <- floor(vi[2]); y1 <- min(y0 + 1L, mni_dims[2])
-      z0 <- floor(vi[3]); z1 <- min(z0 + 1L, mni_dims[3])
-      xd <- vi[1] - x0; yd <- vi[2] - y0; zd <- vi[3] - z0
+      x0 <- floor(vi[1])
+      x1 <- min(x0 + 1L, mni_dims[1])
+      y0 <- floor(vi[2])
+      y1 <- min(y0 + 1L, mni_dims[2])
+      z0 <- floor(vi[3])
+      z1 <- min(z0 + 1L, mni_dims[3])
+      xd <- vi[1] - x0
+      yd <- vi[2] - y0
+      zd <- vi[3] - z0
 
       result[i] <-
         mni_arr[x0, y0, z0] * (1 - xd) * (1 - yd) * (1 - zd) +
@@ -720,7 +725,7 @@ read_suit_parcellation <- function(gifti_files) {
   rlang::check_installed("gifti", reason = "to read GIFTI label files")
 
   if (!all(file.exists(gifti_files))) {
-    missing <- gifti_files[!file.exists(gifti_files)]
+    missing <- gifti_files[!file.exists(gifti_files)] # nolint
     cli::cli_abort(
       "GIFTI file{?s} not found: {.path {missing}}"
     )
@@ -917,7 +922,7 @@ read_cerebellar_annotation <- function(annot_files) {
   )
 
   if (!all(file.exists(annot_files))) {
-    missing <- annot_files[!file.exists(annot_files)]
+    missing <- annot_files[!file.exists(annot_files)] # nolint
     cli::cli_abort("Annotation file{?s} not found: {.path {missing}}")
   }
 
@@ -1061,7 +1066,7 @@ sample_volume_at_surface <- function(vol, volume_path, suit_3d_surface) {
   for (i in seq_len(n_verts)) {
     vi <- round(vox_coords[i, ])
     if (all(vi >= 1) && vi[1] <= dims[1] &&
-        vi[2] <= dims[2] && vi[3] <= dims[3]) {
+          vi[2] <= dims[2] && vi[3] <= dims[3]) {
       labels[i] <- vol[vi[1], vi[2], vi[3]]
     }
   }

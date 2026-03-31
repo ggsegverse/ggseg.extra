@@ -168,21 +168,20 @@ check_optional_packages <- function(detail = "simple") {
 
   if (detail != "minimal") {
     if (length(installed) > 0) {
-      installed_str <- paste0("{.pkg ", installed, "}", collapse = ", ")
-      cli::cli_alert_success(
-        "R packages: {installed_str}"
+      installed_str <- paste0( # nolint: object_usage_linter.
+        "{.pkg ", installed, "}", collapse = ", "
       )
+      cli::cli_alert_success("R packages: {installed_str}")
     }
     if (length(missing) > 0) {
-      missing_str <- paste0("{.pkg ", missing, "}", collapse = ", ")
-      cli::cli_alert_danger(
-        "Missing R packages: {missing_str}"
+      missing_str <- paste0( # nolint: object_usage_linter.
+        "{.pkg ", missing, "}", collapse = ", "
       )
+      cli::cli_alert_danger("Missing R packages: {missing_str}")
       if (detail == "full") {
-        install_cmd <- paste0(
+        install_cmd <- paste0( # nolint: object_usage_linter.
           'install.packages(c("',
-          paste(missing, collapse = '", "'),
-          '"))'
+          paste(missing, collapse = '", "'), '"))'
         )
         cli::cli_bullets(c(
           "i" = "Install with: {.code {install_cmd}}"
@@ -213,9 +212,12 @@ check_suit_surfaces <- function(detail = "simple") {
         cli::cli_alert_danger("SUIT 3D surface missing")
       }
       if (detail == "full") {
+        reinstall <- paste0( # nolint: object_usage_linter.
+          'remotes::install_github("ggsegverse/ggseg.extra")'
+        )
         cli::cli_bullets(c(
           "i" = "These should be bundled with the package.",
-          "i" = "Try reinstalling: {.code remotes::install_github(\"ggsegverse/ggseg.extra\")}"
+          "i" = "Try reinstalling: {.code {reinstall}}"
         ))
       }
     }
@@ -302,24 +304,28 @@ pipeline_registry <- function(results) {
     )
   }
 
-  fs_need <- list(ok = has_fs, label = "FreeSurfer",
-    hint = "Install from https://surfer.nmr.mgh.harvard.edu/")
-  fsavg_need <- list(ok = has_fsavg, label = "fsaverage5",
-    hint = "Ships with FreeSurfer ($SUBJECTS_DIR/fsaverage5)")
-  gifti_need <- list(ok = has_gifti, label = "{gifti}",
-    hint = 'install.packages("gifti")')
-  fsf_need <- list(ok = has_fsformats, label = "{freesurferformats}",
-    hint = 'install.packages("freesurferformats")')
-  rnifti_need <- list(ok = has_rnifti, label = "{RNifti}",
-    hint = 'install.packages("RNifti")')
-  cifti_need <- list(ok = has_cifti, label = "{ciftiTools}",
-    hint = 'install.packages("ciftiTools")')
-  neuromapr_need <- list(ok = has_neuromapr, label = "{neuromapr}",
-    hint = 'remotes::install_github("ggseg/neuromapr")')
-  flatmap_need <- list(ok = has_flatmap, label = "SUIT flatmap",
-    hint = "Bundled; reinstall ggseg.extra")
-  surf3d_need <- list(ok = has_3d, label = "SUIT 3D surface",
-    hint = "Bundled; reinstall ggseg.extra")
+  need <- function(ok, label, hint) list(ok = ok, label = label, hint = hint)
+
+  # nolint start: indentation_linter.
+  fs_need <- need(has_fs, "FreeSurfer",
+    "Install from https://surfer.nmr.mgh.harvard.edu/")
+  fsavg_need <- need(has_fsavg, "fsaverage5",
+    "Ships with FreeSurfer ($SUBJECTS_DIR/fsaverage5)")
+  gifti_need <- need(has_gifti, "{gifti}",
+    'install.packages("gifti")')
+  fsf_need <- need(has_fsformats, "{freesurferformats}",
+    'install.packages("freesurferformats")')
+  rnifti_need <- need(has_rnifti, "{RNifti}",
+    'install.packages("RNifti")')
+  cifti_need <- need(has_cifti, "{ciftiTools}",
+    'install.packages("ciftiTools")')
+  neuromapr_need <- need(has_neuromapr, "{neuromapr}",
+    'remotes::install_github("ggseg/neuromapr")')
+  flatmap_need <- need(has_flatmap, "SUIT flatmap",
+    "Bundled; reinstall ggseg.extra")
+  surf3d_need <- need(has_3d, "SUIT 3D surface",
+    "Bundled; reinstall ggseg.extra")
+  # nolint end
 
   list(
     cortical = list(
@@ -436,7 +442,9 @@ summarize_pipelines <- function(results, detail = "simple") {
         missing_labels <- vapply(
           p$missing, function(m) m$label, character(1)
         )
-        missing_str <- paste(missing_labels, collapse = ", ")
+        missing_str <- paste( # nolint: object_usage_linter.
+          missing_labels, collapse = ", "
+        )
         cli::cli_alert_danger("{p$name}: needs {missing_str}")
 
         if (detail == "full") {

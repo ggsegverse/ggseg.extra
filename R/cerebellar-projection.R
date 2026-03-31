@@ -55,6 +55,7 @@ read_suit_flatmap <- function(suit_surface) {
 #' @param n_vertices Total number of vertices in the flatmap.
 #' @return Character vector of length `n_vertices` (NA for unlabelled).
 #' @noRd
+# nolint next: object_length_linter.
 build_vertex_label_vector_cerebellum <- function(vertices_df, n_vertices) {
   vertex_labels <- rep(NA_character_, n_vertices)
 
@@ -221,8 +222,10 @@ cerebellar_build_sf_flatmap <- function(
   }
 
   if (verbose) {
+    n_v <- flatmap$n_vertices # nolint: object_usage_linter.
+    n_f <- nrow(flatmap$faces) # nolint: object_usage_linter.
     cli::cli_alert_info(
-      "Building polygons from {flatmap$n_vertices} vertices, {nrow(flatmap$faces)} faces"
+      "Building polygons from {n_v} vertices, {n_f} faces"
     )
   }
 
