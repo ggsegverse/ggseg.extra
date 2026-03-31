@@ -114,25 +114,41 @@ describe("check_fsaverage", {
 })
 
 
-describe("summarize_sitrep", {
-  it("handles all-true results", {
+describe("summarize_pipelines", {
+  it("shows all pipelines ready when deps are met", {
     results <- list(
       freesurfer = list(available = TRUE),
       system = list(imagemagick = TRUE, chrome = TRUE),
-      fsaverage = list(fsaverage5 = TRUE)
+      fsaverage = list(fsaverage5 = TRUE),
+      packages = list(
+        freesurferformats = TRUE, gifti = TRUE, ciftiTools = TRUE,
+        RNifti = TRUE, smoothr = TRUE, Rvcg = TRUE, neuromapr = TRUE
+      ),
+      suit = list(flatmap = TRUE, surface_3d = TRUE)
     )
 
-    expect_message(summarize_sitrep(results, "simple"), "Ready")
+    expect_message(
+      summarize_pipelines(results, "simple"),
+      "All 12 pipelines ready"
+    )
   })
 
-  it("handles missing requirements", {
+  it("shows missing deps per pipeline", {
     results <- list(
       freesurfer = list(available = FALSE),
       system = list(imagemagick = TRUE, chrome = TRUE),
-      fsaverage = list(fsaverage5 = TRUE)
+      fsaverage = list(fsaverage5 = FALSE),
+      packages = list(
+        freesurferformats = TRUE, gifti = FALSE, ciftiTools = FALSE,
+        RNifti = TRUE, smoothr = TRUE, Rvcg = TRUE, neuromapr = FALSE
+      ),
+      suit = list(flatmap = TRUE, surface_3d = TRUE)
     )
 
-    expect_message(summarize_sitrep(results, "simple"), "Missing")
+    expect_message(
+      summarize_pipelines(results, "simple"),
+      "pipelines ready"
+    )
   })
 })
 

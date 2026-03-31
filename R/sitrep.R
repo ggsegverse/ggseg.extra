@@ -2,7 +2,8 @@
 #'
 #' Performs diagnostic checks to verify that system dependencies
 #' and environment variables required by ggseg.extra are properly
-#' configured.
+#' configured. Shows per-pipeline readiness so you can see which
+#' atlas creation workflows are available.
 #'
 #' @param detail Character. Level of detail to display:
 #'   - `"simple"` (default): Quick pass/fail overview
@@ -21,10 +22,13 @@ setup_sitrep <- function(detail = c("simple", "full")) {
   results$freesurfer <- check_freesurfer(detail)
   results$system <- check_other_system_deps(detail)
   results$fsaverage <- check_fsaverage(detail)
-  results$options <- check_pipeline_options(detail)
+  results$packages <- check_optional_packages()
+  results$suit <- check_suit_surfaces()
 
   cli::cli_text("")
-  summarize_sitrep(results, detail)
+  check_pipeline_options(detail)
+  cli::cli_text("")
+  summarize_pipelines(results, detail)
 
   invisible(results)
 }
@@ -33,7 +37,7 @@ setup_sitrep <- function(detail = c("simple", "full")) {
 check_freesurfer <- function(detail = "simple") {
   if (!rlang::is_installed("freesurfer")) {
     cli::cli_alert_danger("freesurfer R package not installed")
-    return(FALSE)
+    return(list(available = FALSE))
   }
   has_fs <- freesurfer::have_fs()
 
@@ -109,6 +113,31 @@ check_fsaverage <- function(detail = "simple") {
 }
 
 
+check_optional_packages <- function() {
+  pkgs <- c(
+    "freesurferformats", "gifti", "ciftiTools",
+    "RNifti", "smoothr", "Rvcg", "neuromapr"
+  )
+
+  results <- list()
+  for (pkg in pkgs) {
+    results[[pkg]] <- rlang::is_installed(pkg)
+  }
+  results
+}
+
+
+check_suit_surfaces <- function() {
+  flatmap <- tryCatch(suit_flatmap_path(), error = function(e) "")
+  surface_3d <- tryCatch(suit_3d_path(), error = function(e) "")
+
+  list(
+    flatmap = nzchar(flatmap) && file.exists(flatmap),
+    surface_3d = nzchar(surface_3d) && file.exists(surface_3d)
+  )
+}
+
+
 check_pipeline_options <- function(detail = "simple") {
   opts <- list(
     verbose = get_verbose(),
@@ -163,18 +192,153 @@ find_chrome_path <- function() {
 }
 
 
-summarize_sitrep <- function(results, detail = "simple") {
+summarize_pipelines <- function(results, detail = "simple") {
   has_fs <- isTRUE(results$freesurfer$available)
   has_magick <- isTRUE(results$system$imagemagick)
   has_chrome <- isTRUE(results$system$chrome)
   has_fsavg <- isTRUE(results$fsaverage$fsaverage5)
+  has_gifti <- isTRUE(results$packages$gifti)
+  has_fsformats <- isTRUE(results$packages$freesurferformats)
+  has_rnifti <- isTRUE(results$packages$RNifti)
+  has_smoothr <- isTRUE(results$packages$smoothr)
+  has_rvcg <- isTRUE(results$packages$Rvcg)
+  has_cifti <- isTRUE(results$packages$ciftiTools)
+  has_neuromapr <- isTRUE(results$packages$neuromapr)
+  has_flatmap <- isTRUE(results$suit$flatmap)
+  has_3d <- isTRUE(results$suit$surface_3d)
 
-  all_ok <- has_fs && has_magick && has_chrome && has_fsavg
+  cli::cli_h3("Pipeline readiness")
 
-  if (all_ok) {
-    cli::cli_alert_success("Ready for atlas creation")
+  pipelines <- list(
+    list(
+      name = "Cortical from annotation",
+      fn = "create_cortical_from_annotation()",
+      ready = has_fs && has_fsavg && has_fsformats,
+      missing = c(
+        if (!has_fs) "FreeSurfer",
+        if (!has_fsavg) "fsaverage5",
+        if (!has_fsformats) "{freesurferformats}"
+      )
+    ),
+    list(
+      name = "Cortical from GIFTI",
+      fn = "create_cortical_from_gifti()",
+      ready = has_fsformats,
+      missing = c(
+        if (!has_fsformats) "{freesurferformats}"
+      )
+    ),
+    list(
+      name = "Cortical from CIFTI",
+      fn = "create_cortical_from_cifti()",
+      ready = has_cifti,
+      missing = c(
+        if (!has_cifti) "{ciftiTools}"
+      )
+    ),
+    list(
+      name = "Cortical from neuromaps",
+      fn = "create_cortical_from_neuromaps()",
+      ready = has_gifti && has_neuromapr,
+      missing = c(
+        if (!has_gifti) "{gifti}",
+        if (!has_neuromapr) "{neuromapr}"
+      )
+    ),
+    list(
+      name = "Cortical from labels",
+      fn = "create_cortical_from_labels()",
+      ready = has_fsformats,
+      missing = c(
+        if (!has_fsformats) "{freesurferformats}"
+      )
+    ),
+    list(
+      name = "Subcortical from volume",
+      fn = "create_subcortical_from_volume()",
+      ready = has_fs && has_rnifti,
+      missing = c(
+        if (!has_fs) "FreeSurfer",
+        if (!has_rnifti) "{RNifti}"
+      )
+    ),
+    list(
+      name = "Tract from tractography",
+      fn = "create_tract_from_tractography()",
+      ready = has_rnifti,
+      missing = c(
+        if (!has_rnifti) "{RNifti}"
+      )
+    ),
+    list(
+      name = "Whole-brain from volume",
+      fn = "create_wholebrain_from_volume()",
+      ready = has_fs && has_fsavg && has_rnifti,
+      missing = c(
+        if (!has_fs) "FreeSurfer",
+        if (!has_fsavg) "fsaverage5",
+        if (!has_rnifti) "{RNifti}"
+      )
+    ),
+    list(
+      name = "Cerebellar from GIFTI",
+      fn = "create_cerebellar_from_gifti()",
+      ready = has_gifti && has_flatmap,
+      missing = c(
+        if (!has_gifti) "{gifti}",
+        if (!has_flatmap) "SUIT flatmap (bundled)"
+      )
+    ),
+    list(
+      name = "Cerebellar from annotation",
+      fn = "create_cerebellar_from_annotation()",
+      ready = has_fsformats && has_flatmap,
+      missing = c(
+        if (!has_fsformats) "{freesurferformats}",
+        if (!has_flatmap) "SUIT flatmap (bundled)"
+      )
+    ),
+    list(
+      name = "Cerebellar from volume",
+      fn = "create_cerebellar_from_volume()",
+      ready = has_fs && has_rnifti && has_gifti && has_flatmap && has_3d,
+      missing = c(
+        if (!has_fs) "FreeSurfer",
+        if (!has_rnifti) "{RNifti}",
+        if (!has_gifti) "{gifti}",
+        if (!has_flatmap) "SUIT flatmap (bundled)",
+        if (!has_3d) "SUIT 3D surface (bundled)"
+      )
+    ),
+    list(
+      name = "MNI to SUIT transform",
+      fn = "transform_mni_to_suit()",
+      ready = has_rnifti,
+      missing = c(
+        if (!has_rnifti) "{RNifti}"
+      )
+    )
+  )
+
+  n_ready <- sum(vapply(pipelines, function(p) p$ready, logical(1)))
+  n_total <- length(pipelines)
+
+  for (p in pipelines) {
+    if (p$ready) {
+      cli::cli_alert_success("{p$name}")
+    } else {
+      missing_str <- paste(p$missing, collapse = ", ")
+      cli::cli_alert_danger("{p$name}: needs {missing_str}")
+    }
+  }
+
+  cli::cli_text("")
+  if (n_ready == n_total) {
+    cli::cli_alert_success("All {n_total} pipelines ready")
   } else {
-    cli::cli_alert_danger("Missing requirements for atlas creation")
+    cli::cli_alert_info(
+      "{n_ready}/{n_total} pipelines ready"
+    )
     if (detail == "simple") {
       cli::cli_bullets(c(
         "i" = "Run {.code setup_sitrep(\"full\")} for details"
