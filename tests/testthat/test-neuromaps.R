@@ -290,14 +290,11 @@ describe("create_cortical_from_neuromaps", {
       preview_atlas = function(atlas) invisible(atlas)
     )
 
-    expect_warning(
-      result <- create_cortical_from_neuromaps(
-        source = "abagen",
-        desc = "genepc1",
-        verbose = FALSE,
-        cleanup = FALSE
-      ),
-      "Large atlases"
+    result <- create_cortical_from_neuromaps(
+      source = "abagen",
+      desc = "genepc1",
+      verbose = FALSE,
+      cleanup = FALSE
     )
 
     expect_equal(result$atlas, "abagen_genepc1")

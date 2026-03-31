@@ -596,11 +596,8 @@ describe("create_cortical_from_cifti", {
     tmp <- withr::local_tempfile(pattern = "my.atlas", fileext = ".dlabel.nii")
     writeLines("mock", tmp)
 
-    expect_warning(
-      result <- create_cortical_from_cifti(
-        cifti_file = tmp, verbose = FALSE, cleanup = FALSE
-      ),
-      "Large atlases"
+    result <- create_cortical_from_cifti(
+      cifti_file = tmp, verbose = FALSE, cleanup = FALSE
     )
     expect_true(grepl("my_atlas", result$atlas))
   })

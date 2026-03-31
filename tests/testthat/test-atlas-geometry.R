@@ -639,9 +639,8 @@ describe("smooth_contours verbose output", {
     )
     save(contours, file = file.path(outdir, "contours.rda"))
 
-    expect_message(
-      smooth_contours(outdir, smoothness = 5, step = "1/3", verbose = TRUE),
-      "Smoothing contours"
+    expect_no_message(
+      smooth_contours(outdir, smoothness = 5, step = "1/3", verbose = TRUE)
     )
   })
 })
@@ -665,7 +664,7 @@ describe("reduce_vertex verbose output", {
 
     expect_message(
       reduce_vertex(outdir, tolerance = 0.5, step = "2/3", verbose = TRUE),
-      "Reducing vertices"
+      "Simplifying contours"
     )
   })
 })

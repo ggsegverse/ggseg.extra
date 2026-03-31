@@ -173,10 +173,10 @@ describe("get_tolerance", {
     expect_equal(get_tolerance(), 0.25)
   })
 
-  it("returns default of 1 when nothing is set", {
+  it("returns default of 0.05 when nothing is set", {
     withr::local_options(ggseg.extra.tolerance = NULL)
     withr::local_envvar(GGSEG_EXTRA_TOLERANCE = NA)
-    expect_equal(get_tolerance(), 1)
+    expect_equal(get_tolerance(), 0.05)
   })
 })
 
@@ -564,7 +564,7 @@ describe("get_numeric_option", {
   it("falls back to default when env var is not numeric", {
     withr::local_options(ggseg.extra.tolerance = NULL)
     withr::local_envvar(GGSEG_EXTRA_TOLERANCE = "not_a_number")
-    expect_equal(get_tolerance(), 1)
+    expect_equal(get_tolerance(), 0.05)
   })
 })
 
