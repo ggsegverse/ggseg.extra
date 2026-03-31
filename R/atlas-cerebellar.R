@@ -47,6 +47,134 @@ suit_3d_path <- function() {
 }
 
 
+# MNI to SUIT transform ----
+
+#' Transform a volume from MNI space to SUIT cerebellar space
+#'
+#' @description
+#' `r lifecycle::badge("experimental")`
+#'
+#' Resamples a volumetric parcellation from MNI152 space into the SUIT
+#' cerebellar template space using a nonlinear deformation field. This is
+#' required when working with cerebellar atlases that are distributed in
+#' MNI space (e.g., the Buckner cerebellar network parcellations shipped
+#' with FreeSurfer).
+#'
+#' The deformation field must be a 5D NIfTI file where each SUIT-space
+#' voxel stores the corresponding MNI coordinate to sample from. These
+#' are available from the Diedrichsen Lab cerebellar atlases repository
+#' as `tpl-SUIT_from-MNI152NLin*_mode-image_xfm.nii`.
+#'
+#' @param input_volume Path to the MNI-space volume (NIfTI).
+#' @param deformation_field Path to the SUIT deformation field NIfTI.
+#'   A 5D volume (x, y, z, 1, 3) mapping SUIT voxels to MNI coordinates.
+#' @param output_file Path for the output SUIT-space volume. If NULL,
+#'   writes to a temporary file.
+#' @param interpolation Interpolation method: `"nearest"` (default, for
+#'   parcellations/labels) or `"linear"` (for continuous maps).
+#'
+#' @return Path to the output SUIT-space NIfTI file (invisibly).
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' suit_vol <- transform_mni_to_suit(
+#'   input_volume = "Buckner2011_7Networks.nii.gz",
+#'   deformation_field = "tpl-SUIT_from-MNI152NLin6AsymC_mode-image_xfm.nii"
+#' )
+#' atlas <- create_cerebellar_from_volume(volume = suit_vol)
+#' }
+transform_mni_to_suit <- function(
+  input_volume,
+  deformation_field,
+  output_file = NULL,
+  interpolation = c("nearest", "linear")
+) {
+  rlang::check_installed("RNifti", reason = "to read NIfTI volumes")
+  interpolation <- match.arg(interpolation)
+
+  if (!file.exists(input_volume)) {
+    cli::cli_abort("Input volume not found: {.path {input_volume}}")
+  }
+  if (!file.exists(deformation_field)) {
+    cli::cli_abort("Deformation field not found: {.path {deformation_field}}")
+  }
+
+  if (is.null(output_file)) {
+    output_file <- tempfile(fileext = ".nii.gz")
+  }
+
+  mni_vol <- RNifti::readNifti(input_volume, internal = FALSE)
+  xfm <- RNifti::readNifti(deformation_field, internal = FALSE)
+
+  xfm_dims <- dim(xfm)
+  if (length(xfm_dims) != 5 || xfm_dims[4] != 1 || xfm_dims[5] != 3) {
+    cli::cli_abort(c(
+      "Deformation field must be a 5D NIfTI (x, y, z, 1, 3)",
+      "i" = "Got dimensions: {paste(xfm_dims, collapse = ' x ')}"
+    ))
+  }
+
+  suit_dims <- xfm_dims[1:3]
+  result <- array(0, dim = suit_dims)
+
+  mni_coords_x <- xfm[, , , 1, 1]
+  mni_coords_y <- xfm[, , , 1, 2]
+  mni_coords_z <- xfm[, , , 1, 3]
+
+  mni_coords <- cbind(
+    c(mni_coords_x), c(mni_coords_y), c(mni_coords_z)
+  )
+
+  vox_coords <- RNifti::worldToVoxel(mni_coords, mni_vol)
+
+  mni_arr <- drop(as.array(mni_vol))
+  mni_dims <- dim(mni_arr)
+  if (length(mni_dims) != 3) {
+    cli::cli_abort("Input volume must be 3D, got {length(mni_dims)}D")
+  }
+
+  if (interpolation == "nearest") {
+    vox_round <- round(vox_coords)
+    valid <- vox_round[, 1] >= 1 & vox_round[, 1] <= mni_dims[1] &
+      vox_round[, 2] >= 1 & vox_round[, 2] <= mni_dims[2] &
+      vox_round[, 3] >= 1 & vox_round[, 3] <= mni_dims[3]
+    idx <- which(valid)
+    for (i in idx) {
+      vi <- vox_round[i, ]
+      result[i] <- mni_arr[vi[1], vi[2], vi[3]]
+    }
+  } else {
+    for (i in seq_len(nrow(vox_coords))) {
+      vi <- vox_coords[i, ]
+      if (any(vi < 1) || vi[1] > mni_dims[1] ||
+          vi[2] > mni_dims[2] || vi[3] > mni_dims[3]) next
+
+      x0 <- floor(vi[1]); x1 <- min(x0 + 1L, mni_dims[1])
+      y0 <- floor(vi[2]); y1 <- min(y0 + 1L, mni_dims[2])
+      z0 <- floor(vi[3]); z1 <- min(z0 + 1L, mni_dims[3])
+      xd <- vi[1] - x0; yd <- vi[2] - y0; zd <- vi[3] - z0
+
+      result[i] <-
+        mni_arr[x0, y0, z0] * (1 - xd) * (1 - yd) * (1 - zd) +
+        mni_arr[x1, y0, z0] * xd * (1 - yd) * (1 - zd) +
+        mni_arr[x0, y1, z0] * (1 - xd) * yd * (1 - zd) +
+        mni_arr[x0, y0, z1] * (1 - xd) * (1 - yd) * zd +
+        mni_arr[x1, y1, z0] * xd * yd * (1 - zd) +
+        mni_arr[x0, y1, z1] * (1 - xd) * yd * zd +
+        mni_arr[x1, y0, z1] * xd * (1 - yd) * zd +
+        mni_arr[x1, y1, z1] * xd * yd * zd
+    }
+  }
+
+  ref_nii <- RNifti::asNifti(array(0, dim = suit_dims), reference = xfm)
+  out_nii <- RNifti::asNifti(result, reference = ref_nii)
+  RNifti::writeNifti(out_nii, output_file)
+
+  invisible(output_file)
+}
+
+
 # Cerebellar atlas creation ----
 
 #' Create cerebellar atlas from SUIT flatmap

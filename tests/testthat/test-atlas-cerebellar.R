@@ -903,3 +903,61 @@ describe("cerebellar_build_sf_flatmap smoothing and simplification", {
     )
   })
 })
+
+
+describe("transform_mni_to_suit", {
+  it("errors on missing input volume", {
+    expect_error(
+      transform_mni_to_suit("nonexistent.nii.gz", "xfm.nii"),
+      "not found"
+    )
+  })
+
+  it("errors on missing deformation field", {
+    skip_if_not_installed("RNifti")
+    vol <- withr::local_tempfile(fileext = ".nii.gz")
+    RNifti::writeNifti(RNifti::asNifti(array(0L, dim = c(3, 3, 3))), vol)
+
+    expect_error(
+      transform_mni_to_suit(vol, "nonexistent_xfm.nii"),
+      "not found"
+    )
+  })
+
+  it("errors on invalid deformation field dimensions", {
+    skip_if_not_installed("RNifti")
+    vol <- withr::local_tempfile(fileext = ".nii.gz")
+    RNifti::writeNifti(RNifti::asNifti(array(0L, dim = c(3, 3, 3))), vol)
+
+    bad_xfm <- withr::local_tempfile(fileext = ".nii")
+    RNifti::writeNifti(RNifti::asNifti(array(0, dim = c(3, 3, 3))), bad_xfm)
+
+    expect_error(
+      transform_mni_to_suit(vol, bad_xfm),
+      "5D NIfTI"
+    )
+  })
+
+  it("resamples volume using nearest-neighbor interpolation", {
+    skip_if_not_installed("RNifti")
+
+    mni <- array(0L, dim = c(5, 5, 5))
+    mni[3, 3, 3] <- 1L
+    mni_file <- withr::local_tempfile(fileext = ".nii.gz")
+    RNifti::writeNifti(RNifti::asNifti(mni), mni_file)
+
+    xfm <- array(0, dim = c(3, 3, 3, 1, 3))
+    mni_nii <- RNifti::readNifti(mni_file)
+    center_world <- RNifti::voxelToWorld(c(3, 3, 3), mni_nii)
+    for (i in 1:3) for (j in 1:3) for (k in 1:3) {
+      xfm[i, j, k, 1, ] <- center_world
+    }
+    xfm_file <- withr::local_tempfile(fileext = ".nii")
+    RNifti::writeNifti(RNifti::asNifti(xfm, reference = mni_nii), xfm_file)
+
+    result_file <- transform_mni_to_suit(mni_file, xfm_file)
+    result <- RNifti::readNifti(result_file)
+
+    expect_true(all(drop(as.array(result)) == 1L))
+  })
+})
