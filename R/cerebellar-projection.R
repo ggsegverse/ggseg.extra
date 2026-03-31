@@ -233,6 +233,8 @@ cerebellar_build_sf_flatmap <- function(
     flatmap$verts_2d, flatmap$faces, vertex_labels
   )
 
+  sf_data <- fill_flatmap_holes(sf_data, verbose = verbose)
+
   if (smooth_refinements > 0) {
     rlang::check_installed("smoothr", reason = "for polygon smoothing")
     sf_data <- smoothr::smooth(sf_data, method = "chaikin",
@@ -248,4 +250,99 @@ cerebellar_build_sf_flatmap <- function(
 
   sf_data$view <- "flatmap"
   sf::st_as_sf(sf_data)
+}
+
+
+#' Fill holes in cerebellar flatmap polygons
+#'
+#' Two-pass hole filling:
+#' 1. Remove small internal rings (holes inside a region polygon)
+#' 2. Fill small gaps between regions by assigning to the nearest region
+#'
+#' @param sf_data sf data.frame from `flatmap_triangles_to_polygons()`.
+#' @param hole_threshold Maximum area of an internal ring to remove.
+#'   Rings larger than this are kept (e.g. the midline fissure).
+#' @param gap_threshold Maximum area of an inter-region gap to fill.
+#' @param verbose Logical.
+#' @return sf data.frame with holes filled.
+#' @noRd
+fill_flatmap_holes <- function(
+  sf_data,
+  hole_threshold = 100,
+  gap_threshold = 200,
+  verbose = FALSE
+) {
+  sf_data <- remove_small_internal_holes(sf_data, hole_threshold)
+  sf_data <- fill_inter_region_gaps(sf_data, gap_threshold, verbose)
+  sf_data
+}
+
+
+#' @noRd
+remove_small_internal_holes <- function(sf_data, threshold) {
+  for (i in seq_len(nrow(sf_data))) {
+    geom <- sf::st_geometry(sf_data)[[i]]
+    sf::st_geometry(sf_data)[[i]] <- drop_small_rings(geom, threshold)
+  }
+  sf::st_make_valid(sf_data)
+}
+
+
+#' @noRd
+drop_small_rings <- function(geom, threshold) {
+  if (inherits(geom, "MULTIPOLYGON")) {
+    polys <- lapply(geom, function(p) drop_small_rings_poly(p, threshold))
+    sf::st_multipolygon(polys)
+  } else if (inherits(geom, "POLYGON")) {
+    sf::st_polygon(drop_small_rings_poly(geom, threshold))
+  } else {
+    geom
+  }
+}
+
+
+#' @noRd
+drop_small_rings_poly <- function(poly_coords, threshold) {
+  if (length(poly_coords) <= 1) return(poly_coords)
+
+  keep <- list(poly_coords[[1]])
+  for (j in seq_along(poly_coords)[-1]) {
+    ring <- poly_coords[[j]]
+    ring_area <- abs(sum(
+      ring[-nrow(ring), 1] * ring[-1, 2] -
+      ring[-1, 1] * ring[-nrow(ring), 2]
+    )) / 2
+    if (ring_area > threshold) keep[[length(keep) + 1]] <- ring
+  }
+  keep
+}
+
+
+#' @noRd
+fill_inter_region_gaps <- function(sf_data, threshold, verbose) {
+  all_union <- sf::st_union(sf_data)
+  hull <- sf::st_convex_hull(all_union)
+  uncovered <- sf::st_difference(hull, all_union)
+
+  if (sf::st_is_empty(uncovered)) return(sf_data)
+
+  gap_polys <- sf::st_cast(sf::st_make_valid(uncovered), "POLYGON")
+  gap_areas <- sf::st_area(gap_polys)
+  small_gaps <- gap_polys[as.numeric(gap_areas) <= threshold]
+
+  if (length(small_gaps) == 0) return(sf_data)
+
+  if (verbose) {
+    cli::cli_alert_info("Filling {length(small_gaps)} small inter-region gaps")
+  }
+
+  for (gap in small_gaps) {
+    dists <- sf::st_distance(gap, sf_data)
+    nearest_idx <- which.min(dists)
+    sf::st_geometry(sf_data)[[nearest_idx]] <- sf::st_make_valid(
+      sf::st_union(sf::st_geometry(sf_data)[[nearest_idx]], gap)
+    )
+  }
+
+  sf::st_make_valid(sf_data)
 }

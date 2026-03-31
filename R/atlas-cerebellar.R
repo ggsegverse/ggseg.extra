@@ -1071,6 +1071,89 @@ sample_volume_at_surface <- function(vol, volume_path, suit_3d_surface) {
     }
   }
 
+  labels <- fill_unlabelled_from_voxel_neighbors(labels, vox_coords, vol, dims)
+  labels <- fill_unlabelled_from_mesh_neighbors(
+    labels, gii$data$triangle + 1L, n_verts
+  )
+
+  labels
+}
+
+
+#' Fill unlabelled surface vertices from neighboring voxels
+#'
+#' For vertices that landed on a zero voxel, search the 26-connected
+#' neighborhood for the nearest non-zero label.
+#' @noRd
+fill_unlabelled_from_voxel_neighbors <- function(
+  labels, vox_coords, vol, dims
+) {
+  unlabelled <- which(labels == 0L)
+  if (length(unlabelled) == 0) return(labels)
+
+  offsets <- as.matrix(expand.grid(-1:1, -1:1, -1:1))
+  offsets <- offsets[rowSums(offsets^2) > 0, , drop = FALSE]
+  dists <- sqrt(rowSums(offsets^2))
+
+  for (i in unlabelled) {
+    vc <- round(vox_coords[i, ])
+    best_dist <- Inf
+    best_label <- 0L
+
+    for (j in seq_len(nrow(offsets))) {
+      vi <- vc + offsets[j, ]
+      if (all(vi >= 1) && vi[1] <= dims[1] &&
+            vi[2] <= dims[2] && vi[3] <= dims[3]) {
+        val <- vol[vi[1], vi[2], vi[3]]
+        if (val > 0 && dists[j] < best_dist) {
+          best_dist <- dists[j]
+          best_label <- val
+        }
+      }
+    }
+    if (best_label > 0L) labels[i] <- best_label
+  }
+
+  labels
+}
+
+
+#' Fill remaining unlabelled vertices from mesh neighbors
+#'
+#' Propagates labels along surface mesh edges using majority vote,
+#' repeating until no further vertices can be filled.
+#' @noRd
+fill_unlabelled_from_mesh_neighbors <- function(labels, faces, n_verts) {
+  n_unlabelled <- sum(labels == 0L)
+  if (n_unlabelled == 0) return(labels)
+
+  adjacency <- vector("list", n_verts)
+  for (fi in seq_len(nrow(faces))) {
+    v <- faces[fi, ]
+    adjacency[[v[1]]] <- c(adjacency[[v[1]]], v[2], v[3])
+    adjacency[[v[2]]] <- c(adjacency[[v[2]]], v[1], v[3])
+    adjacency[[v[3]]] <- c(adjacency[[v[3]]], v[1], v[2])
+  }
+
+  max_passes <- 10L
+  for (pass in seq_len(max_passes)) {
+    still_zero <- which(labels == 0L)
+    if (length(still_zero) == 0) break
+
+    changed <- 0L
+    for (i in still_zero) {
+      nbr_labels <- labels[unique(adjacency[[i]])]
+      nbr_labels <- nbr_labels[nbr_labels > 0L]
+      if (length(nbr_labels) > 0) {
+        labels[i] <- as.integer(
+          names(sort(table(nbr_labels), decreasing = TRUE))[1]
+        )
+        changed <- changed + 1L
+      }
+    }
+    if (changed == 0L) break
+  }
+
   labels
 }
 
