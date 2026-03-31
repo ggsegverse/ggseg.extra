@@ -452,18 +452,10 @@ create_subcortical_geometry_projection <- function(
 
   filenm_base <- sub("\\.png$", "", conts$filenm)
 
-  conts$view <- vapply(
-    filenm_base,
-    function(fn) {
-      for (vn in c(views$name, cortex_slices$name)) {
-        if (startsWith(fn, paste0(vn, "_"))) {
-          return(vn)
-        }
-      }
-      NA_character_
-    },
-    character(1)
-  )
+  view_names <- c(views$name, cortex_slices$name)
+  view_pattern <- paste0("^(", paste(view_names, collapse = "|"), ")_")
+  conts$view <- sub(paste0(view_pattern, ".*"), "\\1", filenm_base)
+  conts$view[!grepl(view_pattern, filenm_base)] <- NA_character_
 
   conts$geometry <- conts$geometry * matrix(c(1, 0, 0, -1), 2, 2)
 

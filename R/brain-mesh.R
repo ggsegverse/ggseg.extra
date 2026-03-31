@@ -118,21 +118,24 @@ make_brain_meshes <- function(
 
   hemispheres <- c("lh", "rh")
 
-  meshes <- list()
+  combos <- expand.grid(
+    surf = surfaces, hemi = hemispheres,
+    stringsAsFactors = FALSE
+  )
 
-  for (hemi in hemispheres) {
-    for (surf in surfaces) {
-      name <- paste(hemi, surf, sep = "_")
+  meshes <- stats::setNames(
+    lapply(seq_len(nrow(combos)), function(idx) {
+      name <- paste(combos$hemi[idx], combos$surf[idx], sep = "_")
       cli::cli_alert_info("Extracting {name}")
-
-      meshes[[name]] <- read_fs_mesh(
+      read_fs_mesh(
         subject = subject,
-        hemisphere = hemi,
-        surface = surf,
+        hemisphere = combos$hemi[idx],
+        surface = combos$surf[idx],
         subjects_dir = subjects_dir
       )
-    }
-  }
+    }),
+    paste(combos$hemi, combos$surf, sep = "_")
+  )
 
   structure(
     meshes,

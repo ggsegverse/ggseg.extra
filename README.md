@@ -8,8 +8,6 @@
 
 [![Coverage
 Status](https://raw.githubusercontent.com/ggsegverse/ggseg.extra/coverage/badges/coverage.svg)](https://github.com/ggsegverse/ggseg.extra/actions/workflows/test-coverage.yaml)
-[![CRAN
-status](https://www.r-pkg.org/badges/version/ggseg.extra)](https://CRAN.R-project.org/package=ggseg.extra)
 [![Lifecycle:
 stable](https://img.shields.io/badge/lifecycle-stable-brightgreen.svg)](https://lifecycle.r-lib.org/articles/stages.html)
 [![R-CMD-check](https://github.com/ggsegverse/ggseg.extra/workflows/R-CMD-check/badge.svg)](https://github.com/ggsegverse/ggseg.extra/actions)
@@ -21,13 +19,7 @@ compatible with the [ggseg](https://ggsegverse.github.io/ggseg/) and
 
 ## Installing
 
-Install from CRAN:
-
-``` r
-install.packages("ggseg.extra")
-```
-
-Or install the development version from
+Install the development version from
 [r-universe](https://ggsegverse.r-universe.dev/#builds):
 
 ``` r

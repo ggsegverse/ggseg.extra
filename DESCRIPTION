@@ -1,6 +1,6 @@
 Package: ggseg.extra
 Title: Create Brain Atlases for the 'ggsegverse' Plotting Ecosystem
-Version: 1.9.9.9001
+Version: 1.9.9.9002
 Authors@R: c(
     person(
         given = "Athanasia Mo",
@@ -43,6 +43,7 @@ Imports:
     lifecycle,
     progressr,
     rlang,
+    rmapshaper,
     sf,
     stats,
     tools,
@@ -65,7 +66,6 @@ Suggests:
     RNifti,
     rstudioapi,
     Rvcg,
-    smoothr,
     spelling,
     terra,
     testthat (>= 3.0.0),

@@ -1,6 +1,10 @@
 ---
 title: "Tutorial: Creating an atlas from neuromaps"
 format: html
+vignette: >
+  %\VignetteIndexEntry{Tutorial: Creating an atlas from neuromaps}
+  %\VignetteEngine{quarto::html}
+  %\VignetteEncoding{UTF-8}
 ---
 
 
@@ -13,7 +17,7 @@ This tutorial walks through the full workflow, from fetching an annotation to fi
 
 ## What you need
 
-- The [neuromapr](https://github.com/ggsegverse/neuromapr) R package (for
+- The [neuromapr](https://github.com/LCBC-UiO/neuromapr) R package (for
   fetching neuromaps annotations)
 - For **surface** annotations (GIFTI): no system tools needed
 - For **volume** annotations (NIfTI): FreeSurfer installed with `fsaverage5`

@@ -22,7 +22,7 @@ snapshot_partial_projection(
 \arguments{
 \item{vol}{3D array with voxel values}
 
-\item{view}{"axial", "coronal", or "sagittal"}
+\item{view}{"axial", "sagittal", or "coronal"}
 
 \item{start}{First slice index}
 

@@ -1,6 +1,10 @@
 ---
 title: "Tutorial: Creating an atlas from label files"
 format: html
+vignette: >
+  %\VignetteIndexEntry{Tutorial: Creating an atlas from label files}
+  %\VignetteEngine{quarto::html}
+  %\VignetteEncoding{UTF-8}
 ---
 
 

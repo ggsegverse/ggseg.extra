@@ -170,14 +170,8 @@ flatmap_triangles_to_polygons <- function(verts_2d, faces, vertex_labels) {
 #' builds sf polygons from the mesh triangles, and applies smoothing
 #' and simplification.
 #'
-#' @param components Atlas components list with `vertices_df`.
-#' @param suit_surface Path to SUIT flatmap `.surf.gii` file.
-#' @param tolerance Simplification tolerance (Douglas-Peucker).
-#' @param smooth_refinements Chaikin corner-cutting iterations.
-#' @param verbose Logical.
-#' @return sf data.frame with columns: label, view, geometry.
 #' @noRd
-#' @importFrom sf st_simplify st_make_valid st_as_sf
+#' @importFrom sf st_make_valid st_as_sf
 cerebellar_build_sf_flatmap <- function(
   components,
   suit_surface,
@@ -235,18 +229,7 @@ cerebellar_build_sf_flatmap <- function(
 
   sf_data <- fill_flatmap_holes(sf_data, verbose = verbose)
 
-  if (smooth_refinements > 0) {
-    rlang::check_installed("smoothr", reason = "for polygon smoothing")
-    sf_data <- smoothr::smooth(sf_data, method = "chaikin",
-                               refinements = smooth_refinements)
-    sf_data <- sf::st_make_valid(sf_data)
-  }
-
-  if (tolerance > 0) {
-    sf_data <- sf::st_simplify(sf_data, preserveTopology = TRUE,
-                               dTolerance = tolerance)
-    sf_data <- sf::st_make_valid(sf_data)
-  }
+  sf_data <- smooth_and_simplify_sf(sf_data, smooth_refinements, tolerance)
 
   sf_data$view <- "flatmap"
   sf::st_as_sf(sf_data)
@@ -259,12 +242,6 @@ cerebellar_build_sf_flatmap <- function(
 #' 1. Remove small internal rings (holes inside a region polygon)
 #' 2. Fill small gaps between regions by assigning to the nearest region
 #'
-#' @param sf_data sf data.frame from `flatmap_triangles_to_polygons()`.
-#' @param hole_threshold Maximum area of an internal ring to remove.
-#'   Rings larger than this are kept (e.g. the midline fissure).
-#' @param gap_threshold Maximum area of an inter-region gap to fill.
-#' @param verbose Logical.
-#' @return sf data.frame with holes filled.
 #' @noRd
 fill_flatmap_holes <- function(
   sf_data,
@@ -336,12 +313,18 @@ fill_inter_region_gaps <- function(sf_data, threshold, verbose) {
     cli::cli_alert_info("Filling {length(small_gaps)} small inter-region gaps")
   }
 
+  sf_data <- sf::st_cast(sf_data, "MULTIPOLYGON")
+
   for (gap in small_gaps) {
     dists <- sf::st_distance(gap, sf_data)
     nearest_idx <- which.min(dists)
-    sf::st_geometry(sf_data)[[nearest_idx]] <- sf::st_make_valid(
+    merged <- sf::st_make_valid(
       sf::st_union(sf::st_geometry(sf_data)[[nearest_idx]], gap)
     )
+    if (!inherits(merged, "MULTIPOLYGON")) {
+      merged <- sf::st_cast(merged, "MULTIPOLYGON")
+    }
+    sf::st_geometry(sf_data)[[nearest_idx]] <- merged
   }
 
   sf::st_make_valid(sf_data)

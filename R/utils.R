@@ -334,21 +334,18 @@ get_skip_existing <- function(skip_existing = NULL) {
 #' Controls vertex reduction during contour simplification.
 #'
 #' @param tolerance Optional explicit value. If NULL, reads from options/env.
-#' @return Numeric tolerance value (0 = no simplification)
+#' @return Numeric keep proportion (0--1). 0 = no simplification.
 #' @noRd
 get_tolerance <- function(tolerance = NULL) {
   get_numeric_option(
     tolerance,
     "ggseg.extra.tolerance",
     "GGSEG_EXTRA_TOLERANCE",
-    1
+    0.05
   )
 }
 
 #' Get smoothness setting
-#'
-#' Returns the smoothness setting from options or environment variable.
-#' Controls contour smoothing during geometry extraction.
 #'
 #' @param smoothness Optional explicit value. If NULL, reads from options/env.
 #' @return Numeric smoothness value
@@ -364,21 +361,12 @@ get_smoothness <- function(smoothness = NULL) {
 
 #' Get smooth refinements setting
 #'
-#' Returns the number of Chaikin corner-cutting refinements for the
-#' vertex projection pipeline. Higher values produce smoother region
-#' boundaries.
-#'
-#' @param smooth_refinements Optional explicit value. If NULL, reads from
-#'   options/env.
-#' @return Integer refinement count (0 = no smoothing)
+#' @param smooth_refinements Ignored. Kept for API compatibility.
+#' @return Integer 0 (smoothing is now handled by topology-preserving
+#'   simplification).
 #' @noRd
 get_smooth_refinements <- function(smooth_refinements = NULL) {
-  as.integer(get_numeric_option(
-    smooth_refinements,
-    "ggseg.extra.smooth_refinements",
-    "GGSEG_EXTRA_SMOOTH_REFINEMENTS",
-    2
-  ))
+  0L
 }
 
 #' Get snapshot dimension setting

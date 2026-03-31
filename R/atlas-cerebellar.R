@@ -642,14 +642,6 @@ cerebellar_project_and_build <- function(
 #' Wraps the subcortical tessellation machinery to create per-region meshes
 #' from a cerebellar segmentation volume.
 #'
-#' @param volume Path to cerebellar segmentation NIfTI file.
-#' @param components Atlas components from `build_atlas_components()`.
-#' @param dirs Directory structure from `setup_atlas_dirs()`.
-#' @param skip_existing Logical.
-#' @param verbose Logical.
-#' @param decimate Decimation factor (0-1).
-#' @return Data frame with columns `label` and `mesh` (list-column),
-#'   or NULL if tessellation fails entirely.
 #' @noRd
 cerebellar_create_meshes <- function(
   volume, components, dirs, skip_existing, verbose, decimate
@@ -926,38 +918,37 @@ read_cerebellar_annotation <- function(annot_files) {
     cli::cli_abort("Annotation file{?s} not found: {.path {missing}}")
   }
 
-  all_data <- list()
-
-  for (annot_file in annot_files) {
+  all_data <- lapply(annot_files, function(annot_file) {
     annot <- freesurferformats::read.fs.annot(annot_file)
     ct <- annot$colortable_df
     ct <- ct[!is.na(ct$r), ]
-
     label_codes <- annot$label_codes
 
-    for (i in seq_len(nrow(ct))) {
-      code <- ct$code[i]
-      region_name <- ct$struct_name[i]
-      colour <- ct$hex_color_string_rgb[i]
+    skip <- tolower(ct$struct_name) %in% c("unknown", "corpuscallosum")
+    ct <- ct[!skip, ]
+    if (nrow(ct) == 0) return(NULL)
 
-      region_vertices <- which(label_codes == code) - 1L
-      if (length(region_vertices) == 0) next
+    region_verts <- lapply(ct$code, function(code) {
+      which(label_codes == code) - 1L
+    })
+    has_verts <- lengths(region_verts) > 0
+    ct <- ct[has_verts, ]
+    region_verts <- region_verts[has_verts]
+    if (nrow(ct) == 0) return(NULL)
 
-      if (tolower(region_name) %in% c("unknown", "corpuscallosum")) next
+    hemi <- unname(vapply(ct$struct_name, detect_cerebellar_hemi, character(1)))
+    region <- unname(vapply(ct$struct_name, clean_cerebellar_region, character(1)))
 
-      hemi <- detect_cerebellar_hemi(region_name)
-      region <- clean_cerebellar_region(region_name)
-      label <- paste(hemi, region, sep = "_")
+    dplyr::tibble(
+      hemi = hemi,
+      region = region,
+      label = paste(hemi, region, sep = "_"),
+      colour = ct$hex_color_string_rgb,
+      vertices = region_verts
+    )
+  })
 
-      all_data[[length(all_data) + 1]] <- dplyr::tibble(
-        hemi = hemi,
-        region = region,
-        label = label,
-        colour = colour,
-        vertices = list(region_vertices)
-      )
-    }
-  }
+  all_data <- Filter(Negate(is.null), all_data)
 
   if (length(all_data) == 0) {
     cli::cli_abort("No regions found in annotation files")
@@ -1097,21 +1088,21 @@ fill_unlabelled_from_voxel_neighbors <- function(
 
   for (i in unlabelled) {
     vc <- round(vox_coords[i, ])
-    best_dist <- Inf
-    best_label <- 0L
+    nbrs <- sweep(offsets, 2, vc, "+")
+    in_bounds <- nbrs[, 1] >= 1 & nbrs[, 1] <= dims[1] &
+      nbrs[, 2] >= 1 & nbrs[, 2] <= dims[2] &
+      nbrs[, 3] >= 1 & nbrs[, 3] <= dims[3]
+    nbrs <- nbrs[in_bounds, , drop = FALSE]
+    nbr_dists <- dists[in_bounds]
 
-    for (j in seq_len(nrow(offsets))) {
-      vi <- vc + offsets[j, ]
-      if (all(vi >= 1) && vi[1] <= dims[1] &&
-            vi[2] <= dims[2] && vi[3] <= dims[3]) {
-        val <- vol[vi[1], vi[2], vi[3]]
-        if (val > 0 && dists[j] < best_dist) {
-          best_dist <- dists[j]
-          best_label <- val
-        }
-      }
+    vals <- vapply(seq_len(nrow(nbrs)), function(k) {
+      vol[nbrs[k, 1], nbrs[k, 2], nbrs[k, 3]]
+    }, integer(1))
+
+    has_label <- vals > 0L
+    if (any(has_label)) {
+      labels[i] <- vals[has_label][which.min(nbr_dists[has_label])]
     }
-    if (best_label > 0L) labels[i] <- best_label
   }
 
   labels

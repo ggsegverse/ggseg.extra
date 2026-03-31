@@ -33,11 +33,9 @@ compute_vertex_normals <- function(mesh) {
   )
 
   for (j in 1:3) {
-    for (col in 1:3) {
-      acc <- tapply(fn[, col], faces[, j], sum)
-      vi <- as.integer(names(acc))
-      normals[vi, col] <- normals[vi, col] + as.numeric(acc)
-    }
+    sums <- rowsum(fn, faces[, j])
+    vi <- as.integer(rownames(sums))
+    normals[vi, ] <- normals[vi, ] + sums
   }
 
   norms <- sqrt(rowSums(normals^2))

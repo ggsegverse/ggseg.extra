@@ -2,28 +2,30 @@
 % Please edit documentation in R/atlas-geometry.R
 \name{atlas_smooth}
 \alias{atlas_smooth}
-\title{Smooth atlas 2D contours}
+\alias{atlas_simplify}
+\title{Smooth and simplify atlas 2D contours}
 \usage{
-atlas_smooth(atlas, smoothness = 5)
+atlas_smooth(atlas, keep = 0.05)
+
+atlas_simplify(atlas, keep = 0.05)
 }
 \arguments{
 \item{atlas}{A \code{ggseg_atlas} object with sf data.}
 
-\item{smoothness}{Smoothing bandwidth passed to
-\link[smoothr:smooth]{smoothr::smooth(method = "ksmooth")}. Typical range
-3--15. Default 5.}
+\item{keep}{Proportion of vertices to retain (0--1). Lower values produce
+simpler, smoother shapes. Default 0.05.}
 }
 \value{
-A modified \code{ggseg_atlas} with smoothed sf geometry.
+A modified \code{ggseg_atlas} with simplified sf geometry.
 }
 \description{
-Apply kernel smoothing to the sf geometry of a \code{ggseg_atlas} object.
-Higher \code{smoothness} values produce rounder region boundaries.
-This avoids re-running the full atlas creation pipeline.
+Topology-preserving simplification of atlas sf geometry via
+\code{\link[rmapshaper:ms_simplify]{rmapshaper::ms_simplify()}}. Shared boundaries between adjacent regions
+are simplified together, preventing gaps between regions.
 }
 \examples{
 \dontrun{
-atlas <- atlas_smooth(my_atlas, smoothness = 10)
+atlas <- atlas_smooth(my_atlas, keep = 0.05)
 plot(atlas)
 }
 }

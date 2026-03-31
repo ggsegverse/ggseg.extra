@@ -1,6 +1,10 @@
 ---
 title: "Tutorial: Creating a cortical atlas"
 format: html
+vignette: >
+  %\VignetteIndexEntry{Tutorial: Creating a cortical atlas}
+  %\VignetteEngine{quarto::html}
+  %\VignetteEncoding{UTF-8}
 ---
 
 

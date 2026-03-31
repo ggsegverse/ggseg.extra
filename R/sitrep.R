@@ -150,7 +150,7 @@ check_fsaverage <- function(detail = "simple") {
 check_optional_packages <- function(detail = "simple") {
   pkgs <- c(
     "freesurferformats", "gifti", "ciftiTools",
-    "RNifti", "smoothr", "Rvcg", "neuromapr"
+    "RNifti", "Rvcg", "neuromapr"
   )
 
   results <- list()

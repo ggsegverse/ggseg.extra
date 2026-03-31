@@ -1,5 +1,6 @@
 # Coordinate transformation functions for atlas geometry ----
 
+#' @noRd
 #' @importFrom dplyr mutate
 #' @importFrom sf st_geometry st_bbox st_transform
 correct_coords_sf <- function(data, by) {
@@ -10,6 +11,7 @@ correct_coords_sf <- function(data, by) {
 }
 
 
+#' @noRd
 #' @importFrom dplyr group_by group_split group_keys ungroup
 #' @importFrom sf st_bbox
 layout_cortical_views <- function(atlas_df) {
@@ -69,6 +71,7 @@ layout_cortical_views <- function(atlas_df) {
 }
 
 
+#' @noRd
 #' @importFrom dplyr group_by group_split
 layout_volumetric_views <- function(atlas_df) {
   atlas <- group_by(atlas_df, view)
@@ -82,12 +85,14 @@ layout_volumetric_views <- function(atlas_df) {
 }
 
 
+#' @noRd
 #' @importFrom sf st_coordinates
 count_vertices <- function(x) {
   vapply(x$geometry, function(i) nrow(st_coordinates(i)), integer(1))
 }
 
 
+#' @noRd
 #' @importFrom dplyr as_tibble group_by mutate row_number ungroup
 #' @importFrom sf st_combine st_coordinates
 to_coords <- function(x, n) {
@@ -115,6 +120,7 @@ to_coords <- function(x, n) {
 }
 
 
+#' @noRd
 #' @importFrom dplyr group_by group_split
 #' @importFrom sf st_polygon st_sfc st_sf st_zm st_cast st_crs
 coords2sf <- function(x, vertex_size_limits = NULL) {
@@ -158,6 +164,7 @@ coords2sf <- function(x, vertex_size_limits = NULL) {
 }
 
 
+#' @noRd
 #' @importFrom sf st_bbox
 gather_geometry <- function(df) {
   cent <- center_coord(df)
@@ -171,6 +178,7 @@ center_coord <- function(x) {
 }
 
 
+#' @noRd
 #' @importFrom sf st_coordinates
 range_coord <- function(x) {
   coords <- st_coordinates(x)
@@ -178,6 +186,7 @@ range_coord <- function(x) {
 }
 
 
+#' @noRd
 #' @importFrom sf st_bbox
 #' @importFrom stats sd
 restack <- function(views) {

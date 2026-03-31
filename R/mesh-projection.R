@@ -262,42 +262,41 @@ project_mesh_view <- function(mesh, vertex_labels, camera_pos,
 #'
 #' @param components Atlas components list with `vertices_df`.
 #' @param hemisphere Character vector of hemisphere codes ("lh", "rh").
-#' @param views Character vector of view names.
-#' @param smooth_refinements Number of Chaikin corner-cutting refinements
-#'   to apply before simplification. 0 = no smoothing.
-#' @param verbose Logical.
-#' @return sf data.frame with columns: filenm, hemi_short, hemi, view,
-#'   label, geometry.
 #' @noRd
-#' @importFrom sf st_simplify st_make_valid
+#' @importFrom sf st_make_valid
 project_mesh_to_polygons <- function(components, hemisphere, views,
                                      tolerance = 0,
                                      smooth_refinements = 2,
                                      verbose = FALSE) {
-  all_results <- list()
-
-  for (hemi in hemisphere) {
+  hemi_data <- lapply(stats::setNames(hemisphere, hemisphere), function(hemi) {
     mesh <- ggseg.formats::get_brain_mesh(hemi, "inflated")
     n_verts <- nrow(mesh$vertices)
     vertex_labels <- build_vertex_label_vector(
       components$vertices_df, n_verts, hemi
     )
+    list(mesh = mesh, vertex_labels = vertex_labels)
+  })
 
-    for (view in views) {
-      key <- paste(hemi, view, sep = "_")
-      cam <- camera_presets[[key]]
-      if (is.null(cam)) next
+  combos <- expand.grid(
+    view = views, hemi = hemisphere,
+    stringsAsFactors = FALSE
+  )
 
-      if (verbose) {
-        cli::cli_alert_info("Projecting {.val {hemi}} {.val {view}}")
-      }
+  all_results <- lapply(seq_len(nrow(combos)), function(idx) {
+    hemi <- combos$hemi[idx]
+    view <- combos$view[idx]
+    key <- paste(hemi, view, sep = "_")
+    cam <- camera_presets[[key]]
+    if (is.null(cam)) return(NULL)
 
-      result <- project_mesh_view(mesh, vertex_labels, cam, hemi, view)
-      if (!is.null(result)) {
-        all_results <- c(all_results, list(result))
-      }
+    if (verbose) {
+      cli::cli_alert_info("Projecting {.val {hemi}} {.val {view}}")
     }
-  }
+
+    hd <- hemi_data[[hemi]]
+    project_mesh_view(hd$mesh, hd$vertex_labels, cam, hemi, view)
+  })
+  all_results <- Filter(Negate(is.null), all_results)
 
   if (length(all_results) == 0) {
     cli::cli_abort("No polygons generated from mesh projection")
@@ -305,34 +304,12 @@ project_mesh_to_polygons <- function(components, hemisphere, views,
 
   sf_data <- do.call(rbind, all_results)
 
-  if (smooth_refinements > 0) {
-    rlang::check_installed("smoothr", reason = "for polygon smoothing")
-    sf_data <- smoothr::smooth(sf_data, method = "chaikin",
-                               refinements = smooth_refinements)
-    sf_data <- sf::st_make_valid(sf_data)
-  }
-
-  if (tolerance > 0) {
-    sf_data <- sf::st_simplify(sf_data, preserveTopology = TRUE,
-                               dTolerance = tolerance)
-    sf_data <- sf::st_make_valid(sf_data)
-  }
+  sf_data <- smooth_and_simplify_sf(sf_data, smooth_refinements, tolerance)
 
   sf_data
 }
 
 
-#' Build cortical sf data from mesh projection
-#'
-#' Build cortical sf data using mesh projection.
-#'
-#' @param components Atlas components.
-#' @param hemisphere Hemisphere codes.
-#' @param views View names.
-#' @param tolerance Simplification tolerance.
-#' @param smooth_refinements Chaikin corner-cutting refinements.
-#' @param verbose Logical.
-#' @return sf data.frame with label, view, geometry columns.
 #' @noRd
 #' @importFrom dplyr group_by mutate ungroup select
 #' @importFrom sf st_combine st_as_sf

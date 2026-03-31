@@ -126,7 +126,7 @@ describe("summarize_pipelines", {
       fsaverage = list(fsaverage5 = fsavg),
       packages = list(
         freesurferformats = fsf, gifti = gifti, ciftiTools = cifti,
-        RNifti = rnifti, smoothr = TRUE, Rvcg = TRUE, neuromapr = neuromapr
+        RNifti = rnifti, Rvcg = TRUE, neuromapr = neuromapr
       ),
       suit = list(flatmap = flatmap, surface_3d = surface_3d)
     )

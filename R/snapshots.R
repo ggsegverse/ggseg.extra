@@ -595,27 +595,13 @@ snapshot_na_regions_batch <- function(
 #'
 #' Creates a PNG with filename format matching tract projections.
 #'
-#' @param vol 3D array with voxel values
-#' @param x,y,z Slice coordinates
+#' @inheritParams snapshot_volume_slice
 #' @param slice_view "axial", "sagittal", or "coronal"
 #' @param view_name Name for this view (used in filename)
 #' @param hemi Hemisphere ("left" or "right")
-#' @param output_dir Output directory
-#' @param width,height Image dimensions
-#' @param skip_existing If TRUE, skip if output file already exists
 #'
 #' @return Invisible path to output file, or NULL if no voxels
 #' @keywords internal
-#' Render a 2D matrix to PNG
-#'
-#' Shared rendering logic for all volumetric snapshot functions.
-#' Writes a matrix as a single-colour image on a black background.
-#'
-#' @param slice_data 2D numeric matrix (zeros treated as transparent)
-#' @param outfile Output PNG path
-#' @param colour Colour for non-zero values
-#' @param width,height Image dimensions in pixels
-#' @return Invisible outfile path, or NULL if slice has no data
 #' @noRd
 #' @importFrom grDevices png dev.off
 #' @importFrom graphics par image
@@ -726,17 +712,11 @@ snapshot_volume_slice <- function(
 #'
 #' Creates a PNG image showing maximum intensity projection of a volume subset.
 #'
-#' @param vol 3D array with voxel values
-#' @param view "axial", "coronal", or "sagittal"
+#' @inheritParams snapshot_volume_slice
 #' @param start First slice index
 #' @param end Last slice index
 #' @param view_name Name for this view (used in filename)
-#' @param label Label for filename
-#' @param output_dir Output directory
-#' @param colour Colour for non-zero voxels
 #' @param hemi Hemisphere for sagittal views: "left" or "right"
-#' @param width,height Image dimensions
-#' @param skip_existing If TRUE, skip if output file already exists
 #'
 #' @return Invisible path to output file, or NULL if no voxels
 #' @keywords internal

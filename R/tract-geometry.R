@@ -159,43 +159,28 @@ generate_tube_mesh <- function(centerline, radius = 0.5, segments = 8) {
     )
   }
 
-  n_vertices <- n_points * segments
   n_faces <- (n_points - 1) * segments * 2
-
-  vertices <- matrix(0, nrow = n_vertices, ncol = 3)
-  faces <- matrix(0L, nrow = n_faces, ncol = 3)
 
   angles <- seq(0, 2 * pi, length.out = segments + 1)[1:segments]
 
-  for (i in seq_len(n_points)) {
-    center <- centerline[i, ]
-    normal <- frames$normals[i, ]
-    binormal <- frames$binormals[i, ]
-    r <- radius[i]
+  grid <- expand.grid(j = seq_len(segments), i = seq_len(n_points))
+  cos_a <- cos(angles[grid$j])
+  sin_a <- sin(angles[grid$j])
+  r <- radius[grid$i]
+  offsets <- r * (cos_a * frames$normals[grid$i, ] +
+                    sin_a * frames$binormals[grid$i, ])
+  vertices <- centerline[grid$i, ] + offsets
 
-    for (j in seq_len(segments)) {
-      angle <- angles[j]
-      offset <- r * (cos(angle) * normal + sin(angle) * binormal)
-      vertex_idx <- (i - 1) * segments + j
-      vertices[vertex_idx, ] <- center + offset
-    }
-  }
-
-  face_idx <- 1
-  for (i in seq_len(n_points - 1)) {
-    for (j in seq_len(segments)) {
-      j_next <- if (j == segments) 1L else j + 1L
-
-      v1 <- (i - 1L) * segments + j
-      v2 <- (i - 1L) * segments + j_next
-      v3 <- i * segments + j
-      v4 <- i * segments + j_next
-
-      faces[face_idx, ] <- c(v1, v2, v3)
-      faces[face_idx + 1L, ] <- c(v2, v4, v3)
-      face_idx <- face_idx + 2L
-    }
-  }
+  fg <- expand.grid(j = seq_len(segments), i = seq_len(n_points - 1))
+  j_next <- ifelse(fg$j == segments, 1L, fg$j + 1L)
+  v1 <- (fg$i - 1L) * segments + fg$j
+  v2 <- (fg$i - 1L) * segments + j_next
+  v3 <- fg$i * segments + fg$j
+  v4 <- fg$i * segments + j_next
+  faces <- matrix(0L, nrow = n_faces, ncol = 3)
+  odds <- seq(1, n_faces, by = 2)
+  faces[odds, ] <- cbind(v1, v2, v3)
+  faces[odds + 1L, ] <- cbind(v2, v4, v3)
 
   list(
     vertices = data.frame(
@@ -306,23 +291,14 @@ compute_streamline_density <- function(
   centerline,
   search_radius = 2
 ) {
-  n_points <- nrow(centerline)
-  density <- numeric(n_points)
+  valid_sl <- Filter(function(sl) is.matrix(sl) && nrow(sl) > 0, streamlines)
 
-  for (i in seq_len(n_points)) {
+  vapply(seq_len(nrow(centerline)), function(i) {
     center <- centerline[i, ]
-    count <- 0
-    for (sl in streamlines) {
-      if (!is.matrix(sl) || nrow(sl) == 0) {
-        next
-      }
-      dists <- sqrt(rowSums(sweep(sl, 2, center)^2))
-      if (any(dists <= search_radius)) count <- count + 1
-    }
-    density[i] <- count
-  }
-
-  density
+    sum(vapply(valid_sl, function(sl) {
+      any(rowSums(sweep(sl, 2, center)^2) <= search_radius^2)
+    }, logical(1)))
+  }, numeric(1))
 }
 
 
@@ -446,22 +422,21 @@ coord_to_voxel <- function(coord, dims, vox2ras, coords_are_voxels) {
 #' Set voxels within a sphere around center point
 #' @noRd
 set_sphere_voxels <- function(vol, center, radius, label_value, dims) {
-  for (dx in seq(-radius, radius)) {
-    for (dy in seq(-radius, radius)) {
-      for (dz in seq(-radius, radius)) {
-        if (dx^2 + dy^2 + dz^2 > radius^2) {
-          next
-        }
+  offsets <- as.matrix(expand.grid(
+    dx = seq(-radius, radius),
+    dy = seq(-radius, radius),
+    dz = seq(-radius, radius)
+  ))
+  offsets <- offsets[rowSums(offsets^2) <= radius^2, , drop = FALSE]
 
-        vx <- center[1] + dx
-        vy <- center[2] + dy
-        vz <- center[3] + dz
+  coords <- sweep(offsets, 2, center, "+")
+  in_bounds <- coords[, 1] >= 1 & coords[, 1] <= dims[1] &
+    coords[, 2] >= 1 & coords[, 2] <= dims[2] &
+    coords[, 3] >= 1 & coords[, 3] <= dims[3]
+  coords <- coords[in_bounds, , drop = FALSE]
 
-        if (voxel_in_bounds(vx, vy, vz, dims)) {
-          vol[vx, vy, vz] <- label_value
-        }
-      }
-    }
+  for (k in seq_len(nrow(coords))) {
+    vol[coords[k, 1], coords[k, 2], coords[k, 3]] <- label_value
   }
   vol
 }

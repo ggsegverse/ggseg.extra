@@ -46,17 +46,15 @@ contours). Defaults to \code{\link[=tempdir]{tempdir()}}.}
 \item{views}{Which views to include: "lateral", "medial",
 "superior", "inferior".}
 
-\item{tolerance}{Simplification tolerance for 2D polygons. Higher values
-produce simpler shapes with fewer vertices (typical range: 0.1--2).
-Passed to \code{\link[sf:geos_unary]{sf::st_simplify()}}.
+\item{tolerance}{Proportion of vertices to retain during topology-preserving
+simplification (0--1). Lower values produce simpler, smoother shapes.
+Passed to \code{\link[rmapshaper:ms_simplify]{rmapshaper::ms_simplify()}}.
 If not specified, uses \code{options("ggseg.extra.tolerance")} or the
-\code{GGSEG_EXTRA_TOLERANCE} environment variable. Default is 1.}
+\code{GGSEG_EXTRA_TOLERANCE} environment variable. Default is 0.05.}
 
-\item{smooth_refinements}{Number of Chaikin corner-cutting refinements
-to apply to 2D polygons. Higher values produce smoother region
-boundaries (typical range: 0--3). 0 disables smoothing.
-If not specified, uses \code{options("ggseg.extra.smooth_refinements")} or the
-\code{GGSEG_EXTRA_SMOOTH_REFINEMENTS} environment variable. Default is 2.}
+\item{smooth_refinements}{Ignored. Kept for API compatibility.
+Smoothing is now handled by topology-preserving simplification
+via the \code{tolerance} parameter.}
 
 \item{cleanup}{Remove intermediate files after atlas creation. If not
 specified, uses \code{options("ggseg.extra.cleanup")} or the \code{GGSEG_EXTRA_CLEANUP}

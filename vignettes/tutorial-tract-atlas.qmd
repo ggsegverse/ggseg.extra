@@ -1,6 +1,10 @@
 ---
 title: "Tutorial: Creating a tract atlas"
 format: html
+vignette: >
+  %\VignetteIndexEntry{Tutorial: Creating a tract atlas}
+  %\VignetteEngine{quarto::html}
+  %\VignetteEncoding{UTF-8}
 ---
 
 

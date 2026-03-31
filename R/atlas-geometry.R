@@ -87,37 +87,19 @@ smooth_contours <- function(
   step,
   verbose = get_verbose() # nolint: object_usage_linter
 ) {
-  rlang::check_installed("smoothr",
-    reason = "for polygon smoothing"
-  )
   load_rda(file.path(dir, "contours.rda"))
 
-  if (verbose) {
-    cli::cli_progress_step(
-      "{step} Smoothing contours (smoothness = {.val {smoothness}})"
-    )
-  }
   contours <- filter_valid_geometries(contours)
   if (nrow(contours) == 0) {
     cli::cli_warn("No valid contours found after extraction")
-    save(contours, file = file.path(dir, "contours_smoothed.rda"))
-    return(invisible(contours))
   }
-
-  contours <- smoothr::smooth(contours, method = "ksmooth",
-                              smoothness = smoothness)
-  contours <- filter_valid_geometries(contours)
 
   save(contours, file = file.path(dir, "contours_smoothed.rda"))
-  if (verbose) {
-    cli::cli_progress_done()
-  }
   invisible(contours)
 }
 
 
 #' @noRd
-#' @importFrom sf st_simplify
 reduce_vertex <- function(
   dir,
   tolerance,
@@ -126,7 +108,7 @@ reduce_vertex <- function(
 ) {
   if (verbose) {
     cli::cli_progress_step(
-      "{step} Reducing vertices (tolerance = {.val {tolerance}})"
+      "{step} Simplifying contours (keep = {.val {tolerance}})"
     )
   }
   load_rda(file.path(dir, "contours_smoothed.rda"))
@@ -138,11 +120,7 @@ reduce_vertex <- function(
     return(invisible(contours))
   }
 
-  contours <- st_simplify(
-    contours,
-    preserveTopology = TRUE,
-    dTolerance = tolerance
-  )
+  contours <- simplify_sf_topology(contours, keep = tolerance)
   contours <- filter_valid_geometries(contours)
   save(contours, file = file.path(dir, "contours_reduced.rda"))
   if (verbose) {
@@ -204,77 +182,107 @@ filter_valid_geometries <- function(sf_obj) {
 
 # Atlas geometry post-processing ----
 
-#' Smooth atlas 2D contours
+#' Smooth and simplify atlas 2D contours
 #'
-#' Apply kernel smoothing to the sf geometry of a `ggseg_atlas` object.
-#' Higher `smoothness` values produce rounder region boundaries.
-#' This avoids re-running the full atlas creation pipeline.
+#' Topology-preserving simplification of atlas sf geometry via
+#' [rmapshaper::ms_simplify()]. Shared boundaries between adjacent regions
+#' are simplified together, preventing gaps between regions.
 #'
 #' @param atlas A `ggseg_atlas` object with sf data.
-#' @param smoothness Smoothing bandwidth passed to
-#'   [smoothr::smooth(method = "ksmooth")][smoothr::smooth]. Typical range
-#'   3--15. Default 5.
+#' @param keep Proportion of vertices to retain (0--1). Lower values produce
+#'   simpler, smoother shapes. Default 0.05.
 #'
-#' @return A modified `ggseg_atlas` with smoothed sf geometry.
+#' @return A modified `ggseg_atlas` with simplified sf geometry.
 #' @export
 #' @importFrom sf st_make_valid
 #'
 #' @examples
 #' \dontrun{
-#' atlas <- atlas_smooth(my_atlas, smoothness = 10)
+#' atlas <- atlas_smooth(my_atlas, keep = 0.05)
 #' plot(atlas)
 #' }
-atlas_smooth <- function(atlas, smoothness = 5) {
-  rlang::check_installed("smoothr",
-    reason = "for polygon smoothing"
-  )
+atlas_smooth <- function(atlas, keep = 0.05) {
   if (is.null(atlas$data$sf)) {
     cli::cli_warn("Atlas has no sf data, nothing to smooth")
     return(atlas)
   }
 
-  new_sf <- smoothr::smooth(atlas$data$sf, method = "ksmooth",
-                            smoothness = smoothness)
-  new_sf <- sf::st_make_valid(new_sf)
-
-  atlas$data$sf <- new_sf
+  atlas$data$sf <- simplify_sf_topology(atlas$data$sf, keep = keep)
   atlas
 }
 
 
-#' Simplify atlas 2D contours
-#'
-#' Reduce vertex count in the sf geometry of a `ggseg_atlas` object using
-#' Douglas-Peucker simplification. Higher `tolerance` values produce simpler
-#' shapes with fewer vertices. This avoids re-running the full atlas creation
-#' pipeline.
-#'
-#' @param atlas A `ggseg_atlas` object with sf data.
-#' @param tolerance Simplification tolerance passed to
-#'   [sf::st_simplify(dTolerance)][sf::st_simplify]. Typical range 0.1--2.
-#'   Default 0.5.
-#'
-#' @return A modified `ggseg_atlas` with simplified sf geometry.
+#' @rdname atlas_smooth
 #' @export
-#' @importFrom sf st_simplify st_make_valid
+atlas_simplify <- function(atlas, keep = 0.05) {
+  lifecycle::deprecate_warn(
+    "2.0.0", "atlas_simplify()", "atlas_smooth()"
+  )
+  atlas_smooth(atlas, keep = keep)
+}
+
+
+#' Topology-preserving simplification of sf polygons
 #'
-#' @examples
-#' \dontrun{
-#' atlas <- atlas_simplify(my_atlas, tolerance = 1)
-#' plot(atlas)
-#' }
-atlas_simplify <- function(atlas, tolerance = 0.5) {
-  if (is.null(atlas$data$sf)) {
-    cli::cli_warn("Atlas has no sf data, nothing to simplify")
-    return(atlas)
+#' Wraps [rmapshaper::ms_simplify()] to reduce vertex count while keeping
+#' shared boundaries between adjacent regions aligned. Used by all atlas
+#' pipelines and the user-facing [atlas_smooth()]/[atlas_simplify()].
+#'
+#' @param sf_data An sf data.frame.
+#' @param keep Proportion of vertices to retain (0--1). Default 0.05.
+#' @return Simplified sf data.frame.
+#' @noRd
+simplify_sf_topology <- function(sf_data, keep = 0.05) {
+  group_col <- if ("view" %in% names(sf_data)) {
+    "view"
+  } else if ("filenm" %in% names(sf_data)) {
+    sf_data$.view_group <- sub("_[^_]+$", "", sf_data$filenm)
+    ".view_group"
+  } else {
+    NULL
   }
 
-  new_sf <- sf::st_simplify(atlas$data$sf, preserveTopology = TRUE,
-                            dTolerance = tolerance)
-  new_sf <- sf::st_make_valid(new_sf)
+  if (!is.null(group_col)) {
+    groups <- unique(sf_data[[group_col]])
+    if (length(groups) > 1) {
+      parts <- lapply(groups, function(g) {
+        group_sf <- sf_data[sf_data[[group_col]] == g, , drop = FALSE]
+        rmapshaper::ms_simplify(group_sf, keep = keep,
+                                keep_shapes = TRUE)
+      })
+      sf_data <- do.call(rbind, parts)
+      if (".view_group" %in% names(sf_data)) {
+        sf_data$.view_group <- NULL
+      }
+      return(sf::st_make_valid(sf_data))
+    }
+  }
 
-  atlas$data$sf <- new_sf
-  atlas
+  sf_data <- rmapshaper::ms_simplify(sf_data, keep = keep,
+                                     keep_shapes = TRUE)
+  sf::st_make_valid(sf_data)
+}
+
+
+#' Topology-preserving simplification for atlas pipelines
+#'
+#' Central post-processing called by cortical, cerebellar, and other
+#' mesh-based pipelines.
+#'
+#' @param sf_data An sf data.frame.
+#' @param smooth_refinements Ignored (kept for API compatibility during
+#'   transition). Smoothing is handled by topology-preserving simplification.
+#' @param keep Proportion of vertices to retain (0--1). 0 skips
+#'   simplification.
+#' @return Processed sf data.frame.
+#' @noRd
+smooth_and_simplify_sf <- function(sf_data, smooth_refinements = 0,
+                                   keep = 0) {
+  if (keep > 0 && keep < 1) {
+    sf_data <- simplify_sf_topology(sf_data, keep = keep)
+  }
+
+  sf_data
 }
 
 
