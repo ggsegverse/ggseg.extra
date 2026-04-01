@@ -309,8 +309,8 @@ describe("read_suit_parcellation", {
     result <- read_suit_parcellation(label_file)
 
     expect_s3_class(result, "tbl_df")
-    expect_true(all(c("hemi", "region", "label", "colour", "vertices") %in%
-      names(result)))
+    expected_cols <- c("hemi", "region", "label", "colour", "vertices")
+    expect_true(all(expected_cols %in% names(result)))
     expect_true(nrow(result) > 0)
     expect_true(all(result$hemi %in% c("left", "right", "vermis", "midline")))
   })
@@ -353,7 +353,6 @@ describe("create_cerebellar_from_gifti", {
 
   it("runs full pipeline with bundled flatmap", {
     skip_if_not_installed("gifti")
-    skip_if_not_installed("smoothr")
     skip_if_not_installed("base64enc")
 
     label_file <- create_mock_suit_labels(n_vertices = 28935)
@@ -443,8 +442,8 @@ describe("read_cerebellar_annotation", {
 
     expect_s3_class(result, "tbl_df")
     expect_equal(nrow(result), 3)
-    expect_true(all(c("hemi", "region", "label", "colour", "vertices") %in%
-      names(result)))
+    expected_cols <- c("hemi", "region", "label", "colour", "vertices")
+    expect_true(all(expected_cols %in% names(result)))
     expect_equal(result$hemi, c("left", "right", "vermis"))
     expect_equal(result$region, c("I-IV", "Crus I", "VI"))
     expect_equal(lengths(result$vertices), c(2L, 2L, 1L))
@@ -728,8 +727,8 @@ describe("read_cerebellar_volume", {
 
     expect_s3_class(result, "tbl_df")
     expect_true(nrow(result) > 0)
-    expect_true(all(c("hemi", "region", "label", "colour", "vertices") %in%
-      names(result)))
+    expected_cols <- c("hemi", "region", "label", "colour", "vertices")
+    expect_true(all(expected_cols %in% names(result)))
   })
 
   it("errors when no regions found after sampling", {
@@ -775,7 +774,6 @@ describe("sample_volume_at_surface", {
 describe("cerebellar pipeline orchestration", {
   it("create_cerebellar_from_gifti derives atlas_name from file", {
     skip_if_not_installed("gifti")
-    skip_if_not_installed("smoothr")
     skip_if_not_installed("base64enc")
 
     label_file <- create_mock_suit_labels(n_vertices = 28935)
@@ -842,9 +840,8 @@ describe("cerebellar pipeline orchestration", {
 
 
 describe("cerebellar_build_sf_flatmap smoothing and simplification", {
-  it("applies chaikin smoothing when smooth_refinements > 0", {
+  it("applies topology-preserving simplification", {
     skip_if_not_installed("gifti")
-    skip_if_not_installed("smoothr")
 
     components <- list(
       vertices_df = data.frame(
@@ -865,7 +862,6 @@ describe("cerebellar_build_sf_flatmap smoothing and simplification", {
 
   it("applies simplification when tolerance > 0", {
     skip_if_not_installed("gifti")
-    skip_if_not_installed("smoothr")
 
     components <- list(
       vertices_df = data.frame(
@@ -965,12 +961,12 @@ describe("transform_mni_to_suit", {
 
 describe("suit_deformation_field", {
   it("errors without internet when not cached", {
-    local_mocked_bindings(has_internet = function() FALSE)
+    local_mocked_bindings(can_reach_github = function() FALSE)
 
     tmp <- withr::local_tempdir()
     expect_error(
       suit_deformation_field(cache_dir = tmp),
-      "No internet"
+      "Cannot reach GitHub"
     )
   })
 
@@ -994,9 +990,9 @@ describe("suit_deformation_field", {
 })
 
 
-describe("has_internet", {
+describe("can_reach_github", {
   it("returns TRUE or FALSE", {
-    result <- has_internet()
+    result <- can_reach_github()
     expect_type(result, "logical")
     expect_length(result, 1)
   })

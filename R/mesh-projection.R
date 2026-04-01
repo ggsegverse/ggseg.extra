@@ -304,7 +304,9 @@ project_mesh_to_polygons <- function(components, hemisphere, views,
 
   sf_data <- do.call(rbind, all_results)
 
-  sf_data <- smooth_and_simplify_sf(sf_data, smooth_refinements, tolerance)
+  sf_data <- smooth_and_simplify_sf( # nolint: object_usage_linter.
+    sf_data, smooth_refinements, tolerance
+  )
 
   sf_data
 }

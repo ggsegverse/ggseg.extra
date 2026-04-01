@@ -22,7 +22,7 @@ package-lock.json
 _brand.yml
 .*\.pdf$
 ^\.lintr$
-^vignettes/tutorial-.*\.Rmd$
+^vignettes/tutorial-.*\.[qR]md$
 ^vignettes/.*\.Rmd\.orig$
 ^vignettes/\.quarto$
 ^vignettes/atlas-workflows\.qmd$

@@ -275,21 +275,18 @@ This works reliably for standard MNI152 volumes, but can break with unusual orie
 ## Post-processing
 
 The raw atlas usually needs cleanup.
-Smooth the contours and reduce vertex count for faster plotting:
+Simplify the contours for faster plotting using topology-preserving simplification:
 
 ``` r
 ho_cort <- ho$cortical |>
-  atlas_smooth(smoothness = 5) |>
-  atlas_simplify(tolerance = 0.5)
+  atlas_smooth(keep = 0.05)
 
 ho_sub <- ho$subcortical |>
-  atlas_smooth(smoothness = 5) |>
-  atlas_simplify(tolerance = 0.5)
+  atlas_smooth(keep = 0.05)
 ```
 
-Higher smoothness values produce rounder contours.
-Higher tolerance values produce simpler polygons with fewer vertices — important for keeping atlas file sizes manageable.
-The right values depend on your atlas: parcellations with many small regions need gentler settings than those with a few large ones.
+Lower `keep` values produce simpler polygons with fewer vertices — important for keeping atlas file sizes manageable.
+The right value depends on your atlas: parcellations with many small regions need higher `keep` values than those with a few large ones.
 
 You can also remove unwanted regions from the subcortical atlas (ventricles, white matter) and set context regions, just like in the [subcortical tutorial](tutorial-subcortical-atlas.html):
 

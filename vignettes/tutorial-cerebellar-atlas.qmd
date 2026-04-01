@@ -55,7 +55,7 @@ atlas <- create_cerebellar_from_gifti(
 atlas
 ```
 
-The pipeline reads the GIFTI label table for region names and colours, maps labels onto the SUIT flatmap vertices, builds per-region sf polygons from the mesh triangles, and applies Chaikin smoothing to clean up jagged triangle boundaries.
+The pipeline reads the GIFTI label table for region names and colours, maps labels onto the SUIT flatmap vertices, builds per-region sf polygons from the mesh triangles, and applies topology-preserving simplification via `rmapshaper` to clean up jagged triangle boundaries while keeping shared edges aligned.
 
 If you also have a matching NIfTI volume and want 3D meshes:
 
@@ -127,16 +127,14 @@ After the transform, pass the SUIT-space volume to `create_cerebellar_from_volum
 
 ## Tuning the output
 
-The cerebellar pipeline has two parameters that control the 2D polygon geometry:
+The cerebellar pipeline has two parameters that control output geometry:
 
-- `tolerance` — Douglas-Peucker simplification.
-  Default is 1.
-  Higher values produce simpler polygons with fewer vertices.
-  Set to 0 for maximum fidelity.
-- `smooth_refinements` — Chaikin corner-cutting iterations.
-  Default is 2.
-  More iterations produce rounder region boundaries.
-  Set to 0 to skip smoothing entirely.
+- `tolerance` — proportion of vertices to retain during topology-preserving simplification via `rmapshaper::ms_simplify()`.
+  Default is 0.05.
+  Lower values produce simpler polygons with fewer vertices.
+  Set to 0 to skip simplification entirely.
+- `smooth_refinements` — deprecated (kept for backwards compatibility).
+  Smoothing is now handled entirely by the `tolerance` parameter.
 
 For 3D meshes, `decimate` controls quadric edge decimation (0–1, default 0.5).
 A value of 0.5 reduces the mesh to roughly half its original vertex count.
@@ -144,8 +142,7 @@ A value of 0.5 reduces the mesh to roughly half its original vertex count.
 ``` r
 atlas <- create_cerebellar_from_gifti(
   gifti_files = "Lobules-SUIT.label.gii",
-  tolerance = 0.5,
-  smooth_refinements = 3,
+  tolerance = 0.1,
   decimate = 0.3
 )
 ```

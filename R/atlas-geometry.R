@@ -83,7 +83,7 @@ extract_contours <- function(
 #' @noRd
 smooth_contours <- function(
   dir,
-  smoothness,
+  smoothness, # nolint: object_usage_linter.
   step,
   verbose = get_verbose() # nolint: object_usage_linter
 ) {

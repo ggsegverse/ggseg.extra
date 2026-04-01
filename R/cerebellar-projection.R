@@ -229,7 +229,9 @@ cerebellar_build_sf_flatmap <- function(
 
   sf_data <- fill_flatmap_holes(sf_data, verbose = verbose)
 
-  sf_data <- smooth_and_simplify_sf(sf_data, smooth_refinements, tolerance)
+  sf_data <- smooth_and_simplify_sf( # nolint: object_usage_linter.
+    sf_data, smooth_refinements, tolerance
+  )
 
   sf_data$view <- "flatmap"
   sf::st_as_sf(sf_data)
@@ -287,7 +289,7 @@ drop_small_rings_poly <- function(poly_coords, threshold) {
     ring <- poly_coords[[j]]
     ring_area <- abs(sum(
       ring[-nrow(ring), 1] * ring[-1, 2] -
-      ring[-1, 1] * ring[-nrow(ring), 2]
+        ring[-1, 1] * ring[-nrow(ring), 2]
     )) / 2
     if (ring_area > threshold) keep[[length(keep) + 1]] <- ring
   }

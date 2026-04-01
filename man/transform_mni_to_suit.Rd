@@ -21,7 +21,9 @@ A 5D volume (x, y, z, 1, 3) mapping SUIT voxels to MNI coordinates.}
 writes to a temporary file.}
 
 \item{interpolation}{Interpolation method: \code{"nearest"} (default, for
-parcellations/labels) or \code{"linear"} (for continuous maps).}
+parcellations/labels) or \code{"linear"} (for continuous maps). Note that
+\code{"linear"} uses a pure-R trilinear loop and can be slow for large
+volumes.}
 }
 \value{
 Path to the output SUIT-space NIfTI file (invisibly).

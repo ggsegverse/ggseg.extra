@@ -7,7 +7,6 @@ CIFTI
 CMD
 CSF
 Centerline
-Chaikin
 Colour
 Connectome
 Crus
@@ -164,6 +163,7 @@ th
 tibble
 tidyr
 tractography
+trilinear
 unlabelled
 vermis
 visualising

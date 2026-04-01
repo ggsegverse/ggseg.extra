@@ -668,3 +668,145 @@ describe("reduce_vertex verbose output", {
     )
   })
 })
+
+
+describe("simplify_sf_topology", {
+  it("reduces vertices while preserving shared boundaries", {
+    angles_a <- seq(0, 2 * pi, length.out = 21)[-21]
+    coords_a <- cbind(cos(angles_a), sin(angles_a))
+    coords_a <- rbind(coords_a, coords_a[1, ])
+    poly_a <- sf::st_polygon(list(coords_a))
+
+    coords_b <- coords_a
+    coords_b[, 1] <- coords_b[, 1] + 2
+    poly_b <- sf::st_polygon(list(coords_b))
+
+    sf_data <- sf::st_sf(
+      label = c("a", "b"),
+      geometry = sf::st_sfc(poly_a, poly_b)
+    )
+
+    result <- simplify_sf_topology(sf_data, keep = 0.3)
+
+    expect_s3_class(result, "sf")
+    expect_equal(nrow(result), 2)
+    expect_true(all(sf::st_is_valid(result)))
+
+    n_before <- nrow(sf::st_coordinates(sf_data))
+    n_after <- nrow(sf::st_coordinates(result))
+    expect_lt(n_after, n_before)
+  })
+
+  it("simplifies per-view group when view column exists", {
+    poly_a <- sf::st_polygon(list(matrix(
+      c(0, 0, 1, 0, 1, 1, 0, 1, 0, 0),
+      ncol = 2, byrow = TRUE
+    )))
+    poly_b <- sf::st_polygon(list(matrix(
+      c(10, 10, 11, 10, 11, 11, 10, 11, 10, 10),
+      ncol = 2, byrow = TRUE
+    )))
+    sf_data <- sf::st_sf(
+      label = c("a", "b"),
+      view = c("lateral", "medial"),
+      geometry = sf::st_sfc(poly_a, poly_b)
+    )
+
+    result <- simplify_sf_topology(sf_data, keep = 0.5)
+
+    expect_s3_class(result, "sf")
+    expect_equal(nrow(result), 2)
+    expect_true(all(c("lateral", "medial") %in% result$view))
+  })
+
+  it("handles single-view data without grouping", {
+    poly <- sf::st_polygon(list(matrix(
+      c(0, 0, 1, 0, 1, 1, 0, 1, 0, 0),
+      ncol = 2, byrow = TRUE
+    )))
+    sf_data <- sf::st_sf(
+      label = "a",
+      view = "flatmap",
+      geometry = sf::st_sfc(poly)
+    )
+
+    result <- simplify_sf_topology(sf_data, keep = 0.5)
+
+    expect_s3_class(result, "sf")
+    expect_equal(nrow(result), 1)
+  })
+})
+
+
+describe("smooth_and_simplify_sf", {
+  it("skips simplification when keep is 0", {
+    poly <- sf::st_polygon(list(matrix(
+      c(0, 0, 1, 0, 1, 1, 0, 1, 0, 0),
+      ncol = 2, byrow = TRUE
+    )))
+    sf_data <- sf::st_sf(
+      label = "a",
+      geometry = sf::st_sfc(poly)
+    )
+
+    result <- smooth_and_simplify_sf(sf_data, smooth_refinements = 2, keep = 0)
+
+    expect_identical(sf_data, result)
+  })
+
+  it("applies simplification when keep is between 0 and 1", {
+    poly <- sf::st_polygon(list(matrix(
+      c(0, 0, 0.5, 0.01, 1, 0, 1, 1, 0.5, 0.99, 0, 1, 0, 0),
+      ncol = 2, byrow = TRUE
+    )))
+    sf_data <- sf::st_sf(
+      label = "a",
+      geometry = sf::st_sfc(poly)
+    )
+
+    result <- smooth_and_simplify_sf(sf_data, keep = 0.5)
+
+    expect_s3_class(result, "sf")
+    expect_true(all(sf::st_is_valid(result)))
+  })
+})
+
+
+describe("atlas_smooth", {
+  it("warns when atlas has no sf data", {
+    atlas <- list(data = list(sf = NULL))
+
+    expect_warning(
+      result <- atlas_smooth(atlas),
+      "no sf data"
+    )
+    expect_null(result$data$sf)
+  })
+
+  it("simplifies atlas sf data", {
+    poly <- sf::st_polygon(list(matrix(
+      c(0, 0, 0.5, 0.01, 1, 0, 1, 1, 0.5, 0.99, 0, 1, 0, 0),
+      ncol = 2, byrow = TRUE
+    )))
+    atlas <- list(data = list(sf = sf::st_sf(
+      label = "a",
+      geometry = sf::st_sfc(poly)
+    )))
+
+    result <- atlas_smooth(atlas, keep = 0.5)
+
+    expect_s3_class(result$data$sf, "sf")
+    expect_true(all(sf::st_is_valid(result$data$sf)))
+  })
+})
+
+
+describe("atlas_simplify (deprecated)", {
+  it("warns about deprecation and delegates to atlas_smooth", {
+    atlas <- list(data = list(sf = NULL))
+
+    lifecycle::expect_deprecated(
+      expect_warning(atlas_simplify(atlas), "no sf data")
+    )
+  })
+})

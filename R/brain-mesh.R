@@ -125,8 +125,9 @@ make_brain_meshes <- function(
 
   meshes <- stats::setNames(
     lapply(seq_len(nrow(combos)), function(idx) {
-      name <- paste(combos$hemi[idx], combos$surf[idx], sep = "_")
-      cli::cli_alert_info("Extracting {name}")
+      cli::cli_alert_info(
+        "Extracting {combos$hemi[idx]}_{combos$surf[idx]}"
+      )
       read_fs_mesh(
         subject = subject,
         hemisphere = combos$hemi[idx],

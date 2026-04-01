@@ -269,6 +269,12 @@ build_atlas_components <- function(atlas_data) {
     result$meshes_df <- meshes_df
   }
 
+  if ("vol_idx" %in% names(atlas_data)) {
+    result$vol_idx <- stats::setNames(
+      atlas_data$vol_idx, atlas_data$label
+    )
+  }
+
   result
 }
 

@@ -94,11 +94,11 @@ suit_deformation_field <- function(
     return(cached_path)
   }
 
-  if (!has_internet()) {
+  if (!can_reach_github()) {
     cli::cli_abort(c(
-      "No internet connection available",
+      "Cannot reach GitHub to download deformation field",
       "i" = "The deformation field {.file {filename}} is not cached",
-      "i" = "Connect to the internet and try again"
+      "i" = "Check your internet connection and try again"
     ))
   }
 
@@ -135,7 +135,7 @@ suit_deformation_field <- function(
 
 #' Check internet connectivity
 #' @noRd
-has_internet <- function() {
+can_reach_github <- function() {
   tryCatch(
     {
       con <- url("https://raw.githubusercontent.com", open = "r")
@@ -171,7 +171,9 @@ has_internet <- function() {
 #' @param output_file Path for the output SUIT-space volume. If NULL,
 #'   writes to a temporary file.
 #' @param interpolation Interpolation method: `"nearest"` (default, for
-#'   parcellations/labels) or `"linear"` (for continuous maps).
+#'   parcellations/labels) or `"linear"` (for continuous maps). Note that
+#'   `"linear"` uses a pure-R trilinear loop and can be slow for large
+#'   volumes.
 #'
 #' @return Path to the output SUIT-space NIfTI file (invisibly).
 #' @export
@@ -245,6 +247,9 @@ transform_mni_to_suit <- function(
       result[i] <- mni_arr[vi[1], vi[2], vi[3]]
     }
   } else {
+    cli::cli_alert_info(
+      "Trilinear interpolation (may be slow for large volumes)"
+    )
     for (i in seq_len(nrow(vox_coords))) {
       vi <- vox_coords[i, ]
       if (any(vi < 1) || vi[1] > mni_dims[1] ||
@@ -656,23 +661,32 @@ cerebellar_create_meshes <- function(
   vol_ids <- sort(unique(as.integer(vol)))
   vol_ids <- vol_ids[vol_ids > 0L]
 
-  labels <- components$core$label
-  if (length(vol_ids) < length(labels)) {
-    cli::cli_warn(c(
-      paste(
-        "Volume has {length(vol_ids)} non-zero labels but atlas",
-        "has {length(labels)} regions"
-      ),
-      "i" = "Only labels found in the volume will get 3D meshes"
-    ))
-    labels <- labels[seq_along(vol_ids)]
+  if (!is.null(components$vol_idx)) {
+    idx_map <- components$vol_idx
+    matched <- names(idx_map)[unname(idx_map) %in% vol_ids]
+    colortable <- data.frame(
+      idx = unname(idx_map[matched]),
+      label = matched,
+      stringsAsFactors = FALSE
+    )
+  } else {
+    labels <- components$core$label
+    n_ids <- min(length(vol_ids), length(labels))
+    if (length(vol_ids) != length(labels)) {
+      cli::cli_warn(c(
+        paste(
+          "Volume has {length(vol_ids)} non-zero labels but atlas",
+          "has {length(labels)} regions"
+        ),
+        "i" = "Only the first {n_ids} will get 3D meshes"
+      ))
+    }
+    colortable <- data.frame(
+      idx = vol_ids[seq_len(n_ids)],
+      label = labels[seq_len(n_ids)],
+      stringsAsFactors = FALSE
+    )
   }
-
-  colortable <- data.frame(
-    idx = vol_ids[seq_along(labels)],
-    label = labels,
-    stringsAsFactors = FALSE
-  )
 
   meshes_list <- subcort_create_meshes(
     input_volume = volume,
@@ -937,7 +951,9 @@ read_cerebellar_annotation <- function(annot_files) {
     if (nrow(ct) == 0) return(NULL)
 
     hemi <- unname(vapply(ct$struct_name, detect_cerebellar_hemi, character(1)))
-    region <- unname(vapply(ct$struct_name, clean_cerebellar_region, character(1)))
+    region <- unname(vapply(
+      ct$struct_name, clean_cerebellar_region, character(1)
+    ))
 
     dplyr::tibble(
       hemi = hemi,
@@ -1004,6 +1020,7 @@ read_cerebellar_volume <- function(volume, suit_3d_surface, input_lut = NULL) {
       region = region,
       label = label,
       colour = colour,
+      vol_idx = idx,
       vertices = list(region_vertices)
     )
   }
@@ -1076,6 +1093,7 @@ sample_volume_at_surface <- function(vol, volume_path, suit_3d_surface) {
 #' For vertices that landed on a zero voxel, search the 26-connected
 #' neighborhood for the nearest non-zero label.
 #' @noRd
+# nolint next: object_length_linter.
 fill_unlabelled_from_voxel_neighbors <- function(
   labels, vox_coords, vol, dims
 ) {
@@ -1114,6 +1132,7 @@ fill_unlabelled_from_voxel_neighbors <- function(
 #' Propagates labels along surface mesh edges using majority vote,
 #' repeating until no further vertices can be filled.
 #' @noRd
+# nolint next: object_length_linter.
 fill_unlabelled_from_mesh_neighbors <- function(labels, faces, n_verts) {
   n_unlabelled <- sum(labels == 0L)
   if (n_unlabelled == 0) return(labels)
