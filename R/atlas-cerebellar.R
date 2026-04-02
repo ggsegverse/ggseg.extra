@@ -358,8 +358,6 @@ create_cerebellar_from_gifti <- function(
     atlas_name = atlas_name,
     config = config,
     read_fn = function() read_suit_parcellation(gifti_files),
-    volume = volume,
-    decimate = decimate,
     input_files = gifti_files
   )
 }
@@ -425,8 +423,6 @@ create_cerebellar_from_annotation <- function(
     atlas_name = atlas_name,
     config = config,
     read_fn = function() read_cerebellar_annotation(input_annot),
-    volume = volume,
-    decimate = decimate,
     input_files = input_annot
   )
 }
@@ -500,9 +496,8 @@ create_cerebellar_from_volume <- function(
     read_fn = function() {
       read_cerebellar_volume(volume, suit_3d_path(), input_lut)
     },
-    volume = volume,
-    decimate = decimate,
-    input_files = c(volume, suit_3d_path())
+    input_files = c(volume, suit_3d_path()),
+    volume = volume
   )
 }
 
@@ -529,9 +524,8 @@ run_cerebellar_creation <- function(
   atlas_name,
   config,
   read_fn,
-  volume = NULL,
-  decimate = 0.5,
-  input_files
+  input_files,
+  volume = NULL
 ) {
   start_time <- Sys.time()
   dirs <- setup_atlas_dirs(config$output_dir, atlas_name, type = "cerebellar")
@@ -539,9 +533,6 @@ run_cerebellar_creation <- function(
   if (config$verbose) {
     cli::cli_h1("Creating cerebellar atlas {.val {atlas_name}}")
     cli::cli_alert_info("Input files: {.path {input_files}}")
-    if (!is.null(volume)) {
-      cli::cli_alert_info("Volume for 3D meshes: {.path {volume}}")
-    }
   }
 
   step1 <- cerebellar_read_data(
@@ -550,8 +541,8 @@ run_cerebellar_creation <- function(
 
   cerebellar_project_and_build(
     components = step1$components,
+    deep_data = step1$deep_data,
     volume = volume,
-    decimate = decimate,
     atlas_name = atlas_name,
     config = config,
     dirs = dirs,
@@ -563,6 +554,7 @@ run_cerebellar_creation <- function(
 #' @noRd
 cerebellar_read_data <- function(config, dirs, read_fn) {
   files <- file.path(dirs$base, "components.rds")
+  deep_file <- file.path(dirs$base, "deep_data.rds")
   cached <- load_or_run_step(
     1L, config$steps, files, config$skip_existing, "Read parcellation"
   )
@@ -571,8 +563,10 @@ cerebellar_read_data <- function(config, dirs, read_fn) {
     if (config$verbose) {
       cli::cli_alert_success("Loaded cached atlas data")
     }
+    deep_data <- if (file.exists(deep_file)) readRDS(deep_file) else NULL
     return(list(
-      components = cached$data[["components.rds"]]
+      components = cached$data[["components.rds"]],
+      deep_data = deep_data
     ))
   }
 
@@ -585,17 +579,51 @@ cerebellar_read_data <- function(config, dirs, read_fn) {
     cli::cli_abort("No regions found in input files")
   }
 
-  components <- build_atlas_components(atlas_data)
+  has_deep <- "deep" %in% names(atlas_data) && any(atlas_data$deep)
+  deep_data <- NULL
+
+  if (has_deep) {
+    deep_data <- atlas_data[atlas_data$deep, , drop = FALSE]
+    surface_data <- atlas_data[!atlas_data$deep, , drop = FALSE]
+
+    if (config$verbose) {
+      cli::cli_alert_info(
+        "Found {nrow(deep_data)} deep cerebellar nucle{?us/i}"
+      )
+    }
+  } else {
+    surface_data <- atlas_data
+  }
+
+  components <- build_atlas_components(surface_data)
+
+  if (!is.null(deep_data) && nrow(deep_data) > 0) {
+    deep_core <- dplyr::distinct(deep_data, hemi, region, label)
+    components$core <- rbind(components$core, deep_core)
+
+    deep_colours <- stats::setNames(deep_data$colour, deep_data$label)
+    deep_colours <- deep_colours[!duplicated(names(deep_colours))]
+    needs_colour <- is.na(deep_colours)
+    if (any(needs_colour)) {
+      deep_colours[needs_colour] <- generate_region_colours(sum(needs_colour))
+    }
+    if (!is.null(components$palette)) {
+      components$palette <- c(components$palette, deep_colours)
+    }
+
+    saveRDS(deep_data, deep_file)
+  }
+
   saveRDS(components, file.path(dirs$base, "components.rds"))
   cli::cli_progress_done()
 
-  list(components = components)
+  list(components = components, deep_data = deep_data)
 }
 
 
 #' @noRd
 cerebellar_project_and_build <- function(
-  components, volume = NULL, decimate = 0.5,
+  components, deep_data = NULL, volume = NULL,
   atlas_name, config, dirs, start_time
 ) {
   if (config$verbose) {
@@ -611,20 +639,25 @@ cerebellar_project_and_build <- function(
 
   if (config$verbose) cli::cli_progress_done()
 
-  meshes_df <- NULL
-  if (!is.null(volume)) {
-    if (config$verbose) {
-      cli::cli_progress_step("Tessellating 3D meshes from volume")
-    }
-    meshes_df <- cerebellar_create_meshes(
+  deep_meshes_df <- NULL
+
+  if (!is.null(deep_data) && nrow(deep_data) > 0 && !is.null(volume)) {
+    deep_result <- cerebellar_process_deep_nuclei(
       volume = volume,
-      components = components,
+      deep_data = deep_data,
       dirs = dirs,
-      skip_existing = config$skip_existing,
-      verbose = config$verbose,
-      decimate = decimate
+      verbose = config$verbose
     )
-    if (config$verbose) cli::cli_progress_done()
+
+    if (!is.null(deep_result$sf) && nrow(deep_result$sf) > 0) {
+      sf_data <- sf::st_cast(sf_data, "MULTIPOLYGON")
+      deep_result$sf <- sf::st_cast(deep_result$sf, "MULTIPOLYGON")
+      sf_data <- rbind(sf_data, deep_result$sf)
+    }
+
+    if (!is.null(deep_result$meshes) && nrow(deep_result$meshes) > 0) {
+      deep_meshes_df <- deep_result$meshes
+    }
   }
 
   atlas <- ggseg_atlas(
@@ -634,11 +667,169 @@ cerebellar_project_and_build <- function(
     core = components$core,
     data = ggseg_data_cerebellar(
       sf = sf_data,
-      meshes = meshes_df
+      vertices = components$vertices_df,
+      meshes = deep_meshes_df
     )
   )
 
+  if (length(unique(sf_data$view)) > 1) {
+    atlas <- ggseg.formats::atlas_view_gather(atlas)
+  }
+
   cortical_finalize(atlas, config, dirs, start_time)
+}
+
+
+#' Process deep cerebellar nuclei
+#'
+#' Creates sf geometries (coronal projection) and 3D meshes for deep
+#' cerebellar structures that are not on the cortical surface.
+#' @noRd
+cerebellar_process_deep_nuclei <- function(
+  volume, deep_data, dirs, verbose = FALSE
+) {
+  rlang::check_installed("terra", reason = "to create nuclei projections")
+
+  vol <- read_volume(volume, reorient = FALSE)
+
+  deep_sf_list <- list()
+  for (i in seq_len(nrow(deep_data))) {
+    idx <- deep_data$vol_idx[i]
+    label <- deep_data$label[i]
+    n_voxels <- sum(vol == idx)
+
+    if (n_voxels == 0) next
+
+    mask <- array(0L, dim = dim(vol))
+    mask[vol == idx] <- 1L
+
+    proj <- apply(mask, c(1, 3), max)
+
+    if (sum(proj) == 0) next
+
+    r <- terra::rast(t(proj[, rev(seq_len(ncol(proj)))]))
+    polys <- tryCatch(
+      terra::as.polygons(r, dissolve = TRUE),
+      error = function(e) NULL
+    )
+    if (is.null(polys)) next
+
+    polys <- polys[terra::values(polys) > 0, ]
+    if (nrow(polys) == 0) next
+
+    sf_poly <- sf::st_as_sf(polys)
+    geom <- sf::st_union(sf_poly$geometry)
+    geom <- sf::st_buffer(geom, 1.5)
+    geom <- sf::st_buffer(geom, -1.0)
+    if (sf::st_is_empty(geom)) {
+      geom <- sf::st_union(sf::st_as_sf(polys)$geometry)
+      geom <- sf::st_buffer(geom, 0.5)
+    }
+    geom <- sf::st_cast(geom, "MULTIPOLYGON")
+
+    deep_sf_list[[length(deep_sf_list) + 1]] <- sf::st_sf(
+      label = label,
+      view = "nuclei",
+      geometry = geom
+    )
+  }
+
+  deep_sf <- if (length(deep_sf_list) > 0) {
+    do.call(rbind, deep_sf_list)
+  }
+
+  deep_meshes <- NULL
+  if (check_fs(abort = FALSE)) {
+    mesh_dir <- file.path(dirs$base, "deep_meshes")
+    dir.create(mesh_dir, showWarnings = FALSE, recursive = TRUE)
+
+    tkr_to_world <- get_tkras_to_world(volume)
+
+    meshes_list <- list()
+    for (i in seq_len(nrow(deep_data))) {
+      idx <- deep_data$vol_idx[i]
+      label <- deep_data$label[i]
+
+      mesh <- tryCatch(
+        tessellate_label(
+          volume_file = volume,
+          label_id = idx,
+          output_dir = mesh_dir,
+          verbose = verbose > 1,
+          skip_existing = FALSE
+        ),
+        error = function(e) {
+          if (verbose) {
+            cli::cli_warn("Failed to tessellate {label}: {e$message}")
+          }
+          NULL
+        }
+      )
+
+      if (!is.null(mesh)) {
+        mesh <- decimate_mesh(mesh, percent = 0.5)
+        verts <- as.matrix(mesh$vertices)
+        verts_h <- cbind(verts, 1)
+        world <- verts_h %*% t(tkr_to_world)
+        mesh$vertices <- data.frame(
+          x = world[, 1], y = world[, 2], z = world[, 3]
+        )
+        meshes_list[[label]] <- mesh
+      }
+    }
+
+    if (length(meshes_list) > 0) {
+      if (verbose) {
+        total_faces <- sum(vapply(
+          meshes_list, function(m) nrow(m$faces), integer(1)
+        ))
+        cli::cli_alert_success("Created {length(meshes_list)} meshes")
+      }
+      deep_meshes <- data.frame(
+        label = names(meshes_list),
+        stringsAsFactors = FALSE
+      )
+      deep_meshes$mesh <- unname(meshes_list)
+    }
+  } else if (verbose) {
+    cli::cli_warn(
+      "FreeSurfer not found; skipping 3D mesh tessellation for deep nuclei"
+    )
+  }
+
+  list(sf = deep_sf, meshes = deep_meshes)
+}
+
+
+#' Compute tkRAS-to-world transform for a NIfTI volume
+#'
+#' FreeSurfer tessellation outputs surfaces in tkRAS coordinates.
+#' This computes the transform to convert them to the volume's world
+#' (scanner RAS / MNI) coordinates: world = vox2ras * inv(vox2ras_tkr) * tkRAS
+#' @noRd
+get_tkras_to_world <- function(volume_path) {
+  check_fs(abort = TRUE)
+
+  parse_matrix <- function(lines) {
+    lines <- trimws(lines)
+    lines <- lines[nzchar(lines)]
+    vals <- as.numeric(unlist(strsplit(lines, "\\s+")))
+    matrix(vals, nrow = 4, ncol = 4, byrow = TRUE)
+  }
+
+  tkr_lines <- system2(
+    "mri_info", c("--vox2ras-tkr", volume_path),
+    stdout = TRUE, stderr = FALSE
+  )
+  vox2ras_tkr <- parse_matrix(tkr_lines)
+
+  ras_lines <- system2(
+    "mri_info", c("--vox2ras", volume_path),
+    stdout = TRUE, stderr = FALSE
+  )
+  vox2ras <- parse_matrix(ras_lines)
+
+  vox2ras %*% solve(vox2ras_tkr)
 }
 
 
@@ -1009,11 +1200,40 @@ read_cerebellar_volume <- function(volume, suit_3d_surface, input_lut = NULL) {
     }
 
     region_vertices <- which(vertex_labels == idx) - 1L
-    if (length(region_vertices) == 0) next
+    n_voxels <- sum(vol == idx)
+
+    if (length(region_vertices) == 0 && n_voxels == 0) next
 
     hemi <- detect_cerebellar_hemi(region_name)
     region <- clean_cerebellar_region(region_name)
     label <- paste(hemi, region, sep = "_")
+
+    is_deep <- FALSE
+    if (length(region_vertices) == 0 && n_voxels > 0) {
+      is_known_nucleus <- grepl(
+        "Dentate|Interposed|Fastigial", region_name, ignore.case = TRUE
+      )
+      if (is_known_nucleus) {
+        is_deep <- TRUE
+        cli::cli_warn(c(
+          "Region {.val {region_name}} has {n_voxels} volume voxel{?s} but",
+          "0 surface vertices (deep/non-surface structure)",
+          "i" = "Will be treated as a deep cerebellar nucleus"
+        ))
+      } else {
+        nearest <- rescue_orphaned_region(
+          vol, idx, volume, suit_3d_surface, vertex_labels
+        )
+        if (length(nearest) > 0) {
+          region_vertices <- nearest
+          vertex_labels[nearest + 1L] <- idx
+          cli::cli_warn(c(
+            "Region {.val {region_name}} ({n_voxels} voxels) had 0 surface",
+            "vertices; assigned {length(nearest)} nearest vertex{?es}"
+          ))
+        }
+      }
+    }
 
     all_data[[length(all_data) + 1]] <- dplyr::tibble(
       hemi = hemi,
@@ -1021,7 +1241,8 @@ read_cerebellar_volume <- function(volume, suit_3d_surface, input_lut = NULL) {
       label = label,
       colour = colour,
       vol_idx = idx,
-      vertices = list(region_vertices)
+      vertices = list(region_vertices),
+      deep = is_deep
     )
   }
 
@@ -1090,36 +1311,45 @@ sample_volume_at_surface <- function(vol, volume_path, suit_3d_surface) {
 
 #' Fill unlabelled surface vertices from neighboring voxels
 #'
-#' For vertices that landed on a zero voxel, search the 26-connected
-#' neighborhood for the nearest non-zero label.
+#' For vertices that landed on a zero voxel, search an expanding neighborhood
+#' for the nearest non-zero label. Starts at radius 1 (26-connected) and
+#' expands up to `max_radius` if unlabelled vertices remain after each shell.
 #' @noRd
 # nolint next: object_length_linter.
 fill_unlabelled_from_voxel_neighbors <- function(
-  labels, vox_coords, vol, dims
+  labels, vox_coords, vol, dims, max_radius = 3L
 ) {
-  unlabelled <- which(labels == 0L)
-  if (length(unlabelled) == 0) return(labels)
+  for (radius in seq_len(max_radius)) {
+    unlabelled <- which(labels == 0L)
+    if (length(unlabelled) == 0) return(labels)
 
-  offsets <- as.matrix(expand.grid(-1:1, -1:1, -1:1))
-  offsets <- offsets[rowSums(offsets^2) > 0, , drop = FALSE]
-  dists <- sqrt(rowSums(offsets^2))
+    r <- radius
+    offsets <- as.matrix(expand.grid(-r:r, -r:r, -r:r))
+    offsets <- offsets[apply(abs(offsets), 1, max) == r, , drop = FALSE]
+    if (radius == 1L) {
+      offsets <- as.matrix(expand.grid(-1:1, -1:1, -1:1))
+      offsets <- offsets[rowSums(offsets^2) > 0, , drop = FALSE]
+    }
+    dists <- sqrt(rowSums(offsets^2))
 
-  for (i in unlabelled) {
-    vc <- round(vox_coords[i, ])
-    nbrs <- sweep(offsets, 2, vc, "+")
-    in_bounds <- nbrs[, 1] >= 1 & nbrs[, 1] <= dims[1] &
-      nbrs[, 2] >= 1 & nbrs[, 2] <= dims[2] &
-      nbrs[, 3] >= 1 & nbrs[, 3] <= dims[3]
-    nbrs <- nbrs[in_bounds, , drop = FALSE]
-    nbr_dists <- dists[in_bounds]
+    for (i in unlabelled) {
+      if (labels[i] != 0L) next
+      vc <- round(vox_coords[i, ])
+      nbrs <- sweep(offsets, 2, vc, "+")
+      in_bounds <- nbrs[, 1] >= 1 & nbrs[, 1] <= dims[1] &
+        nbrs[, 2] >= 1 & nbrs[, 2] <= dims[2] &
+        nbrs[, 3] >= 1 & nbrs[, 3] <= dims[3]
+      nbrs <- nbrs[in_bounds, , drop = FALSE]
+      nbr_dists <- dists[in_bounds]
 
-    vals <- vapply(seq_len(nrow(nbrs)), function(k) {
-      vol[nbrs[k, 1], nbrs[k, 2], nbrs[k, 3]]
-    }, integer(1))
+      vals <- vapply(seq_len(nrow(nbrs)), function(k) {
+        vol[nbrs[k, 1], nbrs[k, 2], nbrs[k, 3]]
+      }, integer(1))
 
-    has_label <- vals > 0L
-    if (any(has_label)) {
-      labels[i] <- vals[has_label][which.min(nbr_dists[has_label])]
+      has_label <- vals > 0L
+      if (any(has_label)) {
+        labels[i] <- vals[has_label][which.min(nbr_dists[has_label])]
+      }
     }
   }
 
@@ -1165,6 +1395,39 @@ fill_unlabelled_from_mesh_neighbors <- function(labels, faces, n_verts) {
   }
 
   labels
+}
+
+
+#' Rescue an orphaned surface region by finding nearest vertices
+#'
+#' For regions that have volume voxels but no surface vertices (even after
+#' expanded fill), find the surface vertices closest to the region's voxel
+#' centroid and assign them.
+#' @return Integer vector of 0-based vertex indices (may be empty)
+#' @noRd
+rescue_orphaned_region <- function(
+  vol, label_id, volume_path, suit_3d_surface, vertex_labels
+) {
+  voxel_locs <- which(vol == label_id, arr.ind = TRUE)
+  if (nrow(voxel_locs) == 0) return(integer(0))
+
+  nii <- RNifti::readNifti(volume_path)
+  centroid_vox <- colMeans(voxel_locs)
+  centroid_world <- RNifti::voxelToWorld(
+    matrix(centroid_vox, nrow = 1), nii
+  )
+
+  gii <- gifti::readgii(suit_3d_surface)
+  verts_3d <- gii$data$pointset
+
+  dists <- sqrt(
+    (verts_3d[, 1] - centroid_world[1])^2 +
+    (verts_3d[, 2] - centroid_world[2])^2 +
+    (verts_3d[, 3] - centroid_world[3])^2
+  )
+
+  nearest_idx <- which.min(dists)
+  as.integer(nearest_idx - 1L)
 }
 
 

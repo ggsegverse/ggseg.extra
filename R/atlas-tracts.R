@@ -26,7 +26,7 @@
 #' @param input_lut Path to a color lookup table (LUT) file, or a data.frame
 #'   with columns `region` and colour columns (R, G, B or hex).
 #'   Use this to provide tract names and colours. If NULL, names are derived
-#'   from filenames or list names, and the atlas will have no palette.
+#'   from filenames or list names, and colours will be auto-generated.
 #' @param tube_radius Controls the tube thickness. Either a single numeric
 #'   value for uniform radius, or `"density"` to scale radius by how many
 #'   streamlines pass through each point.
@@ -426,6 +426,8 @@ tract_assemble_full <- function(step1, dirs, views, cortex_slices) {
       centerlines = step1$centerlines_df
     )
   )
+
+  atlas <- ggseg.formats::atlas_view_gather(atlas)
 
   warn_if_large_atlas(atlas)
   preview_atlas(atlas)

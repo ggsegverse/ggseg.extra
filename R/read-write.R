@@ -802,13 +802,6 @@ read_neuromaps_annotation <- function(
     return(result)
   }
 
-  needs_colour <- is.na(result$colour) & result$region != "unknown"
-  if (any(needs_colour)) {
-    n_missing <- sum(needs_colour)
-    generated <- hcl.colors(n_missing, palette = "Set2")
-    result$colour[needs_colour] <- generated
-  }
-
   result
 }
 
@@ -998,7 +991,9 @@ read_neuromaps_volume <- function(
 
   needs_colour <- is.na(result$colour) & result$region != "unknown"
   if (any(needs_colour)) {
-    result$colour[needs_colour] <- hcl.colors(sum(needs_colour), "Set2")
+    result$colour[needs_colour] <- grDevices::hcl.colors(
+      sum(needs_colour), "Set2"
+    )
   }
 
   result

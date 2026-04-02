@@ -195,6 +195,57 @@ describe("build_atlas_components", {
     expect_equal(nrow(result$meshes_df), 2)
   })
 
+  it("auto-generates colours when all are NA", {
+    atlas_data <- data.frame(
+      hemi = c("left", "right"),
+      region = c("motor", "visual"),
+      label = c("lh_motor", "rh_visual"),
+      colour = c(NA_character_, NA_character_),
+      stringsAsFactors = FALSE
+    )
+    atlas_data$vertices <- list(c(1L, 2L), c(3L, 4L))
+
+    result <- build_atlas_components(atlas_data)
+
+    expect_false(is.null(result$palette))
+    expect_equal(length(result$palette), 2)
+    expect_true(all(grepl("^#", result$palette)))
+  })
+
+  it("auto-generates colours for NA entries while keeping existing ones", {
+    atlas_data <- data.frame(
+      hemi = c("left", "left", "right"),
+      region = c("motor", "visual", "motor"),
+      label = c("lh_motor", "lh_visual", "rh_motor"),
+      colour = c("#FF0000", NA_character_, "#0000FF"),
+      stringsAsFactors = FALSE
+    )
+    atlas_data$vertices <- list(c(1L, 2L), c(3L), c(4L, 5L))
+
+    result <- build_atlas_components(atlas_data)
+
+    expect_equal(result$palette[["lh_motor"]], "#FF0000")
+    expect_equal(result$palette[["rh_motor"]], "#0000FF")
+    expect_true(grepl("^#", result$palette[["lh_visual"]]))
+    expect_false(is.na(result$palette[["lh_visual"]]))
+  })
+
+  it("does not generate colour for unknown label", {
+    atlas_data <- data.frame(
+      hemi = c("left", "left"),
+      region = c("unknown", "motor"),
+      label = c("unknown", "lh_motor"),
+      colour = c(NA_character_, NA_character_),
+      stringsAsFactors = FALSE
+    )
+    atlas_data$vertices <- list(c(1L), c(2L, 3L))
+
+    result <- build_atlas_components(atlas_data)
+
+    expect_true(is.na(result$palette[["unknown"]]))
+    expect_true(grepl("^#", result$palette[["lh_motor"]]))
+  })
+
   it("handles duplicate labels in palette", {
     atlas_data <- data.frame(
       hemi = c("left", "left"),

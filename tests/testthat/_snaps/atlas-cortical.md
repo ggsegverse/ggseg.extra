@@ -104,7 +104,7 @@
       Regions: 2
       Hemispheres: left, right
       Views: lateral, medial
-      Palette: x
+      Palette: v
       Rendering: v ggseg
       v ggseg3d (vertices)
       --------------------------------------------------------------------------------

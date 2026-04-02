@@ -14,6 +14,6 @@ data.frame with columns: idx, label, R, G, B, A, roi, color
 }
 \description{
 Creates a colour lookup table from unique labels in a volume file.
-Region names are generic and colours are NA (no palette).
+Region names are generic and colours are NA (auto-generated downstream).
 }
 \keyword{internal}

@@ -21,7 +21,7 @@
 #'   label IDs to region names and colours (e.g., `FreeSurferColorLUT.txt`
 #'   or `ASegStatsLUT.txt`), or a data.frame with columns `region` and colour
 #'   columns (R, G, B or hex). If NULL, region names will be generic
-#'   (e.g., "region_0010") and the atlas will have no palette.
+#'   (e.g., "region_0010") and colours will be auto-generated.
 #' @template atlas_name
 #' @param views A data.frame specifying projection views with columns `name`,
 #'   `type` ("axial", "coronal", "sagittal"), `start` (first slice), `end`
@@ -269,7 +269,7 @@ subcort_resolve_labels <- function(config, dirs) {
     cli::cli_warn(c(
       "No color lookup table provided",
       "i" = "Region names will be generic (e.g., 'region_0010')",
-      "i" = "Atlas will have no palette"
+      "i" = "Colours will be auto-generated"
     ))
     generate_colortable_from_volume(config$input_volume)
   } else {
@@ -495,6 +495,8 @@ subcort_assemble_full <- function(
     core = components$core,
     data = ggseg_data_subcortical(sf = sf_data, meshes = components$meshes_df)
   )
+
+  atlas <- ggseg.formats::atlas_view_gather(atlas)
 
   warn_if_large_atlas(atlas)
   preview_atlas(atlas)

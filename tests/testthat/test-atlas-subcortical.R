@@ -143,7 +143,8 @@ describe("create_subcortical_from_volume", {
     expect_s3_class(atlas, "ggseg_atlas")
     expect_true(nrow(atlas$core) > 0)
     expect_true(all(grepl("^region_", atlas$core$label)))
-    expect_null(atlas$palette)
+    expect_false(is.null(atlas$palette))
+    expect_true(all(grepl("^#", atlas$palette)))
   })
 })
 
@@ -241,7 +242,7 @@ describe("create_subcortical_from_volume pipeline flow", {
             hemi = NA, region = "test", label = "test_region",
             stringsAsFactors = FALSE
           ),
-          palette = NULL,
+          palette = c(test_region = "#E78AC3"),
           meshes_df = data.frame(label = "test_region")
         )
       },
@@ -264,7 +265,7 @@ describe("create_subcortical_from_volume pipeline flow", {
     )
 
     expect_identical(captured_gen_args$vol, vol_file)
-    expect_null(atlas$palette)
+    expect_false(is.null(atlas$palette))
   })
 
   it("returns 3D-only atlas with correct structure count", {

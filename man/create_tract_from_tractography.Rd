@@ -39,7 +39,7 @@ filename.}
 \item{input_lut}{Path to a color lookup table (LUT) file, or a data.frame
 with columns \code{region} and colour columns (R, G, B or hex).
 Use this to provide tract names and colours. If NULL, names are derived
-from filenames or list names, and the atlas will have no palette.}
+from filenames or list names, and colours will be auto-generated.}
 
 \item{tube_radius}{Controls the tube thickness. Either a single numeric
 value for uniform radius, or \code{"density"} to scale radius by how many

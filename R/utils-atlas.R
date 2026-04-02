@@ -247,6 +247,11 @@ build_atlas_components <- function(atlas_data) {
 
   raw_colours <- stats::setNames(atlas_data$colour, atlas_data$label)
   raw_colours <- raw_colours[!duplicated(names(raw_colours))]
+
+  needs_colour <- is.na(raw_colours) & names(raw_colours) != "unknown"
+  if (any(needs_colour)) {
+    raw_colours[needs_colour] <- generate_region_colours(sum(needs_colour))
+  }
   palette <- if (all(is.na(raw_colours))) NULL else raw_colours
 
   result <- list(core = core, palette = palette)
@@ -395,4 +400,16 @@ parse_lut_colours <- function(input_lut) {
   }
 
   list(region_names = region_names, colours = colours)
+}
+
+
+#' @noRd
+generate_region_colours <- function(n) {
+  if (n <= 8) {
+    grDevices::hcl.colors(n, palette = "Set2")
+  } else if (n <= 36) {
+    grDevices::palette.colors(n, palette = "Polychrome 36")
+  } else {
+    grDevices::hcl.colors(n, palette = "Dynamic")
+  }
 }

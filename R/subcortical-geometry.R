@@ -219,7 +219,7 @@ read_fs_surface <- function(file, verbose = get_verbose()) {
 #' Generate colour table from volume labels
 #'
 #' Creates a colour lookup table from unique labels in a volume file.
-#' Region names are generic and colours are NA (no palette).
+#' Region names are generic and colours are NA (auto-generated downstream).
 #'
 #' @param volume_file Path to volume file
 #' @return data.frame with columns: idx, label, R, G, B, A, roi, color

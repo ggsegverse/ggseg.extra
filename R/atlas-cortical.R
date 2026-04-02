@@ -223,6 +223,8 @@ cortical_project_and_build <- function(
     )
   )
 
+  atlas <- ggseg.formats::atlas_view_gather(atlas)
+
   cortical_finalize(atlas, config, dirs, start_time)
 }
 
