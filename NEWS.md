@@ -1,4 +1,19 @@
-# ggseg.extra (development version)
+# ggseg.extra 1.9.9.9003
+
+## Deep cerebellar nuclei support
+
+- `create_cerebellar_from_volume()` now detects deep cerebellar nuclei
+  (Dentate, Interposed, Fastigial) that have volume voxels but no SUIT
+  surface vertices. These are tessellated as individual 3D meshes with
+  proper tkRAS-to-MNI coordinate transform, and rendered as smoothed
+  coronal projection sf geometries in a separate "nuclei" view.
+- Orphaned surface parcels (e.g. buckner17 17Networks_14) that are too small
+  for any SUIT vertex to land on are now rescued by assigning the nearest
+  surface vertex, keeping them on the flatmap.
+- Voxel neighbor fill radius expanded from 1 to 3 (configurable) to better
+  capture small regions during volume-to-surface sampling.
+- Restored colour auto-fill in `read_suit_parcellation()` and
+  `read_neuromaps_volume()`.
 
 ## Cerebellar atlas type and SUIT flatmap pipeline
 
