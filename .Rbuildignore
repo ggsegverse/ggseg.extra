@@ -28,3 +28,4 @@ _brand.yml
 ^vignettes/atlas-workflows\.qmd$
 ^figure$
 ^cran-comments\.md$
+^codemeta\.json$
