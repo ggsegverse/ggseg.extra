@@ -43,6 +43,7 @@ describe("create_cortical_from_annotation", {
 
   it("can render with ggseg3d", {
     skip_if_not_installed("freesurferformats")
+    skip_if_not_installed("ggseg.meshes")
 
     annots <- test_annot_files()
     annot_files <- c(annots$lh, annots$rh)

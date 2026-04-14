@@ -1,6 +1,7 @@
 describe("integration tests", {
   it("creates atlas from labels and renders with ggseg3d", {
     skip_if_not_installed("freesurferformats")
+    skip_if_not_installed("ggseg.meshes")
 
     labels <- unlist(test_label_files())
     atlas <- create_cortical_from_labels(
@@ -19,6 +20,7 @@ describe("integration tests", {
 
   it("creates atlas from annotation and renders with ggseg3d", {
     skip_if_not_installed("freesurferformats")
+    skip_if_not_installed("ggseg.meshes")
 
     annots <- test_annot_files()
     annot_files <- c(annots$lh, annots$rh)

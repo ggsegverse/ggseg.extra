@@ -91,6 +91,8 @@ describe("create_tract_from_tractography", {
   })
 
   it("can render with ggseg3d", {
+    skip_if_not_installed("ggseg.meshes")
+
     tracts <- list(
       cst_left = matrix(c(1:20, rep(0, 40)), ncol = 3),
       cst_right = matrix(c(1:20, rep(1, 40)), ncol = 3)
