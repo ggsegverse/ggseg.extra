@@ -14,6 +14,8 @@ data.frame with columns: idx, label, R, G, B, A, roi, color
 }
 \description{
 Creates a colour lookup table from unique labels in a volume file.
-Region names are generic and colours are NA (auto-generated downstream).
+Region names are generic (\code{region_XXXX}) and RGB colours are spread
+evenly around the HCL hue wheel so downstream atlases render with
+distinct colours instead of the default black.
 }
 \keyword{internal}

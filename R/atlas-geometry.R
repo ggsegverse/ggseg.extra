@@ -103,6 +103,7 @@ smooth_contours <- function(
 reduce_vertex <- function(
   dir,
   tolerance,
+  smoothness = 0,
   step = "",
   verbose = get_verbose() # nolint: object_usage_linter
 ) {
@@ -121,6 +122,7 @@ reduce_vertex <- function(
   }
 
   contours <- simplify_sf_topology(contours, keep = tolerance)
+  contours <- smooth_sf_light(contours, smoothness)
   contours <- filter_valid_geometries(contours)
   save(contours, file = file.path(dir, "contours_reduced.rda"))
   if (verbose) {
@@ -216,7 +218,7 @@ atlas_smooth <- function(atlas, keep = 0.05) {
 #' @export
 atlas_simplify <- function(atlas, keep = 0.05) {
   lifecycle::deprecate_warn(
-    "2.0.0", "atlas_simplify()", "atlas_smooth()"
+    "1.9.9.9003", "atlas_simplify()", "atlas_smooth()"
   )
   atlas_smooth(atlas, keep = keep)
 }
@@ -264,14 +266,34 @@ simplify_sf_topology <- function(sf_data, keep = 0.05) {
 }
 
 
-#' Topology-preserving simplification for atlas pipelines
+#' Light buffer smoothing for polygon edges
 #'
-#' Central post-processing called by cortical, cerebellar, and other
-#' mesh-based pipelines.
+#' Applies a small positive then negative buffer to round off jagged edges
+#' after simplification. The buffer distance is small enough that gaps
+#' between adjacent regions remain negligible.
 #'
 #' @param sf_data An sf data.frame.
-#' @param smooth_refinements Ignored (kept for API compatibility during
-#'   transition). Smoothing is handled by topology-preserving simplification.
+#' @param smoothness Buffer distance in geometry units. 0 skips smoothing.
+#' @return Smoothed sf data.frame.
+#' @noRd
+#' @importFrom sf st_buffer st_make_valid
+smooth_sf_light <- function(sf_data, smoothness = 0) {
+  if (smoothness <= 0) return(sf_data)
+  sf_data <- sf::st_buffer(sf_data, dist = smoothness, nQuadSegs = 8L)
+  sf_data <- sf::st_buffer(sf_data, dist = -smoothness, nQuadSegs = 8L)
+  sf::st_make_valid(sf_data)
+}
+
+
+#' Simplify then lightly smooth atlas sf geometry
+#'
+#' Central post-processing called by cortical, cerebellar, and other
+#' mesh-based pipelines. First simplifies with [simplify_sf_topology()],
+#' then applies a light buffer smooth via [smooth_sf_light()].
+#'
+#' @param sf_data An sf data.frame.
+#' @param smooth_refinements Buffer distance for light post-simplification
+#'   smoothing. 0 skips smoothing.
 #' @param keep Proportion of vertices to retain (0--1). 0 skips
 #'   simplification.
 #' @return Processed sf data.frame.
@@ -282,6 +304,7 @@ smooth_and_simplify_sf <- function(sf_data, smooth_refinements = 0,
     sf_data <- simplify_sf_topology(sf_data, keep = keep)
   }
 
+  sf_data <- smooth_sf_light(sf_data, smooth_refinements)
   sf_data
 }
 

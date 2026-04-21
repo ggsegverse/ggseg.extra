@@ -73,7 +73,9 @@ describe("subcort_create_meshes", {
     expect_error(
       expect_warning(
         expect_warning(
-          subcort_create_meshes("fake.mgz", colortable, dirs, FALSE, TRUE),
+          expect_messages(
+            subcort_create_meshes("fake.mgz", colortable, dirs, FALSE, TRUE)
+          ),
           "Failed to create mesh"
         ),
         "Failed to create mesh"
@@ -102,13 +104,15 @@ describe("subcort_create_meshes", {
     )
     dirs <- list(meshes = withr::local_tempdir())
 
-    result <- subcort_create_meshes(
-      "fake.mgz",
-      colortable,
-      dirs,
-      FALSE,
-      TRUE,
-      decimate = NULL
+    result <- expect_messages(
+      subcort_create_meshes(
+        "fake.mgz",
+        colortable,
+        dirs,
+        FALSE,
+        TRUE,
+        decimate = NULL
+      )
     )
 
     expect_equal(length(result), 1)
@@ -469,6 +473,37 @@ describe("validate_subcort_config", {
 
     expect_equal(result$steps, 1L:9L)
   })
+
+  it("accepts a data.frame as input_lut", {
+    local_mocked_bindings(check_fs = function(...) TRUE)
+    vol_file <- withr::local_tempfile(fileext = ".mgz")
+    file.create(vol_file)
+    withr::local_options(ggseg.extra.output_dir = tempdir())
+
+    lut_df <- data.frame(
+      idx = c(10, 20),
+      region = c("Region A", "Region B"),
+      hex = c("#FF0000", "#00FF00"),
+      stringsAsFactors = FALSE
+    )
+
+    result <- validate_subcort_config(
+      input_volume = vol_file,
+      input_lut = lut_df,
+      atlas_name = NULL,
+      output_dir = NULL,
+      verbose = FALSE,
+      cleanup = FALSE,
+      skip_existing = FALSE,
+      decimate = 0.5,
+      steps = NULL,
+      tolerance = NULL,
+      smoothness = NULL
+    )
+
+    expect_true(is.data.frame(result$input_lut))
+    expect_equal(nrow(result$input_lut), 2)
+  })
 })
 
 
@@ -482,7 +517,7 @@ describe("subcort_log_header", {
       output_dir = "/tmp/output"
     )
 
-    expect_message(subcort_log_header(config), "volume.mgz")
+    expect_messages(subcort_log_header(config), "volume.mgz")
   })
 
   it("is silent when verbose is FALSE", {
@@ -724,7 +759,7 @@ describe("finalize_atlas (subcort parameters)", {
       class = "ggseg_atlas"
     )
 
-    expect_message(
+    expect_messages(
       finalize_atlas(
         mock_atlas, config, dirs, Sys.time(),
         type_label = "Subcortical", unit = "structures", early_step = 3L
@@ -881,7 +916,7 @@ describe("subcort_create_meshes", {
     )
     dirs <- list(meshes = withr::local_tempdir())
 
-    expect_message(
+    expect_messages(
       subcort_create_meshes(
         "fake.mgz", colortable, dirs,
         skip_existing = FALSE, verbose = TRUE,

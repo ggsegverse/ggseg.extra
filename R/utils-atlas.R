@@ -376,6 +376,7 @@ run_image_steps <- function(
   if (step_map$reduce %in% config$steps) {
     reduce_vertex(
       dirs$base, config$tolerance,
+      smoothness = config$smoothness,
       step = fmt(step_map$reduce),
       verbose = config$verbose
     )

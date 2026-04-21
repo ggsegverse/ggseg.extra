@@ -719,7 +719,8 @@ tract_process_and_extract <- function(
     vertex_size_limits = vertex_size_limits
   )
   smooth_contours(dirs$base, smoothness, step = NULL, verbose = verbose)
-  reduce_vertex(dirs$base, tolerance, step = NULL, verbose = verbose)
+  reduce_vertex(dirs$base, tolerance, smoothness = smoothness,
+                step = NULL, verbose = verbose)
 }
 
 

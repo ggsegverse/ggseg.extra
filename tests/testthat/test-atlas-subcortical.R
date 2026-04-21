@@ -324,11 +324,14 @@ describe("create_subcortical_from_volume pipeline flow", {
     file.create(lut_file)
     withr::local_options(ggseg.extra.output_dir = withr::local_tempdir())
 
-    atlas <- create_subcortical_from_volume(
-      input_volume = vol_file,
-      input_lut = lut_file,
-      steps = 1:3,
-      verbose = TRUE
+    expect_messages(
+      atlas <- create_subcortical_from_volume(
+        input_volume = vol_file,
+        input_lut = lut_file,
+        steps = 1:3,
+        verbose = TRUE
+      ),
+      "Creating subcortical atlas"
     )
 
     expect_s3_class(atlas, "ggseg_atlas")
@@ -430,11 +433,14 @@ describe("create_subcortical_from_volume pipeline flow", {
     file.create(lut_file)
     withr::local_options(ggseg.extra.output_dir = withr::local_tempdir())
 
-    result <- create_subcortical_from_volume(
-      input_volume = vol_file,
-      input_lut = lut_file,
-      steps = 5:8,
-      verbose = TRUE
+    expect_messages(
+      result <- create_subcortical_from_volume(
+        input_volume = vol_file,
+        input_lut = lut_file,
+        steps = 5:8,
+        verbose = TRUE
+      ),
+      "Creating subcortical atlas"
     )
 
     expect_null(result)
@@ -615,12 +621,15 @@ describe("create_subcortical_from_volume pipeline flow", {
     file.create(lut_file)
     withr::local_options(ggseg.extra.output_dir = withr::local_tempdir())
 
-    atlas <- create_subcortical_from_volume(
-      input_volume = vol_file,
-      input_lut = lut_file,
-      steps = 9,
-      verbose = TRUE,
-      cleanup = TRUE
+    expect_messages(
+      atlas <- create_subcortical_from_volume(
+        input_volume = vol_file,
+        input_lut = lut_file,
+        steps = 9,
+        verbose = TRUE,
+        cleanup = TRUE
+      ),
+      "Creating subcortical atlas"
     )
 
     expect_s3_class(atlas, "ggseg_atlas")
@@ -657,11 +666,14 @@ describe("create_subcortical_from_volume pipeline flow", {
     file.create(lut_file)
     withr::local_options(ggseg.extra.output_dir = withr::local_tempdir())
 
-    result <- create_subcortical_from_volume(
-      input_volume = vol_file,
-      input_lut = lut_file,
-      steps = 5:6,
-      verbose = TRUE
+    expect_messages(
+      result <- create_subcortical_from_volume(
+        input_volume = vol_file,
+        input_lut = lut_file,
+        steps = 5:6,
+        verbose = TRUE
+      ),
+      "Creating subcortical atlas"
     )
 
     expect_null(result)

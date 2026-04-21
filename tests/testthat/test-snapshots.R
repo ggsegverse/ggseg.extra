@@ -787,6 +787,236 @@ describe("snapshot_cortex_slice when extract_slice_2d returns NULL", {
 })
 
 
+describe("snapshot_brain_full_batch", {
+  it("returns early when all files exist and skip_existing = TRUE", {
+    tmp_dir <- withr::local_tempdir()
+    mock_atlas <- list(
+      core = data.frame(label = "lh_frontal", stringsAsFactors = FALSE)
+    )
+    views <- c("lateral", "medial")
+    for (v in views) {
+      file.create(file.path(tmp_dir, sprintf("full_lh_%s.png", v)))
+    }
+    widget_called <- FALSE
+    local_mocked_bindings(
+      hemi_to_long = function(h) "left",
+      build_brain_widget = function(...) {
+        widget_called <<- TRUE
+        NULL
+      },
+      snapshot_widget_batch = function(...) invisible(character(0))
+    )
+    result <- snapshot_brain_full_batch(
+      atlas = mock_atlas, hemisphere = "lh", views = views,
+      surface = "inflated", output_dir = tmp_dir, skip_existing = TRUE
+    )
+    expect_false(widget_called)
+  })
+
+  it("only snapshots missing views", {
+    tmp_dir <- withr::local_tempdir()
+    mock_atlas <- list(
+      core = data.frame(label = "lh_frontal", stringsAsFactors = FALSE)
+    )
+    views <- c("lateral", "medial")
+    file.create(file.path(tmp_dir, "full_lh_lateral.png"))
+    captured_files <- NULL
+    local_mocked_bindings(
+      hemi_to_long = function(h) "left",
+      build_brain_widget = function(...) {
+        structure(list(), class = "ggseg3d")
+      },
+      snapshot_widget_batch = function(widget, views, files, ...) {
+        captured_files <<- files
+        invisible(files)
+      }
+    )
+    snapshot_brain_full_batch(
+      atlas = mock_atlas, hemisphere = "lh", views = views,
+      surface = "inflated", output_dir = tmp_dir, skip_existing = TRUE
+    )
+    expect_length(captured_files, 1)
+    expect_true(grepl("medial", captured_files))
+  })
+
+  it("renders all views with grey na_colour", {
+    tmp_dir <- withr::local_tempdir()
+    mock_atlas <- list(
+      core = data.frame(label = "lh_frontal", stringsAsFactors = FALSE)
+    )
+    captured_na <- NULL
+    local_mocked_bindings(
+      hemi_to_long = function(h) "left",
+      build_brain_widget = function(atlas, hemisphere, surface,
+                                    na_colour = NULL, ...) {
+        captured_na <<- na_colour
+        structure(list(), class = "ggseg3d")
+      },
+      snapshot_widget_batch = function(...) invisible(character(0))
+    )
+    snapshot_brain_full_batch(
+      atlas = mock_atlas, hemisphere = "lh", views = "lateral",
+      surface = "inflated", output_dir = tmp_dir, skip_existing = FALSE
+    )
+    expect_equal(captured_na, "#CCCCCC")
+  })
+})
+
+
+describe("snapshot_region_batch", {
+  it("returns early when all files exist and skip_existing = TRUE", {
+    tmp_dir <- withr::local_tempdir()
+    mock_atlas <- list(
+      core = data.frame(
+        label = c("lh_frontal", "lh_parietal"),
+        stringsAsFactors = FALSE
+      )
+    )
+    views <- c("lateral", "medial")
+    for (v in views) {
+      file.create(
+        file.path(tmp_dir, sprintf("lh_frontal_lh_%s.png", v))
+      )
+    }
+    widget_called <- FALSE
+    local_mocked_bindings(
+      hemi_to_long = function(h) "left",
+      build_brain_widget = function(...) {
+        widget_called <<- TRUE
+        NULL
+      },
+      snapshot_widget_batch = function(...) invisible(character(0))
+    )
+    snapshot_region_batch(
+      atlas = mock_atlas, region_label = "lh_frontal",
+      hemisphere = "lh", views = views, surface = "inflated",
+      output_dir = tmp_dir, skip_existing = TRUE
+    )
+    expect_false(widget_called)
+  })
+
+  it("highlights target region in red, others in white", {
+    tmp_dir <- withr::local_tempdir()
+    mock_atlas <- list(
+      core = data.frame(
+        label = c("lh_frontal", "lh_parietal"),
+        stringsAsFactors = FALSE
+      )
+    )
+    captured_data <- NULL
+    local_mocked_bindings(
+      hemi_to_long = function(h) "left",
+      build_brain_widget = function(atlas, hemisphere, surface,
+                                    .data = NULL, colour = NULL,
+                                    na_colour = NULL, ...) {
+        captured_data <<- .data
+        structure(list(), class = "ggseg3d")
+      },
+      snapshot_widget_batch = function(...) invisible(character(0))
+    )
+    snapshot_region_batch(
+      atlas = mock_atlas, region_label = "lh_frontal",
+      hemisphere = "lh", views = "lateral", surface = "inflated",
+      output_dir = tmp_dir, skip_existing = FALSE
+    )
+    expect_equal(
+      captured_data$highlight[captured_data$label == "lh_frontal"],
+      "#FF0000"
+    )
+    expect_equal(
+      captured_data$highlight[captured_data$label == "lh_parietal"],
+      "#FFFFFF"
+    )
+  })
+})
+
+
+describe("snapshot_na_regions_batch", {
+  it("returns early when all files exist and skip_existing = TRUE", {
+    tmp_dir <- withr::local_tempdir()
+    mock_atlas <- list(
+      core = data.frame(label = "lh_frontal", stringsAsFactors = FALSE)
+    )
+    views <- c("lateral", "medial")
+    for (v in views) {
+      file.create(file.path(
+        tmp_dir,
+        sprintf("lh____nolabel____lh_%s.png", v)
+      ))
+    }
+    widget_called <- FALSE
+    local_mocked_bindings(
+      hemi_to_long = function(h) "left",
+      build_brain_widget = function(...) {
+        widget_called <<- TRUE
+        NULL
+      },
+      snapshot_widget_batch = function(...) invisible(character(0))
+    )
+    snapshot_na_regions_batch(
+      atlas = mock_atlas, hemisphere = "lh", views = views,
+      surface = "inflated", output_dir = tmp_dir, skip_existing = TRUE
+    )
+    expect_false(widget_called)
+  })
+
+  it("only snapshots missing views", {
+    tmp_dir <- withr::local_tempdir()
+    mock_atlas <- list(
+      core = data.frame(label = "lh_frontal", stringsAsFactors = FALSE)
+    )
+    views <- c("lateral", "medial")
+    file.create(file.path(tmp_dir, "lh____nolabel____lh_lateral.png"))
+    captured_files <- NULL
+    local_mocked_bindings(
+      hemi_to_long = function(h) "left",
+      build_brain_widget = function(...) {
+        structure(list(), class = "ggseg3d")
+      },
+      snapshot_widget_batch = function(widget, views, files, ...) {
+        captured_files <<- files
+        invisible(files)
+      }
+    )
+    snapshot_na_regions_batch(
+      atlas = mock_atlas, hemisphere = "lh", views = views,
+      surface = "inflated", output_dir = tmp_dir, skip_existing = TRUE
+    )
+    expect_length(captured_files, 1)
+    expect_true(grepl("medial", captured_files))
+  })
+
+  it("uses white highlight and red na_colour", {
+    tmp_dir <- withr::local_tempdir()
+    mock_atlas <- list(
+      core = data.frame(
+        label = c("lh_a", "lh_b"), stringsAsFactors = FALSE
+      )
+    )
+    captured_args <- NULL
+    local_mocked_bindings(
+      hemi_to_long = function(h) "left",
+      build_brain_widget = function(atlas, hemisphere, surface,
+                                    .data = NULL, colour = NULL,
+                                    na_colour = NULL, ...) {
+        captured_args <<- list(
+          .data = .data, colour = colour, na_colour = na_colour
+        )
+        structure(list(), class = "ggseg3d")
+      },
+      snapshot_widget_batch = function(...) invisible(character(0))
+    )
+    snapshot_na_regions_batch(
+      atlas = mock_atlas, hemisphere = "lh", views = "lateral",
+      surface = "inflated", output_dir = tmp_dir, skip_existing = FALSE
+    )
+    expect_equal(captured_args$na_colour, "#FF0000")
+    expect_equal(captured_args$colour, "highlight")
+    expect_true(all(captured_args$.data$highlight == "#FFFFFF"))
+  })
+})
+
+
 describe("snapshot_partial_projection skip and zero paths", {
   it("returns outfile when skip_existing is TRUE and file exists", {
     outdir <- withr::local_tempdir("partial_skip_")
@@ -824,5 +1054,115 @@ describe("snapshot_partial_projection skip and zero paths", {
     )
 
     expect_null(result)
+  })
+})
+
+
+describe("snapshot_brain_helper skip_existing", {
+  it("returns NULL without rendering when file exists", {
+    tmp_dir <- withr::local_tempdir()
+    outfile <- file.path(tmp_dir, "test_skip.png")
+    file.create(outfile)
+
+    render_called <- FALSE
+    local_mocked_bindings(
+      hemi_to_long = function(h) "left",
+      ggseg3d = function(...) {
+        render_called <<- TRUE
+        structure(list(), class = "ggseg3d")
+      }
+    )
+
+    result <- snapshot_brain_helper(
+      atlas = NULL, hemisphere = "lh", view = "lateral",
+      surface = "inflated", outfile = outfile,
+      skip_existing = TRUE
+    )
+
+    expect_null(result)
+    expect_false(render_called)
+  })
+})
+
+
+describe("build_brain_widget", {
+  it("calls ggseg3d with correct parameters and returns styled widget", {
+    captured_args <- NULL
+    mock_widget <- structure(list(), class = c("ggseg3d", "htmlwidget"))
+
+    local_mocked_bindings(
+      hemi_to_long = function(h) "left",
+      ggseg3d = function(...) {
+        captured_args <<- list(...)
+        mock_widget
+      },
+      set_flat_shading = function(x, ...) x,
+      set_orthographic = function(x, ...) x,
+      set_background = function(x, ...) x,
+      set_legend = function(x, ...) x
+    )
+
+    result <- build_brain_widget(
+      atlas = "test_atlas", hemisphere = "lh", surface = "inflated",
+      na_colour = "#AABBCC"
+    )
+
+    expect_equal(captured_args$hemisphere, "left")
+    expect_equal(captured_args$surface, "inflated")
+    expect_equal(captured_args$na_colour, "#AABBCC")
+    expect_equal(captured_args$atlas, "test_atlas")
+  })
+
+  it("passes custom .data and colour arguments", {
+    captured_args <- NULL
+    mock_widget <- structure(list(), class = c("ggseg3d", "htmlwidget"))
+
+    local_mocked_bindings(
+      hemi_to_long = function(h) "left",
+      ggseg3d = function(...) {
+        captured_args <<- list(...)
+        mock_widget
+      },
+      set_flat_shading = function(x, ...) x,
+      set_orthographic = function(x, ...) x,
+      set_background = function(x, ...) x,
+      set_legend = function(x, ...) x
+    )
+
+    custom_data <- data.frame(label = "a", highlight = "#FF0000")
+    build_brain_widget(
+      atlas = "test", hemisphere = "lh", surface = "inflated",
+      .data = custom_data, colour = "highlight"
+    )
+
+    expect_equal(captured_args$.data, custom_data)
+    expect_equal(captured_args$colour, "highlight")
+  })
+})
+
+
+describe("snapshot_brain_helper rendering", {
+  it("calls the ggseg3d pipeline when file doesn't exist", {
+    env <- new.env(parent = emptyenv())
+    env$snapshot_called <- FALSE
+    local_mocked_bindings(
+      ggseg3d = function(...) structure(list(), class = "ggseg3d"),
+      set_flat_shading = function(x, ...) x,
+      set_orthographic = function(x, ...) x,
+      pan_camera = function(x, ...) x,
+      set_background = function(x, ...) x,
+      set_legend = function(x, ...) x,
+      snapshot_brain = function(p, file, ...) {
+        env$snapshot_called <- TRUE
+        file.create(file)
+      }
+    )
+
+    outfile <- withr::local_tempfile(fileext = ".png")
+    snapshot_brain_helper(
+      atlas = NULL, hemisphere = "lh", view = "lateral",
+      surface = "inflated", outfile = outfile
+    )
+    expect_true(env$snapshot_called)
   })
 })

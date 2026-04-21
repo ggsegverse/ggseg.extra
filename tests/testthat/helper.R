@@ -2,6 +2,7 @@ library(dplyr, quietly = TRUE, warn.conflicts = FALSE)
 library(tidyr, quietly = TRUE, warn.conflicts = FALSE)
 library(ggseg, quietly = TRUE, warn.conflicts = FALSE)
 library(ggseg3d, quietly = TRUE, warn.conflicts = FALSE)
+library(ggplot2, quietly = TRUE, warn.conflicts = FALSE)
 
 # terra::describe masks testthat::describe in parallel workers
 describe <- testthat::describe
@@ -76,6 +77,33 @@ mock_future_pmap <- function(.l, .f, ...) {
 
 mock_future_map2 <- function(.x, .y, .f, ...) {
   mapply(.f, .x, .y, SIMPLIFY = FALSE)
+}
+
+expect_messages <- function(expr, ...) {
+  patterns <- c(...)
+  messages_caught <- character()
+  result <- withCallingHandlers(
+    expr,
+    message = function(m) {
+      messages_caught[length(messages_caught) + 1L] <<- conditionMessage(m)
+      invokeRestart("muffleMessage")
+    }
+  )
+  for (pat in patterns) {
+    testthat::expect_true(
+      any(grepl(pat, messages_caught)),
+      label = paste0(
+        "Expected at least one message matching '", pat, "'"
+      )
+    )
+  }
+  if (length(patterns) == 0L) {
+    testthat::expect_true(
+      length(messages_caught) > 0,
+      label = "Expected at least one message"
+    )
+  }
+  invisible(result)
 }
 
 expect_warnings <- function(expr, regexp) {

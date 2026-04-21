@@ -1,4 +1,29 @@
+# ggseg.extra 1.9.9.9004
+
+## Template-based atlas repo scaffolding
+
+- `setup_atlas_repo()` now downloads the atlas template from
+  [ggsegverse/ggseg-atlas-template](https://github.com/ggsegverse/ggseg-atlas-template)
+  instead of bundling template files inside the package. This makes the
+  template a single source of truth that can be updated independently.
+- The generated scaffold includes all modern atlas repo conventions:
+  Quarto README, Bootstrap 5 pkgdown config, code-quality workflow,
+  render-readme workflow, update-codemeta workflow, and AI agent instructions.
+- `data-raw/create-atlas.R` now scaffolds all pipeline methods (cortical,
+  subcortical, cerebellar, tract, wholebrain) with commented sections.
+- Falls back to a bundled minimal template when offline.
+- Rich CLI messaging throughout the scaffolding process.
+
 # ggseg.extra 1.9.9.9003
+
+## Large-atlas warning
+
+- `warn_if_large_atlas()` now scales its threshold with region count via
+  `per_region = 50` (threshold = `max(max_vertices, per_region * n_regions)`).
+  Prevents spurious warnings for high-resolution parcellations (e.g. Kong
+  1000-parcel) where `keep_shapes = TRUE` sets a ~40 vertices/region floor.
+- Fixed the follow-up hint which previously suggested raising `tolerance`
+  to reduce vertices; lower values simplify more aggressively.
 
 ## Deep cerebellar nuclei support
 

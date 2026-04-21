@@ -1,8 +1,24 @@
 describe("setup_atlas_repo", {
+  # Mock download to always use fallback for consistent testing
+  use_fallback <- function() {
+    local_mocked_bindings(
+      download_atlas_template = function(url = NULL) {
+        system.file(
+          "templates", "atlas-fallback",
+          package = "ggseg.extra"
+        )
+      }
+    )
+  }
+
   it("creates package with explicit atlas name", {
     tmp <- withr::local_tempdir("atlas_test_")
+    use_fallback()
 
-    expect_message(result <- setup_atlas_repo(tmp, "dkt", open = FALSE))
+    expect_messages(
+      result <- setup_atlas_repo(tmp, "dkt", open = FALSE),
+      "Created atlas package", "Next steps"
+    )
 
     expect_true(dir.exists(result))
     expect_true(dir.exists(tmp))
@@ -12,8 +28,12 @@ describe("setup_atlas_repo", {
   it("derives atlas name from ggsegXxx path format", {
     parent <- withr::local_tempdir()
     tmp <- file.path(parent, paste0("ggsegSchaefer", Sys.getpid()))
+    use_fallback()
 
-    expect_message(setup_atlas_repo(tmp, open = FALSE))
+    expect_messages(
+      setup_atlas_repo(tmp, open = FALSE),
+      "Created atlas package", "Next steps"
+    )
 
     desc <- readLines(file.path(tmp, "DESCRIPTION"))
     pkg_line <- desc[grep("^Package:", desc)]
@@ -24,8 +44,12 @@ describe("setup_atlas_repo", {
   it("derives atlas name from plain directory name", {
     parent <- withr::local_tempdir()
     tmp <- file.path(parent, paste0("myatlas", Sys.getpid()))
+    use_fallback()
 
-    expect_message(setup_atlas_repo(tmp, open = FALSE))
+    expect_messages(
+      setup_atlas_repo(tmp, open = FALSE),
+      "Created atlas package", "Next steps"
+    )
 
     desc <- readLines(file.path(tmp, "DESCRIPTION"))
     pkg_line <- desc[grep("^Package:", desc)]
@@ -35,8 +59,12 @@ describe("setup_atlas_repo", {
 
   it("cleans atlas name (lowercase, alphanumeric only)", {
     tmp <- withr::local_tempdir("atlas_test_")
+    use_fallback()
 
-    expect_message(setup_atlas_repo(tmp, "My-Atlas_123!", open = FALSE))
+    expect_messages(
+      setup_atlas_repo(tmp, "My-Atlas_123!", open = FALSE),
+      "Created atlas package", "Next steps"
+    )
 
     desc <- readLines(file.path(tmp, "DESCRIPTION"))
     pkg_line <- desc[grep("^Package:", desc)]
@@ -65,8 +93,12 @@ describe("setup_atlas_repo", {
 
   it("creates .Rproj file when rstudio = TRUE", {
     tmp <- withr::local_tempdir("atlas_test_")
+    use_fallback()
 
-    expect_message(setup_atlas_repo(tmp, "test", open = FALSE, rstudio = TRUE))
+    expect_messages(
+      setup_atlas_repo(tmp, "test", open = FALSE, rstudio = TRUE),
+      "Created atlas package", "Next steps"
+    )
 
     rproj_files <- list.files(tmp, pattern = "\\.Rproj$")
     expect_length(rproj_files, 1)
@@ -75,8 +107,12 @@ describe("setup_atlas_repo", {
 
   it("skips .Rproj file when rstudio = FALSE", {
     tmp <- withr::local_tempdir("atlas_test_")
+    use_fallback()
 
-    expect_message(setup_atlas_repo(tmp, "test", open = FALSE, rstudio = FALSE))
+    expect_messages(
+      setup_atlas_repo(tmp, "test", open = FALSE, rstudio = FALSE),
+      "Created atlas package", "Next steps"
+    )
 
     rproj_files <- list.files(tmp, pattern = "\\.Rproj$")
     expect_length(rproj_files, 0)
@@ -86,13 +122,23 @@ describe("setup_atlas_repo", {
 
 describe("setup_atlas_repo template files", {
   tmp <- withr::local_tempdir("atlas_template_test_")
-  expect_message(setup_atlas_repo(tmp, "testatlas", open = FALSE))
+  local_mocked_bindings(
+    download_atlas_template = function(url = NULL) {
+      system.file(
+        "templates", "atlas-fallback",
+        package = "ggseg.extra"
+      )
+    }
+  )
+  expect_messages(
+    setup_atlas_repo(tmp, "testatlas", open = FALSE),
+    "Created atlas package", "Next steps"
+  )
 
   it("creates all required directories", {
     expect_true(dir.exists(file.path(tmp, "R")))
     expect_true(dir.exists(file.path(tmp, "data-raw")))
     expect_true(dir.exists(file.path(tmp, "tests", "testthat")))
-    expect_true(dir.exists(file.path(tmp, ".github", "workflows")))
   })
 
   it("creates all required files", {
@@ -100,18 +146,15 @@ describe("setup_atlas_repo template files", {
       "DESCRIPTION",
       "NAMESPACE",
       "LICENSE",
-      "LICENSE.md",
-      "README.Rmd",
+      "NEWS.md",
+      "README.qmd",
       "_pkgdown.yml",
       ".gitignore",
       ".Rbuildignore",
       "R/data.R",
       "data-raw/create-atlas.R",
-      "data-raw/create-hex-logo.R",
       "tests/testthat.R",
-      "tests/testthat/test-atlas.R",
-      ".github/workflows/R-CMD-check.yaml",
-      ".github/workflows/pkgdown.yaml"
+      "tests/testthat/test-data.R"
     )
 
     for (f in expected_files) {
@@ -120,6 +163,15 @@ describe("setup_atlas_repo template files", {
         info = paste("Missing file:", f)
       )
     }
+  })
+
+  it("renames package-level documentation file", {
+    expect_true(
+      file.exists(file.path(tmp, "R", "ggsegTestatlas-package.R"))
+    )
+    expect_false(
+      file.exists(file.path(tmp, "R", "REPO-package.R"))
+    )
   })
 
   it("replaces {GGSEG} placeholder with atlas name", {
@@ -140,47 +192,59 @@ describe("setup_atlas_repo template files", {
     desc <- readLines(file.path(tmp, "DESCRIPTION"))
 
     expect_true(any(grepl("^Package: ggsegTestatlas", desc)))
-    expect_true(any(grepl("^License: MIT", desc)))
-    expect_true(any(grepl("ggseg", desc)))
-    expect_true(any(grepl("ggseg3d", desc)))
+    expect_true(any(grepl("^License: CC0", desc)))
+    expect_true(any(grepl("ggseg.formats", desc)))
   })
 
   it("creates valid test file", {
-    test_file <- readLines(file.path(tmp, "tests/testthat/test-atlas.R"))
+    test_file <- readLines(file.path(tmp, "tests/testthat/test-data.R"))
 
     expect_true(any(grepl("describe.*testatlas", test_file)))
     expect_true(any(grepl("ggseg_atlas", test_file)))
-    expect_true(any(grepl("vertices", test_file)))
   })
 
-  it("creates GitHub Actions workflows", {
-    r_cmd_check <- readLines(file.path(
-      tmp,
-      ".github/workflows/R-CMD-check.yaml"
-    ))
-    pkgdown <- readLines(file.path(tmp, ".github/workflows/pkgdown.yaml"))
-
-    expect_true(any(grepl("R-CMD-check", r_cmd_check)))
-    expect_true(any(grepl("rcmdcheck", r_cmd_check)))
-    expect_true(any(grepl("pkgdown", pkgdown)))
-  })
-
-  it("creates data-raw scripts with correct atlas name", {
+  it("creates data-raw script with correct atlas name", {
     create_script <- readLines(file.path(tmp, "data-raw/create-atlas.R"))
-    hex_script <- readLines(file.path(tmp, "data-raw/create-hex-logo.R"))
 
     expect_true(any(grepl("testatlas", create_script)))
-    expect_true(any(grepl("testatlas", hex_script)))
     expect_false(any(grepl("\\{GGSEG\\}", create_script)))
   })
 
   it("creates README with correct package references", {
-    readme <- readLines(file.path(tmp, "README.Rmd"))
+    readme <- readLines(file.path(tmp, "README.qmd"))
 
     expect_true(any(grepl("ggsegTestatlas", readme)))
     expect_true(any(grepl("testatlas", readme)))
     expect_true(any(grepl("Citation", readme)))
     expect_false(any(grepl("\\{REPO\\}", readme)))
+  })
+
+  it("scaffold contains all pipeline methods", {
+    create_script <- readLines(file.path(tmp, "data-raw/create-atlas.R"))
+    script_text <- paste(create_script, collapse = "\n")
+
+    expect_match(script_text, "CORTICAL ATLAS")
+    expect_match(script_text, "SUBCORTICAL ATLAS")
+    expect_match(script_text, "CEREBELLAR ATLAS")
+    expect_match(script_text, "TRACT ATLAS")
+    expect_match(script_text, "WHOLEBRAIN ATLAS")
+  })
+})
+
+
+describe("download_atlas_template", {
+  it("falls back to bundled template on download failure", {
+    local_mocked_bindings(
+      template_url = function() "https://invalid.example.com/nonexistent.tar.gz"
+    )
+
+    expect_messages(
+      result <- download_atlas_template(),
+      "Download failed", "fallback"
+    )
+
+    expect_true(dir.exists(result))
+    expect_true(file.exists(file.path(result, "DESCRIPTION")))
   })
 })
 
@@ -189,7 +253,19 @@ describe("setup_atlas_repo .Rproj file", {
   it("contains correct package build settings", {
     tmp <- withr::local_tempdir("atlas_rproj_test_")
 
-    expect_message(setup_atlas_repo(tmp, "test", open = FALSE))
+    local_mocked_bindings(
+      download_atlas_template = function(url = NULL) {
+        system.file(
+          "templates", "atlas-fallback",
+          package = "ggseg.extra"
+        )
+      }
+    )
+
+    expect_messages(
+      setup_atlas_repo(tmp, "test", open = FALSE),
+      "Created atlas package", "Next steps"
+    )
 
     rproj <- readLines(file.path(tmp, "ggsegTest.Rproj"))
 
@@ -205,7 +281,19 @@ describe("setup_atlas_repo lowercase ggseg prefix", {
     parent <- withr::local_tempdir()
     tmp <- file.path(parent, paste0("ggsegfoo", Sys.getpid()))
 
-    expect_message(setup_atlas_repo(tmp, open = FALSE))
+    local_mocked_bindings(
+      download_atlas_template = function(url = NULL) {
+        system.file(
+          "templates", "atlas-fallback",
+          package = "ggseg.extra"
+        )
+      }
+    )
+
+    expect_messages(
+      setup_atlas_repo(tmp, open = FALSE),
+      "Created atlas package", "Next steps"
+    )
 
     desc <- readLines(file.path(tmp, "DESCRIPTION"))
     pkg_line <- desc[grep("^Package:", desc)]
@@ -218,30 +306,24 @@ describe("setup_atlas_repo lowercase ggseg prefix", {
     opened <- FALSE
 
     local_mocked_bindings(
+      download_atlas_template = function(url = NULL) {
+        system.file(
+          "templates", "atlas-fallback",
+          package = "ggseg.extra"
+        )
+      },
       open_rstudio_project = function(path) {
         opened <<- TRUE
         invisible(TRUE)
       }
     )
 
-    expect_message(setup_atlas_repo(tmp, "test", open = TRUE, rstudio = TRUE))
+    expect_messages(
+      setup_atlas_repo(tmp, "test", open = TRUE, rstudio = TRUE),
+      "Created atlas package", "Next steps"
+    )
 
     expect_true(opened)
-  })
-})
-
-
-describe("create_atlas_from_template", {
-  it("errors when template directory does not exist", {
-    local_mocked_bindings(
-      dir.exists = function(...) FALSE,
-      .package = "base"
-    )
-
-    expect_error(
-      create_atlas_from_template("/tmp/nonexistent", "test"),
-      "Template not found"
-    )
   })
 })
 

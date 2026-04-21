@@ -28,15 +28,22 @@ when running interactively.}
 Invisibly returns the path to the created package.
 }
 \description{
-Scaffold an R package for distributing a brain atlas. The generated
-package follows ggseg conventions and includes everything you need:
-template scripts for atlas creation, documentation stubs, a test suite,
-and GitHub Actions for automated checking.
+Scaffold an R package for distributing a brain atlas. Downloads a
+modern template from the
+\href{https://github.com/ggsegverse/ggseg-atlas-template}{ggseg-atlas-template}
+GitHub repository and customises it for your atlas. The generated
+package follows ggseg conventions and includes GitHub Actions workflows,
+pkgdown configuration, a test suite, and a multi-method scaffold for
+building your atlas.
 }
 \details{
 The package will be named \verb{ggseg\{AtlasName\}} (e.g., \code{ggsegSchaefer} for
 a Schaefer parcellation). After creation, edit the files in \verb{data-raw/}
 to build your atlas, then run \code{devtools::document()} and \code{devtools::check()}.
+
+If the template cannot be downloaded (e.g. no internet), a minimal bundled
+fallback is used instead. The fallback omits GitHub Actions workflows; you
+can copy them from the template repository later.
 }
 \examples{
 \dontrun{

@@ -66,7 +66,10 @@ describe("make_brain_meshes", {
   it("creates meshes for all hemisphere/surface combos", {
     skip_if_no_freesurfer()
 
-    meshes <- make_brain_meshes(surfaces = "inflated")
+    expect_messages(
+      meshes <- make_brain_meshes(surfaces = "inflated"),
+      "Extracting"
+    )
 
     expect_s3_class(meshes, "brain_meshes")
     expect_true("lh_inflated" %in% names(meshes))

@@ -4,6 +4,7 @@ Beate
 Brainnetome
 Brodmann
 CIFTI
+CLI
 CMD
 CSF
 Centerline
@@ -12,9 +13,11 @@ Connectome
 Crus
 DK
 DKT
+Dentate
 Diedrichsen
 FS
 FSL
+Fastigial
 Fjell
 FreeSurfer
 FreeSurfer's
@@ -28,6 +31,7 @@ HCL
 HCP
 ImageMagick
 Infratentorial
+LCBC
 LUT
 Lifebrain
 Lifecycle
@@ -44,6 +48,7 @@ ORCID
 Peucker
 Piñeiro
 RAS
+README
 RGBA
 RNifti
 ROIs
@@ -75,17 +80,21 @@ bibentry
 binormals
 blobby
 brainstem
+buckner
 caudate
 centerline
 centre
 chromote
 chromote's
 cli
+codemeta
 colour
+colouring
 colours
 commissural
 corpuscallosum
 ctab
+customises
 dev
 discretizing
 entorhinal
@@ -145,6 +154,7 @@ quadric
 ras
 rasterisation
 rda
+readme
 renderers
 repositions
 reticulate
@@ -162,6 +172,7 @@ terra
 th
 tibble
 tidyr
+tkRAS
 tractography
 trilinear
 unlabelled

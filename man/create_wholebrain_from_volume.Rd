@@ -17,11 +17,9 @@ create_wholebrain_from_volume(
   cortical_labels = NULL,
   subcortical_labels = NULL,
   cerebellar_labels = NULL,
-  cortical_views = c("lateral", "medial", "superior", "inferior"),
-  subcortical_views = NULL,
-  decimate = 0.5,
-  tolerance = NULL,
-  smoothness = NULL,
+  cortical_opts = list(),
+  subcortical_opts = list(),
+  cerebellar_opts = list(),
   cleanup = NULL,
   verbose = get_verbose(),
   skip_existing = NULL,
@@ -79,28 +77,20 @@ cerebellar. These go through the cerebellar SUIT flatmap pipeline instead
 of cortical or subcortical. Uses the bundled SUIT surfaces from
 \code{\link[=suit_flatmap_path]{suit_flatmap_path()}} and \code{\link[=suit_3d_path]{suit_3d_path()}}.}
 
-\item{cortical_views}{Views for cortical sub-pipeline.
-Default \code{c("lateral", "medial", "superior", "inferior")}.}
+\item{cortical_opts}{Named list of extra arguments forwarded to the
+cortical sub-pipeline. Allowed entries: \code{views}, \code{tolerance},
+\code{smooth_refinements}. Unknown entries error. Leave empty to use defaults.}
 
-\item{subcortical_views}{Views for subcortical sub-pipeline. Default NULL
-(auto-detected).}
+\item{subcortical_opts}{Named list of extra arguments forwarded to
+\code{\link[=create_subcortical_from_volume]{create_subcortical_from_volume()}}. Any argument of that function may
+be set here except those managed by the wholebrain pipeline
+(\code{input_volume}, \code{input_lut}, \code{atlas_name}, \code{output_dir}, \code{verbose},
+\code{cleanup}, \code{skip_existing}). Use this to tune \code{dilate},
+\code{vertex_size_limits}, \code{tolerance}, \code{smoothness}, \code{decimate}, \code{views}.}
 
-\item{decimate}{Mesh decimation ratio for subcortical/cerebellar meshes
-(0-1). Default 0.5.}
-
-\item{tolerance}{Proportion of vertices to retain during topology-preserving
-simplification (0--1). Lower values produce simpler, smoother shapes.
-Passed to \code{\link[rmapshaper:ms_simplify]{rmapshaper::ms_simplify()}}.
-If not specified, uses \code{options("ggseg.extra.tolerance")} or the
-\code{GGSEG_EXTRA_TOLERANCE} environment variable. Default is 0.05.}
-
-\item{smoothness}{Smoothing factor for 2D contours from screenshot-based
-pipelines. Higher values produce smoother region boundaries (typical
-range: 3--15). If not specified, uses
-\code{options("ggseg.extra.smoothness")} or the \code{GGSEG_EXTRA_SMOOTHNESS}
-environment variable. Default is 5. Note: for mesh-based pipelines,
-smoothing is handled by topology-preserving simplification via
-\code{tolerance}.}
+\item{cerebellar_opts}{Named list of extra arguments forwarded to
+\code{\link[=create_cerebellar_from_volume]{create_cerebellar_from_volume()}}. Allowed entries include \code{tolerance},
+\code{smooth_refinements}, \code{decimate}.}
 
 \item{cleanup}{Remove intermediate files after atlas creation. If not
 specified, uses \code{options("ggseg.extra.cleanup")} or the \code{GGSEG_EXTRA_CLEANUP}
@@ -212,7 +202,8 @@ lut <- data.frame(
 result <- create_wholebrain_from_volume(
   input_volume = "my_atlas.nii.gz",
   input_lut = lut,
-  atlas_name = "my_atlas"
+  atlas_name = "my_atlas",
+  subcortical_opts = list(dilate = 2, smoothness = 8)
 )
 result$cortical   # surface-based cortical atlas
 result$subcortical # mesh-based subcortical atlas

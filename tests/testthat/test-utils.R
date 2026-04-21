@@ -328,6 +328,27 @@ describe("warn_if_large_atlas", {
     atlas <- list(data = list(sf = NULL))
     expect_no_warning(warn_if_large_atlas(atlas))
   })
+
+  it("scales threshold with region count via per_region", {
+    coords <- matrix(runif(200), ncol = 2)
+    coords <- rbind(coords, coords[1, ])
+    sf_obj <- sf::st_sf(
+      label = "test",
+      geometry = sf::st_sfc(sf::st_polygon(list(coords)))
+    )
+    atlas <- list(
+      data = list(sf = sf_obj),
+      core = data.frame(region = paste0("r", 1:10))
+    )
+
+    expect_no_warning(
+      warn_if_large_atlas(atlas, max_vertices = 50, per_region = 20)
+    )
+    expect_warning(
+      warn_if_large_atlas(atlas, max_vertices = 50, per_region = 5),
+      "vertices"
+    )
+  })
 })
 
 
@@ -344,7 +365,7 @@ describe("preview_atlas", {
     atlas <- list(data = list(sf = NULL, vertices = NULL, meshes = NULL))
     local_mocked_bindings(is_interactive = function() TRUE)
 
-    expect_message(preview_atlas(atlas), "malformed")
+    expect_messages(preview_atlas(atlas), "malformed")
   })
 
   it("shows 3D cortical preview for both hemispheres", {
@@ -420,7 +441,7 @@ describe("preview_atlas", {
     expect_identical(result, atlas)
   })
 
-  it("shows 2D preview with geom_brain", {
+  it("reports malformed atlas when only sf data present", {
     sf_data <- sf::st_sf(
       label = "test",
       geometry = sf::st_sfc(sf::st_polygon(list(matrix(
@@ -434,96 +455,13 @@ describe("preview_atlas", {
       palette = NULL
     )
 
-    prompts <- character()
-    local_mocked_bindings(
-      is_interactive = function() TRUE,
-      prompt_user = function(msg) {
-        prompts <<- c(prompts, msg)
-        ""
-      }
-    )
-    local_mocked_bindings(
-      geom_brain = function(...) ggplot2::geom_blank(),
-      position_brain = function(...) ggplot2::position_identity(),
-      .package = "ggseg"
-    )
+    local_mocked_bindings(is_interactive = function() TRUE)
 
-    result <- preview_atlas(atlas)
+    expect_messages(
+      result <- preview_atlas(atlas),
+      "malformed"
+    )
     expect_identical(result, atlas)
-    expect_length(prompts, 1)
-    expect_match(prompts[1], "2D preview")
-  })
-
-  it("applies palette when available", {
-    sf_data <- sf::st_sf(
-      label = c("a", "b"),
-      geometry = sf::st_sfc(
-        sf::st_polygon(list(matrix(
-          c(0, 0, 1, 0, 1, 1, 0, 0),
-          ncol = 2,
-          byrow = TRUE
-        ))),
-        sf::st_polygon(list(matrix(
-          c(2, 2, 3, 2, 3, 3, 2, 2),
-          ncol = 2,
-          byrow = TRUE
-        )))
-      )
-    )
-    atlas <- list(
-      data = list(sf = sf_data, vertices = NULL, meshes = NULL),
-      palette = c(a = "red", b = "blue")
-    )
-
-    prompts <- character()
-    local_mocked_bindings(
-      is_interactive = function() TRUE,
-      prompt_user = function(msg) {
-        prompts <<- c(prompts, msg)
-        ""
-      }
-    )
-    local_mocked_bindings(
-      geom_brain = function(...) ggplot2::geom_blank(),
-      position_brain = function(...) ggplot2::position_identity(),
-      .package = "ggseg"
-    )
-
-    suppressWarnings(result <- preview_atlas(atlas))
-    expect_identical(result, atlas)
-    expect_length(prompts, 1)
-  })
-
-  it("falls back to base plot when geom_brain errors", {
-    sf_data <- sf::st_sf(
-      label = "test",
-      geometry = sf::st_sfc(sf::st_polygon(list(matrix(
-        c(0, 0, 1, 0, 1, 1, 0, 0),
-        ncol = 2,
-        byrow = TRUE
-      ))))
-    )
-    atlas <- list(
-      data = list(sf = sf_data, vertices = NULL, meshes = NULL)
-    )
-
-    prompts <- character()
-    local_mocked_bindings(
-      is_interactive = function() TRUE,
-      prompt_user = function(msg) {
-        prompts <<- c(prompts, msg)
-        ""
-      }
-    )
-    local_mocked_bindings(
-      geom_brain = function(...) stop("geom_brain failed"),
-      position_brain = function(...) ggplot2::position_identity(),
-      .package = "ggseg"
-    )
-
-    result <- preview_atlas(atlas)
-    expect_identical(result, atlas)
-    expect_length(prompts, 0)
   })
 })
 
@@ -531,7 +469,7 @@ describe("preview_atlas", {
 describe("log_elapsed", {
   it("logs elapsed time as cli message", {
     start <- Sys.time() - 60
-    expect_message(log_elapsed(start), "Pipeline completed in")
+    expect_messages(log_elapsed(start), "Pipeline completed in")
   })
 })
 

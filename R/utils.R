@@ -89,72 +89,44 @@ prompt_user <- function(msg) readline(msg)
 #'
 #' @param atlas A ggseg_atlas object
 #' @return Invisible atlas
+#' @importFrom ggseg ggseg position_brain
+#' @importFrom ggseg3d ggseg3d pan_camera set_legend
 #' @noRd
 preview_atlas <- function(atlas) {
   if (!is_interactive()) {
     return(invisible(atlas))
   }
 
-  has_sf <- !is.null(atlas$data$sf)
   has_3d <- !is.null(atlas$data$vertices) ||
     !is.null(atlas$data$meshes)
 
-  if (!has_sf && !has_3d) {
+  if (!has_3d) {
     cli::cli_alert_danger(
       "Atlas malformed and doesn't contain compatible data."
     )
     return(invisible(atlas))
   }
 
-  if (has_3d) {
-    tryCatch(
-      {
-        if (atlas$type == "cortical") {
-          for (hemi in c("left", "right")) {
-            p3d <- ggseg3d::ggseg3d(atlas = atlas, hemisphere = hemi) |>
-              ggseg3d::pan_camera(paste(hemi, "lateral")) |>
-              ggseg3d::set_legend(show = FALSE)
-            print(p3d)
-            prompt_user(sprintf("3D %s hemisphere. Press Enter for next", hemi))
-          }
-        } else {
-          p3d <- ggseg3d::ggseg3d(atlas = atlas) |>
+  tryCatch(
+    {
+      if (atlas$type == "cortical") {
+        for (hemi in c("left", "right")) {
+          p3d <- ggseg3d::ggseg3d(atlas = atlas, hemisphere = hemi) |>
+            ggseg3d::pan_camera(paste(hemi, "lateral")) |>
             ggseg3d::set_legend(show = FALSE)
           print(p3d)
-          prompt_user("3D preview. Press Enter to continue")
+          prompt_user(sprintf("3D %s hemisphere. Press Enter for next", hemi))
         }
-      },
-      error = function(e) NULL
-    )
-  }
-
-  if (has_sf) {
-    gp <- tryCatch(
-      {
-        p <- ggplot2::ggplot() +
-          ggseg::geom_brain(
-            atlas = atlas,
-            position = ggseg::position_brain(nrow = 4),
-            show.legend = FALSE,
-            alpha = .7,
-            ggplot2::aes(fill = label)
-          )
-        if (!is.null(atlas$palette)) {
-          p <- p +
-            ggplot2::scale_fill_manual(values = atlas$palette)
-        }
-        p
-      },
-      error = function(e) {
-        plot(atlas$data$sf)
-        NULL
+      } else {
+        p3d <- ggseg3d::ggseg3d(atlas = atlas) |>
+          ggseg3d::set_legend(show = FALSE)
+        print(p3d)
+        prompt_user("3D preview. Press Enter to continue")
       }
-    )
-    if (!is.null(gp)) {
-      print(gp)
-      prompt_user("2D preview. Press Enter to continue")
-    }
-  }
+    },
+    error = function(e) NULL
+  )
+
   invisible(atlas)
 }
 
@@ -175,9 +147,13 @@ preview_atlas <- function(atlas) {
 #' as_verbosity(TRUE)
 #' as_verbosity(2)
 as_verbosity <- function(x) {
-  if (is.logical(x) && !is.na(x)) return(as.integer(x))
+  if (is.logical(x) && !is.na(x)) {
+    return(as.integer(x))
+  }
   x <- suppressWarnings(as.integer(x))
-  if (is.na(x) || x < 0L) return(1L)
+  if (is.na(x) || x < 0L) {
+    return(1L)
+  }
   min(x, 2L)
 }
 
@@ -204,9 +180,13 @@ as_verbosity <- function(x) {
 #' options(ggseg.extra.verbose = NULL)
 get_verbose <- function() {
   val <- getOption("ggseg.extra.verbose")
-  if (!is.null(val)) return(as_verbosity(val))
+  if (!is.null(val)) {
+    return(as_verbosity(val))
+  }
   env <- Sys.getenv("GGSEG_EXTRA_VERBOSE", unset = NA)
-  if (!is.na(env)) return(as_verbosity(env))
+  if (!is.na(env)) {
+    return(as_verbosity(env))
+  }
   1L
 }
 
@@ -221,7 +201,9 @@ get_verbose <- function() {
 #' is_verbose(FALSE)
 #' is_verbose(2)
 is_verbose <- function(verbose = NULL) {
-  if (is.null(verbose)) return(get_verbose())
+  if (is.null(verbose)) {
+    return(get_verbose())
+  }
   as_verbosity(verbose)
 }
 
@@ -470,21 +452,25 @@ get_output_dir <- function(output_dir = NULL) {
 # Atlas validation ----
 
 #' @noRd
-warn_if_large_atlas <- function(atlas, max_vertices = 10000) {
+warn_if_large_atlas <- function(atlas,
+                                max_vertices = 10000,
+                                per_region = 50) {
   if (is.null(atlas$data$sf)) {
     return(invisible(NULL))
   }
 
   n_vertices <- sum(count_vertices(atlas$data$sf))
+  n_regions <- if (is.null(atlas$core)) 0L else nrow(atlas$core)
+  threshold <- max(max_vertices, per_region * n_regions)
 
-  if (n_vertices > max_vertices) {
+  if (n_vertices > threshold) {
     cli::cli_warn(c(
       paste(
         "Atlas has {.val {n_vertices}} vertices",
-        "(threshold: {.val {max_vertices}})"
+        "(threshold: {.val {threshold}})"
       ),
       "i" = "Large atlases may be slow to plot and increase package size",
-      "i" = "Re-run with higher {.arg tolerance} to reduce vertices"
+      "i" = "Re-run with lower {.arg tolerance} to reduce vertices"
     ))
   }
 

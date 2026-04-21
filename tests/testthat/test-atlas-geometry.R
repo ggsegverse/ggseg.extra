@@ -310,7 +310,7 @@ describe("extract_contours", {
       .package = "furrr"
     )
 
-    expect_message(
+    expect_messages(
       extract_contours(input_dir, output_dir, verbose = TRUE),
       "contour"
     )
@@ -662,7 +662,7 @@ describe("reduce_vertex verbose output", {
     )
     save(contours, file = file.path(outdir, "contours_smoothed.rda"))
 
-    expect_message(
+    expect_messages(
       reduce_vertex(outdir, tolerance = 0.5, step = "2/3", verbose = TRUE),
       "Simplifying contours"
     )
@@ -749,7 +749,7 @@ describe("smooth_and_simplify_sf", {
       geometry = sf::st_sfc(poly)
     )
 
-    result <- smooth_and_simplify_sf(sf_data, smooth_refinements = 2, keep = 0)
+    result <- smooth_and_simplify_sf(sf_data, smooth_refinements = 0, keep = 0)
 
     expect_identical(sf_data, result)
   })

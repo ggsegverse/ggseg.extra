@@ -1,13 +1,20 @@
 #' Create a new ggseg atlas package
 #'
-#' Scaffold an R package for distributing a brain atlas. The generated
-#' package follows ggseg conventions and includes everything you need:
-#' template scripts for atlas creation, documentation stubs, a test suite,
-#' and GitHub Actions for automated checking.
+#' Scaffold an R package for distributing a brain atlas. Downloads a
+#' modern template from the
+#' [ggseg-atlas-template](https://github.com/ggsegverse/ggseg-atlas-template)
+#' GitHub repository and customises it for your atlas. The generated
+#' package follows ggseg conventions and includes GitHub Actions workflows,
+#' pkgdown configuration, a test suite, and a multi-method scaffold for
+#' building your atlas.
 #'
 #' The package will be named `ggseg{AtlasName}` (e.g., `ggsegSchaefer` for
 #' a Schaefer parcellation). After creation, edit the files in `data-raw/`
 #' to build your atlas, then run `devtools::document()` and `devtools::check()`.
+#'
+#' If the template cannot be downloaded (e.g. no internet), a minimal bundled
+#' fallback is used instead. The fallback omits GitHub Actions workflows; you
+#' can copy them from the template repository later.
 #'
 #' @param path Where to create the package. If the directory exists, it must
 #'   be empty.
@@ -77,12 +84,17 @@ setup_atlas_repo <- function(
     }
   }
 
-  create_atlas_from_template(path, atlas_name)
+  cli::cli_h2("Creating {.pkg {repo_name}}")
+
+  template_dir <- download_atlas_template()
+  populate_from_template(path, template_dir, atlas_name, repo_name)
 
   if (rstudio) {
     create_rproj_file(path, repo_name)
+    cli::cli_alert_success("Created {.file {repo_name}.Rproj}")
   }
 
+  cli::cli_rule()
   cli::cli_alert_success("Created atlas package {.pkg {repo_name}}")
   cli::cli_alert_info("Location: {.path {path}}")
 
@@ -90,7 +102,7 @@ setup_atlas_repo <- function(
   cli::cli_bullets(c(
     "1" = "Edit {.file data-raw/create-atlas.R} to create your atlas",
     "2" = "Update {.file R/data.R} with documentation and citation",
-    "3" = "Add atlas citation to {.file README.Rmd}",
+    "3" = "Add atlas citation to {.file README.qmd}",
     "4" = "Run {.code devtools::document()} to generate documentation",
     "5" = "Run {.code devtools::check()} to verify the package"
   ))
@@ -103,43 +115,108 @@ setup_atlas_repo <- function(
 }
 
 
+template_url <- function() {
+  paste0(
+    "https://github.com/ggsegverse/ggseg-atlas-template/",
+    "archive/refs/heads/main.tar.gz"
+  )
+}
+
+
 #' @keywords internal
-create_atlas_from_template <- function(path, atlas_name) {
-  template_dir <- system.file(
-    file.path("rstudio", "templates", "project", "create-ggseg-atlas"),
+download_atlas_template <- function(url = template_url()) {
+  tmp_tar <- tempfile(fileext = ".tar.gz")
+  tmp_dir <- tempfile("ggseg-template-")
+
+  cli::cli_alert_info("Downloading atlas template from GitHub...")
+
+  ok <- tryCatch(
+    {
+      utils::download.file(url, tmp_tar, quiet = TRUE, mode = "wb")
+      TRUE
+    },
+    error = function(e) FALSE,
+    warning = function(w) FALSE
+  )
+
+  if (ok && file.exists(tmp_tar) && file.size(tmp_tar) > 0) {
+    utils::untar(tmp_tar, exdir = tmp_dir)
+    unlink(tmp_tar)
+    extracted <- list.dirs(tmp_dir, full.names = TRUE, recursive = FALSE)
+    if (length(extracted) == 1) {
+      cli::cli_alert_success("Downloaded template")
+      return(extracted)
+    }
+  }
+
+  cli::cli_alert_warning(
+    "Download failed, using bundled fallback template"
+  )
+  cli::cli_alert_info(paste0(
+    "Workflows not included \u2014 copy from ",
+    "{.url https://github.com/ggsegverse/ggseg-atlas-template}"
+  ))
+
+  fallback <- system.file(
+    "templates", "atlas-fallback",
     package = "ggseg.extra"
   )
 
-  if (!dir.exists(template_dir)) {
+  if (!dir.exists(fallback)) {
     cli::cli_abort(c(
       "Template not found",
-      "x" = "Could not find atlas template directory",
+      "x" = "Could not download template or find bundled fallback",
       "i" = "Is ggseg.extra installed correctly?"
     ))
   }
 
+  fallback
+}
+
+
+#' @keywords internal
+populate_from_template <- function(path, template_dir, atlas_name, repo_name) {
   mkdir(path)
 
   dirs <- list.dirs(template_dir, full.names = FALSE, recursive = TRUE)
-  dirs <- dirs[!grepl("^\\.", dirs)]
+  dirs <- dirs[nchar(dirs) > 0 & !grepl("^\\.", dirs)]
   for (d in dirs) {
-    if (nchar(d) > 0) {
+    mkdir(file.path(path, d))
+  }
+  cli::cli_alert_success(
+    "Created {.path R/}, {.path tests/}, {.path data-raw/}"
+  )
+
+  has_workflows <- dir.exists(file.path(template_dir, ".github"))
+  if (has_workflows) {
+    dirs_hidden <- list.dirs(template_dir, full.names = FALSE, recursive = TRUE)
+    dirs_hidden <- dirs_hidden[grepl("^\\.github", dirs_hidden)]
+    for (d in dirs_hidden) {
       mkdir(file.path(path, d))
     }
+    cli::cli_alert_success("Created {.path .github/workflows/}")
   }
 
-  files <- list.files(template_dir, recursive = TRUE, all.files = FALSE)
+  files <- list.files(
+    template_dir,
+    recursive = TRUE,
+    all.files = TRUE,
+    no.. = TRUE
+  )
+  files <- files[!grepl("^\\.git/", files) & files != ".git"]
 
   for (f in files) {
     src <- file.path(template_dir, f)
-    dst <- file.path(path, f)
+    dst_name <- gsub("(^|/)dot-", "\\1.", f)
+    dst <- file.path(path, dst_name)
     mkdir(dirname(dst))
     file.copy(src, dst, overwrite = TRUE)
   }
 
-  write_gitignore(path)
-  write_rbuildignore(path)
-  write_github_workflows(path)
+  pkg_file <- file.path(path, "R", "REPO-package.R")
+  if (file.exists(pkg_file)) {
+    file.rename(pkg_file, file.path(path, "R", paste0(repo_name, "-package.R")))
+  }
 
   all_files <- list.files(
     path,
@@ -148,11 +225,12 @@ create_atlas_from_template <- function(path, atlas_name) {
     all.files = TRUE
   )
   all_files <- all_files[
-    !grepl(
-      "\\.(png|jpg|jpeg|gif|ico|rda|RData|rds)$",
-      all_files,
-      ignore.case = TRUE
-    )
+    !grepl("^\\.git/", basename(all_files)) &
+      !grepl(
+        "\\.(png|jpg|jpeg|gif|ico|rda|RData|rds)$",
+        all_files,
+        ignore.case = TRUE
+      )
   ]
 
   for (f in all_files) {
@@ -160,6 +238,8 @@ create_atlas_from_template <- function(path, atlas_name) {
       template_replace(f, atlas_name)
     }
   }
+
+  cli::cli_alert_success("Replaced template placeholders")
 
   invisible(path)
 }
@@ -242,196 +322,6 @@ template_replace <- function(file, atlas_name) {
       invisible(NULL)
     }
   )
-}
-
-
-#' @keywords internal
-write_gitignore <- function(path) {
-  content <- c(
-    "# R specific",
-    ".Rproj.user",
-    ".Rhistory",
-    ".RData",
-    ".Ruserdata",
-    "",
-    "# Package specific",
-    "*.Rcheck",
-    "*.tar.gz",
-    "",
-    "# IDE",
-    ".idea/",
-    "*.swp",
-    "*~",
-    "",
-    "# OS specific",
-    ".DS_Store",
-    "Thumbs.db",
-    "",
-    "# pkgdown",
-    "docs/",
-    "",
-    "# Temporary files",
-    "inst/doc"
-  )
-
-  invisible(writeLines(content, file.path(path, ".gitignore")))
-}
-
-
-#' @keywords internal
-write_rbuildignore <- function(path) {
-  content <- c(
-    "^.*\\.Rproj$",
-    "^\\.Rproj\\.user$",
-    "^README\\.Rmd$",
-    "^LICENSE\\.md$",
-    "^\\.github$",
-    "^data-raw$",
-    "^docs$",
-    "^pkgdown$",
-    "^_pkgdown\\.yml$",
-    "^\\.lintr$",
-    "^codecov\\.yml$"
-  )
-
-  invisible(writeLines(content, file.path(path, ".Rbuildignore")))
-}
-
-
-#' @keywords internal
-write_github_workflows <- function(path) {
-  mkdir(file.path(path, ".github", "workflows"))
-
-  check_workflow <- c(
-    paste0(
-      "# Workflow derived from ",
-      "https://github.com/r-lib/actions/tree/v2/examples"
-    ),
-    paste0(
-      "# Need help debugging build failures? ",
-      "Start at https://github.com/r-lib/actions#where-to-find-help"
-    ),
-    "",
-    "on:",
-    "  push:",
-    "    branches: [main, master]",
-    "  pull_request:",
-    "    branches: [main, master]",
-    "",
-    "name: R-CMD-check",
-    "",
-    "jobs:",
-    "  R-CMD-check:",
-    "    runs-on: ${{ matrix.config.os }}",
-    "",
-    "    name: ${{ matrix.config.os }} (${{ matrix.config.r }})",
-    "",
-    "    strategy:",
-    "      fail-fast: false",
-    "      matrix:",
-    "        config:",
-    "          - {os: macos-latest,   r: 'release'}",
-    "          - {os: windows-latest, r: 'release'}",
-    "          - {os: ubuntu-latest,  r: 'devel', http-user-agent: 'release'}",
-    "          - {os: ubuntu-latest,  r: 'release'}",
-    "          - {os: ubuntu-latest,  r: 'oldrel-1'}",
-    "",
-    "    env:",
-    "      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}",
-    "      R_KEEP_PKG_SOURCE: yes",
-    "",
-    "    steps:",
-    "      - uses: actions/checkout@v4",
-    "",
-    "      - uses: r-lib/actions/setup-pandoc@v2",
-    "",
-    "      - uses: r-lib/actions/setup-r@v2",
-    "        with:",
-    "          r-version: ${{ matrix.config.r }}",
-    "          http-user-agent: ${{ matrix.config.http-user-agent }}",
-    "          use-public-rspm: true",
-    "",
-    "      - uses: r-lib/actions/setup-r-dependencies@v2",
-    "        with:",
-    "          extra-packages: any::rcmdcheck",
-    "          needs: check",
-    "",
-    "      - uses: r-lib/actions/check-r-package@v2",
-    "        with:",
-    "          upload-snapshots: true"
-  )
-  writeLines(
-    check_workflow,
-    file.path(path, ".github", "workflows", "R-CMD-check.yaml")
-  )
-
-  pkgdown_workflow <- c(
-    paste0(
-      "# Workflow derived from ",
-      "https://github.com/r-lib/actions/tree/v2/examples"
-    ),
-    paste0(
-      "# Need help debugging build failures? ",
-      "Start at https://github.com/r-lib/actions#where-to-find-help"
-    ),
-    "",
-    "on:",
-    "  push:",
-    "    branches: [main, master]",
-    "  pull_request:",
-    "    branches: [main, master]",
-    "  release:",
-    "    types: [published]",
-    "  workflow_dispatch:",
-    "",
-    "name: pkgdown",
-    "",
-    "jobs:",
-    "  pkgdown:",
-    "    runs-on: ubuntu-latest",
-    "    # Only restrict concurrency for non-PR jobs",
-    "    concurrency:",
-    paste0(
-      "      group: pkgdown-${{ github.event_name",
-      " != 'pull_request' || github.run_id }}"
-    ),
-    "    env:",
-    "      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}",
-    "    permissions:",
-    "      contents: write",
-    "    steps:",
-    "      - uses: actions/checkout@v4",
-    "",
-    "      - uses: r-lib/actions/setup-pandoc@v2",
-    "",
-    "      - uses: r-lib/actions/setup-r@v2",
-    "        with:",
-    "          use-public-rspm: true",
-    "",
-    "      - uses: r-lib/actions/setup-r-dependencies@v2",
-    "        with:",
-    "          extra-packages: any::pkgdown, local::.",
-    "          needs: website",
-    "",
-    "      - name: Build site",
-    paste0(
-      "        run: pkgdown::build_site_github_pages",
-      "(new_process = FALSE, install = FALSE)"
-    ),
-    "        shell: Rscript {0}",
-    "",
-    "      - name: Deploy to GitHub pages",
-    "        if: github.event_name != 'pull_request'",
-    "        uses: JamesIves/github-pages-deploy-action@v4.5.0",
-    "        with:",
-    "          clean: false",
-    "          branch: gh-pages",
-    "          folder: docs"
-  )
-  invisible(writeLines(
-    pkgdown_workflow,
-    file.path(path, ".github", "workflows", "pkgdown.yaml")
-  ))
 }
 
 

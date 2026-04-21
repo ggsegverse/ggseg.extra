@@ -139,7 +139,7 @@ can_reach_github <- function() {
   tryCatch(
     {
       con <- url("https://raw.githubusercontent.com", open = "r")
-      close(con)
+      on.exit(try(close(con), silent = TRUE))
       TRUE
     },
     error = function(e) FALSE
@@ -242,10 +242,10 @@ transform_mni_to_suit <- function(
       vox_round[, 2] >= 1 & vox_round[, 2] <= mni_dims[2] &
       vox_round[, 3] >= 1 & vox_round[, 3] <= mni_dims[3]
     idx <- which(valid)
-    for (i in idx) {
-      vi <- vox_round[i, ]
-      result[i] <- mni_arr[vi[1], vi[2], vi[3]]
-    }
+    lin_idx <- vox_round[idx, 1] +
+      (vox_round[idx, 2] - 1L) * mni_dims[1] +
+      (vox_round[idx, 3] - 1L) * mni_dims[1] * mni_dims[2]
+    result[idx] <- mni_arr[lin_idx]
   } else {
     cli::cli_alert_info(
       "Trilinear interpolation (may be slow for large volumes)"
@@ -690,6 +690,15 @@ cerebellar_process_deep_nuclei <- function(
 ) {
   rlang::check_installed("terra", reason = "to create nuclei projections")
 
+  if (!"vol_idx" %in% names(deep_data)) {
+    if (verbose) {
+      cli::cli_warn(
+        "Deep nuclei data has no {.field vol_idx} column; skipping"
+      )
+    }
+    return(list(sf = NULL, meshes = NULL))
+  }
+
   vol <- read_volume(volume, reorient = FALSE)
 
   deep_sf_list <- list()
@@ -929,6 +938,7 @@ read_suit_parcellation <- function(gifti_files) {
   }
 
   all_data <- list()
+  seen_vertices <- integer(0)
 
   for (gifti_file in gifti_files) {
     gii <- gifti::readgii(gifti_file)
@@ -957,6 +967,18 @@ read_suit_parcellation <- function(gifti_files) {
 
       region_vertices <- which(values == pid) - 1L
       if (length(region_vertices) == 0) next
+
+      overlap <- intersect(region_vertices, seen_vertices)
+      if (length(overlap) > 0) {
+        cli::cli_warn(c(
+          paste(
+            "Region {.val {pid}} in {.path {gifti_file}} overlaps",
+            "{length(overlap)} previously assigned vertex{?es}"
+          ),
+          "i" = "Last file wins for overlapping vertices"
+        ))
+      }
+      seen_vertices <- union(seen_vertices, region_vertices)
 
       if (!is.null(label_table) && pid %in% label_table$id) {
         row <- label_table[label_table$id == pid, ]
@@ -1072,9 +1094,9 @@ extract_gifti_label_table <- function(gii) {
 #' @return "left", "right", "vermis", or "midline".
 #' @noRd
 detect_cerebellar_hemi <- function(region_name) {
-  if (grepl("^(Left|left|L)[- _.]", region_name)) return("left")
-  if (grepl("^(Right|right|R)[- _.]", region_name)) return("right")
-  if (grepl("^(Vermis|vermis|V)[- _.]", region_name)) return("vermis")
+  if (grepl("^(Left|left)[- _.]", region_name)) return("left")
+  if (grepl("^(Right|right)[- _.]", region_name)) return("right")
+  if (grepl("^(Vermis|vermis)[- _.]", region_name)) return("vermis")
   if (grepl("vermis", region_name, ignore.case = TRUE)) return("vermis")
 
   hemi <- detect_hemi(region_name, default = "midline")
@@ -1092,7 +1114,7 @@ detect_cerebellar_hemi <- function(region_name) {
 #' @noRd
 clean_cerebellar_region <- function(region_name) {
   region <- gsub(
-    "^(Left|Right|Vermis|left|right|vermis|L|R|V)[- _.]\\s*",
+    "^(Left|Right|Vermis|left|right|vermis)[- _.]\\s*",
     "", region_name
   )
   region <- trimws(region)
@@ -1292,13 +1314,15 @@ sample_volume_at_surface <- function(vol, volume_path, suit_3d_surface) {
   n_verts <- nrow(vox_coords)
   labels <- integer(n_verts)
 
-  for (i in seq_len(n_verts)) {
-    vi <- round(vox_coords[i, ])
-    if (all(vi >= 1) && vi[1] <= dims[1] &&
-          vi[2] <= dims[2] && vi[3] <= dims[3]) {
-      labels[i] <- vol[vi[1], vi[2], vi[3]]
-    }
-  }
+  vox_round <- round(vox_coords)
+  valid <- vox_round[, 1] >= 1 & vox_round[, 1] <= dims[1] &
+    vox_round[, 2] >= 1 & vox_round[, 2] <= dims[2] &
+    vox_round[, 3] >= 1 & vox_round[, 3] <= dims[3]
+  idx <- which(valid)
+  lin_idx <- vox_round[idx, 1] +
+    (vox_round[idx, 2] - 1L) * dims[1] +
+    (vox_round[idx, 3] - 1L) * dims[1] * dims[2]
+  labels[idx] <- vol[lin_idx]
 
   labels <- fill_unlabelled_from_voxel_neighbors(labels, vox_coords, vol, dims)
   labels <- fill_unlabelled_from_mesh_neighbors(
@@ -1325,10 +1349,10 @@ fill_unlabelled_from_voxel_neighbors <- function(
 
     r <- radius
     offsets <- as.matrix(expand.grid(-r:r, -r:r, -r:r))
-    offsets <- offsets[apply(abs(offsets), 1, max) == r, , drop = FALSE]
     if (radius == 1L) {
-      offsets <- as.matrix(expand.grid(-1:1, -1:1, -1:1))
       offsets <- offsets[rowSums(offsets^2) > 0, , drop = FALSE]
+    } else {
+      offsets <- offsets[apply(abs(offsets), 1, max) == r, , drop = FALSE]
     }
     dists <- sqrt(rowSums(offsets^2))
 
@@ -1406,7 +1430,8 @@ fill_unlabelled_from_mesh_neighbors <- function(labels, faces, n_verts) {
 #' @return Integer vector of 0-based vertex indices (may be empty)
 #' @noRd
 rescue_orphaned_region <- function(
-  vol, label_id, volume_path, suit_3d_surface, vertex_labels
+  vol, label_id, volume_path, suit_3d_surface, vertex_labels,
+  n_vertices = 5L
 ) {
   voxel_locs <- which(vol == label_id, arr.ind = TRUE)
   if (nrow(voxel_locs) == 0) return(integer(0))
@@ -1426,7 +1451,14 @@ rescue_orphaned_region <- function(
     (verts_3d[, 3] - centroid_world[3])^2
   )
 
-  nearest_idx <- which.min(dists)
+  unassigned <- which(vertex_labels == 0L)
+  if (length(unassigned) > 0) {
+    candidates <- unassigned[order(dists[unassigned])]
+    n <- min(n_vertices, length(candidates))
+    return(as.integer(candidates[seq_len(n)] - 1L))
+  }
+
+  nearest_idx <- order(dists)[seq_len(min(n_vertices, length(dists)))]
   as.integer(nearest_idx - 1L)
 }
 

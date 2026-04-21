@@ -121,7 +121,7 @@ describe("generate_colortable_from_volume", {
     expect_equal(nrow(result), 2)
     expect_equal(result$idx, c(10, 20))
     expect_equal(result$label, c("region_0010", "region_0020"))
-    expect_true(all(is.na(result$color)))
+    expect_true(all(grepl("^#", result$color)))
   })
 })
 
@@ -314,7 +314,7 @@ describe("generate_colortable_from_volume", {
     expect_s3_class(result, "data.frame")
     expect_equal(result$idx, c(10, 20))
     expect_equal(result$label, c("region_0010", "region_0020"))
-    expect_true(all(is.na(result$R)))
+    expect_true(all(result$R >= 0L & result$R <= 255L))
   })
 })
 
@@ -370,10 +370,12 @@ describe("create_subcortical_geometry_projection", {
       layout_volumetric_views = function(df) df
     )
 
-    result <- create_subcortical_geometry_projection(
-      input_volume = "fake_aseg.mgz",
-      colortable = fake_colortable,
-      verbose = TRUE
+    expect_messages(
+      result <- create_subcortical_geometry_projection(
+        input_volume = "fake_aseg.mgz",
+        colortable = fake_colortable,
+        verbose = TRUE
+      )
     )
 
     expect_s3_class(result, "sf")

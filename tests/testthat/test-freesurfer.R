@@ -19,7 +19,7 @@ describe("check_fs", {
       .package = "freesurfer"
     )
 
-    expect_message(
+    expect_messages(
       result <- check_fs(abort = FALSE),
       "Freesurfer"
     )

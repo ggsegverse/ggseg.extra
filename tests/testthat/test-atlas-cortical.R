@@ -374,7 +374,7 @@ describe("cortical_finalize", {
     )
     dirs <- list(base = withr::local_tempdir())
 
-    expect_message(
+    expect_messages(
       result <- cortical_finalize(
         mock_atlas,
         config = list(
@@ -452,7 +452,7 @@ describe("cortical_project_and_build verbose and cleanup paths", {
     actual_base <- file.path(base_dir, "atlas_work")
     dir.create(actual_base)
 
-    expect_message(
+    expect_messages(
       cortical_project_and_build(
         components = mock_components(),
         atlas_name = "test",
@@ -635,7 +635,7 @@ describe("cortical_read_data verbose paths", {
       )
     }
 
-    expect_message(
+    expect_messages(
       cortical_read_data(
         config = list(steps = 1:2, skip_existing = FALSE, verbose = TRUE),
         dirs = list(base = tmp_dir),
@@ -684,7 +684,7 @@ describe("cortical_read_data verbose paths", {
     saveRDS(mock_atlas, file.path(tmp_dir, "atlas_3d.rds"))
     saveRDS(mock_components, file.path(tmp_dir, "components.rds"))
 
-    expect_message(
+    expect_messages(
       cortical_read_data(
         config = list(steps = 1:2, skip_existing = TRUE, verbose = TRUE),
         dirs = list(base = tmp_dir),
@@ -905,7 +905,7 @@ describe("create_cortical_from_gifti verbose", {
     writeLines("mock", tmp)
     withr::local_options(ggseg.extra.output_dir = withr::local_tempdir())
 
-    expect_message(
+    expect_messages(
       create_cortical_from_gifti(
         gifti_files = tmp,
         atlas_name = "test_gifti",
@@ -959,7 +959,7 @@ describe("create_cortical_from_cifti verbose", {
     writeLines("mock", tmp)
     withr::local_options(ggseg.extra.output_dir = withr::local_tempdir())
 
-    expect_message(
+    expect_messages(
       create_cortical_from_cifti(
         cifti_file = tmp,
         atlas_name = "test_cifti",
@@ -1012,23 +1012,14 @@ describe("create_cortical_from_neuromaps verbose", {
 
     withr::local_options(ggseg.extra.output_dir = withr::local_tempdir())
 
-    expect_message(
+    expect_messages(
       create_cortical_from_neuromaps(
         source = "test",
         desc = "testdesc",
         atlas_name = "test_neuromaps",
         verbose = TRUE
       ),
-      "Fetching neuromaps"
-    )
-
-    expect_message(
-      create_cortical_from_neuromaps(
-        source = "test",
-        desc = "testdesc",
-        atlas_name = "test_neuromaps",
-        verbose = TRUE
-      ),
+      "Fetching neuromaps",
       "from neuromaps"
     )
   })
@@ -1065,7 +1056,7 @@ describe("create_cortical_from_neuromaps verbose", {
 
     withr::local_options(ggseg.extra.output_dir = withr::local_tempdir())
 
-    expect_message(
+    expect_messages(
       create_cortical_from_neuromaps(
         source = "test",
         desc = "vol",
@@ -1145,7 +1136,10 @@ describe("filter_visible_regions with empty vertices", {
       vertices = I(list(integer(0)))
     )
 
-    result <- filter_visible_regions(region_grid, vertices_df)
+    expect_messages(
+      result <- filter_visible_regions(region_grid, vertices_df),
+      "Empty vertices"
+    )
     expect_equal(nrow(result), 1)
   })
 })

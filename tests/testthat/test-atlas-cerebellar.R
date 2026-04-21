@@ -278,6 +278,12 @@ describe("detect_cerebellar_hemi", {
   it("defaults to midline for ambiguous labels", {
     expect_equal(detect_cerebellar_hemi("Dentate"), "midline")
   })
+
+  it("does not match single-letter prefixes", {
+    expect_equal(detect_cerebellar_hemi("Lobule_X"), "midline")
+    expect_equal(detect_cerebellar_hemi("Region_5"), "midline")
+    expect_equal(detect_cerebellar_hemi("Volume_1"), "midline")
+  })
 })
 
 
@@ -890,7 +896,7 @@ describe("cerebellar_build_sf_flatmap smoothing and simplification", {
     )
     components$vertices_df$vertices <- list(0:999)
 
-    expect_message(
+    expect_messages(
       cerebellar_build_sf_flatmap(
         components, suit_flatmap_path(),
         tolerance = 0, smooth_refinements = 0, verbose = TRUE
@@ -995,5 +1001,886 @@ describe("can_reach_github", {
     result <- can_reach_github()
     expect_type(result, "logical")
     expect_length(result, 1)
+  })
+})
+
+
+describe("fill_unlabelled_from_voxel_neighbors", {
+  it("fills unlabelled vertices from nearest non-zero voxel neighbor", {
+    vol <- array(0L, dim = c(5, 5, 5))
+    vol[2, 2, 2] <- 1L
+    vol[4, 4, 4] <- 2L
+
+    vox_coords <- matrix(c(
+      2, 2, 2,
+      2, 2, 3,
+      4, 4, 4,
+      3, 3, 3
+    ), ncol = 3, byrow = TRUE)
+    labels <- c(1L, 0L, 2L, 0L)
+
+    result <- fill_unlabelled_from_voxel_neighbors(
+      labels, vox_coords, vol, dim(vol)
+    )
+    expect_equal(result[1], 1L)
+    expect_equal(result[2], 1L)
+    expect_equal(result[3], 2L)
+    expect_true(result[4] %in% c(1L, 2L))
+  })
+
+  it("returns unchanged labels when all already labelled", {
+    vol <- array(1L, dim = c(3, 3, 3))
+    vox_coords <- matrix(c(2, 2, 2), ncol = 3)
+    labels <- 1L
+    result <- fill_unlabelled_from_voxel_neighbors(
+      labels, vox_coords, vol, dim(vol)
+    )
+    expect_equal(result, 1L)
+  })
+
+  it("expands to radius 2 when radius 1 finds no neighbors", {
+    vol <- array(0L, dim = c(7, 7, 7))
+    vol[1, 1, 1] <- 5L
+
+    vox_coords <- matrix(c(
+      1, 1, 1,
+      1, 1, 3
+    ), ncol = 3, byrow = TRUE)
+    labels <- c(5L, 0L)
+
+    result <- fill_unlabelled_from_voxel_neighbors(
+      labels, vox_coords, vol, dim(vol), max_radius = 3L
+    )
+    expect_equal(result[1], 5L)
+    expect_equal(result[2], 5L)
+  })
+})
+
+
+describe("fill_unlabelled_from_mesh_neighbors", {
+  it("propagates labels along mesh edges using majority vote", {
+    faces <- matrix(c(
+      1L, 2L, 3L,
+      3L, 4L, 5L
+    ), ncol = 3, byrow = TRUE)
+    labels <- c(1L, 1L, 0L, 0L, 2L)
+
+    result <- fill_unlabelled_from_mesh_neighbors(labels, faces, 5)
+
+    expect_equal(result[1], 1L)
+    expect_equal(result[2], 1L)
+    expect_equal(result[3], 1L)
+    expect_equal(result[5], 2L)
+    expect_true(result[4] %in% c(1L, 2L))
+  })
+
+  it("returns unchanged when no unlabelled vertices", {
+    faces <- matrix(c(1L, 2L, 3L), ncol = 3)
+    labels <- c(1L, 2L, 3L)
+    result <- fill_unlabelled_from_mesh_neighbors(labels, faces, 3)
+    expect_equal(result, c(1L, 2L, 3L))
+  })
+
+  it("stops when isolated vertices cannot be reached", {
+    faces <- matrix(c(1L, 2L, 3L), ncol = 3)
+    labels <- c(1L, 0L, 0L, 0L, 0L)
+
+    result <- fill_unlabelled_from_mesh_neighbors(labels, faces, 5)
+
+    expect_equal(result[1], 1L)
+    expect_true(result[2] != 0L)
+    expect_true(result[3] != 0L)
+    expect_equal(result[4], 0L)
+    expect_equal(result[5], 0L)
+  })
+})
+
+
+describe("rescue_orphaned_region", {
+  it("finds nearest unassigned vertices to orphaned voxel centroid", {
+    skip_if_not_installed("RNifti")
+    skip_if_not_installed("gifti")
+
+    vol <- array(0L, dim = c(10, 10, 10))
+    vol[5, 5, 5] <- 7L
+
+    vol_file <- withr::local_tempfile(fileext = ".nii.gz")
+    nii <- RNifti::asNifti(vol)
+    RNifti::writeNifti(nii, vol_file)
+
+    centroid_world <- RNifti::voxelToWorld(c(5, 5, 5), nii)
+
+    local_mocked_bindings(
+      readgii = function(file) {
+        list(
+          data = list(
+            pointset = matrix(c(
+              centroid_world[1], centroid_world[2], centroid_world[3],
+              centroid_world[1] + 1, centroid_world[2], centroid_world[3],
+              centroid_world[1] + 100, centroid_world[2], centroid_world[3]
+            ), ncol = 3, byrow = TRUE)
+          )
+        )
+      },
+      .package = "gifti"
+    )
+
+    vertex_labels <- c(0L, 0L, 0L)
+    result <- rescue_orphaned_region(
+      vol, 7L, vol_file, "mock.surf.gii", vertex_labels, n_vertices = 2L
+    )
+
+    expect_length(result, 2)
+    expect_true(0L %in% result)
+    expect_true(1L %in% result)
+    expect_false(2L %in% result)
+  })
+
+  it("returns empty integer when label has no voxels", {
+    skip_if_not_installed("RNifti")
+    vol <- array(0L, dim = c(3, 3, 3))
+    result <- rescue_orphaned_region(
+      vol, 99L, "unused", "unused", integer(0)
+    )
+    expect_length(result, 0)
+    expect_type(result, "integer")
+  })
+
+  it("falls back to nearest vertices when all are assigned", {
+    skip_if_not_installed("RNifti")
+    skip_if_not_installed("gifti")
+
+    vol <- array(0L, dim = c(5, 5, 5))
+    vol[3, 3, 3] <- 1L
+
+    vol_file <- withr::local_tempfile(fileext = ".nii.gz")
+    nii <- RNifti::asNifti(vol)
+    RNifti::writeNifti(nii, vol_file)
+
+    centroid_world <- RNifti::voxelToWorld(c(3, 3, 3), nii)
+
+    local_mocked_bindings(
+      readgii = function(file) {
+        list(data = list(
+          pointset = matrix(c(
+            centroid_world[1], centroid_world[2], centroid_world[3],
+            centroid_world[1] + 50, centroid_world[2], centroid_world[3]
+          ), ncol = 3, byrow = TRUE)
+        ))
+      },
+      .package = "gifti"
+    )
+
+    vertex_labels <- c(5L, 5L)
+    result <- rescue_orphaned_region(
+      vol, 1L, vol_file, "mock.surf.gii", vertex_labels, n_vertices = 1L
+    )
+
+    expect_length(result, 1)
+    expect_equal(result, 0L)
+  })
+})
+
+
+describe("read_cerebellar_volume deep nucleus and orphan branches", {
+  it("marks Dentate as deep nucleus when no surface vertices found", {
+    skip_if_not_installed("RNifti")
+
+    vol <- array(0L, dim = c(5, 5, 5))
+    vol[2, 2, 2] <- 1L
+    vol[3, 3, 3] <- 2L
+
+    vol_file <- withr::local_tempfile(fileext = ".nii.gz")
+    RNifti::writeNifti(RNifti::asNifti(vol), vol_file)
+
+    lut <- data.frame(
+      idx = c(1L, 2L),
+      label = c("Left Dentate", "Left Lobule-I"),
+      stringsAsFactors = FALSE
+    )
+
+    local_mocked_bindings(
+      sample_volume_at_surface = function(...) {
+        c(0L, 2L, 2L, 0L, 0L)
+      }
+    )
+
+    expect_warning(
+      result <- read_cerebellar_volume(vol_file, "mock.surf.gii", lut),
+      "deep"
+    )
+
+    dentate_row <- result[grepl("Dentate", result$region), ]
+    expect_true(nrow(dentate_row) == 1)
+    expect_true(dentate_row$deep)
+    expect_equal(lengths(dentate_row$vertices), 0L)
+
+    lobule_row <- result[grepl("Lobule", result$region), ]
+    expect_false(lobule_row$deep)
+    expect_true(lengths(lobule_row$vertices) > 0)
+  })
+
+  it("rescues orphaned non-nucleus region via nearest vertices", {
+    skip_if_not_installed("RNifti")
+
+    vol <- array(0L, dim = c(5, 5, 5))
+    vol[2, 2, 2] <- 1L
+
+    vol_file <- withr::local_tempfile(fileext = ".nii.gz")
+    RNifti::writeNifti(RNifti::asNifti(vol), vol_file)
+
+    lut <- data.frame(
+      idx = 1L, label = "Left Lobule-V", stringsAsFactors = FALSE
+    )
+
+    local_mocked_bindings(
+      sample_volume_at_surface = function(...) c(0L, 0L, 0L),
+      rescue_orphaned_region = function(...) c(0L, 1L)
+    )
+
+    expect_warning(
+      result <- read_cerebellar_volume(vol_file, "mock.surf.gii", lut),
+      "assigned.*nearest"
+    )
+
+    expect_equal(lengths(result$vertices), 2L)
+    expect_false(result$deep)
+  })
+
+  it("auto-fills NA colours for non-unknown regions", {
+    skip_if_not_installed("RNifti")
+
+    vol <- array(0L, dim = c(5, 5, 5))
+    vol[2, 2, 2] <- 1L
+    vol[3, 3, 3] <- 2L
+
+    vol_file <- withr::local_tempfile(fileext = ".nii.gz")
+    RNifti::writeNifti(RNifti::asNifti(vol), vol_file)
+
+    lut <- data.frame(
+      idx = c(1L, 2L),
+      label = c("Left Lobule-I", "Right Lobule-II"),
+      stringsAsFactors = FALSE
+    )
+
+    local_mocked_bindings(
+      sample_volume_at_surface = function(...) c(1L, 2L, 1L)
+    )
+
+    result <- read_cerebellar_volume(vol_file, "mock.surf.gii", lut)
+
+    expect_true(all(!is.na(result$colour)))
+    expect_true(all(grepl("^#", result$colour)))
+  })
+
+  it("uses colour from LUT color column when present", {
+    skip_if_not_installed("RNifti")
+
+    vol <- array(0L, dim = c(5, 5, 5))
+    vol[2, 2, 2] <- 1L
+
+    vol_file <- withr::local_tempfile(fileext = ".nii.gz")
+    RNifti::writeNifti(RNifti::asNifti(vol), vol_file)
+
+    lut <- data.frame(
+      idx = 1L,
+      label = "Left Lobule-I",
+      R = 255L, G = 0L, B = 0L, A = 0L,
+      roi = "0001", color = "#FF0000",
+      stringsAsFactors = FALSE
+    )
+
+    local_mocked_bindings(
+      sample_volume_at_surface = function(...) c(1L, 1L)
+    )
+
+    result <- read_cerebellar_volume(vol_file, "mock.surf.gii", lut)
+    expect_equal(result$colour, "#FF0000")
+  })
+})
+
+
+describe("cerebellar_create_meshes", {
+  it("warns when volume labels and atlas regions count differ", {
+    skip_if_not_installed("RNifti")
+
+    vol <- array(0L, dim = c(5, 5, 5))
+    vol[2, 2, 2] <- 1L
+    vol[3, 3, 3] <- 2L
+    vol[4, 4, 4] <- 3L
+
+    vol_file <- withr::local_tempfile(fileext = ".nii.gz")
+    RNifti::writeNifti(RNifti::asNifti(vol), vol_file)
+
+    components <- list(
+      core = data.frame(
+        label = c("region_a", "region_b"),
+        stringsAsFactors = FALSE
+      ),
+      vol_idx = NULL
+    )
+    dirs <- mock_dirs()
+
+    local_mocked_bindings(
+      check_fs = function(...) TRUE,
+      subcort_create_meshes = function(input_volume, colortable, ...) {
+        stats::setNames(
+          lapply(colortable$label, function(l) {
+            list(vertices = data.frame(x = 0, y = 0, z = 0),
+                 faces = data.frame(V1 = 1, V2 = 1, V3 = 1))
+          }),
+          colortable$label
+        )
+      }
+    )
+
+    expect_warning(
+      result <- cerebellar_create_meshes(
+        vol_file, components, dirs,
+        skip_existing = FALSE, verbose = FALSE, decimate = 0.5
+      ),
+      "Volume has 3.*but atlas has 2"
+    )
+
+    expect_equal(nrow(result), 2)
+    expect_true(all(c("label", "mesh") %in% names(result)))
+  })
+
+  it("uses vol_idx mapping when available", {
+    skip_if_not_installed("RNifti")
+
+    vol <- array(0L, dim = c(5, 5, 5))
+    vol[2, 2, 2] <- 10L
+    vol[3, 3, 3] <- 20L
+    vol[4, 4, 4] <- 99L
+
+    vol_file <- withr::local_tempfile(fileext = ".nii.gz")
+    RNifti::writeNifti(RNifti::asNifti(vol), vol_file)
+
+    components <- list(
+      core = data.frame(
+        label = c("lobule_I", "lobule_II", "lobule_III"),
+        stringsAsFactors = FALSE
+      ),
+      vol_idx = c(lobule_I = 10L, lobule_II = 20L, lobule_III = 30L)
+    )
+    dirs <- mock_dirs()
+
+    captured_ct <- NULL
+    local_mocked_bindings(
+      check_fs = function(...) TRUE,
+      subcort_create_meshes = function(input_volume, colortable, ...) {
+        captured_ct <<- colortable
+        stats::setNames(
+          lapply(colortable$label, function(l) list()),
+          colortable$label
+        )
+      }
+    )
+
+    result <- cerebellar_create_meshes(
+      vol_file, components, dirs,
+      skip_existing = FALSE, verbose = FALSE, decimate = 0.5
+    )
+
+    expect_equal(sort(captured_ct$label), c("lobule_I", "lobule_II"))
+    expect_false("lobule_III" %in% captured_ct$label)
+    expect_equal(sort(captured_ct$idx), c(10L, 20L))
+  })
+
+  it("errors when volume file not found", {
+    local_mocked_bindings(check_fs = function(...) TRUE)
+
+    expect_error(
+      cerebellar_create_meshes(
+        "nonexistent.nii.gz", list(), list(),
+        skip_existing = FALSE, verbose = FALSE, decimate = 0.5
+      ),
+      "not found"
+    )
+  })
+})
+
+
+describe("clean_cerebellar_region with whitespace collapsing", {
+  it("collapses multiple internal spaces", {
+    expect_equal(
+      clean_cerebellar_region("Left  Crus   I"),
+      "Crus I"
+    )
+  })
+})
+
+
+describe("cerebellar_read_data", {
+  it("returns cached data when skip_existing and files exist", {
+    dirs <- list(base = withr::local_tempdir())
+
+    mock_components <- list(
+      core = data.frame(
+        hemi = "left", region = "I-IV", label = "left_I-IV",
+        stringsAsFactors = FALSE
+      ),
+      palette = c("left_I-IV" = "#FF0000"),
+      vertices_df = data.frame(label = "left_I-IV")
+    )
+    mock_components$vertices_df$vertices <- list(0:3)
+
+    saveRDS(mock_components, file.path(dirs$base, "components.rds"))
+
+    local_mocked_bindings(
+      load_or_run_step = function(step, steps, files, skip_existing, ...) {
+        list(
+          run = FALSE,
+          data = list("components.rds" = mock_components)
+        )
+      }
+    )
+
+    config <- list(
+      steps = 1L, skip_existing = TRUE, verbose = FALSE
+    )
+    result <- cerebellar_read_data(config, dirs, read_fn = function() {
+      stop("should not be called")
+    })
+
+    expect_equal(result$components, mock_components)
+    expect_null(result$deep_data)
+  })
+
+  it("loads deep_data.rds when cached and present", {
+    dirs <- list(base = withr::local_tempdir())
+
+    mock_components <- list(
+      core = data.frame(
+        hemi = "left", region = "I-IV", label = "left_I-IV",
+        stringsAsFactors = FALSE
+      )
+    )
+    mock_deep <- tibble(
+      hemi = "midline", region = "Dentate", label = "midline_Dentate",
+      colour = "#0000FF", vol_idx = 5L, deep = TRUE
+    )
+    mock_deep$vertices <- list(integer(0))
+
+    saveRDS(mock_components, file.path(dirs$base, "components.rds"))
+    saveRDS(mock_deep, file.path(dirs$base, "deep_data.rds"))
+
+    local_mocked_bindings(
+      load_or_run_step = function(...) {
+        list(
+          run = FALSE,
+          data = list("components.rds" = mock_components)
+        )
+      }
+    )
+
+    config <- list(steps = 1L, skip_existing = TRUE, verbose = FALSE)
+    result <- cerebellar_read_data(config, dirs, read_fn = stop)
+
+    expect_false(is.null(result$deep_data))
+    expect_true(all(result$deep_data$deep))
+  })
+
+  it("separates deep nuclei from surface data when deep column present", {
+    dirs <- list(base = withr::local_tempdir())
+
+    atlas_data <- tibble(
+      hemi = c("left", "midline"),
+      region = c("I-IV", "Dentate"),
+      label = c("left_I-IV", "midline_Dentate"),
+      colour = c("#FF0000", NA_character_),
+      vol_idx = c(1L, 2L),
+      vertices = list(0:3, integer(0)),
+      deep = c(FALSE, TRUE)
+    )
+
+    local_mocked_bindings(
+      load_or_run_step = function(...) {
+        list(run = TRUE, data = list())
+      }
+    )
+
+    config <- list(
+      steps = 1L, skip_existing = FALSE, verbose = FALSE,
+      tolerance = 0, smooth_refinements = 0
+    )
+
+    result <- cerebellar_read_data(config, dirs, read_fn = function() {
+      atlas_data
+    })
+
+    expect_false(is.null(result$deep_data))
+    expect_equal(nrow(result$deep_data), 1)
+    expect_equal(result$deep_data$label, "midline_Dentate")
+    expect_true("midline_Dentate" %in% result$components$core$label)
+    expect_true(file.exists(file.path(dirs$base, "deep_data.rds")))
+  })
+
+  it("fills missing colours for deep nuclei", {
+    dirs <- list(base = withr::local_tempdir())
+
+    atlas_data <- tibble(
+      hemi = c("left", "midline"),
+      region = c("I-IV", "Dentate"),
+      label = c("left_I-IV", "midline_Dentate"),
+      colour = c("#FF0000", NA_character_),
+      vol_idx = c(1L, 2L),
+      vertices = list(0:3, integer(0)),
+      deep = c(FALSE, TRUE)
+    )
+
+    local_mocked_bindings(
+      load_or_run_step = function(...) {
+        list(run = TRUE, data = list())
+      }
+    )
+
+    config <- list(
+      steps = 1L, skip_existing = FALSE, verbose = FALSE,
+      tolerance = 0, smooth_refinements = 0
+    )
+
+    result <- cerebellar_read_data(config, dirs, read_fn = function() {
+      atlas_data
+    })
+
+    deep_colour <- result$components$palette["midline_Dentate"]
+    expect_true(!is.na(deep_colour))
+    expect_true(grepl("^#", deep_colour))
+  })
+})
+
+
+describe("cerebellar_project_and_build", {
+  it("builds atlas without deep nuclei when deep_data is NULL", {
+    components <- list(
+      core = data.frame(
+        hemi = "left", region = "I-IV", label = "left_I-IV",
+        stringsAsFactors = FALSE
+      ),
+      palette = c("left_I-IV" = "#FF0000"),
+      vertices_df = data.frame(label = "left_I-IV", stringsAsFactors = FALSE)
+    )
+    components$vertices_df$vertices <- list(0:999)
+
+    dirs <- mock_dirs()
+    config <- list(
+      verbose = FALSE, tolerance = 0, smooth_refinements = 0,
+      cleanup = FALSE, skip_existing = FALSE
+    )
+
+    atlas <- cerebellar_project_and_build(
+      components = components,
+      deep_data = NULL,
+      volume = NULL,
+      atlas_name = "test_cer",
+      config = config,
+      dirs = dirs,
+      start_time = Sys.time()
+    )
+
+    expect_s3_class(atlas, "ggseg_atlas")
+    expect_s3_class(atlas, "cerebellar_atlas")
+    expect_equal(atlas$type, "cerebellar")
+    expect_true(nrow(atlas$core) > 0)
+  })
+})
+
+
+describe("cerebellar_process_deep_nuclei", {
+  it("returns NULL sf/meshes when vol_idx column missing", {
+    skip_if_not_installed("terra")
+
+    deep_data <- tibble(
+      hemi = "midline", region = "Dentate", label = "midline_Dentate",
+      colour = "#0000FF", deep = TRUE
+    )
+    deep_data$vertices <- list(integer(0))
+
+    dirs <- mock_dirs()
+
+    expect_warning(
+      result <- cerebellar_process_deep_nuclei(
+        volume = "unused.nii.gz", deep_data = deep_data,
+        dirs = dirs, verbose = TRUE
+      ),
+      "vol_idx"
+    )
+
+    expect_null(result$sf)
+    expect_null(result$meshes)
+  })
+
+  it("creates sf geometries from deep nuclei voxels", {
+    skip_if_not_installed("terra")
+    skip_if_not_installed("RNifti")
+
+    vol <- array(0L, dim = c(20, 20, 20))
+    vol[8:12, 8:12, 8:12] <- 1L
+
+    vol_file <- withr::local_tempfile(fileext = ".nii.gz")
+    RNifti::writeNifti(RNifti::asNifti(vol), vol_file)
+
+    deep_data <- tibble(
+      hemi = "midline", region = "Dentate", label = "midline_Dentate",
+      colour = "#0000FF", vol_idx = 1L, deep = TRUE
+    )
+    deep_data$vertices <- list(integer(0))
+
+    dirs <- mock_dirs()
+
+    local_mocked_bindings(check_fs = function(...) FALSE)
+
+    result <- cerebellar_process_deep_nuclei(
+      volume = vol_file, deep_data = deep_data,
+      dirs = dirs, verbose = FALSE
+    )
+
+    expect_s3_class(result$sf, "sf")
+    expect_true(nrow(result$sf) > 0)
+    expect_equal(result$sf$label, "midline_Dentate")
+    expect_equal(result$sf$view, "nuclei")
+    expect_null(result$meshes)
+  })
+
+  it("skips labels with zero voxels in volume", {
+    skip_if_not_installed("terra")
+    skip_if_not_installed("RNifti")
+
+    vol <- array(0L, dim = c(10, 10, 10))
+    vol[3:5, 3:5, 3:5] <- 1L
+
+    vol_file <- withr::local_tempfile(fileext = ".nii.gz")
+    RNifti::writeNifti(RNifti::asNifti(vol), vol_file)
+
+    deep_data <- tibble(
+      hemi = c("midline", "midline"),
+      region = c("Dentate", "Fastigial"),
+      label = c("midline_Dentate", "midline_Fastigial"),
+      colour = c("#0000FF", "#00FF00"),
+      vol_idx = c(1L, 99L),
+      deep = c(TRUE, TRUE)
+    )
+    deep_data$vertices <- list(integer(0), integer(0))
+
+    dirs <- mock_dirs()
+    local_mocked_bindings(check_fs = function(...) FALSE)
+
+    result <- cerebellar_process_deep_nuclei(
+      volume = vol_file, deep_data = deep_data,
+      dirs = dirs, verbose = FALSE
+    )
+
+    expect_equal(nrow(result$sf), 1)
+    expect_equal(result$sf$label, "midline_Dentate")
+  })
+
+  it("creates 3D meshes when FreeSurfer available", {
+    skip_if_no_freesurfer()
+    skip_if_not_installed("terra")
+    skip_if_not_installed("RNifti")
+
+    vol <- array(0L, dim = c(20, 20, 20))
+    vol[5:15, 5:15, 5:15] <- 1L
+
+    vol_file <- withr::local_tempfile(fileext = ".nii.gz")
+    RNifti::writeNifti(RNifti::asNifti(vol), vol_file)
+
+    deep_data <- tibble(
+      hemi = "midline", region = "Dentate", label = "midline_Dentate",
+      colour = "#0000FF", vol_idx = 1L, deep = TRUE
+    )
+    deep_data$vertices <- list(integer(0))
+
+    dirs <- mock_dirs()
+
+    result <- cerebellar_process_deep_nuclei(
+      volume = vol_file, deep_data = deep_data,
+      dirs = dirs, verbose = TRUE
+    )
+
+    expect_s3_class(result$sf, "sf")
+    if (!is.null(result$meshes)) {
+      expect_true(nrow(result$meshes) > 0)
+      expect_true("mesh" %in% names(result$meshes))
+    }
+  })
+})
+
+
+describe("get_tkras_to_world", {
+  it("computes transform matrix from FreeSurfer mri_info", {
+    skip_if_no_freesurfer()
+    skip_if_not_installed("RNifti")
+
+    vol <- array(0L, dim = c(10, 10, 10))
+    vol_file <- withr::local_tempfile(fileext = ".nii.gz")
+    RNifti::writeNifti(RNifti::asNifti(vol), vol_file)
+
+    result <- get_tkras_to_world(vol_file)
+
+    expect_true(is.matrix(result))
+    expect_equal(dim(result), c(4, 4))
+    expect_equal(result[4, ], c(0, 0, 0, 1))
+  })
+})
+
+
+describe("run_cerebellar_creation verbose output", {
+  it("prints header and input files when verbose", {
+    dirs_tmp <- withr::local_tempdir()
+
+    local_mocked_bindings(
+      setup_atlas_dirs = function(...) {
+        list(
+          base = dirs_tmp, snapshots = dirs_tmp,
+          processed = dirs_tmp, masks = dirs_tmp
+        )
+      },
+      cerebellar_read_data = function(...) {
+        list(
+          components = list(
+            core = data.frame(
+              hemi = "left", region = "I-IV", label = "left_I-IV",
+              stringsAsFactors = FALSE
+            ),
+            palette = c("left_I-IV" = "#FF0000"),
+            vertices_df = data.frame(
+              label = "left_I-IV", stringsAsFactors = FALSE
+            )
+          ),
+          deep_data = NULL
+        )
+      },
+      cerebellar_project_and_build = function(...) {
+        structure(list(), class = "ggseg_atlas")
+      }
+    )
+
+    config <- list(
+      verbose = TRUE, output_dir = dirs_tmp,
+      steps = 1:2, skip_existing = FALSE,
+      cleanup = FALSE, tolerance = 0,
+      smooth_refinements = 0
+    )
+
+    expect_messages(
+      run_cerebellar_creation(
+        atlas_name = "test_verbose",
+        config = config,
+        read_fn = function() tibble(),
+        input_files = c("file1.gii", "file2.gii")
+      ),
+      "Creating cerebellar atlas"
+    )
+  })
+})
+
+
+describe("read_suit_parcellation vertex overlap warning", {
+  it("warns when vertices assigned to multiple regions across files", {
+    skip_if_not_installed("gifti")
+    skip_if_not_installed("base64enc")
+
+    make_label_gii <- function(values, lt = NULL) {
+      dir <- withr::local_tempdir(.local_envir = parent.frame(2))
+      label_file <- file.path(dir, paste0("parcellation_", sample(1e6, 1), ".label.gii"))
+
+      labels_b64 <- base64enc::base64encode(
+        writeBin(as.integer(values), raw(), size = 4)
+      )
+
+      lt_xml <- if (!is.null(lt)) {
+        paste(vapply(seq_len(nrow(lt)), function(i) {
+          sprintf(
+            '<Label Key="%d" Red="%.1f" Green="%.1f" Blue="%.1f" Alpha="1">%s</Label>',
+            lt$id[i], lt$r[i], lt$g[i], lt$b[i], lt$name[i]
+          )
+        }, character(1)), collapse = "\n    ")
+      } else {
+        ""
+      }
+
+      xml <- sprintf(
+        '<?xml version="1.0" encoding="UTF-8"?>
+<GIFTI Version="1.0" NumberOfDataArrays="1">
+  <MetaData/><LabelTable>%s</LabelTable>
+  <DataArray Intent="NIFTI_INTENT_LABEL" DataType="NIFTI_TYPE_INT32"
+    ArrayIndexingOrder="RowMajorOrder" Dimensionality="1"
+    Dim0="%d" Encoding="Base64Binary" Endian="LittleEndian">
+    <MetaData/><Data>%s</Data>
+  </DataArray>
+</GIFTI>', lt_xml, length(values), labels_b64)
+
+      writeLines(xml, label_file)
+      label_file
+    }
+
+    lt <- data.frame(
+      id = c(0L, 1L, 2L),
+      name = c("Background", "Left I-IV", "Vermis VI"),
+      r = c(0, 0.8, 0.2),
+      g = c(0, 0.2, 0.8),
+      b = c(0, 0.2, 0.2),
+      stringsAsFactors = FALSE
+    )
+
+    file1 <- make_label_gii(c(1L, 1L, 0L, 0L), lt)
+    file2 <- make_label_gii(c(0L, 2L, 2L, 0L), lt)
+
+    expect_warning(
+      result <- read_suit_parcellation(c(file1, file2)),
+      "overlaps"
+    )
+
+    expect_s3_class(result, "tbl_df")
+    expect_true(nrow(result) >= 2)
+  })
+})
+
+
+describe("create_cerebellar_from_volume integration", {
+  it("runs the full pipeline with a real NIfTI volume", {
+    skip_if_not_installed("RNifti")
+    skip_if_not_installed("gifti")
+    skip_on_cran()
+
+    vol <- array(0L, dim = c(112, 93, 66))
+    hdr <- RNifti::dumpNifti(RNifti::asNifti(vol))
+    hdr$sform_code <- 2L
+    hdr$srow_x <- c(1, 0, 0, -55)
+    hdr$srow_y <- c(0, 1, 0, -92)
+    hdr$srow_z <- c(0, 0, 1, -65)
+
+    vol[30:40, 47:51, 38:42] <- 1L
+    vol[70:80, 47:51, 38:42] <- 2L
+
+    vol_file <- withr::local_tempfile(fileext = ".nii.gz")
+    RNifti::writeNifti(RNifti::asNifti(vol, reference = hdr), vol_file)
+
+    lut <- data.frame(
+      idx = c(1L, 2L),
+      label = c("Left Lobule-I", "Right Lobule-V"),
+      stringsAsFactors = FALSE
+    )
+
+    atlas <- create_cerebellar_from_volume(
+      volume = vol_file,
+      input_lut = lut,
+      atlas_name = "test_cer_integ",
+      smooth_refinements = 0,
+      tolerance = 0,
+      verbose = FALSE,
+      cleanup = TRUE
+    )
+
+    expect_s3_class(atlas, "ggseg_atlas")
+    expect_s3_class(atlas, "cerebellar_atlas")
+    expect_true(nrow(atlas$core) >= 2)
+
+    sf_data <- ggseg.formats::atlas_sf(atlas)
+    expect_s3_class(sf_data, "sf")
+    expect_true("flatmap" %in% sf_data$view)
   })
 })

@@ -25,6 +25,7 @@ Other contributors:
 \itemize{
   \item Didac Vidal-Piñeiro \email{d.v.pineiro@psykologi.uio.no} (\href{https://orcid.org/0000-0001-9997-9156}{ORCID}) [contributor, copyright holder]
   \item John Muschelli \email{muschellij2@gmail.com} (\href{https://orcid.org/0000-0001-6469-1750}{ORCID}) [contributor]
+  \item Center for Lifespan Changes in Brain and Cognition (LCBC), University of Oslo [copyright holder]
 }
 
 }

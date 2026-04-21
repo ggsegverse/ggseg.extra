@@ -1,6 +1,6 @@
 Package: ggseg.extra
 Title: Create Brain Atlases for the 'ggsegverse' Plotting Ecosystem
-Version: 1.9.9.9003
+Version: 1.9.9.9004
 Authors@R: c(
     person(
         given = "Athanasia Mo",
@@ -21,7 +21,9 @@ Authors@R: c(
         family = "Muschelli",
         email =  "muschellij2@gmail.com",
         role = "ctb",
-        comment = c(ORCID = "0000-0001-6469-1750"))
+        comment = c(ORCID = "0000-0001-6469-1750")),
+    person("Center for Lifespan Changes in Brain and Cognition (LCBC), University of Oslo",
+           role = "cph")
   )
 Description: Create brain atlas data sets compatible with the 'ggsegverse' plotting packages in 'R'. Provides pipelines for building
     cortical, subcortical, white-matter tract, and cerebellar atlases from
@@ -37,6 +39,7 @@ Imports:
     dplyr,
     future,
     furrr,
+    ggseg,
     ggseg.formats,
     ggseg3d (>= 2.0.0),
     grDevices,
@@ -56,7 +59,6 @@ Suggests:
     freesurferformats,
     ggplot2,
     gifti,
-    ggseg,
     hexSticker,
     htmlwidgets,
     knitr,
@@ -80,10 +82,9 @@ Encoding: UTF-8
 Language: en-US
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3
-SystemRequirements: FreeSurfer (subcortical/tract/wholebrain pipelines,
-    and annotation reading for cortical pipelines), ImageMagick
-    (subcortical/tract pipelines only), Connectome Workbench (optional,
-    for CIFTI resampling).
+SystemRequirements: FreeSurfer (subcortical/tract/wholebrain pipelines), 
+    ImageMagick (subcortical/tract pipelines only), 
+    Connectome Workbench (optional, for CIFTI resampling).
 Config/testthat/edition: 3
 Config/testthat/parallel: true
 Config/Needs/website: ggsegverse/ggseg.docs

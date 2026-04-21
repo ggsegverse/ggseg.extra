@@ -843,11 +843,13 @@ describe("create_tract_geometry_volumetric", {
       layout_volumetric_views = function(df) df
     )
 
-    result <- create_tract_geometry_volumetric(
-      atlas = fake_atlas,
-      aseg_file = aseg_tmp,
-      streamlines = fake_streamlines,
-      verbose = TRUE
+    expect_messages(
+      result <- create_tract_geometry_volumetric(
+        atlas = fake_atlas,
+        aseg_file = aseg_tmp,
+        streamlines = fake_streamlines,
+        verbose = TRUE
+      )
     )
 
     expect_s3_class(result, "sf")
@@ -1029,11 +1031,13 @@ describe("create_tract_geometry_volumetric", {
       layout_volumetric_views = function(df) df
     )
 
-    result <- create_tract_geometry_volumetric(
-      atlas = fake_atlas,
-      aseg_file = aseg_tmp,
-      streamlines = list(tract_a = matrix(1:6, ncol = 3)),
-      verbose = TRUE
+    expect_messages(
+      result <- create_tract_geometry_volumetric(
+        atlas = fake_atlas,
+        aseg_file = aseg_tmp,
+        streamlines = list(tract_a = matrix(1:6, ncol = 3)),
+        verbose = TRUE
+      )
     )
 
     expect_s3_class(result, "sf")
@@ -1338,11 +1342,13 @@ describe("create_tract_geometry_volumetric", {
       layout_volumetric_views = function(df) df
     )
 
-    result <- create_tract_geometry_volumetric(
-      atlas = fake_atlas,
-      aseg_file = aseg_tmp,
-      streamlines = list(tract_a = matrix(1:6, ncol = 3)),
-      verbose = TRUE
+    expect_messages(
+      result <- create_tract_geometry_volumetric(
+        atlas = fake_atlas,
+        aseg_file = aseg_tmp,
+        streamlines = list(tract_a = matrix(1:6, ncol = 3)),
+        verbose = TRUE
+      )
     )
 
     expect_s3_class(result, "sf")
@@ -1520,12 +1526,14 @@ describe("create_tract_geometry_volumetric", {
       layout_volumetric_views = function(df) df
     )
 
-    result <- create_tract_geometry_volumetric(
-      atlas = fake_atlas,
-      aseg_file = aseg_tmp,
-      streamlines = list(tract_a = matrix(c(5:14, rep(0, 20)), ncol = 3)),
-      coords_are_voxels = NULL,
-      verbose = TRUE
+    expect_messages(
+      result <- create_tract_geometry_volumetric(
+        atlas = fake_atlas,
+        aseg_file = aseg_tmp,
+        streamlines = list(tract_a = matrix(c(5:14, rep(0, 20)), ncol = 3)),
+        coords_are_voxels = NULL,
+        verbose = TRUE
+      )
     )
 
     expect_s3_class(result, "sf")

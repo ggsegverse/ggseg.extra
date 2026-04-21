@@ -285,16 +285,19 @@ describe("tract_create_snapshots", {
     streamlines_data <- list(t1 = list(matrix(1:9, ncol = 3)))
     dirs <- list(snapshots = withr::local_tempdir())
 
-    result <- tract_create_snapshots(
-      streamlines_data,
-      centerlines_df,
-      "fake_aseg.mgz",
-      NULL,
-      dirs,
-      TRUE,
-      FALSE,
-      3,
-      TRUE
+    expect_messages(
+      result <- tract_create_snapshots(
+        streamlines_data,
+        centerlines_df,
+        "fake_aseg.mgz",
+        NULL,
+        dirs,
+        TRUE,
+        FALSE,
+        3,
+        TRUE
+      ),
+      "Creating cortex reference slices"
     )
 
     expect_true(is.list(result))
@@ -641,7 +644,7 @@ describe("tract_log_header", {
   it("prints info when verbose", {
     config <- list(verbose = TRUE)
 
-    expect_message(
+    expect_messages(
       tract_log_header(config, "tract.trk", "aseg.mgz"),
       "tractography"
     )
@@ -1089,7 +1092,7 @@ describe("finalize_atlas (tract parameters)", {
       log_elapsed = function(...) invisible(NULL)
     )
 
-    expect_message(
+    expect_messages(
       finalize_atlas(
         NULL, config, dirs, Sys.time(),
         type_label = "Tract", unit = "tracts", early_step = 1L

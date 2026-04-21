@@ -71,10 +71,28 @@ tessellate_label <- function(
 
   volume_file <- ensure_fs_compatible_nifti(volume_file, output_dir)
 
+  # mri_pretess writes UCHAR output — labels > 255 wrap around. Remap the
+  # target label to 1 in an isolated volume before pretess/tessellate.
+  pretess_input <- volume_file
+  tess_label <- label_id
+  if (label_id > 255L) {
+    remapped_file <- paste0(base_name, "_remap.nii.gz")
+    if (!skip_existing || !file.exists(remapped_file)) {
+      vol <- RNifti::readNifti(volume_file)
+      arr <- as.array(vol)
+      mask <- array(0L, dim = dim(arr))
+      mask[arr == label_id] <- 1L
+      out <- RNifti::asNifti(mask, reference = vol)
+      RNifti::writeNifti(out, remapped_file)
+    }
+    pretess_input <- remapped_file
+    tess_label <- 1L
+  }
+
   if (!skip_existing || !file.exists(pretess_file)) {
     mri_pretess(
-      template = volume_file,
-      label = label_id,
+      template = pretess_input,
+      label = tess_label,
       output_file = pretess_file,
       verbose = verbose
     )
@@ -87,7 +105,7 @@ tessellate_label <- function(
   if (!skip_existing || !file.exists(tess_file)) {
     mri_tessellate(
       input_file = pretess_file,
-      label = label_id,
+      label = tess_label,
       output_file = tess_file,
       verbose = verbose
     )
@@ -219,28 +237,47 @@ read_fs_surface <- function(file, verbose = get_verbose()) {
 #' Generate colour table from volume labels
 #'
 #' Creates a colour lookup table from unique labels in a volume file.
-#' Region names are generic and colours are NA (auto-generated downstream).
+#' Region names are generic (`region_XXXX`) and RGB colours are spread
+#' evenly around the HCL hue wheel so downstream atlases render with
+#' distinct colours instead of the default black.
 #'
 #' @param volume_file Path to volume file
 #' @return data.frame with columns: idx, label, R, G, B, A, roi, color
 #' @keywords internal
+#' @importFrom grDevices col2rgb hcl
 # nolint next: object_length_linter.
 generate_colortable_from_volume <- function(volume_file) {
   vol <- read_volume(volume_file)
   vol_labels <- sort(unique(c(vol)))
   vol_labels <- vol_labels[vol_labels != 0]
 
+  hex <- generate_region_palette(length(vol_labels))
+  rgb_mat <- col2rgb(hex)
+
   data.frame(
     idx = vol_labels,
     label = sprintf("region_%04d", vol_labels),
-    R = NA_integer_,
-    G = NA_integer_,
-    B = NA_integer_,
+    R = as.integer(rgb_mat["red", ]),
+    G = as.integer(rgb_mat["green", ]),
+    B = as.integer(rgb_mat["blue", ]),
     A = 0L,
     roi = sprintf("%04d", vol_labels),
-    color = NA_character_,
+    color = hex,
     stringsAsFactors = FALSE
   )
+}
+
+
+#' Evenly spaced HCL palette for generic region colouring
+#'
+#' @param n Number of colours to generate.
+#' @return Character vector of `n` hex colours.
+#' @keywords internal
+#' @importFrom grDevices hcl
+generate_region_palette <- function(n) {
+  if (n <= 0) return(character(0))
+  hues <- seq(15, 375, length.out = n + 1)[seq_len(n)]
+  hcl(h = hues, l = 65, c = 100)
 }
 
 
@@ -442,7 +479,8 @@ create_subcortical_geometry_projection <- function(
     vertex_size_limits = vertex_size_limits
   )
   smooth_contours(dirs$base, smoothness, step = "", verbose = verbose)
-  reduce_vertex(dirs$base, tolerance, step = "", verbose = verbose)
+  reduce_vertex(dirs$base, tolerance, smoothness = smoothness,
+                step = "", verbose = verbose)
 
   if (verbose) {
     cli::cli_alert_info("Building sf geometry")

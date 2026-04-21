@@ -58,7 +58,7 @@ aseg_raw <- create_subcortical_from_volume(
 #> 10000)
 #> ℹ Large atlases may be slow to plot and
 #>   increase package size
-#> ℹ Re-run with higher `tolerance` to
+#> ℹ Re-run with lower `tolerance` to
 #>   reduce vertices
 
 aseg_raw

@@ -207,7 +207,8 @@ validate_subcort_config <- function(
   if (!file.exists(input_volume)) {
     cli::cli_abort("Volume file not found: {.path {input_volume}}")
   }
-  if (!is.null(input_lut) && !file.exists(input_lut)) {
+  if (!is.null(input_lut) && is.character(input_lut) &&
+        !file.exists(input_lut)) {
     cli::cli_abort("Color lookup table not found: {.path {input_lut}}")
   }
 
