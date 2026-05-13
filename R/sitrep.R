@@ -6,7 +6,8 @@
 #'
 #' @param detail Character. Level of detail to display:
 #'   - `"simple"` (default): Quick pass/fail overview
-#'   - `"full"`: Detailed diagnostics including [freesurfer::fs_sitrep()]
+#'   - `"full"`: Detailed diagnostics including `freesurfer::fs_sitrep()`
+#'     when available
 #'
 #' @return Invisibly returns a list with check results.
 #' @export
@@ -33,12 +34,12 @@ setup_sitrep <- function(detail = c("simple", "full")) {
 check_freesurfer <- function(detail = "simple") {
   if (!rlang::is_installed("freesurfer")) {
     cli::cli_alert_danger("freesurfer R package not installed")
-    return(FALSE)
+    return(list(available = FALSE))
   }
   has_fs <- freesurfer::have_fs()
 
   if (detail == "full") {
-    freesurfer::fs_sitrep()
+    fs_sitrep_safe()
   } else {
     if (has_fs) {
       cli::cli_alert_success("FreeSurfer")
@@ -48,6 +49,20 @@ check_freesurfer <- function(detail = "simple") {
   }
 
   list(available = has_fs)
+}
+
+
+# `fs_sitrep()` was added in freesurfer > 1.8.1 (CRAN). Call it via the
+# namespace only if the binding exists so older installs don't error.
+fs_sitrep_safe <- function() {
+  ns <- asNamespace("freesurfer")
+  if (exists("fs_sitrep", envir = ns, inherits = FALSE)) {
+    get("fs_sitrep", envir = ns)()
+  } else {
+    cli::cli_alert_info(
+      "Detailed {.pkg freesurfer} diagnostics require a newer version of the package."
+    )
+  }
 }
 
 

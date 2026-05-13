@@ -2,9 +2,9 @@ describe("setup_sitrep", {
   it("returns list of results invisibly", {
     local_mocked_bindings(
       have_fs = function() TRUE,
-      fs_sitrep = function() invisible(NULL),
       .package = "freesurfer"
     )
+    local_mocked_bindings(fs_sitrep_safe = function() invisible(NULL))
 
     expect_message(result <- setup_sitrep("simple"))
 
@@ -17,9 +17,9 @@ describe("setup_sitrep", {
   it("accepts detail parameter", {
     local_mocked_bindings(
       have_fs = function() TRUE,
-      fs_sitrep = function() invisible(NULL),
       .package = "freesurfer"
     )
+    local_mocked_bindings(fs_sitrep_safe = function() invisible(NULL))
 
     expect_no_error(expect_message(setup_sitrep("simple")))
     expect_no_error(expect_message(setup_sitrep("full")))
@@ -157,7 +157,9 @@ describe("find_chrome_path", {
     )
     local_mocked_bindings(
       file.exists = function(path) {
-        if (any(grepl("Chrome|Chromium|chrome", path))) return(FALSE)
+        if (any(grepl("Chrome|Chromium|chrome", path))) {
+          return(FALSE)
+        }
         base::file.exists(path)
       },
       .package = "base"

@@ -7,6 +7,7 @@ CIFTI
 CMD
 CSF
 Centerline
+Chaikin
 Colour
 Connectome
 DK
@@ -20,7 +21,9 @@ Frenet
 GH
 GIFTI
 GitLab
+Glasser
 HCL
+HCP
 ImageMagick
 LUT
 Lifebrain
@@ -29,7 +32,9 @@ MGZ
 MNI
 MRtrix
 NIfTI
+NeuroVault
 Neuromaps
+Neuroscientists
 Nx
 ORCID
 Peucker
@@ -57,10 +62,13 @@ Yeo
 abagen
 annot
 aparc
+artefacts
 aseg
+backface
 behaviour
 bibentry
 binormals
+blobby
 caudate
 centerline
 chromote
@@ -80,11 +88,14 @@ fibres
 freesurfer
 fsaverage
 furrr
+ggplot
 ggseg
 ggsegExtra
+ggsegHO
 ggsegverse
 github
 grey
+gyri
 gyrus
 gz
 hemi
@@ -95,9 +106,12 @@ labelled
 lh
 medoid
 mgz
+midline
 minimises
 mri
 mris
+neighbouring
+neighbours
 neuroimaging
 neuromapr
 neuromaps
@@ -117,6 +131,7 @@ purrr
 putamen
 quadric
 ras
+rasterisation
 rda
 renderers
 repositions
@@ -126,6 +141,7 @@ rh
 roi
 roxygen
 sagittal
+sawtooth
 segmentations
 subcortical
 summarises
@@ -141,5 +157,6 @@ visualising
 vox
 webshot
 websocket
+wholebrain
 ’
 ’s

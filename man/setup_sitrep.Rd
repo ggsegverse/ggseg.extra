@@ -10,7 +10,8 @@ setup_sitrep(detail = c("simple", "full"))
 \item{detail}{Character. Level of detail to display:
 \itemize{
 \item \code{"simple"} (default): Quick pass/fail overview
-\item \code{"full"}: Detailed diagnostics including \code{\link[freesurfer:fs_sitrep]{freesurfer::fs_sitrep()}}
+\item \code{"full"}: Detailed diagnostics including \code{freesurfer::fs_sitrep()}
+when available
 }}
 }
 \value{
