@@ -20,9 +20,7 @@ process_snapshot_image <- function(
   fuzz = 10,
   skip_existing = get_skip_existing()
 ) {
-  rlang::check_installed("magick",
-    reason = "for snapshot image processing"
-  )
+  rlang::check_installed("magick", reason = "for snapshot image processing")
   if (skip_existing && file.exists(output_file)) {
     return(invisible(output_file))
   }
@@ -59,7 +57,10 @@ extract_alpha_mask <- function(
   exit_code <- system2(
     "magick",
     args = c(
-      shQuote(input_file), "-alpha", "extract", shQuote(output_file)
+      shQuote(input_file),
+      "-alpha",
+      "extract",
+      shQuote(output_file)
     ),
     stdout = FALSE,
     stderr = FALSE
@@ -211,7 +212,7 @@ check_magick <- function() {
 #' @noRd
 magick_version <- function() {
   tryCatch(
-    system2("magick", "--version", stdout = TRUE)[1],
+    system2("magick", "--version", stdout = TRUE, stderr = FALSE)[1],
     error = function(e) "",
     warning = function(w) ""
   )
@@ -260,9 +261,7 @@ get_contours <- function(
   vertex_size_limits = c(3 * 10^6, 3 * 10^7),
   verbose = get_verbose() # nolint: object_usage_linter
 ) {
-  rlang::check_installed("terra",
-    reason = "for contour extraction"
-  )
+  rlang::check_installed("terra", reason = "for contour extraction")
   mx <- terra::global(raster_object, fun = "max", na.rm = TRUE)[1, 1]
 
   if (mx < max_val) {
@@ -299,9 +298,7 @@ isolate_region <- function(
   interim_file = tempfile(),
   skip_existing = get_skip_existing()
 ) {
-  rlang::check_installed("magick",
-    reason = "for snapshot image processing"
-  )
+  rlang::check_installed("magick", reason = "for snapshot image processing")
   if (skip_existing && file.exists(output_file)) {
     return(invisible(output_file))
   }
@@ -316,7 +313,10 @@ isolate_region <- function(
     system2(
       "magick",
       args = c(
-        shQuote(interim_file), "-alpha", "extract", shQuote(output_file)
+        shQuote(interim_file),
+        "-alpha",
+        "extract",
+        shQuote(output_file)
       ),
       stdout = FALSE,
       stderr = FALSE
