@@ -222,7 +222,8 @@ magick_version <- function() {
 
 #' @noRd
 run_cmd <- function(cmd, verbose = get_verbose(), no_ui = FALSE) {
-  # nolint: object_usage_linter
+                                        # nolint: object_usage_linter
+  print(cmd)
   if (no_ui) {
     if (Sys.info()["sysname"] == "Darwin") {
       fv_args <- sub("^freeview[[:space:]]*", "", cmd)
@@ -236,7 +237,7 @@ run_cmd <- function(cmd, verbose = get_verbose(), no_ui = FALSE) {
       cmd <- paste("fsxvfb", cmd)
     }
   }
-  full_cmd <- paste0(freesurfer::get_fs(), cmd)
+  full_cmd <- paste0(sub(";\\s*$", "", freesurfer::get_fs()), "; ", cmd)
   suppress <- verbose < 2
   exit_code <- system(
     paste("bash -c", shQuote(full_cmd)),
