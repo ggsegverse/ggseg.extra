@@ -237,7 +237,12 @@ run_cmd <- function(cmd, verbose = get_verbose(), no_ui = FALSE) {
       cmd <- paste("fsxvfb", cmd)
     }
   }
-  full_cmd <- paste0(sub(";\\s*$", "", freesurfer::get_fs()), "; ", cmd)
+  fs_init <- sub(";\\s*$", "", freesurfer::get_fs())
+  full_cmd <- if (nzchar(trimws(fs_init))) {
+    paste0(fs_init, "; ", cmd)
+  } else {
+    cmd
+  }
   suppress <- verbose < 2
   exit_code <- system(
     paste("bash -c", shQuote(full_cmd)),
