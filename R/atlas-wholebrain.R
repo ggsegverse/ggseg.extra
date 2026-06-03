@@ -92,17 +92,19 @@
 #'   of cortical or subcortical. Uses the bundled SUIT surfaces from
 #'   [suit_flatmap_path()] and [suit_3d_path()].
 #' @param cortical_opts Named list of extra arguments forwarded to the
-#'   cortical sub-pipeline. Allowed entries: `views`, `tolerance`,
-#'   `smooth_refinements`. Unknown entries error. Leave empty to use defaults.
+#'   cortical sub-pipeline. Allowed entry: `views`. Unknown entries error.
+#'   Leave empty to use defaults.
 #' @param subcortical_opts Named list of extra arguments forwarded to
 #'   [create_subcortical_from_volume()]. Any argument of that function may
 #'   be set here except those managed by the wholebrain pipeline
 #'   (`input_volume`, `input_lut`, `atlas_name`, `output_dir`, `verbose`,
 #'   `cleanup`, `skip_existing`). Use this to tune `dilate`,
-#'   `vertex_size_limits`, `tolerance`, `smoothness`, `decimate`, `views`.
+#'   `vertex_size_limits`, `decimate`, `views`. The deprecated
+#'   `tolerance`/`smoothness` entries trigger a lifecycle warning.
 #' @param cerebellar_opts Named list of extra arguments forwarded to
-#'   [create_cerebellar_from_volume()]. Allowed entries include `tolerance`,
-#'   `smooth_refinements`, `decimate`.
+#'   [create_cerebellar_from_volume()]. Allowed entries include `decimate`.
+#'   The deprecated `tolerance`/`smooth_refinements` entries trigger a
+#'   lifecycle warning.
 #' @template cleanup
 #' @template verbose
 #' @template skip_existing
@@ -124,7 +126,6 @@
 #' @importFrom dplyr tibble bind_rows filter
 #' @importFrom grDevices rgb
 #' @importFrom tools file_path_sans_ext
-#' @importFrom utils modifyList
 #'
 #' @examples
 #' \dontrun{
@@ -145,7 +146,7 @@
 #'   input_volume = "my_atlas.nii.gz",
 #'   input_lut = lut,
 #'   atlas_name = "my_atlas",
-#'   subcortical_opts = list(dilate = 2, smoothness = 8)
+#'   subcortical_opts = list(dilate = 2)
 #' )
 #' result$cortical   # surface-based cortical atlas
 #' result$subcortical # mesh-based subcortical atlas
@@ -1005,6 +1006,12 @@ wholebrain_run_cortical <- function(
     views <- c("lateral", "medial", "superior", "inferior")
   }
 
+  warn_deprecated_sf_smoothing(
+    tolerance = opts$tolerance,
+    smooth_refinements = opts$smooth_refinements,
+    fn = "create_wholebrain_from_volume(cortical_opts)"
+  )
+
   cortical_data <- projection$atlas_data[
     projection$atlas_data$source_label %in% split$cortical_labels,
   ]
@@ -1119,7 +1126,6 @@ wholebrain_run_subcortical <- function(
 
 # Step 5: Run cerebellar pipeline ----
 
-#' @importFrom utils modifyList
 #' @noRd
 wholebrain_run_cerebellar <- function(
   config,
@@ -1167,8 +1173,7 @@ wholebrain_run_cerebellar <- function(
     cleanup = FALSE,
     skip_existing = config$skip_existing
   )
-  defaults <- list(smooth_refinements = 2L)
-  args <- c(managed, modifyList(defaults, opts))
+  args <- c(managed, opts)
   do.call(create_cerebellar_from_volume, args)
 }
 

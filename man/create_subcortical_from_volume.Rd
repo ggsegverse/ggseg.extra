@@ -51,19 +51,15 @@ filtered out. Default NULL applies no limits.}
 \item{dilate}{Dilation iterations for 2D polygons. Useful for filling small
 gaps between structures.}
 
-\item{tolerance}{Proportion of vertices to retain during topology-preserving
-simplification (0--1). Lower values produce simpler, smoother shapes.
-Passed to \code{\link[rmapshaper:ms_simplify]{rmapshaper::ms_simplify()}}.
-If not specified, uses \code{options("ggseg.extra.tolerance")} or the
-\code{GGSEG_EXTRA_TOLERANCE} environment variable. Default is 0.05.}
+\item{tolerance}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} sf simplification is
+no longer applied during atlas creation. Use \code{\link[=atlas_smooth]{atlas_smooth()}} on the
+returned atlas instead. Supplying a value emits a lifecycle warning
+and is otherwise ignored.}
 
-\item{smoothness}{Smoothing factor for 2D contours from screenshot-based
-pipelines. Higher values produce smoother region boundaries (typical
-range: 3--15). If not specified, uses
-\code{options("ggseg.extra.smoothness")} or the \code{GGSEG_EXTRA_SMOOTHNESS}
-environment variable. Default is 5. Note: for mesh-based pipelines,
-smoothing is handled by topology-preserving simplification via
-\code{tolerance}.}
+\item{smoothness}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} sf contour smoothing
+is no longer applied during atlas creation. Use \code{\link[=atlas_smooth]{atlas_smooth()}} on the
+returned atlas instead. Supplying a value emits a lifecycle warning
+and is otherwise ignored.}
 
 \item{verbose}{Verbosity level: \code{0} (silent), \code{1} (standard progress,
 default), or \code{2} (debug, includes FreeSurfer output). Logical values

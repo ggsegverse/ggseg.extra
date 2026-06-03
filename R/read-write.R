@@ -154,7 +154,10 @@ read_ply_mesh <- function(ply, ...) {
 #' @return List of tibble rows
 #' @noRd
 extract_vertex_regions <- function(
-  vertex_codes, regions, hemi, hemi_short
+  vertex_codes,
+  regions,
+  hemi,
+  hemi_short
 ) {
   all_data <- vector("list", nrow(regions))
   labeled <- vector("list", nrow(regions))
@@ -162,7 +165,9 @@ extract_vertex_regions <- function(
 
   for (i in seq_len(nrow(regions))) {
     region_vertices <- which(vertex_codes == regions$code[i]) - 1L
-    if (length(region_vertices) == 0) next
+    if (length(region_vertices) == 0) {
+      next
+    }
 
     n_regions <- n_regions + 1L
     labeled[[n_regions]] <- region_vertices
@@ -372,7 +377,9 @@ read_ctab <- function(path) {
   )
   parsed <- regmatches(lines, regexec(lut_pattern, lines))
   rows <- lapply(parsed, function(m) {
-    if (length(m) == 0) return(NULL)
+    if (length(m) == 0) {
+      return(NULL)
+    }
     data.frame(
       idx = as.integer(m[2]),
       label = trimws(m[3]),
@@ -385,7 +392,9 @@ read_ctab <- function(path) {
     )
   })
   result <- do.call(rbind, Filter(Negate(is.null), rows))
-  if (all(is.na(result$type))) result$type <- NULL
+  if (all(is.na(result$type))) {
+    result$type <- NULL
+  }
   result
 }
 
@@ -480,6 +489,86 @@ get_ctab <- function(color_lut) {
   colourtable
 }
 
+
+#' Add rows to a FreeSurfer color table
+#'
+#' Append custom label entries to a color table (as read by [read_ctab()]).
+#' Scalar inputs are recycled to the length of `idx`. Useful for adding
+#' custom subregion labels (e.g. hemisphere-prefixed or split structures)
+#' before passing the table to [create_subcortical_from_volume()].
+#'
+#' @param lut A color table data.frame (passes [is_ctab()]).
+#' @param idx Integer label indices to add.
+#' @param label Character region labels.
+#' @param R,G,B,A Integer colour channels (0-255); `A` defaults to `0`.
+#' @return `lut` with the new rows appended (a `type` column, if present, is
+#'   filled with `NA` for the new rows).
+#' @seealso [read_ctab()], [lut_combine()]
+#' @export
+#' @examples
+#' ct <- data.frame(
+#'   idx = 0L, label = "Unknown", R = 0L, G = 0L, B = 0L, A = 0L
+#' )
+#' lut_add(ct, idx = 20001:20002,
+#'         label = c("Left-Hippocampus-ant", "Left-Hippocampus-post"),
+#'         R = c(220, 60), G = c(190, 140), B = c(30, 200))
+lut_add <- function(lut, idx, label, R, G, B, A = 0L) {
+  if (!is_ctab(lut)) {
+    cli::cli_abort("{.arg lut} must be a color table; see {.fn is_ctab}.")
+  }
+  n <- length(idx)
+  new <- data.frame(
+    idx = as.integer(idx),
+    label = rep_len(as.character(label), n),
+    R = as.integer(rep_len(R, n)),
+    G = as.integer(rep_len(G, n)),
+    B = as.integer(rep_len(B, n)),
+    A = as.integer(rep_len(A, n)),
+    stringsAsFactors = FALSE
+  )
+  lut_combine(lut, new)
+}
+
+
+#' Combine FreeSurfer color tables
+#'
+#' Row-binds several color tables (as read by [read_ctab()] or built with
+#' [lut_add()]) into one, aligning columns (a `type` column present in only
+#' some tables is filled with `NA`) and warning on duplicate label indices.
+#'
+#' @param ... Color table data.frames, each passing [is_ctab()]. `NULL`
+#'   inputs are dropped.
+#' @return A single combined color table.
+#' @seealso [read_ctab()], [lut_add()]
+#' @export
+#' @examples
+#' a <- data.frame(idx = 0L, label = "Unknown", R = 0L, G = 0L, B = 0L, A = 0L)
+#' b <- data.frame(idx = 1L, label = "Region1", R = 5L, G = 5L, B = 5L, A = 0L)
+#' lut_combine(a, b)
+lut_combine <- function(...) {
+  luts <- Filter(Negate(is.null), list(...))
+  if (length(luts) == 0) {
+    cli::cli_abort("Provide at least one color table.")
+  }
+  if (!all(vapply(luts, is_ctab, logical(1)))) {
+    cli::cli_abort("All inputs must be color tables; see {.fn is_ctab}.")
+  }
+  cols <- Reduce(union, lapply(luts, names))
+  luts <- lapply(luts, function(d) {
+    for (cc in setdiff(cols, names(d))) {
+      d[[cc]] <- NA
+    }
+    d[cols]
+  })
+  out <- do.call(rbind, luts)
+  dup <- unique(out$idx[duplicated(out$idx)])
+  if (length(dup) > 0) {
+    cli::cli_warn("Duplicate label indices in combined table: {.val {dup}}.")
+  }
+  rownames(out) <- NULL
+  out
+}
+
 # GIFTI annotation reading ----
 
 #' Detect hemisphere from GIFTI filename
@@ -542,7 +631,8 @@ read_gifti_annotation <- function(gifti_files) {
   )
 
   if (!all(file.exists(gifti_files))) {
-    missing <- gifti_files[ # nolint: object_usage_linter.
+    missing <- gifti_files[
+      # nolint: object_usage_linter.
       !file.exists(gifti_files)
     ]
     cli::cli_abort(
@@ -639,7 +729,9 @@ read_cifti_annotation <- function(cifti_file) {
   )
 
   for (hi in hemi_info) {
-    if (is.null(hi$data)) next
+    if (is.null(hi$data)) {
+      next
+    }
 
     vertex_labels <- as.integer(hi$data[, 1])
     n_verts <- length(vertex_labels)
@@ -715,7 +807,8 @@ read_neuromaps_annotation <- function(
   rlang::check_installed("gifti", reason = "to read GIFTI metric files")
 
   if (!all(file.exists(gifti_files))) {
-    missing <- gifti_files[ # nolint: object_usage_linter.
+    missing <- gifti_files[
+      # nolint: object_usage_linter.
       !file.exists(gifti_files)
     ]
     cli::cli_abort(
@@ -992,7 +1085,8 @@ read_neuromaps_volume <- function(
   needs_colour <- is.na(result$colour) & result$region != "unknown"
   if (any(needs_colour)) {
     result$colour[needs_colour] <- grDevices::hcl.colors(
-      sum(needs_colour), "Set2"
+      sum(needs_colour),
+      "Set2"
     )
   }
 

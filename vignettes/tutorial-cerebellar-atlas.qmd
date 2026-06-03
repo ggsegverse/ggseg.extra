@@ -127,25 +127,24 @@ After the transform, pass the SUIT-space volume to `create_cerebellar_from_volum
 
 ## Tuning the output
 
-The cerebellar pipeline has two parameters that control output geometry:
-
-- `tolerance` — proportion of vertices to retain during topology-preserving simplification via `rmapshaper::ms_simplify()`.
-  Default is 0.05.
-  Lower values produce simpler polygons with fewer vertices.
-  Set to 0 to skip simplification entirely.
-- `smooth_refinements` — deprecated (kept for backwards compatibility).
-  Smoothing is now handled entirely by the `tolerance` parameter.
-
-For 3D meshes, `decimate` controls quadric edge decimation (0–1, default 0.5).
-A value of 0.5 reduces the mesh to roughly half its original vertex count.
+The cerebellar pipeline now returns raw, unsmoothed flatmap polygons.
+Smoothing is a separate post-processing step via `atlas_smooth()` — apply it once and tune `keep` freely without re-running the pipeline:
 
 ``` r
 atlas <- create_cerebellar_from_gifti(
   gifti_files = "Lobules-SUIT.label.gii",
-  tolerance = 0.1,
   decimate = 0.3
 )
+
+atlas <- atlas |>
+  atlas_smooth(keep = 0.2, exclude = "cortex_")
 ```
+
+For 3D meshes, `decimate` controls quadric edge decimation (0–1, default 0.5).
+A value of 0.5 reduces the mesh to roughly half its original vertex count.
+
+The `tolerance`, `smoothness` and `smooth_refinements` arguments on the `create_*()` functions are deprecated.
+Supplying them emits a lifecycle warning and they are otherwise ignored.
 
 ## Post-processing
 

@@ -1,3 +1,63 @@
+# ggseg.extra 1.9.9.9005
+
+## sf smoothing moves out of atlas creation
+
+Pipeline-time simplification of 2D sf geometry was the most common reason
+to re-run an otherwise expensive `create_*()` pipeline (10+ minutes for
+volumetric atlases). All `create_*()` functions now return raw,
+unsmoothed sf polygons. The (cheap) `atlas_smooth()` post-processing
+step is the single place where simplification level is decided, so you
+can iterate freely on a cached atlas:
+
+```r
+atlas <- create_cortical_from_annotation(...) |>
+  atlas_smooth(keep = 0.2, exclude = "cortex_")
+```
+
+- 3D mesh smoothing (tessellation, FreeSurfer `mris_smooth`, decimation)
+  is unchanged.
+- `tolerance`, `smoothness` and `smooth_refinements` on every
+  `create_*()` function are now soft-deprecated. Supplying any of them
+  emits a `lifecycle::deprecate_warn()` and the value is otherwise
+  ignored.
+- `atlas_smooth()` gained `labels` / `exclude` regex arguments so the
+  brain-outline geometry can stay crisp while everything else is
+  simplified.
+- `atlas_smooth()` also gained a `smoothness` argument that applies a
+  positive-then-negative `sf::st_buffer()` (morphological closing)
+  after vertex simplification. This restores the rounded sulcal curves
+  the old pipeline `smoothness` argument produced, but as a per-region,
+  post-atlas operation. Pass `keep = NULL` to skip vertex reduction and
+  only round off voxel-edge stair-steps.
+- The "large atlas" warning text now points at `atlas_smooth()` instead
+  of the deprecated `tolerance` argument.
+- `create_wholebrain_from_volume()` no longer injects a default
+  `smooth_refinements = 2L` into the cerebellar sub-pipeline.
+
+## Anatomical-context coregistration helpers
+
+- New `coregister_volume()` wraps `mri_coreg` to align an atlas volume to
+  a FreeSurfer subject's T1 grid (default `cvs_avg35_inMNI152`), returning
+  a reusable LTA file.
+- New `project_volume_anatomical()` resamples each atlas label with
+  trilinear interpolation onto the target `aparc+aseg` grid, takes the
+  argmax across labels, and produces a merged volume that combines the
+  source `aparc+aseg` (anatomical brain-outline context) with the user's
+  atlas labels.
+- New `prepare_subcortical_anatomical()` chains both in a single call,
+  producing a volume ready to feed `create_subcortical_from_volume()`.
+- Removes the ~50 lines of per-atlas boilerplate previously hand-rolled in
+  `ggsegShen` and `ggsegHO` build scripts.
+- `id_offset` parameter (default `200L`) shifts every input label ID in
+  the merged volume so they don't collide with FreeSurfer `aparc+aseg`
+  IDs (e.g. an atlas where `11` means "Putamen" while FS uses `11` for
+  "Caudate"). Optional `lut` argument is shifted in lock-step.
+- `protect_cortex` parameter (default `TRUE`) keeps `aparc+aseg` cortex
+  voxels (labels 1000-2999) and cortical white matter (`2`, `41`)
+  intact even when the user's argmax wins above `threshold` — this
+  preserves the brain-outline geometry that the subcortical pipeline
+  draws as anatomical context.
+
 # ggseg.extra 1.9.9.9004
 
 ## Template-based atlas repo scaffolding
@@ -95,7 +155,7 @@ extraction from v2.0.0.
 - **Much faster** — atlas creation completes in ~5 seconds instead of minutes.
 - **Cleaner geometry** — no pixel staircase artifacts from rasterisation.
 - **Fewer dependencies** — no FreeSurfer rendering, ImageMagick, or Chrome
-  needed for 2D geometry (FreeSurfer is still required to *read* annotation
+  needed for 2D geometry (FreeSurfer is still required to _read_ annotation
   files).
 - **Better small-region visibility** — boundary faces are assigned to the
   smallest neighbouring region so tiny parcels are not swallowed by their

@@ -351,6 +351,56 @@ get_smooth_refinements <- function(smooth_refinements = NULL) {
   0L
 }
 
+#' Warn when deprecated sf-smoothing parameters are supplied
+#'
+#' Atlas creation no longer smooths or simplifies sf geometry; users
+#' should call [atlas_smooth()] after the atlas is built. Emits a
+#' lifecycle warning for each deprecated parameter passed a non-NULL
+#' value.
+#'
+#' @param tolerance,smoothness,smooth_refinements User-supplied values.
+#'   `NULL` means "not passed" and is silently accepted.
+#' @param fn Name of the calling function for the warning message.
+#' @noRd
+warn_deprecated_sf_smoothing <- function(
+  tolerance = NULL,
+  smoothness = NULL,
+  smooth_refinements = NULL,
+  fn = NULL
+) {
+  args <- list(
+    tolerance = tolerance,
+    smoothness = smoothness,
+    smooth_refinements = smooth_refinements
+  )
+  supplied <- names(args)[!vapply(args, is.null, logical(1))]
+  if (length(supplied) == 0L) {
+    return(invisible(NULL))
+  }
+
+  details <- c(
+    i = paste(
+      "Atlas creation no longer smooths or simplifies sf geometry.",
+      "Call `atlas_smooth(atlas, keep = ...)` on the returned atlas",
+      "instead. Use `exclude = \"cortex_\"` to keep the brain outline",
+      "crisp."
+    )
+  )
+
+  for (arg in supplied) {
+    what <- if (is.null(fn)) {
+      paste0(arg, " = ")
+    } else {
+      paste0(fn, "(", arg, " = )")
+    }
+    lifecycle::deprecate_warn(
+      when = "1.9.9.9005",
+      what = what,
+      details = details
+    )
+  }
+}
+
 #' Get snapshot dimension setting
 #'
 #' Returns the snapshot dimension (width and height in pixels) for brain
@@ -452,9 +502,7 @@ get_output_dir <- function(output_dir = NULL) {
 # Atlas validation ----
 
 #' @noRd
-warn_if_large_atlas <- function(atlas,
-                                max_vertices = 10000,
-                                per_region = 50) {
+warn_if_large_atlas <- function(atlas, max_vertices = 10000, per_region = 50) {
   if (is.null(atlas$data$sf)) {
     return(invisible(NULL))
   }
@@ -470,7 +518,10 @@ warn_if_large_atlas <- function(atlas,
         "(threshold: {.val {threshold}})"
       ),
       "i" = "Large atlases may be slow to plot and increase package size",
-      "i" = "Re-run with lower {.arg tolerance} to reduce vertices"
+      "i" = paste(
+        "Call {.code atlas_smooth(atlas, keep = 0.2, exclude = \"cortex_\")}",
+        "to reduce vertices"
+      )
     ))
   }
 

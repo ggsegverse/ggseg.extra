@@ -91,7 +91,9 @@ build_vertex_label_vector <- function(vertices_df, n_vertices, hemi_short) {
 
   for (i in seq_len(nrow(vertices_df))) {
     lbl <- vertices_df$label[i]
-    if (!startsWith(lbl, prefix)) next
+    if (!startsWith(lbl, prefix)) {
+      next
+    }
     idx <- vertices_df$vertices[[i]] + 1L
     idx <- idx[idx >= 1L & idx <= n_vertices]
     vertex_labels[idx] <- lbl
@@ -168,8 +170,13 @@ split_boundary_triangle <- function(p1, p2, p3, lab1, lab2, lab3) {
 #'   label, geometry.
 #' @noRd
 #' @importFrom sf st_sf st_sfc st_polygon st_union st_make_valid
-project_mesh_view <- function(mesh, vertex_labels, camera_pos,
-                              hemi_short, view) {
+project_mesh_view <- function(
+  mesh,
+  vertex_labels,
+  camera_pos,
+  hemi_short,
+  view
+) {
   verts_3d <- as.matrix(mesh$vertices)
   faces_1idx <- as.matrix(mesh$faces) + 1L
 
@@ -196,7 +203,9 @@ project_mesh_view <- function(mesh, vertex_labels, camera_pos,
     labs <- c(l1[i], l2[i], l3[i])
     non_na <- labs[!is.na(labs)]
     unique_non_na <- unique(non_na)
-    if (length(unique_non_na) == 0) next
+    if (length(unique_non_na) == 0) {
+      next
+    }
 
     vi <- faces_1idx[i, ]
 
@@ -216,8 +225,12 @@ project_mesh_view <- function(mesh, vertex_labels, camera_pos,
     }
 
     fragments <- split_boundary_triangle(
-      verts_2d[vi[1], ], verts_2d[vi[2], ], verts_2d[vi[3], ],
-      labs[1], labs[2], labs[3]
+      verts_2d[vi[1], ],
+      verts_2d[vi[2], ],
+      verts_2d[vi[3], ],
+      labs[1],
+      labs[2],
+      labs[3]
     )
     for (frag in fragments) {
       n <- n + 1L
@@ -226,7 +239,9 @@ project_mesh_view <- function(mesh, vertex_labels, camera_pos,
     }
   }
 
-  if (n == 0L) return(NULL)
+  if (n == 0L) {
+    return(NULL)
+  }
 
   all_polys <- all_polys[seq_len(n)]
   all_labels <- all_labels[seq_len(n)]
@@ -264,21 +279,28 @@ project_mesh_view <- function(mesh, vertex_labels, camera_pos,
 #' @param hemisphere Character vector of hemisphere codes ("lh", "rh").
 #' @noRd
 #' @importFrom sf st_make_valid
-project_mesh_to_polygons <- function(components, hemisphere, views,
-                                     tolerance = 0,
-                                     smooth_refinements = 2,
-                                     verbose = FALSE) {
+project_mesh_to_polygons <- function(
+  components,
+  hemisphere,
+  views,
+  tolerance = 0,
+  smooth_refinements = 2,
+  verbose = FALSE
+) {
   hemi_data <- lapply(stats::setNames(hemisphere, hemisphere), function(hemi) {
     mesh <- ggseg.formats::get_brain_mesh(hemi, "inflated")
     n_verts <- nrow(mesh$vertices)
     vertex_labels <- build_vertex_label_vector(
-      components$vertices_df, n_verts, hemi
+      components$vertices_df,
+      n_verts,
+      hemi
     )
     list(mesh = mesh, vertex_labels = vertex_labels)
   })
 
   combos <- expand.grid(
-    view = views, hemi = hemisphere,
+    view = views,
+    hemi = hemisphere,
     stringsAsFactors = FALSE
   )
 
@@ -287,7 +309,9 @@ project_mesh_to_polygons <- function(components, hemisphere, views,
     view <- combos$view[idx]
     key <- paste(hemi, view, sep = "_")
     cam <- camera_presets[[key]]
-    if (is.null(cam)) return(NULL)
+    if (is.null(cam)) {
+      return(NULL)
+    }
 
     if (verbose) {
       cli::cli_alert_info("Projecting {.val {hemi}} {.val {view}}")
@@ -303,11 +327,6 @@ project_mesh_to_polygons <- function(components, hemisphere, views,
   }
 
   sf_data <- do.call(rbind, all_results)
-
-  sf_data <- smooth_and_simplify_sf( # nolint: object_usage_linter.
-    sf_data, smooth_refinements, tolerance
-  )
-
   sf_data
 }
 
@@ -315,12 +334,18 @@ project_mesh_to_polygons <- function(components, hemisphere, views,
 #' @noRd
 #' @importFrom dplyr group_by mutate ungroup select
 #' @importFrom sf st_combine st_as_sf
-cortical_build_sf_projected <- function(components, hemisphere, views,
-                                        tolerance = 0,
-                                        smooth_refinements = 2,
-                                        verbose = FALSE) {
+cortical_build_sf_projected <- function(
+  components,
+  hemisphere,
+  views,
+  tolerance = 0,
+  smooth_refinements = 2,
+  verbose = FALSE
+) {
   projected <- project_mesh_to_polygons(
-    components, hemisphere, views,
+    components,
+    hemisphere,
+    views,
     tolerance = tolerance,
     smooth_refinements = smooth_refinements,
     verbose = verbose

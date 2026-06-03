@@ -224,8 +224,13 @@ describe("subcort_create_snapshots", {
     expect_true(is.list(result))
     expect_true("views" %in% names(result))
     expect_true("cortex_slices" %in% names(result))
+    # Both structures and the cortex outline now route through
+    # snapshot_partial_projection for axial/coronal views (the cortex
+    # outline must match the structures' slice-range projection so they
+    # share the same brain extent). snapshot_cortex_slice is reserved for
+    # sagittal cortex slices (hemisphere-specific, no slice range).
     expect_true(snapshot_calls > 0)
-    expect_true(cortex_calls > 0)
+    expect_equal(cortex_calls, 0)
   })
 
   it("uses provided views instead of defaults", {
@@ -736,8 +741,13 @@ describe("finalize_atlas (subcort parameters)", {
     dirs <- list(base = sub_dir)
 
     finalize_atlas(
-      NULL, config, dirs, Sys.time(),
-      type_label = "Subcortical", unit = "structures", early_step = 3L
+      NULL,
+      config,
+      dirs,
+      Sys.time(),
+      type_label = "Subcortical",
+      unit = "structures",
+      early_step = 3L
     )
 
     expect_false(dir.exists(sub_dir))
@@ -761,8 +771,13 @@ describe("finalize_atlas (subcort parameters)", {
 
     expect_messages(
       finalize_atlas(
-        mock_atlas, config, dirs, Sys.time(),
-        type_label = "Subcortical", unit = "structures", early_step = 3L
+        mock_atlas,
+        config,
+        dirs,
+        Sys.time(),
+        type_label = "Subcortical",
+        unit = "structures",
+        early_step = 3L
       ),
       "atlas created"
     )
@@ -781,8 +796,13 @@ describe("finalize_atlas (subcort parameters)", {
     dirs <- list(base = withr::local_tempdir())
 
     result <- finalize_atlas(
-      NULL, config, dirs, Sys.time(),
-      type_label = "Subcortical", unit = "structures", early_step = 3L
+      NULL,
+      config,
+      dirs,
+      Sys.time(),
+      type_label = "Subcortical",
+      unit = "structures",
+      early_step = 3L
     )
 
     expect_null(result)
@@ -918,8 +938,11 @@ describe("subcort_create_meshes", {
 
     expect_messages(
       subcort_create_meshes(
-        "fake.mgz", colortable, dirs,
-        skip_existing = FALSE, verbose = TRUE,
+        "fake.mgz",
+        colortable,
+        dirs,
+        skip_existing = FALSE,
+        verbose = TRUE,
         decimate = 0.5
       ),
       "Decimating"

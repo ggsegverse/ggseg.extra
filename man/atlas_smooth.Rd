@@ -5,27 +5,58 @@
 \alias{atlas_simplify}
 \title{Smooth and simplify atlas 2D contours}
 \usage{
-atlas_smooth(atlas, keep = 0.05)
+atlas_smooth(atlas, keep = 0.05, smoothness = 0, labels = NULL, exclude = NULL)
 
 atlas_simplify(atlas, keep = 0.05)
 }
 \arguments{
 \item{atlas}{A \code{ggseg_atlas} object with sf data.}
 
-\item{keep}{Proportion of vertices to retain (0--1). Lower values produce
-simpler, smoother shapes. Default 0.05.}
+\item{keep}{Proportion of vertices to retain (0--1), or \code{NULL} to skip
+vertex simplification. Lower values produce simpler shapes; values
+near 1 are an effective no-op. Default 0.05.}
+
+\item{smoothness}{Buffer distance in geometry units for morphological
+closing after simplification. 0 (the default) skips closing. Values
+of 2--3 round off voxel-edge stair-steps on millimetre voxel grids
+without merging adjacent regions; larger values produce rounder
+shapes but can bleed nearby region boundaries together.}
+
+\item{labels}{Optional regex pattern. Only labels matching this pattern
+are smoothed; others are left unchanged.}
+
+\item{exclude}{Optional regex pattern. Labels matching this pattern are
+left unchanged; all others are smoothed.}
 }
 \value{
 A modified \code{ggseg_atlas} with simplified sf geometry.
 }
 \description{
 Topology-preserving simplification of atlas sf geometry via
-\code{\link[rmapshaper:ms_simplify]{rmapshaper::ms_simplify()}}. Shared boundaries between adjacent regions
-are simplified together, preventing gaps between regions.
+\code{\link[rmapshaper:ms_simplify]{rmapshaper::ms_simplify()}}, with optional morphological closing
+(positive then negative \code{\link[sf:geos_unary]{sf::st_buffer()}}) layered on top to round
+off voxel-edge stair-steps into smooth curves. Shared boundaries
+between adjacent regions are simplified together, preventing gaps.
+}
+\details{
+By default all labels are smoothed equally. Use \code{labels} to smooth only
+matching labels, or \code{exclude} to smooth everything except matching labels.
+Only one of \code{labels} or \code{exclude} may be specified.
 }
 \examples{
 \dontrun{
+# Vertex reduction only (legacy behaviour).
 atlas <- atlas_smooth(my_atlas, keep = 0.05)
-plot(atlas)
+
+# Keep cortex outline detailed, simplify everything else.
+atlas <- atlas_smooth(my_atlas, keep = 0.2, exclude = "cortex_|Cortex")
+
+# Round off jagged voxel edges without dropping vertices.
+atlas <- atlas_smooth(my_atlas, keep = NULL, smoothness = 3)
+
+# Per-region tuning: hard simplification for tiny nuclei, gentle
+# closing for the brain outline.
+atlas <- atlas_smooth(my_atlas, keep = 0.05, exclude = "cortex_")
+atlas <- atlas_smooth(atlas, keep = NULL, smoothness = 3, labels = "cortex_")
 }
 }

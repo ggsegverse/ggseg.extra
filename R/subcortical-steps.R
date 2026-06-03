@@ -175,22 +175,55 @@ subcort_create_snapshots <- function(
   for (lbl in c(cortex_labels$left, cortex_labels$right)) {
     cortex_vol[vol == lbl] <- 1L
   }
+  # Also include cerebellum and brainstem (FS labels 7,8,46,47 = cerebellum
+  # WM/cortex per hemisphere; 16 = brain-stem). The "brain outline" context
+  # must span the full brain extent — otherwise atlases that label
+  # cerebellar regions (e.g. HOA-2) draw structures that extend below the
+  # cerebrum-only outline, making the structures look oversized.
+  for (lbl in c(7L, 8L, 46L, 47L, 16L)) {
+    cortex_vol[vol == lbl] <- 1L
+  }
 
-  invisible(lapply(seq_len(nrow(cortex_slices)), function(i) {
-    cs <- cortex_slices[i, ]
-    hemi <- extract_hemi_from_view(cs$view, cs$name)
-    snapshot_cortex_slice(
-      vol = cortex_vol,
-      x = cs$x,
-      y = cs$y,
-      z = cs$z,
-      slice_view = cs$view,
-      view_name = cs$name,
-      hemi = hemi,
-      output_dir = dirs$snapshots,
-      skip_existing = skip_existing
-    )
-  }))
+  # Cortex outline must use the same slice-range projection as structures,
+  # otherwise structures (max-projected over start..end) appear larger than
+  # the single-slice cortex silhouette and overflow the brain shape. For
+  # sagittal cortex slices (hemisphere-specific, no start/end), keep the
+  # single-slice rendering. Skip entirely if cortex_vol has no voxels
+  # (consistent with how empty structures are skipped above).
+  if (sum(cortex_vol) > 0) {
+    invisible(lapply(seq_len(nrow(cortex_slices)), function(i) {
+      cs <- cortex_slices[i, ]
+      hemi <- extract_hemi_from_view(cs$view, cs$name)
+      matched_view <- views[views$name == cs$name, ]
+
+      if (cs$view %in% c("axial", "coronal") && nrow(matched_view) == 1) {
+        snapshot_partial_projection(
+          vol = cortex_vol,
+          view = cs$view,
+          start = matched_view$start,
+          end = matched_view$end,
+          view_name = cs$name,
+          label = paste0("cortex_", hemi),
+          output_dir = dirs$snapshots,
+          colour = "red",
+          hemi = hemi,
+          skip_existing = skip_existing
+        )
+      } else {
+        snapshot_cortex_slice(
+          vol = cortex_vol,
+          x = cs$x,
+          y = cs$y,
+          z = cs$z,
+          slice_view = cs$view,
+          view_name = cs$name,
+          hemi = hemi,
+          output_dir = dirs$snapshots,
+          skip_existing = skip_existing
+        )
+      }
+    }))
+  }
 
   list(views = views, cortex_slices = cortex_slices)
 }

@@ -108,6 +108,12 @@ create_tract_from_tractography <- function(
   vertex_size_limits = NULL,
   steps = NULL
 ) {
+  warn_deprecated_sf_smoothing(
+    tolerance = tolerance,
+    smoothness = smoothness,
+    fn = "create_tract_from_tractography"
+  )
+
   start_time <- Sys.time()
 
   config <- validate_tract_config(
@@ -142,8 +148,13 @@ create_tract_from_tractography <- function(
 
   tract_final <- function(atlas) {
     finalize_atlas(
-      atlas, config, dirs, start_time,
-      type_label = "Tract", unit = "tracts", early_step = 1L
+      atlas,
+      config,
+      dirs,
+      start_time,
+      type_label = "Tract",
+      unit = "tracts",
+      early_step = 1L
     )
   }
 
@@ -163,7 +174,8 @@ create_tract_from_tractography <- function(
   )
 
   run_image_steps(
-    config, dirs,
+    config,
+    dirs,
     step_map = list(process = 3L, extract = 4L, smooth = 5L, reduce = 6L),
     total_steps = 7L,
     dilate = dilate,
@@ -196,13 +208,20 @@ validate_tract_config <- function(
   n_points
 ) {
   config <- resolve_common_config(
-    output_dir, verbose, cleanup, skip_existing,
-    tolerance, smoothness, steps, max_step = 7L
+    output_dir,
+    verbose,
+    cleanup,
+    skip_existing,
+    tolerance,
+    smoothness,
+    steps,
+    max_step = 7L
   )
   config$output_dir <- normalizePath(config$output_dir, mustWork = FALSE)
 
   config$centerline_method <- match.arg(
-    centerline_method, c("mean", "medoid")
+    centerline_method,
+    c("mean", "medoid")
   )
   config$tube_radius <- tube_radius
   config$tube_segments <- tube_segments

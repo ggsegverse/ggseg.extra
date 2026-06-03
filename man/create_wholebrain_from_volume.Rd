@@ -78,19 +78,21 @@ of cortical or subcortical. Uses the bundled SUIT surfaces from
 \code{\link[=suit_flatmap_path]{suit_flatmap_path()}} and \code{\link[=suit_3d_path]{suit_3d_path()}}.}
 
 \item{cortical_opts}{Named list of extra arguments forwarded to the
-cortical sub-pipeline. Allowed entries: \code{views}, \code{tolerance},
-\code{smooth_refinements}. Unknown entries error. Leave empty to use defaults.}
+cortical sub-pipeline. Allowed entry: \code{views}. Unknown entries error.
+Leave empty to use defaults.}
 
 \item{subcortical_opts}{Named list of extra arguments forwarded to
 \code{\link[=create_subcortical_from_volume]{create_subcortical_from_volume()}}. Any argument of that function may
 be set here except those managed by the wholebrain pipeline
 (\code{input_volume}, \code{input_lut}, \code{atlas_name}, \code{output_dir}, \code{verbose},
 \code{cleanup}, \code{skip_existing}). Use this to tune \code{dilate},
-\code{vertex_size_limits}, \code{tolerance}, \code{smoothness}, \code{decimate}, \code{views}.}
+\code{vertex_size_limits}, \code{decimate}, \code{views}. The deprecated
+\code{tolerance}/\code{smoothness} entries trigger a lifecycle warning.}
 
 \item{cerebellar_opts}{Named list of extra arguments forwarded to
-\code{\link[=create_cerebellar_from_volume]{create_cerebellar_from_volume()}}. Allowed entries include \code{tolerance},
-\code{smooth_refinements}, \code{decimate}.}
+\code{\link[=create_cerebellar_from_volume]{create_cerebellar_from_volume()}}. Allowed entries include \code{decimate}.
+The deprecated \code{tolerance}/\code{smooth_refinements} entries trigger a
+lifecycle warning.}
 
 \item{cleanup}{Remove intermediate files after atlas creation. If not
 specified, uses \code{options("ggseg.extra.cleanup")} or the \code{GGSEG_EXTRA_CLEANUP}
@@ -203,7 +205,7 @@ result <- create_wholebrain_from_volume(
   input_volume = "my_atlas.nii.gz",
   input_lut = lut,
   atlas_name = "my_atlas",
-  subcortical_opts = list(dilate = 2, smoothness = 8)
+  subcortical_opts = list(dilate = 2)
 )
 result$cortical   # surface-based cortical atlas
 result$subcortical # mesh-based subcortical atlas

@@ -100,6 +100,12 @@ create_subcortical_from_volume <- function(
   decimate = 0.5,
   steps = NULL
 ) {
+  warn_deprecated_sf_smoothing(
+    tolerance = tolerance,
+    smoothness = smoothness,
+    fn = "create_subcortical_from_volume"
+  )
+
   start_time <- Sys.time()
 
   config <- validate_subcort_config(
@@ -134,8 +140,13 @@ create_subcortical_from_volume <- function(
 
   subcort_final <- function(atlas) {
     finalize_atlas(
-      atlas, config, dirs, start_time,
-      type_label = "Subcortical", unit = "structures", early_step = 3L
+      atlas,
+      config,
+      dirs,
+      start_time,
+      type_label = "Subcortical",
+      unit = "structures",
+      early_step = 3L
     )
   }
 
@@ -146,7 +157,8 @@ create_subcortical_from_volume <- function(
 
   snaps <- subcort_resolve_snapshots(config, dirs, labels$colortable, views)
   run_image_steps(
-    config, dirs,
+    config,
+    dirs,
     step_map = list(process = 5L, extract = 6L, smooth = 7L, reduce = 8L),
     total_steps = 9L,
     dilate = dilate,
@@ -185,16 +197,23 @@ validate_subcort_config <- function(
   smoothness
 ) {
   config <- resolve_common_config(
-    output_dir, verbose, cleanup, skip_existing,
-    tolerance, smoothness, steps, max_step = 9L
+    output_dir,
+    verbose,
+    cleanup,
+    skip_existing,
+    tolerance,
+    smoothness,
+    steps,
+    max_step = 9L
   )
 
-  if (!is.null(decimate) && (
-    !is.numeric(decimate) ||
-      length(decimate) != 1 ||
-      decimate <= 0 ||
-      decimate >= 1
-  )) {
+  if (
+    !is.null(decimate) &&
+      (!is.numeric(decimate) ||
+        length(decimate) != 1 ||
+        decimate <= 0 ||
+        decimate >= 1)
+  ) {
     cli::cli_abort(c(
       "{.arg decimate} must be a single number between 0 and 1 (exclusive)",
       "x" = "Got {.val {decimate}}",
@@ -207,8 +226,9 @@ validate_subcort_config <- function(
   if (!file.exists(input_volume)) {
     cli::cli_abort("Volume file not found: {.path {input_volume}}")
   }
-  if (!is.null(input_lut) && is.character(input_lut) &&
-        !file.exists(input_lut)) {
+  if (
+    !is.null(input_lut) && is.character(input_lut) && !file.exists(input_lut)
+  ) {
     cli::cli_abort("Color lookup table not found: {.path {input_lut}}")
   }
 

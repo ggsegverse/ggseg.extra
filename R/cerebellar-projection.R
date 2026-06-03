@@ -103,7 +103,9 @@ flatmap_triangles_to_polygons <- function(verts_2d, faces, vertex_labels) {
     labs <- c(l1[i], l2[i], l3[i])
     non_na <- labs[!is.na(labs)]
     unique_non_na <- unique(non_na)
-    if (length(unique_non_na) == 0) next
+    if (length(unique_non_na) == 0) {
+      next
+    }
 
     vi <- faces_1idx[i, ]
     coords <- verts_2d[vi, , drop = FALSE]
@@ -111,7 +113,9 @@ flatmap_triangles_to_polygons <- function(verts_2d, faces, vertex_labels) {
     e1 <- coords[2, ] - coords[1, ]
     e2 <- coords[3, ] - coords[1, ]
     area2 <- abs(e1[1] * e2[2] - e1[2] * e2[1])
-    if (area2 < 1e-12) next
+    if (area2 < 1e-12) {
+      next
+    }
 
     if (length(unique_non_na) == 1 || !all_labeled[i]) {
       if (length(unique_non_na) == 1) {
@@ -128,8 +132,12 @@ flatmap_triangles_to_polygons <- function(verts_2d, faces, vertex_labels) {
     }
 
     fragments <- split_boundary_triangle(
-      verts_2d[vi[1], ], verts_2d[vi[2], ], verts_2d[vi[3], ],
-      labs[1], labs[2], labs[3]
+      verts_2d[vi[1], ],
+      verts_2d[vi[2], ],
+      verts_2d[vi[3], ],
+      labs[1],
+      labs[2],
+      labs[3]
     )
     for (frag in fragments) {
       n <- n + 1L
@@ -201,7 +209,8 @@ cerebellar_build_sf_flatmap <- function(
   }
 
   vertex_labels <- build_vertex_label_vector_cerebellum(
-    components$vertices_df, flatmap$n_vertices
+    components$vertices_df,
+    flatmap$n_vertices
   )
 
   n_labelled <- sum(!is.na(vertex_labels))
@@ -224,14 +233,12 @@ cerebellar_build_sf_flatmap <- function(
   }
 
   sf_data <- flatmap_triangles_to_polygons(
-    flatmap$verts_2d, flatmap$faces, vertex_labels
+    flatmap$verts_2d,
+    flatmap$faces,
+    vertex_labels
   )
 
   sf_data <- fill_flatmap_holes(sf_data, verbose = verbose)
-
-  sf_data <- smooth_and_simplify_sf( # nolint: object_usage_linter.
-    sf_data, smooth_refinements, tolerance
-  )
 
   sf_data$view <- "flatmap"
   sf::st_as_sf(sf_data)
@@ -282,15 +289,17 @@ drop_small_rings <- function(geom, threshold) {
 
 #' @noRd
 drop_small_rings_poly <- function(poly_coords, threshold) {
-  if (length(poly_coords) <= 1) return(poly_coords)
+  if (length(poly_coords) <= 1) {
+    return(poly_coords)
+  }
 
   keep <- list(poly_coords[[1]])
   for (j in seq_along(poly_coords)[-1]) {
     ring <- poly_coords[[j]]
     ring_area <- abs(sum(
-      ring[-nrow(ring), 1] * ring[-1, 2] -
-        ring[-1, 1] * ring[-nrow(ring), 2]
-    )) / 2
+      ring[-nrow(ring), 1] * ring[-1, 2] - ring[-1, 1] * ring[-nrow(ring), 2]
+    )) /
+      2
     if (ring_area > threshold) keep[[length(keep) + 1]] <- ring
   }
   keep
@@ -303,13 +312,17 @@ fill_inter_region_gaps <- function(sf_data, threshold, verbose) {
   hull <- sf::st_convex_hull(all_union)
   uncovered <- sf::st_difference(hull, all_union)
 
-  if (sf::st_is_empty(uncovered)) return(sf_data)
+  if (sf::st_is_empty(uncovered)) {
+    return(sf_data)
+  }
 
   gap_polys <- sf::st_cast(sf::st_make_valid(uncovered), "POLYGON")
   gap_areas <- sf::st_area(gap_polys)
   small_gaps <- gap_polys[as.numeric(gap_areas) <= threshold]
 
-  if (length(small_gaps) == 0) return(sf_data)
+  if (length(small_gaps) == 0) {
+    return(sf_data)
+  }
 
   if (verbose) {
     cli::cli_alert_info("Filling {length(small_gaps)} small inter-region gaps")

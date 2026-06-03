@@ -30,15 +30,15 @@ filename.}
 \item{output_dir}{Directory to store intermediate files (screenshots, masks,
 contours). Defaults to \code{\link[=tempdir]{tempdir()}}.}
 
-\item{tolerance}{Proportion of vertices to retain during topology-preserving
-simplification (0--1). Lower values produce simpler, smoother shapes.
-Passed to \code{\link[rmapshaper:ms_simplify]{rmapshaper::ms_simplify()}}.
-If not specified, uses \code{options("ggseg.extra.tolerance")} or the
-\code{GGSEG_EXTRA_TOLERANCE} environment variable. Default is 0.05.}
+\item{tolerance}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} sf simplification is
+no longer applied during atlas creation. Use \code{\link[=atlas_smooth]{atlas_smooth()}} on the
+returned atlas instead. Supplying a value emits a lifecycle warning
+and is otherwise ignored.}
 
-\item{smooth_refinements}{Ignored. Kept for API compatibility.
-Smoothing is now handled by topology-preserving simplification
-via the \code{tolerance} parameter.}
+\item{smooth_refinements}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} sf-side
+smoothing is no longer applied during atlas creation. Use
+\code{\link[=atlas_smooth]{atlas_smooth()}} on the returned atlas instead. Supplying a value
+emits a lifecycle warning and is otherwise ignored.}
 
 \item{decimate}{Mesh decimation factor between 0 and 1. Reduces the number
 of faces in 3D meshes using quadric edge decimation (via

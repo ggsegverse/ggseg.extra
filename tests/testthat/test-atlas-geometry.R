@@ -532,33 +532,32 @@ describe("smooth_contours", {
 
 
 describe("reduce_vertex", {
-  it("simplifies contour geometry", {
+  it("passes contour geometry through unchanged", {
     outdir <- withr::local_tempdir("reduce_test_")
 
+    coords <- matrix(
+      c(
+        0,
+        0,
+        0.1,
+        0.01,
+        0.2,
+        0,
+        1,
+        0,
+        1,
+        1,
+        0,
+        1,
+        0,
+        0
+      ),
+      ncol = 2,
+      byrow = TRUE
+    )
     contours <- sf::st_sf(
       region = "test",
-      geometry = sf::st_sfc(
-        sf::st_polygon(list(matrix(
-          c(
-            0,
-            0,
-            0.1,
-            0.01,
-            0.2,
-            0,
-            1,
-            0,
-            1,
-            1,
-            0,
-            1,
-            0,
-            0
-          ),
-          ncol = 2,
-          byrow = TRUE
-        )))
-      )
+      geometry = sf::st_sfc(sf::st_polygon(list(coords)))
     )
     save(contours, file = file.path(outdir, "contours_smoothed.rda"))
 
@@ -566,6 +565,10 @@ describe("reduce_vertex", {
 
     expect_s3_class(result, "sf")
     expect_true(file.exists(file.path(outdir, "contours_reduced.rda")))
+    expect_equal(
+      nrow(sf::st_coordinates(result)),
+      nrow(sf::st_coordinates(contours))
+    )
   })
 
   it("warns and saves empty when all contours are invalid", {
@@ -647,7 +650,7 @@ describe("smooth_contours verbose output", {
 
 
 describe("reduce_vertex verbose output", {
-  it("emits progress message when verbose is TRUE", {
+  it("is silent now that simplification has moved post-creation", {
     outdir <- withr::local_tempdir("reduce_verbose_")
 
     contours <- sf::st_sf(
@@ -662,9 +665,8 @@ describe("reduce_vertex verbose output", {
     )
     save(contours, file = file.path(outdir, "contours_smoothed.rda"))
 
-    expect_messages(
-      reduce_vertex(outdir, tolerance = 0.5, step = "2/3", verbose = TRUE),
-      "Simplifying contours"
+    expect_no_message(
+      reduce_vertex(outdir, tolerance = 0.5, step = "2/3", verbose = TRUE)
     )
   })
 })
@@ -700,11 +702,13 @@ describe("simplify_sf_topology", {
   it("simplifies per-view group when view column exists", {
     poly_a <- sf::st_polygon(list(matrix(
       c(0, 0, 1, 0, 1, 1, 0, 1, 0, 0),
-      ncol = 2, byrow = TRUE
+      ncol = 2,
+      byrow = TRUE
     )))
     poly_b <- sf::st_polygon(list(matrix(
       c(10, 10, 11, 10, 11, 11, 10, 11, 10, 10),
-      ncol = 2, byrow = TRUE
+      ncol = 2,
+      byrow = TRUE
     )))
     sf_data <- sf::st_sf(
       label = c("a", "b"),
@@ -722,7 +726,8 @@ describe("simplify_sf_topology", {
   it("handles single-view data without grouping", {
     poly <- sf::st_polygon(list(matrix(
       c(0, 0, 1, 0, 1, 1, 0, 1, 0, 0),
-      ncol = 2, byrow = TRUE
+      ncol = 2,
+      byrow = TRUE
     )))
     sf_data <- sf::st_sf(
       label = "a",
@@ -739,35 +744,25 @@ describe("simplify_sf_topology", {
 
 
 describe("smooth_and_simplify_sf", {
-  it("skips simplification when keep is 0", {
-    poly <- sf::st_polygon(list(matrix(
-      c(0, 0, 1, 0, 1, 1, 0, 1, 0, 0),
-      ncol = 2, byrow = TRUE
-    )))
-    sf_data <- sf::st_sf(
-      label = "a",
-      geometry = sf::st_sfc(poly)
-    )
-
-    result <- smooth_and_simplify_sf(sf_data, smooth_refinements = 0, keep = 0)
-
-    expect_identical(sf_data, result)
-  })
-
-  it("applies simplification when keep is between 0 and 1", {
+  it("returns input unchanged regardless of keep and smooth_refinements", {
     poly <- sf::st_polygon(list(matrix(
       c(0, 0, 0.5, 0.01, 1, 0, 1, 1, 0.5, 0.99, 0, 1, 0, 0),
-      ncol = 2, byrow = TRUE
+      ncol = 2,
+      byrow = TRUE
     )))
     sf_data <- sf::st_sf(
       label = "a",
       geometry = sf::st_sfc(poly)
     )
 
-    result <- smooth_and_simplify_sf(sf_data, keep = 0.5)
-
-    expect_s3_class(result, "sf")
-    expect_true(all(sf::st_is_valid(result)))
+    expect_identical(
+      smooth_and_simplify_sf(sf_data, smooth_refinements = 0, keep = 0),
+      sf_data
+    )
+    expect_identical(
+      smooth_and_simplify_sf(sf_data, smooth_refinements = 2, keep = 0.5),
+      sf_data
+    )
   })
 })
 
@@ -786,12 +781,17 @@ describe("atlas_smooth", {
   it("simplifies atlas sf data", {
     poly <- sf::st_polygon(list(matrix(
       c(0, 0, 0.5, 0.01, 1, 0, 1, 1, 0.5, 0.99, 0, 1, 0, 0),
-      ncol = 2, byrow = TRUE
+      ncol = 2,
+      byrow = TRUE
     )))
-    atlas <- list(data = list(sf = sf::st_sf(
-      label = "a",
-      geometry = sf::st_sfc(poly)
-    )))
+    atlas <- list(
+      data = list(
+        sf = sf::st_sf(
+          label = "a",
+          geometry = sf::st_sfc(poly)
+        )
+      )
+    )
 
     result <- atlas_smooth(atlas, keep = 0.5)
 

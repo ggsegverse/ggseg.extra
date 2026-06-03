@@ -14,7 +14,8 @@ extract_contours <- function(
   step = "",
   vertex_size_limits = NULL
 ) {
-  rlang::check_installed("terra",
+  rlang::check_installed(
+    "terra",
     reason = "for contour extraction from raster images"
   )
   if (verbose) {
@@ -80,11 +81,19 @@ extract_contours <- function(
 }
 
 
+#' Pass extracted contours through unchanged
+#'
+#' Pipeline smoothing and simplification have been removed from atlas
+#' creation. Apply [atlas_smooth()] after the atlas is built instead.
+#' This function only filters out invalid geometries and writes the
+#' result to `contours_smoothed.rda` so downstream pipeline steps that
+#' load that filename continue to work.
+#'
 #' @noRd
 smooth_contours <- function(
   dir,
-  smoothness, # nolint: object_usage_linter.
-  step,
+  smoothness = NULL, # nolint: object_usage_linter.
+  step = "",
   verbose = get_verbose() # nolint: object_usage_linter
 ) {
   load_rda(file.path(dir, "contours.rda"))
@@ -99,35 +108,27 @@ smooth_contours <- function(
 }
 
 
+#' Pass smoothed contours through unchanged
+#'
+#' Pipeline simplification has been removed; this writes the loaded
+#' contours back to `contours_reduced.rda` after filtering invalid
+#' geometries so the assembly step can keep reading that filename.
+#'
 #' @noRd
 reduce_vertex <- function(
   dir,
-  tolerance,
-  smoothness = 0,
+  tolerance = NULL,
+  smoothness = NULL,
   step = "",
   verbose = get_verbose() # nolint: object_usage_linter
 ) {
-  if (verbose) {
-    cli::cli_progress_step(
-      "{step} Simplifying contours (keep = {.val {tolerance}})"
-    )
-  }
   load_rda(file.path(dir, "contours_smoothed.rda"))
 
   contours <- filter_valid_geometries(contours)
   if (nrow(contours) == 0) {
     cli::cli_warn("No valid contours to simplify")
-    save(contours, file = file.path(dir, "contours_reduced.rda"))
-    return(invisible(contours))
   }
-
-  contours <- simplify_sf_topology(contours, keep = tolerance)
-  contours <- smooth_sf_light(contours, smoothness)
-  contours <- filter_valid_geometries(contours)
   save(contours, file = file.path(dir, "contours_reduced.rda"))
-  if (verbose) {
-    cli::cli_progress_done()
-  }
   invisible(contours)
 }
 
@@ -187,12 +188,28 @@ filter_valid_geometries <- function(sf_obj) {
 #' Smooth and simplify atlas 2D contours
 #'
 #' Topology-preserving simplification of atlas sf geometry via
-#' [rmapshaper::ms_simplify()]. Shared boundaries between adjacent regions
-#' are simplified together, preventing gaps between regions.
+#' [rmapshaper::ms_simplify()], with optional morphological closing
+#' (positive then negative [sf::st_buffer()]) layered on top to round
+#' off voxel-edge stair-steps into smooth curves. Shared boundaries
+#' between adjacent regions are simplified together, preventing gaps.
+#'
+#' By default all labels are smoothed equally. Use `labels` to smooth only
+#' matching labels, or `exclude` to smooth everything except matching labels.
+#' Only one of `labels` or `exclude` may be specified.
 #'
 #' @param atlas A `ggseg_atlas` object with sf data.
-#' @param keep Proportion of vertices to retain (0--1). Lower values produce
-#'   simpler, smoother shapes. Default 0.05.
+#' @param keep Proportion of vertices to retain (0--1), or `NULL` to skip
+#'   vertex simplification. Lower values produce simpler shapes; values
+#'   near 1 are an effective no-op. Default 0.05.
+#' @param smoothness Buffer distance in geometry units for morphological
+#'   closing after simplification. 0 (the default) skips closing. Values
+#'   of 2--3 round off voxel-edge stair-steps on millimetre voxel grids
+#'   without merging adjacent regions; larger values produce rounder
+#'   shapes but can bleed nearby region boundaries together.
+#' @param labels Optional regex pattern. Only labels matching this pattern
+#'   are smoothed; others are left unchanged.
+#' @param exclude Optional regex pattern. Labels matching this pattern are
+#'   left unchanged; all others are smoothed.
 #'
 #' @return A modified `ggseg_atlas` with simplified sf geometry.
 #' @export
@@ -200,16 +217,83 @@ filter_valid_geometries <- function(sf_obj) {
 #'
 #' @examples
 #' \dontrun{
+#' # Vertex reduction only (legacy behaviour).
 #' atlas <- atlas_smooth(my_atlas, keep = 0.05)
-#' plot(atlas)
+#'
+#' # Keep cortex outline detailed, simplify everything else.
+#' atlas <- atlas_smooth(my_atlas, keep = 0.2, exclude = "cortex_|Cortex")
+#'
+#' # Round off jagged voxel edges without dropping vertices.
+#' atlas <- atlas_smooth(my_atlas, keep = NULL, smoothness = 3)
+#'
+#' # Per-region tuning: hard simplification for tiny nuclei, gentle
+#' # closing for the brain outline.
+#' atlas <- atlas_smooth(my_atlas, keep = 0.05, exclude = "cortex_")
+#' atlas <- atlas_smooth(atlas, keep = NULL, smoothness = 3, labels = "cortex_")
 #' }
-atlas_smooth <- function(atlas, keep = 0.05) {
+atlas_smooth <- function(
+  atlas,
+  keep = 0.05,
+  smoothness = 0,
+  labels = NULL,
+  exclude = NULL
+) {
   if (is.null(atlas$data$sf)) {
     cli::cli_warn("Atlas has no sf data, nothing to smooth")
     return(atlas)
   }
 
-  atlas$data$sf <- simplify_sf_topology(atlas$data$sf, keep = keep)
+  if (!is.null(labels) && !is.null(exclude)) {
+    cli::cli_abort(
+      "Specify only one of {.arg labels} or {.arg exclude}, not both."
+    )
+  }
+
+  do_simplify <- !is.null(keep) && !is.na(keep)
+  do_close <- isTRUE(smoothness > 0)
+  if (!do_simplify && !do_close) {
+    return(atlas)
+  }
+
+  apply_ops <- function(d) {
+    if (do_simplify) {
+      d <- simplify_sf_topology(d, keep = keep)
+    }
+    if (do_close) {
+      d <- smooth_sf_light(d, smoothness = smoothness)
+    }
+    d
+  }
+
+  sf_data <- atlas$data$sf
+
+  if (!is.null(labels) || !is.null(exclude)) {
+    sf_labels <- sf_data$label
+    if (!is.null(labels)) {
+      mask <- grepl(labels, sf_labels, ignore.case = TRUE)
+    } else {
+      mask <- !grepl(exclude, sf_labels, ignore.case = TRUE)
+    }
+    mask[is.na(sf_labels)] <- FALSE
+
+    # Preserve the caller's row order: smoothing must not change which
+    # regions draw on top (e.g. context regions placed behind core regions
+    # by atlas_region_contextual()). Tag rows, process the target subset,
+    # reassemble, then restore the original order.
+    sf_data$.smooth_order <- seq_len(nrow(sf_data))
+    target <- sf_data[mask, , drop = FALSE]
+    rest <- sf_data[!mask, , drop = FALSE]
+
+    target <- apply_ops(target)
+    sf_data <- rbind(target, rest)
+    sf_data <- sf_data[order(sf_data$.smooth_order), , drop = FALSE]
+    sf_data$.smooth_order <- NULL
+    sf_data <- sf::st_make_valid(sf_data)
+  } else {
+    sf_data <- apply_ops(sf_data)
+  }
+
+  atlas$data$sf <- sf_data
   atlas
 }
 
@@ -218,7 +302,9 @@ atlas_smooth <- function(atlas, keep = 0.05) {
 #' @export
 atlas_simplify <- function(atlas, keep = 0.05) {
   lifecycle::deprecate_warn(
-    "1.9.9.9003", "atlas_simplify()", "atlas_smooth()"
+    "1.9.9.9003",
+    "atlas_simplify()",
+    "atlas_smooth()"
   )
   atlas_smooth(atlas, keep = keep)
 }
@@ -249,8 +335,7 @@ simplify_sf_topology <- function(sf_data, keep = 0.05) {
     if (length(groups) > 1) {
       parts <- lapply(groups, function(g) {
         group_sf <- sf_data[sf_data[[group_col]] == g, , drop = FALSE]
-        rmapshaper::ms_simplify(group_sf, keep = keep,
-                                keep_shapes = TRUE)
+        rmapshaper::ms_simplify(group_sf, keep = keep, keep_shapes = TRUE)
       })
       sf_data <- do.call(rbind, parts)
       if (".view_group" %in% names(sf_data)) {
@@ -260,8 +345,7 @@ simplify_sf_topology <- function(sf_data, keep = 0.05) {
     }
   }
 
-  sf_data <- rmapshaper::ms_simplify(sf_data, keep = keep,
-                                     keep_shapes = TRUE)
+  sf_data <- rmapshaper::ms_simplify(sf_data, keep = keep, keep_shapes = TRUE)
   sf::st_make_valid(sf_data)
 }
 
@@ -278,33 +362,23 @@ simplify_sf_topology <- function(sf_data, keep = 0.05) {
 #' @noRd
 #' @importFrom sf st_buffer st_make_valid
 smooth_sf_light <- function(sf_data, smoothness = 0) {
-  if (smoothness <= 0) return(sf_data)
+  if (smoothness <= 0) {
+    return(sf_data)
+  }
   sf_data <- sf::st_buffer(sf_data, dist = smoothness, nQuadSegs = 8L)
   sf_data <- sf::st_buffer(sf_data, dist = -smoothness, nQuadSegs = 8L)
   sf::st_make_valid(sf_data)
 }
 
 
-#' Simplify then lightly smooth atlas sf geometry
+#' Pass-through stub kept for backward compatibility
 #'
-#' Central post-processing called by cortical, cerebellar, and other
-#' mesh-based pipelines. First simplifies with [simplify_sf_topology()],
-#' then applies a light buffer smooth via [smooth_sf_light()].
+#' Pipeline-time smoothing has been removed; callers should rely on
+#' [atlas_smooth()] for any post-creation simplification. This helper
+#' returns its input unchanged.
 #'
-#' @param sf_data An sf data.frame.
-#' @param smooth_refinements Buffer distance for light post-simplification
-#'   smoothing. 0 skips smoothing.
-#' @param keep Proportion of vertices to retain (0--1). 0 skips
-#'   simplification.
-#' @return Processed sf data.frame.
 #' @noRd
-smooth_and_simplify_sf <- function(sf_data, smooth_refinements = 0,
-                                   keep = 0) {
-  if (keep > 0 && keep < 1) {
-    sf_data <- simplify_sf_topology(sf_data, keep = keep)
-  }
-
-  sf_data <- smooth_sf_light(sf_data, smooth_refinements)
+smooth_and_simplify_sf <- function(sf_data, smooth_refinements = 0, keep = 0) {
   sf_data
 }
 
@@ -369,9 +443,17 @@ build_contour_sf <- function(contours_file, views, cortex_slices = NULL) {
 
   sf_data <- dplyr::select(conts, label, view, geometry)
   sf_data <- sf::st_as_sf(sf_data)
+  # Ensure the cortex outline is the first row per view so it draws as
+  # the bottom layer; structures get drawn on top. The outline can be
+  # named `cortex_` (legacy single-slice path) or `cortex` (current
+  # projection path, where sanitize_label strips the trailing
+  # underscore). Match both — but exact equality, not a loose
+  # `grepl("cortex", ...)` which would also catch `Cerebellar_Cortex_*`
+  # and let cerebellum sort above the outline (HO2 regression).
   sf_data <- dplyr::arrange(
     sf_data,
-    dplyr::desc(grepl("cortex", label, ignore.case = TRUE))
+    view,
+    !label %in% c("cortex_", "cortex")
   )
 
   sf_data
@@ -389,15 +471,19 @@ make_multipolygon <- function(contourfile) {
     summarise(geometry = st_combine(geometry)) |>
     ungroup()
 
-  bounds <- vapply(seq_len(nrow(contours)), function(i) {
-    coords <- st_coordinates(contours[i, ])
-    c(
-      xmin = min(coords[, "X"]),
-      ymin = min(coords[, "Y"]),
-      xmax = max(coords[, "X"]),
-      ymax = max(coords[, "Y"])
-    )
-  }, numeric(4))
+  bounds <- vapply(
+    seq_len(nrow(contours)),
+    function(i) {
+      coords <- st_coordinates(contours[i, ])
+      c(
+        xmin = min(coords[, "X"]),
+        ymin = min(coords[, "Y"]),
+        xmax = max(coords[, "X"]),
+        ymax = max(coords[, "Y"])
+      )
+    },
+    numeric(4)
+  )
 
   new_bb <- c(
     xmin = min(bounds["xmin", ]),

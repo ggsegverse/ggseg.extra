@@ -59,8 +59,18 @@ create_cortical_from_annotation <- function(
     cli::cli_abort("{.arg input_annot} must not be empty")
   }
 
+  warn_deprecated_sf_smoothing(
+    tolerance = tolerance,
+    smooth_refinements = smooth_refinements,
+    fn = "create_cortical_from_annotation"
+  )
+
   config <- validate_cortical_config(
-    output_dir, verbose, cleanup, skip_existing, tolerance,
+    output_dir,
+    verbose,
+    cleanup,
+    skip_existing,
+    tolerance,
     smooth_refinements
   )
 
@@ -108,7 +118,9 @@ run_cortical_creation <- function(
   }
 
   step1 <- cortical_read_data(
-    config, dirs, atlas_name,
+    config,
+    dirs,
+    atlas_name,
     read_fn = read_fn,
     step_label = step_label,
     cache_label = cache_label
@@ -134,12 +146,22 @@ run_cortical_creation <- function(
 
 #' @noRd
 validate_cortical_config <- function(
-  output_dir, verbose, cleanup, skip_existing, tolerance,
+  output_dir,
+  verbose,
+  cleanup,
+  skip_existing,
+  tolerance,
   smooth_refinements = NULL
 ) {
   config <- resolve_common_config(
-    output_dir, verbose, cleanup, skip_existing,
-    tolerance, smoothness = NULL, steps = NULL, max_step = 2L
+    output_dir,
+    verbose,
+    cleanup,
+    skip_existing,
+    tolerance,
+    smoothness = NULL,
+    steps = NULL,
+    max_step = 2L
   )
   config$smooth_refinements <- get_smooth_refinements(smooth_refinements)
   config
@@ -148,14 +170,23 @@ validate_cortical_config <- function(
 
 #' @noRd
 cortical_read_data <- function(
-  config, dirs, atlas_name, read_fn, step_label, cache_label
+  config,
+  dirs,
+  atlas_name,
+  read_fn,
+  step_label,
+  cache_label
 ) {
   files <- c(
     file.path(dirs$base, "atlas_3d.rds"),
     file.path(dirs$base, "components.rds")
   )
   cached <- load_or_run_step(
-    1L, config$steps, files, config$skip_existing, cache_label
+    1L,
+    config$steps,
+    files,
+    config$skip_existing,
+    cache_label
   )
 
   if (!cached$run) {
@@ -196,21 +227,30 @@ cortical_read_data <- function(
 
 #' @noRd
 cortical_project_and_build <- function(
-  components, atlas_name, hemisphere, views,
-  config, dirs, start_time
+  components,
+  atlas_name,
+  hemisphere,
+  views,
+  config,
+  dirs,
+  start_time
 ) {
   if (config$verbose) {
     cli::cli_progress_step("Projecting mesh to 2D polygons")
   }
 
   sf_data <- cortical_build_sf_projected(
-    components, hemisphere, views,
+    components,
+    hemisphere,
+    views,
     tolerance = config$tolerance,
     smooth_refinements = config$smooth_refinements,
     verbose = config$verbose
   )
 
-  if (config$verbose) cli::cli_progress_done()
+  if (config$verbose) {
+    cli::cli_progress_done()
+  }
 
   atlas <- ggseg_atlas(
     atlas = atlas_name,
@@ -301,8 +341,18 @@ create_cortical_from_labels <- function(
   verbose = get_verbose(), # nolint: object_usage_linter
   skip_existing = NULL
 ) {
+  warn_deprecated_sf_smoothing(
+    tolerance = tolerance,
+    smooth_refinements = smooth_refinements,
+    fn = "create_cortical_from_labels"
+  )
+
   config <- validate_cortical_config(
-    output_dir, verbose, cleanup, skip_existing, tolerance,
+    output_dir,
+    verbose,
+    cleanup,
+    skip_existing,
+    tolerance,
     smooth_refinements
   )
 
@@ -324,7 +374,10 @@ create_cortical_from_labels <- function(
       step1$components$core$hemi[!is.na(step1$components$core$hemi)]
     )
     hemi_short <- vapply(
-      hemisphere, hemi_to_short, character(1), USE.NAMES = FALSE
+      hemisphere,
+      hemi_to_short,
+      character(1),
+      USE.NAMES = FALSE
     )
     if (length(hemi_short) == 0) c("lh", "rh") else hemi_short
   }
@@ -398,8 +451,18 @@ create_cortical_from_gifti <- function(
     cli::cli_abort("{.arg gifti_files} must not be empty")
   }
 
+  warn_deprecated_sf_smoothing(
+    tolerance = tolerance,
+    smooth_refinements = smooth_refinements,
+    fn = "create_cortical_from_gifti"
+  )
+
   config <- validate_cortical_config(
-    output_dir, verbose, cleanup, skip_existing, tolerance,
+    output_dir,
+    verbose,
+    cleanup,
+    skip_existing,
+    tolerance,
     smooth_refinements
   )
 
@@ -468,8 +531,18 @@ create_cortical_from_cifti <- function(
     cli::cli_abort("CIFTI file not found: {.path {cifti_file}}")
   }
 
+  warn_deprecated_sf_smoothing(
+    tolerance = tolerance,
+    smooth_refinements = smooth_refinements,
+    fn = "create_cortical_from_cifti"
+  )
+
   config <- validate_cortical_config(
-    output_dir, verbose, cleanup, skip_existing, tolerance,
+    output_dir,
+    verbose,
+    cleanup,
+    skip_existing,
+    tolerance,
     smooth_refinements
   )
 
@@ -556,8 +629,18 @@ create_cortical_from_neuromaps <- function(
     reason = "to download neuromaps annotations"
   )
 
+  warn_deprecated_sf_smoothing(
+    tolerance = tolerance,
+    smooth_refinements = smooth_refinements,
+    fn = "create_cortical_from_neuromaps"
+  )
+
   config <- validate_cortical_config(
-    output_dir, verbose, cleanup, skip_existing, tolerance,
+    output_dir,
+    verbose,
+    cleanup,
+    skip_existing,
+    tolerance,
     smooth_refinements
   )
 

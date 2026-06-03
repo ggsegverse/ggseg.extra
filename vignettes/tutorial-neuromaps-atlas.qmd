@@ -279,10 +279,10 @@ ggseg3d::ggseg3d(atlas = atlas_20, hemisphere = "left")
 <p class="caption">3D brain rendering with 20 quantile bins.</p>
 </div>
 
-## Tuning tolerance
+## Tuning simplification
 
-The `tolerance` parameter controls polygon simplification.
-We use 7 bins here with a tolerance of 0.5 for a balance between clarity and file size:
+The pipeline returns raw polygons; call `atlas_smooth()` afterwards to balance clarity and file size.
+We start with 7 bins and then simplify to roughly 20% of vertices:
 
 
 ``` r
@@ -291,9 +291,10 @@ atlas_full <- create_cortical_from_neuromaps(
   desc = "genepc1",
   n_bins = 7,
   atlas_name = "abagen_genepc1",
-  tolerance = 0.5,
   verbose = TRUE
 )
+
+atlas_full <- atlas_full |> atlas_smooth(keep = 0.2, exclude = "cortex_")
 #>
 #> ── Creating brain atlas "abagen_genepc1" ──
 #> ℹ Reading neuromaps annotation
