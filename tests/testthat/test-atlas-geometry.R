@@ -768,14 +768,22 @@ describe("smooth_and_simplify_sf", {
 
 
 describe("atlas_smooth", {
-  it("warns when atlas has no sf data", {
-    atlas <- list(data = list(sf = NULL))
+  it("warns when atlas has no 2D geometry", {
+    atlas <- ggseg.formats::ggseg_atlas(
+      atlas = "t",
+      type = "cortical",
+      palette = c(a = "#000000"),
+      core = data.frame(label = "a", region = "a", stringsAsFactors = FALSE),
+      data = ggseg.formats::ggseg_data_cortical(
+        vertices = data.frame(label = "a", vertices = I(list(1:3)))
+      )
+    )
 
     expect_warning(
       result <- atlas_smooth(atlas),
-      "no sf data"
+      "no 2D geometry"
     )
-    expect_null(result$data$sf)
+    expect_null(ggseg.formats::atlas_geom(result))
   })
 
   it("simplifies atlas sf data", {
@@ -784,29 +792,91 @@ describe("atlas_smooth", {
       ncol = 2,
       byrow = TRUE
     )))
-    atlas <- list(
-      data = list(
-        sf = sf::st_sf(
-          label = "a",
-          geometry = sf::st_sfc(poly)
-        )
-      )
+    sf_obj <- sf::st_sf(
+      label = "a",
+      view = "v1",
+      geometry = sf::st_sfc(poly)
+    )
+    atlas <- ggseg.formats::ggseg_atlas(
+      atlas = "t",
+      type = "subcortical",
+      palette = c(a = "#000000"),
+      core = data.frame(label = "a", region = "a", stringsAsFactors = FALSE),
+      data = ggseg.formats::ggseg_data_subcortical(geom = sf_obj)
     )
 
     result <- atlas_smooth(atlas, keep = 0.5)
 
-    expect_s3_class(result$data$sf, "sf")
-    expect_true(all(sf::st_is_valid(result$data$sf)))
+    expect_s3_class(ggseg.formats::atlas_geom(result), "sf")
+    expect_true(all(sf::st_is_valid(ggseg.formats::atlas_geom(result))))
+  })
+
+  it("smooths a polygon-backed atlas and preserves the representation", {
+    poly <- sf::st_polygon(list(matrix(
+      c(0, 0, 0.5, 0.01, 1, 0, 1, 1, 0.5, 0.99, 0, 1, 0, 0),
+      ncol = 2,
+      byrow = TRUE
+    )))
+    sf_obj <- sf::st_sf(label = "a", view = "v1", geometry = sf::st_sfc(poly))
+    atlas <- ggseg.formats::as_polygon_atlas(
+      ggseg.formats::ggseg_atlas(
+        atlas = "t",
+        type = "subcortical",
+        palette = c(a = "#000000"),
+        core = data.frame(label = "a", region = "a", stringsAsFactors = FALSE),
+        data = ggseg.formats::ggseg_data_subcortical(geom = sf_obj)
+      )
+    )
+    expect_true(ggseg.formats::is_atlas_polygon(atlas))
+
+    result <- atlas_smooth(atlas, keep = 0.5)
+
+    # representation round-trips back to polygons, not sf
+    expect_true(ggseg.formats::is_atlas_polygon(result))
+    expect_true(all(sf::st_is_valid(ggseg.formats::atlas_sf(result))))
+    expect_equal(ggseg.formats::atlas_geom(result)$label, "a")
+  })
+
+  it("does not leave a stale legacy sf slot behind the geom slot", {
+    poly <- sf::st_polygon(list(matrix(
+      c(0, 0, 0.5, 0.01, 1, 0, 1, 1, 0.5, 0.99, 0, 1, 0, 0),
+      ncol = 2,
+      byrow = TRUE
+    )))
+    sf_obj <- sf::st_sf(label = "a", view = "v1", geometry = sf::st_sfc(poly))
+    atlas <- ggseg.formats::ggseg_atlas(
+      atlas = "t",
+      type = "subcortical",
+      palette = c(a = "#000000"),
+      core = data.frame(label = "a", region = "a", stringsAsFactors = FALSE),
+      data = ggseg.formats::ggseg_data_subcortical(geom = sf_obj)
+    )
+    # simulate a released atlas whose geometry lives in the legacy $sf slot
+    atlas$data$sf <- atlas$data$geom
+    atlas$data$geom <- NULL
+
+    result <- atlas_smooth(atlas, keep = 0.5)
+
+    expect_null(result$data$sf)
+    expect_false(is.null(result$data$geom))
   })
 })
 
 
 describe("atlas_simplify (deprecated)", {
   it("warns about deprecation and delegates to atlas_smooth", {
-    atlas <- list(data = list(sf = NULL))
+    atlas <- ggseg.formats::ggseg_atlas(
+      atlas = "t",
+      type = "cortical",
+      palette = c(a = "#000000"),
+      core = data.frame(label = "a", region = "a", stringsAsFactors = FALSE),
+      data = ggseg.formats::ggseg_data_cortical(
+        vertices = data.frame(label = "a", vertices = I(list(1:3)))
+      )
+    )
 
     lifecycle::expect_deprecated(
-      expect_warning(atlas_simplify(atlas), "no sf data")
+      expect_warning(atlas_simplify(atlas), "no 2D geometry")
     )
   })
 })

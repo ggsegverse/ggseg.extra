@@ -43,7 +43,7 @@ make_test_atlas <- function() {
     type = "subcortical",
     core = core,
     palette = palette,
-    data = ggseg.formats::ggseg_data_subcortical(sf = sf_df)
+    data = ggseg.formats::ggseg_data_subcortical(geom = sf_df)
   )
 }
 
@@ -128,7 +128,9 @@ describe("aseg_context", {
       punch_white_matter = FALSE
     )
     expect_false("Left-Cerebral-White-Matter" %in% a$core$label)
-    expect_false("Left-Cerebral-White-Matter" %in% a$data$sf$label)
+    expect_false(
+      "Left-Cerebral-White-Matter" %in% ggseg.formats::atlas_geom(a)$label
+    )
   })
 
   it("keeps demoted context geometry for display", {
@@ -138,7 +140,7 @@ describe("aseg_context", {
       punch_white_matter = FALSE
     )
     # Left-Thalamus is context: gone from core but its sf geometry remains.
-    expect_true("Left-Thalamus" %in% a$data$sf$label)
+    expect_true("Left-Thalamus" %in% ggseg.formats::atlas_geom(a)$label)
   })
 
   it("drops views with no focus region", {
@@ -147,8 +149,8 @@ describe("aseg_context", {
       focus = "hypothalamus",
       punch_white_matter = FALSE
     )
-    expect_false("coronal_2" %in% a$data$sf$view)
-    expect_true("coronal_1" %in% a$data$sf$view)
+    expect_false("coronal_2" %in% ggseg.formats::atlas_views(a))
+    expect_true("coronal_1" %in% ggseg.formats::atlas_views(a))
   })
 
   it("can keep empty views when asked", {
@@ -158,7 +160,7 @@ describe("aseg_context", {
       punch_white_matter = FALSE,
       drop_empty_views = FALSE
     )
-    expect_true("coronal_2" %in% a$data$sf$view)
+    expect_true("coronal_2" %in% ggseg.formats::atlas_views(a))
   })
 })
 

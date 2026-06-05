@@ -202,10 +202,11 @@ aseg_context <- function(
     cli::cli_abort("{.arg atlas} must be a {.cls ggseg_atlas}.")
   }
 
-  sf_labels <- if (is.null(atlas$data$sf)) {
+  geom <- ggseg.formats::atlas_geom(atlas)
+  sf_labels <- if (is.null(geom)) {
     character(0)
   } else {
-    atlas$data$sf$label
+    geom$label
   }
 
   if (punch_white_matter) {
@@ -245,12 +246,14 @@ aseg_context <- function(
     )
   }
 
-  if (drop_empty_views && !is.null(atlas$data$sf)) {
-    views <- unique(atlas$data$sf$view)
+  if (drop_empty_views && !is.null(ggseg.formats::atlas_geom(atlas))) {
+    # atlas was rebuilt by the region ops above, so re-derive its 2D rows.
+    sf_rows <- ggseg.formats::atlas_sf(atlas)
+    views <- unique(sf_rows$view)
     empty <- vapply(
       views,
       function(v) {
-        rows <- atlas$data$sf[atlas$data$sf$view == v, ]
+        rows <- sf_rows[sf_rows$view == v, ]
         !any(rows$label %in% atlas$core$label)
       },
       logical(1)

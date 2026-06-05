@@ -503,11 +503,11 @@ get_output_dir <- function(output_dir = NULL) {
 
 #' @noRd
 warn_if_large_atlas <- function(atlas, max_vertices = 10000, per_region = 50) {
-  if (is.null(atlas$data$sf)) {
+  if (is.null(ggseg.formats::atlas_geom(atlas))) {
     return(invisible(NULL))
   }
 
-  n_vertices <- sum(count_vertices(atlas$data$sf))
+  n_vertices <- sum(count_vertices(ggseg.formats::atlas_sf(atlas)))
   n_regions <- if (is.null(atlas$core)) 0L else nrow(atlas$core)
   threshold <- max(max_vertices, per_region * n_regions)
 

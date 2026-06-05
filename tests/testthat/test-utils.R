@@ -298,9 +298,49 @@ describe("warn_if_large_atlas", {
     coords <- rbind(coords, coords[1, ])
     sf_obj <- sf::st_sf(
       label = "test",
+      view = "v1",
       geometry = sf::st_sfc(sf::st_polygon(list(coords)))
     )
-    atlas <- list(data = list(sf = sf_obj))
+    atlas <- ggseg.formats::ggseg_atlas(
+      atlas = "t",
+      type = "subcortical",
+      palette = c(test = "#000000"),
+      core = data.frame(
+        label = "test",
+        region = "test",
+        stringsAsFactors = FALSE
+      ),
+      data = ggseg.formats::ggseg_data_subcortical(geom = sf_obj)
+    )
+
+    expect_warning(
+      warn_if_large_atlas(atlas, max_vertices = 5),
+      "vertices"
+    )
+  })
+
+  it("counts vertices on a polygon-backed atlas", {
+    coords <- matrix(runif(200), ncol = 2)
+    coords <- rbind(coords, coords[1, ])
+    sf_obj <- sf::st_sf(
+      label = "test",
+      view = "v1",
+      geometry = sf::st_sfc(sf::st_polygon(list(coords)))
+    )
+    atlas <- ggseg.formats::as_polygon_atlas(
+      ggseg.formats::ggseg_atlas(
+        atlas = "t",
+        type = "subcortical",
+        palette = c(test = "#000000"),
+        core = data.frame(
+          label = "test",
+          region = "test",
+          stringsAsFactors = FALSE
+        ),
+        data = ggseg.formats::ggseg_data_subcortical(geom = sf_obj)
+      )
+    )
+    expect_true(ggseg.formats::is_atlas_polygon(atlas))
 
     expect_warning(
       warn_if_large_atlas(atlas, max_vertices = 5),
@@ -311,6 +351,7 @@ describe("warn_if_large_atlas", {
   it("does not warn when atlas is small", {
     sf_obj <- sf::st_sf(
       label = "test",
+      view = "v1",
       geometry = sf::st_sfc(
         sf::st_polygon(list(matrix(
           c(0, 0, 1, 0, 1, 1, 0, 0),
@@ -319,30 +360,60 @@ describe("warn_if_large_atlas", {
         )))
       )
     )
-    atlas <- list(data = list(sf = sf_obj))
+    atlas <- ggseg.formats::ggseg_atlas(
+      atlas = "t",
+      type = "subcortical",
+      palette = c(test = "#000000"),
+      core = data.frame(
+        label = "test",
+        region = "test",
+        stringsAsFactors = FALSE
+      ),
+      data = ggseg.formats::ggseg_data_subcortical(geom = sf_obj)
+    )
 
     expect_no_warning(warn_if_large_atlas(atlas, max_vertices = 10000))
   })
 
-  it("does nothing when atlas has no sf data", {
-    atlas <- list(data = list(sf = NULL))
+  it("does nothing when atlas has no 2D geometry", {
+    atlas <- ggseg.formats::ggseg_atlas(
+      atlas = "t",
+      type = "cortical",
+      palette = c(a = "#000000"),
+      core = data.frame(label = "a", region = "a", stringsAsFactors = FALSE),
+      data = ggseg.formats::ggseg_data_cortical(
+        vertices = data.frame(label = "a", vertices = I(list(1:3)))
+      )
+    )
     expect_no_warning(warn_if_large_atlas(atlas))
   })
 
   it("scales threshold with region count via per_region", {
     coords <- matrix(runif(200), ncol = 2)
     coords <- rbind(coords, coords[1, ])
+    labels <- paste0("r", 1:10)
     sf_obj <- sf::st_sf(
-      label = "test",
-      geometry = sf::st_sfc(sf::st_polygon(list(coords)))
+      label = labels,
+      view = "v1",
+      geometry = sf::st_sfc(rep(
+        list(sf::st_polygon(list(coords))),
+        length(labels)
+      ))
     )
-    atlas <- list(
-      data = list(sf = sf_obj),
-      core = data.frame(region = paste0("r", 1:10))
+    atlas <- ggseg.formats::ggseg_atlas(
+      atlas = "t",
+      type = "subcortical",
+      palette = stats::setNames(rep("#000000", 10), labels),
+      core = data.frame(
+        label = labels,
+        region = labels,
+        stringsAsFactors = FALSE
+      ),
+      data = ggseg.formats::ggseg_data_subcortical(geom = sf_obj)
     )
 
     expect_no_warning(
-      warn_if_large_atlas(atlas, max_vertices = 50, per_region = 20)
+      warn_if_large_atlas(atlas, max_vertices = 50, per_region = 200)
     )
     expect_warning(
       warn_if_large_atlas(atlas, max_vertices = 50, per_region = 5),
