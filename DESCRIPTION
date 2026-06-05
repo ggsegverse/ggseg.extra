@@ -75,6 +75,8 @@ Suggests:
     tidyr,
     quarto,
     withr
+Remotes:
+    ggsegverse/ggseg.formats@sf-optional-suggests
 VignetteBuilder:
     knitr,
     quarto
