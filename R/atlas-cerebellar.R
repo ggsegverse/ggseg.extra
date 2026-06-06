@@ -227,9 +227,9 @@ transform_mni_to_suit <- function(
   suit_dims <- xfm_dims[1:3]
   result <- array(0, dim = suit_dims)
 
-  mni_coords_x <- xfm[,,, 1, 1]
-  mni_coords_y <- xfm[,,, 1, 2]
-  mni_coords_z <- xfm[,,, 1, 3]
+  mni_coords_x <- xfm[, , , 1, 1]
+  mni_coords_y <- xfm[, , , 1, 2]
+  mni_coords_z <- xfm[, , , 1, 3]
 
   mni_coords <- cbind(
     c(mni_coords_x),
@@ -366,7 +366,7 @@ create_cerebellar_from_gifti <- function(
     cli::cli_abort("{.arg gifti_files} must not be empty")
   }
 
-  warn_deprecated_sf_smoothing(
+  warn_deprecated_sf_smoothing( # nolint: object_usage_linter.
     tolerance = tolerance,
     smooth_refinements = smooth_refinements,
     fn = "create_cerebellar_from_gifti"
@@ -441,7 +441,7 @@ create_cerebellar_from_annotation <- function(
     cli::cli_abort("{.arg input_annot} must not be empty")
   }
 
-  warn_deprecated_sf_smoothing(
+  warn_deprecated_sf_smoothing( # nolint: object_usage_linter.
     tolerance = tolerance,
     smooth_refinements = smooth_refinements,
     fn = "create_cerebellar_from_annotation"
@@ -522,7 +522,7 @@ create_cerebellar_from_volume <- function(
     cli::cli_abort("Volume file not found: {.path {volume}}")
   }
 
-  warn_deprecated_sf_smoothing(
+  warn_deprecated_sf_smoothing( # nolint: object_usage_linter.
     tolerance = tolerance,
     smooth_refinements = smooth_refinements,
     fn = "create_cerebellar_from_volume"
@@ -877,11 +877,6 @@ cerebellar_process_deep_nuclei <- function(
 
     if (length(meshes_list) > 0) {
       if (verbose) {
-        total_faces <- sum(vapply(
-          meshes_list,
-          function(m) nrow(m$faces),
-          integer(1)
-        ))
         cli::cli_alert_success("Created {length(meshes_list)} meshes")
       }
       deep_meshes <- data.frame(

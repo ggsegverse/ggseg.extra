@@ -187,6 +187,16 @@ aseg_hidden_labels <- function() {
 #' @return The post-processed `ggseg_atlas`.
 #' @seealso [subcortical_views()], [ggseg.formats::atlas_region_contextual()]
 #' @export
+#' @examples
+#' \dontrun{
+#' atlas <- create_subcortical_from_volume(
+#'   input_volume = file.path(
+#'     freesurfer::fs_subj_dir(), "fsaverage5", "mri", "aseg.mgz"
+#'   ),
+#'   atlas_name = "aseg"
+#' )
+#' aseg_context(atlas, focus = "Hippocampus")
+#' }
 aseg_context <- function(
   atlas,
   focus,

@@ -59,7 +59,7 @@ create_cortical_from_annotation <- function(
     cli::cli_abort("{.arg input_annot} must not be empty")
   }
 
-  warn_deprecated_sf_smoothing(
+  warn_deprecated_sf_smoothing( # nolint: object_usage_linter.
     tolerance = tolerance,
     smooth_refinements = smooth_refinements,
     fn = "create_cortical_from_annotation"
@@ -341,7 +341,7 @@ create_cortical_from_labels <- function(
   verbose = get_verbose(), # nolint: object_usage_linter
   skip_existing = NULL
 ) {
-  warn_deprecated_sf_smoothing(
+  warn_deprecated_sf_smoothing( # nolint: object_usage_linter.
     tolerance = tolerance,
     smooth_refinements = smooth_refinements,
     fn = "create_cortical_from_labels"
@@ -451,7 +451,7 @@ create_cortical_from_gifti <- function(
     cli::cli_abort("{.arg gifti_files} must not be empty")
   }
 
-  warn_deprecated_sf_smoothing(
+  warn_deprecated_sf_smoothing( # nolint: object_usage_linter.
     tolerance = tolerance,
     smooth_refinements = smooth_refinements,
     fn = "create_cortical_from_gifti"
@@ -531,7 +531,7 @@ create_cortical_from_cifti <- function(
     cli::cli_abort("CIFTI file not found: {.path {cifti_file}}")
   }
 
-  warn_deprecated_sf_smoothing(
+  warn_deprecated_sf_smoothing( # nolint: object_usage_linter.
     tolerance = tolerance,
     smooth_refinements = smooth_refinements,
     fn = "create_cortical_from_cifti"
@@ -629,7 +629,7 @@ create_cortical_from_neuromaps <- function(
     reason = "to download neuromaps annotations"
   )
 
-  warn_deprecated_sf_smoothing(
+  warn_deprecated_sf_smoothing( # nolint: object_usage_linter.
     tolerance = tolerance,
     smooth_refinements = smooth_refinements,
     fn = "create_cortical_from_neuromaps"

@@ -328,20 +328,17 @@ create_wholebrain_from_volume <- function(
   }
 
   if (config$verbose) {
-    n_cort <- if (!is.null(cortical_atlas)) {
-      # nolint: object_usage_linter.
+    n_cort <- if (!is.null(cortical_atlas)) { # nolint: object_usage_linter.
       nrow(cortical_atlas$core)
     } else {
       0L
     }
-    n_sub <- if (!is.null(subcortical_atlas)) {
-      # nolint: object_usage_linter.
+    n_sub <- if (!is.null(subcortical_atlas)) { # nolint: object_usage_linter.
       nrow(subcortical_atlas$core)
     } else {
       0L
     }
-    n_cer <- if (!is.null(cerebellar_atlas)) {
-      # nolint: object_usage_linter.
+    n_cer <- if (!is.null(cerebellar_atlas)) { # nolint: object_usage_linter.
       nrow(cerebellar_atlas$core)
     } else {
       0L
@@ -363,7 +360,7 @@ create_wholebrain_from_volume <- function(
 
 # Arg names managed by the wholebrain pipeline for each sub-pipeline.
 # Users cannot set these via *_opts; the wholebrain call owns them.
-SUBCORT_MANAGED_ARGS <- c(
+SUBCORT_MANAGED_ARGS <- c( # nolint: object_name_linter.
   "input_volume",
   "input_lut",
   "atlas_name",
@@ -372,7 +369,7 @@ SUBCORT_MANAGED_ARGS <- c(
   "cleanup",
   "skip_existing"
 )
-CEREBELLAR_MANAGED_ARGS <- c(
+CEREBELLAR_MANAGED_ARGS <- c( # nolint: object_name_linter.
   "volume",
   "input_lut",
   "atlas_name",
@@ -381,7 +378,7 @@ CEREBELLAR_MANAGED_ARGS <- c(
   "cleanup",
   "skip_existing"
 )
-CORTICAL_OPT_NAMES <- c("views", "tolerance", "smooth_refinements")
+CORTICAL_OPT_NAMES <- c("views", "tolerance", "smooth_refinements") # nolint: object_name_linter, line_length_linter.
 
 
 #' Validate a named-list of extra arguments for a sub-pipeline
@@ -671,8 +668,7 @@ wholebrain_project_to_surface <- function(
       n_after <- sum(overlay != 0L) # nolint: object_usage_linter.
       n_total <- length(overlay)
       n_medial <- n_total - n_after # nolint: object_usage_linter.
-      pct <- sprintf(
-        # nolint: object_usage_linter.
+      pct <- sprintf( # nolint: object_usage_linter.
         "%.0f%%",
         100 * n_after / n_total
       )
@@ -880,8 +876,7 @@ wholebrain_classify_labels <- function(
       )
     )
     if (length(classified_subcortical) > 0) {
-      sub_info <- paste(
-        # nolint: object_usage_linter.
+      sub_info <- paste( # nolint: object_usage_linter.
         classified_subcortical,
         paste0("(", vertex_counts[classified_subcortical], "v)"),
         collapse = ", "
@@ -889,8 +884,7 @@ wholebrain_classify_labels <- function(
       cli::cli_alert("Subcortical: {sub_info}")
     }
     if (length(classified_cerebellar) > 0) {
-      cer_info <- paste(
-        # nolint: object_usage_linter.
+      cer_info <- paste( # nolint: object_usage_linter.
         classified_cerebellar,
         paste0("(", vertex_counts[classified_cerebellar], "v)"),
         collapse = ", "
@@ -1006,7 +1000,7 @@ wholebrain_run_cortical <- function(
     views <- c("lateral", "medial", "superior", "inferior")
   }
 
-  warn_deprecated_sf_smoothing(
+  warn_deprecated_sf_smoothing( # nolint: object_usage_linter.
     tolerance = opts$tolerance,
     smooth_refinements = opts$smooth_refinements,
     fn = "create_wholebrain_from_volume(cortical_opts)"

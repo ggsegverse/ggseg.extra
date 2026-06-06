@@ -108,7 +108,7 @@ create_tract_from_tractography <- function(
   vertex_size_limits = NULL,
   steps = NULL
 ) {
-  warn_deprecated_sf_smoothing(
+  warn_deprecated_sf_smoothing( # nolint: object_usage_linter.
     tolerance = tolerance,
     smoothness = smoothness,
     fn = "create_tract_from_tractography"

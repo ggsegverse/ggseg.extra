@@ -60,6 +60,17 @@ case-sensitively, so a focus region is never swallowed by a context entry
 that happens to be a substring of its name (e.g. \code{Thalamus} vs
 \code{hypothalamus}).
 }
+\examples{
+\dontrun{
+atlas <- create_subcortical_from_volume(
+  input_volume = file.path(
+    freesurfer::fs_subj_dir(), "fsaverage5", "mri", "aseg.mgz"
+  ),
+  atlas_name = "aseg"
+)
+aseg_context(atlas, focus = "Hippocampus")
+}
+}
 \seealso{
 \code{\link[=subcortical_views]{subcortical_views()}}, \code{\link[ggseg.formats:atlas_manipulation]{ggseg.formats::atlas_region_contextual()}}
 }

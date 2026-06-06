@@ -100,7 +100,7 @@ create_subcortical_from_volume <- function(
   decimate = 0.5,
   steps = NULL
 ) {
-  warn_deprecated_sf_smoothing(
+  warn_deprecated_sf_smoothing( # nolint: object_usage_linter.
     tolerance = tolerance,
     smoothness = smoothness,
     fn = "create_subcortical_from_volume"
@@ -210,7 +210,7 @@ validate_subcort_config <- function(
   if (
     !is.null(decimate) &&
       (!is.numeric(decimate) ||
-        length(decimate) != 1 ||
+        length(decimate) != 1 || # nolint: indentation_linter.
         decimate <= 0 ||
         decimate >= 1)
   ) {

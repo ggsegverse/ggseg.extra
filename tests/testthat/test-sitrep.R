@@ -295,9 +295,11 @@ describe("check_suit_surfaces additional branches", {
   it("alerts only flatmap missing when 3D exists", {
     local_mocked_bindings(
       suit_flatmap_path = function() "",
-      suit_3d_path = function() system.file(
-        "suit", "SUIT.surf.gii", package = "ggseg.extra"
-      )
+      suit_3d_path = function() {
+        system.file(
+          "suit", "SUIT.surf.gii", package = "ggseg.extra"
+        )
+      }
     )
     expect_messages(
       check_suit_surfaces("simple"),
@@ -308,9 +310,11 @@ describe("check_suit_surfaces additional branches", {
   it("alerts only 3D surface missing when flatmap exists", {
     local_mocked_bindings(
       suit_3d_path = function() "",
-      suit_flatmap_path = function() system.file(
-        "suit", "SUIT_flatmap.surf.gii", package = "ggseg.extra"
-      )
+      suit_flatmap_path = function() {
+        system.file(
+          "suit", "SUIT_flatmap.surf.gii", package = "ggseg.extra"
+        )
+      }
     )
     expect_messages(
       check_suit_surfaces("simple"),

@@ -266,10 +266,10 @@ atlas_smooth <- function(
     d
   }
 
-  # Smoothing is an sf/GEOS operation; rehydrate polygon-backed atlases for the
-  # op and restore the original representation afterwards.
-  was_polygon <- inherits(geom, "brain_polygons")
-  sf_data <- if (was_polygon) ggseg.formats::polygons_to_sf(geom) else geom
+  # Smoothing is an sf/GEOS operation; work on the sf representation and
+  # restore the atlas's original representation afterwards.
+  was_polygon <- ggseg.formats::is_atlas_polygon(atlas)
+  sf_data <- ggseg.formats::atlas_geom(ggseg.formats::as_sf_atlas(atlas))
 
   if (!is.null(labels) || !is.null(exclude)) {
     sf_labels <- sf_data$label
@@ -297,14 +297,14 @@ atlas_smooth <- function(
     sf_data <- apply_ops(sf_data)
   }
 
-  atlas$data$geom <- if (was_polygon) {
-    ggseg.formats::sf_to_polygons(sf_data)
-  } else {
-    sf_data
-  }
-  # Drop any legacy slot so it can't shadow $geom with stale, unsmoothed
+  atlas$data$geom <- sf_data
+  # Drop any legacy slots so they can't shadow $geom with stale, unsmoothed
   # geometry for direct readers / re-serialisation.
   atlas$data$sf <- NULL
+  atlas$data$polygons <- NULL
+  if (was_polygon) {
+    atlas <- ggseg.formats::as_polygon_atlas(atlas)
+  }
   atlas
 }
 
