@@ -158,7 +158,8 @@ download_atlas_template <- function(url = template_url()) {
   ))
 
   fallback <- system.file(
-    "templates", "atlas-fallback",
+    "templates",
+    "atlas-fallback",
     package = "ggseg.extra"
   )
 
@@ -177,7 +178,22 @@ download_atlas_template <- function(url = template_url()) {
 #' @keywords internal
 populate_from_template <- function(path, template_dir, atlas_name, repo_name) {
   mkdir(path)
+  create_template_dirs(path, template_dir)
+  copy_template_files(path, template_dir)
 
+  pkg_file <- file.path(path, "R", "REPO-package.R")
+  if (file.exists(pkg_file)) {
+    file.rename(pkg_file, file.path(path, "R", paste0(repo_name, "-package.R")))
+  }
+
+  replace_template_placeholders(path, atlas_name)
+
+  invisible(path)
+}
+
+
+#' @keywords internal
+create_template_dirs <- function(path, template_dir) {
   dirs <- list.dirs(template_dir, full.names = FALSE, recursive = TRUE)
   dirs <- dirs[nchar(dirs) > 0 & !grepl("^\\.", dirs)]
   for (d in dirs) {
@@ -197,6 +213,12 @@ populate_from_template <- function(path, template_dir, atlas_name, repo_name) {
     cli::cli_alert_success("Created {.path .github/workflows/}")
   }
 
+  invisible(path)
+}
+
+
+#' @keywords internal
+copy_template_files <- function(path, template_dir) {
   files <- list.files(
     template_dir,
     recursive = TRUE,
@@ -213,11 +235,12 @@ populate_from_template <- function(path, template_dir, atlas_name, repo_name) {
     file.copy(src, dst, overwrite = TRUE)
   }
 
-  pkg_file <- file.path(path, "R", "REPO-package.R")
-  if (file.exists(pkg_file)) {
-    file.rename(pkg_file, file.path(path, "R", paste0(repo_name, "-package.R")))
-  }
+  invisible(path)
+}
 
+
+#' @keywords internal
+replace_template_placeholders <- function(path, atlas_name) {
   all_files <- list.files(
     path,
     full.names = TRUE,

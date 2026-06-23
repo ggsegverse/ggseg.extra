@@ -97,36 +97,13 @@ read_tck <- function(file) {
   con <- file(file, "rb")
   on.exit(close(con))
 
-  header_lines <- character()
-  while (TRUE) {
-    line <- readLines(con, 1)
-    if (length(line) == 0 || line == "END") {
-      break
-    }
-    header_lines <- c(header_lines, line)
-  }
-
-  datatype <- "float32"
-  for (line in header_lines) {
-    if (grepl("^datatype:", line)) {
-      datatype <- trimws(sub("datatype:", "", line))
-    }
-  }
-
-  byte_size <- switch(
-    datatype,
-    "Float32LE" = 4,
-    "Float32BE" = 4,
-    "Float64LE" = 8,
-    "Float64BE" = 8,
-    4
-  )
-
+  header_lines <- read_tck_header(con)
+  datatype <- parse_tck_datatype(header_lines)
+  byte_size <- tck_datatype_byte_size(datatype)
   endian <- if (grepl("BE$", datatype)) "big" else "little"
 
   streamlines <- list()
-  current_streamline <- matrix(ncol = 3, nrow = 0)
-  colnames(current_streamline) <- c("x", "y", "z")
+  current_streamline <- new_tck_streamline()
 
   while (TRUE) {
     coords <- readBin(con, "double", 3, size = byte_size, endian = endian)
@@ -141,8 +118,7 @@ read_tck <- function(file) {
     if (all(is.nan(coords))) {
       if (nrow(current_streamline) > 0) {
         streamlines[[length(streamlines) + 1]] <- current_streamline
-        current_streamline <- matrix(ncol = 3, nrow = 0)
-        colnames(current_streamline) <- c("x", "y", "z")
+        current_streamline <- new_tck_streamline()
       }
       next
     }
@@ -155,4 +131,55 @@ read_tck <- function(file) {
   }
 
   streamlines
+}
+
+
+#' Read TCK header lines up to the END marker
+#' @noRd
+read_tck_header <- function(con) {
+  header_lines <- character()
+  while (TRUE) {
+    line <- readLines(con, 1)
+    if (length(line) == 0 || line == "END") {
+      break
+    }
+    header_lines <- c(header_lines, line)
+  }
+  header_lines
+}
+
+
+#' Extract the datatype field from TCK header lines
+#' @noRd
+parse_tck_datatype <- function(header_lines) {
+  datatype <- "float32"
+  for (line in header_lines) {
+    if (grepl("^datatype:", line)) {
+      datatype <- trimws(sub("datatype:", "", line))
+    }
+  }
+  datatype
+}
+
+
+#' Map a TCK datatype string to its element byte size
+#' @noRd
+tck_datatype_byte_size <- function(datatype) {
+  switch(
+    datatype,
+    "Float32LE" = 4,
+    "Float32BE" = 4,
+    "Float64LE" = 8,
+    "Float64BE" = 8,
+    4
+  )
+}
+
+
+#' Create an empty TCK streamline matrix with xyz columns
+#' @noRd
+new_tck_streamline <- function() {
+  current_streamline <- matrix(ncol = 3, nrow = 0)
+  colnames(current_streamline) <- c("x", "y", "z")
+  current_streamline
 }

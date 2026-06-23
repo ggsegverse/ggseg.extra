@@ -227,9 +227,9 @@ transform_mni_to_suit <- function(
   suit_dims <- xfm_dims[1:3]
   result <- array(0, dim = suit_dims)
 
-  mni_coords_x <- xfm[, , , 1, 1]
-  mni_coords_y <- xfm[, , , 1, 2]
-  mni_coords_z <- xfm[, , , 1, 3]
+  mni_coords_x <- xfm[,,, 1, 1] # nolint: commas_linter.
+  mni_coords_y <- xfm[,,, 1, 2] # nolint: commas_linter.
+  mni_coords_z <- xfm[,,, 1, 3] # nolint: commas_linter.
 
   mni_coords <- cbind(
     c(mni_coords_x),
@@ -246,56 +246,9 @@ transform_mni_to_suit <- function(
   }
 
   if (interpolation == "nearest") {
-    vox_round <- round(vox_coords)
-    valid <- vox_round[, 1] >= 1 &
-      vox_round[, 1] <= mni_dims[1] &
-      vox_round[, 2] >= 1 &
-      vox_round[, 2] <= mni_dims[2] &
-      vox_round[, 3] >= 1 &
-      vox_round[, 3] <= mni_dims[3]
-    idx <- which(valid)
-    lin_idx <- vox_round[idx, 1] +
-      (vox_round[idx, 2] - 1L) * mni_dims[1] +
-      (vox_round[idx, 3] - 1L) * mni_dims[1] * mni_dims[2]
-    result[idx] <- mni_arr[lin_idx]
+    result <- resample_nearest(result, vox_coords, mni_arr, mni_dims)
   } else {
-    cli::cli_alert_info(
-      "Trilinear interpolation (may be slow for large volumes)"
-    )
-    for (i in seq_len(nrow(vox_coords))) {
-      vi <- vox_coords[i, ]
-      if (
-        any(vi < 1) ||
-          vi[1] > mni_dims[1] ||
-          vi[2] > mni_dims[2] ||
-          vi[3] > mni_dims[3]
-      ) {
-        next
-      }
-
-      x0 <- floor(vi[1])
-      x1 <- min(x0 + 1L, mni_dims[1])
-      y0 <- floor(vi[2])
-      y1 <- min(y0 + 1L, mni_dims[2])
-      z0 <- floor(vi[3])
-      z1 <- min(z0 + 1L, mni_dims[3])
-      xd <- vi[1] - x0
-      yd <- vi[2] - y0
-      zd <- vi[3] - z0
-
-      result[i] <-
-        mni_arr[x0, y0, z0] *
-        (1 - xd) *
-        (1 - yd) *
-        (1 - zd) +
-        mni_arr[x1, y0, z0] * xd * (1 - yd) * (1 - zd) +
-        mni_arr[x0, y1, z0] * (1 - xd) * yd * (1 - zd) +
-        mni_arr[x0, y0, z1] * (1 - xd) * (1 - yd) * zd +
-        mni_arr[x1, y1, z0] * xd * yd * (1 - zd) +
-        mni_arr[x0, y1, z1] * (1 - xd) * yd * zd +
-        mni_arr[x1, y0, z1] * xd * (1 - yd) * zd +
-        mni_arr[x1, y1, z1] * xd * yd * zd
-    }
+    result <- resample_trilinear(result, vox_coords, mni_arr, mni_dims)
   }
 
   ref_nii <- RNifti::asNifti(array(0, dim = suit_dims), reference = xfm)
@@ -303,6 +256,69 @@ transform_mni_to_suit <- function(
   RNifti::writeNifti(out_nii, output_file)
 
   invisible(output_file)
+}
+
+
+#' Nearest-neighbour resample of MNI volume into SUIT grid
+#' @noRd
+resample_nearest <- function(result, vox_coords, mni_arr, mni_dims) {
+  vox_round <- round(vox_coords)
+  valid <- vox_round[, 1] >= 1 &
+    vox_round[, 1] <= mni_dims[1] &
+    vox_round[, 2] >= 1 &
+    vox_round[, 2] <= mni_dims[2] &
+    vox_round[, 3] >= 1 &
+    vox_round[, 3] <= mni_dims[3]
+  idx <- which(valid)
+  lin_idx <- vox_round[idx, 1] +
+    (vox_round[idx, 2] - 1L) * mni_dims[1] +
+    (vox_round[idx, 3] - 1L) * mni_dims[1] * mni_dims[2]
+  result[idx] <- mni_arr[lin_idx]
+  result
+}
+
+
+#' Trilinear resample of MNI volume into SUIT grid
+#' @noRd
+resample_trilinear <- function(result, vox_coords, mni_arr, mni_dims) {
+  cli::cli_alert_info(
+    "Trilinear interpolation (may be slow for large volumes)"
+  )
+  for (i in seq_len(nrow(vox_coords))) {
+    vi <- vox_coords[i, ]
+    if (
+      any(vi < 1) ||
+        vi[1] > mni_dims[1] ||
+        vi[2] > mni_dims[2] ||
+        vi[3] > mni_dims[3]
+    ) {
+      next
+    }
+
+    x0 <- floor(vi[1])
+    x1 <- min(x0 + 1L, mni_dims[1])
+    y0 <- floor(vi[2])
+    y1 <- min(y0 + 1L, mni_dims[2])
+    z0 <- floor(vi[3])
+    z1 <- min(z0 + 1L, mni_dims[3])
+    xd <- vi[1] - x0
+    yd <- vi[2] - y0
+    zd <- vi[3] - z0
+
+    result[i] <-
+      mni_arr[x0, y0, z0] *
+      (1 - xd) *
+      (1 - yd) *
+      (1 - zd) +
+      mni_arr[x1, y0, z0] * xd * (1 - yd) * (1 - zd) +
+      mni_arr[x0, y1, z0] * (1 - xd) * yd * (1 - zd) +
+      mni_arr[x0, y0, z1] * (1 - xd) * (1 - yd) * zd +
+      mni_arr[x1, y1, z0] * xd * yd * (1 - zd) +
+      mni_arr[x0, y1, z1] * (1 - xd) * yd * zd +
+      mni_arr[x1, y0, z1] * xd * (1 - yd) * zd +
+      mni_arr[x1, y1, z1] * xd * yd * zd
+  }
+  result
 }
 
 
@@ -366,7 +382,8 @@ create_cerebellar_from_gifti <- function(
     cli::cli_abort("{.arg gifti_files} must not be empty")
   }
 
-  warn_deprecated_sf_smoothing( # nolint: object_usage_linter.
+  warn_deprecated_sf_smoothing(
+    # nolint: object_usage_linter.
     tolerance = tolerance,
     smooth_refinements = smooth_refinements,
     fn = "create_cerebellar_from_gifti"
@@ -441,7 +458,8 @@ create_cerebellar_from_annotation <- function(
     cli::cli_abort("{.arg input_annot} must not be empty")
   }
 
-  warn_deprecated_sf_smoothing( # nolint: object_usage_linter.
+  warn_deprecated_sf_smoothing(
+    # nolint: object_usage_linter.
     tolerance = tolerance,
     smooth_refinements = smooth_refinements,
     fn = "create_cerebellar_from_annotation"
@@ -522,7 +540,8 @@ create_cerebellar_from_volume <- function(
     cli::cli_abort("Volume file not found: {.path {volume}}")
   }
 
-  warn_deprecated_sf_smoothing( # nolint: object_usage_linter.
+  warn_deprecated_sf_smoothing(
+    # nolint: object_usage_linter.
     tolerance = tolerance,
     smooth_refinements = smooth_refinements,
     fn = "create_cerebellar_from_volume"
@@ -723,16 +742,8 @@ cerebellar_project_and_build <- function(
       dirs = dirs,
       verbose = config$verbose
     )
-
-    if (!is.null(deep_result$sf) && nrow(deep_result$sf) > 0) {
-      sf_data <- sf::st_cast(sf_data, "MULTIPOLYGON")
-      deep_result$sf <- sf::st_cast(deep_result$sf, "MULTIPOLYGON")
-      sf_data <- rbind(sf_data, deep_result$sf)
-    }
-
-    if (!is.null(deep_result$meshes) && nrow(deep_result$meshes) > 0) {
-      deep_meshes_df <- deep_result$meshes
-    }
+    sf_data <- merge_deep_nuclei_sf(sf_data, deep_result$sf)
+    deep_meshes_df <- extract_deep_meshes(deep_result$meshes)
   }
 
   atlas <- ggseg_atlas(
@@ -741,7 +752,7 @@ cerebellar_project_and_build <- function(
     palette = components$palette,
     core = components$core,
     data = ggseg_data_cerebellar(
-      sf = sf_data,
+      geom = sf_data,
       vertices = components$vertices_df,
       meshes = deep_meshes_df
     )
@@ -752,6 +763,27 @@ cerebellar_project_and_build <- function(
   }
 
   cortical_finalize(atlas, config, dirs, start_time)
+}
+
+
+#' Append deep-nuclei sf geometry to the flatmap sf data
+#' @noRd
+merge_deep_nuclei_sf <- function(sf_data, deep_sf) {
+  if (!is.null(deep_sf) && nrow(deep_sf) > 0) {
+    sf_data <- sf::st_cast(sf_data, "MULTIPOLYGON")
+    deep_sf <- sf::st_cast(deep_sf, "MULTIPOLYGON")
+    sf_data <- rbind(sf_data, deep_sf)
+  }
+  sf_data
+}
+
+
+#' Return deep-nuclei mesh data frame or NULL when empty
+#' @noRd
+extract_deep_meshes <- function(deep_meshes) {
+  if (!is.null(deep_meshes) && nrow(deep_meshes) > 0) {
+    deep_meshes
+  }
 }
 
 
@@ -781,117 +813,170 @@ cerebellar_process_deep_nuclei <- function(
 
   deep_sf_list <- list()
   for (i in seq_len(nrow(deep_data))) {
-    idx <- deep_data$vol_idx[i]
-    label <- deep_data$label[i]
-    n_voxels <- sum(vol == idx)
-
-    if (n_voxels == 0) {
-      next
-    }
-
-    mask <- array(0L, dim = dim(vol))
-    mask[vol == idx] <- 1L
-
-    proj <- apply(mask, c(1, 3), max)
-
-    if (sum(proj) == 0) {
-      next
-    }
-
-    r <- terra::rast(t(proj[, rev(seq_len(ncol(proj)))]))
-    polys <- tryCatch(
-      terra::as.polygons(r, dissolve = TRUE),
-      error = function(e) NULL
+    sf_row <- build_deep_nucleus_sf(
+      vol,
+      deep_data$vol_idx[i],
+      deep_data$label[i]
     )
-    if (is.null(polys)) {
-      next
+    if (!is.null(sf_row)) {
+      deep_sf_list[[length(deep_sf_list) + 1]] <- sf_row
     }
-
-    polys <- polys[terra::values(polys) > 0, ]
-    if (nrow(polys) == 0) {
-      next
-    }
-
-    sf_poly <- sf::st_as_sf(polys)
-    geom <- sf::st_union(sf_poly$geometry)
-    geom <- sf::st_buffer(geom, 1.5)
-    geom <- sf::st_buffer(geom, -1.0)
-    if (sf::st_is_empty(geom)) {
-      geom <- sf::st_union(sf::st_as_sf(polys)$geometry)
-      geom <- sf::st_buffer(geom, 0.5)
-    }
-    geom <- sf::st_cast(geom, "MULTIPOLYGON")
-
-    deep_sf_list[[length(deep_sf_list) + 1]] <- sf::st_sf(
-      label = label,
-      view = "nuclei",
-      geometry = geom
-    )
   }
 
   deep_sf <- if (length(deep_sf_list) > 0) {
     do.call(rbind, deep_sf_list)
   }
 
-  deep_meshes <- NULL
-  if (check_fs(abort = FALSE)) {
-    mesh_dir <- file.path(dirs$base, "deep_meshes")
-    dir.create(mesh_dir, showWarnings = FALSE, recursive = TRUE)
-
-    tkr_to_world <- get_tkras_to_world(volume)
-
-    meshes_list <- list()
-    for (i in seq_len(nrow(deep_data))) {
-      idx <- deep_data$vol_idx[i]
-      label <- deep_data$label[i]
-
-      mesh <- tryCatch(
-        tessellate_label(
-          volume_file = volume,
-          label_id = idx,
-          output_dir = mesh_dir,
-          verbose = verbose > 1,
-          skip_existing = FALSE
-        ),
-        error = function(e) {
-          if (verbose) {
-            cli::cli_warn("Failed to tessellate {label}: {e$message}")
-          }
-          NULL
-        }
-      )
-
-      if (!is.null(mesh)) {
-        mesh <- decimate_mesh(mesh, percent = 0.5)
-        verts <- as.matrix(mesh$vertices)
-        verts_h <- cbind(verts, 1)
-        world <- verts_h %*% t(tkr_to_world)
-        mesh$vertices <- data.frame(
-          x = world[, 1],
-          y = world[, 2],
-          z = world[, 3]
-        )
-        meshes_list[[label]] <- mesh
-      }
-    }
-
-    if (length(meshes_list) > 0) {
-      if (verbose) {
-        cli::cli_alert_success("Created {length(meshes_list)} meshes")
-      }
-      deep_meshes <- data.frame(
-        label = names(meshes_list),
-        stringsAsFactors = FALSE
-      )
-      deep_meshes$mesh <- unname(meshes_list)
-    }
-  } else if (verbose) {
-    cli::cli_warn(
-      "FreeSurfer not found; skipping 3D mesh tessellation for deep nuclei"
-    )
-  }
+  deep_meshes <- build_deep_nuclei_meshes(volume, deep_data, dirs, verbose)
 
   list(sf = deep_sf, meshes = deep_meshes)
+}
+
+
+#' Build a coronal-projection sf row for one deep nucleus
+#'
+#' Returns NULL when the nucleus has no voxels or no usable geometry.
+#' @noRd
+build_deep_nucleus_sf <- function(vol, idx, label) {
+  n_voxels <- sum(vol == idx)
+  if (n_voxels == 0) {
+    return(NULL)
+  }
+
+  mask <- array(0L, dim = dim(vol))
+  mask[vol == idx] <- 1L
+
+  proj <- apply(mask, c(1, 3), max)
+
+  if (sum(proj) == 0) {
+    return(NULL)
+  }
+
+  r <- terra::rast(t(proj[, rev(seq_len(ncol(proj)))]))
+  polys <- tryCatch(
+    terra::as.polygons(r, dissolve = TRUE),
+    error = function(e) NULL
+  )
+  if (is.null(polys)) {
+    return(NULL)
+  }
+
+  polys <- polys[terra::values(polys) > 0, ]
+  if (nrow(polys) == 0) {
+    return(NULL)
+  }
+
+  sf_poly <- sf::st_as_sf(polys)
+  geom <- sf::st_union(sf_poly$geometry)
+  geom <- sf::st_buffer(geom, 1.5)
+  geom <- sf::st_buffer(geom, -1.0)
+  if (sf::st_is_empty(geom)) {
+    geom <- sf::st_union(sf::st_as_sf(polys)$geometry)
+    geom <- sf::st_buffer(geom, 0.5)
+  }
+  geom <- sf::st_cast(geom, "MULTIPOLYGON")
+
+  sf::st_sf(
+    label = label,
+    view = "nuclei",
+    geometry = geom
+  )
+}
+
+
+#' Tessellate and world-transform a single deep nucleus mesh
+#'
+#' Returns NULL when tessellation fails.
+#' @noRd
+build_deep_nucleus_mesh <- function(
+  volume,
+  idx,
+  label,
+  mesh_dir,
+  tkr_to_world,
+  verbose
+) {
+  mesh <- tryCatch(
+    tessellate_label(
+      volume_file = volume,
+      label_id = idx,
+      output_dir = mesh_dir,
+      verbose = verbose > 1,
+      skip_existing = FALSE
+    ),
+    error = function(e) {
+      if (verbose) {
+        cli::cli_warn("Failed to tessellate {label}: {e$message}")
+      }
+      NULL
+    }
+  )
+
+  if (is.null(mesh)) {
+    return(NULL)
+  }
+
+  mesh <- decimate_mesh(mesh, percent = 0.5)
+  verts <- as.matrix(mesh$vertices)
+  verts_h <- cbind(verts, 1)
+  world <- verts_h %*% t(tkr_to_world)
+  mesh$vertices <- data.frame(
+    x = world[, 1],
+    y = world[, 2],
+    z = world[, 3]
+  )
+  mesh
+}
+
+
+#' Build the deep-nuclei 3D mesh data frame
+#'
+#' Returns NULL when FreeSurfer is unavailable or no meshes were produced.
+#' @noRd
+build_deep_nuclei_meshes <- function(volume, deep_data, dirs, verbose) {
+  if (!check_fs(abort = FALSE)) {
+    if (verbose) {
+      cli::cli_warn(
+        "FreeSurfer not found; skipping 3D mesh tessellation for deep nuclei"
+      )
+    }
+    return(NULL)
+  }
+
+  mesh_dir <- file.path(dirs$base, "deep_meshes")
+  dir.create(mesh_dir, showWarnings = FALSE, recursive = TRUE)
+
+  tkr_to_world <- get_tkras_to_world(volume)
+
+  meshes_list <- list()
+  for (i in seq_len(nrow(deep_data))) {
+    label <- deep_data$label[i]
+    mesh <- build_deep_nucleus_mesh(
+      volume,
+      deep_data$vol_idx[i],
+      label,
+      mesh_dir,
+      tkr_to_world,
+      verbose
+    )
+    if (!is.null(mesh)) {
+      meshes_list[[label]] <- mesh
+    }
+  }
+
+  if (length(meshes_list) == 0) {
+    return(NULL)
+  }
+
+  if (verbose) {
+    cli::cli_alert_success("Created {length(meshes_list)} meshes")
+  }
+  deep_meshes <- data.frame(
+    label = names(meshes_list),
+    stringsAsFactors = FALSE
+  )
+  deep_meshes$mesh <- unname(meshes_list)
+  deep_meshes
 }
 
 
@@ -1035,72 +1120,9 @@ read_suit_parcellation <- function(gifti_files) {
   seen_vertices <- integer(0)
 
   for (gifti_file in gifti_files) {
-    gii <- gifti::readgii(gifti_file)
-
-    data_arrays <- gii$data
-    if (is.null(data_arrays) || length(data_arrays) == 0) {
-      cli::cli_warn("No data arrays in {.path {gifti_file}}, skipping")
-      next
-    }
-
-    label_array <- data_arrays[[1]]
-    if (is.matrix(label_array)) {
-      label_array <- label_array[, 1]
-    }
-    values <- as.integer(label_array)
-
-    if (length(values) == 0) {
-      cli::cli_warn("Empty data array in {.path {gifti_file}}, skipping")
-      next
-    }
-
-    label_table <- extract_gifti_label_table(gii)
-
-    unique_ids <- sort(unique(values))
-
-    for (pid in unique_ids) {
-      if (pid == 0L) {
-        next
-      }
-
-      region_vertices <- which(values == pid) - 1L
-      if (length(region_vertices) == 0) {
-        next
-      }
-
-      overlap <- intersect(region_vertices, seen_vertices)
-      if (length(overlap) > 0) {
-        cli::cli_warn(c(
-          paste(
-            "Region {.val {pid}} in {.path {gifti_file}} overlaps",
-            "{length(overlap)} previously assigned vertex{?es}"
-          ),
-          "i" = "Last file wins for overlapping vertices"
-        ))
-      }
-      seen_vertices <- union(seen_vertices, region_vertices)
-
-      if (!is.null(label_table) && pid %in% label_table$id) {
-        row <- label_table[label_table$id == pid, ]
-        region_name <- row$name[1]
-        colour <- row$colour[1]
-      } else {
-        region_name <- paste0("region_", pid)
-        colour <- NA_character_
-      }
-
-      hemi <- detect_cerebellar_hemi(region_name)
-      region <- clean_cerebellar_region(region_name)
-      label <- paste(hemi, region, sep = "_")
-
-      all_data[[length(all_data) + 1]] <- dplyr::tibble(
-        hemi = hemi,
-        region = region,
-        label = label,
-        colour = colour,
-        vertices = list(region_vertices)
-      )
-    }
+    parsed <- read_suit_gifti_rows(gifti_file, seen_vertices)
+    all_data <- c(all_data, parsed$rows)
+    seen_vertices <- parsed$seen_vertices
   }
 
   if (length(all_data) == 0) {
@@ -1125,6 +1147,106 @@ read_suit_parcellation <- function(gifti_files) {
   }
 
   result
+}
+
+
+#' Parse one SUIT GIFTI file into region rows
+#'
+#' Returns a list with `rows` (list of tibbles) and the updated
+#' `seen_vertices` vector. Skipped files yield zero rows.
+#' @noRd
+read_suit_gifti_rows <- function(gifti_file, seen_vertices) {
+  gii <- gifti::readgii(gifti_file)
+
+  data_arrays <- gii$data
+  if (is.null(data_arrays) || length(data_arrays) == 0) {
+    cli::cli_warn("No data arrays in {.path {gifti_file}}, skipping")
+    return(list(rows = list(), seen_vertices = seen_vertices))
+  }
+
+  label_array <- data_arrays[[1]]
+  if (is.matrix(label_array)) {
+    label_array <- label_array[, 1]
+  }
+  values <- as.integer(label_array)
+
+  if (length(values) == 0) {
+    cli::cli_warn("Empty data array in {.path {gifti_file}}, skipping")
+    return(list(rows = list(), seen_vertices = seen_vertices))
+  }
+
+  label_table <- extract_gifti_label_table(gii)
+  unique_ids <- sort(unique(values))
+
+  rows <- list()
+  for (pid in unique_ids) {
+    if (pid == 0L) {
+      next
+    }
+
+    region_vertices <- which(values == pid) - 1L
+    if (length(region_vertices) == 0) {
+      next
+    }
+
+    warn_vertex_overlap(region_vertices, seen_vertices, pid, gifti_file)
+    seen_vertices <- union(seen_vertices, region_vertices)
+
+    rows[[length(rows) + 1]] <- build_suit_region_row(
+      pid,
+      region_vertices,
+      label_table
+    )
+  }
+
+  list(rows = rows, seen_vertices = seen_vertices)
+}
+
+
+#' Warn about vertices already assigned to another SUIT region
+#' @noRd
+warn_vertex_overlap <- function(
+  region_vertices,
+  seen_vertices,
+  pid,
+  gifti_file
+) {
+  overlap <- intersect(region_vertices, seen_vertices)
+  if (length(overlap) > 0) {
+    cli::cli_warn(c(
+      paste(
+        "Region {.val {pid}} in {.path {gifti_file}} overlaps",
+        "{length(overlap)} previously assigned vertex{?es}"
+      ),
+      "i" = "Last file wins for overlapping vertices"
+    ))
+  }
+}
+
+
+#' Build a single SUIT parcellation region row
+#' @noRd
+build_suit_region_row <- function(pid, region_vertices, label_table) {
+  if (!is.null(label_table) && pid %in% label_table$id) {
+    row <- label_table[label_table$id == pid, ]
+    region_name <- row$name[1]
+    colour <- row$colour[1]
+  } else {
+    region_name <- paste0("region_", pid)
+    colour <- NA_character_
+  }
+
+  hemi <- detect_cerebellar_hemi(region_name)
+  region <- clean_cerebellar_region(region_name)
+  label <- paste(hemi, region, sep = "_")
+
+  dplyr::tibble(
+    hemi = hemi,
+    region = region,
+    label = label,
+    colour = colour,
+    vertices = list(region_vertices)
+  )
 }
 
 
@@ -1635,24 +1757,9 @@ resolve_cerebellar_lut <- function(vol, vertex_labels, input_lut = NULL) {
   unique_ids <- unique_ids[unique_ids > 0L]
 
   if (!is.null(input_lut)) {
-    if (is.character(input_lut) && length(input_lut) == 1) {
-      lut <- get_ctab(input_lut)
-      lut <- lut[lut$idx %in% unique_ids, , drop = FALSE]
-      return(lut)
-    }
-
-    if (is.data.frame(input_lut)) {
-      if (!all(c("idx", "label") %in% names(input_lut))) {
-        cli::cli_abort(c(
-          "{.arg input_lut} must have columns {.field idx} and {.field label}",
-          "i" = "Got columns: {.field {names(input_lut)}}"
-        ))
-      }
-      lut <- input_lut[input_lut$idx %in% unique_ids, , drop = FALSE]
-      if ("R" %in% names(lut) && "G" %in% names(lut) && "B" %in% names(lut)) {
-        lut$color <- grDevices::rgb(lut$R, lut$G, lut$B, maxColorValue = 255)
-      }
-      return(lut)
+    resolved <- resolve_provided_lut(input_lut, unique_ids)
+    if (!is.null(resolved)) {
+      return(resolved)
     }
   }
 
@@ -1669,4 +1776,33 @@ resolve_cerebellar_lut <- function(vol, vertex_labels, input_lut = NULL) {
     label = paste0("region_", unique_ids),
     stringsAsFactors = FALSE
   )
+}
+
+
+#' Resolve a user-provided cerebellar LUT
+#'
+#' Handles a LUT path or data.frame. Returns NULL when `input_lut` is
+#' neither, so the caller falls back to an auto-generated LUT.
+#' @noRd
+resolve_provided_lut <- function(input_lut, unique_ids) {
+  if (is.character(input_lut) && length(input_lut) == 1) {
+    lut <- get_ctab(input_lut)
+    return(lut[lut$idx %in% unique_ids, , drop = FALSE])
+  }
+
+  if (is.data.frame(input_lut)) {
+    if (!all(c("idx", "label") %in% names(input_lut))) {
+      cli::cli_abort(c(
+        "{.arg input_lut} must have columns {.field idx} and {.field label}",
+        "i" = "Got columns: {.field {names(input_lut)}}"
+      ))
+    }
+    lut <- input_lut[input_lut$idx %in% unique_ids, , drop = FALSE]
+    if ("R" %in% names(lut) && "G" %in% names(lut) && "B" %in% names(lut)) {
+      lut$color <- grDevices::rgb(lut$R, lut$G, lut$B, maxColorValue = 255)
+    }
+    return(lut)
+  }
+
+  NULL
 }

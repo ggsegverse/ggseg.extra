@@ -6,7 +6,7 @@ Authors@R: c(
         given = "Athanasia Mo",
         family = "Mowinckel",
         email = "a.m.mowinckel@psykologi.uio.no",
-        role = c("aut", "cre", "cph"),
+        role = c("aut", "cre"),
         comment = c(
             ORCID = "0000-0002-5756-0223",
             Github = "drmowinckels")),
@@ -14,7 +14,7 @@ Authors@R: c(
         given = "Didac",
         family = "Vidal-Piñeiro",
         email = "d.v.pineiro@psykologi.uio.no",
-        role = c("ctb", "cph"),
+        role = c("ctb"),
         comment = c(ORCID = "0000-0001-9997-9156")),
     person(
         given = "John",
@@ -25,10 +25,10 @@ Authors@R: c(
     person("Center for Lifespan Changes in Brain and Cognition (LCBC), University of Oslo",
            role = "cph")
   )
-Description: Create brain atlas data sets compatible with the 'ggsegverse' plotting packages in 'R'. Provides pipelines for building
+Description: Create brain atlas data sets compatible with the 'ggsegverse' plotting packages. Provides pipelines for building
     cortical, subcortical, white-matter tract, and cerebellar atlases from
     'FreeSurfer' annotation files, 'GIFTI' and 'CIFTI' surface formats,
-    'neuromaps', 'SUIT' flatmap surfaces, and volumetric 'NIfTI' images.
+    'neuromaps', cerebellar flatmaps, and volumetric 'NIfTI' images.
 License: MIT + file LICENSE
 URL: https://github.com/ggsegverse/ggseg.extra
 BugReports: https://github.com/ggsegverse/ggseg.extra/issues
@@ -40,7 +40,7 @@ Imports:
     future,
     furrr,
     ggseg,
-    ggseg.formats,
+    ggseg.formats (>= 0.0.3),
     ggseg3d (>= 2.0.0),
     grDevices,
     lifecycle,
@@ -86,7 +86,11 @@ Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3
 SystemRequirements: FreeSurfer (subcortical/tract/wholebrain pipelines), 
     ImageMagick (subcortical/tract pipelines only), 
-    Connectome Workbench (optional, for CIFTI resampling).
+    Connectome Workbench (optional, for CIFTI resampling),
+    GDAL (>= 2.0.1), 
+    GEOS (>= 3.4.0), 
+    PROJ (>= 4.8.0), 
+    sqlite3
 Config/testthat/edition: 3
 Config/testthat/parallel: true
 Config/Needs/website: ggsegverse/ggseg.docs

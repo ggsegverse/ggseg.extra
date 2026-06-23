@@ -193,6 +193,40 @@ project_mesh_view <- function(
 
   region_sizes <- table(vertex_labels[!is.na(vertex_labels)])
 
+  polys <- build_view_polygons(
+    visible,
+    faces_1idx,
+    verts_2d,
+    l1,
+    l2,
+    l3,
+    all_labeled,
+    region_sizes
+  )
+
+  if (polys$n == 0L) {
+    return(NULL)
+  }
+
+  hemi_long <- if (hemi_short == "lh") "left" else "right"
+  assemble_region_sf(polys$polys, polys$labels, hemi_short, hemi_long, view)
+}
+
+#' Build the per-triangle polygon list for one hemisphere/view
+#'
+#' @return List with `polys` (sfc-ready polygon list), `labels` (character),
+#'   and `n` (number of polygons collected).
+#' @noRd
+build_view_polygons <- function(
+  visible,
+  faces_1idx,
+  verts_2d,
+  l1,
+  l2,
+  l3,
+  all_labeled,
+  region_sizes
+) {
   vis_idx <- which(visible)
   max_polys <- length(vis_idx) * 3L
   all_polys <- vector("list", max_polys)
@@ -201,36 +235,19 @@ project_mesh_view <- function(
 
   for (i in vis_idx) {
     labs <- c(l1[i], l2[i], l3[i])
-    non_na <- labs[!is.na(labs)]
-    unique_non_na <- unique(non_na)
+    unique_non_na <- unique(labs[!is.na(labs)])
     if (length(unique_non_na) == 0) {
       next
     }
 
     vi <- faces_1idx[i, ]
-
-    if (length(unique_non_na) == 1 || !all_labeled[i]) {
-      if (length(unique_non_na) == 1) {
-        lbl <- unique_non_na
-      } else {
-        sizes <- region_sizes[unique_non_na]
-        lbl <- names(which.min(sizes))
-      }
-      coords <- verts_2d[vi, , drop = FALSE]
-      coords <- rbind(coords, coords[1, , drop = FALSE])
-      n <- n + 1L
-      all_polys[[n]] <- sf::st_polygon(list(coords))
-      all_labels[n] <- lbl
-      next
-    }
-
-    fragments <- split_boundary_triangle(
-      verts_2d[vi[1], ],
-      verts_2d[vi[2], ],
-      verts_2d[vi[3], ],
-      labs[1],
-      labs[2],
-      labs[3]
+    fragments <- triangle_fragments(
+      labs,
+      unique_non_na,
+      all_labeled[i],
+      vi,
+      verts_2d,
+      region_sizes
     )
     for (frag in fragments) {
       n <- n + 1L
@@ -239,15 +256,59 @@ project_mesh_view <- function(
     }
   }
 
-  if (n == 0L) {
-    return(NULL)
+  list(
+    polys = all_polys[seq_len(n)],
+    labels = all_labels[seq_len(n)],
+    n = n
+  )
+}
+
+#' Compute polygon fragments for a single visible triangle
+#'
+#' @return List of `list(label, coords)` fragments.
+#' @noRd
+triangle_fragments <- function(
+  labs,
+  unique_non_na,
+  is_all_labeled,
+  vi,
+  verts_2d,
+  region_sizes
+) {
+  if (length(unique_non_na) == 1 || !is_all_labeled) {
+    if (length(unique_non_na) == 1) {
+      lbl <- unique_non_na
+    } else {
+      sizes <- region_sizes[unique_non_na]
+      lbl <- names(which.min(sizes))
+    }
+    coords <- verts_2d[vi, , drop = FALSE]
+    coords <- rbind(coords, coords[1, , drop = FALSE])
+    return(list(list(label = lbl, coords = coords)))
   }
 
-  all_polys <- all_polys[seq_len(n)]
-  all_labels <- all_labels[seq_len(n)]
-  sfc_all <- sf::st_sfc(all_polys)
+  split_boundary_triangle(
+    verts_2d[vi[1], ],
+    verts_2d[vi[2], ],
+    verts_2d[vi[3], ],
+    labs[1],
+    labs[2],
+    labs[3]
+  )
+}
 
-  hemi_long <- if (hemi_short == "lh") "left" else "right"
+#' Union per-triangle polygons into one sf row per region
+#'
+#' @return sf data.frame with one row per unique label.
+#' @noRd
+assemble_region_sf <- function(
+  all_polys,
+  all_labels,
+  hemi_short,
+  hemi_long,
+  view
+) {
+  sfc_all <- sf::st_sfc(all_polys)
   region_labels <- unique(all_labels)
 
   results <- vector("list", length(region_labels))

@@ -100,49 +100,18 @@ flatmap_triangles_to_polygons <- function(verts_2d, faces, vertex_labels) {
   n <- 0L
 
   for (i in seq_len(n_faces)) {
-    labs <- c(l1[i], l2[i], l3[i])
-    non_na <- labs[!is.na(labs)]
-    unique_non_na <- unique(non_na)
-    if (length(unique_non_na) == 0) {
-      next
-    }
-
-    vi <- faces_1idx[i, ]
-    coords <- verts_2d[vi, , drop = FALSE]
-
-    e1 <- coords[2, ] - coords[1, ]
-    e2 <- coords[3, ] - coords[1, ]
-    area2 <- abs(e1[1] * e2[2] - e1[2] * e2[1])
-    if (area2 < 1e-12) {
-      next
-    }
-
-    if (length(unique_non_na) == 1 || !all_labeled[i]) {
-      if (length(unique_non_na) == 1) {
-        lbl <- unique_non_na
-      } else {
-        sizes <- region_sizes[unique_non_na]
-        lbl <- names(which.min(sizes))
-      }
-      ring <- rbind(coords, coords[1, , drop = FALSE])
-      n <- n + 1L
-      all_polys[[n]] <- sf::st_polygon(list(ring))
-      all_labels[n] <- lbl
-      next
-    }
-
-    fragments <- split_boundary_triangle(
-      verts_2d[vi[1], ],
-      verts_2d[vi[2], ],
-      verts_2d[vi[3], ],
-      labs[1],
-      labs[2],
-      labs[3]
+    face_polys <- triangle_to_region_polys(
+      i,
+      faces_1idx,
+      verts_2d,
+      c(l1[i], l2[i], l3[i]),
+      all_labeled[i],
+      region_sizes
     )
-    for (frag in fragments) {
+    for (poly in face_polys) {
       n <- n + 1L
-      all_polys[[n]] <- sf::st_polygon(list(frag$coords))
-      all_labels[n] <- frag$label
+      all_polys[[n]] <- poly$geometry
+      all_labels[n] <- poly$label
     }
   }
 
@@ -154,6 +123,68 @@ flatmap_triangles_to_polygons <- function(verts_2d, faces, vertex_labels) {
   all_labels <- all_labels[seq_len(n)]
   sfc_all <- sf::st_sfc(all_polys)
 
+  combined <- union_polys_by_region(sfc_all, all_labels)
+  sf::st_as_sf(combined)
+}
+
+
+#' Convert one flatmap triangle into labelled sf polygon fragments
+#'
+#' Returns a list of `list(geometry = <POLYGON>, label = <chr>)` entries.
+#' Degenerate or fully unlabelled triangles yield an empty list.
+#' @noRd
+triangle_to_region_polys <- function(
+  i,
+  faces_1idx,
+  verts_2d,
+  labs,
+  face_all_labeled,
+  region_sizes
+) {
+  non_na <- labs[!is.na(labs)]
+  unique_non_na <- unique(non_na)
+  if (length(unique_non_na) == 0) {
+    return(list())
+  }
+
+  vi <- faces_1idx[i, ]
+  coords <- verts_2d[vi, , drop = FALSE]
+
+  e1 <- coords[2, ] - coords[1, ]
+  e2 <- coords[3, ] - coords[1, ]
+  area2 <- abs(e1[1] * e2[2] - e1[2] * e2[1])
+  if (area2 < 1e-12) {
+    return(list())
+  }
+
+  if (length(unique_non_na) == 1 || !face_all_labeled) {
+    if (length(unique_non_na) == 1) {
+      lbl <- unique_non_na
+    } else {
+      sizes <- region_sizes[unique_non_na]
+      lbl <- names(which.min(sizes))
+    }
+    ring <- rbind(coords, coords[1, , drop = FALSE])
+    return(list(list(geometry = sf::st_polygon(list(ring)), label = lbl)))
+  }
+
+  fragments <- split_boundary_triangle(
+    verts_2d[vi[1], ],
+    verts_2d[vi[2], ],
+    verts_2d[vi[3], ],
+    labs[1],
+    labs[2],
+    labs[3]
+  )
+  lapply(fragments, function(frag) {
+    list(geometry = sf::st_polygon(list(frag$coords)), label = frag$label)
+  })
+}
+
+
+#' Union triangle polygons into one row per region label
+#' @noRd
+union_polys_by_region <- function(sfc_all, all_labels) {
   region_labels <- unique(all_labels)
   results <- vector("list", length(region_labels))
 
@@ -167,8 +198,7 @@ flatmap_triangles_to_polygons <- function(verts_2d, faces, vertex_labels) {
     results[[j]]$geometry <- geom
   }
 
-  combined <- do.call(rbind, results)
-  sf::st_as_sf(combined)
+  do.call(rbind, results)
 }
 
 

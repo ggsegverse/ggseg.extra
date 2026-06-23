@@ -190,27 +190,14 @@ create_wholebrain_from_volume <- function(
 ) {
   start_time <- Sys.time()
 
-  cortical_opts <- validate_pipeline_opts(
+  opts <- validate_wholebrain_opts(
     cortical_opts,
-    "cortical",
-    CORTICAL_OPT_NAMES
-  )
-  subcortical_opts <- validate_pipeline_opts(
     subcortical_opts,
-    "subcortical",
-    setdiff(
-      names(formals(create_subcortical_from_volume)),
-      SUBCORT_MANAGED_ARGS
-    )
+    cerebellar_opts
   )
-  cerebellar_opts <- validate_pipeline_opts(
-    cerebellar_opts,
-    "cerebellar",
-    setdiff(
-      names(formals(create_cerebellar_from_volume)),
-      CEREBELLAR_MANAGED_ARGS
-    )
-  )
+  cortical_opts <- opts$cortical
+  subcortical_opts <- opts$subcortical
+  cerebellar_opts <- opts$cerebellar
 
   config <- validate_wholebrain_config(
     input_volume = input_volume,
@@ -235,20 +222,7 @@ create_wholebrain_from_volume <- function(
   )
 
   if (config$verbose) {
-    cli::cli_h1("Creating whole-brain atlas {.val {config$atlas_name}}")
-    cli::cli_alert_warning(paste(
-      "This pipeline combines volume-to-surface projection with automatic",
-      "cortical/subcortical classification. Both steps are heuristic and",
-      "require manual validation. Run with {.code steps = 1:2} first to",
-      "inspect the label split before committing to the full pipeline."
-    ))
-    cli::cli_alert_info("Volume: {.path {config$input_volume}}")
-    if (!is.null(config$input_lut) && is.character(config$input_lut)) {
-      cli::cli_alert_info("Color LUT: {.path {config$input_lut}}")
-    }
-    cli::cli_alert_info(
-      "Setting output directory to {.path {config$output_dir}}"
-    )
+    wholebrain_log_header(config)
   }
 
   projection <- wholebrain_resolve_projection(config, dirs)
@@ -264,18 +238,50 @@ create_wholebrain_from_volume <- function(
 
   if (max(config$steps) <= 2L) {
     if (config$verbose) {
-      cli::cli_alert_info(paste(
-        "Inspect {.code split$cortical_labels},",
-        "{.code split$subcortical_labels}, and",
-        "{.code split$cerebellar_labels}.",
-        "Override with {.arg cortical_labels}/{.arg subcortical_labels}/",
-        "{.arg cerebellar_labels} if needed, then re-run with all steps."
-      ))
-      log_elapsed(start_time)
+      wholebrain_log_split_inspect(start_time)
     }
     return(invisible(split))
   }
 
+  result <- wholebrain_build_atlases(
+    config,
+    dirs,
+    projection,
+    split,
+    cortical_opts = cortical_opts,
+    subcortical_opts = subcortical_opts,
+    cerebellar_opts = cerebellar_opts
+  )
+
+  if (config$cleanup) {
+    unlink(dirs$base, recursive = TRUE)
+    if (config$verbose) cli::cli_alert_success("Temporary files removed")
+  }
+
+  if (config$verbose) {
+    wholebrain_log_summary(
+      result$cortical,
+      result$subcortical,
+      result$cerebellar,
+      start_time
+    )
+  }
+
+  result
+}
+
+
+#' Run pipeline steps 3-5 and assemble the result list
+#' @noRd
+wholebrain_build_atlases <- function(
+  config,
+  dirs,
+  projection,
+  split,
+  cortical_opts,
+  subcortical_opts,
+  cerebellar_opts
+) {
   cortical_atlas <- NULL
   subcortical_atlas <- NULL
 
@@ -316,43 +322,116 @@ create_wholebrain_from_volume <- function(
     )
   }
 
-  result <- list(
+  list(
     cortical = cortical_atlas,
     subcortical = subcortical_atlas,
     cerebellar = cerebellar_atlas
   )
+}
 
-  if (config$cleanup) {
-    unlink(dirs$base, recursive = TRUE)
-    if (config$verbose) cli::cli_alert_success("Temporary files removed")
-  }
 
-  if (config$verbose) {
-    n_cort <- if (!is.null(cortical_atlas)) { # nolint: object_usage_linter.
-      nrow(cortical_atlas$core)
-    } else {
-      0L
-    }
-    n_sub <- if (!is.null(subcortical_atlas)) { # nolint: object_usage_linter.
-      nrow(subcortical_atlas$core)
-    } else {
-      0L
-    }
-    n_cer <- if (!is.null(cerebellar_atlas)) { # nolint: object_usage_linter.
-      nrow(cerebellar_atlas$core)
-    } else {
-      0L
-    }
-    cli::cli_alert_success(
-      paste(
-        "Whole-brain atlas created:",
-        "{n_cort} cortical, {n_sub} subcortical, {n_cer} cerebellar"
+#' Print the inspect-the-split guidance for a steps = 1:2 run
+#' @noRd
+wholebrain_log_split_inspect <- function(start_time) {
+  cli::cli_alert_info(paste(
+    "Inspect {.code split$cortical_labels},",
+    "{.code split$subcortical_labels}, and",
+    "{.code split$cerebellar_labels}.",
+    "Override with {.arg cortical_labels}/{.arg subcortical_labels}/",
+    "{.arg cerebellar_labels} if needed, then re-run with all steps."
+  ))
+  log_elapsed(start_time)
+  invisible(NULL)
+}
+
+
+#' Validate all three sub-pipeline opts lists for the wholebrain pipeline
+#' @noRd
+validate_wholebrain_opts <- function(
+  cortical_opts,
+  subcortical_opts,
+  cerebellar_opts
+) {
+  list(
+    cortical = validate_pipeline_opts(
+      cortical_opts,
+      "cortical",
+      CORTICAL_OPT_NAMES
+    ),
+    subcortical = validate_pipeline_opts(
+      subcortical_opts,
+      "subcortical",
+      setdiff(
+        names(formals(create_subcortical_from_volume)),
+        SUBCORT_MANAGED_ARGS
+      )
+    ),
+    cerebellar = validate_pipeline_opts(
+      cerebellar_opts,
+      "cerebellar",
+      setdiff(
+        names(formals(create_cerebellar_from_volume)),
+        CEREBELLAR_MANAGED_ARGS
       )
     )
-    log_elapsed(start_time)
-  }
+  )
+}
 
-  result
+
+#' Print the wholebrain pipeline header and input summary
+#' @noRd
+wholebrain_log_header <- function(config) {
+  cli::cli_h1("Creating whole-brain atlas {.val {config$atlas_name}}")
+  cli::cli_alert_warning(paste(
+    "This pipeline combines volume-to-surface projection with automatic",
+    "cortical/subcortical classification. Both steps are heuristic and",
+    "require manual validation. Run with {.code steps = 1:2} first to",
+    "inspect the label split before committing to the full pipeline."
+  ))
+  cli::cli_alert_info("Volume: {.path {config$input_volume}}")
+  if (!is.null(config$input_lut) && is.character(config$input_lut)) {
+    cli::cli_alert_info("Color LUT: {.path {config$input_lut}}")
+  }
+  cli::cli_alert_info(
+    "Setting output directory to {.path {config$output_dir}}"
+  )
+  invisible(NULL)
+}
+
+
+#' Print the final region-count summary for the wholebrain pipeline
+#' @noRd
+wholebrain_log_summary <- function(
+  cortical_atlas,
+  subcortical_atlas,
+  cerebellar_atlas,
+  start_time
+) {
+  # nolint start: object_usage_linter.
+  n_cort <- if (!is.null(cortical_atlas)) {
+    nrow(cortical_atlas$core)
+  } else {
+    0L
+  }
+  n_sub <- if (!is.null(subcortical_atlas)) {
+    nrow(subcortical_atlas$core)
+  } else {
+    0L
+  }
+  n_cer <- if (!is.null(cerebellar_atlas)) {
+    nrow(cerebellar_atlas$core)
+  } else {
+    0L
+  }
+  # nolint end
+  cli::cli_alert_success(
+    paste(
+      "Whole-brain atlas created:",
+      "{n_cort} cortical, {n_sub} subcortical, {n_cer} cerebellar"
+    )
+  )
+  log_elapsed(start_time)
+  invisible(NULL)
 }
 
 
@@ -360,7 +439,8 @@ create_wholebrain_from_volume <- function(
 
 # Arg names managed by the wholebrain pipeline for each sub-pipeline.
 # Users cannot set these via *_opts; the wholebrain call owns them.
-SUBCORT_MANAGED_ARGS <- c( # nolint: object_name_linter.
+# nolint start: object_name_linter.
+SUBCORT_MANAGED_ARGS <- c(
   "input_volume",
   "input_lut",
   "atlas_name",
@@ -369,7 +449,7 @@ SUBCORT_MANAGED_ARGS <- c( # nolint: object_name_linter.
   "cleanup",
   "skip_existing"
 )
-CEREBELLAR_MANAGED_ARGS <- c( # nolint: object_name_linter.
+CEREBELLAR_MANAGED_ARGS <- c(
   "volume",
   "input_lut",
   "atlas_name",
@@ -378,6 +458,7 @@ CEREBELLAR_MANAGED_ARGS <- c( # nolint: object_name_linter.
   "cleanup",
   "skip_existing"
 )
+# nolint end
 CORTICAL_OPT_NAMES <- c("views", "tolerance", "smooth_refinements") # nolint: object_name_linter, line_length_linter.
 
 
@@ -668,10 +749,12 @@ wholebrain_project_to_surface <- function(
       n_after <- sum(overlay != 0L) # nolint: object_usage_linter.
       n_total <- length(overlay)
       n_medial <- n_total - n_after # nolint: object_usage_linter.
-      pct <- sprintf( # nolint: object_usage_linter.
+      # nolint start: object_usage_linter.
+      pct <- sprintf(
         "%.0f%%",
         100 * n_after / n_total
       )
+      # nolint end
       cli::cli_alert(
         paste(
           "{hemi_short}: {n_before} -> {n_after}",
@@ -793,25 +876,15 @@ wholebrain_classify_labels <- function(
   volume_labels <- if (!is.null(colortable)) colortable$label else character(0)
   all_labels <- union(projected_labels, volume_labels)
 
-  classified_cortical <- character(0)
-  classified_subcortical <- character(0)
-  classified_cerebellar <- character(0)
-
-  if (!is.null(cortical_labels)) {
-    classified_cortical <- intersect(cortical_labels, all_labels)
-  }
-  if (!is.null(cerebellar_labels)) {
-    classified_cerebellar <- intersect(cerebellar_labels, all_labels)
-  }
-  if (!is.null(subcortical_labels)) {
-    unmatched <- setdiff(subcortical_labels, all_labels)
-    if (length(unmatched) > 0) {
-      cli::cli_warn(
-        "Subcortical labels not found in data: {.val {unmatched}}"
-      )
-    }
-    classified_subcortical <- intersect(subcortical_labels, all_labels)
-  }
+  manual <- classify_labels_manual(
+    all_labels,
+    cortical_labels,
+    subcortical_labels,
+    cerebellar_labels
+  )
+  classified_cortical <- manual$cortical
+  classified_subcortical <- manual$subcortical
+  classified_cerebellar <- manual$cerebellar
 
   remaining <- setdiff(
     all_labels,
@@ -820,21 +893,10 @@ wholebrain_classify_labels <- function(
 
   has_type <- !is.null(colortable) && "type" %in% names(colortable)
   if (has_type && length(remaining) > 0) {
-    lut_cortical <- colortable$label[colortable$type == "cortical"]
-    lut_subcortical <- colortable$label[colortable$type == "subcortical"]
-    lut_cerebellar <- colortable$label[colortable$type == "cerebellar"]
-    classified_cortical <- c(
-      classified_cortical,
-      intersect(remaining, lut_cortical)
-    )
-    classified_subcortical <- c(
-      classified_subcortical,
-      intersect(remaining, lut_subcortical)
-    )
-    classified_cerebellar <- c(
-      classified_cerebellar,
-      intersect(remaining, lut_cerebellar)
-    )
+    by_type <- classify_labels_by_type(colortable, remaining)
+    classified_cortical <- c(classified_cortical, by_type$cortical)
+    classified_subcortical <- c(classified_subcortical, by_type$subcortical)
+    classified_cerebellar <- c(classified_cerebellar, by_type$cerebellar)
     remaining <- setdiff(
       remaining,
       c(classified_cortical, classified_subcortical, classified_cerebellar)
@@ -868,29 +930,12 @@ wholebrain_classify_labels <- function(
   }
 
   if (verbose) {
-    cli::cli_alert_info(
-      paste(
-        "{length(classified_cortical)} cortical,",
-        "{length(classified_subcortical)} subcortical,",
-        "{length(classified_cerebellar)} cerebellar labels"
-      )
+    classify_labels_log_summary(
+      classified_cortical,
+      classified_subcortical,
+      classified_cerebellar,
+      vertex_counts
     )
-    if (length(classified_subcortical) > 0) {
-      sub_info <- paste( # nolint: object_usage_linter.
-        classified_subcortical,
-        paste0("(", vertex_counts[classified_subcortical], "v)"),
-        collapse = ", "
-      )
-      cli::cli_alert("Subcortical: {sub_info}")
-    }
-    if (length(classified_cerebellar) > 0) {
-      cer_info <- paste( # nolint: object_usage_linter.
-        classified_cerebellar,
-        paste0("(", vertex_counts[classified_cerebellar], "v)"),
-        collapse = ", "
-      )
-      cli::cli_alert("Cerebellar: {cer_info}")
-    }
   }
 
   list(
@@ -899,6 +944,94 @@ wholebrain_classify_labels <- function(
     cerebellar_labels = classified_cerebellar,
     vertex_counts = vertex_counts
   )
+}
+
+
+#' Apply explicit cortical/subcortical/cerebellar label overrides
+#'
+#' Returns the labels matched by the manual override vectors. Warns about
+#' subcortical labels that are not present in the data.
+#' @noRd
+classify_labels_manual <- function(
+  all_labels,
+  cortical_labels,
+  subcortical_labels,
+  cerebellar_labels
+) {
+  cortical <- character(0)
+  subcortical <- character(0)
+  cerebellar <- character(0)
+
+  if (!is.null(cortical_labels)) {
+    cortical <- intersect(cortical_labels, all_labels)
+  }
+  if (!is.null(cerebellar_labels)) {
+    cerebellar <- intersect(cerebellar_labels, all_labels)
+  }
+  if (!is.null(subcortical_labels)) {
+    unmatched <- setdiff(subcortical_labels, all_labels)
+    if (length(unmatched) > 0) {
+      cli::cli_warn(
+        "Subcortical labels not found in data: {.val {unmatched}}"
+      )
+    }
+    subcortical <- intersect(subcortical_labels, all_labels)
+  }
+
+  list(cortical = cortical, subcortical = subcortical, cerebellar = cerebellar)
+}
+
+
+#' Classify the still-unassigned labels using the LUT `type` column
+#' @noRd
+classify_labels_by_type <- function(colortable, remaining) {
+  lut_cortical <- colortable$label[colortable$type == "cortical"]
+  lut_subcortical <- colortable$label[colortable$type == "subcortical"]
+  lut_cerebellar <- colortable$label[colortable$type == "cerebellar"]
+  list(
+    cortical = intersect(remaining, lut_cortical),
+    subcortical = intersect(remaining, lut_subcortical),
+    cerebellar = intersect(remaining, lut_cerebellar)
+  )
+}
+
+
+#' Print the cortical/subcortical/cerebellar classification summary
+#' @noRd
+classify_labels_log_summary <- function(
+  classified_cortical,
+  classified_subcortical,
+  classified_cerebellar,
+  vertex_counts
+) {
+  cli::cli_alert_info(
+    paste(
+      "{length(classified_cortical)} cortical,",
+      "{length(classified_subcortical)} subcortical,",
+      "{length(classified_cerebellar)} cerebellar labels"
+    )
+  )
+  if (length(classified_subcortical) > 0) {
+    # nolint start: object_usage_linter.
+    sub_info <- paste(
+      classified_subcortical,
+      paste0("(", vertex_counts[classified_subcortical], "v)"),
+      collapse = ", "
+    )
+    # nolint end
+    cli::cli_alert("Subcortical: {sub_info}")
+  }
+  if (length(classified_cerebellar) > 0) {
+    # nolint start: object_usage_linter.
+    cer_info <- paste(
+      classified_cerebellar,
+      paste0("(", vertex_counts[classified_cerebellar], "v)"),
+      collapse = ", "
+    )
+    # nolint end
+    cli::cli_alert("Cerebellar: {cer_info}")
+  }
+  invisible(NULL)
 }
 
 
@@ -1000,11 +1133,13 @@ wholebrain_run_cortical <- function(
     views <- c("lateral", "medial", "superior", "inferior")
   }
 
-  warn_deprecated_sf_smoothing( # nolint: object_usage_linter.
+  # nolint start: object_usage_linter.
+  warn_deprecated_sf_smoothing(
     tolerance = opts$tolerance,
     smooth_refinements = opts$smooth_refinements,
     fn = "create_wholebrain_from_volume(cortical_opts)"
   )
+  # nolint end
 
   cortical_data <- projection$atlas_data[
     projection$atlas_data$source_label %in% split$cortical_labels,

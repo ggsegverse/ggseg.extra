@@ -39,28 +39,49 @@ detect_hemi <- function(label_name, strict = FALSE, default = NA_character_) {
     return(default)
   }
 
-  left_prefix <- grepl("^(Left|left|lh|L)[- _.]+", label_name)
-  left_suffix <- grepl("[- _.]+(left|lh|L|l)$", label_name)
-  right_prefix <- grepl("^(Right|right|rh|R)[- _.]+", label_name)
-  right_suffix <- grepl("[- _.]+(right|rh|R|r)$", label_name)
-
-  if (left_prefix || left_suffix) {
-    return("left")
-  }
-  if (right_prefix || right_suffix) {
-    return("right")
+  affix <- detect_hemi_affix(label_name)
+  if (!is.null(affix)) {
+    return(affix)
   }
 
   if (!strict) {
-    if (grepl("left|lh", label_name, ignore.case = TRUE)) {
-      return("left")
-    }
-    if (grepl("right|rh", label_name, ignore.case = TRUE)) {
-      return("right")
+    contains <- detect_hemi_contains(label_name)
+    if (!is.null(contains)) {
+      return(contains)
     }
   }
 
   default
+}
+
+#' Detect hemisphere from prefix/suffix affix patterns
+#' @noRd
+detect_hemi_affix <- function(label_name) {
+  left_prefix <- grepl("^(Left|left|lh|L)[- _.]+", label_name)
+  left_suffix <- grepl("[- _.]+(left|lh|L|l)$", label_name)
+  if (left_prefix || left_suffix) {
+    return("left")
+  }
+
+  right_prefix <- grepl("^(Right|right|rh|R)[- _.]+", label_name)
+  right_suffix <- grepl("[- _.]+(right|rh|R|r)$", label_name)
+  if (right_prefix || right_suffix) {
+    return("right")
+  }
+
+  NULL
+}
+
+#' Detect hemisphere from substring anywhere in the label
+#' @noRd
+detect_hemi_contains <- function(label_name) {
+  if (grepl("left|lh", label_name, ignore.case = TRUE)) {
+    return("left")
+  }
+  if (grepl("right|rh", label_name, ignore.case = TRUE)) {
+    return("right")
+  }
+  NULL
 }
 
 #' Vectorized hemisphere detection
@@ -276,7 +297,8 @@ build_atlas_components <- function(atlas_data) {
 
   if ("vol_idx" %in% names(atlas_data)) {
     result$vol_idx <- stats::setNames(
-      atlas_data$vol_idx, atlas_data$label
+      atlas_data$vol_idx,
+      atlas_data$label
     )
   }
 
@@ -288,8 +310,14 @@ build_atlas_components <- function(atlas_data) {
 
 #' @noRd
 resolve_common_config <- function(
-  output_dir, verbose, cleanup, skip_existing,
-  tolerance, smoothness, steps, max_step
+  output_dir,
+  verbose,
+  cleanup,
+  skip_existing,
+  tolerance,
+  smoothness,
+  steps,
+  max_step
 ) {
   list(
     output_dir = get_output_dir(output_dir),
@@ -305,8 +333,13 @@ resolve_common_config <- function(
 
 #' @noRd
 finalize_atlas <- function(
-  atlas, config, dirs, start_time,
-  type_label = "Brain", unit = "regions", early_step = 1L
+  atlas,
+  config,
+  dirs,
+  start_time,
+  type_label = "Brain",
+  unit = "regions",
+  early_step = 1L
 ) {
   if (config$cleanup) {
     unlink(dirs$base, recursive = TRUE)
@@ -330,14 +363,25 @@ finalize_atlas <- function(
     log_elapsed(start_time) # nolint: object_usage_linter.
   }
 
-  if (is.null(atlas)) invisible(NULL) else atlas
+  if (is.null(atlas)) {
+    return(invisible(NULL))
+  }
+
+  if (ggseg.formats::is_atlas_sf(atlas)) {
+    atlas <- ggseg.formats::as_polygon_atlas(atlas)
+  }
+  atlas
 }
 
 
 #' @noRd
 run_image_steps <- function(
-  config, dirs, step_map, total_steps,
-  dilate = NULL, vertex_size_limits = NULL
+  config,
+  dirs,
+  step_map,
+  total_steps,
+  dilate = NULL,
+  vertex_size_limits = NULL
 ) {
   fmt <- function(step) paste0(step, "/", total_steps)
 
@@ -358,7 +402,8 @@ run_image_steps <- function(
 
   if (step_map$extract %in% config$steps) {
     extract_contours(
-      dirs$masks, dirs$base,
+      dirs$masks,
+      dirs$base,
       step = fmt(step_map$extract),
       verbose = config$verbose,
       vertex_size_limits = vertex_size_limits
@@ -367,7 +412,8 @@ run_image_steps <- function(
 
   if (step_map$smooth %in% config$steps) {
     smooth_contours(
-      dirs$base, config$smoothness,
+      dirs$base,
+      config$smoothness,
       step = fmt(step_map$smooth),
       verbose = config$verbose
     )
@@ -375,7 +421,8 @@ run_image_steps <- function(
 
   if (step_map$reduce %in% config$steps) {
     reduce_vertex(
-      dirs$base, config$tolerance,
+      dirs$base,
+      config$tolerance,
       smoothness = config$smoothness,
       step = fmt(step_map$reduce),
       verbose = config$verbose

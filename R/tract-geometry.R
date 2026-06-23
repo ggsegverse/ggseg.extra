@@ -36,41 +36,58 @@ extract_centerline <- function(
     return(resample_streamline(streamlines[[1]], n_points))
   }
 
-  resampled <- lapply(streamlines, resample_streamline, n_points = n_points)
-
-  valid <- vapply(
-    resampled,
-    function(x) !is.null(x) && nrow(x) == n_points,
-    logical(1)
-  )
-  resampled <- resampled[valid]
+  resampled <- resample_valid_streamlines(streamlines, n_points)
 
   if (length(resampled) == 0) {
     return(NULL)
   }
 
-  if (method == "mean") {
-    centerline <- Reduce(`+`, resampled) / length(resampled)
-    colnames(centerline) <- c("x", "y", "z")
-    return(centerline)
-  }
+  switch(
+    method,
+    mean = centerline_mean(resampled),
+    medoid = centerline_medoid(resampled),
+    NULL
+  )
+}
 
-  if (method == "medoid") {
-    distances <- vapply(
-      resampled,
-      function(sl) {
-        mean(vapply(
-          resampled,
-          function(other) sqrt(sum((sl - other)^2)),
-          numeric(1)
-        ))
-      },
-      numeric(1)
-    )
-    return(resampled[[which.min(distances)]])
-  }
 
-  NULL
+#' Resample streamlines and keep only those with the target point count
+#' @noRd
+resample_valid_streamlines <- function(streamlines, n_points) {
+  resampled <- lapply(streamlines, resample_streamline, n_points = n_points)
+  valid <- vapply(
+    resampled,
+    function(x) !is.null(x) && nrow(x) == n_points,
+    logical(1)
+  )
+  resampled[valid]
+}
+
+
+#' Average resampled streamlines point-wise
+#' @noRd
+centerline_mean <- function(resampled) {
+  centerline <- Reduce(`+`, resampled) / length(resampled)
+  colnames(centerline) <- c("x", "y", "z")
+  centerline
+}
+
+
+#' Select the most representative resampled streamline
+#' @noRd
+centerline_medoid <- function(resampled) {
+  distances <- vapply(
+    resampled,
+    function(sl) {
+      mean(vapply(
+        resampled,
+        function(other) sqrt(sum((sl - other)^2)),
+        numeric(1)
+      ))
+    },
+    numeric(1)
+  )
+  resampled[[which.min(distances)]]
 }
 
 
@@ -167,8 +184,8 @@ generate_tube_mesh <- function(centerline, radius = 0.5, segments = 8) {
   cos_a <- cos(angles[grid$j])
   sin_a <- sin(angles[grid$j])
   r <- radius[grid$i]
-  offsets <- r * (cos_a * frames$normals[grid$i, ] +
-                    sin_a * frames$binormals[grid$i, ])
+  offsets <- r *
+    (cos_a * frames$normals[grid$i, ] + sin_a * frames$binormals[grid$i, ])
   vertices <- centerline[grid$i, ] + offsets
 
   fg <- expand.grid(j = seq_len(segments), i = seq_len(n_points - 1))
@@ -293,12 +310,20 @@ compute_streamline_density <- function(
 ) {
   valid_sl <- Filter(function(sl) is.matrix(sl) && nrow(sl) > 0, streamlines)
 
-  vapply(seq_len(nrow(centerline)), function(i) {
-    center <- centerline[i, ]
-    sum(vapply(valid_sl, function(sl) {
-      any(rowSums(sweep(sl, 2, center)^2) <= search_radius^2)
-    }, logical(1)))
-  }, numeric(1))
+  vapply(
+    seq_len(nrow(centerline)),
+    function(i) {
+      center <- centerline[i, ]
+      sum(vapply(
+        valid_sl,
+        function(sl) {
+          any(rowSums(sweep(sl, 2, center)^2) <= search_radius^2)
+        },
+        logical(1)
+      ))
+    },
+    numeric(1)
+  )
 }
 
 
@@ -430,9 +455,12 @@ set_sphere_voxels <- function(vol, center, radius, label_value, dims) {
   offsets <- offsets[rowSums(offsets^2) <= radius^2, , drop = FALSE]
 
   coords <- sweep(offsets, 2, center, "+")
-  in_bounds <- coords[, 1] >= 1 & coords[, 1] <= dims[1] &
-    coords[, 2] >= 1 & coords[, 2] <= dims[2] &
-    coords[, 3] >= 1 & coords[, 3] <= dims[3]
+  in_bounds <- coords[, 1] >= 1 &
+    coords[, 1] <= dims[1] &
+    coords[, 2] >= 1 &
+    coords[, 2] <= dims[2] &
+    coords[, 3] >= 1 &
+    coords[, 3] <= dims[3]
   coords <- coords[in_bounds, , drop = FALSE]
 
   for (k in seq_len(nrow(coords))) {
@@ -442,10 +470,19 @@ set_sphere_voxels <- function(vol, center, radius, label_value, dims) {
 }
 
 
+#' Check a single axis coordinate against its dimension bound
+#' @noRd
+axis_in_bounds <- function(value, dim_size) {
+  value >= 1 && value <= dim_size
+}
+
+
 #' Check if voxel coordinates are within volume bounds
 #' @noRd
 voxel_in_bounds <- function(x, y, z, dims) {
-  x >= 1 && x <= dims[1] && y >= 1 && y <= dims[2] && z >= 1 && z <= dims[3]
+  axis_in_bounds(x, dims[1]) &&
+    axis_in_bounds(y, dims[2]) &&
+    axis_in_bounds(z, dims[3])
 }
 
 
@@ -459,16 +496,7 @@ voxel_in_bounds <- function(x, y, z, dims) {
 #' @return TRUE if likely voxel space, FALSE if likely RAS
 #' @noRd
 detect_coords_are_voxels <- function(streamlines, dims = NULL) {
-  all_coords <- do.call(
-    rbind,
-    lapply(streamlines, function(s) {
-      if (is.matrix(s) && nrow(s) > 0) {
-        s[, 1:3, drop = FALSE]
-      } else {
-        NULL
-      }
-    })
-  )
+  all_coords <- collect_streamline_coords(streamlines)
 
   if (is.null(all_coords) || nrow(all_coords) == 0) {
     return(FALSE)
@@ -482,17 +510,36 @@ detect_coords_are_voxels <- function(streamlines, dims = NULL) {
   }
 
   if (min_coord >= 0 && max_coord <= 300) {
-    if (!is.null(dims) && max(dims) > 0) {
-      max_dim <- max(dims)
-      if (max_coord <= max_dim * 1.1) {
-        return(TRUE)
-      }
-    } else {
-      return(TRUE)
-    }
+    return(coords_fit_dims(max_coord, dims))
   }
 
   FALSE
+}
+
+
+#' Stack streamline xyz coordinates into a single matrix
+#' @noRd
+collect_streamline_coords <- function(streamlines) {
+  do.call(
+    rbind,
+    lapply(streamlines, function(s) {
+      if (is.matrix(s) && nrow(s) > 0) {
+        s[, 1:3, drop = FALSE]
+      } else {
+        NULL
+      }
+    })
+  )
+}
+
+
+#' Check whether the coordinate range is consistent with voxel dims
+#' @noRd
+coords_fit_dims <- function(max_coord, dims) {
+  if (!is.null(dims) && max(dims) > 0) {
+    return(max_coord <= max(dims) * 1.1)
+  }
+  TRUE
 }
 
 
@@ -543,8 +590,12 @@ detect_coords_are_voxels <- function(streamlines, dims = NULL) {
 
 #' @noRd
 tract_create_volumes <- function(
-  tract_labels, streamlines, aseg_file,
-  tract_radius, coords_are_voxels, verbose
+  tract_labels,
+  streamlines,
+  aseg_file,
+  tract_radius,
+  coords_are_voxels,
+  verbose
 ) {
   if (verbose) {
     cli::cli_alert_info("Converting tracts to volumes")
@@ -593,8 +644,15 @@ tract_create_volumes <- function(
 
 #' @noRd
 tract_snapshot_projections <- function(
-  tract_volumes, tract_labels, aseg_vol, dims,
-  views, cortex_slices, dirs, skip_existing, verbose
+  tract_volumes,
+  tract_labels,
+  aseg_vol,
+  dims,
+  views,
+  cortex_slices,
+  dirs,
+  skip_existing,
+  verbose
 ) {
   if (verbose) {
     cli::cli_alert_info("Creating projections")
@@ -685,8 +743,13 @@ tract_snapshot_projections <- function(
 
 #' @noRd
 tract_process_and_extract <- function(
-  dirs, dilate, skip_existing, verbose,
-  vertex_size_limits, smoothness, tolerance
+  dirs,
+  dilate,
+  skip_existing,
+  verbose,
+  vertex_size_limits,
+  smoothness,
+  tolerance
 ) {
   if (verbose) {
     cli::cli_alert_info("Processing images")
@@ -719,12 +782,152 @@ tract_process_and_extract <- function(
     vertex_size_limits = vertex_size_limits
   )
   smooth_contours(dirs$base, smoothness, step = NULL, verbose = verbose)
-  reduce_vertex(dirs$base, tolerance, smoothness = smoothness,
-                step = NULL, verbose = verbose)
+  reduce_vertex(
+    dirs$base,
+    tolerance,
+    smoothness = smoothness,
+    step = NULL,
+    verbose = verbose
+  )
 }
 
 
-create_tract_geometry_volumetric <- function( # nolint: object_length_linter.
+#' Validate atlas, aseg file, and streamlines presence for tract geometry
+#' @noRd
+validate_tract_geometry_inputs <- function(
+  atlas,
+  aseg_file,
+  streamlines_missing
+) {
+  if (!ggseg.formats::is_tract_atlas(atlas)) {
+    cli::cli_abort("Atlas must be of type 'tract'")
+  }
+
+  if (!file.exists(aseg_file)) {
+    cli::cli_abort("Aseg file not found: {.path {aseg_file}}")
+  }
+
+  if (streamlines_missing) {
+    cli::cli_abort(c(
+      "{.arg streamlines} is required for volumetric geometry",
+      "i" = paste(
+        "Atlas centerlines are centered for 3D",
+        "rendering and don't match volumetric space"
+      ),
+      "i" = "Pass the original streamlines/centerlines in RAS coordinates"
+    ))
+  }
+}
+
+
+#' Ensure every tract label has matching streamlines
+#' @noRd
+validate_streamline_labels <- function(tract_labels, streamline_names) {
+  missing_labels <- setdiff(tract_labels, streamline_names)
+  if (length(missing_labels) > 0) {
+    cli::cli_abort(c(
+      "Streamlines missing for tracts: {.val {missing_labels}}",
+      "i" = "streamlines must be a named list with names matching tract labels"
+    ))
+  }
+}
+
+
+#' Auto-detect tract coordinate space and report it when verbose
+#' @noRd
+detect_tract_coord_space <- function(streamlines, verbose) {
+  all_streamlines <- unlist(streamlines, recursive = FALSE)
+  coords_are_voxels <- detect_coords_are_voxels(all_streamlines)
+  if (verbose) {
+    space <- if (coords_are_voxels) "voxel" else "RAS" # nolint: object_usage_linter
+    cli::cli_alert_info("Auto-detected coordinate space: {.val {space}}")
+  }
+  coords_are_voxels
+}
+
+
+#' Generate tract volumes, snapshots, and 2D contours
+#'
+#' Runs the full geometry-generation branch and returns the resolved
+#' `views` and `cortex_slices` used downstream.
+#' @noRd
+tract_generate_geometry <- function(
+  aseg_file,
+  streamlines,
+  tract_labels,
+  views,
+  cortex_slices,
+  views_file,
+  dirs,
+  tract_radius,
+  coords_are_voxels,
+  dilate,
+  vertex_size_limits,
+  smoothness,
+  tolerance,
+  skip_existing,
+  verbose
+) {
+  aseg_vol <- read_volume(aseg_file)
+  dims <- dim(aseg_vol)
+
+  if (is.null(views)) {
+    views <- default_tract_views(dims)
+  }
+  saveRDS(views, views_file)
+
+  if (is.null(cortex_slices)) {
+    cortex_slices <- create_cortex_slices(views, dims)
+  }
+
+  n_snapshots <- nrow(views) * length(tract_labels) + nrow(cortex_slices)
+  existing_snaps <- length(list.files(dirs$snapshots, pattern = "\\.png$"))
+
+  if (skip_existing && existing_snaps >= n_snapshots) {
+    if (verbose) {
+      cli::cli_alert_success(
+        "Using existing snapshots ({existing_snaps} files)"
+      )
+    }
+  } else {
+    tract_volumes <- tract_create_volumes(
+      tract_labels,
+      streamlines,
+      aseg_file,
+      tract_radius,
+      coords_are_voxels,
+      verbose
+    )
+
+    tract_snapshot_projections(
+      tract_volumes,
+      tract_labels,
+      aseg_vol,
+      dims,
+      views,
+      cortex_slices,
+      dirs,
+      skip_existing,
+      verbose
+    )
+  }
+
+  tract_process_and_extract(
+    dirs,
+    dilate,
+    skip_existing,
+    verbose,
+    vertex_size_limits,
+    smoothness,
+    tolerance
+  )
+
+  list(views = views, cortex_slices = cortex_slices)
+}
+
+
+# nolint next: object_length_linter.
+create_tract_geometry_volumetric <- function(
   atlas,
   aseg_file,
   streamlines,
@@ -748,32 +951,14 @@ create_tract_geometry_volumetric <- function( # nolint: object_length_linter.
   smoothness <- get_smoothness(smoothness)
   output_dir <- get_output_dir(output_dir)
 
-  if (atlas$type != "tract") {
-    cli::cli_abort("Atlas must be of type 'tract'")
-  }
-
-  if (!file.exists(aseg_file)) {
-    cli::cli_abort("Aseg file not found: {.path {aseg_file}}")
-  }
-
-  if (missing(streamlines) || is.null(streamlines)) {
-    cli::cli_abort(c(
-      "{.arg streamlines} is required for volumetric geometry",
-      "i" = paste(
-        "Atlas centerlines are centered for 3D",
-        "rendering and don't match volumetric space"
-      ),
-      "i" = "Pass the original streamlines/centerlines in RAS coordinates"
-    ))
-  }
+  validate_tract_geometry_inputs(
+    atlas,
+    aseg_file,
+    missing(streamlines) || is.null(streamlines)
+  )
 
   if (is.null(coords_are_voxels)) {
-    all_streamlines <- unlist(streamlines, recursive = FALSE)
-    coords_are_voxels <- detect_coords_are_voxels(all_streamlines)
-    if (verbose) {
-      space <- if (coords_are_voxels) "voxel" else "RAS" # nolint: object_usage_linter
-      cli::cli_alert_info("Auto-detected coordinate space: {.val {space}}")
-    }
+    coords_are_voxels <- detect_tract_coord_space(streamlines, verbose)
   }
 
   output_dir <- path.expand(output_dir)
@@ -791,13 +976,7 @@ create_tract_geometry_volumetric <- function( # nolint: object_length_linter.
   }
   tract_labels <- centerlines$label
 
-  missing_labels <- setdiff(tract_labels, names(streamlines))
-  if (length(missing_labels) > 0) {
-    cli::cli_abort(c(
-      "Streamlines missing for tracts: {.val {missing_labels}}",
-      "i" = "streamlines must be a named list with names matching tract labels"
-    ))
-  }
+  validate_streamline_labels(tract_labels, names(streamlines))
 
   contours_file <- file.path(dirs$base, "contours_reduced.rda")
   views_file <- file.path(dirs$base, "views.rds")
@@ -812,43 +991,25 @@ create_tract_geometry_volumetric <- function( # nolint: object_length_linter.
       cli::cli_alert_success("Loaded existing 2D geometry from cache")
     }
   } else {
-    aseg_vol <- read_volume(aseg_file)
-    dims <- dim(aseg_vol)
-
-    if (is.null(views)) {
-      views <- default_tract_views(dims)
-    }
-    saveRDS(views, views_file)
-
-    if (is.null(cortex_slices)) {
-      cortex_slices <- create_cortex_slices(views, dims)
-    }
-
-    n_snapshots <- nrow(views) * length(tract_labels) + nrow(cortex_slices)
-    existing_snaps <- length(list.files(dirs$snapshots, pattern = "\\.png$"))
-
-    if (skip_existing && existing_snaps >= n_snapshots) {
-      if (verbose) {
-        cli::cli_alert_success(
-          "Using existing snapshots ({existing_snaps} files)"
-        )
-      }
-    } else {
-      tract_volumes <- tract_create_volumes(
-        tract_labels, streamlines, aseg_file,
-        tract_radius, coords_are_voxels, verbose
-      )
-
-      tract_snapshot_projections(
-        tract_volumes, tract_labels, aseg_vol, dims,
-        views, cortex_slices, dirs, skip_existing, verbose
-      )
-    }
-
-    tract_process_and_extract(
-      dirs, dilate, skip_existing, verbose,
-      vertex_size_limits, smoothness, tolerance
+    generated <- tract_generate_geometry(
+      aseg_file,
+      streamlines,
+      tract_labels,
+      views,
+      cortex_slices,
+      views_file,
+      dirs,
+      tract_radius,
+      coords_are_voxels,
+      dilate,
+      vertex_size_limits,
+      smoothness,
+      tolerance,
+      skip_existing,
+      verbose
     )
+    views <- generated$views
+    cortex_slices <- generated$cortex_slices
   }
 
   if (verbose) {

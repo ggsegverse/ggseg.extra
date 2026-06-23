@@ -378,7 +378,9 @@ describe("cortical_finalize", {
       result <- cortical_finalize(
         mock_atlas,
         config = list(
-          steps = 1:2, cleanup = FALSE, verbose = TRUE
+          steps = 1:2,
+          cleanup = FALSE,
+          verbose = TRUE
         ),
         dirs = dirs,
         start_time = Sys.time()
@@ -405,7 +407,9 @@ describe("cortical_finalize", {
     cortical_finalize(
       mock_atlas,
       config = list(
-        steps = 1:2, cleanup = TRUE, verbose = FALSE
+        steps = 1:2,
+        cleanup = TRUE,
+        verbose = FALSE
       ),
       dirs = list(base = file.path(base_dir, "subdir")),
       start_time = Sys.time()
@@ -426,7 +430,7 @@ describe("cortical_project_and_build verbose and cleanup paths", {
       gsub("[A-Za-z]:[^ ']*Rtmp[^ ']*", "<TMPDIR>", x)
     }
     expect_snapshot(
-      cortical_project_and_build(
+      invisible(cortical_project_and_build(
         components = mock_components(),
         atlas_name = "test",
         hemisphere = "lh",
@@ -440,7 +444,7 @@ describe("cortical_project_and_build verbose and cleanup paths", {
         ),
         dirs = mock_dirs(),
         start_time = Sys.time()
-      ),
+      )),
       transform = scrub
     )
   })
@@ -552,10 +556,10 @@ describe("create_cortical_from_annotation verbose output", {
       gsub("[A-Za-z]:[^ ']*Rtmp[^ ']*", "<TMPDIR>", x)
     }
     expect_snapshot(
-      create_cortical_from_annotation(
+      invisible(create_cortical_from_annotation(
         input_annot = c("lh.test.annot"),
         verbose = TRUE
-      ),
+      )),
       transform = scrub
     )
   })
@@ -699,8 +703,6 @@ describe("cortical_read_data verbose paths", {
 })
 
 
-
-
 describe("create_cortical_from_labels verbose and LUT paths", {
   it("prints verbose output when verbose is TRUE", {
     local_mocked_bindings(
@@ -717,11 +719,11 @@ describe("create_cortical_from_labels verbose and LUT paths", {
       gsub("[A-Za-z]:[^ ']*Rtmp[^ ']*", "<TMPDIR>", x)
     }
     expect_snapshot(
-      create_cortical_from_labels(
+      invisible(create_cortical_from_labels(
         labels,
         atlas_name = "test_atlas",
         verbose = TRUE
-      ),
+      )),
       transform = scrub
     )
   })
@@ -1074,7 +1076,11 @@ describe("cortical_region_snapshots invisible-region filtering", {
     captured <- list()
     local_mocked_bindings(
       snapshot_region_batch = function(
-        atlas, region_label, hemisphere, views, ...
+        atlas,
+        region_label,
+        hemisphere,
+        views,
+        ...
       ) {
         captured[[length(captured) + 1]] <<- list(
           region_label = region_label,

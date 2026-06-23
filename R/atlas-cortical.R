@@ -59,7 +59,8 @@ create_cortical_from_annotation <- function(
     cli::cli_abort("{.arg input_annot} must not be empty")
   }
 
-  warn_deprecated_sf_smoothing( # nolint: object_usage_linter.
+  warn_deprecated_sf_smoothing(
+    # nolint: object_usage_linter.
     tolerance = tolerance,
     smooth_refinements = smooth_refinements,
     fn = "create_cortical_from_annotation"
@@ -214,7 +215,7 @@ cortical_read_data <- function(
     type = "cortical",
     palette = components$palette,
     core = components$core,
-    data = ggseg_data_cortical(sf = NULL, vertices = components$vertices_df)
+    data = ggseg_data_cortical(vertices = components$vertices_df)
   )
 
   saveRDS(atlas_3d, file.path(dirs$base, "atlas_3d.rds"))
@@ -258,7 +259,7 @@ cortical_project_and_build <- function(
     palette = components$palette,
     core = components$core,
     data = ggseg_data_cortical(
-      sf = sf_data,
+      geom = sf_data,
       vertices = components$vertices_df
     )
   )
@@ -285,6 +286,10 @@ cortical_finalize <- function(atlas, config, dirs, start_time) {
 
   warn_if_large_atlas(atlas)
   preview_atlas(atlas)
+
+  if (ggseg.formats::is_atlas_sf(atlas)) {
+    atlas <- ggseg.formats::as_polygon_atlas(atlas)
+  }
   atlas
 }
 
@@ -341,7 +346,8 @@ create_cortical_from_labels <- function(
   verbose = get_verbose(), # nolint: object_usage_linter
   skip_existing = NULL
 ) {
-  warn_deprecated_sf_smoothing( # nolint: object_usage_linter.
+  warn_deprecated_sf_smoothing(
+    # nolint: object_usage_linter.
     tolerance = tolerance,
     smooth_refinements = smooth_refinements,
     fn = "create_cortical_from_labels"
@@ -451,7 +457,8 @@ create_cortical_from_gifti <- function(
     cli::cli_abort("{.arg gifti_files} must not be empty")
   }
 
-  warn_deprecated_sf_smoothing( # nolint: object_usage_linter.
+  warn_deprecated_sf_smoothing(
+    # nolint: object_usage_linter.
     tolerance = tolerance,
     smooth_refinements = smooth_refinements,
     fn = "create_cortical_from_gifti"
@@ -531,7 +538,8 @@ create_cortical_from_cifti <- function(
     cli::cli_abort("CIFTI file not found: {.path {cifti_file}}")
   }
 
-  warn_deprecated_sf_smoothing( # nolint: object_usage_linter.
+  warn_deprecated_sf_smoothing(
+    # nolint: object_usage_linter.
     tolerance = tolerance,
     smooth_refinements = smooth_refinements,
     fn = "create_cortical_from_cifti"
@@ -629,7 +637,8 @@ create_cortical_from_neuromaps <- function(
     reason = "to download neuromaps annotations"
   )
 
-  warn_deprecated_sf_smoothing( # nolint: object_usage_linter.
+  warn_deprecated_sf_smoothing(
+    # nolint: object_usage_linter.
     tolerance = tolerance,
     smooth_refinements = smooth_refinements,
     fn = "create_cortical_from_neuromaps"

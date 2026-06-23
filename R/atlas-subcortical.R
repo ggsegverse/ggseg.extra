@@ -100,11 +100,13 @@ create_subcortical_from_volume <- function(
   decimate = 0.5,
   steps = NULL
 ) {
-  warn_deprecated_sf_smoothing( # nolint: object_usage_linter.
+  # nolint start: object_usage_linter.
+  warn_deprecated_sf_smoothing(
     tolerance = tolerance,
     smoothness = smoothness,
     fn = "create_subcortical_from_volume"
   )
+  # nolint end
 
   start_time <- Sys.time()
 
@@ -207,6 +209,28 @@ validate_subcort_config <- function(
     max_step = 9L
   )
 
+  validate_decimate(decimate)
+
+  check_fs(abort = TRUE)
+
+  validate_subcort_inputs(input_volume, input_lut)
+
+  config$output_dir <- normalizePath(config$output_dir, mustWork = FALSE)
+
+  if (is.null(atlas_name)) {
+    atlas_name <- file_path_sans_ext(basename(input_volume))
+  }
+
+  config$input_volume <- input_volume
+  config$input_lut <- input_lut
+  config$atlas_name <- atlas_name
+  config$decimate <- decimate
+  config
+}
+
+
+#' @noRd
+validate_decimate <- function(decimate) {
   if (
     !is.null(decimate) &&
       (!is.numeric(decimate) ||
@@ -220,9 +244,12 @@ validate_subcort_config <- function(
       "i" = "Use {.code NULL} to skip mesh decimation"
     ))
   }
+  invisible(NULL)
+}
 
-  check_fs(abort = TRUE)
 
+#' @noRd
+validate_subcort_inputs <- function(input_volume, input_lut) {
   if (!file.exists(input_volume)) {
     cli::cli_abort("Volume file not found: {.path {input_volume}}")
   }
@@ -231,18 +258,7 @@ validate_subcort_config <- function(
   ) {
     cli::cli_abort("Color lookup table not found: {.path {input_lut}}")
   }
-
-  config$output_dir <- normalizePath(config$output_dir, mustWork = FALSE)
-
-  if (is.null(atlas_name)) {
-    atlas_name <- file_path_sans_ext(basename(input_volume))
-  }
-
-  config$input_volume <- input_volume
-  config$input_lut <- input_lut
-  config$atlas_name <- atlas_name
-  config$decimate <- decimate
-  config
+  invisible(NULL)
 }
 
 
@@ -457,7 +473,7 @@ subcort_assemble_3d <- function(atlas_name, components) {
     type = "subcortical",
     palette = components$palette,
     core = components$core,
-    data = ggseg_data_subcortical(sf = NULL, meshes = components$meshes_df)
+    data = ggseg_data_subcortical(meshes = components$meshes_df)
   )
 }
 
@@ -514,7 +530,7 @@ subcort_assemble_full <- function(
     type = "subcortical",
     palette = components$palette,
     core = components$core,
-    data = ggseg_data_subcortical(sf = sf_data, meshes = components$meshes_df)
+    data = ggseg_data_subcortical(geom = sf_data, meshes = components$meshes_df)
   )
 
   atlas <- ggseg.formats::atlas_view_gather(atlas)

@@ -16,16 +16,23 @@ ensure_fs_compatible_nifti <- function(volume_file, output_dir) {
     suppressWarnings(RNifti::niftiHeader(volume_file)),
     error = function(e) NULL
   )
-  if (is.null(hdr) || length(hdr$datatype) == 0) return(volume_file)
+  if (is.null(hdr) || length(hdr$datatype) == 0) {
+    return(volume_file)
+  }
   # FreeSurfer supports: 2 (UINT8), 4 (INT16 with slope), 8 (INT32),
   # 16 (FLOAT32), 64 (FLOAT64). Datatype 256 (INT16 without slope) fails.
   fs_ok <- c(2L, 4L, 8L, 16L, 64L)
-  if (hdr$datatype %in% fs_ok) return(volume_file)
+  if (hdr$datatype %in% fs_ok) {
+    return(volume_file)
+  }
 
   converted <- file.path(
-    output_dir, paste0("_fs_compat_", basename(volume_file))
+    output_dir,
+    paste0("_fs_compat_", basename(volume_file))
   )
-  if (file.exists(converted)) return(converted)
+  if (file.exists(converted)) {
+    return(converted)
+  }
 
   dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
   vol <- RNifti::readNifti(volume_file)
@@ -47,6 +54,62 @@ ensure_fs_compatible_nifti <- function(volume_file, output_dir) {
 #' @param verbose Print progress
 #' @param skip_existing If TRUE, skip files that already exist
 #'
+#' Isolate a label > 255 into a 0/1 mask volume for pretess/tessellate
+#'
+#' mri_pretess writes UCHAR output, so labels > 255 wrap around. This remaps
+#' the target label to 1 in an isolated volume.
+#'
+#' @return list with `pretess_input` (path) and `tess_label` (numeric).
+#' @noRd
+tessellate_remap_label <- function(
+  volume_file,
+  label_id,
+  base_name,
+  skip_existing
+) {
+  if (label_id <= 255L) {
+    return(list(pretess_input = volume_file, tess_label = label_id))
+  }
+  remapped_file <- paste0(base_name, "_remap.nii.gz")
+  if (!skip_existing || !file.exists(remapped_file)) {
+    vol <- RNifti::readNifti(volume_file)
+    arr <- as.array(vol)
+    mask <- array(0L, dim = dim(arr))
+    mask[arr == label_id] <- 1L
+    out <- RNifti::asNifti(mask, reference = vol)
+    RNifti::writeNifti(out, remapped_file)
+  }
+  list(pretess_input = remapped_file, tess_label = 1L)
+}
+
+
+#' Smooth a tessellated mesh, warning and falling back if smoothing fails
+#' @noRd
+tessellate_smooth_mesh <- function(
+  tess_file,
+  smooth_file,
+  label_id,
+  skip_existing,
+  verbose
+) {
+  if (!skip_existing || !file.exists(smooth_file)) {
+    tryCatch(
+      mri_smooth(
+        input_file = tess_file,
+        output_file = smooth_file,
+        verbose = verbose
+      ),
+      error = function(e) {
+        cli::cli_warn(
+          "Smoothing failed for label {label_id}, using unsmoothed mesh"
+        )
+      }
+    )
+  }
+  invisible(NULL)
+}
+
+
 #' @return list with vertices (data.frame) and faces (data.frame)
 #' @keywords internal
 tessellate_label <- function(
@@ -71,23 +134,14 @@ tessellate_label <- function(
 
   volume_file <- ensure_fs_compatible_nifti(volume_file, output_dir)
 
-  # mri_pretess writes UCHAR output — labels > 255 wrap around. Remap the
-  # target label to 1 in an isolated volume before pretess/tessellate.
-  pretess_input <- volume_file
-  tess_label <- label_id
-  if (label_id > 255L) {
-    remapped_file <- paste0(base_name, "_remap.nii.gz")
-    if (!skip_existing || !file.exists(remapped_file)) {
-      vol <- RNifti::readNifti(volume_file)
-      arr <- as.array(vol)
-      mask <- array(0L, dim = dim(arr))
-      mask[arr == label_id] <- 1L
-      out <- RNifti::asNifti(mask, reference = vol)
-      RNifti::writeNifti(out, remapped_file)
-    }
-    pretess_input <- remapped_file
-    tess_label <- 1L
-  }
+  remapped <- tessellate_remap_label(
+    volume_file,
+    label_id,
+    base_name,
+    skip_existing
+  )
+  pretess_input <- remapped$pretess_input
+  tess_label <- remapped$tess_label
 
   if (!skip_existing || !file.exists(pretess_file)) {
     mri_pretess(
@@ -115,20 +169,13 @@ tessellate_label <- function(
     cli::cli_abort("Tessellation failed for label {label_id}")
   }
 
-  if (!skip_existing || !file.exists(smooth_file)) {
-    tryCatch(
-      mri_smooth(
-        input_file = tess_file,
-        output_file = smooth_file,
-        verbose = verbose
-      ),
-      error = function(e) {
-        cli::cli_warn(
-          "Smoothing failed for label {label_id}, using unsmoothed mesh"
-        )
-      }
-    )
-  }
+  tessellate_smooth_mesh(
+    tess_file,
+    smooth_file,
+    label_id,
+    skip_existing,
+    verbose
+  )
 
   surf_file <- if (file.exists(smooth_file)) smooth_file else tess_file
   read_fs_surface(surf_file, verbose = verbose)
@@ -275,7 +322,9 @@ generate_colortable_from_volume <- function(volume_file) {
 #' @keywords internal
 #' @importFrom grDevices hcl
 generate_region_palette <- function(n) {
-  if (n <= 0) return(character(0))
+  if (n <= 0) {
+    return(character(0))
+  }
   hues <- seq(15, 375, length.out = n + 1)[seq_len(n)]
   hcl(h = hues, l = 65, c = 100)
 }
@@ -351,25 +400,11 @@ create_subcortical_geometry_projection <- function(
   dims <- dim(vol)
 
   if (is.null(views)) {
-    mid_x <- dims[1] %/% 2
-    views <- data.frame(
-      name = c("axial", "coronal", "sagittal_left", "sagittal_right"),
-      type = c("axial", "coronal", "sagittal", "sagittal"),
-      start = c(1, 1, 1, mid_x + 1),
-      end = c(dims[3], dims[2], mid_x, dims[1]),
-      stringsAsFactors = FALSE
-    )
+    views <- default_projection_views(dims)
   }
 
   if (is.null(cortex_slices)) {
-    cortex_slices <- data.frame(
-      x = c(NA, NA, dims[1] / 4, dims[1] * 3 / 4),
-      y = c(dims[2] / 2, NA, NA, NA),
-      z = c(NA, dims[3] / 2, NA, NA),
-      view = c("coronal", "axial", "sagittal_left", "sagittal_right"),
-      name = c("coronal", "axial", "sagittal_left", "sagittal_right"),
-      stringsAsFactors = FALSE
-    )
+    cortex_slices <- default_cortex_slices(dims)
   }
 
   cortex_labels <- detect_cortex_labels(vol)
@@ -380,6 +415,102 @@ create_subcortical_geometry_projection <- function(
     )
   }
 
+  snapshot_projection_structures(
+    vol,
+    dims,
+    colortable,
+    views,
+    dirs,
+    skip_existing = skip_existing
+  )
+
+  if (verbose) {
+    cli::cli_alert_info("Creating cortex reference slices")
+  }
+
+  snapshot_projection_cortex(
+    vol,
+    dims,
+    cortex_labels,
+    cortex_slices,
+    dirs,
+    skip_existing = skip_existing
+  )
+
+  if (verbose) {
+    cli::cli_alert_info("Processing images")
+  }
+
+  process_projection_images(dirs, dilate, skip_existing)
+
+  extract_contours(
+    dirs$masks,
+    dirs$base,
+    step = "",
+    verbose = verbose,
+    vertex_size_limits = vertex_size_limits
+  )
+  smooth_contours(dirs$base, smoothness, step = "", verbose = verbose)
+  reduce_vertex(
+    dirs$base,
+    tolerance,
+    smoothness = smoothness,
+    step = "",
+    verbose = verbose
+  )
+
+  if (verbose) {
+    cli::cli_alert_info("Building sf geometry")
+  }
+
+  sf_data <- build_projection_sf(dirs, views, cortex_slices)
+
+  if (cleanup) {
+    unlink(dirs$base, recursive = TRUE)
+  }
+
+  sf_data
+}
+
+
+#' Default whole-volume projection views keyed off volume dimensions
+#' @noRd
+default_projection_views <- function(dims) {
+  mid_x <- dims[1] %/% 2
+  data.frame(
+    name = c("axial", "coronal", "sagittal_left", "sagittal_right"),
+    type = c("axial", "coronal", "sagittal", "sagittal"),
+    start = c(1, 1, 1, mid_x + 1),
+    end = c(dims[3], dims[2], mid_x, dims[1]),
+    stringsAsFactors = FALSE
+  )
+}
+
+
+#' Default cortex reference slice positions keyed off volume dimensions
+#' @noRd
+default_cortex_slices <- function(dims) {
+  data.frame(
+    x = c(NA, NA, dims[1] / 4, dims[1] * 3 / 4),
+    y = c(dims[2] / 2, NA, NA, NA),
+    z = c(NA, dims[3] / 2, NA, NA),
+    view = c("coronal", "axial", "sagittal_left", "sagittal_right"),
+    name = c("coronal", "axial", "sagittal_left", "sagittal_right"),
+    stringsAsFactors = FALSE
+  )
+}
+
+
+#' Render projection snapshots for every structure x view combination
+#' @noRd
+snapshot_projection_structures <- function(
+  vol,
+  dims,
+  colortable,
+  views,
+  dirs,
+  skip_existing
+) {
   snapshot_grid <- expand.grid(
     struct_idx = seq_len(nrow(colortable)),
     view_idx = seq_len(nrow(views)),
@@ -422,11 +553,19 @@ create_subcortical_geometry_projection <- function(
       globals = c("dims", "vol", "dirs", "skip_existing", "p")
     )
   ))
+}
 
-  if (verbose) {
-    cli::cli_alert_info("Creating cortex reference slices")
-  }
 
+#' Render cortex reference slice snapshots
+#' @noRd
+snapshot_projection_cortex <- function(
+  vol,
+  dims,
+  cortex_labels,
+  cortex_slices,
+  dirs,
+  skip_existing
+) {
   cortex_vol <- array(0L, dim = dims)
   for (lbl in c(cortex_labels$left, cortex_labels$right)) {
     cortex_vol[vol == lbl] <- 1L
@@ -447,11 +586,12 @@ create_subcortical_geometry_projection <- function(
       skip_existing = skip_existing
     )
   }
+}
 
-  if (verbose) {
-    cli::cli_alert_info("Processing images")
-  }
 
+#' Process snapshot PNGs into alpha masks via the dilation/mask pipeline
+#' @noRd
+process_projection_images <- function(dirs, dilate, skip_existing) {
   files <- list.files(dirs$snapshots, full.names = TRUE, pattern = "\\.png$")
 
   for (f in files) {
@@ -470,22 +610,12 @@ create_subcortical_geometry_projection <- function(
       skip_existing = skip_existing
     )
   }
+}
 
-  extract_contours(
-    dirs$masks,
-    dirs$base,
-    step = "",
-    verbose = verbose,
-    vertex_size_limits = vertex_size_limits
-  )
-  smooth_contours(dirs$base, smoothness, step = "", verbose = verbose)
-  reduce_vertex(dirs$base, tolerance, smoothness = smoothness,
-                step = "", verbose = verbose)
 
-  if (verbose) {
-    cli::cli_alert_info("Building sf geometry")
-  }
-
+#' Assemble reduced contours into a labelled, view-laid-out sf data.frame
+#' @noRd
+build_projection_sf <- function(dirs, views, cortex_slices) {
   conts <- make_multipolygon(file.path(dirs$base, "contours_reduced.rda"))
 
   filenm_base <- sub("\\.png$", "", conts$filenm)
@@ -513,11 +643,5 @@ create_subcortical_geometry_projection <- function(
   )
 
   sf_data <- dplyr::select(conts, label, view, geometry)
-  sf_data <- sf::st_as_sf(sf_data)
-
-  if (cleanup) {
-    unlink(dirs$base, recursive = TRUE)
-  }
-
-  sf_data
+  sf::st_as_sf(sf_data)
 }

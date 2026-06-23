@@ -837,7 +837,7 @@ describe("atlas_smooth", {
     expect_equal(ggseg.formats::atlas_geom(result)$label, "a")
   })
 
-  it("does not leave a stale legacy sf slot behind the geom slot", {
+  it("smooths a legacy sf-slot atlas into a compliant sf atlas", {
     poly <- sf::st_polygon(list(matrix(
       c(0, 0, 0.5, 0.01, 1, 0, 1, 1, 0.5, 0.99, 0, 1, 0, 0),
       ncol = 2,
@@ -857,8 +857,10 @@ describe("atlas_smooth", {
 
     result <- atlas_smooth(atlas, keep = 0.5)
 
-    expect_null(result$data$sf)
-    expect_false(is.null(result$data$geom))
+    expect_true(ggseg.formats::is_ggseg_atlas(result))
+    expect_true(ggseg.formats::is_atlas_sf(result))
+    expect_equal(ggseg.formats::atlas_geom(result)$label, "a")
+    expect_true(all(sf::st_is_valid(ggseg.formats::atlas_sf(result))))
   })
 })
 

@@ -208,22 +208,7 @@ project_volume_anatomical <- function(
   check_fs(abort = TRUE)
   rlang::check_installed("RNifti", reason = "to read NIfTI volumes")
 
-  if (!is.numeric(threshold) || threshold < 0 || threshold > 1) {
-    cli::cli_abort(
-      "{.arg threshold} must be in [0, 1]; got {.val {threshold}}."
-    )
-  }
-  if (
-    !is.numeric(id_offset) ||
-      length(id_offset) != 1L ||
-      id_offset != as.integer(id_offset) ||
-      id_offset < 0
-  ) {
-    cli::cli_abort(
-      "{.arg id_offset} must be a non-negative integer; \\
-       got {.val {id_offset}}."
-    )
-  }
+  validate_projection_args(threshold, id_offset)
   id_offset <- as.integer(id_offset)
 
   in_path <- resolve_volume_path(input_volume)
@@ -239,13 +224,7 @@ project_volume_anatomical <- function(
   vol <- RNifti::readNifti(in_path)
   arr <- as.array(vol)
 
-  if (is.null(label_ids)) {
-    label_ids <- sort(unique(as.integer(arr[arr != 0])))
-  }
-  label_ids <- as.integer(label_ids)
-  if (!length(label_ids)) {
-    cli::cli_abort("No labels found in {.path {in_path}}.")
-  }
+  label_ids <- resolve_label_ids(label_ids, arr, in_path)
 
   aparc_nii <- tempfile(fileext = ".nii.gz")
   on.exit(unlink(aparc_nii), add = TRUE)
@@ -264,41 +243,15 @@ project_volume_anatomical <- function(
     )
   }
 
-  prob_stack <- array(
-    0,
-    dim = c(prod(dim(arr_aparc)), length(label_ids))
+  prob_stack <- project_label_probabilities(
+    label_ids = label_ids,
+    arr = arr,
+    vol = vol,
+    aparc_mgz = aparc_mgz,
+    registration = registration,
+    n_voxels = prod(dim(arr_aparc)),
+    verbose = verbose
   )
-  for (i in seq_along(label_ids)) {
-    id <- label_ids[i]
-    mov_tmp <- tempfile(fileext = ".nii.gz")
-    out_tmp <- tempfile(fileext = ".nii.gz")
-    mask_arr <- (arr == id) * 1.0
-    RNifti::writeNifti(RNifti::asNifti(mask_arr, reference = vol), mov_tmp)
-
-    cmd <- paste(
-      "mri_vol2vol",
-      "--mov",
-      shQuote(mov_tmp),
-      "--targ",
-      shQuote(aparc_mgz),
-      if (is.null(registration)) {
-        "--regheader"
-      } else {
-        paste(
-          "--reg",
-          shQuote(registration)
-        )
-      },
-      "--interp",
-      "trilin",
-      "--o",
-      shQuote(out_tmp)
-    )
-    run_cmd(cmd, verbose = max(0L, verbose - 1L))
-
-    prob_stack[, i] <- as.numeric(as.array(RNifti::readNifti(out_tmp)))
-    unlink(c(mov_tmp, out_tmp))
-  }
 
   argmax_idx <- max.col(prob_stack, ties.method = "first")
   max_prob <- prob_stack[
@@ -306,37 +259,17 @@ project_volume_anatomical <- function(
   ]
   keep <- max_prob > threshold
 
-  if (protect_cortex) {
-    arr_flat <- as.vector(arr_aparc)
-    is_cortex <- arr_flat >= 1000 & arr_flat < 3000
-    is_cortical_wm <- arr_flat %in% c(2L, 41L)
-    keep <- keep & !is_cortex & !is_cortical_wm
-    if (verbose) {
-      cli::cli_alert_info(
-        "Protected {sum(is_cortex)} cortex and \\
-         {sum(is_cortical_wm)} cortical-WM voxels from overwrite."
-      )
-    }
-  }
+  keep <- apply_cortex_protection(keep, arr_aparc, protect_cortex, verbose)
 
-  shifted_ids <- label_ids + id_offset
-  merged <- arr_aparc
-  new_labels <- integer(length(merged))
-  new_labels[keep] <- shifted_ids[argmax_idx[keep]]
-  dim(new_labels) <- dim(merged)
-  for (id in shifted_ids) {
-    merged[new_labels == id] <- id
-  }
-  storage.mode(merged) <- "integer"
+  merged <- build_merged_volume(
+    arr_aparc,
+    keep,
+    argmax_idx,
+    label_ids,
+    id_offset
+  )
 
-  if (is.null(output_file)) {
-    output_file <- tempfile(fileext = ".nii.gz")
-  }
-  out_vol <- RNifti::asNifti(merged, reference = aparc)
-  if (RNifti::orientation(out_vol) != "RAS") {
-    RNifti::orientation(out_vol) <- "RAS"
-  }
-  RNifti::writeNifti(out_vol, output_file)
+  output_file <- write_merged_volume(merged, aparc, output_file)
 
   if (verbose) {
     cli::cli_alert_success(
@@ -431,6 +364,147 @@ prepare_subcortical_anatomical <- function(
 
 
 # Internal helpers ----
+
+#' @noRd
+validate_threshold <- function(threshold) {
+  if (!is.numeric(threshold) || threshold < 0 || threshold > 1) {
+    cli::cli_abort(
+      "{.arg threshold} must be in [0, 1]; got {.val {threshold}}."
+    )
+  }
+  invisible(TRUE)
+}
+
+#' @noRd
+validate_id_offset <- function(id_offset) {
+  if (
+    !is.numeric(id_offset) ||
+      length(id_offset) != 1L ||
+      id_offset != as.integer(id_offset) ||
+      id_offset < 0
+  ) {
+    cli::cli_abort(
+      "{.arg id_offset} must be a non-negative integer; \\
+       got {.val {id_offset}}."
+    )
+  }
+  invisible(TRUE)
+}
+
+#' @noRd
+validate_projection_args <- function(threshold, id_offset) {
+  validate_threshold(threshold)
+  validate_id_offset(id_offset)
+  invisible(TRUE)
+}
+
+#' @noRd
+resolve_label_ids <- function(label_ids, arr, in_path) {
+  if (is.null(label_ids)) {
+    label_ids <- sort(unique(as.integer(arr[arr != 0])))
+  }
+  label_ids <- as.integer(label_ids)
+  if (!length(label_ids)) {
+    cli::cli_abort("No labels found in {.path {in_path}}.")
+  }
+  label_ids
+}
+
+#' @noRd
+project_label_probabilities <- function(
+  label_ids,
+  arr,
+  vol,
+  aparc_mgz,
+  registration,
+  n_voxels,
+  verbose
+) {
+  prob_stack <- array(0, dim = c(n_voxels, length(label_ids)))
+  for (i in seq_along(label_ids)) {
+    id <- label_ids[i]
+    mov_tmp <- tempfile(fileext = ".nii.gz")
+    out_tmp <- tempfile(fileext = ".nii.gz")
+    mask_arr <- (arr == id) * 1.0
+    RNifti::writeNifti(RNifti::asNifti(mask_arr, reference = vol), mov_tmp)
+
+    cmd <- paste(
+      "mri_vol2vol",
+      "--mov",
+      shQuote(mov_tmp),
+      "--targ",
+      shQuote(aparc_mgz),
+      if (is.null(registration)) {
+        "--regheader"
+      } else {
+        paste(
+          "--reg",
+          shQuote(registration)
+        )
+      },
+      "--interp",
+      "trilin",
+      "--o",
+      shQuote(out_tmp)
+    )
+    run_cmd(cmd, verbose = max(0L, verbose - 1L))
+
+    prob_stack[, i] <- as.numeric(as.array(RNifti::readNifti(out_tmp)))
+    unlink(c(mov_tmp, out_tmp))
+  }
+  prob_stack
+}
+
+#' @noRd
+apply_cortex_protection <- function(keep, arr_aparc, protect_cortex, verbose) {
+  if (!protect_cortex) {
+    return(keep)
+  }
+  arr_flat <- as.vector(arr_aparc)
+  is_cortex <- arr_flat >= 1000 & arr_flat < 3000
+  is_cortical_wm <- arr_flat %in% c(2L, 41L)
+  keep <- keep & !is_cortex & !is_cortical_wm
+  if (verbose) {
+    cli::cli_alert_info(
+      "Protected {sum(is_cortex)} cortex and \\
+       {sum(is_cortical_wm)} cortical-WM voxels from overwrite."
+    )
+  }
+  keep
+}
+
+#' @noRd
+build_merged_volume <- function(
+  arr_aparc,
+  keep,
+  argmax_idx,
+  label_ids,
+  id_offset
+) {
+  shifted_ids <- label_ids + id_offset
+  merged <- arr_aparc
+  new_labels <- integer(length(merged))
+  new_labels[keep] <- shifted_ids[argmax_idx[keep]]
+  dim(new_labels) <- dim(merged)
+  for (id in shifted_ids) {
+    merged[new_labels == id] <- id
+  }
+  storage.mode(merged) <- "integer"
+  merged
+}
+
+#' @noRd
+write_merged_volume <- function(merged, aparc, output_file) {
+  if (is.null(output_file)) {
+    output_file <- tempfile(fileext = ".nii.gz")
+  }
+  out_vol <- RNifti::asNifti(merged, reference = aparc)
+  if (RNifti::orientation(out_vol) != "RAS") {
+    RNifti::orientation(out_vol) <- "RAS"
+  }
+  RNifti::writeNifti(out_vol, output_file)
+  output_file
+}
 
 #' @noRd
 resolve_volume_path <- function(x) {

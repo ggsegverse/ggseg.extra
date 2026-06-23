@@ -256,56 +256,93 @@ atlas_smooth <- function(
     return(atlas)
   }
 
-  apply_ops <- function(d) {
-    if (do_simplify) {
-      d <- simplify_sf_topology(d, keep = keep)
-    }
-    if (do_close) {
-      d <- smooth_sf_light(d, smoothness = smoothness)
-    }
-    d
-  }
-
   # Smoothing is an sf/GEOS operation; work on the sf representation and
   # restore the atlas's original representation afterwards.
   was_polygon <- ggseg.formats::is_atlas_polygon(atlas)
   sf_data <- ggseg.formats::atlas_geom(ggseg.formats::as_sf_atlas(atlas))
 
   if (!is.null(labels) || !is.null(exclude)) {
-    sf_labels <- sf_data$label
-    if (!is.null(labels)) {
-      mask <- grepl(labels, sf_labels, ignore.case = TRUE)
-    } else {
-      mask <- !grepl(exclude, sf_labels, ignore.case = TRUE)
-    }
-    mask[is.na(sf_labels)] <- FALSE
-
-    # Preserve the caller's row order: smoothing must not change which
-    # regions draw on top (e.g. context regions placed behind core regions
-    # by atlas_region_contextual()). Tag rows, process the target subset,
-    # reassemble, then restore the original order.
-    sf_data$.smooth_order <- seq_len(nrow(sf_data))
-    target <- sf_data[mask, , drop = FALSE]
-    rest <- sf_data[!mask, , drop = FALSE]
-
-    target <- apply_ops(target)
-    sf_data <- rbind(target, rest)
-    sf_data <- sf_data[order(sf_data$.smooth_order), , drop = FALSE]
-    sf_data$.smooth_order <- NULL
-    sf_data <- sf::st_make_valid(sf_data)
+    sf_data <- smooth_sf_subset(
+      sf_data,
+      labels,
+      exclude,
+      do_simplify,
+      do_close,
+      keep,
+      smoothness
+    )
   } else {
-    sf_data <- apply_ops(sf_data)
+    sf_data <- apply_smooth_ops(
+      sf_data,
+      do_simplify,
+      do_close,
+      keep,
+      smoothness
+    )
   }
 
-  atlas$data$geom <- sf_data
-  # Drop any legacy slots so they can't shadow $geom with stale, unsmoothed
-  # geometry for direct readers / re-serialisation.
-  atlas$data$sf <- NULL
-  atlas$data$polygons <- NULL
-  if (was_polygon) {
-    atlas <- ggseg.formats::as_polygon_atlas(atlas)
+  rehydrate_smoothed_atlas(atlas, sf_data, was_polygon)
+}
+
+
+#' Apply the configured simplify/close operations to an sf data.frame
+#' @noRd
+apply_smooth_ops <- function(d, do_simplify, do_close, keep, smoothness) {
+  if (do_simplify) {
+    d <- simplify_sf_topology(d, keep = keep)
   }
-  atlas
+  if (do_close) {
+    d <- smooth_sf_light(d, smoothness = smoothness)
+  }
+  d
+}
+
+
+#' Smooth only the masked subset of rows, preserving caller row order
+#' @noRd
+#' @importFrom sf st_make_valid
+smooth_sf_subset <- function(
+  sf_data,
+  labels,
+  exclude,
+  do_simplify,
+  do_close,
+  keep,
+  smoothness
+) {
+  sf_labels <- sf_data$label
+  if (!is.null(labels)) {
+    mask <- grepl(labels, sf_labels, ignore.case = TRUE)
+  } else {
+    mask <- !grepl(exclude, sf_labels, ignore.case = TRUE)
+  }
+  mask[is.na(sf_labels)] <- FALSE
+
+  # Preserve the caller's row order: smoothing must not change which
+  # regions draw on top (e.g. context regions placed behind core regions
+  # by atlas_region_contextual()). Tag rows, process the target subset,
+  # reassemble, then restore the original order.
+  sf_data$.smooth_order <- seq_len(nrow(sf_data))
+  target <- sf_data[mask, , drop = FALSE]
+  rest <- sf_data[!mask, , drop = FALSE]
+
+  target <- apply_smooth_ops(target, do_simplify, do_close, keep, smoothness)
+  sf_data <- rbind(target, rest)
+  sf_data <- sf_data[order(sf_data$.smooth_order), , drop = FALSE]
+  sf_data$.smooth_order <- NULL
+  sf::st_make_valid(sf_data)
+}
+
+
+#' Write smoothed geometry back and restore the atlas representation
+#' @noRd
+rehydrate_smoothed_atlas <- function(atlas, sf_data, was_polygon) {
+  atlas$data$geom <- sf_data
+  if (was_polygon) {
+    ggseg.formats::as_polygon_atlas(atlas)
+  } else {
+    ggseg.formats::as_sf_atlas(atlas)
+  }
 }
 
 
