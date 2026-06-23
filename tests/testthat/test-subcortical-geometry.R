@@ -223,7 +223,10 @@ describe("tessellate_label", {
 
     expect_warnings(
       result <- tessellate_label(
-        "vol.mgz", 10, tmp_dir, skip_existing = FALSE
+        "vol.mgz",
+        10,
+        tmp_dir,
+        skip_existing = FALSE
       ),
       "Smoothing failed.*using unsmoothed"
     )
@@ -688,7 +691,9 @@ describe("create_subcortical_geometry_projection image processing loop", {
     mask_files <- character(0)
 
     fake_geom <- sf::st_polygon(list(matrix(
-      c(0, 0, 1, 0, 1, 1, 0, 1, 0, 0), ncol = 2, byrow = TRUE
+      c(0, 0, 1, 0, 1, 1, 0, 1, 0, 0),
+      ncol = 2,
+      byrow = TRUE
     )))
     fake_sf <- sf::st_sf(
       filenm = "axial_region_0005.png",
@@ -712,8 +717,12 @@ describe("create_subcortical_geometry_projection image processing loop", {
       progressor = function(...) function(...) NULL,
       future_pmap = mock_future_pmap,
       furrr_options = function(...) list(),
-      snapshot_partial_projection = function( # nolint: line_length_linter.
-        ..., output_dir, label, view_name
+      snapshot_partial_projection = function(
+        # nolint: line_length_linter.
+        ...,
+        output_dir,
+        label,
+        view_name
       ) {
         f <- file.path(output_dir, paste0(view_name, "_", label, ".png"))
         file.create(f)
@@ -744,8 +753,11 @@ describe("create_subcortical_geometry_projection image processing loop", {
       stringsAsFactors = FALSE
     )
     custom_cortex <- data.frame(
-      x = NA, y = NA, z = 5,
-      view = "axial", name = "axial",
+      x = NA,
+      y = NA,
+      z = 5,
+      view = "axial",
+      name = "axial",
       stringsAsFactors = FALSE
     )
 

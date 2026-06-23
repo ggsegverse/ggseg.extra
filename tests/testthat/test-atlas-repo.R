@@ -4,7 +4,8 @@ describe("setup_atlas_repo", {
     local_mocked_bindings(
       download_atlas_template = function(url = NULL) {
         system.file(
-          "templates", "atlas-fallback",
+          "templates",
+          "atlas-fallback",
           package = "ggseg.extra"
         )
       }
@@ -17,7 +18,8 @@ describe("setup_atlas_repo", {
 
     expect_messages(
       result <- setup_atlas_repo(tmp, "dkt", open = FALSE),
-      "Created atlas package", "Next steps"
+      "Created atlas package",
+      "Next steps"
     )
 
     expect_true(dir.exists(result))
@@ -32,7 +34,8 @@ describe("setup_atlas_repo", {
 
     expect_messages(
       setup_atlas_repo(tmp, open = FALSE),
-      "Created atlas package", "Next steps"
+      "Created atlas package",
+      "Next steps"
     )
 
     desc <- readLines(file.path(tmp, "DESCRIPTION"))
@@ -48,7 +51,8 @@ describe("setup_atlas_repo", {
 
     expect_messages(
       setup_atlas_repo(tmp, open = FALSE),
-      "Created atlas package", "Next steps"
+      "Created atlas package",
+      "Next steps"
     )
 
     desc <- readLines(file.path(tmp, "DESCRIPTION"))
@@ -63,7 +67,8 @@ describe("setup_atlas_repo", {
 
     expect_messages(
       setup_atlas_repo(tmp, "My-Atlas_123!", open = FALSE),
-      "Created atlas package", "Next steps"
+      "Created atlas package",
+      "Next steps"
     )
 
     desc <- readLines(file.path(tmp, "DESCRIPTION"))
@@ -97,7 +102,8 @@ describe("setup_atlas_repo", {
 
     expect_messages(
       setup_atlas_repo(tmp, "test", open = FALSE, rstudio = TRUE),
-      "Created atlas package", "Next steps"
+      "Created atlas package",
+      "Next steps"
     )
 
     rproj_files <- list.files(tmp, pattern = "\\.Rproj$")
@@ -111,7 +117,8 @@ describe("setup_atlas_repo", {
 
     expect_messages(
       setup_atlas_repo(tmp, "test", open = FALSE, rstudio = FALSE),
-      "Created atlas package", "Next steps"
+      "Created atlas package",
+      "Next steps"
     )
 
     rproj_files <- list.files(tmp, pattern = "\\.Rproj$")
@@ -125,14 +132,16 @@ describe("setup_atlas_repo template files", {
   local_mocked_bindings(
     download_atlas_template = function(url = NULL) {
       system.file(
-        "templates", "atlas-fallback",
+        "templates",
+        "atlas-fallback",
         package = "ggseg.extra"
       )
     }
   )
   expect_messages(
     setup_atlas_repo(tmp, "testatlas", open = FALSE),
-    "Created atlas package", "Next steps"
+    "Created atlas package",
+    "Next steps"
   )
 
   it("creates all required directories", {
@@ -240,7 +249,8 @@ describe("download_atlas_template", {
 
     expect_messages(
       result <- download_atlas_template(),
-      "Download failed", "fallback"
+      "Download failed",
+      "fallback"
     )
 
     expect_true(dir.exists(result))
@@ -256,7 +266,8 @@ describe("setup_atlas_repo .Rproj file", {
     local_mocked_bindings(
       download_atlas_template = function(url = NULL) {
         system.file(
-          "templates", "atlas-fallback",
+          "templates",
+          "atlas-fallback",
           package = "ggseg.extra"
         )
       }
@@ -264,7 +275,8 @@ describe("setup_atlas_repo .Rproj file", {
 
     expect_messages(
       setup_atlas_repo(tmp, "test", open = FALSE),
-      "Created atlas package", "Next steps"
+      "Created atlas package",
+      "Next steps"
     )
 
     rproj <- readLines(file.path(tmp, "ggsegTest.Rproj"))
@@ -284,7 +296,8 @@ describe("setup_atlas_repo lowercase ggseg prefix", {
     local_mocked_bindings(
       download_atlas_template = function(url = NULL) {
         system.file(
-          "templates", "atlas-fallback",
+          "templates",
+          "atlas-fallback",
           package = "ggseg.extra"
         )
       }
@@ -292,7 +305,8 @@ describe("setup_atlas_repo lowercase ggseg prefix", {
 
     expect_messages(
       setup_atlas_repo(tmp, open = FALSE),
-      "Created atlas package", "Next steps"
+      "Created atlas package",
+      "Next steps"
     )
 
     desc <- readLines(file.path(tmp, "DESCRIPTION"))
@@ -308,7 +322,8 @@ describe("setup_atlas_repo lowercase ggseg prefix", {
     local_mocked_bindings(
       download_atlas_template = function(url = NULL) {
         system.file(
-          "templates", "atlas-fallback",
+          "templates",
+          "atlas-fallback",
           package = "ggseg.extra"
         )
       },
@@ -320,7 +335,8 @@ describe("setup_atlas_repo lowercase ggseg prefix", {
 
     expect_messages(
       setup_atlas_repo(tmp, "test", open = TRUE, rstudio = TRUE),
-      "Created atlas package", "Next steps"
+      "Created atlas package",
+      "Next steps"
     )
 
     expect_true(opened)

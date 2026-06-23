@@ -6,9 +6,7 @@
 #' @return logical
 #' @keywords internal
 check_fs <- function(abort = FALSE) {
-  rlang::check_installed("freesurfer",
-    reason = "to interact with FreeSurfer"
-  )
+  rlang::check_installed("freesurfer", reason = "to interact with FreeSurfer")
   x <- freesurfer::have_fs()
 
   if (!x) {
@@ -61,8 +59,10 @@ mri_vol2surf <- function(
 
   cmd <- paste(
     fs_cmd,
-    "--mov", shQuote(input_file),
-    "--o", shQuote(output_file)
+    "--mov",
+    shQuote(input_file),
+    "--o",
+    shQuote(output_file)
   )
 
   if (mni152reg) {
@@ -74,8 +74,11 @@ mri_vol2surf <- function(
 
   if (!is.null(projfrac_range)) {
     cmd <- paste(
-      cmd, "--projfrac-max",
-      projfrac_range[1], projfrac_range[2], projfrac_range[3]
+      cmd,
+      "--projfrac-max",
+      projfrac_range[1],
+      projfrac_range[2],
+      projfrac_range[3]
     )
   } else {
     cmd <- paste(cmd, "--projfrac", projfrac)
@@ -114,8 +117,11 @@ mri_pretess <- function(
 
   label <- as.integer(label)
   cmd <- paste(
-    fscmd, shQuote(template), label,
-    shQuote(template), shQuote(output_file)
+    fscmd,
+    shQuote(template),
+    label,
+    shQuote(template),
+    shQuote(output_file)
   )
 
   run_cmd(cmd, verbose = verbose)
@@ -226,11 +232,16 @@ mri_surf2surf_rereg <- function(
 
   cmd <- paste(
     fscmd,
-    "--srcsubject", shQuote(subject),
-    "--sval-annot", shQuote(annot),
-    "--trgsubject", shQuote(target_subject),
-    "--tval", shQuote(file.path(output_dir, paste(hemi, annot, sep = "."))),
-    "--hemi", hemi
+    "--srcsubject",
+    shQuote(subject),
+    "--sval-annot",
+    shQuote(annot),
+    "--trgsubject",
+    shQuote(target_subject),
+    "--tval",
+    shQuote(file.path(output_dir, paste(hemi, annot, sep = "."))),
+    "--hemi",
+    hemi
   )
 
   run_cmd(cmd, verbose = verbose)

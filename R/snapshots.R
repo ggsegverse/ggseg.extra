@@ -23,7 +23,7 @@
 extract_slice_2d <- function(vol, view, pos, hemi = NULL) {
   slice <- switch(
     view,
-    "axial" = vol[, , pos, drop = TRUE],
+    "axial" = vol[,, pos, drop = TRUE],
     "coronal" = vol[, pos, , drop = TRUE],
     "sagittal" = vol[pos, , , drop = TRUE]
   )
@@ -83,7 +83,7 @@ volume_projection <- function(
 
   sub_vol <- switch(
     view,
-    "axial" = vol[, , start:end, drop = FALSE],
+    "axial" = vol[,, start:end, drop = FALSE],
     "coronal" = vol[, start:end, , drop = FALSE],
     "sagittal" = vol[start:end, , , drop = FALSE]
   )
@@ -246,7 +246,9 @@ snapshot_brain_helper <- function(
 
   for (attempt in seq_len(max_retries + 1L)) {
     result <- tryCatch(take_snapshot(), error = function(e) e)
-    if (!inherits(result, "error")) break
+    if (!inherits(result, "error")) {
+      break
+    }
     if (attempt <= max_retries) {
       try(chromote::default_chromote_object()$close(), silent = TRUE)
       Sys.sleep(2)
@@ -374,12 +376,8 @@ snapshot_widget_batch <- function(
   render_delay = 0.3,
   max_retries = 2
 ) {
-  rlang::check_installed("chromote",
-    reason = "for browser-based screenshots"
-  )
-  rlang::check_installed("htmlwidgets",
-    reason = "for saving widget HTML"
-  )
+  rlang::check_installed("chromote", reason = "for browser-based screenshots")
+  rlang::check_installed("htmlwidgets", reason = "for saving widget HTML")
 
   tmphtml <- tempfile(fileext = ".html")
   libdir <- paste0(tools::file_path_sans_ext(tmphtml), "_files")
@@ -425,7 +423,9 @@ snapshot_widget_batch <- function(
 
   for (attempt in seq_len(max_retries + 1L)) {
     result <- tryCatch(take_batch(), error = function(e) e)
-    if (!inherits(result, "error")) break
+    if (!inherits(result, "error")) {
+      break
+    }
     if (attempt <= max_retries) {
       try(chromote::default_chromote_object()$close(), silent = TRUE)
       Sys.sleep(2)
@@ -479,13 +479,18 @@ snapshot_brain_full_batch <- function(
 
   if (skip_existing) {
     needed <- !file.exists(files)
-    if (!any(needed)) return(invisible(files))
+    if (!any(needed)) {
+      return(invisible(files))
+    }
     views <- views[needed]
     files <- files[needed]
   }
 
   widget <- build_brain_widget(
-    atlas, hemisphere, surface, na_colour = "#CCCCCC"
+    atlas,
+    hemisphere,
+    surface,
+    na_colour = "#CCCCCC"
   )
 
   snapshot_widget_batch(
@@ -517,7 +522,9 @@ snapshot_region_batch <- function(
 
   if (skip_existing) {
     needed <- !file.exists(files)
-    if (!any(needed)) return(invisible(files))
+    if (!any(needed)) {
+      return(invisible(files))
+    }
     views <- views[needed]
     files <- files[needed]
   }
@@ -529,7 +536,9 @@ snapshot_region_batch <- function(
   )
 
   widget <- build_brain_widget(
-    atlas, hemisphere, surface,
+    atlas,
+    hemisphere,
+    surface,
     .data = highlight_data,
     colour = "highlight",
     na_colour = "#FFFFFF"
@@ -563,7 +572,9 @@ snapshot_na_regions_batch <- function(
 
   if (skip_existing) {
     needed <- !file.exists(files)
-    if (!any(needed)) return(invisible(files))
+    if (!any(needed)) {
+      return(invisible(files))
+    }
     views <- views[needed]
     files <- files[needed]
   }
@@ -575,7 +586,9 @@ snapshot_na_regions_batch <- function(
   )
 
   widget <- build_brain_widget(
-    atlas, hemisphere, surface,
+    atlas,
+    hemisphere,
+    surface,
     .data = white_data,
     colour = "highlight",
     na_colour = "#FF0000"
@@ -612,10 +625,14 @@ render_slice_png <- function(
   width = 400,
   height = 400
 ) {
-  if (is.null(slice_data)) return(invisible(NULL))
+  if (is.null(slice_data)) {
+    return(invisible(NULL))
+  }
 
   slice_data[slice_data == 0] <- NA
-  if (!any(is.finite(slice_data))) return(invisible(NULL))
+  if (!any(is.finite(slice_data))) {
+    return(invisible(NULL))
+  }
 
   png(outfile, width = width, height = height, bg = "black")
   on.exit(dev.off())
@@ -703,7 +720,11 @@ snapshot_volume_slice <- function(
   pos <- switch(view, "axial" = z, "coronal" = y, "sagittal" = x)
   slice <- extract_slice_2d(vol, view, pos)
   render_slice_png(
-    slice, outfile, colour = colour, width = width, height = height
+    slice,
+    outfile,
+    colour = colour,
+    width = width,
+    height = height
   )
 }
 
@@ -744,6 +765,10 @@ snapshot_partial_projection <- function(
 
   proj <- volume_projection(vol, view, start, end, hemi = hemi)
   render_slice_png(
-    proj, outfile, colour = colour, width = width, height = height
+    proj,
+    outfile,
+    colour = colour,
+    width = width,
+    height = height
   )
 }

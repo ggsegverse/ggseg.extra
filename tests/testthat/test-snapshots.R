@@ -634,7 +634,8 @@ describe("region_faces_camera", {
   it("returns TRUE when at least one normal faces camera", {
     normals <- matrix(
       c(-1, 0, 0, 1, 0, 0),
-      nrow = 2, byrow = TRUE
+      nrow = 2,
+      byrow = TRUE
     )
     camera <- c(-350, 0, 0)
 
@@ -648,7 +649,9 @@ describe("filter_visible_regions", {
     n <- max(n, 4L)
     list(
       vertices = data.frame(
-        x = seq_len(n), y = seq_len(n), z = rep(0, n)
+        x = seq_len(n),
+        y = seq_len(n),
+        z = rep(0, n)
       ),
       faces = data.frame(
         i = rep(0L, n - 2L),
@@ -807,8 +810,12 @@ describe("snapshot_brain_full_batch", {
       snapshot_widget_batch = function(...) invisible(character(0))
     )
     result <- snapshot_brain_full_batch(
-      atlas = mock_atlas, hemisphere = "lh", views = views,
-      surface = "inflated", output_dir = tmp_dir, skip_existing = TRUE
+      atlas = mock_atlas,
+      hemisphere = "lh",
+      views = views,
+      surface = "inflated",
+      output_dir = tmp_dir,
+      skip_existing = TRUE
     )
     expect_false(widget_called)
   })
@@ -832,8 +839,12 @@ describe("snapshot_brain_full_batch", {
       }
     )
     snapshot_brain_full_batch(
-      atlas = mock_atlas, hemisphere = "lh", views = views,
-      surface = "inflated", output_dir = tmp_dir, skip_existing = TRUE
+      atlas = mock_atlas,
+      hemisphere = "lh",
+      views = views,
+      surface = "inflated",
+      output_dir = tmp_dir,
+      skip_existing = TRUE
     )
     expect_length(captured_files, 1)
     expect_true(grepl("medial", captured_files))
@@ -847,16 +858,25 @@ describe("snapshot_brain_full_batch", {
     captured_na <- NULL
     local_mocked_bindings(
       hemi_to_long = function(h) "left",
-      build_brain_widget = function(atlas, hemisphere, surface,
-                                    na_colour = NULL, ...) {
+      build_brain_widget = function(
+        atlas,
+        hemisphere,
+        surface,
+        na_colour = NULL,
+        ...
+      ) {
         captured_na <<- na_colour
         structure(list(), class = "ggseg3d")
       },
       snapshot_widget_batch = function(...) invisible(character(0))
     )
     snapshot_brain_full_batch(
-      atlas = mock_atlas, hemisphere = "lh", views = "lateral",
-      surface = "inflated", output_dir = tmp_dir, skip_existing = FALSE
+      atlas = mock_atlas,
+      hemisphere = "lh",
+      views = "lateral",
+      surface = "inflated",
+      output_dir = tmp_dir,
+      skip_existing = FALSE
     )
     expect_equal(captured_na, "#CCCCCC")
   })
@@ -888,9 +908,13 @@ describe("snapshot_region_batch", {
       snapshot_widget_batch = function(...) invisible(character(0))
     )
     snapshot_region_batch(
-      atlas = mock_atlas, region_label = "lh_frontal",
-      hemisphere = "lh", views = views, surface = "inflated",
-      output_dir = tmp_dir, skip_existing = TRUE
+      atlas = mock_atlas,
+      region_label = "lh_frontal",
+      hemisphere = "lh",
+      views = views,
+      surface = "inflated",
+      output_dir = tmp_dir,
+      skip_existing = TRUE
     )
     expect_false(widget_called)
   })
@@ -906,18 +930,28 @@ describe("snapshot_region_batch", {
     captured_data <- NULL
     local_mocked_bindings(
       hemi_to_long = function(h) "left",
-      build_brain_widget = function(atlas, hemisphere, surface,
-                                    .data = NULL, colour = NULL,
-                                    na_colour = NULL, ...) {
+      build_brain_widget = function(
+        atlas,
+        hemisphere,
+        surface,
+        .data = NULL,
+        colour = NULL,
+        na_colour = NULL,
+        ...
+      ) {
         captured_data <<- .data
         structure(list(), class = "ggseg3d")
       },
       snapshot_widget_batch = function(...) invisible(character(0))
     )
     snapshot_region_batch(
-      atlas = mock_atlas, region_label = "lh_frontal",
-      hemisphere = "lh", views = "lateral", surface = "inflated",
-      output_dir = tmp_dir, skip_existing = FALSE
+      atlas = mock_atlas,
+      region_label = "lh_frontal",
+      hemisphere = "lh",
+      views = "lateral",
+      surface = "inflated",
+      output_dir = tmp_dir,
+      skip_existing = FALSE
     )
     expect_equal(
       captured_data$highlight[captured_data$label == "lh_frontal"],
@@ -954,8 +988,12 @@ describe("snapshot_na_regions_batch", {
       snapshot_widget_batch = function(...) invisible(character(0))
     )
     snapshot_na_regions_batch(
-      atlas = mock_atlas, hemisphere = "lh", views = views,
-      surface = "inflated", output_dir = tmp_dir, skip_existing = TRUE
+      atlas = mock_atlas,
+      hemisphere = "lh",
+      views = views,
+      surface = "inflated",
+      output_dir = tmp_dir,
+      skip_existing = TRUE
     )
     expect_false(widget_called)
   })
@@ -979,8 +1017,12 @@ describe("snapshot_na_regions_batch", {
       }
     )
     snapshot_na_regions_batch(
-      atlas = mock_atlas, hemisphere = "lh", views = views,
-      surface = "inflated", output_dir = tmp_dir, skip_existing = TRUE
+      atlas = mock_atlas,
+      hemisphere = "lh",
+      views = views,
+      surface = "inflated",
+      output_dir = tmp_dir,
+      skip_existing = TRUE
     )
     expect_length(captured_files, 1)
     expect_true(grepl("medial", captured_files))
@@ -990,25 +1032,38 @@ describe("snapshot_na_regions_batch", {
     tmp_dir <- withr::local_tempdir()
     mock_atlas <- list(
       core = data.frame(
-        label = c("lh_a", "lh_b"), stringsAsFactors = FALSE
+        label = c("lh_a", "lh_b"),
+        stringsAsFactors = FALSE
       )
     )
     captured_args <- NULL
     local_mocked_bindings(
       hemi_to_long = function(h) "left",
-      build_brain_widget = function(atlas, hemisphere, surface,
-                                    .data = NULL, colour = NULL,
-                                    na_colour = NULL, ...) {
+      build_brain_widget = function(
+        atlas,
+        hemisphere,
+        surface,
+        .data = NULL,
+        colour = NULL,
+        na_colour = NULL,
+        ...
+      ) {
         captured_args <<- list(
-          .data = .data, colour = colour, na_colour = na_colour
+          .data = .data,
+          colour = colour,
+          na_colour = na_colour
         )
         structure(list(), class = "ggseg3d")
       },
       snapshot_widget_batch = function(...) invisible(character(0))
     )
     snapshot_na_regions_batch(
-      atlas = mock_atlas, hemisphere = "lh", views = "lateral",
-      surface = "inflated", output_dir = tmp_dir, skip_existing = FALSE
+      atlas = mock_atlas,
+      hemisphere = "lh",
+      views = "lateral",
+      surface = "inflated",
+      output_dir = tmp_dir,
+      skip_existing = FALSE
     )
     expect_equal(captured_args$na_colour, "#FF0000")
     expect_equal(captured_args$colour, "highlight")
@@ -1074,8 +1129,11 @@ describe("snapshot_brain_helper skip_existing", {
     )
 
     result <- snapshot_brain_helper(
-      atlas = NULL, hemisphere = "lh", view = "lateral",
-      surface = "inflated", outfile = outfile,
+      atlas = NULL,
+      hemisphere = "lh",
+      view = "lateral",
+      surface = "inflated",
+      outfile = outfile,
       skip_existing = TRUE
     )
 
@@ -1103,7 +1161,9 @@ describe("build_brain_widget", {
     )
 
     result <- build_brain_widget(
-      atlas = "test_atlas", hemisphere = "lh", surface = "inflated",
+      atlas = "test_atlas",
+      hemisphere = "lh",
+      surface = "inflated",
       na_colour = "#AABBCC"
     )
 
@@ -1131,8 +1191,11 @@ describe("build_brain_widget", {
 
     custom_data <- data.frame(label = "a", highlight = "#FF0000")
     build_brain_widget(
-      atlas = "test", hemisphere = "lh", surface = "inflated",
-      .data = custom_data, colour = "highlight"
+      atlas = "test",
+      hemisphere = "lh",
+      surface = "inflated",
+      .data = custom_data,
+      colour = "highlight"
     )
 
     expect_equal(captured_args$.data, custom_data)
@@ -1160,8 +1223,11 @@ describe("snapshot_brain_helper rendering", {
 
     outfile <- withr::local_tempfile(fileext = ".png")
     snapshot_brain_helper(
-      atlas = NULL, hemisphere = "lh", view = "lateral",
-      surface = "inflated", outfile = outfile
+      atlas = NULL,
+      hemisphere = "lh",
+      view = "lateral",
+      surface = "inflated",
+      outfile = outfile
     )
     expect_true(env$snapshot_called)
   })

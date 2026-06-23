@@ -32,7 +32,10 @@ create_mock_suit_surface <- function() {
     Dim0="2" Dim1="3" Encoding="Base64Binary" Endian="LittleEndian">
     <MetaData/><Data>%s</Data>
   </DataArray>
-</GIFTI>', pointset_b64, triangles_b64)
+</GIFTI>',
+    pointset_b64,
+    triangles_b64
+  )
   # nolint end
 
   writeLines(xml, surf_file)
@@ -70,7 +73,10 @@ create_mock_suit_labels <- function(n_vertices = 4) {
     Dim0="%d" Encoding="Base64Binary" Endian="LittleEndian">
     <MetaData/><Data>%s</Data>
   </DataArray>
-</GIFTI>', n_vertices, labels_b64)
+</GIFTI>',
+    n_vertices,
+    labels_b64
+  )
   # nolint end
 
   writeLines(xml, label_file)
@@ -133,8 +139,11 @@ describe("read_suit_flatmap", {
     skip_if_not_installed("gifti") # nolint: object_usage_linter.
 
     tmp <- withr::local_tempfile(fileext = ".surf.gii")
-    writeLines('<?xml version="1.0"?><GIFTI Version="1.0"
-      NumberOfDataArrays="0"><MetaData/><LabelTable/></GIFTI>', tmp)
+    writeLines(
+      '<?xml version="1.0"?><GIFTI Version="1.0"
+      NumberOfDataArrays="0"><MetaData/><LabelTable/></GIFTI>',
+      tmp
+    )
 
     expect_error(read_suit_flatmap(tmp))
   })
@@ -156,8 +165,11 @@ describe("cerebellar_build_sf_flatmap", {
     expect_warning(
       expect_error(
         cerebellar_build_sf_flatmap(
-          components, suit_flatmap_path(),
-          tolerance = 0, smooth_refinements = 0, verbose = FALSE
+          components,
+          suit_flatmap_path(),
+          tolerance = 0,
+          smooth_refinements = 0,
+          verbose = FALSE
         ),
         "No vertices matched"
       ),
@@ -199,12 +211,20 @@ describe("build_vertex_label_vector_cerebellum", {
 
 describe("flatmap_triangles_to_polygons", {
   it("produces valid sf polygons from uniform triangles", {
-    verts <- matrix(c(
-      0, 0,
-      1, 0,
-      0.5, 1,
-      1.5, 1
-    ), ncol = 2, byrow = TRUE)
+    verts <- matrix(
+      c(
+        0,
+        0,
+        1,
+        0,
+        0.5,
+        1,
+        1.5,
+        1
+      ),
+      ncol = 2,
+      byrow = TRUE
+    )
     faces <- matrix(c(0, 1, 2, 1, 3, 2), ncol = 3, byrow = TRUE)
     labels <- c("left_I", "left_I", "left_I", "left_I")
 
@@ -216,11 +236,18 @@ describe("flatmap_triangles_to_polygons", {
   })
 
   it("splits boundary triangles between regions", {
-    verts <- matrix(c(
-      0, 0,
-      1, 0,
-      0.5, 1
-    ), ncol = 2, byrow = TRUE)
+    verts <- matrix(
+      c(
+        0,
+        0,
+        1,
+        0,
+        0.5,
+        1
+      ),
+      ncol = 2,
+      byrow = TRUE
+    )
     faces <- matrix(c(0, 1, 2), ncol = 3)
     labels <- c("left_I", "left_I", "right_I")
 
@@ -243,12 +270,20 @@ describe("flatmap_triangles_to_polygons", {
   })
 
   it("skips degenerate (zero-area) triangles", {
-    verts <- matrix(c(
-      0, 0,
-      1, 0,
-      2, 0,
-      0.5, 1
-    ), ncol = 2, byrow = TRUE)
+    verts <- matrix(
+      c(
+        0,
+        0,
+        1,
+        0,
+        2,
+        0,
+        0.5,
+        1
+      ),
+      ncol = 2,
+      byrow = TRUE
+    )
     faces <- matrix(c(0, 1, 2, 0, 1, 3), ncol = 3, byrow = TRUE)
     labels <- c("left_I", "left_I", "left_I", "left_I")
 
@@ -335,10 +370,25 @@ describe("extract_gifti_label_table", {
 
   it("extracts labels from gifti format (rownames + Key column)", {
     lt <- matrix(
-      c("0", "0", "0", "0", "0",
-        "1", "0.8", "0.2", "0.2", "1",
-        "2", "0.2", "0.8", "0.2", "1"),
-      ncol = 5, byrow = TRUE,
+      c(
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "1",
+        "0.8",
+        "0.2",
+        "0.2",
+        "1",
+        "2",
+        "0.2",
+        "0.8",
+        "0.2",
+        "1"
+      ),
+      ncol = 5,
+      byrow = TRUE,
       dimnames = list(
         c("Background", "Left I-IV", "Vermis VI"),
         c("Key", "Red", "Green", "Blue", "Alpha")
@@ -465,8 +515,12 @@ describe("read_cerebellar_annotation", {
     mock_annot <- list(
       label_codes = integer(0),
       colortable_df = data.frame(
-        code = integer(), struct_name = character(),
-        r = numeric(), g = numeric(), b = numeric(), a = numeric(),
+        code = integer(),
+        struct_name = character(),
+        r = numeric(),
+        g = numeric(),
+        b = numeric(),
+        a = numeric(),
         hex_color_string_rgb = character(),
         stringsAsFactors = FALSE
       )
@@ -532,10 +586,13 @@ describe("resolve_cerebellar_lut", {
     vertex_labels <- c(1L, 2L)
 
     tmp <- withr::local_tempfile(fileext = ".txt")
-    writeLines(c(
-      "  1  Left_I-IV   200 50 50 0",
-      "  2  Vermis_VI   50 200 50 0"
-    ), tmp)
+    writeLines(
+      c(
+        "  1  Left_I-IV   200 50 50 0",
+        "  2  Vermis_VI   50 200 50 0"
+      ),
+      tmp
+    )
 
     result <- resolve_cerebellar_lut(vol, vertex_labels, tmp)
 
@@ -629,10 +686,25 @@ describe("read_suit_parcellation edge cases", {
     skip_if_not_installed("base64enc") # nolint: object_usage_linter.
 
     lt <- matrix(
-      c("0", "0", "0", "0", "0",
-        "1", "0.8", "0.2", "0.2", "1",
-        "2", "0.2", "0.8", "0.2", "1"),
-      ncol = 5, byrow = TRUE,
+      c(
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "1",
+        "0.8",
+        "0.2",
+        "0.2",
+        "1",
+        "2",
+        "0.2",
+        "0.8",
+        "0.2",
+        "1"
+      ),
+      ncol = 5,
+      byrow = TRUE,
       dimnames = list(
         c("Background", "Left I-IV", "Vermis VI"),
         c("Key", "Red", "Green", "Blue", "Alpha")
@@ -679,7 +751,8 @@ describe("extract_gifti_label_table edge cases", {
   it("handles Key format without RGB columns", {
     lt <- matrix(
       c("0", "0", "1", "0"),
-      ncol = 2, byrow = TRUE,
+      ncol = 2,
+      byrow = TRUE,
       dimnames = list(c("Background", "Region1"), c("Key", "Alpha"))
     )
     gii <- list(label = as.data.frame(lt))
@@ -806,7 +879,10 @@ describe("cerebellar pipeline orchestration", {
       colortable_df = data.frame(
         code = 1:2,
         struct_name = c("Left I-IV", "Vermis VI"),
-        r = c(200, 50), g = c(50, 200), b = c(50, 50), a = c(0, 0),
+        r = c(200, 50),
+        g = c(50, 200),
+        b = c(50, 50),
+        a = c(0, 0),
         hex_color_string_rgb = c("#C83232", "#329632"),
         stringsAsFactors = FALSE
       )
@@ -823,10 +899,14 @@ describe("cerebellar pipeline orchestration", {
           view = "flatmap",
           geometry = sf::st_sfc(
             sf::st_polygon(list(matrix(
-              c(0, 0, 1, 0, 1, 1, 0, 0), ncol = 2, byrow = TRUE
+              c(0, 0, 1, 0, 1, 1, 0, 0),
+              ncol = 2,
+              byrow = TRUE
             ))),
             sf::st_polygon(list(matrix(
-              c(2, 0, 3, 0, 3, 1, 2, 0), ncol = 2, byrow = TRUE
+              c(2, 0, 3, 0, 3, 1, 2, 0),
+              ncol = 2,
+              byrow = TRUE
             )))
           )
         )
@@ -862,8 +942,11 @@ describe("cerebellar_build_sf_flatmap smoothing and simplification", {
     components$vertices_df$vertices <- list(0:999)
 
     result <- cerebellar_build_sf_flatmap(
-      components, suit_flatmap_path(),
-      tolerance = 0, smooth_refinements = 2, verbose = FALSE
+      components,
+      suit_flatmap_path(),
+      tolerance = 0,
+      smooth_refinements = 2,
+      verbose = FALSE
     )
 
     expect_s3_class(result, "sf")
@@ -882,8 +965,11 @@ describe("cerebellar_build_sf_flatmap smoothing and simplification", {
     components$vertices_df$vertices <- list(0:999)
 
     result <- cerebellar_build_sf_flatmap(
-      components, suit_flatmap_path(),
-      tolerance = 0.5, smooth_refinements = 0, verbose = FALSE
+      components,
+      suit_flatmap_path(),
+      tolerance = 0.5,
+      smooth_refinements = 0,
+      verbose = FALSE
     )
 
     expect_s3_class(result, "sf")
@@ -902,8 +988,11 @@ describe("cerebellar_build_sf_flatmap smoothing and simplification", {
 
     expect_messages(
       cerebellar_build_sf_flatmap(
-        components, suit_flatmap_path(),
-        tolerance = 0, smooth_refinements = 0, verbose = TRUE
+        components,
+        suit_flatmap_path(),
+        tolerance = 0,
+        smooth_refinements = 0,
+        verbose = TRUE
       ),
       "Reading SUIT flatmap|Building polygons"
     )
@@ -955,8 +1044,12 @@ describe("transform_mni_to_suit", {
     xfm <- array(0, dim = c(3, 3, 3, 1, 3))
     mni_nii <- RNifti::readNifti(mni_file)
     center_world <- RNifti::voxelToWorld(c(3, 3, 3), mni_nii)
-    for (i in 1:3) for (j in 1:3) for (k in 1:3) {
-      xfm[i, j, k, 1, ] <- center_world
+    for (i in 1:3) {
+      for (j in 1:3) {
+        for (k in 1:3) {
+          xfm[i, j, k, 1, ] <- center_world
+        }
+      }
     }
     xfm_file <- withr::local_tempfile(fileext = ".nii")
     RNifti::writeNifti(RNifti::asNifti(xfm, reference = mni_nii), xfm_file)
@@ -983,7 +1076,8 @@ describe("suit_deformation_field", {
   it("returns cached path without downloading", {
     tmp <- withr::local_tempdir()
     cached <- file.path(
-      tmp, "tpl-SUIT_from-MNI152NLin6AsymC_mode-image_xfm.nii"
+      tmp,
+      "tpl-SUIT_from-MNI152NLin6AsymC_mode-image_xfm.nii"
     )
     writeBin(raw(1e6 + 1), cached)
 
@@ -1015,16 +1109,31 @@ describe("fill_unlabelled_from_voxel_neighbors", {
     vol[2, 2, 2] <- 1L
     vol[4, 4, 4] <- 2L
 
-    vox_coords <- matrix(c(
-      2, 2, 2,
-      2, 2, 3,
-      4, 4, 4,
-      3, 3, 3
-    ), ncol = 3, byrow = TRUE)
+    vox_coords <- matrix(
+      c(
+        2,
+        2,
+        2,
+        2,
+        2,
+        3,
+        4,
+        4,
+        4,
+        3,
+        3,
+        3
+      ),
+      ncol = 3,
+      byrow = TRUE
+    )
     labels <- c(1L, 0L, 2L, 0L)
 
     result <- fill_unlabelled_from_voxel_neighbors(
-      labels, vox_coords, vol, dim(vol)
+      labels,
+      vox_coords,
+      vol,
+      dim(vol)
     )
     expect_equal(result[1], 1L)
     expect_equal(result[2], 1L)
@@ -1037,7 +1146,10 @@ describe("fill_unlabelled_from_voxel_neighbors", {
     vox_coords <- matrix(c(2, 2, 2), ncol = 3)
     labels <- 1L
     result <- fill_unlabelled_from_voxel_neighbors(
-      labels, vox_coords, vol, dim(vol)
+      labels,
+      vox_coords,
+      vol,
+      dim(vol)
     )
     expect_equal(result, 1L)
   })
@@ -1046,14 +1158,26 @@ describe("fill_unlabelled_from_voxel_neighbors", {
     vol <- array(0L, dim = c(7, 7, 7))
     vol[1, 1, 1] <- 5L
 
-    vox_coords <- matrix(c(
-      1, 1, 1,
-      1, 1, 3
-    ), ncol = 3, byrow = TRUE)
+    vox_coords <- matrix(
+      c(
+        1,
+        1,
+        1,
+        1,
+        1,
+        3
+      ),
+      ncol = 3,
+      byrow = TRUE
+    )
     labels <- c(5L, 0L)
 
     result <- fill_unlabelled_from_voxel_neighbors(
-      labels, vox_coords, vol, dim(vol), max_radius = 3L
+      labels,
+      vox_coords,
+      vol,
+      dim(vol),
+      max_radius = 3L
     )
     expect_equal(result[1], 5L)
     expect_equal(result[2], 5L)
@@ -1063,10 +1187,18 @@ describe("fill_unlabelled_from_voxel_neighbors", {
 
 describe("fill_unlabelled_from_mesh_neighbors", {
   it("propagates labels along mesh edges using majority vote", {
-    faces <- matrix(c(
-      1L, 2L, 3L,
-      3L, 4L, 5L
-    ), ncol = 3, byrow = TRUE)
+    faces <- matrix(
+      c(
+        1L,
+        2L,
+        3L,
+        3L,
+        4L,
+        5L
+      ),
+      ncol = 3,
+      byrow = TRUE
+    )
     labels <- c(1L, 1L, 0L, 0L, 2L)
 
     result <- fill_unlabelled_from_mesh_neighbors(labels, faces, 5)
@@ -1118,11 +1250,21 @@ describe("rescue_orphaned_region", {
       readgii = function(file) {
         list(
           data = list(
-            pointset = matrix(c(
-              centroid_world[1], centroid_world[2], centroid_world[3],
-              centroid_world[1] + 1, centroid_world[2], centroid_world[3],
-              centroid_world[1] + 100, centroid_world[2], centroid_world[3]
-            ), ncol = 3, byrow = TRUE)
+            pointset = matrix(
+              c(
+                centroid_world[1],
+                centroid_world[2],
+                centroid_world[3],
+                centroid_world[1] + 1,
+                centroid_world[2],
+                centroid_world[3],
+                centroid_world[1] + 100,
+                centroid_world[2],
+                centroid_world[3]
+              ),
+              ncol = 3,
+              byrow = TRUE
+            )
           )
         )
       },
@@ -1131,7 +1273,12 @@ describe("rescue_orphaned_region", {
 
     vertex_labels <- c(0L, 0L, 0L)
     result <- rescue_orphaned_region(
-      vol, 7L, vol_file, "mock.surf.gii", vertex_labels, n_vertices = 2L
+      vol,
+      7L,
+      vol_file,
+      "mock.surf.gii",
+      vertex_labels,
+      n_vertices = 2L
     )
 
     expect_length(result, 2)
@@ -1144,7 +1291,11 @@ describe("rescue_orphaned_region", {
     skip_if_not_installed("RNifti")
     vol <- array(0L, dim = c(3, 3, 3))
     result <- rescue_orphaned_region(
-      vol, 99L, "unused", "unused", integer(0)
+      vol,
+      99L,
+      "unused",
+      "unused",
+      integer(0)
     )
     expect_length(result, 0)
     expect_type(result, "integer")
@@ -1165,19 +1316,34 @@ describe("rescue_orphaned_region", {
 
     local_mocked_bindings(
       readgii = function(file) {
-        list(data = list(
-          pointset = matrix(c(
-            centroid_world[1], centroid_world[2], centroid_world[3],
-            centroid_world[1] + 50, centroid_world[2], centroid_world[3]
-          ), ncol = 3, byrow = TRUE)
-        ))
+        list(
+          data = list(
+            pointset = matrix(
+              c(
+                centroid_world[1],
+                centroid_world[2],
+                centroid_world[3],
+                centroid_world[1] + 50,
+                centroid_world[2],
+                centroid_world[3]
+              ),
+              ncol = 3,
+              byrow = TRUE
+            )
+          )
+        )
       },
       .package = "gifti"
     )
 
     vertex_labels <- c(5L, 5L)
     result <- rescue_orphaned_region(
-      vol, 1L, vol_file, "mock.surf.gii", vertex_labels, n_vertices = 1L
+      vol,
+      1L,
+      vol_file,
+      "mock.surf.gii",
+      vertex_labels,
+      n_vertices = 1L
     )
 
     expect_length(result, 1)
@@ -1234,7 +1400,9 @@ describe("read_cerebellar_volume deep nucleus and orphan branches", {
     RNifti::writeNifti(RNifti::asNifti(vol), vol_file)
 
     lut <- data.frame(
-      idx = 1L, label = "Left Lobule-V", stringsAsFactors = FALSE
+      idx = 1L,
+      label = "Left Lobule-V",
+      stringsAsFactors = FALSE
     )
 
     local_mocked_bindings(
@@ -1289,8 +1457,12 @@ describe("read_cerebellar_volume deep nucleus and orphan branches", {
     lut <- data.frame(
       idx = 1L,
       label = "Left Lobule-I",
-      R = 255L, G = 0L, B = 0L, A = 0L,
-      roi = "0001", color = "#FF0000",
+      R = 255L,
+      G = 0L,
+      B = 0L,
+      A = 0L,
+      roi = "0001",
+      color = "#FF0000",
       stringsAsFactors = FALSE
     )
 
@@ -1330,8 +1502,10 @@ describe("cerebellar_create_meshes", {
       subcort_create_meshes = function(input_volume, colortable, ...) {
         stats::setNames(
           lapply(colortable$label, function(l) {
-            list(vertices = data.frame(x = 0, y = 0, z = 0),
-                 faces = data.frame(V1 = 1, V2 = 1, V3 = 1))
+            list(
+              vertices = data.frame(x = 0, y = 0, z = 0),
+              faces = data.frame(V1 = 1, V2 = 1, V3 = 1)
+            )
           }),
           colortable$label
         )
@@ -1340,8 +1514,12 @@ describe("cerebellar_create_meshes", {
 
     expect_warning(
       result <- cerebellar_create_meshes(
-        vol_file, components, dirs,
-        skip_existing = FALSE, verbose = FALSE, decimate = 0.5
+        vol_file,
+        components,
+        dirs,
+        skip_existing = FALSE,
+        verbose = FALSE,
+        decimate = 0.5
       ),
       "Volume has 3.*but atlas has 2"
     )
@@ -1383,8 +1561,12 @@ describe("cerebellar_create_meshes", {
     )
 
     result <- cerebellar_create_meshes(
-      vol_file, components, dirs,
-      skip_existing = FALSE, verbose = FALSE, decimate = 0.5
+      vol_file,
+      components,
+      dirs,
+      skip_existing = FALSE,
+      verbose = FALSE,
+      decimate = 0.5
     )
 
     expect_equal(sort(captured_ct$label), c("lobule_I", "lobule_II"))
@@ -1397,8 +1579,12 @@ describe("cerebellar_create_meshes", {
 
     expect_error(
       cerebellar_create_meshes(
-        "nonexistent.nii.gz", list(), list(),
-        skip_existing = FALSE, verbose = FALSE, decimate = 0.5
+        "nonexistent.nii.gz",
+        list(),
+        list(),
+        skip_existing = FALSE,
+        verbose = FALSE,
+        decimate = 0.5
       ),
       "not found"
     )
@@ -1422,7 +1608,9 @@ describe("cerebellar_read_data", {
 
     mock_components <- list(
       core = data.frame(
-        hemi = "left", region = "I-IV", label = "left_I-IV",
+        hemi = "left",
+        region = "I-IV",
+        label = "left_I-IV",
         stringsAsFactors = FALSE
       ),
       palette = c("left_I-IV" = "#FF0000"),
@@ -1442,7 +1630,9 @@ describe("cerebellar_read_data", {
     )
 
     config <- list(
-      steps = 1L, skip_existing = TRUE, verbose = FALSE
+      steps = 1L,
+      skip_existing = TRUE,
+      verbose = FALSE
     )
     result <- cerebellar_read_data(config, dirs, read_fn = function() {
       stop("should not be called")
@@ -1457,13 +1647,19 @@ describe("cerebellar_read_data", {
 
     mock_components <- list(
       core = data.frame(
-        hemi = "left", region = "I-IV", label = "left_I-IV",
+        hemi = "left",
+        region = "I-IV",
+        label = "left_I-IV",
         stringsAsFactors = FALSE
       )
     )
     mock_deep <- tibble(
-      hemi = "midline", region = "Dentate", label = "midline_Dentate",
-      colour = "#0000FF", vol_idx = 5L, deep = TRUE
+      hemi = "midline",
+      region = "Dentate",
+      label = "midline_Dentate",
+      colour = "#0000FF",
+      vol_idx = 5L,
+      deep = TRUE
     )
     mock_deep$vertices <- list(integer(0))
 
@@ -1506,8 +1702,11 @@ describe("cerebellar_read_data", {
     )
 
     config <- list(
-      steps = 1L, skip_existing = FALSE, verbose = FALSE,
-      tolerance = 0, smooth_refinements = 0
+      steps = 1L,
+      skip_existing = FALSE,
+      verbose = FALSE,
+      tolerance = 0,
+      smooth_refinements = 0
     )
 
     result <- cerebellar_read_data(config, dirs, read_fn = function() {
@@ -1541,8 +1740,11 @@ describe("cerebellar_read_data", {
     )
 
     config <- list(
-      steps = 1L, skip_existing = FALSE, verbose = FALSE,
-      tolerance = 0, smooth_refinements = 0
+      steps = 1L,
+      skip_existing = FALSE,
+      verbose = FALSE,
+      tolerance = 0,
+      smooth_refinements = 0
     )
 
     result <- cerebellar_read_data(config, dirs, read_fn = function() {
@@ -1560,7 +1762,9 @@ describe("cerebellar_project_and_build", {
   it("builds atlas without deep nuclei when deep_data is NULL", {
     components <- list(
       core = data.frame(
-        hemi = "left", region = "I-IV", label = "left_I-IV",
+        hemi = "left",
+        region = "I-IV",
+        label = "left_I-IV",
         stringsAsFactors = FALSE
       ),
       palette = c("left_I-IV" = "#FF0000"),
@@ -1570,8 +1774,11 @@ describe("cerebellar_project_and_build", {
 
     dirs <- mock_dirs()
     config <- list(
-      verbose = FALSE, tolerance = 0, smooth_refinements = 0,
-      cleanup = FALSE, skip_existing = FALSE
+      verbose = FALSE,
+      tolerance = 0,
+      smooth_refinements = 0,
+      cleanup = FALSE,
+      skip_existing = FALSE
     )
 
     atlas <- cerebellar_project_and_build(
@@ -1597,8 +1804,11 @@ describe("cerebellar_process_deep_nuclei", {
     skip_if_not_installed("terra")
 
     deep_data <- tibble(
-      hemi = "midline", region = "Dentate", label = "midline_Dentate",
-      colour = "#0000FF", deep = TRUE
+      hemi = "midline",
+      region = "Dentate",
+      label = "midline_Dentate",
+      colour = "#0000FF",
+      deep = TRUE
     )
     deep_data$vertices <- list(integer(0))
 
@@ -1606,8 +1816,10 @@ describe("cerebellar_process_deep_nuclei", {
 
     expect_warning(
       result <- cerebellar_process_deep_nuclei(
-        volume = "unused.nii.gz", deep_data = deep_data,
-        dirs = dirs, verbose = TRUE
+        volume = "unused.nii.gz",
+        deep_data = deep_data,
+        dirs = dirs,
+        verbose = TRUE
       ),
       "vol_idx"
     )
@@ -1627,8 +1839,12 @@ describe("cerebellar_process_deep_nuclei", {
     RNifti::writeNifti(RNifti::asNifti(vol), vol_file)
 
     deep_data <- tibble(
-      hemi = "midline", region = "Dentate", label = "midline_Dentate",
-      colour = "#0000FF", vol_idx = 1L, deep = TRUE
+      hemi = "midline",
+      region = "Dentate",
+      label = "midline_Dentate",
+      colour = "#0000FF",
+      vol_idx = 1L,
+      deep = TRUE
     )
     deep_data$vertices <- list(integer(0))
 
@@ -1637,8 +1853,10 @@ describe("cerebellar_process_deep_nuclei", {
     local_mocked_bindings(check_fs = function(...) FALSE)
 
     result <- cerebellar_process_deep_nuclei(
-      volume = vol_file, deep_data = deep_data,
-      dirs = dirs, verbose = FALSE
+      volume = vol_file,
+      deep_data = deep_data,
+      dirs = dirs,
+      verbose = FALSE
     )
 
     expect_s3_class(result$sf, "sf")
@@ -1672,8 +1890,10 @@ describe("cerebellar_process_deep_nuclei", {
     local_mocked_bindings(check_fs = function(...) FALSE)
 
     result <- cerebellar_process_deep_nuclei(
-      volume = vol_file, deep_data = deep_data,
-      dirs = dirs, verbose = FALSE
+      volume = vol_file,
+      deep_data = deep_data,
+      dirs = dirs,
+      verbose = FALSE
     )
 
     expect_equal(nrow(result$sf), 1)
@@ -1692,16 +1912,22 @@ describe("cerebellar_process_deep_nuclei", {
     RNifti::writeNifti(RNifti::asNifti(vol), vol_file)
 
     deep_data <- tibble(
-      hemi = "midline", region = "Dentate", label = "midline_Dentate",
-      colour = "#0000FF", vol_idx = 1L, deep = TRUE
+      hemi = "midline",
+      region = "Dentate",
+      label = "midline_Dentate",
+      colour = "#0000FF",
+      vol_idx = 1L,
+      deep = TRUE
     )
     deep_data$vertices <- list(integer(0))
 
     dirs <- mock_dirs()
 
     result <- cerebellar_process_deep_nuclei(
-      volume = vol_file, deep_data = deep_data,
-      dirs = dirs, verbose = TRUE
+      volume = vol_file,
+      deep_data = deep_data,
+      dirs = dirs,
+      verbose = TRUE
     )
 
     expect_s3_class(result$sf, "sf")
@@ -1738,20 +1964,25 @@ describe("run_cerebellar_creation verbose output", {
     local_mocked_bindings(
       setup_atlas_dirs = function(...) {
         list(
-          base = dirs_tmp, snapshots = dirs_tmp,
-          processed = dirs_tmp, masks = dirs_tmp
+          base = dirs_tmp,
+          snapshots = dirs_tmp,
+          processed = dirs_tmp,
+          masks = dirs_tmp
         )
       },
       cerebellar_read_data = function(...) {
         list(
           components = list(
             core = data.frame(
-              hemi = "left", region = "I-IV", label = "left_I-IV",
+              hemi = "left",
+              region = "I-IV",
+              label = "left_I-IV",
               stringsAsFactors = FALSE
             ),
             palette = c("left_I-IV" = "#FF0000"),
             vertices_df = data.frame(
-              label = "left_I-IV", stringsAsFactors = FALSE
+              label = "left_I-IV",
+              stringsAsFactors = FALSE
             )
           ),
           deep_data = NULL
@@ -1763,9 +1994,12 @@ describe("run_cerebellar_creation verbose output", {
     )
 
     config <- list(
-      verbose = TRUE, output_dir = dirs_tmp,
-      steps = 1:2, skip_existing = FALSE,
-      cleanup = FALSE, tolerance = 0,
+      verbose = TRUE,
+      output_dir = dirs_tmp,
+      steps = 1:2,
+      skip_existing = FALSE,
+      cleanup = FALSE,
+      tolerance = 0,
       smooth_refinements = 0
     )
 
@@ -1799,12 +2033,23 @@ describe("read_suit_parcellation vertex overlap warning", {
       )
 
       lt_xml <- if (!is.null(lt)) {
-        paste(vapply(seq_len(nrow(lt)), function(i) {
-          sprintf(
-            '<Label Key="%d" Red="%.1f" Green="%.1f" Blue="%.1f" Alpha="1">%s</Label>', # nolint: line_length_linter.
-            lt$id[i], lt$r[i], lt$g[i], lt$b[i], lt$name[i]
-          )
-        }, character(1)), collapse = "\n    ")
+        paste(
+          vapply(
+            seq_len(nrow(lt)),
+            function(i) {
+              sprintf(
+                '<Label Key="%d" Red="%.1f" Green="%.1f" Blue="%.1f" Alpha="1">%s</Label>', # nolint: line_length_linter.
+                lt$id[i],
+                lt$r[i],
+                lt$g[i],
+                lt$b[i],
+                lt$name[i]
+              )
+            },
+            character(1)
+          ),
+          collapse = "\n    "
+        )
       } else {
         ""
       }
@@ -1819,7 +2064,11 @@ describe("read_suit_parcellation vertex overlap warning", {
     Dim0="%d" Encoding="Base64Binary" Endian="LittleEndian">
     <MetaData/><Data>%s</Data>
   </DataArray>
-</GIFTI>', lt_xml, length(values), labels_b64)
+</GIFTI>',
+        lt_xml,
+        length(values),
+        labels_b64
+      )
       # nolint end
 
       writeLines(xml, label_file)

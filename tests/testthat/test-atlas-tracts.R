@@ -117,7 +117,8 @@ describe("create_tract_from_tractography pipeline flow", {
     local_mocked_bindings(
       tract_read_input = function(input_tracts, tract_names) {
         captured_read_args <<- list(
-          input_tracts = input_tracts, tract_names = tract_names
+          input_tracts = input_tracts,
+          tract_names = tract_names
         )
         list(
           streamlines_data = list(t1 = matrix(1:30, ncol = 3)),
@@ -127,17 +128,25 @@ describe("create_tract_from_tractography pipeline flow", {
       detect_coords_are_voxels = function(...) TRUE,
       tract_create_meshes = function(...) {
         captured_mesh_args <<- list(...)
-        list(t1 = list(metadata = list(
-          centerline = matrix(
-            1:9, ncol = 3, dimnames = list(NULL, c("x", "y", "z"))
-          ),
-          tangents = matrix(1:9, ncol = 3)
-        )))
+        list(
+          t1 = list(
+            metadata = list(
+              centerline = matrix(
+                1:9,
+                ncol = 3,
+                dimnames = list(NULL, c("x", "y", "z"))
+              ),
+              tangents = matrix(1:9, ncol = 3)
+            )
+          )
+        )
       },
       tract_build_core = function(...) {
         list(
           core = data.frame(
-            hemi = "midline", region = "t1", label = "t1",
+            hemi = "midline",
+            region = "t1",
+            label = "t1",
             stringsAsFactors = FALSE
           ),
           palette = c(t1 = "#FF0000"),
@@ -173,7 +182,9 @@ describe("create_tract_from_tractography pipeline flow", {
       streamlines_data = list(t1 = matrix(1:30, ncol = 3)),
       centerlines_df = data.frame(label = "t1"),
       core = data.frame(
-        hemi = "midline", region = "t1", label = "t1",
+        hemi = "midline",
+        region = "t1",
+        label = "t1",
         stringsAsFactors = FALSE
       ),
       palette = c(t1 = "#FF0000"),
@@ -254,7 +265,9 @@ describe("create_tract_from_tractography pipeline flow", {
       streamlines_data = list(t1 = matrix(1:30, ncol = 3)),
       centerlines_df = data.frame(label = "t1"),
       core = data.frame(
-        hemi = "midline", region = "t1", label = "t1",
+        hemi = "midline",
+        region = "t1",
+        label = "t1",
         stringsAsFactors = FALSE
       ),
       palette = c(t1 = "#FF0000"),
@@ -269,12 +282,18 @@ describe("create_tract_from_tractography pipeline flow", {
         if (step == 1L) {
           list(run = FALSE, data = list("step1_data.rds" = cached))
         } else if (step == 2L) {
-          list(run = FALSE, data = list(
-            "views.rds" = data.frame(
-              name = "ax_1", type = "axial", start = 1, end = 10
-            ),
-            "cortex_slices.rds" = NULL
-          ))
+          list(
+            run = FALSE,
+            data = list(
+              "views.rds" = data.frame(
+                name = "ax_1",
+                type = "axial",
+                start = 1,
+                end = 10
+              ),
+              "cortex_slices.rds" = NULL
+            )
+          )
         } else {
           list(run = step %in% steps, data = list())
         }
@@ -317,17 +336,25 @@ describe("create_tract_from_tractography pipeline flow", {
       },
       detect_coords_are_voxels = function(...) TRUE,
       tract_create_meshes = function(...) {
-        list(t1 = list(metadata = list(
-          centerline = matrix(
-            1:9, ncol = 3, dimnames = list(NULL, c("x", "y", "z"))
-          ),
-          tangents = matrix(1:9, ncol = 3)
-        )))
+        list(
+          t1 = list(
+            metadata = list(
+              centerline = matrix(
+                1:9,
+                ncol = 3,
+                dimnames = list(NULL, c("x", "y", "z"))
+              ),
+              tangents = matrix(1:9, ncol = 3)
+            )
+          )
+        )
       },
       tract_build_core = function(...) {
         list(
           core = data.frame(
-            hemi = "midline", region = "t1", label = "t1",
+            hemi = "midline",
+            region = "t1",
+            label = "t1",
             stringsAsFactors = FALSE
           ),
           palette = c(t1 = "#FF0000"),
@@ -367,7 +394,9 @@ describe("create_tract_from_tractography pipeline flow", {
       streamlines_data = list(t1 = matrix(1:30, ncol = 3)),
       centerlines_df = data.frame(label = "t1"),
       core = data.frame(
-        hemi = "midline", region = "t1", label = "t1",
+        hemi = "midline",
+        region = "t1",
+        label = "t1",
         stringsAsFactors = FALSE
       ),
       palette = c(t1 = "#FF0000"),
@@ -385,12 +414,18 @@ describe("create_tract_from_tractography pipeline flow", {
         if (step == 1L) {
           list(run = FALSE, data = list("step1_data.rds" = cached))
         } else if (step == 2L) {
-          list(run = FALSE, data = list(
-            "views.rds" = data.frame(
-              name = "ax_1", type = "axial", start = 1, end = 10
-            ),
-            "cortex_slices.rds" = NULL
-          ))
+          list(
+            run = FALSE,
+            data = list(
+              "views.rds" = data.frame(
+                name = "ax_1",
+                type = "axial",
+                start = 1,
+                end = 10
+              ),
+              "cortex_slices.rds" = NULL
+            )
+          )
         } else {
           list(run = step %in% steps, data = list())
         }
@@ -400,8 +435,10 @@ describe("create_tract_from_tractography pipeline flow", {
         args <- list(...)
         structure(
           list(
-            core = args$core, palette = args$palette,
-            type = args$type, data = args$data
+            core = args$core,
+            palette = args$palette,
+            type = args$type,
+            data = args$data
           ),
           class = "ggseg_atlas"
         )
@@ -434,7 +471,9 @@ describe("create_tract_from_tractography pipeline flow", {
       streamlines_data = list(t1 = matrix(1:30, ncol = 3)),
       centerlines_df = data.frame(label = "t1"),
       core = data.frame(
-        hemi = "midline", region = "t1", label = "t1",
+        hemi = "midline",
+        region = "t1",
+        label = "t1",
         stringsAsFactors = FALSE
       ),
       palette = c(t1 = "#FF0000"),
@@ -449,12 +488,18 @@ describe("create_tract_from_tractography pipeline flow", {
         if (step == 1L) {
           list(run = FALSE, data = list("step1_data.rds" = cached))
         } else if (step == 2L) {
-          list(run = FALSE, data = list(
-            "views.rds" = data.frame(
-              name = "ax_1", type = "axial", start = 1, end = 10
-            ),
-            "cortex_slices.rds" = NULL
-          ))
+          list(
+            run = FALSE,
+            data = list(
+              "views.rds" = data.frame(
+                name = "ax_1",
+                type = "axial",
+                start = 1,
+                end = 10
+              ),
+              "cortex_slices.rds" = NULL
+            )
+          )
         } else {
           list(run = step %in% steps, data = list())
         }
@@ -486,7 +531,9 @@ describe("extract_centerline", {
     )
 
     result <- extract_centerline(
-      bad_streamlines, method = "mean", n_points = 50
+      bad_streamlines,
+      method = "mean",
+      n_points = 50
     )
     expect_null(result)
   })
@@ -513,8 +560,11 @@ describe("tract_resolve_snapshots early-return NULL", {
     dirs <- list(base = withr::local_tempdir())
 
     result <- tract_resolve_snapshots(
-      config, dirs,
-      step1 = list(), input_aseg = NULL, views = "axial"
+      config,
+      dirs,
+      step1 = list(),
+      input_aseg = NULL,
+      views = "axial"
     )
     expect_null(result$views)
     expect_null(result$cortex_slices)

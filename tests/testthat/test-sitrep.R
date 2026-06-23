@@ -116,17 +116,27 @@ describe("check_fsaverage", {
 
 describe("summarize_pipelines", {
   make_results <- function(
-    fs = TRUE, fsavg = TRUE, gifti = TRUE, fsf = TRUE,
-    rnifti = TRUE, cifti = TRUE, neuromapr = TRUE,
-    flatmap = TRUE, surface_3d = TRUE
+    fs = TRUE,
+    fsavg = TRUE,
+    gifti = TRUE,
+    fsf = TRUE,
+    rnifti = TRUE,
+    cifti = TRUE,
+    neuromapr = TRUE,
+    flatmap = TRUE,
+    surface_3d = TRUE
   ) {
     list(
       freesurfer = list(available = fs),
       system = list(imagemagick = TRUE, chrome = TRUE),
       fsaverage = list(fsaverage5 = fsavg),
       packages = list(
-        freesurferformats = fsf, gifti = gifti, ciftiTools = cifti,
-        RNifti = rnifti, Rvcg = TRUE, neuromapr = neuromapr
+        freesurferformats = fsf,
+        gifti = gifti,
+        ciftiTools = cifti,
+        RNifti = rnifti,
+        Rvcg = TRUE,
+        neuromapr = neuromapr
       ),
       suit = list(flatmap = flatmap, surface_3d = surface_3d)
     )
@@ -297,7 +307,9 @@ describe("check_suit_surfaces additional branches", {
       suit_flatmap_path = function() "",
       suit_3d_path = function() {
         system.file(
-          "suit", "SUIT.surf.gii", package = "ggseg.extra"
+          "suit",
+          "SUIT.surf.gii",
+          package = "ggseg.extra"
         )
       }
     )
@@ -312,7 +324,9 @@ describe("check_suit_surfaces additional branches", {
       suit_3d_path = function() "",
       suit_flatmap_path = function() {
         system.file(
-          "suit", "SUIT_flatmap.surf.gii", package = "ggseg.extra"
+          "suit",
+          "SUIT_flatmap.surf.gii",
+          package = "ggseg.extra"
         )
       }
     )
@@ -337,17 +351,27 @@ describe("check_suit_surfaces additional branches", {
 
 describe("summarize_pipelines additional branches", {
   make_results <- function(
-    fs = TRUE, fsavg = TRUE, gifti = TRUE, fsf = TRUE,
-    rnifti = TRUE, cifti = TRUE, neuromapr = TRUE,
-    flatmap = TRUE, surface_3d = TRUE
+    fs = TRUE,
+    fsavg = TRUE,
+    gifti = TRUE,
+    fsf = TRUE,
+    rnifti = TRUE,
+    cifti = TRUE,
+    neuromapr = TRUE,
+    flatmap = TRUE,
+    surface_3d = TRUE
   ) {
     list(
       freesurfer = list(available = fs),
       system = list(imagemagick = TRUE, chrome = TRUE),
       fsaverage = list(fsaverage5 = fsavg),
       packages = list(
-        freesurferformats = fsf, gifti = gifti, ciftiTools = cifti,
-        RNifti = rnifti, Rvcg = TRUE, neuromapr = neuromapr
+        freesurferformats = fsf,
+        gifti = gifti,
+        ciftiTools = cifti,
+        RNifti = rnifti,
+        Rvcg = TRUE,
+        neuromapr = neuromapr
       ),
       suit = list(flatmap = flatmap, surface_3d = surface_3d)
     )
@@ -403,7 +427,9 @@ describe("find_chrome_path", {
     )
     local_mocked_bindings(
       file.exists = function(path) {
-        if (any(grepl("Chrome|Chromium|chrome", path))) return(FALSE)
+        if (any(grepl("Chrome|Chromium|chrome", path))) {
+          return(FALSE)
+        }
         base::file.exists(path)
       },
       .package = "base"

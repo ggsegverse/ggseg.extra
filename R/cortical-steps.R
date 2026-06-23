@@ -1,17 +1,16 @@
 # Cortical step functions ----
 
-
 # Camera positions from ggseg3d::camera_preset_to_position
 # Each vector is the camera position; it looks at the origin.
 camera_presets <- list(
-  lh_lateral  = c(-350,   0,    0),
-  lh_medial   = c(350,    0,    0),
-  lh_superior = c(-120,   0,  330),
-  lh_inferior = c(-120,   0, -330),
-  rh_lateral  = c(350,    0,    0),
-  rh_medial   = c(-350,   0,    0),
-  rh_superior = c(120,    0,  330),
-  rh_inferior = c(120,    0, -330)
+  lh_lateral = c(-350, 0, 0),
+  lh_medial = c(350, 0, 0),
+  lh_superior = c(-120, 0, 330),
+  lh_inferior = c(-120, 0, -330),
+  rh_lateral = c(350, 0, 0),
+  rh_medial = c(-350, 0, 0),
+  rh_superior = c(120, 0, 330),
+  rh_inferior = c(120, 0, -330)
 )
 
 
@@ -59,43 +58,51 @@ filter_visible_regions <- function(region_grid, vertices_df) {
   vnormals <- lapply(meshes, compute_vertex_normals)
   verbose <- is_verbose(2)
 
-  keep <- vapply(seq_len(nrow(region_grid)), function(i) {
-    label <- region_grid$region_label[i]
-    hemi <- region_grid$hemisphere[i]
-    view <- region_grid$view[i]
+  keep <- vapply(
+    seq_len(nrow(region_grid)),
+    function(i) {
+      label <- region_grid$region_label[i]
+      hemi <- region_grid$hemisphere[i]
+      view <- region_grid$view[i]
 
-    key <- paste(hemi, view, sep = "_")
-    cam <- camera_presets[[key]]
-    if (is.null(cam)) return(TRUE)
-
-    idx <- which(vertices_df$label == label)
-    if (length(idx) == 0) {
-      if (verbose) {
-        cli::cli_alert_info(
-          "No vertex data for {.val {label}}, keeping"
-        )
+      key <- paste(hemi, view, sep = "_")
+      cam <- camera_presets[[key]]
+      if (is.null(cam)) {
+        return(TRUE)
       }
-      return(TRUE)
-    }
 
-    v_indices <- vertices_df$vertices[[idx[1]]]
-    if (length(v_indices) == 0) {
-      if (verbose) {
-        cli::cli_alert_info(
-          "Empty vertices for {.val {label}}, keeping"
-        )
+      idx <- which(vertices_df$label == label)
+      if (length(idx) == 0) {
+        if (verbose) {
+          cli::cli_alert_info(
+            "No vertex data for {.val {label}}, keeping"
+          )
+        }
+        return(TRUE)
       }
-      return(TRUE)
-    }
 
-    n_verts <- nrow(vnormals[[hemi]])
-    r_indices <- v_indices + 1L
-    r_indices <- r_indices[r_indices >= 1L & r_indices <= n_verts]
-    if (length(r_indices) == 0) return(TRUE)
+      v_indices <- vertices_df$vertices[[idx[1]]]
+      if (length(v_indices) == 0) {
+        if (verbose) {
+          cli::cli_alert_info(
+            "Empty vertices for {.val {label}}, keeping"
+          )
+        }
+        return(TRUE)
+      }
 
-    region_normals <- vnormals[[hemi]][r_indices, , drop = FALSE]
-    region_faces_camera(region_normals, cam)
-  }, logical(1))
+      n_verts <- nrow(vnormals[[hemi]])
+      r_indices <- v_indices + 1L
+      r_indices <- r_indices[r_indices >= 1L & r_indices <= n_verts]
+      if (length(r_indices) == 0) {
+        return(TRUE)
+      }
+
+      region_normals <- vnormals[[hemi]][r_indices, , drop = FALSE]
+      region_faces_camera(region_normals, cam)
+    },
+    logical(1)
+  )
 
   region_grid[keep, , drop = FALSE]
 }
@@ -156,9 +163,9 @@ cortical_region_snapshots <- function(
 
   region_grid <- region_grid[
     (grepl("^lh_", region_grid$region_label) &
-       region_grid$hemisphere == "lh") |
+      region_grid$hemisphere == "lh") |
       (grepl("^rh_", region_grid$region_label) &
-         region_grid$hemisphere == "rh"),
+        region_grid$hemisphere == "rh"),
   ]
 
   region_grid <- filter_visible_regions(region_grid, components$vertices_df)
@@ -188,8 +195,12 @@ cortical_region_snapshots <- function(
     .options = furrr_options(
       packages = "ggseg.extra",
       globals = c(
-        "atlas_3d", "region_grid", "dirs",
-        "skip_existing", "snapshot_dim", "p"
+        "atlas_3d",
+        "region_grid",
+        "dirs",
+        "skip_existing",
+        "snapshot_dim",
+        "p"
       )
     )
   ))
@@ -319,9 +330,9 @@ labels_region_snapshots <- function(
 
   region_grid <- region_grid[
     (grepl("^lh_", region_grid$region_label) &
-       region_grid$hemisphere == "lh") |
+      region_grid$hemisphere == "lh") |
       (grepl("^rh_", region_grid$region_label) &
-         region_grid$hemisphere == "rh") |
+        region_grid$hemisphere == "rh") |
       (!grepl("^[lr]h_", region_grid$region_label)),
   ]
 
@@ -352,8 +363,12 @@ labels_region_snapshots <- function(
     .options = furrr_options(
       packages = "ggseg.extra",
       globals = c(
-        "atlas_3d", "region_grid", "dirs",
-        "skip_existing", "snapshot_dim", "p"
+        "atlas_3d",
+        "region_grid",
+        "dirs",
+        "skip_existing",
+        "snapshot_dim",
+        "p"
       )
     )
   ))

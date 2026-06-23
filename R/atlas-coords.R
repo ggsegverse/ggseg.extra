@@ -210,8 +210,10 @@ restack <- function(views) {
 
   bboxes <- do.call(rbind, lapply(positioned, function(v) st_bbox(v$geometry)))
   combined_bbox <- c(
-    xmin = min(bboxes[, "xmin"]), ymin = min(bboxes[, "ymin"]),
-    xmax = max(bboxes[, "xmax"]), ymax = max(bboxes[, "ymax"])
+    xmin = min(bboxes[, "xmin"]),
+    ymin = min(bboxes[, "ymin"]),
+    xmax = max(bboxes[, "xmax"]),
+    ymax = max(bboxes[, "ymax"])
   )
 
   list(

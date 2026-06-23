@@ -119,7 +119,8 @@ make_brain_meshes <- function(
   hemispheres <- c("lh", "rh")
 
   combos <- expand.grid(
-    surf = surfaces, hemi = hemispheres,
+    surf = surfaces,
+    hemi = hemispheres,
     stringsAsFactors = FALSE
   )
 

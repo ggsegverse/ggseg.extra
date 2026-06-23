@@ -35,7 +35,11 @@ describe("cortical_region_snapshots", {
     captured <- list()
     local_mocked_bindings(
       snapshot_region_batch = function(
-        atlas, region_label, hemisphere, views, ...
+        atlas,
+        region_label,
+        hemisphere,
+        views,
+        ...
       ) {
         captured[[length(captured) + 1]] <<- list(
           region_label = region_label,
@@ -248,7 +252,11 @@ describe("validate_cortical_config", {
     )
 
     result <- validate_cortical_config(
-      NULL, NULL, NULL, NULL, NULL
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
     )
 
     expect_true(is.list(result))

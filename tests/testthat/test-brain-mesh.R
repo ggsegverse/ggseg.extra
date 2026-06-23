@@ -2,7 +2,9 @@ describe("read_fs_mesh", {
   it("requires FreeSurfer", {
     local_mocked_bindings(
       check_fs = function(msg = NULL, abort = FALSE) {
-        if (abort) cli::cli_abort("Freesurfer not found")
+        if (abort) {
+          cli::cli_abort("Freesurfer not found")
+        }
         FALSE
       }
     )
@@ -56,7 +58,9 @@ describe("make_brain_meshes", {
   it("requires FreeSurfer", {
     local_mocked_bindings(
       check_fs = function(msg = NULL, abort = FALSE) {
-        if (abort) cli::cli_abort("Freesurfer not found")
+        if (abort) {
+          cli::cli_abort("Freesurfer not found")
+        }
         FALSE
       }
     )

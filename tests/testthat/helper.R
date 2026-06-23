@@ -93,7 +93,9 @@ expect_messages <- function(expr, ...) {
     testthat::expect_true(
       any(grepl(pat, messages_caught)),
       label = paste0(
-        "Expected at least one message matching '", pat, "'"
+        "Expected at least one message matching '",
+        pat,
+        "'"
       )
     )
   }

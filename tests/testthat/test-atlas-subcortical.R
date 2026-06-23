@@ -231,15 +231,19 @@ describe("create_subcortical_from_volume pipeline flow", {
         list(run = step %in% steps, data = list())
       },
       subcort_create_meshes = function(...) {
-        list(test_region = list(
-          vertices = list(x = 1, y = 1, z = 1),
-          faces = list(i = 1, j = 1, k = 1)
-        ))
+        list(
+          test_region = list(
+            vertices = list(x = 1, y = 1, z = 1),
+            faces = list(i = 1, j = 1, k = 1)
+          )
+        )
       },
       subcort_build_components = function(...) {
         list(
           core = data.frame(
-            hemi = NA, region = "test", label = "test_region",
+            hemi = NA,
+            region = "test",
+            label = "test_region",
             stringsAsFactors = FALSE
           ),
           palette = c(test_region = "#E78AC3"),
@@ -344,7 +348,9 @@ describe("create_subcortical_from_volume pipeline flow", {
       check_fs = function(...) TRUE,
       get_ctab = function(f) {
         data.frame(
-          idx = 999, label = "nonexistent", color = "#FF0000",
+          idx = 999,
+          label = "nonexistent",
+          color = "#FF0000",
           stringsAsFactors = FALSE
         )
       },
@@ -379,23 +385,32 @@ describe("create_subcortical_from_volume pipeline flow", {
   it("loads cached data for skipped steps and proceeds", {
     dirs <- mock_subcort_dirs()
     cached_colortable <- data.frame(
-      idx = 10, label = "cached_r", color = "#AABBCC",
+      idx = 10,
+      label = "cached_r",
+      color = "#AABBCC",
       stringsAsFactors = FALSE
     )
-    cached_meshes <- list(cached_r = list(
-      vertices = list(x = 1, y = 1, z = 1),
-      faces = list(i = 1, j = 1, k = 1)
-    ))
+    cached_meshes <- list(
+      cached_r = list(
+        vertices = list(x = 1, y = 1, z = 1),
+        faces = list(i = 1, j = 1, k = 1)
+      )
+    )
     cached_components <- list(
       core = data.frame(
-        hemi = NA, region = "cached", label = "cached_r",
+        hemi = NA,
+        region = "cached",
+        label = "cached_r",
         stringsAsFactors = FALSE
       ),
       palette = c(cached_r = "#AABBCC"),
       meshes_df = data.frame(label = "cached_r")
     )
     cached_views <- data.frame(
-      name = "ax_1", type = "axial", start = 1, end = 10,
+      name = "ax_1",
+      type = "axial",
+      start = 1,
+      end = 10,
       stringsAsFactors = FALSE
     )
 
@@ -404,19 +419,25 @@ describe("create_subcortical_from_volume pipeline flow", {
       setup_atlas_dirs = function(...) dirs,
       load_or_run_step = function(step, steps, ...) {
         if (step == 1L) {
-          list(run = FALSE, data = list(
-            "colortable.rds" = cached_colortable,
-            "vol_labels.rds" = c(10)
-          ))
+          list(
+            run = FALSE,
+            data = list(
+              "colortable.rds" = cached_colortable,
+              "vol_labels.rds" = c(10)
+            )
+          )
         } else if (step == 2L) {
           list(run = FALSE, data = list("meshes_list.rds" = cached_meshes))
         } else if (step == 3L) {
           list(run = FALSE, data = list("components.rds" = cached_components))
         } else if (step == 4L) {
-          list(run = FALSE, data = list(
-            "views.rds" = cached_views,
-            "cortex_slices.rds" = NULL
-          ))
+          list(
+            run = FALSE,
+            data = list(
+              "views.rds" = cached_views,
+              "cortex_slices.rds" = NULL
+            )
+          )
         } else {
           list(run = step %in% steps, data = list())
         }
@@ -455,26 +476,35 @@ describe("create_subcortical_from_volume pipeline flow", {
         if (step %in% steps) {
           list(run = TRUE, data = list())
         } else {
-          list(run = FALSE, data = list(
-            "colortable.rds" = data.frame(idx = 10, label = "r"),
-            "vol_labels.rds" = c(10),
-            "meshes_list.rds" = list(),
-            "components.rds" = list(
-              core = data.frame(hemi = NA, region = "r", label = "r"),
-              palette = c(r = "#FF0000"),
-              meshes_df = data.frame(label = "r")
-            ),
-            "views.rds" = data.frame(
-              name = "ax_1", type = "axial", start = 1, end = 10
-            ),
-            "cortex_slices.rds" = NULL
-          ))
+          list(
+            run = FALSE,
+            data = list(
+              "colortable.rds" = data.frame(idx = 10, label = "r"),
+              "vol_labels.rds" = c(10),
+              "meshes_list.rds" = list(),
+              "components.rds" = list(
+                core = data.frame(hemi = NA, region = "r", label = "r"),
+                palette = c(r = "#FF0000"),
+                meshes_df = data.frame(label = "r")
+              ),
+              "views.rds" = data.frame(
+                name = "ax_1",
+                type = "axial",
+                start = 1,
+                end = 10
+              ),
+              "cortex_slices.rds" = NULL
+            )
+          )
         }
       },
       subcort_create_snapshots = function(...) {
         list(
           views = data.frame(
-            name = "ax_1", type = "axial", start = 1, end = 10
+            name = "ax_1",
+            type = "axial",
+            start = 1,
+            end = 10
           ),
           cortex_slices = NULL
         )
@@ -511,22 +541,29 @@ describe("create_subcortical_from_volume pipeline flow", {
       setup_atlas_dirs = function(...) dirs,
       load_or_run_step = function(step, steps, ...) {
         if (step %in% c(1L, 2L, 3L)) {
-          list(run = FALSE, data = list(
-            "colortable.rds" = data.frame(
-              idx = 10, label = "region", color = "#FF0000",
-              stringsAsFactors = FALSE
-            ),
-            "vol_labels.rds" = c(10),
-            "meshes_list.rds" = list(),
-            "components.rds" = list(
-              core = data.frame(
-                hemi = NA, region = "r", label = "region",
+          list(
+            run = FALSE,
+            data = list(
+              "colortable.rds" = data.frame(
+                idx = 10,
+                label = "region",
+                color = "#FF0000",
                 stringsAsFactors = FALSE
               ),
-              palette = c(region = "#FF0000"),
-              meshes_df = data.frame(label = "region")
+              "vol_labels.rds" = c(10),
+              "meshes_list.rds" = list(),
+              "components.rds" = list(
+                core = data.frame(
+                  hemi = NA,
+                  region = "r",
+                  label = "region",
+                  stringsAsFactors = FALSE
+                ),
+                palette = c(region = "#FF0000"),
+                meshes_df = data.frame(label = "region")
+              )
             )
-          ))
+          )
         } else if (step == 4L) {
           list(run = TRUE, data = list())
         } else {
@@ -537,7 +574,10 @@ describe("create_subcortical_from_volume pipeline flow", {
         captured_snapshot_args <<- list(...)
         list(
           views = data.frame(
-            name = "ax_1", type = "axial", start = 1, end = 10,
+            name = "ax_1",
+            type = "axial",
+            start = 1,
+            end = 10,
             stringsAsFactors = FALSE
           ),
           cortex_slices = NULL
@@ -570,14 +610,19 @@ describe("create_subcortical_from_volume pipeline flow", {
     dirs <- mock_subcort_dirs()
     cached_components <- list(
       core = data.frame(
-        hemi = NA, region = "r", label = "region",
+        hemi = NA,
+        region = "r",
+        label = "region",
         stringsAsFactors = FALSE
       ),
       palette = c(region = "#FF0000"),
       meshes_df = data.frame(label = "region")
     )
     cached_views <- data.frame(
-      name = "ax_1", type = "axial", start = 1, end = 10,
+      name = "ax_1",
+      type = "axial",
+      start = 1,
+      end = 10,
       stringsAsFactors = FALSE
     )
 
@@ -588,14 +633,17 @@ describe("create_subcortical_from_volume pipeline flow", {
       check_fs = function(...) TRUE,
       setup_atlas_dirs = function(...) dirs,
       load_or_run_step = function(step, steps, ...) {
-        list(run = FALSE, data = list(
-          "colortable.rds" = data.frame(idx = 10, label = "region"),
-          "vol_labels.rds" = c(10),
-          "meshes_list.rds" = list(),
-          "components.rds" = cached_components,
-          "views.rds" = cached_views,
-          "cortex_slices.rds" = NULL
-        ))
+        list(
+          run = FALSE,
+          data = list(
+            "colortable.rds" = data.frame(idx = 10, label = "region"),
+            "vol_labels.rds" = c(10),
+            "meshes_list.rds" = list(),
+            "components.rds" = cached_components,
+            "views.rds" = cached_views,
+            "cortex_slices.rds" = NULL
+          )
+        )
       },
       build_contour_sf = function(...) {
         data.frame(label = "region", stringsAsFactors = FALSE)
@@ -604,8 +652,10 @@ describe("create_subcortical_from_volume pipeline flow", {
         args <- list(...)
         structure(
           list(
-            core = args$core, palette = args$palette,
-            type = args$type, data = args$data
+            core = args$core,
+            palette = args$palette,
+            type = args$type,
+            data = args$data
           ),
           class = "ggseg_atlas"
         )
@@ -641,20 +691,26 @@ describe("create_subcortical_from_volume pipeline flow", {
       check_fs = function(...) TRUE,
       setup_atlas_dirs = function(...) dirs,
       load_or_run_step = function(step, steps, ...) {
-        list(run = FALSE, data = list(
-          "colortable.rds" = data.frame(idx = 10, label = "r"),
-          "vol_labels.rds" = c(10),
-          "meshes_list.rds" = list(),
-          "components.rds" = list(
-            core = data.frame(hemi = NA, region = "r", label = "r"),
-            palette = c(r = "#FF0000"),
-            meshes_df = data.frame(label = "r")
-          ),
-          "views.rds" = data.frame(
-            name = "ax_1", type = "axial", start = 1, end = 10
-          ),
-          "cortex_slices.rds" = NULL
-        ))
+        list(
+          run = FALSE,
+          data = list(
+            "colortable.rds" = data.frame(idx = 10, label = "r"),
+            "vol_labels.rds" = c(10),
+            "meshes_list.rds" = list(),
+            "components.rds" = list(
+              core = data.frame(hemi = NA, region = "r", label = "r"),
+              palette = c(r = "#FF0000"),
+              meshes_df = data.frame(label = "r")
+            ),
+            "views.rds" = data.frame(
+              name = "ax_1",
+              type = "axial",
+              start = 1,
+              end = 10
+            ),
+            "cortex_slices.rds" = NULL
+          )
+        )
       },
       process_and_mask_images = function(...) invisible(NULL),
       extract_contours = function(...) invisible(NULL)

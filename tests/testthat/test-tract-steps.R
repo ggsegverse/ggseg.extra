@@ -572,17 +572,33 @@ describe("validate_tract_config", {
     withr::local_options(ggseg.extra.output_dir = tempdir())
 
     result <- validate_tract_config(
-      output_dir = NULL, verbose = FALSE, cleanup = FALSE,
-      skip_existing = FALSE, tolerance = NULL, smoothness = NULL,
-      steps = NULL, centerline_method = "mean",
-      tube_radius = 5, tube_segments = 8, n_points = 50
+      output_dir = NULL,
+      verbose = FALSE,
+      cleanup = FALSE,
+      skip_existing = FALSE,
+      tolerance = NULL,
+      smoothness = NULL,
+      steps = NULL,
+      centerline_method = "mean",
+      tube_radius = 5,
+      tube_segments = 8,
+      n_points = 50
     )
 
     expected_fields <- c(
-      "output_dir", "verbose", "cleanup", "skip_existing",
-      "tolerance", "smoothness", "steps", "centerline_method",
-      "tube_radius", "tube_segments", "n_points",
-      "density_radius_range", "tract_radius"
+      "output_dir",
+      "verbose",
+      "cleanup",
+      "skip_existing",
+      "tolerance",
+      "smoothness",
+      "steps",
+      "centerline_method",
+      "tube_radius",
+      "tube_segments",
+      "n_points",
+      "density_radius_range",
+      "tract_radius"
     )
     expect_true(all(expected_fields %in% names(result)))
     expect_true(is.list(result))
@@ -592,10 +608,17 @@ describe("validate_tract_config", {
     withr::local_options(ggseg.extra.output_dir = tempdir())
 
     result <- validate_tract_config(
-      output_dir = NULL, verbose = FALSE, cleanup = FALSE,
-      skip_existing = FALSE, tolerance = NULL, smoothness = NULL,
-      steps = NULL, centerline_method = "mean",
-      tube_radius = 5, tube_segments = 8, n_points = 50
+      output_dir = NULL,
+      verbose = FALSE,
+      cleanup = FALSE,
+      skip_existing = FALSE,
+      tolerance = NULL,
+      smoothness = NULL,
+      steps = NULL,
+      centerline_method = "mean",
+      tube_radius = 5,
+      tube_segments = 8,
+      n_points = 50
     )
 
     expect_equal(result$steps, 1L:7L)
@@ -606,19 +629,33 @@ describe("validate_tract_config", {
 
     expect_no_error(
       validate_tract_config(
-        output_dir = NULL, verbose = FALSE, cleanup = FALSE,
-        skip_existing = FALSE, tolerance = NULL, smoothness = NULL,
-        steps = NULL, centerline_method = "medoid",
-        tube_radius = 5, tube_segments = 8, n_points = 50
+        output_dir = NULL,
+        verbose = FALSE,
+        cleanup = FALSE,
+        skip_existing = FALSE,
+        tolerance = NULL,
+        smoothness = NULL,
+        steps = NULL,
+        centerline_method = "medoid",
+        tube_radius = 5,
+        tube_segments = 8,
+        n_points = 50
       )
     )
 
     expect_error(
       validate_tract_config(
-        output_dir = NULL, verbose = FALSE, cleanup = FALSE,
-        skip_existing = FALSE, tolerance = NULL, smoothness = NULL,
-        steps = NULL, centerline_method = "invalid",
-        tube_radius = 5, tube_segments = 8, n_points = 50
+        output_dir = NULL,
+        verbose = FALSE,
+        cleanup = FALSE,
+        skip_existing = FALSE,
+        tolerance = NULL,
+        smoothness = NULL,
+        steps = NULL,
+        centerline_method = "invalid",
+        tube_radius = 5,
+        tube_segments = 8,
+        n_points = 50
       ),
       "arg"
     )
@@ -628,10 +665,17 @@ describe("validate_tract_config", {
     withr::local_options(ggseg.extra.output_dir = tempdir())
 
     result <- validate_tract_config(
-      output_dir = NULL, verbose = FALSE, cleanup = FALSE,
-      skip_existing = FALSE, tolerance = NULL, smoothness = NULL,
-      steps = NULL, centerline_method = "mean",
-      tube_radius = 5, tube_segments = 8, n_points = 50
+      output_dir = NULL,
+      verbose = FALSE,
+      cleanup = FALSE,
+      skip_existing = FALSE,
+      tolerance = NULL,
+      smoothness = NULL,
+      steps = NULL,
+      centerline_method = "mean",
+      tube_radius = 5,
+      tube_segments = 8,
+      n_points = 50
     )
 
     expect_equal(result$density_radius_range, c(0.2, 1.0))
@@ -667,7 +711,9 @@ describe("tract_resolve_step1", {
       streamlines_data = list(t1 = matrix(1:30, ncol = 3)),
       centerlines_df = data.frame(label = "t1"),
       core = data.frame(
-        hemi = "midline", region = "t1", label = "t1",
+        hemi = "midline",
+        region = "t1",
+        label = "t1",
         stringsAsFactors = FALSE
       ),
       palette = c(t1 = "#FF0000"),
@@ -684,14 +730,20 @@ describe("tract_resolve_step1", {
     )
 
     config <- list(
-      steps = 2L:7L, skip_existing = TRUE, verbose = FALSE,
-      centerline_method = "mean", n_points = 50,
-      tube_radius = 5, tube_segments = 8,
+      steps = 2L:7L,
+      skip_existing = TRUE,
+      verbose = FALSE,
+      centerline_method = "mean",
+      n_points = 50,
+      tube_radius = 5,
+      tube_segments = 8,
       density_radius_range = c(0.2, 1.0)
     )
     dirs <- list(
-      base = test_dir, snapshots = test_dir,
-      processed = test_dir, masks = test_dir
+      base = test_dir,
+      snapshots = test_dir,
+      processed = test_dir,
+      masks = test_dir
     )
 
     result <- tract_resolve_step1(config, dirs, list(), NULL, NULL)
@@ -720,7 +772,8 @@ describe("tract_resolve_step1", {
           t1 = list(
             metadata = list(
               centerline = matrix(
-                1:9, ncol = 3,
+                1:9,
+                ncol = 3,
                 dimnames = list(NULL, c("x", "y", "z"))
               ),
               tangents = matrix(1:9, ncol = 3)
@@ -731,7 +784,9 @@ describe("tract_resolve_step1", {
       tract_build_core = function(...) {
         list(
           core = data.frame(
-            hemi = "midline", region = "t1", label = "t1",
+            hemi = "midline",
+            region = "t1",
+            label = "t1",
             stringsAsFactors = FALSE
           ),
           palette = NULL,
@@ -742,23 +797,39 @@ describe("tract_resolve_step1", {
     )
 
     config <- list(
-      steps = 1L:7L, skip_existing = FALSE, verbose = FALSE,
-      centerline_method = "mean", n_points = 50,
-      tube_radius = 5, tube_segments = 8,
+      steps = 1L:7L,
+      skip_existing = FALSE,
+      verbose = FALSE,
+      centerline_method = "mean",
+      n_points = 50,
+      tube_radius = 5,
+      tube_segments = 8,
       density_radius_range = c(0.2, 1.0)
     )
     dirs <- list(
-      base = test_dir, snapshots = test_dir,
-      processed = test_dir, masks = test_dir
+      base = test_dir,
+      snapshots = test_dir,
+      processed = test_dir,
+      masks = test_dir
     )
 
     result <- tract_resolve_step1(
-      config, dirs, list(t1 = matrix(1:30, ncol = 3)), NULL, NULL
+      config,
+      dirs,
+      list(t1 = matrix(1:30, ncol = 3)),
+      NULL,
+      NULL
     )
 
     expected_fields <- c(
-      "streamlines_data", "centerlines_df", "core", "palette",
-      "atlas_name", "tube_radius", "tube_segments", "coords_are_voxels"
+      "streamlines_data",
+      "centerlines_df",
+      "core",
+      "palette",
+      "atlas_name",
+      "tube_radius",
+      "tube_segments",
+      "coords_are_voxels"
     )
     expect_true(all(expected_fields %in% names(result)))
   })
@@ -818,11 +889,18 @@ describe("tract_resolve_snapshots", {
   it("returns cached data when not running", {
     test_dir <- withr::local_tempdir()
     cached_views <- data.frame(
-      name = "ax_1", type = "axial", start = 1, end = 10,
+      name = "ax_1",
+      type = "axial",
+      start = 1,
+      end = 10,
       stringsAsFactors = FALSE
     )
     cached_cortex <- data.frame(
-      x = NA, y = NA, z = 5, view = "axial", name = "ax_1",
+      x = NA,
+      y = NA,
+      z = 5,
+      view = "axial",
+      name = "ax_1",
       stringsAsFactors = FALSE
     )
 
@@ -839,7 +917,9 @@ describe("tract_resolve_snapshots", {
     )
 
     config <- list(
-      steps = 3L:7L, skip_existing = TRUE, verbose = FALSE,
+      steps = 3L:7L,
+      skip_existing = TRUE,
+      verbose = FALSE,
       tract_radius = 3
     )
     dirs <- list(base = test_dir, snapshots = test_dir)
@@ -865,11 +945,18 @@ describe("tract_resolve_snapshots", {
       tract_create_snapshots = function(...) {
         list(
           views = data.frame(
-            name = "ax_1", type = "axial", start = 1, end = 10,
+            name = "ax_1",
+            type = "axial",
+            start = 1,
+            end = 10,
             stringsAsFactors = FALSE
           ),
           cortex_slices = data.frame(
-            x = NA, y = NA, z = 5, view = "axial", name = "ax_1",
+            x = NA,
+            y = NA,
+            z = 5,
+            view = "axial",
+            name = "ax_1",
             stringsAsFactors = FALSE
           )
         )
@@ -877,7 +964,9 @@ describe("tract_resolve_snapshots", {
     )
 
     config <- list(
-      steps = 2L:7L, skip_existing = FALSE, verbose = FALSE,
+      steps = 2L:7L,
+      skip_existing = FALSE,
+      verbose = FALSE,
       tract_radius = 3
     )
     dirs <- list(base = test_dir, snapshots = test_dir)
@@ -888,7 +977,11 @@ describe("tract_resolve_snapshots", {
     )
 
     result <- tract_resolve_snapshots(
-      config, dirs, step1, "aseg.mgz", NULL
+      config,
+      dirs,
+      step1,
+      "aseg.mgz",
+      NULL
     )
 
     expect_true("views" %in% names(result))
@@ -991,8 +1084,11 @@ describe("run_image_steps (tract step_map)", {
     )
 
     config <- list(
-      steps = 3L:6L, verbose = FALSE,
-      skip_existing = FALSE, smoothness = 1.0, tolerance = 0.01
+      steps = 3L:6L,
+      verbose = FALSE,
+      skip_existing = FALSE,
+      smoothness = 1.0,
+      tolerance = 0.01
     )
     dirs <- list(snapshots = "s", processed = "p", masks = "m", base = "b")
 
@@ -1024,7 +1120,9 @@ describe("tract_assemble_3d", {
     step1 <- list(
       atlas_name = "test_tract",
       core = data.frame(
-        hemi = "midline", region = "t1", label = "t1",
+        hemi = "midline",
+        region = "t1",
+        label = "t1",
         stringsAsFactors = FALSE
       ),
       palette = c(t1 = "#FF0000"),
@@ -1048,7 +1146,9 @@ describe("tract_assemble_full", {
     step1 <- list(
       atlas_name = "t1",
       core = data.frame(
-        hemi = "midline", region = "t1", label = "t1",
+        hemi = "midline",
+        region = "t1",
+        label = "t1",
         stringsAsFactors = FALSE
       ),
       palette = c(t1 = "#FF0000"),
@@ -1076,8 +1176,13 @@ describe("finalize_atlas (tract parameters)", {
     dirs <- list(base = sub_dir)
 
     finalize_atlas(
-      NULL, config, dirs, Sys.time(),
-      type_label = "Tract", unit = "tracts", early_step = 1L
+      NULL,
+      config,
+      dirs,
+      Sys.time(),
+      type_label = "Tract",
+      unit = "tracts",
+      early_step = 1L
     )
 
     expect_false(dir.exists(sub_dir))
@@ -1094,8 +1199,13 @@ describe("finalize_atlas (tract parameters)", {
 
     expect_messages(
       finalize_atlas(
-        NULL, config, dirs, Sys.time(),
-        type_label = "Tract", unit = "tracts", early_step = 1L
+        NULL,
+        config,
+        dirs,
+        Sys.time(),
+        type_label = "Tract",
+        unit = "tracts",
+        early_step = 1L
       ),
       "Completed steps"
     )
@@ -1107,8 +1217,13 @@ describe("finalize_atlas (tract parameters)", {
     dirs <- list(base = test_dir)
 
     result <- finalize_atlas(
-      NULL, config, dirs, Sys.time(),
-      type_label = "Tract", unit = "tracts", early_step = 1L
+      NULL,
+      config,
+      dirs,
+      Sys.time(),
+      type_label = "Tract",
+      unit = "tracts",
+      early_step = 1L
     )
 
     expect_null(result)
@@ -1119,7 +1234,9 @@ describe("finalize_atlas (tract parameters)", {
     mock_atlas <- structure(
       list(
         core = data.frame(
-          hemi = "midline", region = "t1", label = "t1",
+          hemi = "midline",
+          region = "t1",
+          label = "t1",
           stringsAsFactors = FALSE
         )
       ),
@@ -1129,8 +1246,13 @@ describe("finalize_atlas (tract parameters)", {
     dirs <- list(base = test_dir)
 
     result <- finalize_atlas(
-      mock_atlas, config, dirs, Sys.time(),
-      type_label = "Tract", unit = "tracts", early_step = 1L
+      mock_atlas,
+      config,
+      dirs,
+      Sys.time(),
+      type_label = "Tract",
+      unit = "tracts",
+      early_step = 1L
     )
 
     expect_s3_class(result, "ggseg_atlas")

@@ -184,11 +184,14 @@ describe("read_ctab", {
 
   it("reads optional type column when present", {
     tmp <- withr::local_tempfile(fileext = ".txt")
-    writeLines(c(
-      "  0  Unknown          0   0   0   0",
-      "  1  Lobule-I        205 130 176   0  Anterior",
-      "  2  Lobule-II       100  50  25   0  Posterior"
-    ), tmp)
+    writeLines(
+      c(
+        "  0  Unknown          0   0   0   0",
+        "  1  Lobule-I        205 130 176   0  Anterior",
+        "  2  Lobule-II       100  50  25   0  Posterior"
+      ),
+      tmp
+    )
 
     result <- read_ctab(tmp)
 
@@ -200,10 +203,13 @@ describe("read_ctab", {
 
   it("omits type column when no rows have it", {
     tmp <- withr::local_tempfile(fileext = ".txt")
-    writeLines(c(
-      "  0  Unknown          0   0   0   0",
-      "  1  Region1        205 130 176   0"
-    ), tmp)
+    writeLines(
+      c(
+        "  0  Unknown          0   0   0   0",
+        "  1  Region1        205 130 176   0"
+      ),
+      tmp
+    )
 
     result <- read_ctab(tmp)
 
@@ -527,7 +533,9 @@ describe("read_neuromaps_volume", {
     )
 
     result <- read_neuromaps_volume(
-      "fake.nii.gz", n_bins = 5, output_dir = output_dir
+      "fake.nii.gz",
+      n_bins = 5,
+      output_dir = output_dir
     )
 
     expect_s3_class(result, "tbl_df")

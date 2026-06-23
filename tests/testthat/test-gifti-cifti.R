@@ -342,7 +342,9 @@ describe("parse_continuous_values", {
     expect_true("unknown" %in% region_names)
 
     total_verts <- sum(vapply(
-      result, function(r) length(r$vertices[[1]]), integer(1)
+      result,
+      function(r) length(r$vertices[[1]]),
+      integer(1)
     ))
     expect_equal(total_verts, 102)
   })
@@ -379,7 +381,10 @@ describe("parse_parcellation_values", {
   it("creates regions from integer IDs", {
     values <- c(1, 1, 2, 2, 0)
     result <- parse_parcellation_values(
-      values, "left", "lh", label_table = NULL
+      values,
+      "left",
+      "lh",
+      label_table = NULL
     )
 
     region_names <- vapply(result, function(r) r$region[1], character(1))
@@ -391,7 +396,10 @@ describe("parse_parcellation_values", {
   it("treats NaN as medial wall", {
     values <- c(1, 2, NaN)
     result <- parse_parcellation_values(
-      values, "left", "lh", label_table = NULL
+      values,
+      "left",
+      "lh",
+      label_table = NULL
     )
 
     unknown <- Filter(function(r) r$region[1] == "unknown", result)
@@ -597,7 +605,9 @@ describe("create_cortical_from_cifti", {
     writeLines("mock", tmp)
 
     result <- create_cortical_from_cifti(
-      cifti_file = tmp, verbose = FALSE, cleanup = FALSE
+      cifti_file = tmp,
+      verbose = FALSE,
+      cleanup = FALSE
     )
     expect_true(grepl("my_atlas", result$atlas))
   })
@@ -616,7 +626,11 @@ describe("create_cortical_from_cifti", {
         cifti = list(
           labels = list(
             data.frame(
-              Key = 1L, Label = "a", Red = 1, Green = 0, Blue = 0,
+              Key = 1L,
+              Label = "a",
+              Red = 1,
+              Green = 0,
+              Blue = 0,
               stringsAsFactors = FALSE
             )
           )
@@ -642,7 +656,8 @@ describe("create_cortical_from_cifti", {
     withr::local_options(ggseg.extra.output_dir = withr::local_tempdir())
 
     create_cortical_from_cifti(
-      cifti_file = tmp, verbose = FALSE
+      cifti_file = tmp,
+      verbose = FALSE
     )
     expect_true(pipeline_called)
   })
@@ -682,7 +697,9 @@ describe("create_cortical_from_gifti", {
     writeLines("mock", tmp)
 
     result <- create_cortical_from_gifti(
-      gifti_files = tmp, verbose = FALSE, cleanup = FALSE
+      gifti_files = tmp,
+      verbose = FALSE,
+      cleanup = FALSE
     )
     expect_true(grepl("myatlas", result$atlas))
   })
@@ -725,7 +742,8 @@ describe("create_cortical_from_gifti", {
     withr::local_options(ggseg.extra.output_dir = withr::local_tempdir())
 
     create_cortical_from_gifti(
-      gifti_files = tmp, verbose = FALSE
+      gifti_files = tmp,
+      verbose = FALSE
     )
     expect_true(pipeline_called)
   })

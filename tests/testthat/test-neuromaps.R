@@ -77,9 +77,11 @@ describe("read_neuromaps_annotation", {
     skip_if_not_installed("gifti")
 
     n <- 10242L
-    mock_gii <- list(data = list(
-      c(rep(0, 2000), rep(1, 4000), rep(2, 4242))
-    ))
+    mock_gii <- list(
+      data = list(
+        c(rep(0, 2000), rep(1, 4000), rep(2, 4242))
+      )
+    )
 
     local_mocked_bindings(
       read_gifti = function(...) mock_gii,
@@ -106,9 +108,11 @@ describe("read_neuromaps_annotation", {
     skip_if_not_installed("gifti")
 
     n <- 10242L
-    mock_gii <- list(data = list(
-      c(rep(0, 2000), rep(1, 4000), rep(2, 4242))
-    ))
+    mock_gii <- list(
+      data = list(
+        c(rep(0, 2000), rep(1, 4000), rep(2, 4242))
+      )
+    )
 
     local_mocked_bindings(
       read_gifti = function(...) mock_gii,
@@ -213,9 +217,11 @@ describe("create_cortical_from_neuromaps", {
     skip_if_not_installed("gifti")
 
     n <- 10242L
-    mock_gii <- list(data = list(
-      c(rep(0, 2000), rep(1, 4000), rep(2, 4242))
-    ))
+    mock_gii <- list(
+      data = list(
+        c(rep(0, 2000), rep(1, 4000), rep(2, 4242))
+      )
+    )
 
     lh <- withr::local_tempfile(
       pattern = "source-test_hemi-L_feature",
@@ -267,9 +273,11 @@ describe("create_cortical_from_neuromaps", {
     skip_if_not_installed("gifti")
 
     n <- 10242L
-    mock_gii <- list(data = list(
-      c(rep(1, 5000), rep(2, 5242))
-    ))
+    mock_gii <- list(
+      data = list(
+        c(rep(1, 5000), rep(2, 5242))
+      )
+    )
 
     tmp <- withr::local_tempfile(
       pattern = "source-abagen_hemi-L_feature",
@@ -357,9 +365,11 @@ describe("create_cortical_from_neuromaps", {
     skip_if_not_installed("gifti")
 
     n <- 10242L
-    mock_gii <- list(data = list(
-      c(rep(1, 5000), rep(2, 5242))
-    ))
+    mock_gii <- list(
+      data = list(
+        c(rep(1, 5000), rep(2, 5242))
+      )
+    )
 
     tmp <- withr::local_tempfile(
       pattern = "source-test_hemi-L_feature",
