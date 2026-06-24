@@ -1,8 +1,23 @@
 # Design: easier subcortical atlas creation in ggseg.extra
 
-Status: proposal (no code yet)
+Status: implemented (P0–P2); see "Decisions taken" below
 Author: drafted with Claude, 2026-06-01
 Motivating work: ggsegFreeSurfer `data-raw/make_{thalamus,hippoamyg,brainstem,hypothalamus,hcpa}.R`
+
+## Decisions taken (during implementation)
+
+- **`aseg_context_labels()` dropped.** Rather than ship a curated default
+  context-label vector, `aseg_context()` treats _every_ non-focus label as
+  context automatically and subtracts the focus set with exact, case-sensitive
+  `^(…)$` matching. This resolves §4.1's open question (focus exclusion is
+  automatic) and §8's "defaults as data vs functions" — there is no default
+  list to expose, so no companion function is needed. `aseg_hidden_labels()`
+  is still exported (the stripped-structure set genuinely is a curated list).
+- **Orchestrator extension (§4.6) implemented.** `create_subcortical_from_volume()`
+  accepts `views = list(labels = …, coronal = …, …)` (expanded via
+  `subcortical_views()`) and `context = list(focus = …, …)` (applied via
+  `aseg_context()` after the 2D build); both thread through
+  `create_wholebrain_from_volume()`'s `subcortical_opts`.
 
 ## 1. Problem
 

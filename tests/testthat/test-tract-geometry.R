@@ -1,3 +1,55 @@
+# A valid tract atlas carrying the given centerline labels. The volumetric
+# geometry code only reads `centerlines$label` (coordinates come from the
+# separate `streamlines` argument), but ggseg.formats requires real point and
+# tangent columns, so we supply dummy ones.
+make_test_tract_atlas <- function(labels = "tract_a") {
+  cl <- data.frame(label = labels, stringsAsFactors = FALSE)
+  cl$points <- lapply(
+    labels,
+    function(.) matrix(c(0, 0, 0, 1, 1, 1), ncol = 3, byrow = TRUE)
+  )
+  cl$tangents <- lapply(
+    labels,
+    function(.) matrix(c(1, 0, 0, 1, 0, 0), ncol = 3, byrow = TRUE)
+  )
+  ggseg.formats::ggseg_atlas(
+    atlas = "test",
+    type = "tract",
+    core = data.frame(
+      hemi = "mid",
+      region = labels,
+      label = labels,
+      stringsAsFactors = FALSE
+    ),
+    palette = stats::setNames(rep("#FF0000", length(labels)), labels),
+    data = ggseg.formats::ggseg_data_tract(centerlines = cl)
+  )
+}
+
+# A valid tract atlas backed by 2D geometry but carrying no centerlines, for
+# exercising the "atlas must have centerlines" guard.
+make_test_tract_atlas_geom <- function() {
+  geom <- sf::st_sf(
+    label = "tract_a",
+    view = "axial",
+    geometry = sf::st_sfc(
+      sf::st_polygon(list(rbind(c(0, 0), c(1, 0), c(1, 1), c(0, 0))))
+    )
+  )
+  ggseg.formats::ggseg_atlas(
+    atlas = "test",
+    type = "tract",
+    core = data.frame(
+      hemi = "mid",
+      region = "tract a",
+      label = "tract_a",
+      stringsAsFactors = FALSE
+    ),
+    palette = c(tract_a = "#FF0000"),
+    data = ggseg.formats::ggseg_data_tract(geom = geom)
+  )
+}
+
 describe("generate_tube_mesh", {
   it("creates valid mesh from centerline", {
     centerline <- matrix(
@@ -740,15 +792,7 @@ describe("create_tract_geometry_volumetric", {
   it("runs the full pipeline with mocked dependencies", {
     tmp_dir <- withr::local_tempdir()
 
-    fake_atlas <- list(
-      type = "tract",
-      data = list(
-        centerlines = data.frame(
-          label = c("tract_a", "tract_b"),
-          stringsAsFactors = FALSE
-        )
-      )
-    )
+    fake_atlas <- make_test_tract_atlas(c("tract_a", "tract_b"))
 
     fake_streamlines <- list(
       tract_a = matrix(c(1:10, rep(0, 20)), ncol = 3),
@@ -872,7 +916,7 @@ describe("create_tract_geometry_volumetric", {
   it("errors when aseg file doesn't exist", {
     expect_error(
       create_tract_geometry_volumetric(
-        atlas = list(type = "tract"),
+        atlas = make_test_tract_atlas(),
         aseg_file = "/nonexistent.mgz",
         streamlines = list()
       ),
@@ -887,7 +931,7 @@ describe("create_tract_geometry_volumetric", {
 
     expect_error(
       create_tract_geometry_volumetric(
-        atlas = list(type = "tract"),
+        atlas = make_test_tract_atlas(),
         aseg_file = aseg_tmp
       ),
       "streamlines.*required"
@@ -921,7 +965,7 @@ describe("create_tract_geometry_volumetric", {
 
     expect_error(
       create_tract_geometry_volumetric(
-        atlas = list(type = "tract", data = list()),
+        atlas = make_test_tract_atlas_geom(),
         aseg_file = aseg_tmp,
         streamlines = list(a = matrix(1:6, ncol = 3))
       ),
@@ -956,12 +1000,7 @@ describe("create_tract_geometry_volumetric", {
 
     expect_error(
       create_tract_geometry_volumetric(
-        atlas = list(
-          type = "tract",
-          data = list(
-            centerlines = data.frame(label = c("a", "b"))
-          )
-        ),
+        atlas = make_test_tract_atlas(c("a", "b")),
         aseg_file = aseg_tmp,
         streamlines = list(a = matrix(1:6, ncol = 3))
       ),
@@ -972,12 +1011,7 @@ describe("create_tract_geometry_volumetric", {
   it("uses cached contours when skip_existing is TRUE", {
     tmp_dir <- withr::local_tempdir()
 
-    fake_atlas <- list(
-      type = "tract",
-      data = list(
-        centerlines = data.frame(label = "tract_a", stringsAsFactors = FALSE)
-      )
-    )
+    fake_atlas <- make_test_tract_atlas("tract_a")
 
     base_dir <- file.path(tmp_dir, "tract_geom")
     dir.create(base_dir, recursive = TRUE)
@@ -1046,12 +1080,7 @@ describe("create_tract_geometry_volumetric", {
   it("uses cached contours without views file", {
     tmp_dir <- withr::local_tempdir()
 
-    fake_atlas <- list(
-      type = "tract",
-      data = list(
-        centerlines = data.frame(label = "tract_a", stringsAsFactors = FALSE)
-      )
-    )
+    fake_atlas <- make_test_tract_atlas("tract_a")
 
     base_dir <- file.path(tmp_dir, "tract_geom")
     dir.create(base_dir, recursive = TRUE)
@@ -1117,12 +1146,7 @@ describe("create_tract_geometry_volumetric", {
   it("cleans up when cleanup is TRUE", {
     tmp_dir <- withr::local_tempdir()
 
-    fake_atlas <- list(
-      type = "tract",
-      data = list(
-        centerlines = data.frame(label = "tract_a", stringsAsFactors = FALSE)
-      )
-    )
+    fake_atlas <- make_test_tract_atlas("tract_a")
 
     base_dir <- file.path(tmp_dir, "tract_geom")
     dir.create(base_dir, recursive = TRUE)
@@ -1187,12 +1211,7 @@ describe("create_tract_geometry_volumetric", {
   it("handles NA view in filename extraction", {
     tmp_dir <- withr::local_tempdir()
 
-    fake_atlas <- list(
-      type = "tract",
-      data = list(
-        centerlines = data.frame(label = "tract_a", stringsAsFactors = FALSE)
-      )
-    )
+    fake_atlas <- make_test_tract_atlas("tract_a")
 
     base_dir <- file.path(tmp_dir, "tract_geom")
     dir.create(base_dir, recursive = TRUE)
@@ -1257,12 +1276,7 @@ describe("create_tract_geometry_volumetric", {
   it("skips existing snapshots when enough exist", {
     tmp_dir <- withr::local_tempdir()
 
-    fake_atlas <- list(
-      type = "tract",
-      data = list(
-        centerlines = data.frame(label = "tract_a", stringsAsFactors = FALSE)
-      )
-    )
+    fake_atlas <- make_test_tract_atlas("tract_a")
 
     fake_vol <- array(0L, dim = c(20, 20, 20))
     fake_vol[5:10, 5:10, 5:10] <- 3L
@@ -1357,12 +1371,7 @@ describe("create_tract_geometry_volumetric", {
   it("handles list-of-lists streamlines in the tract volume creation", {
     tmp_dir <- withr::local_tempdir()
 
-    fake_atlas <- list(
-      type = "tract",
-      data = list(
-        centerlines = data.frame(label = "tract_a", stringsAsFactors = FALSE)
-      )
-    )
+    fake_atlas <- make_test_tract_atlas("tract_a")
 
     fake_vol <- array(0L, dim = c(20, 20, 20))
     fake_vol[5:10, 5:10, 5:10] <- 3L
@@ -1461,12 +1470,7 @@ describe("create_tract_geometry_volumetric", {
   it("auto-detects coordinate space when coords_are_voxels is NULL", {
     tmp_dir <- withr::local_tempdir()
 
-    fake_atlas <- list(
-      type = "tract",
-      data = list(
-        centerlines = data.frame(label = "tract_a", stringsAsFactors = FALSE)
-      )
-    )
+    fake_atlas <- make_test_tract_atlas("tract_a")
 
     fake_vol <- array(0L, dim = c(20, 20, 20))
     fake_vol[5:10, 5:10, 5:10] <- 3L

@@ -27,7 +27,16 @@
 #'   `type` ("axial", "coronal", "sagittal"), `start` (first slice), `end`
 #'   (last slice). Default projects entire volume from each direction.
 #'   Unlike slices, projections show ALL structures in their spatial
-#'   relationships - like an X-ray view.
+#'   relationships - like an X-ray view. May also be a named list of
+#'   [subcortical_views()] arguments (e.g.
+#'   `views = list(labels = 801:810, coronal = 3, axial = 2)`); it is expanded
+#'   into a view table with `volume` defaulting to `input_volume`, so the slab
+#'   indices are computed in the builder's own frame.
+#' @param context Optional named list of [aseg_context()] arguments (e.g.
+#'   `context = list(focus = "Hippocampus")`) applied to the finished 2D atlas
+#'   to keep the focus regions coloured on grey anatomical context. `NULL`
+#'   (default) leaves the atlas unchanged. Only applied when the 2D build
+#'   (step 9) runs.
 #' @template output_dir
 #' @template vertex_size_limits
 #' @template dilate
@@ -98,7 +107,8 @@ create_subcortical_from_volume <- function(
   cleanup = NULL,
   skip_existing = NULL,
   decimate = 0.5,
-  steps = NULL
+  steps = NULL,
+  context = NULL
 ) {
   # nolint start: object_usage_linter.
   warn_deprecated_sf_smoothing(
@@ -123,6 +133,8 @@ create_subcortical_from_volume <- function(
     tolerance,
     smoothness
   )
+
+  validate_subcort_context_arg(context, config$steps)
 
   dirs <- setup_atlas_dirs(
     config$output_dir,
@@ -157,6 +169,7 @@ create_subcortical_from_volume <- function(
     return(subcort_final(atlas))
   }
 
+  views <- resolve_subcort_views_spec(views, input_volume)
   snaps <- subcort_resolve_snapshots(config, dirs, labels$colortable, views)
   run_image_steps(
     config,
@@ -175,10 +188,64 @@ create_subcortical_from_volume <- function(
       snaps$views,
       snaps$cortex_slices
     )
+    atlas <- apply_subcort_context_spec(atlas, context)
     return(subcort_final(atlas))
   }
 
   subcort_final(NULL)
+}
+
+
+#' Resolve the `views` argument of `create_subcortical_from_volume()`
+#'
+#' Passes a data.frame through unchanged; expands a list spec into a view
+#' table via [subcortical_views()], defaulting `volume` to the atlas volume.
+#' @noRd
+resolve_subcort_views_spec <- function(views, input_volume) {
+  if (is.null(views) || is.data.frame(views)) {
+    return(views)
+  }
+  if (!is.list(views)) {
+    cli::cli_abort(c(
+      "{.arg views} must be a data.frame or a list of
+       {.fn subcortical_views} arguments.",
+      "i" = "Got {.cls {class(views)}}."
+    ))
+  }
+  do.call(subcortical_views, c(list(volume = input_volume), views))
+}
+
+
+#' Validate the `context` argument of `create_subcortical_from_volume()`
+#'
+#' `context` is only applied when the 2D build (step 9) runs; warn otherwise.
+#' @noRd
+validate_subcort_context_arg <- function(context, steps) {
+  if (is.null(context)) {
+    return(invisible(NULL))
+  }
+  if (!is.list(context)) {
+    cli::cli_abort(c(
+      "{.arg context} must be a list of {.fn aseg_context} arguments.",
+      "i" = "Got {.cls {class(context)}}."
+    ))
+  }
+  if (!(9L %in% steps)) {
+    cli::cli_warn(
+      "{.arg context} is ignored unless step 9 (the 2D build) runs."
+    )
+  }
+  invisible(NULL)
+}
+
+
+#' Run [aseg_context()] on a built atlas from a `context` list spec
+#' @noRd
+apply_subcort_context_spec <- function(atlas, context) {
+  if (is.null(context)) {
+    return(atlas)
+  }
+  do.call(aseg_context, c(list(atlas = atlas), context))
 }
 
 

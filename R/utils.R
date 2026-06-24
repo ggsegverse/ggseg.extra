@@ -109,7 +109,7 @@ preview_atlas <- function(atlas) {
 
   tryCatch(
     {
-      if (atlas$type == "cortical") {
+      if (ggseg.formats::is_cortical_atlas(atlas)) {
         for (hemi in c("left", "right")) {
           p3d <- ggseg3d::ggseg3d(atlas = atlas, hemisphere = hemi) |>
             ggseg3d::pan_camera(paste(hemi, "lateral")) |>

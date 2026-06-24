@@ -440,9 +440,19 @@ describe("preview_atlas", {
   })
 
   it("shows 3D cortical preview for both hemispheres", {
-    atlas <- list(
+    atlas <- ggseg.formats::ggseg_atlas(
+      atlas = "t",
       type = "cortical",
-      data = list(sf = NULL, vertices = TRUE, meshes = NULL)
+      core = data.frame(
+        hemi = "left",
+        region = "r",
+        label = "lh_r",
+        stringsAsFactors = FALSE
+      ),
+      palette = c(lh_r = "#FF0000"),
+      data = ggseg.formats::ggseg_data_cortical(
+        vertices = data.frame(label = "lh_r", vertices = I(list(0:3)))
+      )
     )
 
     prompts <- character()

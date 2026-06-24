@@ -155,3 +155,25 @@ describe("resolve_volume_path", {
     )
   })
 })
+
+describe("prepare_subcortical_anatomical", {
+  it("threads the registration from coregister into the projection", {
+    seen <- NULL
+    local_mocked_bindings(
+      coregister_volume = function(...) "registration.lta",
+      project_volume_anatomical = function(registration, ...) {
+        seen <<- registration
+        "merged.nii.gz"
+      }
+    )
+
+    out <- prepare_subcortical_anatomical(
+      input_volume = "atlas.nii.gz",
+      label_ids = 1:3,
+      verbose = FALSE
+    )
+
+    expect_equal(seen, "registration.lta")
+    expect_equal(out, "merged.nii.gz")
+  })
+})

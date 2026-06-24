@@ -18,7 +18,8 @@ create_subcortical_from_volume(
   cleanup = NULL,
   skip_existing = NULL,
   decimate = 0.5,
-  steps = NULL
+  steps = NULL,
+  context = NULL
 )
 }
 \arguments{
@@ -39,7 +40,11 @@ filename.}
 \code{type} ("axial", "coronal", "sagittal"), \code{start} (first slice), \code{end}
 (last slice). Default projects entire volume from each direction.
 Unlike slices, projections show ALL structures in their spatial
-relationships - like an X-ray view.}
+relationships - like an X-ray view. May also be a named list of
+\code{\link[=subcortical_views]{subcortical_views()}} arguments (e.g.
+\code{views = list(labels = 801:810, coronal = 3, axial = 2)}); it is expanded
+into a view table with \code{volume} defaulting to \code{input_volume}, so the slab
+indices are computed in the builder's own frame.}
 
 \item{output_dir}{Directory to store intermediate files (screenshots, masks,
 contours). Defaults to \code{\link[=tempdir]{tempdir()}}.}
@@ -96,6 +101,12 @@ Steps are:
 }
 Use \code{steps = 1:3} for 3D-only atlas. Use \code{steps = 7:8} to iterate on
 smoothing and reduction parameters.}
+
+\item{context}{Optional named list of \code{\link[=aseg_context]{aseg_context()}} arguments (e.g.
+\code{context = list(focus = "Hippocampus")}) applied to the finished 2D atlas
+to keep the focus regions coloured on grey anatomical context. \code{NULL}
+(default) leaves the atlas unchanged. Only applied when the 2D build
+(step 9) runs.}
 }
 \value{
 A \code{ggseg_atlas} object with region metadata (core), 3D meshes,

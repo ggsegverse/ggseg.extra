@@ -1,5 +1,32 @@
 # ggseg.extra 1.9.9.9005
 
+## Subcortical atlas builder helpers
+
+New thin compositions of the existing `ggseg.formats` atlas ops and the
+volume reader, distilled from the repeated boilerplate in the
+`ggsegFreeSurfer` subcortical build scripts:
+
+- `subcortical_views()` builds a slice-view table from the bounding box of
+  a set of labels, reading the volume in the **same** frame the builder
+  uses so coronal/axial/sagittal slabs can't be pointed at the wrong
+  slices.
+- `aseg_context()` collapses the standard post-processing chain (punch
+  cortical white matter, strip the structures `aseg` doesn't draw, demote
+  everything outside `focus` to grey context, drop empty views) into one
+  call. The focus set is subtracted from the context set with exact,
+  case-sensitive matching, so a region is never swallowed by a context
+  entry that is a substring of its name (e.g. `Thalamus` vs
+  `hypothalamus`). `aseg_hidden_labels()` returns the default stripped set.
+- `lut_add()` / `lut_combine()` append and merge FreeSurfer-style colour
+  tables (validating with `is_ctab()` and warning on index clashes) for
+  atlases that add custom prefixed labels.
+- `create_subcortical_from_volume()` gained two opt-in arguments: `views`
+  now also accepts a `subcortical_views()` list spec (e.g.
+  `views = list(labels = 801:810, coronal = 3)`), and a new `context`
+  argument runs `aseg_context()` on the finished 2D atlas (e.g.
+  `context = list(focus = "Hippocampus")`). Both thread through
+  `create_wholebrain_from_volume()`'s `subcortical_opts`.
+
 ## sf smoothing moves out of atlas creation
 
 Pipeline-time simplification of 2D sf geometry was the most common reason

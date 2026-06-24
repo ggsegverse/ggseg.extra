@@ -98,6 +98,31 @@ describe("subcortical_views", {
   it("errors when no orientation is requested", {
     expect_error(subcortical_views(vol, labels = 17), "at least one slab")
   })
+
+  it("reads a path volume in the builder's reorient frame (round-trip)", {
+    skip_if_not_installed("RNifti")
+    arr <- array(0L, dim = c(10, 12, 14))
+    arr[2:4, 5:9, 8:12] <- 17L
+    f <- withr::local_tempfile(fileext = ".nii.gz")
+    # Non-RAS on disk so read_volume() must reorient; subcortical_views() owns
+    # that read, so a path must agree with the same volume already in the
+    # builder's frame rather than the raw on-disk array. The RNifti
+    # orientation/IO setup emits incidental warnings unrelated to the contract.
+    suppressWarnings({
+      img <- RNifti::asNifti(arr)
+      RNifti::orientation(img) <- "LAS"
+      RNifti::writeNifti(img, f)
+    })
+
+    from_path <- subcortical_views(f, labels = 17, coronal = 2, axial = 2)
+    from_frame <- subcortical_views(
+      read_volume(f, reorient = TRUE),
+      labels = 17,
+      coronal = 2,
+      axial = 2
+    )
+    expect_identical(from_path, from_frame)
+  })
 })
 
 describe("aseg_context", {
@@ -219,5 +244,87 @@ describe("lut_add / lut_combine", {
   it("rejects non-color-tables", {
     expect_error(lut_combine(data.frame(x = 1)), "color table")
     expect_error(lut_add(data.frame(x = 1), 1, "a", 1, 1, 1), "color table")
+  })
+})
+
+describe("aseg_hidden_labels", {
+  it("returns the standard set of stripped aseg patterns", {
+    out <- aseg_hidden_labels()
+    expect_type(out, "character")
+    expect_setequal(
+      out,
+      c(
+        "White-Matter",
+        "WM-hypointensities",
+        "-Ventricle",
+        "-Vent$",
+        "CSF",
+        "Cerebral-Cortex",
+        "choroid-plexus",
+        "vessel",
+        "CC_"
+      )
+    )
+  })
+})
+
+describe("create_subcortical_from_volume view/context specs", {
+  it("exposes views and context as formals (whole-brain forwards them)", {
+    fmls <- names(formals(create_subcortical_from_volume))
+    expect_true(all(c("views", "context") %in% fmls))
+  })
+
+  it("expands a views list spec via subcortical_views()", {
+    vol <- array(0L, dim = c(20, 20, 20))
+    vol[8:12, 6:14, 9:11] <- 17L
+    out <- resolve_subcort_views_spec(
+      list(labels = 17, coronal = 3, axial = 2),
+      vol
+    )
+    expect_s3_class(out, "data.frame")
+    expect_equal(nrow(out), 5)
+    expect_setequal(out$type, c("coronal", "axial"))
+  })
+
+  it("passes a data.frame views table through unchanged", {
+    df <- data.frame(name = "v", type = "coronal", start = 1L, end = 2L)
+    expect_identical(resolve_subcort_views_spec(df, NULL), df)
+  })
+
+  it("passes NULL views through unchanged", {
+    expect_null(resolve_subcort_views_spec(NULL, NULL))
+  })
+
+  it("errors on a non-list, non-data.frame views value", {
+    expect_error(resolve_subcort_views_spec(42, NULL), "data.frame or a list")
+  })
+
+  it("errors when context is not a list", {
+    expect_error(validate_subcort_context_arg("nope", 1:9), "must be a list")
+  })
+
+  it("warns when context is set but the 2D build (step 9) is skipped", {
+    expect_warning(
+      validate_subcort_context_arg(list(focus = "x"), 1:3),
+      "step 9"
+    )
+  })
+
+  it("is silent for valid context (with step 9) or NULL context", {
+    expect_silent(validate_subcort_context_arg(list(focus = "x"), 1:9))
+    expect_silent(validate_subcort_context_arg(NULL, 1:3))
+  })
+
+  it("applies aseg_context() to the atlas via a context spec", {
+    a <- apply_subcort_context_spec(
+      make_test_atlas(),
+      list(focus = "hypothalamus", punch_white_matter = FALSE)
+    )
+    expect_equal(a$core$label, "L_hypothalamus_anterior_inferior")
+  })
+
+  it("leaves the atlas unchanged when context is NULL", {
+    atlas <- make_test_atlas()
+    expect_identical(apply_subcort_context_spec(atlas, NULL), atlas)
   })
 })

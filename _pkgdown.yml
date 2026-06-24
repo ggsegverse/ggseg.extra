@@ -105,6 +105,22 @@ reference:
       - write_ctab
       - is_ctab
       - get_ctab
+      - lut_add
+      - lut_combine
+
+  - title: Subcortical Helpers
+    desc: Compose slice views and anatomical context for subcortical atlases
+    contents:
+      - subcortical_views
+      - aseg_context
+      - aseg_hidden_labels
+
+  - title: Anatomical Coregistration
+    desc: Align an atlas volume to a FreeSurfer subject for anatomical context
+    contents:
+      - coregister_volume
+      - project_volume_anatomical
+      - prepare_subcortical_anatomical
 
   - title: Cerebellar Helpers
     desc: SUIT surfaces and MNI-to-SUIT transforms for cerebellar atlases
