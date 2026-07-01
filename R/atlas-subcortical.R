@@ -16,7 +16,11 @@
 #'
 #' @param input_volume Path to the segmentation volume. Supports `.mgz`, `.nii`,
 #'   and `.nii.gz` formats. Typically this is `aseg.mgz` or a custom
-#'   segmentation in the same space.
+#'   segmentation in the same space. May also be the
+#'   `list(volume, lut, id_offset)` returned by
+#'   [prepare_subcortical_anatomical()] /
+#'   [project_volume_anatomical()], in which case its `volume` and `lut`
+#'   are used (an explicit `input_lut` takes precedence over the bundled one).
 #' @param input_lut Path to a FreeSurfer-style colour lookup table that maps
 #'   label IDs to region names and colours (e.g., `FreeSurferColorLUT.txt`
 #'   or `ASegStatsLUT.txt`), or a data.frame with columns `region` and colour
@@ -118,6 +122,10 @@ create_subcortical_from_volume <- function(
   )
   # nolint end
 
+  unpacked <- unpack_anatomical_input(input_volume, input_lut)
+  input_volume <- unpacked$input_volume
+  input_lut <- unpacked$input_lut
+
   start_time <- Sys.time()
 
   config <- validate_subcort_config(
@@ -193,6 +201,28 @@ create_subcortical_from_volume <- function(
   }
 
   subcort_final(NULL)
+}
+
+
+#' Unpack a `prepare_subcortical_anatomical()` result into volume + lut
+#'
+#' [prepare_subcortical_anatomical()] / [project_volume_anatomical()] return a
+#' `list(volume, lut, id_offset)`. Accepting that list directly as
+#' `input_volume` lets the anatomical-context pipeline compose without the
+#' caller hand-threading the shifted colour table. An explicit `input_lut`
+#' still wins over the bundled one.
+#' @noRd
+unpack_anatomical_input <- function(input_volume, input_lut) {
+  if (
+    is.list(input_volume) &&
+      all(c("volume", "lut") %in% names(input_volume))
+  ) {
+    if (is.null(input_lut)) {
+      input_lut <- input_volume$lut
+    }
+    input_volume <- input_volume$volume
+  }
+  list(input_volume = input_volume, input_lut = input_lut)
 }
 
 

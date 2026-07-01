@@ -6,7 +6,6 @@
 \usage{
 project_volume_anatomical(
   input_volume,
-  label_ids = NULL,
   lut = NULL,
   registration = NULL,
   target_subject = "cvs_avg35_inMNI152",
@@ -21,17 +20,18 @@ project_volume_anatomical(
 \arguments{
 \item{input_volume}{Path to the atlas volume, or an \code{RNifti} object.}
 
-\item{label_ids}{Integer vector of labels to project. Defaults to all
-non-zero labels in \code{input_volume}.}
-
 \item{lut}{Optional colour LUT (data frame with at least an \code{idx}
-column, or path to a TSV with \verb{idx, label, R, G, B, A}). If
-provided, returned alongside the volume with \code{idx} shifted by
-\code{id_offset} to match.}
+column, or path to a TSV with \verb{idx, label, R, G, B, A}). When
+provided, its \code{idx} (intersected with the volume) selects which labels
+to project, and it is returned alongside the volume with \code{idx} shifted
+by \code{id_offset} to match. With no \code{lut}, every non-zero label is
+projected. To project a subset, subset the \code{lut}.}
 
 \item{registration}{Path to an LTA file (typically from
 \code{\link[=coregister_volume]{coregister_volume()}}). If \code{NULL}, \code{mri_vol2vol} falls back to
-\code{--regheader} and trusts the volume's xform.}
+\code{--regheader} and trusts the volume's xform. The LTA must be registered
+to a volume on the same subject's conformed grid as \code{aparc+aseg.mgz}
+(true for any \code{recon-all} output); a mismatch is caught and aborted.}
 
 \item{target_subject}{FreeSurfer subject providing the anatomical grid
 and \code{aparc+aseg.mgz}. Defaults to \code{"cvs_avg35_inMNI152"}.}
@@ -45,12 +45,14 @@ the merged volume to avoid collisions with FreeSurfer \code{aparc+aseg}
 labels. Defaults to \code{200L}. Set to \code{0L} if you have already remapped
 your IDs (or if you've verified there are no collisions).}
 
-\item{protect_cortex}{Logical. If \code{TRUE} (default), cortex voxels in
-\code{aparc+aseg} (aparc labels \code{1000-2999}, plus cortical white matter
-\code{2} and \code{41}) are never overwritten by user labels, even when argmax
-wins above \code{threshold}. This preserves the brain-outline geometry
-that the subcortical pipeline renders as context. Disable only if
-you intentionally want user labels to overwrite cortex.}
+\item{protect_cortex}{Logical. If \code{TRUE} (default), the cerebral outline
+in \code{aparc+aseg} is never overwritten by user labels even when argmax
+wins above \code{threshold}: the cortical ribbon (aparc labels \code{1000-2999})
+plus cerebral white matter (\code{2}, \code{41}) and the corpus callosum
+(\code{251-255}). This preserves the brain-outline geometry the subcortical
+pipeline renders as context. Cerebellar structures are not protected
+here (they are handled downstream by \code{\link[=aseg_context]{aseg_context()}}). Disable only if
+you intentionally want user labels to overwrite the cerebrum.}
 
 \item{output_file}{Path for the merged volume. Defaults to a temp file.}
 
@@ -64,10 +66,17 @@ value from \code{options("ggseg.extra.verbose")} or the \code{GGSEG_EXTRA_VERBOS
 environment variable.}
 }
 \value{
-If \code{lut} is \code{NULL}, the path to the merged anatomical-context
-volume (invisibly), with the \code{id_offset} used recorded as an
-attribute. If \code{lut} is supplied, a list with \code{output_file}, \code{lut}
-(the input LUT with \code{idx} shifted by \code{id_offset}), and \code{id_offset}.
+Invisibly, a list with three elements ready to feed
+\code{\link[=create_subcortical_from_volume]{create_subcortical_from_volume()}}:
+\describe{
+\item{\code{volume}}{Path to the merged anatomical-context volume.}
+\item{\code{lut}}{A colour table matching the merged volume one-to-one:
+FreeSurfer names for the surviving \code{aparc+aseg} context labels,
+plus the user's atlas labels with \code{idx} shifted by \code{id_offset}.
+When \code{lut} is \code{NULL}, the user labels get generic \code{region_XXXX}
+names and an auto-generated palette.}
+\item{\code{id_offset}}{The offset applied to the user's label IDs.}
+}
 }
 \description{
 For each label in an atlas volume, resamples a binary indicator with
@@ -99,9 +108,10 @@ it matches the merged volume.
 lta <- coregister_volume("atlas.nii.gz")
 merged <- project_volume_anatomical(
   "atlas.nii.gz",
-  label_ids = c(11, 12, 13, 17, 18, 26),
+  lut = my_lut,
   registration = lta
 )
+atlas <- create_subcortical_from_volume(merged)
 }
 }
 \seealso{

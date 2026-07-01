@@ -146,15 +146,17 @@ coregister_volume <- function(
 #' it matches the merged volume.
 #'
 #' @param input_volume Path to the atlas volume, or an `RNifti` object.
-#' @param label_ids Integer vector of labels to project. Defaults to all
-#'   non-zero labels in `input_volume`.
 #' @param lut Optional colour LUT (data frame with at least an `idx`
-#'   column, or path to a TSV with `idx, label, R, G, B, A`). If
-#'   provided, returned alongside the volume with `idx` shifted by
-#'   `id_offset` to match.
+#'   column, or path to a TSV with `idx, label, R, G, B, A`). When
+#'   provided, its `idx` (intersected with the volume) selects which labels
+#'   to project, and it is returned alongside the volume with `idx` shifted
+#'   by `id_offset` to match. With no `lut`, every non-zero label is
+#'   projected. To project a subset, subset the `lut`.
 #' @param registration Path to an LTA file (typically from
 #'   [coregister_volume()]). If `NULL`, `mri_vol2vol` falls back to
-#'   `--regheader` and trusts the volume's xform.
+#'   `--regheader` and trusts the volume's xform. The LTA must be registered
+#'   to a volume on the same subject's conformed grid as `aparc+aseg.mgz`
+#'   (true for any `recon-all` output); a mismatch is caught and aborted.
 #' @param target_subject FreeSurfer subject providing the anatomical grid
 #'   and `aparc+aseg.mgz`. Defaults to `"cvs_avg35_inMNI152"`.
 #' @param threshold Numeric in `[0, 1]`. Voxels whose argmax probability
@@ -164,21 +166,30 @@ coregister_volume <- function(
 #'   the merged volume to avoid collisions with FreeSurfer `aparc+aseg`
 #'   labels. Defaults to `200L`. Set to `0L` if you have already remapped
 #'   your IDs (or if you've verified there are no collisions).
-#' @param protect_cortex Logical. If `TRUE` (default), cortex voxels in
-#'   `aparc+aseg` (aparc labels `1000-2999`, plus cortical white matter
-#'   `2` and `41`) are never overwritten by user labels, even when argmax
-#'   wins above `threshold`. This preserves the brain-outline geometry
-#'   that the subcortical pipeline renders as context. Disable only if
-#'   you intentionally want user labels to overwrite cortex.
+#' @param protect_cortex Logical. If `TRUE` (default), the cerebral outline
+#'   in `aparc+aseg` is never overwritten by user labels even when argmax
+#'   wins above `threshold`: the cortical ribbon (aparc labels `1000-2999`)
+#'   plus cerebral white matter (`2`, `41`) and the corpus callosum
+#'   (`251-255`). This preserves the brain-outline geometry the subcortical
+#'   pipeline renders as context. Cerebellar structures are not protected
+#'   here (they are handled downstream by [aseg_context()]). Disable only if
+#'   you intentionally want user labels to overwrite the cerebrum.
 #' @param output_file Path for the merged volume. Defaults to a temp file.
 #' @param subjects_dir FreeSurfer `SUBJECTS_DIR`. Defaults to
 #'   [freesurfer::fs_subj_dir()].
 #' @template verbose
 #'
-#' @return If `lut` is `NULL`, the path to the merged anatomical-context
-#'   volume (invisibly), with the `id_offset` used recorded as an
-#'   attribute. If `lut` is supplied, a list with `output_file`, `lut`
-#'   (the input LUT with `idx` shifted by `id_offset`), and `id_offset`.
+#' @return Invisibly, a list with three elements ready to feed
+#'   [create_subcortical_from_volume()]:
+#'   \describe{
+#'     \item{`volume`}{Path to the merged anatomical-context volume.}
+#'     \item{`lut`}{A colour table matching the merged volume one-to-one:
+#'       FreeSurfer names for the surviving `aparc+aseg` context labels,
+#'       plus the user's atlas labels with `idx` shifted by `id_offset`.
+#'       When `lut` is `NULL`, the user labels get generic `region_XXXX`
+#'       names and an auto-generated palette.}
+#'     \item{`id_offset`}{The offset applied to the user's label IDs.}
+#'   }
 #' @export
 #'
 #' @seealso [coregister_volume()], [prepare_subcortical_anatomical()]
@@ -188,13 +199,13 @@ coregister_volume <- function(
 #' lta <- coregister_volume("atlas.nii.gz")
 #' merged <- project_volume_anatomical(
 #'   "atlas.nii.gz",
-#'   label_ids = c(11, 12, 13, 17, 18, 26),
+#'   lut = my_lut,
 #'   registration = lta
 #' )
+#' atlas <- create_subcortical_from_volume(merged)
 #' }
 project_volume_anatomical <- function(
   input_volume,
-  label_ids = NULL,
   lut = NULL,
   registration = NULL,
   target_subject = "cvs_avg35_inMNI152",
@@ -224,7 +235,8 @@ project_volume_anatomical <- function(
   vol <- RNifti::readNifti(in_path)
   arr <- as.array(vol)
 
-  label_ids <- resolve_label_ids(label_ids, arr, in_path)
+  lut_df <- if (is.null(lut)) NULL else read_lut_arg(lut)
+  label_ids <- resolve_label_ids(arr, in_path, lut_df)
 
   aparc_nii <- tempfile(fileext = ".nii.gz")
   on.exit(unlink(aparc_nii), add = TRUE)
@@ -236,6 +248,8 @@ project_volume_anatomical <- function(
   arr_aparc <- as.array(aparc)
   storage.mode(arr_aparc) <- "integer"
 
+  check_registration_grid(registration, dim(arr_aparc))
+
   if (verbose) {
     cli::cli_alert_info(
       "Projecting {length(label_ids)} label{?s} onto \\
@@ -243,7 +257,7 @@ project_volume_anatomical <- function(
     )
   }
 
-  prob_stack <- project_label_probabilities(
+  am <- project_label_argmax(
     label_ids = label_ids,
     arr = arr,
     vol = vol,
@@ -253,11 +267,8 @@ project_volume_anatomical <- function(
     verbose = verbose
   )
 
-  argmax_idx <- max.col(prob_stack, ties.method = "first")
-  max_prob <- prob_stack[
-    cbind(seq_len(nrow(prob_stack)), argmax_idx)
-  ]
-  keep <- max_prob > threshold
+  argmax_idx <- am$argmax_idx
+  keep <- am$max_prob > threshold
 
   keep <- apply_cortex_protection(keep, arr_aparc, protect_cortex, verbose)
 
@@ -271,24 +282,18 @@ project_volume_anatomical <- function(
 
   output_file <- write_merged_volume(merged, aparc, output_file)
 
+  combined_lut <- build_anatomical_lut(merged, label_ids, id_offset, lut_df)
+
   if (verbose) {
     cli::cli_alert_success(
       "Wrote anatomical-context volume: {.path {output_file}} \\
-       (id_offset = {id_offset})"
+       (id_offset = {id_offset}, {nrow(combined_lut)} label{?s})"
     )
   }
 
-  if (is.null(lut)) {
-    attr(output_file, "id_offset") <- id_offset
-    return(invisible(output_file))
-  }
-
-  lut_df <- read_lut_arg(lut)
-  lut_df$idx <- as.integer(lut_df$idx) + id_offset
-
   invisible(list(
-    output_file = output_file,
-    lut = lut_df,
+    volume = output_file,
+    lut = combined_lut,
     id_offset = id_offset
   ))
 }
@@ -298,29 +303,30 @@ project_volume_anatomical <- function(
 #'
 #' Convenience wrapper that runs [coregister_volume()] followed by
 #' [project_volume_anatomical()] in one call, producing a merged volume
-#' on a FreeSurfer subject's `aparc+aseg` grid that's ready to feed
-#' [create_subcortical_from_volume()].
+#' on a FreeSurfer subject's `aparc+aseg` grid together with a matching
+#' colour table, ready to feed [create_subcortical_from_volume()].
 #'
 #' @inheritParams coregister_volume
 #' @inheritParams project_volume_anatomical
 #'
-#' @return Path to the merged anatomical-context volume (invisibly).
+#' @return Invisibly, the `list(volume, lut, id_offset)` returned by
+#'   [project_volume_anatomical()]. Pass it straight to
+#'   [create_subcortical_from_volume()], which unpacks `volume` and `lut`.
 #' @export
 #'
 #' @examples
 #' \dontrun{
 #' merged <- prepare_subcortical_anatomical(
 #'   input_volume = "shen_2mm_268_parcellation.nii.gz",
-#'   label_ids = subcortical_ids
+#'   lut = subcortical_lut
 #' )
 #' atlas <- create_subcortical_from_volume(
 #'   input_volume = merged,
-#'   input_lut = subcortical_lut
+#'   context = list(focus = "my-structures")
 #' )
 #' }
 prepare_subcortical_anatomical <- function(
   input_volume,
-  label_ids = NULL,
   lut = NULL,
   target_subject = "cvs_avg35_inMNI152",
   target_volume = "brain",
@@ -349,7 +355,6 @@ prepare_subcortical_anatomical <- function(
 
   project_volume_anatomical(
     input_volume = input_volume,
-    label_ids = label_ids,
     lut = lut,
     registration = lta,
     target_subject = target_subject,
@@ -398,20 +403,44 @@ validate_projection_args <- function(threshold, id_offset) {
   invisible(TRUE)
 }
 
+#' Resolve which atlas labels to project
+#'
+#' The labels come from `lut`'s `idx` (the colour table is the source of
+#' truth, as in the pre-projection builders), intersected with what's
+#' actually in the volume. With no `lut`, every non-zero label is used.
 #' @noRd
-resolve_label_ids <- function(label_ids, arr, in_path) {
-  if (is.null(label_ids)) {
-    label_ids <- sort(unique(as.integer(arr[arr != 0])))
+resolve_label_ids <- function(arr, in_path, lut = NULL) {
+  vol_ids <- sort(unique(as.integer(arr[arr != 0])))
+
+  if (is.null(lut)) {
+    if (!length(vol_ids)) {
+      cli::cli_abort("No labels found in {.path {in_path}}.")
+    }
+    return(vol_ids)
   }
-  label_ids <- as.integer(label_ids)
+
+  label_ids <- intersect(as.integer(lut$idx), vol_ids)
   if (!length(label_ids)) {
-    cli::cli_abort("No labels found in {.path {in_path}}.")
+    cli::cli_abort(c(
+      "None of the {nrow(lut)} {.arg lut} label{?s} are present in \\
+       {.path {in_path}}.",
+      "i" = "Check that {.arg lut} indices match the volume's labels."
+    ))
   }
   label_ids
 }
 
+#' Per-voxel argmax of resampled label probabilities, computed by streaming
+#'
+#' Resampling every label into one `n_voxels x n_labels` matrix is fatal at
+#' atlas scale (a 256^3 grid x 268 labels x 8 bytes is ~36 GB). Instead we
+#' keep only the running winner: two `n_voxels` vectors updated one label at a
+#' time, so peak memory is independent of the label count. Strict `>` makes
+#' the first label win ties, matching `max.col(ties.method = "first")`;
+#' voxels no label reaches keep `argmax_idx = 0` (never read, since `keep`
+#' is false there).
 #' @noRd
-project_label_probabilities <- function(
+project_label_argmax <- function(
   label_ids,
   arr,
   vol,
@@ -420,39 +449,134 @@ project_label_probabilities <- function(
   n_voxels,
   verbose
 ) {
-  prob_stack <- array(0, dim = c(n_voxels, length(label_ids)))
+  max_prob <- numeric(n_voxels)
+  argmax_idx <- integer(n_voxels)
   for (i in seq_along(label_ids)) {
-    id <- label_ids[i]
-    mov_tmp <- tempfile(fileext = ".nii.gz")
-    out_tmp <- tempfile(fileext = ".nii.gz")
-    mask_arr <- (arr == id) * 1.0
-    RNifti::writeNifti(RNifti::asNifti(mask_arr, reference = vol), mov_tmp)
-
-    cmd <- paste(
-      "mri_vol2vol",
-      "--mov",
-      shQuote(mov_tmp),
-      "--targ",
-      shQuote(aparc_mgz),
-      if (is.null(registration)) {
-        "--regheader"
-      } else {
-        paste(
-          "--reg",
-          shQuote(registration)
-        )
-      },
-      "--interp",
-      "trilin",
-      "--o",
-      shQuote(out_tmp)
+    prob_i <- resample_label_probability(
+      arr = arr,
+      id = label_ids[i],
+      vol = vol,
+      aparc_mgz = aparc_mgz,
+      registration = registration,
+      verbose = verbose
     )
-    run_cmd(cmd, verbose = max(0L, verbose - 1L))
-
-    prob_stack[, i] <- as.numeric(as.array(RNifti::readNifti(out_tmp)))
-    unlink(c(mov_tmp, out_tmp))
+    win <- prob_i > max_prob
+    max_prob[win] <- prob_i[win]
+    argmax_idx[win] <- i
   }
-  prob_stack
+  list(argmax_idx = argmax_idx, max_prob = max_prob)
+}
+
+#' Destination grid dimensions recorded in an LTA file
+#'
+#' `mri_coreg` stores the registration's destination ("dst") volume geometry
+#' in the LTA. Reusing that LTA against `aparc+aseg.mgz` is only valid if the
+#' two share a grid, so we read the dst `volume = a b c` dims to compare.
+#' Returns an integer length-3 vector, or `NULL` when the block isn't found
+#' (an unexpected LTA layout), in which case the caller skips the check.
+#' @noRd
+lta_dst_dims <- function(lta_path) {
+  lines <- readLines(lta_path, warn = FALSE)
+  dst_start <- grep("dst volume info", lines, fixed = TRUE)
+  if (!length(dst_start)) {
+    return(NULL)
+  }
+  tail_lines <- lines[dst_start[1]:length(lines)]
+  vol_line <- grep("^\\s*volume\\s*=", tail_lines, value = TRUE)
+  if (!length(vol_line)) {
+    return(NULL)
+  }
+  nums <- suppressWarnings(as.integer(
+    strsplit(trimws(sub(".*=", "", vol_line[1])), "\\s+")[[1]]
+  ))
+  if (length(nums) != 3L || anyNA(nums)) {
+    return(NULL)
+  }
+  nums
+}
+
+#' Abort when a reused LTA was registered to a grid unlike aparc+aseg
+#'
+#' The LTA from [coregister_volume()] is registered to the subject's
+#' `target_volume` (e.g. `brain.mgz`); reusing it to resample onto
+#' `aparc+aseg.mgz` assumes both sit on that subject's conformed grid. That
+#' holds for recon-all output, but catches the real footgun of passing an LTA
+#' from a different subject or resolution.
+#' @noRd
+check_registration_grid <- function(registration, aparc_dim) {
+  if (is.null(registration)) {
+    return(invisible(NULL))
+  }
+  dst_dim <- lta_dst_dims(registration)
+  if (is.null(dst_dim)) {
+    return(invisible(NULL))
+  }
+  aparc_dim <- as.integer(aparc_dim[1:3])
+  if (!identical(dst_dim, aparc_dim)) {
+    cli::cli_abort(c(
+      "Registration grid does not match the {.file aparc+aseg.mgz} grid.",
+      "x" = "LTA destination is {dst_dim[1]}x{dst_dim[2]}x{dst_dim[3]}, \\
+             aparc+aseg is {aparc_dim[1]}x{aparc_dim[2]}x{aparc_dim[3]}.",
+      "i" = "Reuse an LTA registered to the same {.arg target_subject} on its \\
+             conformed grid; re-run {.fn coregister_volume} if unsure."
+    ))
+  }
+  invisible(NULL)
+}
+
+#' Resample one label's binary mask onto the aparc+aseg grid (trilinear)
+#' @noRd
+resample_label_probability <- function(
+  arr,
+  id,
+  vol,
+  aparc_mgz,
+  registration,
+  verbose
+) {
+  mov_tmp <- tempfile(fileext = ".nii.gz")
+  out_tmp <- tempfile(fileext = ".nii.gz")
+  on.exit(unlink(c(mov_tmp, out_tmp)), add = TRUE)
+
+  mask_arr <- (arr == id) * 1.0
+  RNifti::writeNifti(RNifti::asNifti(mask_arr, reference = vol), mov_tmp)
+
+  cmd <- paste(
+    "mri_vol2vol",
+    "--mov",
+    shQuote(mov_tmp),
+    "--targ",
+    shQuote(aparc_mgz),
+    if (is.null(registration)) {
+      "--regheader"
+    } else {
+      paste(
+        "--reg",
+        shQuote(registration)
+      )
+    },
+    "--interp",
+    "trilin",
+    "--o",
+    shQuote(out_tmp)
+  )
+  run_cmd(cmd, verbose = max(0L, verbose - 1L))
+
+  as.numeric(as.array(RNifti::readNifti(out_tmp)))
+}
+
+#' FreeSurfer `aparc+aseg` cerebral white-matter labels
+#'
+#' Cerebral hemispheric white matter (`2`, `41`) plus the corpus callosum
+#' (`251:255`) — the interhemispheric commissure is cerebral white matter and
+#' sits directly against the deep-gray nuclei a subcortical atlas targets, so
+#' it shares their protection. Cerebellar white matter (`7`, `46`) is
+#' deliberately excluded: it belongs to a different structure, not the
+#' cerebral outline this guard preserves, and is handled downstream by
+#' [aseg_context()] / [aseg_hidden_labels()].
+#' @noRd
+cerebral_white_matter_labels <- function() {
+  c(2L, 41L, 251L, 252L, 253L, 254L, 255L)
 }
 
 #' @noRd
@@ -461,13 +585,14 @@ apply_cortex_protection <- function(keep, arr_aparc, protect_cortex, verbose) {
     return(keep)
   }
   arr_flat <- as.vector(arr_aparc)
+  # Standard aparc+aseg (DKT) cortical ribbon labels span 1000-2999.
   is_cortex <- arr_flat >= 1000 & arr_flat < 3000
-  is_cortical_wm <- arr_flat %in% c(2L, 41L)
-  keep <- keep & !is_cortex & !is_cortical_wm
+  is_cerebral_wm <- arr_flat %in% cerebral_white_matter_labels()
+  keep <- keep & !is_cortex & !is_cerebral_wm
   if (verbose) {
     cli::cli_alert_info(
       "Protected {sum(is_cortex)} cortex and \\
-       {sum(is_cortical_wm)} cortical-WM voxels from overwrite."
+       {sum(is_cerebral_wm)} cerebral-WM voxels from overwrite."
     )
   }
   keep
@@ -481,14 +606,9 @@ build_merged_volume <- function(
   label_ids,
   id_offset
 ) {
-  shifted_ids <- label_ids + id_offset
+  shifted_ids <- as.integer(label_ids) + id_offset
   merged <- arr_aparc
-  new_labels <- integer(length(merged))
-  new_labels[keep] <- shifted_ids[argmax_idx[keep]]
-  dim(new_labels) <- dim(merged)
-  for (id in shifted_ids) {
-    merged[new_labels == id] <- id
-  }
+  merged[keep] <- shifted_ids[argmax_idx[keep]]
   storage.mode(merged) <- "integer"
   merged
 }
@@ -543,6 +663,83 @@ write_brain_mask_from_mgz <- function(mgz_path, fileext = ".nii.gz") {
     verbose = 0L
   )
   write_brain_mask(tmp_nii, fileext = fileext)
+}
+
+#' Read the FreeSurfer colour table that names aparc+aseg context labels
+#' @noRd
+read_fs_color_lut <- function() {
+  fs_home <- freesurfer::fs_dir()
+  lut_path <- file.path(fs_home, "FreeSurferColorLUT.txt")
+  if (!nzchar(fs_home) || !file.exists(lut_path)) {
+    cli::cli_abort(c(
+      "FreeSurfer colour table not found: {.path {lut_path}}",
+      "i" = "Ensure {.envvar FREESURFER_HOME} points at a FreeSurfer install."
+    ))
+  }
+  ctab <- read_ctab(lut_path)
+  ctab$type <- NULL
+  ctab
+}
+
+#' Resolve the user-supplied atlas labels into a shifted colour table
+#'
+#' Returns colour-table rows for the projected labels with `idx` shifted by
+#' `id_offset` so they line up with the merged volume. When no `lut` is
+#' given, generic `region_XXXX` names and an HCL palette are generated.
+#' @noRd
+resolve_user_lut <- function(lut, label_ids, id_offset) {
+  label_ids <- as.integer(label_ids)
+  shifted_ids <- label_ids + id_offset
+
+  if (is.null(lut)) {
+    hex <- generate_region_palette(length(shifted_ids))
+    rgb_mat <- grDevices::col2rgb(hex)
+    return(data.frame(
+      idx = shifted_ids,
+      label = sprintf("region_%04d", label_ids),
+      R = as.integer(rgb_mat["red", ]),
+      G = as.integer(rgb_mat["green", ]),
+      B = as.integer(rgb_mat["blue", ]),
+      A = 0L,
+      stringsAsFactors = FALSE
+    ))
+  }
+
+  tbl <- read_lut_arg(lut)
+  if (!is_ctab(tbl)) {
+    cli::cli_abort(c(
+      "{.arg lut} must be a colour table with columns idx, label, R, G, B, A.",
+      "i" = "See {.fn is_ctab}."
+    ))
+  }
+  tbl <- tbl[as.integer(tbl$idx) %in% label_ids, , drop = FALSE]
+  tbl$idx <- as.integer(tbl$idx) + id_offset
+  tbl
+}
+
+#' Build the colour table that matches a merged anatomical-context volume
+#'
+#' Combines the FreeSurfer colour names for the aparc+aseg context labels
+#' surviving in `merged` with the user's atlas labels shifted by
+#' `id_offset`, trimmed to the labels actually present. The result lines up
+#' one-to-one with the merged volume so it can be passed straight to
+#' [create_subcortical_from_volume()].
+#' @noRd
+build_anatomical_lut <- function(merged, label_ids, id_offset, lut) {
+  shifted_ids <- as.integer(label_ids) + id_offset
+  present <- sort(unique(as.integer(merged)))
+  present <- present[present != 0L]
+  context_ids <- setdiff(present, shifted_ids)
+
+  context_lut <- read_fs_color_lut()
+  context_lut <- context_lut[context_lut$idx %in% context_ids, , drop = FALSE]
+
+  user_tbl <- resolve_user_lut(lut, label_ids, id_offset)
+
+  out <- lut_combine(context_lut, user_tbl)
+  out <- out[out$idx %in% present, , drop = FALSE]
+  rownames(out) <- NULL
+  out
 }
 
 #' @noRd

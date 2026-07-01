@@ -6,7 +6,6 @@
 \usage{
 prepare_subcortical_anatomical(
   input_volume,
-  label_ids = NULL,
   lut = NULL,
   target_subject = "cvs_avg35_inMNI152",
   target_volume = "brain",
@@ -26,13 +25,12 @@ prepare_subcortical_anatomical(
 \item{input_volume}{Path to the atlas volume to coregister, or an
 \code{RNifti} object.}
 
-\item{label_ids}{Integer vector of labels to project. Defaults to all
-non-zero labels in \code{input_volume}.}
-
 \item{lut}{Optional colour LUT (data frame with at least an \code{idx}
-column, or path to a TSV with \verb{idx, label, R, G, B, A}). If
-provided, returned alongside the volume with \code{idx} shifted by
-\code{id_offset} to match.}
+column, or path to a TSV with \verb{idx, label, R, G, B, A}). When
+provided, its \code{idx} (intersected with the volume) selects which labels
+to project, and it is returned alongside the volume with \code{idx} shifted
+by \code{id_offset} to match. With no \code{lut}, every non-zero label is
+projected. To project a subset, subset the \code{lut}.}
 
 \item{target_subject}{FreeSurfer subject name to register to. Defaults
 to \code{"cvs_avg35_inMNI152"}, which is in MNI152 1mm space.}
@@ -50,12 +48,14 @@ the merged volume to avoid collisions with FreeSurfer \code{aparc+aseg}
 labels. Defaults to \code{200L}. Set to \code{0L} if you have already remapped
 your IDs (or if you've verified there are no collisions).}
 
-\item{protect_cortex}{Logical. If \code{TRUE} (default), cortex voxels in
-\code{aparc+aseg} (aparc labels \code{1000-2999}, plus cortical white matter
-\code{2} and \code{41}) are never overwritten by user labels, even when argmax
-wins above \code{threshold}. This preserves the brain-outline geometry
-that the subcortical pipeline renders as context. Disable only if
-you intentionally want user labels to overwrite cortex.}
+\item{protect_cortex}{Logical. If \code{TRUE} (default), the cerebral outline
+in \code{aparc+aseg} is never overwritten by user labels even when argmax
+wins above \code{threshold}: the cortical ribbon (aparc labels \code{1000-2999})
+plus cerebral white matter (\code{2}, \code{41}) and the corpus callosum
+(\code{251-255}). This preserves the brain-outline geometry the subcortical
+pipeline renders as context. Cerebellar structures are not protected
+here (they are handled downstream by \code{\link[=aseg_context]{aseg_context()}}). Disable only if
+you intentionally want user labels to overwrite the cerebrum.}
 
 \item{dof}{Degrees of freedom for \code{mri_coreg} (\code{6}, \code{9}, or \code{12}).
 Defaults to \code{12} (rigid + per-axis scale + shear).}
@@ -83,23 +83,25 @@ value from \code{options("ggseg.extra.verbose")} or the \code{GGSEG_EXTRA_VERBOS
 environment variable.}
 }
 \value{
-Path to the merged anatomical-context volume (invisibly).
+Invisibly, the \code{list(volume, lut, id_offset)} returned by
+\code{\link[=project_volume_anatomical]{project_volume_anatomical()}}. Pass it straight to
+\code{\link[=create_subcortical_from_volume]{create_subcortical_from_volume()}}, which unpacks \code{volume} and \code{lut}.
 }
 \description{
 Convenience wrapper that runs \code{\link[=coregister_volume]{coregister_volume()}} followed by
 \code{\link[=project_volume_anatomical]{project_volume_anatomical()}} in one call, producing a merged volume
-on a FreeSurfer subject's \code{aparc+aseg} grid that's ready to feed
-\code{\link[=create_subcortical_from_volume]{create_subcortical_from_volume()}}.
+on a FreeSurfer subject's \code{aparc+aseg} grid together with a matching
+colour table, ready to feed \code{\link[=create_subcortical_from_volume]{create_subcortical_from_volume()}}.
 }
 \examples{
 \dontrun{
 merged <- prepare_subcortical_anatomical(
   input_volume = "shen_2mm_268_parcellation.nii.gz",
-  label_ids = subcortical_ids
+  lut = subcortical_lut
 )
 atlas <- create_subcortical_from_volume(
   input_volume = merged,
-  input_lut = subcortical_lut
+  context = list(focus = "my-structures")
 )
 }
 }

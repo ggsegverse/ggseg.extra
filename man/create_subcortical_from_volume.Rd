@@ -25,7 +25,11 @@ create_subcortical_from_volume(
 \arguments{
 \item{input_volume}{Path to the segmentation volume. Supports \code{.mgz}, \code{.nii},
 and \code{.nii.gz} formats. Typically this is \code{aseg.mgz} or a custom
-segmentation in the same space.}
+segmentation in the same space. May also be the
+\code{list(volume, lut, id_offset)} returned by
+\code{\link[=prepare_subcortical_anatomical]{prepare_subcortical_anatomical()}} /
+\code{\link[=project_volume_anatomical]{project_volume_anatomical()}}, in which case its \code{volume} and \code{lut}
+are used (an explicit \code{input_lut} takes precedence over the bundled one).}
 
 \item{input_lut}{Path to a FreeSurfer-style colour lookup table that maps
 label IDs to region names and colours (e.g., \code{FreeSurferColorLUT.txt}

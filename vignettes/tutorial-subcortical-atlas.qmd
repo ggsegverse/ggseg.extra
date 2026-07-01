@@ -388,13 +388,12 @@ pipeline can draw the cortical ribbon and white-matter interior as context:
 ``` r
 merged <- prepare_subcortical_anatomical(
   input_volume = "my_parcellation_2mm.nii.gz",
-  label_ids = subcortical_ids, # which atlas labels to keep
+  lut = my_lut, # its idx selects + names the labels to keep
   target_subject = "cvs_avg35_inMNI152" # subject to borrow context from
 )
 
 atlas <- create_subcortical_from_volume(
-  input_volume = merged,
-  input_lut = my_lut,
+  input_volume = merged, # carries both volume and matching colour table
   context = list(focus = "my-structures")
 )
 ```
@@ -402,14 +401,20 @@ atlas <- create_subcortical_from_volume(
 It chains `coregister_volume()` (wrapping `mri_coreg` to produce a reusable LTA
 transform) and `project_volume_anatomical()` (which resamples each label, takes
 the per-voxel argmax, shifts the atlas ids clear of the FreeSurfer ones, and
-protects the cortex). Call them separately to reuse one transform across
-several parcellations.
+protects the cortex). The result is a `list(volume, lut, id_offset)`: the merged
+volume *and* a colour table aligned to it --- FreeSurfer names for the
+`aparc+aseg` context labels plus your atlas labels at their shifted ids.
+`create_subcortical_from_volume()` unpacks both, so the context regions render
+with names `aseg_context()` recognises. Call the two steps separately to reuse
+one transform across several parcellations.
 
 ### Custom colour tables
 
 When an atlas adds labels FreeSurfer doesn't know about, `lut_add()` appends
 them to a colour table; `lut_combine()` merges several tables and warns on
-clashing indices:
+clashing indices. Build `my_lut` from your parcellation's own labels before
+passing it as `lut` above --- `prepare_subcortical_anatomical()` shifts it and
+folds in the FreeSurfer context names for you:
 
 ``` r
 my_lut <- read_ctab(color_lut) |>

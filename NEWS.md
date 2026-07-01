@@ -70,20 +70,31 @@ atlas <- create_cortical_from_annotation(...) |>
   trilinear interpolation onto the target `aparc+aseg` grid, takes the
   argmax across labels, and produces a merged volume that combines the
   source `aparc+aseg` (anatomical brain-outline context) with the user's
-  atlas labels.
+  atlas labels. It returns a `list(volume, lut, id_offset)`: the merged
+  volume _and_ a colour table aligned to it (FreeSurfer names for the
+  surviving `aparc+aseg` context labels plus the user's labels at their
+  shifted ids), so the context regions render with names `aseg_context()`
+  recognises.
 - New `prepare_subcortical_anatomical()` chains both in a single call,
-  producing a volume ready to feed `create_subcortical_from_volume()`.
+  returning the same `list(volume, lut, id_offset)`.
+  `create_subcortical_from_volume()` now accepts that list directly as
+  `input_volume`, unpacking the matching colour table for you (an explicit
+  `input_lut` still wins).
 - Removes the ~50 lines of per-atlas boilerplate previously hand-rolled in
   `ggsegShen` and `ggsegHO` build scripts.
 - `id_offset` parameter (default `200L`) shifts every input label ID in
   the merged volume so they don't collide with FreeSurfer `aparc+aseg`
   IDs (e.g. an atlas where `11` means "Putamen" while FS uses `11` for
-  "Caudate"). Optional `lut` argument is shifted in lock-step.
+  "Caudate"). The returned colour table is shifted in lock-step.
 - `protect_cortex` parameter (default `TRUE`) keeps `aparc+aseg` cortex
   voxels (labels 1000-2999) and cortical white matter (`2`, `41`)
   intact even when the user's argmax wins above `threshold` — this
   preserves the brain-outline geometry that the subcortical pipeline
   draws as anatomical context.
+- The per-voxel argmax streams the running winner across labels instead of
+  materialising an `n_voxels x n_labels` probability matrix, so projecting a
+  many-region atlas (e.g. Shen-268 onto a 256^3 grid) no longer needs tens
+  of gigabytes of memory.
 
 # ggseg.extra 1.9.9.9004
 
