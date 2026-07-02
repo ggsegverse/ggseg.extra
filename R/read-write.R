@@ -512,8 +512,9 @@ get_ctab <- function(color_lut) {
 #' lut_add(ct, idx = 20001:20002,
 #'         label = c("Left-Hippocampus-ant", "Left-Hippocampus-post"),
 #'         R = c(220, 60), G = c(190, 140), B = c(30, 200))
+# nolint start: object_name_linter.
 lut_add <- function(lut, idx, label, R, G, B, A = 0L) {
-  # nolint: object_name_linter, line_length_linter.
+  # nolint end
   if (!is_ctab(lut)) {
     cli::cli_abort("{.arg lut} must be a color table; see {.fn is_ctab}.")
   }
@@ -632,10 +633,9 @@ read_gifti_annotation <- function(gifti_files) {
   )
 
   if (!all(file.exists(gifti_files))) {
-    missing <- gifti_files[
-      # nolint: object_usage_linter.
-      !file.exists(gifti_files)
-    ]
+    # nolint start: object_usage_linter.
+    missing <- gifti_files[!file.exists(gifti_files)]
+    # nolint end
     cli::cli_abort(
       "GIFTI file{?s} not found: {.path {missing}}"
     )
@@ -808,10 +808,9 @@ read_neuromaps_annotation <- function(
   rlang::check_installed("gifti", reason = "to read GIFTI metric files")
 
   if (!all(file.exists(gifti_files))) {
-    missing <- gifti_files[
-      # nolint: object_usage_linter.
-      !file.exists(gifti_files)
-    ]
+    # nolint start: object_usage_linter.
+    missing <- gifti_files[!file.exists(gifti_files)]
+    # nolint end
     cli::cli_abort(
       "GIFTI file{?s} not found: {.path {missing}}"
     )

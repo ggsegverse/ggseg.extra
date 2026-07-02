@@ -161,12 +161,14 @@ cortical_region_snapshots <- function(
     stringsAsFactors = FALSE
   )
 
+  # nolint start: indentation_linter.
   region_grid <- region_grid[
     (grepl("^lh_", region_grid$region_label) &
       region_grid$hemisphere == "lh") |
       (grepl("^rh_", region_grid$region_label) &
         region_grid$hemisphere == "rh"),
   ]
+  # nolint end
 
   region_grid <- filter_visible_regions(region_grid, components$vertices_df)
 
@@ -328,6 +330,7 @@ labels_region_snapshots <- function(
     stringsAsFactors = FALSE
   )
 
+  # nolint start: indentation_linter.
   region_grid <- region_grid[
     (grepl("^lh_", region_grid$region_label) &
       region_grid$hemisphere == "lh") |
@@ -335,6 +338,7 @@ labels_region_snapshots <- function(
         region_grid$hemisphere == "rh") |
       (!grepl("^[lr]h_", region_grid$region_label)),
   ]
+  # nolint end
 
   region_grid <- filter_visible_regions(region_grid, components$vertices_df)
 

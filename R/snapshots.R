@@ -21,12 +21,14 @@
 #' @return 2D matrix ready for image() display
 #' @keywords internal
 extract_slice_2d <- function(vol, view, pos, hemi = NULL) {
+  # nolint start: commas_linter.
   slice <- switch(
     view,
     "axial" = vol[,, pos, drop = TRUE],
     "coronal" = vol[, pos, , drop = TRUE],
     "sagittal" = vol[pos, , , drop = TRUE]
   )
+  # nolint end
 
   if (is.null(slice) || length(slice) == 0) {
     return(NULL)
@@ -81,12 +83,14 @@ volume_projection <- function(
     )
   }
 
+  # nolint start: commas_linter.
   sub_vol <- switch(
     view,
     "axial" = vol[,, start:end, drop = FALSE],
     "coronal" = vol[, start:end, , drop = FALSE],
     "sagittal" = vol[start:end, , , drop = FALSE]
   )
+  # nolint end
 
   proj <- switch(
     view,
