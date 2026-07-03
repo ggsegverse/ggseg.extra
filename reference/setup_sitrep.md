@@ -39,7 +39,7 @@ setup_sitrep()
 #> skip_existing: TRUE
 #> tolerance: 1
 #> smoothness: 5
-#> output_dir: /tmp/Rtmp4QdZB8
+#> output_dir: /tmp/Rtmp4FV9Ba
 #> 
 #> ✖ Missing requirements for atlas creation
 #> ℹ Run `setup_sitrep("full")` for details
@@ -89,7 +89,7 @@ setup_sitrep("full")
 #>   skip_existing: TRUE
 #>   tolerance: 1
 #>   smoothness: 5
-#>   output_dir: /tmp/Rtmp4QdZB8
+#>   output_dir: /tmp/Rtmp4FV9Ba
 #> 
 #> ℹ Set via `options(ggseg.extra.<name> = value)` or environment variables
 #>   `GGSEG_EXTRA_<NAME>`
