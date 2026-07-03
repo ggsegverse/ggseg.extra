@@ -29,6 +29,7 @@ look for the ggseg icon. Or call
 directly:
 
 ``` r
+
 ggseg.extra::setup_atlas_repo("ggsegMyatlas", "myatlas")
 ```
 
@@ -63,6 +64,7 @@ The pattern looks like this:
 **`R/data.R`** – the exported accessor function:
 
 ``` r
+
 #' My Atlas
 #'
 #' @references
@@ -77,6 +79,7 @@ myatlas <- function() .myatlas
 **`data-raw/create-atlas.R`** – saves the atlas as internal data:
 
 ``` r
+
 .myatlas <- myatlas
 usethis::use_data(.myatlas, internal = TRUE, overwrite = TRUE, compress = "xz")
 ```
@@ -101,6 +104,7 @@ Edit `R/data.R` to describe your atlas. Pay particular attention to:
 After editing, regenerate documentation:
 
 ``` r
+
 devtools::document()
 ```
 
@@ -109,6 +113,7 @@ devtools::document()
 Once data is saved and documentation is updated, run the tests:
 
 ``` r
+
 devtools::test()
 ```
 
@@ -133,6 +138,7 @@ If your package contains multiple atlases (e.g. `yeo7` and `yeo17`),
 create one accessor function per atlas:
 
 ``` r
+
 #' Yeo 7-Network Atlas
 #' @return A [ggseg.formats::ggseg_atlas] object.
 #' @export
@@ -149,6 +155,7 @@ yeo17 <- function() .yeo17
 Save all objects together in one call:
 
 ``` r
+
 .yeo7 <- yeo7
 .yeo17 <- yeo17
 usethis::use_data(.yeo7, .yeo17, internal = TRUE, overwrite = TRUE, compress = "xz")
@@ -159,6 +166,7 @@ usethis::use_data(.yeo7, .yeo17, internal = TRUE, overwrite = TRUE, compress = "
 Once all tests pass, run package checks:
 
 ``` r
+
 devtools::check()
 ```
 
@@ -241,12 +249,14 @@ appears within an hour at
 Users can then install your atlas with:
 
 ``` r
+
 install.packages("yourpackage", repos = "https://ggsegverse.r-universe.dev")
 ```
 
 Or use the ggseg.extra helper:
 
 ``` r
+
 ggseg_atlas_repos("yourpackage")
 install_ggseg_atlas("yourpackage")
 ```

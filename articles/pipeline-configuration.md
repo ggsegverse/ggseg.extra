@@ -20,13 +20,13 @@ specific calls.
 
 ## Available options
 
-| Parameter       | R Option                    | Environment Variable        | Default |
-|-----------------|-----------------------------|-----------------------------|---------|
-| `verbose`       | `ggseg.extra.verbose`       | `GGSEG_EXTRA_VERBOSE`       | `TRUE`  |
-| `cleanup`       | `ggseg.extra.cleanup`       | `GGSEG_EXTRA_CLEANUP`       | `TRUE`  |
-| `skip_existing` | `ggseg.extra.skip_existing` | `GGSEG_EXTRA_SKIP_EXISTING` | `TRUE`  |
-| `tolerance`     | `ggseg.extra.tolerance`     | `GGSEG_EXTRA_TOLERANCE`     | `0.5`   |
-| `smoothness`    | `ggseg.extra.smoothness`    | `GGSEG_EXTRA_SMOOTHNESS`    | `5`     |
+| Parameter | R Option | Environment Variable | Default |
+|----|----|----|----|
+| `verbose` | `ggseg.extra.verbose` | `GGSEG_EXTRA_VERBOSE` | `TRUE` |
+| `cleanup` | `ggseg.extra.cleanup` | `GGSEG_EXTRA_CLEANUP` | `TRUE` |
+| `skip_existing` | `ggseg.extra.skip_existing` | `GGSEG_EXTRA_SKIP_EXISTING` | `TRUE` |
+| `tolerance` | `ggseg.extra.tolerance` | `GGSEG_EXTRA_TOLERANCE` | `0.5` |
+| `smoothness` | `ggseg.extra.smoothness` | `GGSEG_EXTRA_SMOOTHNESS` | `5` |
 
 Note: `smoothness` applies only to subcortical and tract pipelines.
 Cortical atlases use direct mesh projection and do not require
@@ -38,6 +38,7 @@ Use [`options()`](https://rdrr.io/r/base/options.html) to set defaults
 for your R session:
 
 ``` r
+
 options(
   ggseg.extra.tolerance = 0.5,
   ggseg.extra.cleanup = FALSE
@@ -55,6 +56,7 @@ The `verbose` parameter controls progress messages during pipeline
 execution.
 
 ``` r
+
 options(ggseg.extra.verbose = FALSE)
 
 Sys.setenv(GGSEG_EXTRA_VERBOSE = "false")
@@ -66,6 +68,7 @@ The `cleanup` parameter controls whether intermediate files are removed
 after pipeline completion. Set it to `FALSE` to keep them for debugging:
 
 ``` r
+
 options(ggseg.extra.cleanup = FALSE)
 
 atlas <- create_subcortical_from_volume(
@@ -80,6 +83,7 @@ The `skip_existing` parameter lets you resume interrupted pipeline runs
 by reusing existing intermediate files:
 
 ``` r
+
 options(ggseg.extra.skip_existing = FALSE)
 
 options(ggseg.extra.skip_existing = TRUE)
@@ -95,6 +99,7 @@ smoothing of contour boundaries. Higher smoothness means rounder region
 boundaries.
 
 ``` r
+
 options(ggseg.extra.tolerance = 0.5)
 
 # smoothness only applies to subcortical/tract pipelines
@@ -133,6 +138,7 @@ ENV GGSEG_EXTRA_CLEANUP=true
 Explicit arguments always win:
 
 ``` r
+
 options(ggseg.extra.cleanup = TRUE)
 
 atlas <- create_cortical_from_annotation(
@@ -146,6 +152,7 @@ atlas <- create_cortical_from_annotation(
 ### Development and debugging
 
 ``` r
+
 options(
   ggseg.extra.verbose = TRUE,
   ggseg.extra.cleanup = FALSE,
@@ -156,6 +163,7 @@ options(
 ### Production and CI
 
 ``` r
+
 options(
   ggseg.extra.verbose = FALSE,
   ggseg.extra.cleanup = TRUE,
@@ -169,6 +177,7 @@ For cortical atlases, adjusting `tolerance` is the main tuning knob. Use
 0 for maximum mesh fidelity, or higher values for smaller file sizes:
 
 ``` r
+
 annot_files <- c("lh.myatlas.annot", "rh.myatlas.annot")
 
 # High fidelity (no simplification)

@@ -5,14 +5,14 @@ atlases may require external software depending on the pipeline.
 
 ## What each pipeline needs
 
-| Pipeline                          | R packages                                                                      | System tools                      |
-|-----------------------------------|---------------------------------------------------------------------------------|-----------------------------------|
-| **Cortical** (annotation, labels) | `freesurferformats`                                                             | None                              |
-| **Cortical** (neuromaps volume)   | `freesurfer`, `neuromapr`                                                       | FreeSurfer                        |
-| **Subcortical**                   | `freesurfer`, `magick`, `chromote`, `htmlwidgets`, `terra`, `smoothr`           | FreeSurfer, ImageMagick           |
-| **Whole-brain**                   | `freesurfer`, `RNifti`, `magick`, `chromote`, `htmlwidgets`, `terra`, `smoothr` | FreeSurfer, ImageMagick           |
-| **Tract**                         | `RNifti`, `Rvcg`                                                                | None                              |
-| **GIFTI / CIFTI**                 | `gifti` or `ciftiTools`                                                         | Connectome Workbench (CIFTI only) |
+| Pipeline | R packages | System tools |
+|----|----|----|
+| **Cortical** (annotation, labels) | `freesurferformats` | None |
+| **Cortical** (neuromaps volume) | `freesurfer`, `neuromapr` | FreeSurfer |
+| **Subcortical** | `freesurfer`, `magick`, `chromote`, `htmlwidgets`, `terra`, `smoothr` | FreeSurfer, ImageMagick |
+| **Whole-brain** | `freesurfer`, `RNifti`, `magick`, `chromote`, `htmlwidgets`, `terra`, `smoothr` | FreeSurfer, ImageMagick |
+| **Tract** | `RNifti`, `Rvcg` | None |
+| **GIFTI / CIFTI** | `gifti` or `ciftiTools` | Connectome Workbench (CIFTI only) |
 
 The cortical mesh-projection pipeline is the lightest — it runs in
 seconds with no system tools and minimal R dependencies. All heavier
@@ -35,6 +35,7 @@ On macOS, you also need:
 Verify your installation:
 
 ``` r
+
 freesurfer::fs_dir()
 ```
 
@@ -74,6 +75,7 @@ To enable parallel processing, set up a `future` plan before running
 atlas creation functions:
 
 ``` r
+
 library(future)
 
 plan(multisession, workers = 4)
@@ -92,6 +94,7 @@ automatically switch to `multisession` and warn you.
 To return to sequential processing:
 
 ``` r
+
 plan(sequential)
 ```
 
@@ -104,6 +107,7 @@ disabled by default.
 To enable progress bars:
 
 ``` r
+
 library(progressr)
 
 handlers("cli")
@@ -118,5 +122,6 @@ step completes. It works with both sequential and parallel execution.
 Run the setup report to verify everything is in place:
 
 ``` r
+
 setup_sitrep()
 ```

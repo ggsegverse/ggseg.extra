@@ -19,12 +19,14 @@ This tutorial recreates the aseg atlas — the same pipeline behind
 - Chrome/Chromium for 3D screenshots
 
 ``` r
+
 library(ggseg.extra)
 library(ggseg.formats)
 library(dplyr)
 ```
 
 ``` r
+
 fs_dir <- freesurfer::fs_dir()
 subjects_dir <- file.path(fs_dir, "subjects")
 
@@ -44,6 +46,7 @@ tessellates each labelled region into a 3D mesh, then creates 2D
 projection views:
 
 ``` r
+
 aseg_raw <- create_subcortical_from_volume(
   input_volume = aseg_volume,
   input_lut = color_lut,
@@ -131,6 +134,7 @@ ventricles, CSF. For a subcortical atlas, most of these are noise.
 Remove them:
 
 ``` r
+
 aseg_raw <- aseg_raw |>
   atlas_region_remove("White-Matter", match_on = "label") |>
   atlas_region_remove("WM-hypointensities", match_on = "label") |>
@@ -150,6 +154,7 @@ subcortical structures sit relative to the brain surface without
 competing for colour:
 
 ``` r
+
 aseg_raw <- aseg_raw |>
   atlas_region_contextual("Cortex", match_on = "label")
 ```
@@ -160,6 +165,7 @@ Not all projection views are equally useful. Keep the ones that show
 your structures best:
 
 ``` r
+
 aseg_raw <- aseg_raw |>
   atlas_view_keep("axial_3|axial_5|coronal_2|coronal_3|coronal_4|sagittal")
 ```
@@ -169,6 +175,7 @@ aseg_raw <- aseg_raw |>
 Gather views into a compact arrangement:
 
 ``` r
+
 aseg_raw <- aseg_raw |>
   atlas_view_gather()
 ```
@@ -179,6 +186,7 @@ The raw labels are technical identifiers like “Left-Thalamus-Proper.”
 Join human-readable names and structural groupings:
 
 ``` r
+
 normalize_region <- function(x) {
   ifelse(
     is.na(x),
@@ -227,6 +235,7 @@ core_with_meta <- aseg_raw$core |>
 Construct the final atlas from modified components:
 
 ``` r
+
 aseg <- ggseg_atlas(
   atlas = aseg_raw$atlas,
   type = aseg_raw$type,
@@ -280,6 +289,7 @@ aseg
 ```
 
 ``` r
+
 atlas_labels(aseg)
 #>  [1] "Brain-Stem"          
 #>  [2] "CC_Anterior"         
@@ -318,6 +328,7 @@ table(aseg$core$structure)
 ```
 
 ``` r
+
 plot(aseg)
 ```
 

@@ -39,7 +39,7 @@ setup_sitrep()
 #> skip_existing: TRUE
 #> tolerance: 1
 #> smoothness: 5
-#> output_dir: /tmp/RtmpDA14YL
+#> output_dir: /tmp/RtmpuGGNW1
 #> 
 #> ✖ Missing requirements for atlas creation
 #> ℹ Run `setup_sitrep("full")` for details
@@ -72,7 +72,7 @@ setup_sitrep("full")
 #> 
 #> ── System Information 
 #> • Operating System: "x86_64-pc-linux-gnu"
-#> • R Version: "4.5.3 (2026-03-11)"
+#> • R Version: "4.6.1 (2026-06-24)"
 #> • Shell: "/bin/bash"
 #> 
 #> ── Testing R and FreeSurfer Communication 
@@ -89,7 +89,7 @@ setup_sitrep("full")
 #>   skip_existing: TRUE
 #>   tolerance: 1
 #>   smoothness: 5
-#>   output_dir: /tmp/RtmpDA14YL
+#>   output_dir: /tmp/RtmpuGGNW1
 #> 
 #> ℹ Set via `options(ggseg.extra.<name> = value)` or environment variables
 #>   `GGSEG_EXTRA_<NAME>`

@@ -17,6 +17,7 @@ are native to ggseg.extra.
 Before changing anything, understand what you have:
 
 ``` r
+
 library(ggseg.formats)
 
 atlas_labels(atlas)
@@ -49,6 +50,7 @@ need.
 matches against labels by default:
 
 ``` r
+
 atlas <- atlas |>
   atlas_region_remove("White-Matter") |>
   atlas_region_remove("WM-hypointensities") |>
@@ -67,6 +69,7 @@ This removes the region from `$core`, `$palette`, and all geometry data.
 The inverse operation — keep only regions that match:
 
 ``` r
+
 atlas <- atlas |>
   atlas_region_keep("Thalamus|Caudate|Putamen|Pallidum")
 ```
@@ -85,6 +88,7 @@ keeps the geometry in `$data$sf` but removes the region from `$core`.
 The region renders as an outline, not a filled polygon:
 
 ``` r
+
 atlas <- atlas |>
   atlas_region_contextual("cortex", match_on = "label") |>
   atlas_region_contextual("unknown", match_on = "label") |>
@@ -120,6 +124,7 @@ are rarely publication-ready.
 cleans up the `region` column without touching `label`:
 
 ``` r
+
 atlas <- atlas |>
   atlas_region_rename("Left-", "", match_on = "region") |>
   atlas_region_rename("Right-", "", match_on = "region") |>
@@ -137,6 +142,7 @@ individual parcels. Adding grouping columns lets users facet plots by
 system, color by network, or filter to structures they care about:
 
 ``` r
+
 metadata <- data.frame(
   region = c("thalamus", "caudate", "putamen", "hippocampus", "amygdala"),
   structure = c("diencephalon", "basal ganglia", "basal ganglia",
@@ -168,6 +174,7 @@ views you see as necessary and provide the best general coverage.
 ### Keeping specific views
 
 ``` r
+
 atlas <- atlas |>
   atlas_view_keep("axial_3|axial_5|coronal_2|sagittal")
 ```
@@ -175,6 +182,7 @@ atlas <- atlas |>
 ### Removing views
 
 ``` r
+
 atlas <- atlas |>
   atlas_view_remove("axial_1|axial_2")
 ```
@@ -182,6 +190,7 @@ atlas <- atlas |>
 ### Reordering views
 
 ``` r
+
 atlas <- atlas |>
   atlas_view_reorder(
     c("sagittal_left", "sagittal_right", "coronal_3", "axial_4")
@@ -194,6 +203,7 @@ After filtering views, some regions may appear as tiny slivers that add
 clutter without information. Remove them by minimum area:
 
 ``` r
+
 atlas <- atlas |>
   atlas_view_remove_region_small(
     min_area = 500,
@@ -212,6 +222,7 @@ Raw atlas views often have large gaps between panels.
 repositions views into a compact layout:
 
 ``` r
+
 atlas <- atlas |>
   atlas_view_gather()
 ```
@@ -239,6 +250,7 @@ have staircase artefacts.
 applies kernel smoothing to the sf geometry:
 
 ``` r
+
 atlas <- atlas |>
   atlas_smooth(smoothness = 5)
 ```
@@ -255,6 +267,7 @@ benefit at typical plot resolutions.
 reduces vertices using Douglas-Peucker simplification:
 
 ``` r
+
 atlas <- atlas |>
   atlas_simplify(tolerance = 0.5)
 ```
@@ -269,6 +282,7 @@ These compose naturally in a pipe. Smooth first to remove noise, then
 simplify to drop redundant points:
 
 ``` r
+
 atlas <- atlas |>
   atlas_smooth(smoothness = 8) |>
   atlas_simplify(tolerance = 1)
@@ -285,6 +299,7 @@ After modifying components directly (e.g., editing `$core` by hand),
 reconstruct the atlas to ensure consistency:
 
 ``` r
+
 atlas <- ggseg_atlas(
   atlas = atlas$atlas,
   type = atlas$type,
@@ -302,6 +317,7 @@ consistent.
 A typical post-processing pipeline for a subcortical atlas:
 
 ``` r
+
 atlas <- atlas_raw |>
   atlas_region_remove("White-Matter", match_on = "label") |>
   atlas_region_remove("-Ventricle", match_on = "label") |>

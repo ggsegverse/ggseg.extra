@@ -4,16 +4,16 @@ ggseg.extra provides pipelines for creating brain atlas data sets
 compatible with the ggseg and ggseg3d plotting packages. It supports
 multiple neuroimaging input formats:
 
-| Function                                                                                                                     | Input                                     | Use case                                       |
-|------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------|------------------------------------------------|
-| [`create_cortical_from_annotation()`](https://ggsegverse.github.io/ggseg.extra/reference/create_cortical_from_annotation.md) | FreeSurfer `.annot` files                 | Cortical parcellations (DK, DKT, Yeo networks) |
-| [`create_cortical_from_labels()`](https://ggsegverse.github.io/ggseg.extra/reference/create_cortical_from_labels.md)         | Individual `.label` files                 | Custom region combinations                     |
-| [`create_cortical_from_gifti()`](https://ggsegverse.github.io/ggseg.extra/reference/create_cortical_from_gifti.md)           | GIFTI `.label.gii` files                  | Cortical parcellations in GIFTI format         |
-| [`create_cortical_from_cifti()`](https://ggsegverse.github.io/ggseg.extra/reference/create_cortical_from_cifti.md)           | CIFTI `.dlabel.nii` files                 | HCP-style cortical parcellations               |
-| [`create_cortical_from_neuromaps()`](https://ggsegverse.github.io/ggseg.extra/reference/create_cortical_from_neuromaps.md)   | Neuromaps `.func.gii` or `.nii` files     | Brain maps and parcellations from neuromaps    |
-| [`create_subcortical_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_subcortical_from_volume.md)   | Volumetric segmentation                   | Subcortical structures (thalamus, amygdala)    |
-| [`create_wholebrain_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_wholebrain_from_volume.md)     | Volumetric parcellation with colour table | Combined cortical + subcortical atlases        |
-| [`create_tract_from_tractography()`](https://ggsegverse.github.io/ggseg.extra/reference/create_tract_from_tractography.md)   | Tractography files (`.trk`, `.tck`)       | White matter tracts                            |
+| Function | Input | Use case |
+|----|----|----|
+| [`create_cortical_from_annotation()`](https://ggsegverse.github.io/ggseg.extra/reference/create_cortical_from_annotation.md) | FreeSurfer `.annot` files | Cortical parcellations (DK, DKT, Yeo networks) |
+| [`create_cortical_from_labels()`](https://ggsegverse.github.io/ggseg.extra/reference/create_cortical_from_labels.md) | Individual `.label` files | Custom region combinations |
+| [`create_cortical_from_gifti()`](https://ggsegverse.github.io/ggseg.extra/reference/create_cortical_from_gifti.md) | GIFTI `.label.gii` files | Cortical parcellations in GIFTI format |
+| [`create_cortical_from_cifti()`](https://ggsegverse.github.io/ggseg.extra/reference/create_cortical_from_cifti.md) | CIFTI `.dlabel.nii` files | HCP-style cortical parcellations |
+| [`create_cortical_from_neuromaps()`](https://ggsegverse.github.io/ggseg.extra/reference/create_cortical_from_neuromaps.md) | Neuromaps `.func.gii` or `.nii` files | Brain maps and parcellations from neuromaps |
+| [`create_subcortical_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_subcortical_from_volume.md) | Volumetric segmentation | Subcortical structures (thalamus, amygdala) |
+| [`create_wholebrain_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_wholebrain_from_volume.md) | Volumetric parcellation with colour table | Combined cortical + subcortical atlases |
+| [`create_tract_from_tractography()`](https://ggsegverse.github.io/ggseg.extra/reference/create_tract_from_tractography.md) | Tractography files (`.trk`, `.tck`) | White matter tracts |
 
 All functions produce a `ggseg_atlas` object that works with both ggseg
 (2D) and ggseg3d (3D).
@@ -37,6 +37,7 @@ triangles directly to 2D polygons via orthographic projection. This
 completes in seconds and needs no external rendering dependencies:
 
 ``` r
+
 annot_files <- file.path(
   freesurfer::fs_dir(),
   "subjects",

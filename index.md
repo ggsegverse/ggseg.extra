@@ -9,6 +9,7 @@ compatible with the [ggseg](https://ggsegverse.github.io/ggseg/) and
 Install from CRAN:
 
 ``` r
+
 install.packages("ggseg.extra")
 ```
 
@@ -16,6 +17,7 @@ Or install the development version from
 [r-universe](https://ggsegverse.r-universe.dev/#builds):
 
 ``` r
+
 options(
   repos = c(
     ggsegverse = "https://ggsegverse.r-universe.dev",
@@ -28,6 +30,7 @@ install.packages("ggseg.extra")
 Or from GitHub:
 
 ``` r
+
 # install.packages("remotes")
 remotes::install_github("ggsegverse/ggseg.extra")
 ```
@@ -40,6 +43,7 @@ merged](https://github.com/muschellij2/freesurfer/pull/28), install
 from:
 
 ``` r
+
 pak::pak("drmowinckels/freesurfer@refactor")
 ```
 

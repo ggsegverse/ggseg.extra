@@ -19,6 +19,7 @@ This tutorial recreates the TRACULA atlas — the same pipeline behind
 - Chrome/Chromium for 3D screenshots
 
 ``` r
+
 library(ggseg.extra)
 library(ggseg.formats)
 library(dplyr)
@@ -30,6 +31,7 @@ TRACULA training data ships with FreeSurfer in the `trctrain/`
 directory. Each `.trk` file contains streamlines for one tract:
 
 ``` r
+
 fs_dir <- freesurfer::fs_dir()
 tract_dir <- file.path(fs_dir, "trctrain", "hcp", "mgh_1017", "mni")
 
@@ -51,6 +53,7 @@ tube mesh around it. The `input_aseg` provides cortex context for 2D
 views:
 
 ``` r
+
 tracula_raw <- create_tract_from_tractography(
   input_tracts = tract_files,
   input_aseg = aseg_file,
@@ -142,6 +145,7 @@ Key parameters:
 Keep the projections that show your tracts best:
 
 ``` r
+
 tracula_raw <- tracula_raw |>
   atlas_view_keep(c(
     "axial_2",
@@ -157,6 +161,7 @@ tracula_raw <- tracula_raw |>
 Add cortex as a background outline:
 
 ``` r
+
 tracula_raw <- tracula_raw |>
   atlas_region_contextual("cortex")
 ```
@@ -167,6 +172,7 @@ After view selection, some tracts may appear as tiny slivers in certain
 views. Remove fragments below a minimum area:
 
 ``` r
+
 tracula_raw <- tracula_raw |>
   atlas_view_remove_small(
     min_area = 500,
@@ -188,6 +194,7 @@ Join tract group information — which tracts are projection fibres, which
 are commissural, which are association:
 
 ``` r
+
 normalize_label <- function(x) {
   x |>
     basename() |>
@@ -243,6 +250,7 @@ core_with_meta <- tracula_raw$core |>
 ## Rebuilding and saving
 
 ``` r
+
 tracula <- ggseg_atlas(
   atlas = "tracula",
   type = "tract",
@@ -312,6 +320,7 @@ tracula
 ```
 
 ``` r
+
 atlas_labels(tracula)
 #>  [1] "acomm.bbr.prep"      
 #>  [2] "cc.bodyc.bbr.prep"   
@@ -363,6 +372,7 @@ table(tracula$core$group, useNA = "ifany")
 ```
 
 ``` r
+
 plot(tracula) +
   ggplot2::scale_fill_viridis_d(na.value = "grey80")
 #> Scale for fill is already present.

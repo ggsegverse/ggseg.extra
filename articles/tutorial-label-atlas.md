@@ -25,6 +25,7 @@ files conventionally include hemisphere in the filename:
 `lh.motor.label` or `rh.motor.label`.
 
 ``` r
+
 library(ggseg.extra)
 library(ggseg.formats)
 library(dplyr)
@@ -35,6 +36,7 @@ library(dplyr)
 Collect your label files and create an atlas:
 
 ``` r
+
 label_dir <- file.path(
   freesurfer::fs_dir(), "subjects", "fsaverage5", "label"
 )
@@ -57,6 +59,7 @@ head(basename(ba_labels))
 ```
 
 ``` r
+
 ba_atlas <- create_cortical_from_labels(
   label_files = ba_labels,
   atlas_name = "brodmann"
@@ -145,6 +148,7 @@ Override auto-detected names when the filenames don’t produce readable
 labels:
 
 ``` r
+
 atlas <- create_cortical_from_labels(
   label_files = c(
     "lh.motor.label", "rh.motor.label",
@@ -166,6 +170,7 @@ same region name — the hemisphere column distinguishes them.
 For 2D plots, enable the full pipeline:
 
 ``` r
+
 ba_atlas <- create_cortical_from_labels(
   label_files = ba_labels,
   atlas_name = "custom"
@@ -255,6 +260,7 @@ contours, and converts them to sf polygons.
 Clean up region names:
 
 ``` r
+
 ba_atlas <- ba_atlas |>
   atlas_region_contextual("cortex", match_on = "label") |>
   atlas_region_contextual("unknown", match_on = "label") |>
@@ -276,6 +282,7 @@ ba_atlas <- ggseg_atlas(
 ```
 
 ``` r
+
 plot(ba_atlas) +
   ggplot2::scale_fill_viridis_d(na.value = "grey80")
 #> Scale for fill is already present.
@@ -295,6 +302,7 @@ FreeSurfer ships with several sets of label files. Brodmann areas are
 the most common:
 
 ``` r
+
 label_dir <- file.path(
   freesurfer::fs_dir(), "subjects", "fsaverage5", "label"
 )
@@ -315,6 +323,7 @@ different analyses or atlases. Each label file is independent, so you
 can combine freely:
 
 ``` r
+
 my_labels <- c(
   "lh.BA1_exvivo.label",
   "lh.BA2_exvivo.label",

@@ -5,6 +5,7 @@ vignette explains how to convert them to the current `ggseg_atlas`
 format.
 
 ``` r
+
 library(ggseg.formats)
 library(ggseg)
 library(ggseg3d)
@@ -36,6 +37,7 @@ to convert old atlas objects:
 ### From a ggseg3d_atlas only
 
 ``` r
+
 unified <- convert_legacy_brain_atlas(atlas_3d = old_atlas_3d)
 
 ggseg3d(atlas = unified)
@@ -44,6 +46,7 @@ ggseg3d(atlas = unified)
 ### From both 2D and 3D objects
 
 ``` r
+
 unified <- convert_legacy_brain_atlas(
   atlas_2d = old_atlas,
   atlas_3d = old_atlas_3d
@@ -57,6 +60,7 @@ ggseg3d(atlas = unified)
 ### From a 2D ggseg_atlas only
 
 ``` r
+
 unified <- convert_legacy_brain_atlas(atlas_2d = old_atlas)
 
 ggplot() + geom_brain(atlas = unified)
@@ -70,6 +74,7 @@ The function auto-detects atlas type from the structure. Override if
 needed:
 
 ``` r
+
 unified <- convert_legacy_brain_atlas(
   atlas_2d = old_atlas,
   atlas_3d = old_atlas_3d,
@@ -86,6 +91,7 @@ When converting many atlas packages, load the `.rda` files into isolated
 environments to avoid name collisions:
 
 ``` r
+
 env <- new.env()
 load("data/my_atlas.rda", envir = env)
 atlas_2d <- env[["my_atlas"]]
@@ -102,6 +108,7 @@ Always save with `compress = "xz"` for significant file size reduction.
 After converting, verify the result:
 
 ``` r
+
 stopifnot(is_ggseg_atlas(result))
 
 nrow(result$core)
@@ -166,6 +173,7 @@ If a converted atlas has no vertices or meshes,
 will error. Either omit the 3D test entirely or guard it:
 
 ``` r
+
 it("renders with ggseg3d", {
   skip_if_not_installed("ggseg3d")
   skip_if(is.null(my_atlas$geometry$vertices), "No 3D data")

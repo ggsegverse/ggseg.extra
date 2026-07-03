@@ -28,6 +28,7 @@ workflow.
   collection 262](https://neurovault.org/collections/262/))
 
 ``` r
+
 library(ggseg.extra)
 library(RNifti)
 library(dplyr)
@@ -50,6 +51,7 @@ doesn’t collide with FreeSurfer’s reserved labels. Adding 200 to every
 subcortical ID puts them safely out of the way:
 
 ``` r
+
 vol <- readNifti("data-raw/HarvardOxford-cort_and_sub-maxprob-thr25-1mm.nii.gz")
 arr <- as.array(vol)
 
@@ -82,6 +84,7 @@ documentation for the full priority system), but the most reliable is a
 `type` column in the lookup table:
 
 ``` r
+
 subcortical_labels <- c(
   "Left Lateral Ventricle", "Left Thalamus", "Left Caudate",
   "Left Putamen", "Left Pallidum", "Brain-Stem",
@@ -163,6 +166,7 @@ volume onto the surface and classify labels, then inspect the result
 before committing to the expensive steps:
 
 ``` r
+
 result <- create_wholebrain_from_volume(
   input_volume = remapped_path,
   input_lut = lut,
@@ -193,6 +197,7 @@ Once the split looks right, run the full pipeline.
 ## Running the full pipeline
 
 ``` r
+
 library(progressr)
 library(future)
 
@@ -273,6 +278,7 @@ The raw atlas usually needs cleanup. Smooth the contours and reduce
 vertex count for faster plotting:
 
 ``` r
+
 ho_cort <- ho$cortical |>
   atlas_smooth(smoothness = 5) |>
   atlas_simplify(tolerance = 0.5)
@@ -294,6 +300,7 @@ You can also remove unwanted regions from the subcortical atlas
 tutorial](https://ggsegverse.github.io/ggseg.extra/articles/tutorial-subcortical-atlas.md):
 
 ``` r
+
 ho_sub <- ho_sub |>
   atlas_region_remove("Ventricle", match_on = "label")
 ```
@@ -310,6 +317,7 @@ becomes human-readable for plot legends.
 The Harvard-Oxford atlas is a good example of both:
 
 ``` r
+
 ho_cort <- ho_cort |>
   atlas_region_rename("Left |Right ", "", match_on = "region") |>
   atlas_region_rename("-", " ", match_on = "region")
@@ -338,6 +346,7 @@ The conventional pattern for atlas packages is to save cortical and
 subcortical atlases as separate internal data objects:
 
 ``` r
+
 .hoCort <- ho_cort
 .hoSub <- ho_sub
 

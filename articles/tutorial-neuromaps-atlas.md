@@ -22,6 +22,7 @@ annotation to fine-tuning the binning.
   cortical surface)
 
 ``` r
+
 library(ggseg.extra)
 library(ggseg.formats)
 library(dplyr)
@@ -36,6 +37,7 @@ component of gene expression from the Allen Human Brain Atlas, provided
 by [abagen](https://abagen.readthedocs.io/).
 
 ``` r
+
 atlas_auto <- create_cortical_from_neuromaps(
   source = "abagen",
   desc = "genepc1",
@@ -129,6 +131,7 @@ vertices, clamped to the range 5–20. For fsaverage5 with 10,242 vertices
 per hemisphere, this gives `1 + log2(10242) ≈ 14` bins.
 
 ``` r
+
 nrow(atlas_auto$core)
 #> [1] 32
 atlas_auto$core |> filter(region != "unknown") |> distinct(region)
@@ -156,6 +159,7 @@ atlas_auto$core |> filter(region != "unknown") |> distinct(region)
 cleaner, more schematic look; more bins for finer spatial resolution.
 
 ``` r
+
 atlas_5 <- create_cortical_from_neuromaps(
   source = "abagen",
   desc = "genepc1",
@@ -175,6 +179,7 @@ atlas_5$core |> filter(region != "unknown") |> distinct(region)
 ```
 
 ``` r
+
 atlas_20 <- create_cortical_from_neuromaps(
   source = "abagen",
   desc = "genepc1",
@@ -227,6 +232,7 @@ gets the warm end. The medial wall is always grey (`#BEBEBE`) and
 labeled “unknown.”
 
 ``` r
+
 atlas_auto$palette
 #>   lh_bin_1   lh_bin_2   lh_bin_3 
 #>  "#A71B4B"  "#C84040"  "#E5610A" 
@@ -258,6 +264,7 @@ Comparing the 3D rendering across different bin counts makes it easy to
 choose the right level of detail:
 
 ``` r
+
 ggseg3d::ggseg3d(atlas = atlas_5, hemisphere = "left")
 ```
 
@@ -268,6 +275,7 @@ patterns.](figures/tutorial-neuromaps-atlas-compare-3d-5-1.png)
 3D brain rendering with 5 quantile bins.
 
 ``` r
+
 ggseg3d::ggseg3d(atlas = atlas_auto, hemisphere = "left")
 ```
 
@@ -278,6 +286,7 @@ version.](figures/tutorial-neuromaps-atlas-compare-3d-auto-1.png)
 3D brain rendering with auto-detected bins (Sturges’ rule).
 
 ``` r
+
 ggseg3d::ggseg3d(atlas = atlas_20, hemisphere = "left")
 ```
 
@@ -324,6 +333,7 @@ atlas_clean <- atlas_full |>
 ## Rendering the final atlas
 
 ``` r
+
 plot(atlas_clean, show.legend = FALSE) +
   theme_void()
 ```
@@ -335,6 +345,7 @@ legend.](figures/tutorial-neuromaps-atlas-plot-2d-1.png)
 2D gene expression atlas plotted with ggseg.
 
 ``` r
+
 ggseg3d::ggseg3d(atlas = atlas_clean, hemisphere = "left")
 ```
 
@@ -354,6 +365,7 @@ For parcellations, you can provide a `label_table` to map the numeric
 IDs to human-readable region names and custom colors:
 
 ``` r
+
 labels <- data.frame(
   id = c(1, 2, 3),
   region = c("visual", "somatomotor", "dorsal_attention"),
@@ -378,6 +390,7 @@ extension (`.nii` or `.nii.gz`) and projects the volume onto the
 fsaverage5 surface using FreeSurfer’s `mri_vol2surf`.
 
 ``` r
+
 atlas_vol <- create_cortical_from_neuromaps(
   source = "pet",
   desc = "5HT1a",
@@ -399,6 +412,7 @@ them directly with
 [`read_neuromaps_annotation()`](https://ggsegverse.github.io/ggseg.extra/reference/read_neuromaps_annotation.md):
 
 ``` r
+
 files <- neuromapr::fetch_neuromaps_annotation(
   source = "abagen",
   desc = "genepc1",
@@ -451,6 +465,7 @@ fast regardless of bin count, so experiment freely.
 Once you’re happy with the atlas, save it as package data:
 
 ``` r
+
 usethis::use_data(abagen_genepc1, overwrite = TRUE, compress = "xz")
 ```
 

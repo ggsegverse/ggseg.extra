@@ -18,6 +18,7 @@ per hemisphere, so the pipeline runs quickly.
   or can be downloaded separately)
 
 ``` r
+
 library(ggseg.extra)
 library(ggseg.formats)
 library(dplyr)
@@ -29,6 +30,7 @@ FreeSurfer stores annotation files alongside the subject’s surface data.
 You need the full paths to the `lh.` and `rh.` annotation files:
 
 ``` r
+
 fs_dir <- freesurfer::fs_dir()
 subjects_dir <- file.path(fs_dir, "subjects")
 
@@ -51,6 +53,7 @@ minutes) and requires no external dependencies beyond FreeSurfer for
 reading the annotation:
 
 ``` r
+
 output_dir <- file.path(tempdir(), "yeo7_tutorial")
 
 yeo7_raw <- create_cortical_from_annotation(
@@ -126,6 +129,7 @@ keeps the geometry for spatial reference but removes the region from
 `$core`, so it renders as an outline:
 
 ``` r
+
 yeo7_raw <- yeo7_raw |>
   atlas_region_contextual("cortex", match_on = "label") |>
   atlas_region_contextual("unknown", match_on = "label") |>
@@ -140,6 +144,7 @@ Yeo atlas, the annotation labels are numeric network IDs. We can map
 them to descriptive network names:
 
 ``` r
+
 yeo7_metadata <- data.frame(
   label = c(
     "7Networks_1", "7Networks_2", "7Networks_3", "7Networks_4",
@@ -162,6 +167,7 @@ core_with_meta <- yeo7_raw$core |>
 Construct the final atlas from the modified core:
 
 ``` r
+
 yeo7 <- ggseg_atlas(
   atlas = yeo7_raw$atlas,
   type = yeo7_raw$type,
@@ -202,6 +208,7 @@ yeo7
 ```
 
 ``` r
+
 atlas_regions(yeo7) |> sort()
 #> [1] "7Networks_1" "7Networks_2"
 #> [3] "7Networks_3" "7Networks_4"
@@ -210,6 +217,7 @@ atlas_regions(yeo7) |> sort()
 ```
 
 ``` r
+
 plot(yeo7)
 ```
 
@@ -227,6 +235,7 @@ regions/hemisphere) take a bit longer but follow the same pattern and
 still complete in under a minute:
 
 ``` r
+
 dk_annots <- file.path(
   subjects_dir, "fsaverage5", "label",
   c("lh.aparc.annot", "rh.aparc.annot")
@@ -244,6 +253,7 @@ dk <- create_cortical_from_annotation(
 Once you’re satisfied with the atlas, save it as package data:
 
 ``` r
+
 usethis::use_data(yeo7, overwrite = TRUE, compress = "xz")
 ```
 

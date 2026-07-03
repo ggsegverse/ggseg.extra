@@ -38,8 +38,7 @@
   outputs and add clear error messages if binaries are missing.
 - Reporting/progress: code uses `cli`, `progressr` and verbose text
   output. Preserve this behaviour in edits (use `cli::cli_*` and
-  [`progressr::progress()`](https://progressr.futureverse.org/reference/progress.html)
-  patterns).
+  `progressr::progress()` patterns).
 
 ### Developer workflows (how to build / test / debug)
 
