@@ -814,7 +814,7 @@ validate_tract_geometry_inputs <- function(
         "Atlas centerlines are centered for 3D",
         "rendering and don't match volumetric space"
       ),
-      "i" = "Pass the original streamlines/centerlines in RAS coordinates"
+      "i" = "Pass the original streamlines/centerlines in RAS coordinates" # nolint
     ))
   }
 }

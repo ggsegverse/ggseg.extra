@@ -1,3 +1,5 @@
+.cap <- new.env()
+
 describe("build_contour_sf", {
   it("produces sf with label and view columns", {
     contours_file <- withr::local_tempfile(fileext = ".rda")
@@ -40,7 +42,7 @@ describe("build_contour_sf", {
 
     expect_s3_class(result, "sf")
     expect_true(all(c("label", "view") %in% names(result)))
-    expect_equal(nrow(result), 2)
+    expect_identical(nrow(result), 2L)
   })
 
   it("assigns views from filename prefix", {
@@ -87,14 +89,14 @@ describe("build_contour_sf", {
 
     result <- build_contour_sf(contours_file, views)
 
-    expect_equal(sort(unique(result$view)), c("axial_1", "coronal_1"))
+    expect_identical(sort(unique(result$view)), c("axial_1", "coronal_1"))
   })
 
   it("strips view prefix from label", {
     contours_file <- withr::local_tempfile(fileext = ".rda")
 
     contours <- sf::st_sf(
-      filenm = c("axial_1_Left-Putamen"),
+      filenm = "axial_1_Left-Putamen",
       geometry = sf::st_sfc(
         sf::st_polygon(list(matrix(
           c(0, 0, 1, 0, 1, 1, 0, 0),
@@ -124,7 +126,7 @@ describe("build_contour_sf", {
 
     result <- build_contour_sf(contours_file, views)
 
-    expect_equal(result$label, "Left-Putamen")
+    expect_identical(result$label, "Left-Putamen")
   })
 
   it("appends cortex_slices view names when provided", {
@@ -178,7 +180,7 @@ describe("build_contour_sf", {
     contours_file <- withr::local_tempfile(fileext = ".rda")
 
     contours <- sf::st_sf(
-      filenm = c("unmatched_region"),
+      filenm = "unmatched_region",
       geometry = sf::st_sfc(
         sf::st_polygon(list(matrix(
           c(0, 0, 1, 0, 1, 1, 0, 0),
@@ -208,7 +210,7 @@ describe("build_contour_sf", {
 
     result <- build_contour_sf(contours_file, views)
 
-    expect_equal(result$label, "unmatched_region")
+    expect_identical(result$label, "unmatched_region")
     expect_true(is.na(result$view))
   })
 })
@@ -254,7 +256,7 @@ describe("extract_contours", {
     output_dir <- withr::local_tempdir("output_")
     file.create(file.path(input_dir, "region1.png"))
 
-    captured_max_val <- NULL
+    .cap$captured_max_val <- NULL
     local_mocked_bindings(
       rast = function(f) list(file = f),
       global = function(r, ...) data.frame(max = 0),
@@ -262,7 +264,7 @@ describe("extract_contours", {
     )
     local_mocked_bindings(
       get_contours = function(r, max_val, ...) {
-        captured_max_val <<- max_val
+        .cap$captured_max_val <- max_val
         sf::st_sf(
           geometry = sf::st_sfc(sf::st_polygon(list(matrix(
             c(0, 0, 1, 0, 1, 1, 0, 0),
@@ -280,7 +282,7 @@ describe("extract_contours", {
 
     result <- extract_contours(input_dir, output_dir, verbose = FALSE)
     expect_s3_class(result, "sf")
-    expect_equal(captured_max_val, 1)
+    expect_identical(.cap$captured_max_val, 1)
   })
 
   it("logs progress when verbose is TRUE", {
@@ -334,8 +336,8 @@ describe("filter_valid_geometries", {
 
     result <- filter_valid_geometries(sf_obj)
 
-    expect_equal(nrow(result), 1)
-    expect_equal(result$id, "a")
+    expect_identical(nrow(result), 1L)
+    expect_identical(result$id, "a")
   })
 
   it("returns empty sf for all-invalid input", {
@@ -346,7 +348,7 @@ describe("filter_valid_geometries", {
 
     result <- filter_valid_geometries(sf_obj)
 
-    expect_equal(nrow(result), 0)
+    expect_identical(nrow(result), 0L)
   })
 
   it("handles already empty sf object", {
@@ -357,7 +359,7 @@ describe("filter_valid_geometries", {
 
     result <- filter_valid_geometries(sf_obj)
 
-    expect_equal(nrow(result), 0)
+    expect_identical(nrow(result), 0L)
   })
 
   it("preserves valid geometries", {
@@ -379,8 +381,8 @@ describe("filter_valid_geometries", {
 
     result <- filter_valid_geometries(sf_obj)
 
-    expect_equal(nrow(result), 2)
-    expect_equal(result$id, c("a", "b"))
+    expect_identical(nrow(result), 2L)
+    expect_identical(result$id, c("a", "b"))
   })
 
   it("removes geometries with non-finite coordinates", {
@@ -400,12 +402,12 @@ describe("filter_valid_geometries", {
       )
     )
 
-    call_count <- 0L
+    .cap$call_count <- 0L
     orig_st_coordinates <- sf::st_coordinates
     local_mocked_bindings(
       st_coordinates = function(...) {
-        call_count <<- call_count + 1L
-        if (call_count == 2L) {
+        .cap$call_count <- .cap$call_count + 1L
+        if (.cap$call_count == 2L) {
           res <- orig_st_coordinates(...)
           res[1, 1] <- Inf
           return(res)
@@ -416,8 +418,8 @@ describe("filter_valid_geometries", {
 
     result <- filter_valid_geometries(sf_obj)
 
-    expect_equal(nrow(result), 1)
-    expect_equal(result$id, "good")
+    expect_identical(nrow(result), 1L)
+    expect_identical(result$id, "good")
   })
 
   it("removes geometries where st_coordinates errors", {
@@ -438,7 +440,7 @@ describe("filter_valid_geometries", {
 
     result <- filter_valid_geometries(sf_obj)
 
-    expect_equal(nrow(result), 0)
+    expect_identical(nrow(result), 0L)
   })
 
   it("removes geometries where st_bbox errors", {
@@ -459,7 +461,7 @@ describe("filter_valid_geometries", {
 
     result <- filter_valid_geometries(sf_obj)
 
-    expect_equal(nrow(result), 0)
+    expect_identical(nrow(result), 0L)
   })
 
   it("removes geometries where st_bbox has non-finite values", {
@@ -480,7 +482,7 @@ describe("filter_valid_geometries", {
 
     result <- filter_valid_geometries(sf_obj)
 
-    expect_equal(nrow(result), 0)
+    expect_identical(nrow(result), 0L)
   })
 })
 
@@ -522,10 +524,12 @@ describe("smooth_contours", {
     save(contours, file = file.path(outdir, "contours.rda"))
 
     expect_warning(
-      result <- smooth_contours(outdir, smoothness = 5, step = ""),
+      {
+        result <- smooth_contours(outdir, smoothness = 5, step = "")
+      },
       "No valid contours"
     )
-    expect_equal(nrow(result), 0)
+    expect_identical(nrow(result), 0L)
     expect_true(file.exists(file.path(outdir, "contours_smoothed.rda")))
   })
 })
@@ -565,7 +569,7 @@ describe("reduce_vertex", {
 
     expect_s3_class(result, "sf")
     expect_true(file.exists(file.path(outdir, "contours_reduced.rda")))
-    expect_equal(
+    expect_identical(
       nrow(sf::st_coordinates(result)),
       nrow(sf::st_coordinates(contours))
     )
@@ -581,10 +585,12 @@ describe("reduce_vertex", {
     save(contours, file = file.path(outdir, "contours_smoothed.rda"))
 
     expect_warning(
-      result <- reduce_vertex(outdir, tolerance = 0.5, step = ""),
+      {
+        result <- reduce_vertex(outdir, tolerance = 0.5, step = "")
+      },
       "No valid contours"
     )
-    expect_equal(nrow(result), 0)
+    expect_identical(nrow(result), 0L)
     expect_true(file.exists(file.path(outdir, "contours_reduced.rda")))
   })
 })
@@ -620,8 +626,8 @@ describe("make_multipolygon", {
     result <- make_multipolygon(contourfile)
 
     expect_s3_class(result, "sf")
-    expect_equal(nrow(result), 2)
-    expect_equal(result$filenm, c("region1", "region2"))
+    expect_identical(nrow(result), 2L)
+    expect_identical(result$filenm, c("region1", "region2"))
   })
 })
 
@@ -691,7 +697,7 @@ describe("simplify_sf_topology", {
     result <- simplify_sf_topology(sf_data, keep = 0.3)
 
     expect_s3_class(result, "sf")
-    expect_equal(nrow(result), 2)
+    expect_identical(nrow(result), 2L)
     expect_true(all(sf::st_is_valid(result)))
 
     n_before <- nrow(sf::st_coordinates(sf_data))
@@ -719,7 +725,7 @@ describe("simplify_sf_topology", {
     result <- simplify_sf_topology(sf_data, keep = 0.5)
 
     expect_s3_class(result, "sf")
-    expect_equal(nrow(result), 2)
+    expect_identical(nrow(result), 2L)
     expect_true(all(c("lateral", "medial") %in% result$view))
   })
 
@@ -738,7 +744,7 @@ describe("simplify_sf_topology", {
     result <- simplify_sf_topology(sf_data, keep = 0.5)
 
     expect_s3_class(result, "sf")
-    expect_equal(nrow(result), 1)
+    expect_identical(nrow(result), 1L)
   })
 })
 
@@ -775,12 +781,18 @@ describe("atlas_smooth", {
       palette = c(a = "#000000"),
       core = data.frame(label = "a", region = "a", stringsAsFactors = FALSE),
       data = ggseg.formats::ggseg_data_cortical(
-        vertices = data.frame(label = "a", vertices = I(list(1:3)))
+        vertices = data.frame(
+          stringsAsFactors = FALSE,
+          label = "a",
+          vertices = I(list(1:3))
+        )
       )
     )
 
     expect_warning(
-      result <- atlas_smooth(atlas),
+      {
+        result <- atlas_smooth(atlas)
+      },
       "no 2D geometry"
     )
     expect_null(ggseg.formats::atlas_geom(result))
@@ -834,7 +846,7 @@ describe("atlas_smooth", {
     # representation round-trips back to polygons, not sf
     expect_true(ggseg.formats::is_atlas_polygon(result))
     expect_true(all(sf::st_is_valid(ggseg.formats::atlas_sf(result))))
-    expect_equal(ggseg.formats::atlas_geom(result)$label, "a")
+    expect_identical(ggseg.formats::atlas_geom(result)$label, "a")
   })
 
   it("smooths a legacy sf-slot atlas into a compliant sf atlas", {
@@ -859,7 +871,7 @@ describe("atlas_smooth", {
 
     expect_true(ggseg.formats::is_ggseg_atlas(result))
     expect_true(ggseg.formats::is_atlas_sf(result))
-    expect_equal(ggseg.formats::atlas_geom(result)$label, "a")
+    expect_identical(ggseg.formats::atlas_geom(result)$label, "a")
     expect_true(all(sf::st_is_valid(ggseg.formats::atlas_sf(result))))
   })
 })
@@ -873,7 +885,11 @@ describe("atlas_simplify (deprecated)", {
       palette = c(a = "#000000"),
       core = data.frame(label = "a", region = "a", stringsAsFactors = FALSE),
       data = ggseg.formats::ggseg_data_cortical(
-        vertices = data.frame(label = "a", vertices = I(list(1:3)))
+        vertices = data.frame(
+          stringsAsFactors = FALSE,
+          label = "a",
+          vertices = I(list(1:3))
+        )
       )
     )
 

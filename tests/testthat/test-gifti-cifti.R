@@ -1,28 +1,36 @@
+.cap <- new.env()
+
 describe("detect_hemi_from_gifti_filename", {
   it("detects lh from lh. prefix", {
-    expect_equal(detect_hemi_from_gifti_filename("lh.aparc.label.gii"), "lh")
+    expect_identical(
+      detect_hemi_from_gifti_filename("lh.aparc.label.gii"),
+      "lh"
+    )
   })
 
   it("detects rh from rh. prefix", {
-    expect_equal(detect_hemi_from_gifti_filename("rh.aparc.label.gii"), "rh")
+    expect_identical(
+      detect_hemi_from_gifti_filename("rh.aparc.label.gii"),
+      "rh"
+    )
   })
 
   it("detects left from .L. pattern", {
-    expect_equal(
+    expect_identical(
       detect_hemi_from_gifti_filename("aparc.L.label.gii"),
       "lh"
     )
   })
 
   it("detects right from .R. pattern", {
-    expect_equal(
+    expect_identical(
       detect_hemi_from_gifti_filename("aparc.R.label.gii"),
       "rh"
     )
   })
 
   it("detects from _lh_ pattern", {
-    expect_equal(
+    expect_identical(
       detect_hemi_from_gifti_filename("atlas_lh_aparc.label.gii"),
       "lh"
     )
@@ -114,7 +122,7 @@ describe("read_gifti_annotation", {
     result <- read_gifti_annotation(tmp)
     region_a <- result[result$region == "a", ]
 
-    expect_equal(region_a$vertices[[1]], c(0L, 1L))
+    expect_identical(region_a$vertices[[1]], c(0L, 1L))
   })
 
   it("warns and skips files with undetectable hemisphere", {
@@ -127,10 +135,12 @@ describe("read_gifti_annotation", {
     writeLines("mock", tmp)
 
     expect_warning(
-      result <- read_gifti_annotation(tmp),
+      {
+        result <- read_gifti_annotation(tmp)
+      },
       "Cannot detect hemisphere"
     )
-    expect_equal(nrow(result), 0)
+    expect_identical(nrow(result), 0L)
   })
 })
 
@@ -222,7 +232,7 @@ describe("read_cifti_annotation", {
     writeLines("mock", tmp)
 
     result <- read_cifti_annotation(tmp)
-    expect_equal(result$colour[result$region == "test_region"], "#FF0000")
+    expect_identical(result$colour[result$region == "test_region"], "#FF0000")
   })
 
   it("errors when vertex count does not match fsaverage5", {
@@ -307,7 +317,7 @@ describe("create_cortical_from_gifti", {
     )
 
     expect_s3_class(result, "ggseg_atlas")
-    expect_true(nrow(result$core) > 0)
+    expect_gt(nrow(result$core), 0)
   })
 })
 
@@ -346,7 +356,7 @@ describe("parse_continuous_values", {
       function(r) length(r$vertices[[1]]),
       integer(1)
     ))
-    expect_equal(total_verts, 102)
+    expect_identical(total_verts, 102L)
   })
 
   it("assigns NaN vertices to unknown", {
@@ -355,7 +365,7 @@ describe("parse_continuous_values", {
 
     unknown <- Filter(function(r) r$region[1] == "unknown", result)
     expect_length(unknown, 1)
-    expect_equal(length(unknown[[1]]$vertices[[1]]), 3)
+    expect_length(unknown[[1]]$vertices[[1]], 3)
   })
 
   it("auto-detects n_bins via Sturges when NULL", {
@@ -364,7 +374,7 @@ describe("parse_continuous_values", {
 
     bins <- Filter(function(r) grepl("^bin_", r$region[1]), result)
     expected <- as.integer(nclass.Sturges(values))
-    expect_equal(length(bins), expected)
+    expect_length(bins, expected)
   })
 
   it("clamps auto-detected bins to 5-20 range", {
@@ -404,7 +414,7 @@ describe("parse_parcellation_values", {
 
     unknown <- Filter(function(r) r$region[1] == "unknown", result)
     expect_length(unknown, 1)
-    expect_equal(unknown[[1]]$vertices[[1]], 2L)
+    expect_identical(unknown[[1]]$vertices[[1]], 2L)
   })
 
   it("uses label_table when provided", {
@@ -453,7 +463,7 @@ describe("read_neuromaps_annotation", {
     expect_named(result, c("hemi", "region", "label", "colour", "vertices"))
 
     bin_regions <- result[grepl("^bin_", result$region), ]
-    expect_equal(length(unique(bin_regions$region)), 5)
+    expect_length(unique(bin_regions$region), 5)
 
     expect_true("left" %in% result$hemi)
     expect_true("right" %in% result$hemi)
@@ -479,7 +489,7 @@ describe("read_neuromaps_annotation", {
     result <- read_neuromaps_annotation(lh)
 
     parcel_regions <- result[grepl("^parcel_", result$region), ]
-    expect_equal(nrow(parcel_regions), 2)
+    expect_identical(nrow(parcel_regions), 2L)
     expect_true("unknown" %in% result$region)
   })
 
@@ -505,10 +515,10 @@ describe("read_neuromaps_annotation", {
     result <- read_neuromaps_annotation(lh, n_bins = 3)
 
     unknown <- result[result$region == "unknown", ]
-    expect_equal(length(unknown$vertices[[1]]), 1000)
+    expect_length(unknown$vertices[[1]], 1000)
 
     total_verts <- sum(vapply(result$vertices, length, integer(1)))
-    expect_equal(total_verts, n)
+    expect_identical(total_verts, n)
   })
 })
 
@@ -552,17 +562,19 @@ describe("create_cortical_from_cifti", {
     writeLines("mock", tmp)
 
     expect_warning(
-      result <- create_cortical_from_cifti(
-        cifti_file = tmp,
-        atlas_name = "test_cifti",
-        verbose = FALSE,
-        cleanup = FALSE
-      ),
+      {
+        result <- create_cortical_from_cifti(
+          cifti_file = tmp,
+          atlas_name = "test_cifti",
+          verbose = FALSE,
+          cleanup = FALSE
+        )
+      },
       "Large atlases"
     )
 
     expect_s3_class(result, "ggseg_atlas")
-    expect_true(nrow(result$core) > 0)
+    expect_gt(nrow(result$core), 0)
     expect_true("left" %in% result$core$hemi)
     expect_true("right" %in% result$core$hemi)
   })
@@ -609,13 +621,13 @@ describe("create_cortical_from_cifti", {
       verbose = FALSE,
       cleanup = FALSE
     )
-    expect_true(grepl("my_atlas", result$atlas))
+    expect_true(grepl("my_atlas", result$atlas, fixed = TRUE))
   })
 
   it("calls cortical_project_and_build", {
     skip_if_not_installed("ciftiTools")
 
-    pipeline_called <- FALSE
+    .cap$pipeline_called <- FALSE
     n <- 10242L
     mock_cii <- list(
       data = list(
@@ -646,7 +658,7 @@ describe("create_cortical_from_cifti", {
       check_fs = function(...) invisible(TRUE),
       check_magick = function() invisible(TRUE),
       cortical_project_and_build = function(...) {
-        pipeline_called <<- TRUE
+        .cap$pipeline_called <- TRUE
         structure(list(), class = "ggseg_atlas")
       }
     )
@@ -659,7 +671,7 @@ describe("create_cortical_from_cifti", {
       cifti_file = tmp,
       verbose = FALSE
     )
-    expect_true(pipeline_called)
+    expect_true(.cap$pipeline_called)
   })
 })
 
@@ -701,13 +713,13 @@ describe("create_cortical_from_gifti", {
       verbose = FALSE,
       cleanup = FALSE
     )
-    expect_true(grepl("myatlas", result$atlas))
+    expect_true(grepl("myatlas", result$atlas, fixed = TRUE))
   })
 
   it("calls cortical_project_and_build", {
     skip_if_not_installed("freesurferformats")
 
-    pipeline_called <- FALSE
+    .cap$pipeline_called <- FALSE
     mock_annot <- list(
       label_codes = c(1L, 1L, 2L, 2L),
       colortable_df = data.frame(
@@ -732,7 +744,7 @@ describe("create_cortical_from_gifti", {
       check_fs = function(...) invisible(TRUE),
       check_magick = function() invisible(TRUE),
       cortical_project_and_build = function(...) {
-        pipeline_called <<- TRUE
+        .cap$pipeline_called <- TRUE
         structure(list(), class = "ggseg_atlas")
       }
     )
@@ -745,6 +757,6 @@ describe("create_cortical_from_gifti", {
       gifti_files = tmp,
       verbose = FALSE
     )
-    expect_true(pipeline_called)
+    expect_true(.cap$pipeline_called)
   })
 })

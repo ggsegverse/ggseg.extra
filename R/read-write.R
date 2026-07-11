@@ -94,9 +94,9 @@ read_ply_mesh <- function(ply, ...) {
   for (i in seq_along(lines)) {
     line <- trimws(lines[i])
     if (grepl("^element vertex", line)) {
-      n_vertices <- as.integer(sub("element vertex ", "", line))
+      n_vertices <- as.integer(sub("element vertex ", "", line, fixed = TRUE))
     } else if (grepl("^element face", line)) {
-      n_faces <- as.integer(sub("element face ", "", line))
+      n_faces <- as.integer(sub("element face ", "", line, fixed = TRUE))
     } else if (line == "end_header") {
       header_end <- i
       break
@@ -316,7 +316,7 @@ write_dpv <- function(path, vertices, faces) {
   )
 
   con <- file(path)
-  on.exit(close(con))
+  on.exit(close(con), add = TRUE)
   writeLines(file_content, con)
 }
 
@@ -821,7 +821,7 @@ read_neuromaps_annotation <- function(
     cli::cli_abort(c(
       "Volume files are not supported for cortical atlas creation.",
       "i" = "Found volume file{?s}: {.path {gifti_files[volume_files]}}",
-      "i" = "Use only surface (.func.gii) files."
+      "i" = "Use only surface (.func.gii) files." # nolint
     ))
   }
 

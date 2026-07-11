@@ -38,8 +38,8 @@ describe("read_fs_mesh", {
     expect_true(all(c("vertices", "faces") %in% names(mesh)))
     expect_s3_class(mesh$vertices, "data.frame")
     expect_s3_class(mesh$faces, "data.frame")
-    expect_equal(names(mesh$vertices), c("x", "y", "z"))
-    expect_equal(names(mesh$faces), c("i", "j", "k"))
+    expect_named(mesh$vertices, c("x", "y", "z"))
+    expect_named(mesh$faces, c("i", "j", "k"))
   })
 
   it("includes metadata", {
@@ -47,9 +47,9 @@ describe("read_fs_mesh", {
 
     mesh <- read_fs_mesh(hemisphere = "rh", surface = "white")
 
-    expect_equal(mesh$hemisphere, "rh")
-    expect_equal(mesh$surface, "white")
-    expect_equal(mesh$subject, "fsaverage5")
+    expect_identical(mesh$hemisphere, "rh")
+    expect_identical(mesh$surface, "white")
+    expect_identical(mesh$subject, "fsaverage5")
   })
 })
 
@@ -71,7 +71,9 @@ describe("make_brain_meshes", {
     skip_if_no_freesurfer()
 
     expect_messages(
-      meshes <- make_brain_meshes(surfaces = "inflated"),
+      {
+        meshes <- make_brain_meshes(surfaces = "inflated")
+      },
       "Extracting"
     )
 

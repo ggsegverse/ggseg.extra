@@ -59,10 +59,10 @@ describe("subcortical_views", {
       axial = 2,
       sagittal = 1
     )
-    expect_equal(nrow(v), 6)
-    expect_equal(sum(v$type == "coronal"), 3)
-    expect_equal(sum(v$type == "axial"), 2)
-    expect_equal(sum(v$type == "sagittal"), 1)
+    expect_identical(nrow(v), 6L)
+    expect_identical(sum(v$type == "coronal"), 3L)
+    expect_identical(sum(v$type == "axial"), 2L)
+    expect_identical(sum(v$type == "sagittal"), 1L)
     expect_setequal(names(v), c("name", "type", "start", "end"))
   })
 
@@ -75,17 +75,17 @@ describe("subcortical_views", {
       sagittal = 1
     )
     coronal <- v[v$type == "coronal", ]
-    expect_equal(min(coronal$start), 6) # dim2 lower
-    expect_true(max(coronal$end) <= 14) # dim2 upper
+    expect_identical(min(coronal$start), 6) # dim2 lower
+    expect_lte(max(coronal$end), 14) # dim2 upper
     sagittal <- v[v$type == "sagittal", ]
-    expect_equal(sagittal$start, 8) # dim1 lower
-    expect_equal(sagittal$end, 12) # dim1 upper
+    expect_identical(sagittal$start, 8) # dim1 lower
+    expect_identical(sagittal$end, 12) # dim1 upper
   })
 
   it("pads the bounding box", {
     v <- subcortical_views(vol, labels = 17, sagittal = 1, pad = 2)
-    expect_equal(v$start, 6) # min 8, padded by 2
-    expect_equal(v$end, 14) # max 12, padded by 2
+    expect_identical(v$start, 6) # min 8, padded by 2
+    expect_identical(v$end, 14) # max 12, padded by 2
   })
 
   it("errors when no labels are present", {
@@ -132,7 +132,7 @@ describe("aseg_context", {
       focus = "hypothalamus",
       punch_white_matter = FALSE
     )
-    expect_equal(a$core$label, "L_hypothalamus_anterior_inferior")
+    expect_identical(a$core$label, "L_hypothalamus_anterior_inferior")
   })
 
   it("does not let a substring context entry swallow the focus", {
@@ -191,6 +191,7 @@ describe("aseg_context", {
 
 describe("lut_add / lut_combine", {
   base <- data.frame(
+    stringsAsFactors = FALSE,
     idx = 0L,
     label = "Unknown",
     R = 0L,
@@ -208,14 +209,14 @@ describe("lut_add / lut_combine", {
       G = c(190, 140),
       B = c(30, 200)
     )
-    expect_equal(nrow(out), 3)
+    expect_identical(nrow(out), 3L)
     expect_true(all(c(20001L, 20002L) %in% out$idx))
     expect_true(is_ctab(out))
   })
 
   it("recycles a scalar channel", {
     out <- lut_add(base, idx = 1:3, label = "x", R = 10, G = 20, B = 30)
-    expect_equal(out$R[out$idx %in% 1:3], c(10L, 10L, 10L))
+    expect_identical(out$R[out$idx %in% 1:3], c(10L, 10L, 10L))
   })
 
   it("combines tables and aligns a missing type column", {
@@ -229,15 +230,31 @@ describe("lut_add / lut_combine", {
       type = "subcortical",
       stringsAsFactors = FALSE
     )
-    b <- data.frame(idx = 2L, label = "b", R = 2L, G = 2L, B = 2L, A = 0L)
+    b <- data.frame(
+      stringsAsFactors = FALSE,
+      idx = 2L,
+      label = "b",
+      R = 2L,
+      G = 2L,
+      B = 2L,
+      A = 0L
+    )
     out <- lut_combine(a, b)
-    expect_equal(nrow(out), 2)
+    expect_identical(nrow(out), 2L)
     expect_true("type" %in% names(out))
     expect_true(is.na(out$type[out$idx == 2]))
   })
 
   it("warns on duplicate indices", {
-    a <- data.frame(idx = 1L, label = "a", R = 1L, G = 1L, B = 1L, A = 0L)
+    a <- data.frame(
+      stringsAsFactors = FALSE,
+      idx = 1L,
+      label = "a",
+      R = 1L,
+      G = 1L,
+      B = 1L,
+      A = 0L
+    )
     expect_warning(lut_combine(a, a), "Duplicate")
   })
 
@@ -282,12 +299,18 @@ describe("create_subcortical_from_volume view/context specs", {
       vol
     )
     expect_s3_class(out, "data.frame")
-    expect_equal(nrow(out), 5)
+    expect_identical(nrow(out), 5L)
     expect_setequal(out$type, c("coronal", "axial"))
   })
 
   it("passes a data.frame views table through unchanged", {
-    df <- data.frame(name = "v", type = "coronal", start = 1L, end = 2L)
+    df <- data.frame(
+      stringsAsFactors = FALSE,
+      name = "v",
+      type = "coronal",
+      start = 1L,
+      end = 2L
+    )
     expect_identical(resolve_subcort_views_spec(df, NULL), df)
   })
 
@@ -320,7 +343,7 @@ describe("create_subcortical_from_volume view/context specs", {
       make_test_atlas(),
       list(focus = "hypothalamus", punch_white_matter = FALSE)
     )
-    expect_equal(a$core$label, "L_hypothalamus_anterior_inferior")
+    expect_identical(a$core$label, "L_hypothalamus_anterior_inferior")
   })
 
   it("leaves the atlas unchanged when context is NULL", {

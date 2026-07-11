@@ -16,7 +16,13 @@ with_safe_plan <- function(expr) {
   withCallingHandlers(
     force(expr),
     warning = function(w) {
-      if (grepl("may not be available when loading", conditionMessage(w))) {
+      if (
+        grepl(
+          "may not be available when loading",
+          conditionMessage(w),
+          fixed = TRUE
+        )
+      ) {
         invokeRestart("muffleWarning")
       }
     }
@@ -265,7 +271,9 @@ load_or_run_step <- function(
     cli::cli_abort(c(
       "{step_name} was not run but required files are missing",
       "i" = "Missing: {.path {missing}}",
-      "i" = paste(
+      "i" = paste( # nolint
+        # nolint
+        # nolint
         "Include step {step_num} in the steps",
         "argument to generate these files"
       )
@@ -518,7 +526,9 @@ warn_if_large_atlas <- function(atlas, max_vertices = 10000, per_region = 50) {
         "(threshold: {.val {threshold}})"
       ),
       "i" = "Large atlases may be slow to plot and increase package size",
-      "i" = paste(
+      "i" = paste( # nolint
+        # nolint
+        # nolint
         "Call {.code atlas_smooth(atlas, keep = 0.2, exclude = \"cortex_\")}",
         "to reduce vertices"
       )

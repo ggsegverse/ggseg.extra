@@ -10,7 +10,7 @@ describe("integration tests", {
     )
 
     expect_s3_class(atlas, "ggseg_atlas")
-    expect_equal(nrow(atlas$core), 3)
+    expect_identical(nrow(atlas$core), 3L)
 
     expect_no_error({
       p <- ggseg3d::ggseg3d(atlas = atlas, hemisphere = "left")
@@ -29,7 +29,7 @@ describe("integration tests", {
     )
 
     expect_s3_class(atlas, "ggseg_atlas")
-    expect_true(nrow(atlas$core) > 0)
+    expect_gt(nrow(atlas$core), 0)
 
     expect_no_error({
       p <- ggseg3d::ggseg3d(atlas = atlas, hemisphere = "left")
@@ -44,7 +44,7 @@ describe("integration tests", {
 
     expect_s3_class(ctab, "data.frame")
     expect_true(all(c("idx", "label", "R", "G", "B", "A") %in% names(ctab)))
-    expect_equal(nrow(ctab), 5)
+    expect_identical(nrow(ctab), 5L)
   })
 
   it("test data files exist", {

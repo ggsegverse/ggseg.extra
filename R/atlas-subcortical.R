@@ -403,7 +403,7 @@ subcort_resolve_labels <- function(config, dirs) {
     cli::cli_warn(c(
       "No color lookup table provided",
       "i" = "Region names will be generic (e.g., 'region_0010')",
-      "i" = "Colours will be auto-generated"
+      "i" = "Colours will be auto-generated" # nolint
     ))
     generate_colortable_from_volume(config$input_volume)
   } else {

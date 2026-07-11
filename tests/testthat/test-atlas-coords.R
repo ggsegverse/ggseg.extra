@@ -18,7 +18,7 @@ describe("to_coords", {
       c(".long", ".lat", ".subid", ".id", ".poly", ".order") %in%
         names(result)
     ))
-    expect_true(nrow(result) > 0)
+    expect_gt(nrow(result), 0)
   })
 
   it("returns empty data.frame for empty sf", {
@@ -29,7 +29,7 @@ describe("to_coords", {
 
     result <- to_coords(sf_obj, 1)
 
-    expect_equal(nrow(result), 0)
+    expect_identical(nrow(result), 0L)
   })
 })
 
@@ -48,7 +48,7 @@ describe("coords2sf", {
     result <- coords2sf(coords)
 
     expect_s3_class(result, "sf")
-    expect_true(nrow(result) > 0)
+    expect_gt(nrow(result), 0)
   })
 
   it("respects vertex_size_limits minimum", {
@@ -63,7 +63,7 @@ describe("coords2sf", {
 
     result <- coords2sf(coords, vertex_size_limits = c(10, NA))
 
-    expect_equal(nrow(result), 0)
+    expect_identical(nrow(result), 0L)
   })
 
   it("respects vertex_size_limits maximum", {
@@ -78,7 +78,7 @@ describe("coords2sf", {
 
     result <- coords2sf(coords, vertex_size_limits = c(NA, 3))
 
-    expect_equal(nrow(result), 0)
+    expect_identical(nrow(result), 0L)
   })
 })
 
@@ -98,8 +98,8 @@ describe("center_coord", {
 
     result <- center_coord(sf_obj)
 
-    expect_equal(unname(result[1]), 5, tolerance = 0.1)
-    expect_equal(unname(result[2]), 5, tolerance = 0.1)
+    expect_identical(unname(result[1]), 5, tolerance = 0.1)
+    expect_identical(unname(result[2]), 5, tolerance = 0.1)
   })
 })
 
@@ -119,10 +119,10 @@ describe("range_coord", {
 
     result <- range_coord(sf_obj)
 
-    expect_equal(unname(result[1, 1]), 0)
-    expect_equal(unname(result[2, 1]), 10)
-    expect_equal(unname(result[1, 2]), 0)
-    expect_equal(unname(result[2, 2]), 10)
+    expect_identical(unname(result[1, 1]), 0)
+    expect_identical(unname(result[2, 1]), 10)
+    expect_identical(unname(result[1, 2]), 0)
+    expect_identical(unname(result[2, 2]), 10)
   })
 })
 
@@ -143,8 +143,8 @@ describe("gather_geometry", {
     result <- gather_geometry(df)
 
     centered <- center_coord(result)
-    expect_equal(unname(centered[1]), 0, tolerance = 0.1)
-    expect_equal(unname(centered[2]), 0, tolerance = 0.1)
+    expect_identical(unname(centered[1]), 0, tolerance = 0.1)
+    expect_identical(unname(centered[2]), 0, tolerance = 0.1)
   })
 })
 
@@ -177,10 +177,10 @@ describe("restack", {
 
     result <- restack(list(df1, df2))
 
-    expect_true(is.list(result))
+    expect_type(result, "list")
     expect_true("df" %in% names(result))
     expect_true("box" %in% names(result))
-    expect_equal(nrow(result$df), 2)
+    expect_identical(nrow(result$df), 2L)
   })
 })
 
@@ -219,7 +219,7 @@ describe("correct_coords_sf", {
     result <- correct_coords_sf(df, by = 0)
 
     coords <- sf::st_coordinates(result)[, 1:2]
-    expect_equal(min(coords[, 2]), 0, tolerance = 1e-6)
+    expect_identical(min(coords[, 2]), 0, tolerance = 1e-6)
   })
 })
 
@@ -245,8 +245,8 @@ describe("count_vertices", {
     result <- count_vertices(sf_obj)
 
     expect_length(result, 2)
-    expect_equal(result[1], 5)
-    expect_equal(result[2], 5)
+    expect_identical(result[1], 5L)
+    expect_identical(result[2], 5L)
   })
 })
 
@@ -265,7 +265,7 @@ describe("coords2sf", {
     result <- coords2sf(coords, vertex_size_limits = c(NA, 2))
 
     expect_s3_class(result, "sf")
-    expect_equal(nrow(result), 0)
+    expect_identical(nrow(result), 0L)
   })
 
   it("creates valid sf from coordinates", {
@@ -281,7 +281,7 @@ describe("coords2sf", {
     result <- coords2sf(coords)
 
     expect_s3_class(result, "sf")
-    expect_true(nrow(result) > 0)
+    expect_gt(nrow(result), 0)
   })
 })
 
@@ -323,7 +323,7 @@ describe("layout_cortical_views", {
     result <- layout_cortical_views(atlas_df)
 
     expect_s3_class(result, "data.frame")
-    expect_true(nrow(result) == 4)
+    expect_identical(nrow(result), 4L)
     expect_true("hemi" %in% names(result))
     expect_true("view" %in% names(result))
   })
@@ -367,7 +367,7 @@ describe("layout_volumetric_views", {
     result <- layout_volumetric_views(df)
 
     expect_s3_class(result, "data.frame")
-    expect_equal(nrow(result), 2)
+    expect_identical(nrow(result), 2L)
   })
 })
 
@@ -386,6 +386,6 @@ describe("coords2sf polygon closing", {
     result <- coords2sf(coords)
 
     expect_s3_class(result, "sf")
-    expect_true(nrow(result) > 0)
+    expect_gt(nrow(result), 0)
   })
 })

@@ -1,3 +1,5 @@
+.cap <- new.env()
+
 describe("tessellate_label", {
   it("creates mesh from volume label", {
     skip_if_no_freesurfer()
@@ -18,10 +20,10 @@ describe("tessellate_label", {
       verbose = FALSE
     )
 
-    expect_true(is.list(mesh))
+    expect_type(mesh, "list")
     expect_true(all(c("vertices", "faces") %in% names(mesh)))
-    expect_true(nrow(mesh$vertices) > 0)
-    expect_true(nrow(mesh$faces) > 0)
+    expect_gt(nrow(mesh$vertices), 0)
+    expect_gt(nrow(mesh$faces), 0)
   })
 })
 
@@ -43,8 +45,8 @@ describe("decimate_mesh", {
 
     result <- suppressWarnings(decimate_mesh(mesh, percent = 0.5))
 
-    expect_true(nrow(result$faces) <= nrow(mesh$faces))
-    expect_true(nrow(result$vertices) <= nrow(mesh$vertices))
+    expect_lte(nrow(result$faces), nrow(mesh$faces))
+    expect_lte(nrow(result$vertices), nrow(mesh$vertices))
   })
 
   it("returns correct data.frame structure", {
@@ -68,9 +70,9 @@ describe("decimate_mesh", {
     expect_true(all(result$faces$i >= 1))
     expect_true(all(result$faces$j >= 1))
     expect_true(all(result$faces$k >= 1))
-    expect_true(max(result$faces$i) <= nrow(result$vertices))
-    expect_true(max(result$faces$j) <= nrow(result$vertices))
-    expect_true(max(result$faces$k) <= nrow(result$vertices))
+    expect_lte(max(result$faces$i), nrow(result$vertices))
+    expect_lte(max(result$faces$j), nrow(result$vertices))
+    expect_lte(max(result$faces$k), nrow(result$vertices))
   })
 
   it("works on real aseg meshes", {
@@ -80,8 +82,8 @@ describe("decimate_mesh", {
 
     result <- decimate_mesh(mesh, percent = 0.5)
 
-    expect_true(nrow(result$faces) < nrow(mesh$faces))
-    expect_true(nrow(result$vertices) < nrow(mesh$vertices))
+    expect_lt(nrow(result$faces), nrow(mesh$faces))
+    expect_lt(nrow(result$vertices), nrow(mesh$vertices))
   })
 })
 
@@ -100,7 +102,7 @@ describe("generate_colortable_from_volume", {
       c("idx", "label", "R", "G", "B", "A", "roi", "color") %in%
         names(result)
     ))
-    expect_true(nrow(result) > 0)
+    expect_gt(nrow(result), 0)
     expect_true(all(result$idx > 0))
     expect_true(all(grepl("^region_", result$label)))
   })
@@ -118,9 +120,9 @@ describe("generate_colortable_from_volume", {
     result <- generate_colortable_from_volume("fake_file.mgz")
 
     expect_s3_class(result, "data.frame")
-    expect_equal(nrow(result), 2)
-    expect_equal(result$idx, c(10, 20))
-    expect_equal(result$label, c("region_0010", "region_0020"))
+    expect_identical(nrow(result), 2L)
+    expect_identical(result$idx, c(10L, 20L))
+    expect_identical(result$label, c("region_0010", "region_0020"))
     expect_true(all(grepl("^#", result$color)))
   })
 })
@@ -143,7 +145,7 @@ describe("tessellate_label", {
     writeLines("placeholder", smooth_file)
 
     result <- tessellate_label("vol.mgz", 10, tmp_dir, skip_existing = TRUE)
-    expect_true(is.list(result))
+    expect_type(result, "list")
     expect_true("vertices" %in% names(result))
   })
 
@@ -222,15 +224,17 @@ describe("tessellate_label", {
     )
 
     expect_warnings(
-      result <- tessellate_label(
-        "vol.mgz",
-        10,
-        tmp_dir,
-        skip_existing = FALSE
-      ),
+      {
+        result <- tessellate_label(
+          "vol.mgz",
+          10,
+          tmp_dir,
+          skip_existing = FALSE
+        )
+      },
       "Smoothing failed.*using unsmoothed"
     )
-    expect_true(is.list(result))
+    expect_type(result, "list")
     expect_true("vertices" %in% names(result))
   })
 })
@@ -250,8 +254,8 @@ describe("read_fs_surface", {
     )
 
     result <- read_fs_surface("test_surface")
-    expect_equal(result$vertices$x, 1:3)
-    expect_equal(result$faces$i, 1:3)
+    expect_identical(result$vertices$x, 1:3)
+    expect_identical(result$faces$i, 1:3)
   })
 
   it("falls back to freesurferformats when surf2asc fails", {
@@ -272,8 +276,8 @@ describe("read_fs_surface", {
     )
 
     result <- read_fs_surface("test_surface")
-    expect_equal(result$vertices$x, c(1, 2, 3))
-    expect_equal(result$faces$i, 1)
+    expect_identical(result$vertices$x, c(1, 2, 3))
+    expect_identical(result$faces$i, 1)
   })
 
   it("errors when surf2asc fails and freesurferformats unavailable", {
@@ -315,8 +319,8 @@ describe("generate_colortable_from_volume", {
 
     result <- generate_colortable_from_volume("test.mgz")
     expect_s3_class(result, "data.frame")
-    expect_equal(result$idx, c(10, 20))
-    expect_equal(result$label, c("region_0010", "region_0020"))
+    expect_identical(result$idx, c(10L, 20L))
+    expect_identical(result$label, c("region_0010", "region_0020"))
     expect_true(all(result$R >= 0L & result$R <= 255L))
   })
 })
@@ -374,11 +378,13 @@ describe("create_subcortical_geometry_projection", {
     )
 
     expect_messages(
-      result <- create_subcortical_geometry_projection(
-        input_volume = "fake_aseg.mgz",
-        colortable = fake_colortable,
-        verbose = TRUE
-      )
+      {
+        result <- create_subcortical_geometry_projection(
+          input_volume = "fake_aseg.mgz",
+          colortable = fake_colortable,
+          verbose = TRUE
+        )
+      }
     )
 
     expect_s3_class(result, "sf")
@@ -589,7 +595,7 @@ describe("create_subcortical_geometry_projection", {
       cortex_slices = custom_cortex
     )
 
-    expect_equal(result$label, "unknown_thing")
+    expect_identical(result$label, "unknown_thing")
   })
 
   it("handles structures with zero voxels in future_pmap callback", {
@@ -615,7 +621,7 @@ describe("create_subcortical_geometry_projection", {
     )
     fake_sf$view <- "axial"
 
-    snap_called <- 0L
+    .cap$snap_called <- 0L
     local_mocked_bindings(
       is_verbose = function(...) FALSE,
       get_cleanup = function(...) FALSE,
@@ -630,7 +636,7 @@ describe("create_subcortical_geometry_projection", {
       future_pmap = mock_future_pmap,
       furrr_options = function(...) list(),
       snapshot_partial_projection = function(...) {
-        snap_called <<- snap_called + 1L
+        .cap$snap_called <- .cap$snap_called + 1L
         invisible(NULL)
       },
       snapshot_cortex_slice = function(...) invisible(NULL),
@@ -687,8 +693,8 @@ describe("create_subcortical_geometry_projection image processing loop", {
     snap_dir <- file.path(tmp_dir, "subcort_proj_geom", "snapshots")
     proc_dir <- file.path(tmp_dir, "subcort_proj_geom", "processed")
 
-    process_files <- character(0)
-    mask_files <- character(0)
+    .cap$process_files <- character(0)
+    .cap$mask_files <- character(0)
 
     fake_geom <- sf::st_polygon(list(matrix(
       c(0, 0, 1, 0, 1, 1, 0, 1, 0, 0),
@@ -730,12 +736,12 @@ describe("create_subcortical_geometry_projection image processing loop", {
       },
       snapshot_cortex_slice = function(...) invisible(NULL),
       process_snapshot_image = function(input_file, output_file, ...) {
-        process_files <<- c(process_files, basename(input_file))
+        .cap$process_files <- c(.cap$process_files, basename(input_file))
         file.create(output_file)
         invisible(NULL)
       },
       extract_alpha_mask = function(input, output, ...) {
-        mask_files <<- c(mask_files, basename(input))
+        .cap$mask_files <- c(.cap$mask_files, basename(input))
         invisible(NULL)
       },
       extract_contours = function(...) invisible(NULL),
@@ -768,8 +774,8 @@ describe("create_subcortical_geometry_projection image processing loop", {
       cortex_slices = custom_cortex
     )
 
-    expect_true(length(process_files) > 0)
-    expect_true(length(mask_files) > 0)
+    expect_gt(length(.cap$process_files), 0)
+    expect_gt(length(.cap$mask_files), 0)
     expect_s3_class(result, "sf")
   })
 })

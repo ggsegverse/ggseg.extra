@@ -13,7 +13,7 @@ derive_atlas_name <- function(filepath) {
     name <- tools::file_path_sans_ext(name)
   }
   name <- gsub("^[lr]h\\.|\\.[LR]\\.", "", name)
-  gsub("\\.", "_", name)
+  gsub(".", "_", name, fixed = TRUE)
 }
 
 
@@ -229,9 +229,9 @@ setup_atlas_dirs <- function(output_dir, atlas_name = NULL, type = "cortical") {
 sanitize_label <- function(x) {
   x <- trimws(x)
   x <- gsub("\\s+", "_", x)
-  x <- gsub("\\(", "_", x)
-  x <- gsub("\\)", "", x)
-  x <- gsub("/", "-", x)
+  x <- gsub("(", "_", x, fixed = TRUE)
+  x <- gsub(")", "", x, fixed = TRUE)
+  x <- gsub("/", "-", x, fixed = TRUE)
   x <- gsub("_+", "_", x)
   x <- gsub("^_|_$", "", x)
   x
@@ -383,7 +383,7 @@ run_image_steps <- function(
   dilate = NULL,
   vertex_size_limits = NULL
 ) {
-  fmt <- function(step) paste0(step, "/", total_steps)
+  fmt <- function(step) sprintf("%s/%s", step, total_steps)
 
   if (step_map$process %in% config$steps) {
     if (config$verbose) {

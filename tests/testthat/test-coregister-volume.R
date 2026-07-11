@@ -1,3 +1,5 @@
+.cap <- new.env()
+
 describe("coregister_volume validation", {
   it("errors for invalid dof", {
     local_mocked_bindings(check_fs = function(...) TRUE)
@@ -99,12 +101,16 @@ describe("project_volume_anatomical validation", {
 
 describe("read_lut_arg", {
   it("accepts a data frame with idx column", {
-    df <- data.frame(idx = 1:3, label = c("a", "b", "c"))
+    df <- data.frame(
+      stringsAsFactors = FALSE,
+      idx = 1:3,
+      label = c("a", "b", "c")
+    )
     expect_identical(read_lut_arg(df), df)
   })
 
   it("errors on data frame missing idx column", {
-    df <- data.frame(label = c("a", "b"))
+    df <- data.frame(stringsAsFactors = FALSE, label = c("a", "b"))
     expect_error(
       read_lut_arg(df),
       "must have an"
@@ -158,12 +164,12 @@ describe("resolve_volume_path", {
 
 describe("prepare_subcortical_anatomical", {
   it("threads the registration from coregister into the projection", {
-    seen <- NULL
+    .cap$seen <- NULL
     result <- list(volume = "merged.nii.gz", lut = NULL, id_offset = 200L)
     local_mocked_bindings(
       coregister_volume = function(...) "registration.lta",
       project_volume_anatomical = function(registration, ...) {
-        seen <<- registration
+        .cap$seen <- registration
         result
       }
     )
@@ -173,8 +179,8 @@ describe("prepare_subcortical_anatomical", {
       verbose = FALSE
     )
 
-    expect_equal(seen, "registration.lta")
-    expect_equal(out, result)
+    expect_identical(.cap$seen, "registration.lta")
+    expect_identical(out, result)
   })
 })
 
@@ -227,7 +233,7 @@ describe("project_label_argmax", {
     )
 
     expect_identical(out$argmax_idx, c(2L, 0L, 1L, 0L))
-    expect_equal(out$max_prob, c(0.2, 0.0, 0.5, 0.0))
+    expect_identical(out$max_prob, c(0.2, 0.0, 0.5, 0.0))
   })
 })
 
@@ -326,6 +332,7 @@ describe("lta_dst_dims / check_registration_grid", {
 describe("resolve_user_lut", {
   it("shifts supplied label ids and drops unprojected rows", {
     lut <- data.frame(
+      stringsAsFactors = FALSE,
       idx = c(11L, 12L, 13L),
       label = c("Foo", "Bar", "Baz"),
       R = c(1L, 2L, 3L),
@@ -357,6 +364,7 @@ describe("resolve_user_lut", {
 describe("build_anatomical_lut", {
   fs_lut <- function() {
     data.frame(
+      stringsAsFactors = FALSE,
       idx = c(2L, 41L, 17L, 1011L),
       label = c(
         "Left-Cerebral-White-Matter",
@@ -375,6 +383,7 @@ describe("build_anatomical_lut", {
     local_mocked_bindings(read_fs_color_lut = fs_lut)
     merged <- c(0L, 2L, 41L, 1011L, 211L, 212L)
     user <- data.frame(
+      stringsAsFactors = FALSE,
       idx = c(11L, 12L),
       label = c("Foo", "Bar"),
       R = 1L,

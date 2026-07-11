@@ -14,8 +14,8 @@
 # create_cortical_from_annotation verbose output / prints atlas name and paths when verbose is TRUE
 
     Code
-      invisible(create_cortical_from_annotation(input_annot = c("lh.test.annot"),
-      verbose = TRUE))
+      invisible(create_cortical_from_annotation(input_annot = "lh.test.annot",
+        verbose = TRUE))
     Message
       
       -- Creating brain atlas "test" -------------------------------------------------

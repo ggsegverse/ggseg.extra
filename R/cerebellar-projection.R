@@ -32,7 +32,7 @@ read_suit_flatmap <- function(suit_surface) {
     cli::cli_abort(c(
       "File does not appear to be a valid GIFTI surface",
       "i" = "Expected {.field pointset} and {.field triangle} data arrays",
-      "i" = "File: {.path {suit_surface}}"
+      "i" = "File: {.path {suit_surface}}" # nolint
     ))
   }
 
@@ -307,7 +307,7 @@ remove_small_internal_holes <- function(sf_data, threshold) {
 #' @noRd
 drop_small_rings <- function(geom, threshold) {
   if (inherits(geom, "MULTIPOLYGON")) {
-    polys <- lapply(geom, function(p) drop_small_rings_poly(p, threshold))
+    polys <- lapply(geom, drop_small_rings_poly, threshold)
     sf::st_multipolygon(polys)
   } else if (inherits(geom, "POLYGON")) {
     sf::st_polygon(drop_small_rings_poly(geom, threshold))

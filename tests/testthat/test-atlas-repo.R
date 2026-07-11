@@ -1,3 +1,5 @@
+.cap <- new.env()
+
 describe("setup_atlas_repo", {
   # Mock download to always use fallback for consistent testing
   use_fallback <- function() {
@@ -17,7 +19,9 @@ describe("setup_atlas_repo", {
     use_fallback()
 
     expect_messages(
-      result <- setup_atlas_repo(tmp, "dkt", open = FALSE),
+      {
+        result <- setup_atlas_repo(tmp, "dkt", open = FALSE)
+      },
       "Created atlas package",
       "Next steps"
     )
@@ -108,7 +112,7 @@ describe("setup_atlas_repo", {
 
     rproj_files <- list.files(tmp, pattern = "\\.Rproj$")
     expect_length(rproj_files, 1)
-    expect_equal(rproj_files, "ggsegTest.Rproj")
+    expect_identical(rproj_files, "ggsegTest.Rproj")
   })
 
   it("skips .Rproj file when rstudio = FALSE", {
@@ -186,15 +190,15 @@ describe("setup_atlas_repo template files", {
   it("replaces {GGSEG} placeholder with atlas name", {
     data_r <- readLines(file.path(tmp, "R/data.R"))
 
-    expect_false(any(grepl("\\{GGSEG\\}", data_r)))
-    expect_true(any(grepl("testatlas", data_r)))
+    expect_false(any(grepl("{GGSEG}", data_r, fixed = TRUE)))
+    expect_true(any(grepl("testatlas", data_r, fixed = TRUE)))
   })
 
   it("replaces {REPO} placeholder with package name", {
     desc <- readLines(file.path(tmp, "DESCRIPTION"))
 
-    expect_false(any(grepl("\\{REPO\\}", desc)))
-    expect_true(any(grepl("ggsegTestatlas", desc)))
+    expect_false(any(grepl("{REPO}", desc, fixed = TRUE)))
+    expect_true(any(grepl("ggsegTestatlas", desc, fixed = TRUE)))
   })
 
   it("creates valid DESCRIPTION file", {
@@ -209,23 +213,23 @@ describe("setup_atlas_repo template files", {
     test_file <- readLines(file.path(tmp, "tests/testthat/test-data.R"))
 
     expect_true(any(grepl("describe.*testatlas", test_file)))
-    expect_true(any(grepl("ggseg_atlas", test_file)))
+    expect_true(any(grepl("ggseg_atlas", test_file, fixed = TRUE)))
   })
 
   it("creates data-raw script with correct atlas name", {
     create_script <- readLines(file.path(tmp, "data-raw/create-atlas.R"))
 
-    expect_true(any(grepl("testatlas", create_script)))
-    expect_false(any(grepl("\\{GGSEG\\}", create_script)))
+    expect_true(any(grepl("testatlas", create_script, fixed = TRUE)))
+    expect_false(any(grepl("{GGSEG}", create_script, fixed = TRUE)))
   })
 
   it("creates README with correct package references", {
     readme <- readLines(file.path(tmp, "README.qmd"))
 
-    expect_true(any(grepl("ggsegTestatlas", readme)))
-    expect_true(any(grepl("testatlas", readme)))
-    expect_true(any(grepl("Citation", readme)))
-    expect_false(any(grepl("\\{REPO\\}", readme)))
+    expect_true(any(grepl("ggsegTestatlas", readme, fixed = TRUE)))
+    expect_true(any(grepl("testatlas", readme, fixed = TRUE)))
+    expect_true(any(grepl("Citation", readme, fixed = TRUE)))
+    expect_false(any(grepl("{REPO}", readme, fixed = TRUE)))
   })
 
   it("scaffold contains all pipeline methods", {
@@ -248,7 +252,9 @@ describe("download_atlas_template", {
     )
 
     expect_messages(
-      result <- download_atlas_template(),
+      {
+        result <- download_atlas_template()
+      },
       "Download failed",
       "fallback"
     )
@@ -281,9 +287,9 @@ describe("setup_atlas_repo .Rproj file", {
 
     rproj <- readLines(file.path(tmp, "ggsegTest.Rproj"))
 
-    expect_true(any(grepl("BuildType: Package", rproj)))
-    expect_true(any(grepl("PackageUseDevtools: Yes", rproj)))
-    expect_true(any(grepl("PackageRoxygenize:", rproj)))
+    expect_true(any(grepl("BuildType: Package", rproj, fixed = TRUE)))
+    expect_true(any(grepl("PackageUseDevtools: Yes", rproj, fixed = TRUE)))
+    expect_true(any(grepl("PackageRoxygenize:", rproj, fixed = TRUE)))
   })
 })
 
@@ -317,7 +323,7 @@ describe("setup_atlas_repo lowercase ggseg prefix", {
 
   it("calls open_rstudio_project when open and rstudio are TRUE", {
     tmp <- withr::local_tempdir("atlas_open_test_")
-    opened <- FALSE
+    .cap$opened <- FALSE
 
     local_mocked_bindings(
       download_atlas_template = function(url = NULL) {
@@ -328,7 +334,7 @@ describe("setup_atlas_repo lowercase ggseg prefix", {
         )
       },
       open_rstudio_project = function(path) {
-        opened <<- TRUE
+        .cap$opened <- TRUE
         invisible(TRUE)
       }
     )
@@ -339,7 +345,7 @@ describe("setup_atlas_repo lowercase ggseg prefix", {
       "Next steps"
     )
 
-    expect_true(opened)
+    expect_true(.cap$opened)
   })
 })
 
@@ -370,7 +376,7 @@ describe("open_rstudio_project", {
   it("opens project when rstudioapi available and Rproj exists", {
     tmp <- withr::local_tempdir("rproj_test_")
     writeLines("Version: 1.0", file.path(tmp, "test.Rproj"))
-    opened_path <- NULL
+    .cap$opened_path <- NULL
 
     local_mocked_bindings(
       rstudioapi_available = function() TRUE
@@ -378,7 +384,7 @@ describe("open_rstudio_project", {
     local_mocked_bindings(
       isAvailable = function() TRUE,
       openProject = function(path, ...) {
-        opened_path <<- path
+        .cap$opened_path <- path
         invisible(NULL)
       },
       .package = "rstudioapi"
@@ -387,7 +393,7 @@ describe("open_rstudio_project", {
     result <- open_rstudio_project(tmp)
 
     expect_true(result)
-    expect_equal(opened_path, file.path(tmp, "test.Rproj"))
+    expect_identical(.cap$opened_path, file.path(tmp, "test.Rproj"))
   })
 })
 
@@ -418,11 +424,11 @@ describe("template_replace error handling", {
 describe("new_project_setup_atlas_repo", {
   it("delegates to setup_atlas_repo with correct parameters", {
     tmp <- withr::local_tempdir("wizard_test_")
-    called_args <- NULL
+    .cap$called_args <- NULL
 
     local_mocked_bindings(
       setup_atlas_repo = function(path, atlas_name, open, rstudio) {
-        called_args <<- list(
+        .cap$called_args <- list(
           path = path,
           atlas_name = atlas_name,
           open = open,
@@ -434,26 +440,26 @@ describe("new_project_setup_atlas_repo", {
 
     new_project_setup_atlas_repo(tmp, atlas_name = "myatlas")
 
-    expect_equal(called_args$path, tmp)
-    expect_equal(called_args$atlas_name, "myatlas")
-    expect_false(called_args$open)
-    expect_true(called_args$rstudio)
+    expect_identical(.cap$called_args$path, tmp)
+    expect_identical(.cap$called_args$atlas_name, "myatlas")
+    expect_false(.cap$called_args$open)
+    expect_true(.cap$called_args$rstudio)
   })
 
   it("passes NULL atlas_name when not provided", {
     tmp <- withr::local_tempdir("wizard_null_test_")
-    called_args <- NULL
+    .cap$called_args <- NULL
 
     local_mocked_bindings(
       setup_atlas_repo = function(path, atlas_name, open, rstudio) {
-        called_args <<- list(atlas_name = atlas_name)
+        .cap$called_args <- list(atlas_name = atlas_name)
         invisible(path)
       }
     )
 
     new_project_setup_atlas_repo(tmp)
 
-    expect_null(called_args$atlas_name)
+    expect_null(.cap$called_args$atlas_name)
   })
 })
 
@@ -473,9 +479,12 @@ describe("template_replace", {
     template_replace(tmp, "myatlas")
 
     result <- readLines(tmp)
-    expect_equal(result[1], "Package: ggsegMyatlas")
-    expect_equal(result[2], "Atlas: myatlas")
-    expect_equal(result[3], "URL: https://github.com/ggsegverse/ggsegMyatlas")
+    expect_identical(result[1], "Package: ggsegMyatlas")
+    expect_identical(result[2], "Atlas: myatlas")
+    expect_identical(
+      result[3],
+      "URL: https://github.com/ggsegverse/ggsegMyatlas"
+    )
   })
 
   it("handles files without placeholders", {
@@ -485,6 +494,6 @@ describe("template_replace", {
     expect_no_error(template_replace(tmp, "test"))
 
     result <- readLines(tmp)
-    expect_equal(result, "No placeholders here")
+    expect_identical(result, "No placeholders here")
   })
 })

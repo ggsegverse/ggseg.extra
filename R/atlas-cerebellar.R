@@ -104,7 +104,7 @@ suit_deformation_field <- function(
     cli::cli_abort(c(
       "Cannot reach GitHub to download deformation field",
       "i" = "The deformation field {.file {filename}} is not cached",
-      "i" = "Check your internet connection and try again"
+      "i" = "Check your internet connection and try again" # nolint
     ))
   }
 
@@ -146,7 +146,7 @@ can_reach_github <- function() {
   tryCatch(
     {
       con <- url("https://raw.githubusercontent.com", open = "r")
-      on.exit(try(close(con), silent = TRUE))
+      on.exit(try(close(con), silent = TRUE), add = TRUE)
       TRUE
     },
     error = function(e) FALSE

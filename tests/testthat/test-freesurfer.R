@@ -1,3 +1,5 @@
+.cap <- new.env()
+
 describe("check_fs", {
   it("returns logical", {
     result <- check_fs()
@@ -20,7 +22,9 @@ describe("check_fs", {
     )
 
     expect_messages(
-      result <- check_fs(abort = FALSE),
+      {
+        result <- check_fs(abort = FALSE)
+      },
       "Freesurfer"
     )
     expect_false(result)
@@ -35,11 +39,11 @@ describe("check_fs", {
 
 describe("mri_vol2surf", {
   it("constructs correct command", {
-    captured_cmd <- NULL
+    .cap$captured_cmd <- NULL
     local_mocked_bindings(
       check_fs = function(abort = FALSE) invisible(TRUE),
       run_cmd = function(cmd, verbose = FALSE) {
-        captured_cmd <<- cmd
+        .cap$captured_cmd <- cmd
         invisible(NULL)
       }
     )
@@ -51,22 +55,22 @@ describe("mri_vol2surf", {
       verbose = FALSE
     )
 
-    expect_match(captured_cmd, "mri_vol2surf")
-    expect_match(captured_cmd, paste("--mov", shQuote("input.mgz")))
-    expect_match(captured_cmd, paste("--o", shQuote("output.mgz")))
-    expect_match(captured_cmd, "--hemi lh")
-    expect_match(captured_cmd, "--projfrac 0.5")
+    expect_match(.cap$captured_cmd, "mri_vol2surf")
+    expect_match(.cap$captured_cmd, paste("--mov", shQuote("input.mgz")))
+    expect_match(.cap$captured_cmd, paste("--o", shQuote("output.mgz")))
+    expect_match(.cap$captured_cmd, "--hemi lh")
+    expect_match(.cap$captured_cmd, "--projfrac 0.5")
   })
 })
 
 
 describe("mri_pretess", {
   it("constructs correct command", {
-    captured_cmd <- NULL
+    .cap$captured_cmd <- NULL
     local_mocked_bindings(
       check_fs = function(abort = FALSE) invisible(TRUE),
       run_cmd = function(cmd, verbose = FALSE) {
-        captured_cmd <<- cmd
+        .cap$captured_cmd <- cmd
         invisible(NULL)
       }
     )
@@ -78,18 +82,18 @@ describe("mri_pretess", {
       verbose = FALSE
     )
 
-    expect_match(captured_cmd, "mri_pretess")
-    expect_match(captured_cmd, "vol.mgz")
-    expect_match(captured_cmd, "10")
-    expect_match(captured_cmd, "pretess.mgz")
+    expect_match(.cap$captured_cmd, "mri_pretess")
+    expect_match(.cap$captured_cmd, "vol.mgz")
+    expect_match(.cap$captured_cmd, "10")
+    expect_match(.cap$captured_cmd, "pretess.mgz")
   })
 
   it("appends opts to command", {
-    captured_cmd <- NULL
+    .cap$captured_cmd <- NULL
     local_mocked_bindings(
       check_fs = function(abort = FALSE) invisible(TRUE),
       run_cmd = function(cmd, verbose = FALSE) {
-        captured_cmd <<- cmd
+        .cap$captured_cmd <- cmd
         invisible(NULL)
       }
     )
@@ -102,18 +106,18 @@ describe("mri_pretess", {
       verbose = FALSE
     )
 
-    expect_match(captured_cmd, "--keep")
+    expect_match(.cap$captured_cmd, "--keep")
   })
 })
 
 
 describe("mri_tessellate", {
   it("constructs correct command", {
-    captured_cmd <- NULL
+    .cap$captured_cmd <- NULL
     local_mocked_bindings(
       check_fs = function(abort = FALSE) invisible(TRUE),
       run_cmd = function(cmd, verbose = FALSE) {
-        captured_cmd <<- cmd
+        .cap$captured_cmd <- cmd
         invisible(NULL)
       }
     )
@@ -125,18 +129,18 @@ describe("mri_tessellate", {
       verbose = FALSE
     )
 
-    expect_match(captured_cmd, "mri_tessellate")
-    expect_match(captured_cmd, "pretess.mgz")
-    expect_match(captured_cmd, "10")
-    expect_match(captured_cmd, "tess")
+    expect_match(.cap$captured_cmd, "mri_tessellate")
+    expect_match(.cap$captured_cmd, "pretess.mgz")
+    expect_match(.cap$captured_cmd, "10")
+    expect_match(.cap$captured_cmd, "tess")
   })
 
   it("appends opts to command", {
-    captured_cmd <- NULL
+    .cap$captured_cmd <- NULL
     local_mocked_bindings(
       check_fs = function(abort = FALSE) invisible(TRUE),
       run_cmd = function(cmd, verbose = FALSE) {
-        captured_cmd <<- cmd
+        .cap$captured_cmd <- cmd
         invisible(NULL)
       }
     )
@@ -149,18 +153,18 @@ describe("mri_tessellate", {
       verbose = FALSE
     )
 
-    expect_match(captured_cmd, "--extra-flag")
+    expect_match(.cap$captured_cmd, "--extra-flag")
   })
 })
 
 
 describe("mri_smooth", {
   it("constructs correct command", {
-    captured_cmd <- NULL
+    .cap$captured_cmd <- NULL
     local_mocked_bindings(
       check_fs = function(abort = FALSE) invisible(TRUE),
       run_cmd = function(cmd, verbose = FALSE) {
-        captured_cmd <<- cmd
+        .cap$captured_cmd <- cmd
         invisible(NULL)
       }
     )
@@ -171,16 +175,16 @@ describe("mri_smooth", {
       verbose = FALSE
     )
 
-    expect_match(captured_cmd, "mris_smooth")
-    expect_match(captured_cmd, "-nw")
+    expect_match(.cap$captured_cmd, "mris_smooth")
+    expect_match(.cap$captured_cmd, "-nw")
   })
 
   it("appends opts to command", {
-    captured_cmd <- NULL
+    .cap$captured_cmd <- NULL
     local_mocked_bindings(
       check_fs = function(abort = FALSE) invisible(TRUE),
       run_cmd = function(cmd, verbose = FALSE) {
-        captured_cmd <<- cmd
+        .cap$captured_cmd <- cmd
         invisible(NULL)
       }
     )
@@ -192,18 +196,18 @@ describe("mri_smooth", {
       verbose = FALSE
     )
 
-    expect_match(captured_cmd, "--seed 42")
+    expect_match(.cap$captured_cmd, "--seed 42")
   })
 })
 
 
 describe("mri_vol2surf with opts", {
   it("appends opts to command", {
-    captured_cmd <- NULL
+    .cap$captured_cmd <- NULL
     local_mocked_bindings(
       check_fs = function(abort = FALSE) invisible(TRUE),
       run_cmd = function(cmd, verbose = FALSE) {
-        captured_cmd <<- cmd
+        .cap$captured_cmd <- cmd
         invisible(NULL)
       }
     )
@@ -216,18 +220,18 @@ describe("mri_vol2surf with opts", {
       verbose = FALSE
     )
 
-    expect_match(captured_cmd, "--interp trilinear")
+    expect_match(.cap$captured_cmd, "--interp trilinear")
   })
 })
 
 
 describe("mri_surf2surf_rereg", {
   it("constructs correct command", {
-    captured_cmd <- NULL
+    .cap$captured_cmd <- NULL
     local_mocked_bindings(
       check_fs = function(abort = FALSE) invisible(TRUE),
       run_cmd = function(cmd, verbose = FALSE) {
-        captured_cmd <<- cmd
+        .cap$captured_cmd <- cmd
         invisible(NULL)
       }
     )
@@ -242,10 +246,13 @@ describe("mri_surf2surf_rereg", {
       verbose = FALSE
     )
 
-    expect_match(captured_cmd, "mri_surf2surf")
-    expect_match(captured_cmd, paste("--srcsubject", shQuote("bert")))
-    expect_match(captured_cmd, paste("--sval-annot", shQuote("aparc.DKTatlas")))
-    expect_match(captured_cmd, "--hemi lh")
+    expect_match(.cap$captured_cmd, "mri_surf2surf")
+    expect_match(.cap$captured_cmd, paste("--srcsubject", shQuote("bert")))
+    expect_match(
+      .cap$captured_cmd,
+      paste("--sval-annot", shQuote("aparc.DKTatlas"))
+    )
+    expect_match(.cap$captured_cmd, "--hemi lh")
   })
 })
 
@@ -274,7 +281,9 @@ describe("surf2asc", {
       check_fs = function(abort = FALSE) invisible(TRUE)
     )
     expect_warning(
-      result <- surf2asc("/nonexistent/file", "output.dpv", verbose = TRUE),
+      {
+        result <- surf2asc("/nonexistent/file", "output.dpv", verbose = TRUE)
+      },
       "Input file does not exist"
     )
     expect_null(result)

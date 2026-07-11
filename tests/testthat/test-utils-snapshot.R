@@ -1,3 +1,5 @@
+.cap <- new.env()
+
 describe("has_magick", {
   it("returns logical", {
     result <- has_magick()
@@ -31,24 +33,24 @@ describe("process_and_mask_images", {
     file.create(file.path(snap_dir, "img1.png"))
     file.create(file.path(snap_dir, "img2.png"))
 
-    process_called <- character(0)
-    mask_called <- character(0)
+    .cap$process_called <- character(0)
+    .cap$mask_called <- character(0)
 
     local_mocked_bindings(
       process_snapshot_image = function(input_file, output_file, ...) {
-        process_called <<- c(process_called, basename(input_file))
+        .cap$process_called <- c(.cap$process_called, basename(input_file))
         file.create(output_file)
       },
       extract_alpha_mask = function(input_file, output_file, ...) {
-        mask_called <<- c(mask_called, basename(input_file))
+        .cap$mask_called <- c(.cap$mask_called, basename(input_file))
       },
       progressor = function(...) function(...) NULL
     )
 
     process_and_mask_images(snap_dir, processed_dir, mask_dir)
 
-    expect_equal(sort(process_called), c("img1.png", "img2.png"))
-    expect_equal(sort(mask_called), c("img1.png", "img2.png"))
+    expect_identical(sort(.cap$process_called), c("img1.png", "img2.png"))
+    expect_identical(sort(.cap$mask_called), c("img1.png", "img2.png"))
   })
 
   it("passes dilate parameter through", {
@@ -58,10 +60,10 @@ describe("process_and_mask_images", {
 
     file.create(file.path(snap_dir, "img1.png"))
 
-    captured_dilate <- NULL
+    .cap$captured_dilate <- NULL
     local_mocked_bindings(
       process_snapshot_image = function(input_file, output_file, dilate, ...) {
-        captured_dilate <<- dilate
+        .cap$captured_dilate <- dilate
         file.create(output_file)
       },
       extract_alpha_mask = function(...) NULL,
@@ -70,7 +72,7 @@ describe("process_and_mask_images", {
 
     process_and_mask_images(snap_dir, processed_dir, mask_dir, dilate = 3L)
 
-    expect_equal(captured_dilate, 3L)
+    expect_identical(.cap$captured_dilate, 3L)
   })
 
   it("handles empty directory", {
@@ -94,29 +96,29 @@ describe("parse_contour_filenames", {
     filenames <- c("region1_lh_lateral", "region2_rh_medial")
     result <- parse_contour_filenames(filenames)
 
-    expect_equal(result$view, c("lateral", "medial"))
-    expect_equal(result$hemi_short, c("lh", "rh"))
-    expect_equal(result$hemi, c("left", "right"))
-    expect_equal(result$label, c("region1", "region2"))
+    expect_identical(result$view, c("lateral", "medial"))
+    expect_identical(result$hemi_short, c("lh", "rh"))
+    expect_identical(result$hemi, c("left", "right"))
+    expect_identical(result$label, c("region1", "region2"))
   })
 
   it("handles underscores in region names", {
-    filenames <- c("left_superior_frontal_lh_lateral")
+    filenames <- "left_superior_frontal_lh_lateral"
     result <- parse_contour_filenames(filenames)
 
-    expect_equal(result$label, "left_superior_frontal")
-    expect_equal(result$hemi_short, "lh")
-    expect_equal(result$view, "lateral")
+    expect_identical(result$label, "left_superior_frontal")
+    expect_identical(result$hemi_short, "lh")
+    expect_identical(result$view, "lateral")
   })
 
   it("strips file extension before parsing", {
     filenames <- c("region1_lh_lateral.png", "region2_rh_medial.png")
     result <- parse_contour_filenames(filenames)
 
-    expect_equal(result$view, c("lateral", "medial"))
-    expect_equal(result$hemi_short, c("lh", "rh"))
-    expect_equal(result$hemi, c("left", "right"))
-    expect_equal(result$label, c("region1", "region2"))
+    expect_identical(result$view, c("lateral", "medial"))
+    expect_identical(result$hemi_short, c("lh", "rh"))
+    expect_identical(result$hemi, c("left", "right"))
+    expect_identical(result$label, c("region1", "region2"))
   })
 })
 
@@ -126,24 +128,24 @@ describe("make_view_chunks", {
     result <- make_view_chunks(85, 152, 10, "axial")
     expect_s3_class(result, "data.frame")
     expect_true(all(c("name", "type", "start", "end") %in% names(result)))
-    expect_equal(nrow(result), 7)
+    expect_identical(nrow(result), 7L)
   })
 
   it("names chunks with type prefix", {
     result <- make_view_chunks(100, 150, 20, "coronal")
     expect_true(all(grepl("^coronal_", result$name)))
-    expect_equal(unique(result$type), "coronal")
+    expect_identical(unique(result$type), "coronal")
   })
 
   it("handles exact division", {
     result <- make_view_chunks(0, 30, 10, "axial")
-    expect_equal(result$start, c(0, 10, 20, 30))
-    expect_equal(result$end, c(9, 19, 29, 30))
+    expect_identical(result$start, c(0, 10, 20, 30))
+    expect_identical(result$end, c(9, 19, 29, 30))
   })
 
   it("clamps end to hi boundary", {
     result <- make_view_chunks(0, 25, 10, "axial")
-    expect_equal(result$end[nrow(result)], 25)
+    expect_identical(result$end[nrow(result)], 25)
   })
 })
 
@@ -162,7 +164,7 @@ describe("create_cortex_slices", {
     result <- create_cortex_slices(views, dims)
 
     expect_s3_class(result, "data.frame")
-    expect_equal(nrow(result), 3)
+    expect_identical(nrow(result), 3L)
     expect_true(all(c("x", "y", "z", "view", "name") %in% names(result)))
   })
 
@@ -180,7 +182,7 @@ describe("create_cortex_slices", {
 
     expect_true(is.na(result$x))
     expect_true(is.na(result$y))
-    expect_equal(result$z, 90)
+    expect_identical(result$z, 90)
   })
 
   it("sets y for coronal views", {
@@ -196,7 +198,7 @@ describe("create_cortex_slices", {
     result <- create_cortex_slices(views, dims)
 
     expect_true(is.na(result$x))
-    expect_equal(result$y, 115)
+    expect_identical(result$y, 115)
     expect_true(is.na(result$z))
   })
 
@@ -212,8 +214,8 @@ describe("create_cortex_slices", {
 
     result <- create_cortex_slices(views, dims)
 
-    expect_equal(result$x[1], round(256 * 0.55))
-    expect_equal(result$x[2], round(256 * 0.45))
+    expect_identical(result$x[1], round(256 * 0.55))
+    expect_identical(result$x[2], round(256 * 0.45))
   })
 })
 
@@ -228,8 +230,8 @@ describe("detect_cortex_labels", {
 
     expect_type(result, "list")
     expect_named(result, c("left", "right"))
-    expect_equal(result$left, 1001L)
-    expect_equal(result$right, 2005L)
+    expect_identical(result$left, 1001L)
+    expect_identical(result$right, 2005L)
   })
 
   it("falls back to aseg labels when no aparc", {
@@ -239,8 +241,8 @@ describe("detect_cortex_labels", {
 
     result <- detect_cortex_labels(vol)
 
-    expect_equal(result$left, 3)
-    expect_equal(result$right, 42)
+    expect_identical(result$left, 3)
+    expect_identical(result$right, 42)
   })
 })
 
@@ -252,22 +254,22 @@ describe("extract_hemi_from_view", {
   })
 
   it("returns left for sagittal left views", {
-    expect_equal(
+    expect_identical(
       extract_hemi_from_view("sagittal", "sagittal_left"),
       "left"
     )
-    expect_equal(
+    expect_identical(
       extract_hemi_from_view("sagittal", "left_sagittal"),
       "left"
     )
   })
 
   it("returns right for sagittal right views", {
-    expect_equal(
+    expect_identical(
       extract_hemi_from_view("sagittal", "sagittal_right"),
       "right"
     )
-    expect_equal(
+    expect_identical(
       extract_hemi_from_view("sagittal", "right_sagittal"),
       "right"
     )
@@ -286,10 +288,10 @@ describe("process_snapshot_image", {
     file.create(input)
     file.create(output)
 
-    read_called <- FALSE
+    .cap$read_called <- FALSE
     local_mocked_bindings(
       image_read = function(...) {
-        read_called <<- TRUE
+        .cap$read_called <- TRUE
         NULL
       },
       .package = "magick"
@@ -297,8 +299,8 @@ describe("process_snapshot_image", {
 
     result <- process_snapshot_image(input, output, skip_existing = TRUE)
 
-    expect_equal(result, output, ignore_attr = TRUE)
-    expect_false(read_called)
+    expect_identical(result, output, ignore_attr = TRUE)
+    expect_false(.cap$read_called)
   })
 
   it("calls image processing pipeline", {
@@ -306,19 +308,19 @@ describe("process_snapshot_image", {
     output <- withr::local_tempfile(fileext = ".png")
     file.create(input)
 
-    transparent_called <- FALSE
-    write_called <- FALSE
+    .cap$transparent_called <- FALSE
+    .cap$write_called <- FALSE
     sentinel <- structure(list(), class = "mock_img")
 
     local_mocked_bindings(
       image_read = function(...) sentinel,
       image_convert = function(...) sentinel,
       image_transparent = function(...) {
-        transparent_called <<- TRUE
+        .cap$transparent_called <- TRUE
         sentinel
       },
       image_write = function(image, path, ...) {
-        write_called <<- TRUE
+        .cap$write_called <- TRUE
         file.create(path)
       },
       .package = "magick"
@@ -326,10 +328,10 @@ describe("process_snapshot_image", {
 
     result <- process_snapshot_image(input, output, skip_existing = FALSE)
 
-    expect_true(transparent_called)
-    expect_true(write_called)
+    expect_true(.cap$transparent_called)
+    expect_true(.cap$write_called)
     expect_true(file.exists(output))
-    expect_equal(result, output, ignore_attr = TRUE)
+    expect_identical(result, output, ignore_attr = TRUE)
   })
 
   it("applies dilation when dilate > 0", {
@@ -337,7 +339,7 @@ describe("process_snapshot_image", {
     output <- withr::local_tempfile(fileext = ".png")
     file.create(input)
 
-    morphology_called <- FALSE
+    .cap$morphology_called <- FALSE
     sentinel <- structure(list(), class = "mock_img")
 
     local_mocked_bindings(
@@ -345,10 +347,10 @@ describe("process_snapshot_image", {
       image_convert = function(...) sentinel,
       image_transparent = function(...) sentinel,
       image_morphology = function(img, method, kernel, iterations, ...) {
-        morphology_called <<- TRUE
-        expect_equal(method, "DilateI")
-        expect_equal(kernel, "diamond")
-        expect_equal(iterations, 2)
+        .cap$morphology_called <- TRUE
+        expect_identical(method, "DilateI")
+        expect_identical(kernel, "diamond")
+        expect_identical(iterations, 2)
         sentinel
       },
       image_write = function(image, path, ...) {
@@ -359,7 +361,7 @@ describe("process_snapshot_image", {
 
     process_snapshot_image(input, output, dilate = 2, skip_existing = FALSE)
 
-    expect_true(morphology_called)
+    expect_true(.cap$morphology_called)
   })
 
   it("skips dilation when dilate is NULL", {
@@ -367,7 +369,7 @@ describe("process_snapshot_image", {
     output <- withr::local_tempfile(fileext = ".png")
     file.create(input)
 
-    morphology_called <- FALSE
+    .cap$morphology_called <- FALSE
     sentinel <- structure(list(), class = "mock_img")
 
     local_mocked_bindings(
@@ -375,7 +377,7 @@ describe("process_snapshot_image", {
       image_convert = function(...) sentinel,
       image_transparent = function(...) sentinel,
       image_morphology = function(...) {
-        morphology_called <<- TRUE
+        .cap$morphology_called <- TRUE
         sentinel
       },
       image_write = function(image, path, ...) {
@@ -386,7 +388,7 @@ describe("process_snapshot_image", {
 
     process_snapshot_image(input, output, dilate = NULL, skip_existing = FALSE)
 
-    expect_false(morphology_called)
+    expect_false(.cap$morphology_called)
   })
 })
 
@@ -400,7 +402,7 @@ describe("extract_alpha_mask", {
 
     result <- extract_alpha_mask(input, output, skip_existing = TRUE)
 
-    expect_equal(result, output, ignore_attr = TRUE)
+    expect_identical(result, output, ignore_attr = TRUE)
   })
 
   it("extracts alpha and returns output path when magick is available", {
@@ -412,7 +414,7 @@ describe("extract_alpha_mask", {
 
     result <- extract_alpha_mask(input, output, skip_existing = FALSE)
 
-    expect_equal(result, output, ignore_attr = TRUE)
+    expect_identical(result, output, ignore_attr = TRUE)
     expect_true(file.exists(output))
   })
 
@@ -440,7 +442,7 @@ describe("run_cmd", {
     )
 
     result <- run_cmd("echo test", verbose = FALSE, no_ui = FALSE)
-    expect_equal(result, 0L)
+    expect_identical(result, 0L)
   })
 
   it("aborts on non-zero exit code", {
@@ -471,12 +473,12 @@ describe("get_contours", {
   })
 
   it("processes raster when max >= max_val", {
-    as_polygons_called <- FALSE
+    .cap$as_polygons_called <- FALSE
 
     local_mocked_bindings(
       global = function(x, ...) data.frame(max = 255),
       as.polygons = function(...) {
-        as_polygons_called <<- TRUE
+        .cap$as_polygons_called <- TRUE
         "mock_poly"
       },
       .package = "terra"
@@ -510,7 +512,7 @@ describe("get_contours", {
       error = function(e) "processing_attempted"
     )
 
-    expect_true(as_polygons_called || result == "processing_attempted")
+    expect_true(.cap$as_polygons_called || result == "processing_attempted")
   })
 })
 
@@ -522,10 +524,10 @@ describe("isolate_region", {
     file.create(input)
     file.create(output)
 
-    read_called <- FALSE
+    .cap$read_called <- FALSE
     local_mocked_bindings(
       image_read = function(...) {
-        read_called <<- TRUE
+        .cap$read_called <- TRUE
         NULL
       },
       .package = "magick"
@@ -533,8 +535,8 @@ describe("isolate_region", {
 
     result <- isolate_region(input, output, skip_existing = TRUE)
 
-    expect_equal(result, output, ignore_attr = TRUE)
-    expect_false(read_called)
+    expect_identical(result, output, ignore_attr = TRUE)
+    expect_false(.cap$read_called)
   })
 
   it("errors when ImageMagick is not available", {
@@ -638,10 +640,10 @@ describe("load_reduced_contours", {
 
     result <- load_reduced_contours(base_dir)
 
-    expect_equal(result$view, c("lateral", "medial"))
-    expect_equal(result$hemi_short, c("lh", "rh"))
-    expect_equal(result$hemi, c("left", "right"))
-    expect_equal(result$label, c("superior_frontal", "precentral"))
+    expect_identical(result$view, c("lateral", "medial"))
+    expect_identical(result$hemi_short, c("lh", "rh"))
+    expect_identical(result$hemi, c("left", "right"))
+    expect_identical(result$label, c("superior_frontal", "precentral"))
   })
 })
 
@@ -653,7 +655,7 @@ describe("magick_version", {
     result <- magick_version()
 
     expect_type(result, "character")
-    expect_true(nchar(result) > 0)
+    expect_gt(nchar(result), 0)
   })
 })
 

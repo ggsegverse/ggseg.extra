@@ -81,17 +81,18 @@ mock_future_map2 <- function(.x, .y, .f, ...) {
 
 expect_messages <- function(expr, ...) {
   patterns <- c(...)
-  messages_caught <- character()
+  rec <- new.env()
+  rec$caught <- character()
   result <- withCallingHandlers(
     expr,
     message = function(m) {
-      messages_caught[length(messages_caught) + 1L] <<- conditionMessage(m)
+      rec$caught[length(rec$caught) + 1L] <- conditionMessage(m)
       invokeRestart("muffleMessage")
     }
   )
   for (pat in patterns) {
     testthat::expect_true(
-      any(grepl(pat, messages_caught)),
+      any(grepl(pat, rec$caught)),
       label = paste0(
         "Expected at least one message matching '",
         pat,
@@ -100,34 +101,24 @@ expect_messages <- function(expr, ...) {
     )
   }
   if (length(patterns) == 0L) {
-    testthat::expect_true(
-      length(messages_caught) > 0,
-      label = "Expected at least one message"
-    )
+    testthat::expect_gt(length(rec$caught), 0)
   }
   invisible(result)
 }
 
 expect_warnings <- function(expr, regexp) {
-  warnings_caught <- character()
+  rec <- new.env()
+  rec$caught <- character()
   result <- withCallingHandlers(
     expr,
     warning = function(w) {
       if (grepl(regexp, conditionMessage(w))) {
-        warnings_caught[[length(warnings_caught) + 1L]] <<-
-          conditionMessage(w)
+        rec$caught[[length(rec$caught) + 1L]] <- conditionMessage(w)
       }
       invokeRestart("muffleWarning")
     }
   )
-  testthat::expect_true(
-    length(warnings_caught) > 0,
-    label = paste0(
-      "Expected at least one warning matching '",
-      regexp,
-      "'"
-    )
-  )
+  testthat::expect_gt(length(rec$caught), 0)
   invisible(result)
 }
 
@@ -191,7 +182,7 @@ mock_cortical_pipeline_bindings <- function(captured = NULL) {
       env <- captured[[fn_name]]
       mocks[[fn_name]] <- (function(e, nm) {
         function(...) {
-          e[[nm]] <<- list(...)
+          e[[nm]] <- list(...)
           if (nm == "cortical_build_sf_projected") {
             return(mock_sf_polygon())
           }

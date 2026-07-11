@@ -43,7 +43,7 @@ mri_vol2surf <- function(
   input_file,
   output_file,
   hemisphere,
-  projfrac = .5,
+  projfrac = 0.5,
   projfrac_range = NULL,
   mni152reg = TRUE,
   opts = NULL,
@@ -84,9 +84,7 @@ mri_vol2surf <- function(
     cmd <- paste(cmd, "--projfrac", projfrac)
   }
 
-  suppressWarnings(
-    k <- run_cmd(cmd, verbose = verbose)
-  )
+  k <- suppressWarnings(run_cmd(cmd, verbose = verbose))
 
   invisible(k)
 }
@@ -279,11 +277,11 @@ surf2asc <- function(input_file, output_file, verbose = get_verbose()) {
 
   freesurfer::mris_convert(
     infile = input_file,
-    outfile = gsub("\\.dpv", "\\.asc", output_file),
+    outfile = gsub(".dpv", ".asc", output_file, fixed = TRUE),
     verbose = (verbose >= 2)
   )
 
-  asc_path <- gsub("\\.dpv", "\\.asc", output_file)
+  asc_path <- gsub(".dpv", ".asc", output_file, fixed = TRUE)
   if (!file.rename(asc_path, output_file)) {
     cli::cli_abort(
       "Failed to rename {.path {asc_path}} to {.path {output_file}}"

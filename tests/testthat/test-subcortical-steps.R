@@ -1,3 +1,5 @@
+.cap <- new.env()
+
 describe("subcort_build_components", {
   it("builds components from colortable and meshes", {
     meshes_list <- list(
@@ -22,7 +24,7 @@ describe("subcort_build_components", {
     expect_type(result, "list")
     expect_true("core" %in% names(result))
     expect_true("palette" %in% names(result))
-    expect_equal(nrow(result$core), 2)
+    expect_identical(nrow(result$core), 2L)
   })
 })
 
@@ -115,20 +117,20 @@ describe("subcort_create_meshes", {
       )
     )
 
-    expect_equal(length(result), 1)
-    expect_equal(names(result), "Left-Putamen")
+    expect_length(result, 1)
+    expect_named(result, "Left-Putamen")
   })
 
   it("filters out NULL meshes from failed tessellations", {
-    call_count <- 0L
+    .cap$call_count <- 0L
     mock_mesh <- list(
       vertices = list(x = 1:3, y = 1:3, z = 1:3),
       faces = list(i = 1, j = 2, k = 3)
     )
     local_mocked_bindings(
       tessellate_label = function(...) {
-        call_count <<- call_count + 1L
-        if (call_count == 1L) stop("fail") else mock_mesh
+        .cap$call_count <- .cap$call_count + 1L
+        if (.cap$call_count == 1L) stop("fail") else mock_mesh
       },
       progressor = function(...) function(...) NULL,
       future_map2 = mock_future_map2,
@@ -152,16 +154,16 @@ describe("subcort_create_meshes", {
       decimate = NULL
     )
 
-    expect_equal(length(result), 1)
-    expect_equal(names(result), "Right-Putamen")
+    expect_length(result, 1)
+    expect_named(result, "Right-Putamen")
   })
 })
 
 
 describe("subcort_create_snapshots", {
   it("creates snapshots for structures and cortex slices", {
-    snapshot_calls <- 0L
-    cortex_calls <- 0L
+    .cap$snapshot_calls <- 0L
+    .cap$cortex_calls <- 0L
 
     local_mocked_bindings(
       read_volume = function(f) {
@@ -197,11 +199,11 @@ describe("subcort_create_snapshots", {
       future_pmap = mock_future_pmap,
       furrr_options = function(...) list(),
       snapshot_partial_projection = function(...) {
-        snapshot_calls <<- snapshot_calls + 1L
+        .cap$snapshot_calls <- .cap$snapshot_calls + 1L
         invisible(NULL)
       },
       snapshot_cortex_slice = function(...) {
-        cortex_calls <<- cortex_calls + 1L
+        .cap$cortex_calls <- .cap$cortex_calls + 1L
         invisible(NULL)
       }
     )
@@ -221,7 +223,7 @@ describe("subcort_create_snapshots", {
       FALSE
     )
 
-    expect_true(is.list(result))
+    expect_type(result, "list")
     expect_true("views" %in% names(result))
     expect_true("cortex_slices" %in% names(result))
     # Both structures and the cortex outline now route through
@@ -229,8 +231,8 @@ describe("subcort_create_snapshots", {
     # outline must match the structures' slice-range projection so they
     # share the same brain extent). snapshot_cortex_slice is reserved for
     # sagittal cortex slices (hemisphere-specific, no slice range).
-    expect_true(snapshot_calls > 0)
-    expect_equal(cortex_calls, 0)
+    expect_gt(.cap$snapshot_calls, 0)
+    expect_identical(.cap$cortex_calls, 0L)
   })
 
   it("uses provided views instead of defaults", {
@@ -284,12 +286,12 @@ describe("subcort_create_snapshots", {
       FALSE
     )
 
-    expect_equal(result$views$name, "custom_view")
-    expect_equal(result$views$type, "coronal")
+    expect_identical(result$views$name, "custom_view")
+    expect_identical(result$views$type, "coronal")
   })
 
   it("skips structures with zero voxels in volume", {
-    snapshot_calls <- 0L
+    .cap$snapshot_calls <- 0L
 
     local_mocked_bindings(
       read_volume = function(f) {
@@ -323,7 +325,7 @@ describe("subcort_create_snapshots", {
       future_pmap = mock_future_pmap,
       furrr_options = function(...) list(),
       snapshot_partial_projection = function(...) {
-        snapshot_calls <<- snapshot_calls + 1L
+        .cap$snapshot_calls <- .cap$snapshot_calls + 1L
         invisible(NULL)
       },
       snapshot_cortex_slice = function(...) invisible(NULL)
@@ -344,7 +346,7 @@ describe("subcort_create_snapshots", {
       FALSE
     )
 
-    expect_equal(snapshot_calls, 0)
+    expect_identical(.cap$snapshot_calls, 0L)
   })
 })
 
@@ -371,7 +373,7 @@ describe("default_subcortical_views", {
     axial_256 <- result_256[result_256$type == "axial", ]
     axial_512 <- result_512[result_512$type == "axial", ]
 
-    expect_equal(axial_512$start[1] / axial_256$start[1], 2)
+    expect_identical(axial_512$start[1] / axial_256$start[1], 2)
   })
 
   it("creates single sagittal midline slice", {
@@ -379,9 +381,9 @@ describe("default_subcortical_views", {
     result <- default_subcortical_views(dims)
 
     sagittal <- result[result$type == "sagittal", ]
-    expect_equal(nrow(sagittal), 1)
-    expect_equal(sagittal$start, 128)
-    expect_equal(sagittal$end, 128)
+    expect_identical(nrow(sagittal), 1L)
+    expect_identical(sagittal$start, 128)
+    expect_identical(sagittal$end, 128)
   })
 })
 
@@ -426,8 +428,8 @@ describe("validate_subcort_config", {
       "smoothness"
     )
     expect_true(all(expected_fields %in% names(result)))
-    expect_equal(result$atlas_name, "test_atlas")
-    expect_equal(result$decimate, 0.5)
+    expect_identical(result$atlas_name, "test_atlas")
+    expect_identical(result$decimate, 0.5)
   })
 
   it("aborts for invalid decimate values", {
@@ -476,7 +478,7 @@ describe("validate_subcort_config", {
       smoothness = NULL
     )
 
-    expect_equal(result$steps, 1L:9L)
+    expect_identical(result$steps, 1L:9L)
   })
 
   it("accepts a data.frame as input_lut", {
@@ -506,8 +508,8 @@ describe("validate_subcort_config", {
       smoothness = NULL
     )
 
-    expect_true(is.data.frame(result$input_lut))
-    expect_equal(nrow(result$input_lut), 2)
+    expect_s3_class(result$input_lut, "data.frame")
+    expect_identical(nrow(result$input_lut), 2L)
   })
 })
 
@@ -547,7 +549,7 @@ describe("subcort_resolve_labels", {
       color = "#FF0000",
       stringsAsFactors = FALSE
     )
-    cached_vol <- c(10L)
+    cached_vol <- 10L
 
     local_mocked_bindings(
       load_or_run_step = function(step, steps, files, skip_existing, ...) {
@@ -572,8 +574,8 @@ describe("subcort_resolve_labels", {
 
     result <- subcort_resolve_labels(config, dirs)
 
-    expect_equal(result$colortable, cached_ct)
-    expect_equal(result$vol_labels, cached_vol)
+    expect_identical(result$colortable, cached_ct)
+    expect_identical(result$vol_labels, cached_vol)
   })
 
   it("warns when no LUT provided", {
@@ -645,7 +647,7 @@ describe("subcort_resolve_meshes", {
 
     result <- subcort_resolve_meshes(config, dirs, colortable)
 
-    expect_equal(result, cached_meshes)
+    expect_identical(result, cached_meshes)
   })
 })
 
@@ -660,7 +662,7 @@ describe("subcort_resolve_components", {
         stringsAsFactors = FALSE
       ),
       palette = c("Left-Putamen" = "#FF0000"),
-      meshes_df = data.frame(label = "Left-Putamen")
+      meshes_df = data.frame(stringsAsFactors = FALSE, label = "Left-Putamen")
     )
 
     local_mocked_bindings(
@@ -692,7 +694,7 @@ describe("subcort_resolve_components", {
       meshes_list
     )
 
-    expect_equal(result, cached_components)
+    expect_identical(result, cached_components)
   })
 })
 
@@ -716,7 +718,7 @@ describe("subcort_assemble_3d", {
         label = "region",
         stringsAsFactors = FALSE
       ),
-      meshes_df = data.frame(label = "region")
+      meshes_df = data.frame(stringsAsFactors = FALSE, label = "region")
     )
 
     result <- subcort_assemble_3d("test_atlas", components)
@@ -765,7 +767,14 @@ describe("finalize_atlas (subcort parameters)", {
     )
     dirs <- list(base = withr::local_tempdir())
     mock_atlas <- structure(
-      list(core = data.frame(hemi = NA, region = "r", label = "r")),
+      list(
+        core = data.frame(
+          stringsAsFactors = FALSE,
+          hemi = NA,
+          region = "r",
+          label = "r"
+        )
+      ),
       class = "ggseg_atlas"
     )
 
@@ -814,26 +823,26 @@ describe("run_image_steps (subcort step_map)", {
   subcort_step_map <- list(process = 5L, extract = 6L, smooth = 7L, reduce = 8L)
 
   it("calls the right functions for the right steps", {
-    step5_called <- FALSE
-    step6_called <- FALSE
-    step7_called <- FALSE
-    step8_called <- FALSE
+    .cap$step5_called <- FALSE
+    .cap$step6_called <- FALSE
+    .cap$step7_called <- FALSE
+    .cap$step8_called <- FALSE
 
     local_mocked_bindings(
       process_and_mask_images = function(...) {
-        step5_called <<- TRUE
+        .cap$step5_called <- TRUE
         invisible(NULL)
       },
       extract_contours = function(...) {
-        step6_called <<- TRUE
+        .cap$step6_called <- TRUE
         invisible(NULL)
       },
       smooth_contours = function(...) {
-        step7_called <<- TRUE
+        .cap$step7_called <- TRUE
         invisible(NULL)
       },
       reduce_vertex = function(...) {
-        step8_called <<- TRUE
+        .cap$step8_called <- TRUE
         invisible(NULL)
       }
     )
@@ -854,33 +863,33 @@ describe("run_image_steps (subcort step_map)", {
 
     run_image_steps(config, dirs, subcort_step_map, 9L)
 
-    expect_true(step5_called)
-    expect_true(step6_called)
-    expect_true(step7_called)
-    expect_true(step8_called)
+    expect_true(.cap$step5_called)
+    expect_true(.cap$step6_called)
+    expect_true(.cap$step7_called)
+    expect_true(.cap$step8_called)
   })
 
   it("skips steps not in config$steps", {
-    step5_called <- FALSE
-    step6_called <- FALSE
-    step7_called <- FALSE
-    step8_called <- FALSE
+    .cap$step5_called <- FALSE
+    .cap$step6_called <- FALSE
+    .cap$step7_called <- FALSE
+    .cap$step8_called <- FALSE
 
     local_mocked_bindings(
       process_and_mask_images = function(...) {
-        step5_called <<- TRUE
+        .cap$step5_called <- TRUE
         invisible(NULL)
       },
       extract_contours = function(...) {
-        step6_called <<- TRUE
+        .cap$step6_called <- TRUE
         invisible(NULL)
       },
       smooth_contours = function(...) {
-        step7_called <<- TRUE
+        .cap$step7_called <- TRUE
         invisible(NULL)
       },
       reduce_vertex = function(...) {
-        step8_called <<- TRUE
+        .cap$step8_called <- TRUE
         invisible(NULL)
       }
     )
@@ -901,10 +910,10 @@ describe("run_image_steps (subcort step_map)", {
 
     run_image_steps(config, dirs, subcort_step_map, 9L)
 
-    expect_false(step5_called)
-    expect_true(step6_called)
-    expect_false(step7_called)
-    expect_true(step8_called)
+    expect_false(.cap$step5_called)
+    expect_true(.cap$step6_called)
+    expect_false(.cap$step7_called)
+    expect_true(.cap$step8_called)
   })
 })
 

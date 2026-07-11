@@ -43,12 +43,12 @@ read_tractography <- function(file) {
 #' @keywords internal
 read_trk <- function(file) {
   con <- file(file, "rb")
-  on.exit(close(con))
+  on.exit(close(con), add = TRUE)
 
   header <- readBin(con, "raw", 1000)
   id_string <- rawToChar(header[1:6])
 
-  if (!grepl("TRACK", id_string)) {
+  if (!grepl("TRACK", id_string, fixed = TRUE)) {
     cli::cli_abort("Invalid TRK file: {file}")
   }
 
@@ -95,7 +95,7 @@ read_trk <- function(file) {
 #' @keywords internal
 read_tck <- function(file) {
   con <- file(file, "rb")
-  on.exit(close(con))
+  on.exit(close(con), add = TRUE)
 
   header_lines <- read_tck_header(con)
   datatype <- parse_tck_datatype(header_lines)
@@ -155,7 +155,7 @@ parse_tck_datatype <- function(header_lines) {
   datatype <- "float32"
   for (line in header_lines) {
     if (grepl("^datatype:", line)) {
-      datatype <- trimws(sub("datatype:", "", line))
+      datatype <- trimws(sub("datatype:", "", line, fixed = TRUE))
     }
   }
   datatype

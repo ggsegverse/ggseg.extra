@@ -133,6 +133,7 @@ Adding grouping columns lets users facet plots by system, color by network, or f
 #| label: core-add
 #| eval: false
 metadata <- data.frame(
+  stringsAsFactors = FALSE,
   region = c("thalamus", "caudate", "putamen", "hippocampus", "amygdala"),
   structure = c("diencephalon", "basal ganglia", "basal ganglia",
                 "limbic", "limbic")

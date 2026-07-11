@@ -1,9 +1,11 @@
+.cap <- new.env()
+
 describe("cortical_brain_snapshots", {
   it("dispatches snapshot_brain_full_batch for each hemisphere", {
-    captured <- list()
+    .cap$captured <- list()
     local_mocked_bindings(
       snapshot_brain_full_batch = function(atlas, hemisphere, views, ...) {
-        captured[[length(captured) + 1]] <<- list(
+        .cap$captured[[length(.cap$captured) + 1]] <- list(
           hemisphere = hemisphere,
           views = views
         )
@@ -22,17 +24,17 @@ describe("cortical_brain_snapshots", {
       skip_existing = FALSE
     )
 
-    expect_equal(length(captured), 2)
-    hemis <- vapply(captured, `[[`, character(1), "hemisphere")
+    expect_length(.cap$captured, 2)
+    hemis <- vapply(.cap$captured, `[[`, character(1), "hemisphere")
     expect_true(all(c("lh", "rh") %in% hemis))
-    expect_equal(captured[[1]]$views, c("lateral", "medial"))
+    expect_identical(.cap$captured[[1]]$views, c("lateral", "medial"))
   })
 })
 
 
 describe("cortical_region_snapshots", {
   it("filters grid to matching hemi-label pairs", {
-    captured <- list()
+    .cap$captured <- list()
     local_mocked_bindings(
       snapshot_region_batch = function(
         atlas,
@@ -41,7 +43,7 @@ describe("cortical_region_snapshots", {
         views,
         ...
       ) {
-        captured[[length(captured) + 1]] <<- list(
+        .cap$captured[[length(.cap$captured) + 1]] <- list(
           region_label = region_label,
           hemisphere = hemisphere
         )
@@ -57,7 +59,7 @@ describe("cortical_region_snapshots", {
         label = c("lh_frontal", "rh_frontal"),
         stringsAsFactors = FALSE
       ),
-      vertices_df = data.frame(label = character(0))
+      vertices_df = data.frame(stringsAsFactors = FALSE, label = character(0))
     )
     atlas_3d <- structure(list(), class = "ggseg_atlas")
     dirs <- list(snapshots = tempdir())
@@ -66,13 +68,13 @@ describe("cortical_region_snapshots", {
       atlas_3d,
       components,
       hemisphere = c("lh", "rh"),
-      views = c("lateral"),
+      views = "lateral",
       dirs = dirs,
       skip_existing = FALSE
     )
 
-    labels <- vapply(captured, `[[`, character(1), "region_label")
-    hemis <- vapply(captured, `[[`, character(1), "hemisphere")
+    labels <- vapply(.cap$captured, `[[`, character(1), "region_label")
+    hemis <- vapply(.cap$captured, `[[`, character(1), "hemisphere")
     expect_true(all(hemis[labels == "lh_frontal"] == "lh"))
     expect_true(all(hemis[labels == "rh_frontal"] == "rh"))
   })
@@ -85,10 +87,10 @@ describe("cortical_isolate_regions", {
     file.create(file.path(snap_dir, "region1.png"))
     file.create(file.path(snap_dir, "region2.png"))
 
-    captured <- list()
+    .cap$captured <- list()
     local_mocked_bindings(
       isolate_region = function(input_file, output_file, ...) {
-        captured[[length(captured) + 1]] <<- basename(input_file)
+        .cap$captured[[length(.cap$captured) + 1]] <- basename(input_file)
       },
       progressor = function(...) function(...) NULL
     )
@@ -101,7 +103,10 @@ describe("cortical_isolate_regions", {
 
     cortical_isolate_regions(dirs, skip_existing = FALSE)
 
-    expect_equal(sort(unlist(captured)), c("region1.png", "region2.png"))
+    expect_identical(
+      sort(unlist(.cap$captured)),
+      c("region1.png", "region2.png")
+    )
   })
 })
 
@@ -148,7 +153,7 @@ describe("labels_read_files", {
     result <- labels_read_files(labels, NULL, NULL, default_colours)
 
     expect_s3_class(result, "tbl_df")
-    expect_equal(nrow(result), 3)
+    expect_identical(nrow(result), 3L)
     expect_true(all(
       c("hemi", "region", "label", "colour", "vertices") %in%
         names(result)
@@ -164,7 +169,7 @@ describe("labels_read_files", {
 
     result <- labels_read_files(labels, custom_names, NULL, default_colours)
 
-    expect_equal(result$region, custom_names)
+    expect_identical(result$region, custom_names)
   })
 })
 
@@ -193,7 +198,7 @@ describe("labels_read_files hemisphere-less filenames", {
       default_colours
     )
 
-    expect_equal(result$label[1], "some_region")
+    expect_identical(result$label[1], "some_region")
     expect_true(is.na(result$hemi[1]))
   })
 })
@@ -201,14 +206,14 @@ describe("labels_read_files hemisphere-less filenames", {
 
 describe("labels_region_snapshots", {
   it("also takes NA region snapshots", {
-    region_captured <- list()
-    na_captured <- list()
+    .cap$region_captured <- list()
+    .cap$na_captured <- list()
     local_mocked_bindings(
       snapshot_region_batch = function(...) {
-        region_captured[[length(region_captured) + 1]] <<- TRUE
+        .cap$region_captured[[length(.cap$region_captured) + 1]] <- TRUE
       },
       snapshot_na_regions_batch = function(...) {
-        na_captured[[length(na_captured) + 1]] <<- TRUE
+        .cap$na_captured[[length(.cap$na_captured) + 1]] <- TRUE
       },
       filter_visible_regions = function(region_grid, vertices_df) {
         region_grid
@@ -230,13 +235,13 @@ describe("labels_region_snapshots", {
       atlas_3d,
       components,
       hemi_short = c("lh", "rh"),
-      views = c("lateral"),
+      views = "lateral",
       dirs = dirs,
       skip_existing = FALSE
     )
 
-    expect_true(length(region_captured) > 0)
-    expect_true(length(na_captured) > 0)
+    expect_gt(length(.cap$region_captured), 0)
+    expect_gt(length(.cap$na_captured), 0)
   })
 })
 
@@ -259,7 +264,7 @@ describe("validate_cortical_config", {
       NULL
     )
 
-    expect_true(is.list(result))
+    expect_type(result, "list")
     expected_fields <- c(
       "output_dir",
       "verbose",
@@ -282,19 +287,21 @@ describe("parse_lut_colours", {
 
   it("extracts hex colours from data.frame", {
     lut <- data.frame(
+      stringsAsFactors = FALSE,
       region = c("Motor", "Visual"),
       hex = c("#FF0000", "#00FF00")
     )
 
     result <- parse_lut_colours(lut)
 
-    expect_equal(result$region_names, c("Motor", "Visual"))
-    expect_equal(result$colours, c("#FF0000", "#00FF00"))
+    expect_identical(result$region_names, c("Motor", "Visual"))
+    expect_identical(result$colours, c("#FF0000", "#00FF00"))
   })
 
   it("converts RGB columns to hex", {
     lut <- data.frame(
-      region = c("Motor"),
+      stringsAsFactors = FALSE,
+      region = "Motor",
       R = 255,
       G = 0,
       B = 128
@@ -302,19 +309,19 @@ describe("parse_lut_colours", {
 
     result <- parse_lut_colours(lut)
 
-    expect_equal(result$region_names, "Motor")
-    expect_equal(
+    expect_identical(result$region_names, "Motor")
+    expect_identical(
       result$colours,
       grDevices::rgb(255, 0, 128, maxColorValue = 255)
     )
   })
 
   it("returns NULL colours when no colour columns", {
-    lut <- data.frame(region = c("Motor", "Visual"))
+    lut <- data.frame(stringsAsFactors = FALSE, region = c("Motor", "Visual"))
 
     result <- parse_lut_colours(lut)
 
-    expect_equal(result$region_names, c("Motor", "Visual"))
+    expect_identical(result$region_names, c("Motor", "Visual"))
     expect_null(result$colours)
   })
 
@@ -322,6 +329,7 @@ describe("parse_lut_colours", {
     local_mocked_bindings(
       read_ctab = function(path) {
         data.frame(
+          stringsAsFactors = FALSE,
           region = "FromFile",
           hex = "#AABBCC"
         )
@@ -330,7 +338,7 @@ describe("parse_lut_colours", {
 
     result <- parse_lut_colours("/fake/path.ctab")
 
-    expect_equal(result$region_names, "FromFile")
-    expect_equal(result$colours, "#AABBCC")
+    expect_identical(result$region_names, "FromFile")
+    expect_identical(result$colours, "#AABBCC")
   })
 })

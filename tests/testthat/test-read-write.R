@@ -49,7 +49,7 @@ describe("read_volume", {
 
     vol <- read_volume(mgz_file)
     expect_true(is.array(vol))
-    expect_equal(length(dim(vol)), 3)
+    expect_length(dim(vol), 3)
   })
 
   it("reads NIfTI files when RNifti available", {
@@ -61,7 +61,7 @@ describe("read_volume", {
 
     result <- read_volume(tmp)
     expect_true(is.array(result))
-    expect_equal(dim(result), c(3, 3, 3))
+    expect_identical(dim(result), c(3L, 3L, 3L))
   })
 })
 
@@ -76,7 +76,7 @@ describe("read_volume with reorient FALSE", {
 
     result <- read_volume(tmp, reorient = FALSE)
 
-    expect_true(inherits(result, "niftiImage"))
+    expect_s3_class(result, "niftiImage")
   })
 })
 
@@ -121,10 +121,10 @@ describe("read_ply_mesh", {
     expect_named(result, c("vertices", "faces"))
     expect_s3_class(result$vertices, "data.frame")
     expect_s3_class(result$faces, "data.frame")
-    expect_equal(nrow(result$vertices), 4)
-    expect_equal(nrow(result$faces), 2)
-    expect_equal(names(result$vertices), c("x", "y", "z"))
-    expect_equal(names(result$faces), c("i", "j", "k"))
+    expect_identical(nrow(result$vertices), 4L)
+    expect_identical(nrow(result$faces), 2L)
+    expect_named(result$vertices, c("x", "y", "z"))
+    expect_named(result$faces, c("i", "j", "k"))
   })
 
   it("extracts correct vertex coordinates", {
@@ -135,9 +135,9 @@ describe("read_ply_mesh", {
 
     result <- read_ply_mesh(ply_file)
 
-    expect_equal(result$vertices$x, c(1, 2, 3))
-    expect_equal(result$vertices$y, c(4, 5, 6))
-    expect_equal(result$vertices$z, c(7, 8, 9))
+    expect_identical(result$vertices$x, c(1, 2, 3))
+    expect_identical(result$vertices$y, c(4, 5, 6))
+    expect_identical(result$vertices$z, c(7, 8, 9))
   })
 
   it("extracts correct face indices", {
@@ -152,9 +152,9 @@ describe("read_ply_mesh", {
 
     result <- read_ply_mesh(ply_file)
 
-    expect_equal(result$faces$i, c(1, 2))
-    expect_equal(result$faces$j, c(2, 3))
-    expect_equal(result$faces$k, c(3, 1))
+    expect_identical(result$faces$i, c(1L, 2L))
+    expect_identical(result$faces$j, c(2L, 3L))
+    expect_identical(result$faces$k, c(3L, 1L))
   })
 
   it("errors on non-string input", {
@@ -179,7 +179,7 @@ describe("read_ctab", {
 
     expect_s3_class(result, "data.frame")
     expect_true(all(c("idx", "label", "R", "G", "B", "A") %in% names(result)))
-    expect_true(nrow(result) > 0)
+    expect_gt(nrow(result), 0)
   })
 
   it("reads optional type column when present", {
@@ -196,9 +196,9 @@ describe("read_ctab", {
     result <- read_ctab(tmp)
 
     expect_s3_class(result, "data.frame")
-    expect_equal(nrow(result), 3)
+    expect_identical(nrow(result), 3L)
     expect_true("type" %in% names(result))
-    expect_equal(result$type, c(NA, "Anterior", "Posterior"))
+    expect_identical(result$type, c(NA, "Anterior", "Posterior"))
   })
 
   it("omits type column when no rows have it", {
@@ -213,7 +213,7 @@ describe("read_ctab", {
 
     result <- read_ctab(tmp)
 
-    expect_equal(names(result), c("idx", "label", "R", "G", "B", "A"))
+    expect_named(result, c("idx", "label", "R", "G", "B", "A"))
   })
 })
 
@@ -221,7 +221,8 @@ describe("read_ctab", {
 describe("write_ctab", {
   it("writes color table to file", {
     ctab <- data.frame(
-      idx = c(1, 2, 3),
+      stringsAsFactors = FALSE,
+      idx = c(1L, 2L, 3L),
       label = c("Region1", "Region2", "Region3"),
       R = c(255, 0, 0),
       G = c(0, 255, 0),
@@ -235,12 +236,12 @@ describe("write_ctab", {
     expect_true(file.exists(tmp))
 
     read_back <- read_ctab(tmp)
-    expect_equal(nrow(read_back), 3)
-    expect_equal(read_back$idx, ctab$idx)
+    expect_identical(nrow(read_back), 3L)
+    expect_identical(read_back$idx, ctab$idx)
   })
 
   it("truncates long label names to 29 characters", {
-    long_label <- paste(rep("a", 40), collapse = "")
+    long_label <- strrep("a", 40)
     ctab <- data.frame(
       idx = 1,
       label = long_label,
@@ -262,6 +263,7 @@ describe("write_ctab", {
 describe("is_ctab", {
   it("returns TRUE for valid color table", {
     ctab <- data.frame(
+      stringsAsFactors = FALSE,
       idx = 1:3,
       label = c("a", "b", "c"),
       R = c(255, 0, 0),
@@ -280,7 +282,12 @@ describe("is_ctab", {
   })
 
   it("returns FALSE for missing columns", {
-    partial <- data.frame(idx = 1, label = "a", R = 255)
+    partial <- data.frame(
+      stringsAsFactors = FALSE,
+      idx = 1,
+      label = "a",
+      R = 255
+    )
     expect_false(is_ctab(partial))
   })
 })
@@ -300,6 +307,7 @@ describe("get_ctab", {
 
   it("accepts data.frame input", {
     ctab <- data.frame(
+      stringsAsFactors = FALSE,
       idx = c(1, 2),
       label = c("Region1", "Region2"),
       R = c(255, 0),
@@ -310,8 +318,8 @@ describe("get_ctab", {
 
     result <- get_ctab(ctab)
 
-    expect_equal(result$color, c("#FF0000", "#00FF00"))
-    expect_equal(result$roi, c("0001", "0002"))
+    expect_identical(result$color, c("#FF0000", "#00FF00"))
+    expect_identical(result$roi, c("0001", "0002"))
   })
 
   it("errors for invalid color table format", {
@@ -330,7 +338,9 @@ describe("read_label_vertices", {
     writeLines("", tmp)
 
     expect_warning(
-      result <- read_label_vertices(tmp),
+      {
+        result <- read_label_vertices(tmp)
+      },
       "Could not parse"
     )
 
@@ -353,7 +363,7 @@ describe("read_label_vertices", {
 
     result <- read_label_vertices(tmp)
 
-    expect_equal(result, c(100L, 101L, 102L))
+    expect_identical(result, c(100L, 101L, 102L))
   })
 
   it("returns 0-indexed vertex indices", {
@@ -370,7 +380,7 @@ describe("read_label_vertices", {
 
     result <- read_label_vertices(tmp)
 
-    expect_equal(result, c(0L, 1L))
+    expect_identical(result, c(0L, 1L))
   })
 })
 
@@ -385,7 +395,7 @@ describe("write_dpv and read_dpv", {
 
     result <- read_dpv(tmp)
 
-    expect_true(is.list(result))
+    expect_type(result, "list")
     expect_true(all(c("vertices", "faces") %in% names(result)))
   })
 
@@ -398,7 +408,9 @@ describe("write_dpv and read_dpv", {
 
     content <- readLines(tmp)
     last_line <- content[length(content)]
-    face_values <- as.numeric(strsplit(trimws(last_line), " ")[[1]])
+    face_values <- as.numeric(strsplit(trimws(last_line), " ", fixed = TRUE)[[
+      1
+    ]])
 
     expect_true(all(face_values[1:3] >= 0))
     expect_true(all(face_values[1:3] < 3))
@@ -421,11 +433,13 @@ describe("read_annotation_data", {
     )
 
     expect_warning(
-      result <- read_annotation_data(tmp),
+      {
+        result <- read_annotation_data(tmp)
+      },
       "Cannot detect hemisphere"
     )
 
-    expect_equal(nrow(result), 0)
+    expect_identical(nrow(result), 0L)
   })
 
   it("skips regions with zero matching vertices", {
@@ -477,7 +491,7 @@ describe("read_neuromaps_volume", {
     local_mocked_bindings(
       check_fs = function(...) invisible(TRUE),
       mri_vol2surf = function(input_file, output_file, hemisphere, ...) {
-        values <- if (grepl("lh", hemisphere)) {
+        values <- if (grepl("lh", hemisphere, fixed = TRUE)) {
           c(rep(1, 5000), rep(2, 5242))
         } else {
           c(rep(1, 4000), rep(2, 6242))
@@ -513,7 +527,7 @@ describe("read_neuromaps_volume", {
     result <- read_neuromaps_volume("fake.nii.gz", output_dir = output_dir)
 
     named_regions <- result[result$region != "unknown", ]
-    expect_true(all(!is.na(named_regions$colour)))
+    expect_false(anyNA(named_regions$colour))
   })
 
   it("handles continuous values with binning", {
@@ -540,8 +554,8 @@ describe("read_neuromaps_volume", {
 
     expect_s3_class(result, "tbl_df")
     bin_regions <- result[grepl("^bin_", result$region), ]
-    expect_true(nrow(bin_regions) > 0)
-    expect_true(all(!is.na(bin_regions$colour)))
+    expect_gt(nrow(bin_regions), 0)
+    expect_false(anyNA(bin_regions$colour))
   })
 
   it("errors when mri_vol2surf fails to produce output", {
@@ -657,7 +671,7 @@ describe("read_cifti_annotation", {
 
     expect_true("unknown" %in% result$region)
     unknown_row <- result[result$region == "unknown", ]
-    expect_equal(unknown_row$colour[1], "#BEBEBE")
+    expect_identical(unknown_row$colour[1], "#BEBEBE")
   })
 })
 
@@ -686,8 +700,8 @@ describe("parse_continuous_values", {
       function(x) x$region[1],
       character(1)
     )
-    expect_true(length(bin_regions) <= 10)
-    expect_true(length(bin_regions) >= 1)
+    expect_lte(length(bin_regions), 10)
+    expect_gte(length(bin_regions), 1)
   })
 })
 
@@ -763,6 +777,6 @@ describe("read_neuromaps_annotation", {
 
     expect_true("unknown" %in% result$region)
     unknown_row <- result[result$region == "unknown", ]
-    expect_equal(unknown_row$colour[1], "#BEBEBE")
+    expect_identical(unknown_row$colour[1], "#BEBEBE")
   })
 })

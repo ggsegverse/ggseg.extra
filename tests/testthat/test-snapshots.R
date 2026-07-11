@@ -1,3 +1,5 @@
+.cap <- new.env()
+
 describe("extract_slice_2d", {
   it("extracts axial slice", {
     vol <- array(0, dim = c(10, 10, 10))
@@ -6,8 +8,8 @@ describe("extract_slice_2d", {
     slice <- extract_slice_2d(vol, "axial", 5)
 
     expect_true(is.matrix(slice))
-    expect_equal(dim(slice), c(10, 10))
-    expect_equal(max(slice), 1)
+    expect_identical(dim(slice), c(10L, 10L))
+    expect_identical(max(slice), 1)
   })
 
   it("extracts coronal slice", {
@@ -17,8 +19,8 @@ describe("extract_slice_2d", {
     slice <- extract_slice_2d(vol, "coronal", 5)
 
     expect_true(is.matrix(slice))
-    expect_equal(dim(slice), c(10, 10))
-    expect_equal(max(slice), 1)
+    expect_identical(dim(slice), c(10L, 10L))
+    expect_identical(max(slice), 1)
   })
 
   it("extracts sagittal slice", {
@@ -28,8 +30,8 @@ describe("extract_slice_2d", {
     slice <- extract_slice_2d(vol, "sagittal", 5)
 
     expect_true(is.matrix(slice))
-    expect_equal(dim(slice), c(10, 10))
-    expect_equal(max(slice), 1)
+    expect_identical(dim(slice), c(10L, 10L))
+    expect_identical(max(slice), 1)
   })
 })
 
@@ -45,7 +47,7 @@ describe("extract_slice_2d edge cases", {
     vol <- array(1:10, dim = c(10, 1, 1))
     result <- extract_slice_2d(vol, "axial", 1)
     expect_true(is.matrix(result))
-    expect_equal(dim(result), c(10, 1))
+    expect_identical(dim(result), c(10L, 1L))
   })
 })
 
@@ -73,7 +75,7 @@ describe("snapshot_slice with label file", {
     )
 
     files <- list.files(outdir, pattern = "\\.png$")
-    expect_true(length(files) > 0)
+    expect_gt(length(files), 0)
   })
 
   it("errors when label_file is NULL for .label input", {
@@ -98,8 +100,8 @@ describe("orient_slice_2d", {
 
     flipped <- orient_slice_2d(slice, "sagittal", hemi = "left")
 
-    expect_equal(flipped[1, ], slice[2, ])
-    expect_equal(flipped[2, ], slice[1, ])
+    expect_identical(flipped[1, ], slice[2, ])
+    expect_identical(flipped[2, ], slice[1, ])
   })
 
   it("does not flip right sagittal", {
@@ -107,14 +109,14 @@ describe("orient_slice_2d", {
 
     result <- orient_slice_2d(slice, "sagittal", hemi = "right")
 
-    expect_equal(result, slice)
+    expect_identical(result, slice)
   })
 
   it("does not flip axial or coronal", {
     slice <- matrix(c(1, 2, 3, 4), nrow = 2)
 
-    expect_equal(orient_slice_2d(slice, "axial"), slice)
-    expect_equal(orient_slice_2d(slice, "coronal"), slice)
+    expect_identical(orient_slice_2d(slice, "axial"), slice)
+    expect_identical(orient_slice_2d(slice, "coronal"), slice)
   })
 })
 
@@ -139,7 +141,7 @@ describe("snapshot_partial_projection", {
     )
 
     files <- list.files(outdir, pattern = "\\.png$")
-    expect_true(length(files) > 0)
+    expect_gt(length(files), 0)
   })
 })
 
@@ -243,7 +245,7 @@ describe("snapshot_slice", {
     )
 
     mtime2 <- file.mtime(outfile)
-    expect_equal(mtime1, mtime2)
+    expect_identical(mtime1, mtime2)
   })
 })
 
@@ -353,7 +355,7 @@ describe("snapshot_cortex_slice", {
       skip_existing = TRUE
     )
 
-    expect_equal(result, outfile)
+    expect_identical(result, outfile)
   })
 })
 
@@ -430,7 +432,7 @@ describe("snapshot_volume_slice coronal/sagittal", {
       skip_existing = TRUE
     )
 
-    expect_equal(file.mtime(result2), mtime1)
+    expect_identical(file.mtime(result2), mtime1)
   })
 })
 
@@ -442,8 +444,8 @@ describe("volume_projection", {
 
     proj <- volume_projection(vol, "axial")
 
-    expect_equal(dim(proj), c(10, 10))
-    expect_equal(max(proj), 10)
+    expect_identical(dim(proj), c(10L, 10L))
+    expect_identical(max(proj), 10)
   })
 
   it("creates sagittal projection", {
@@ -452,7 +454,7 @@ describe("volume_projection", {
 
     proj <- volume_projection(vol, "sagittal")
 
-    expect_equal(dim(proj), c(10, 10))
+    expect_identical(dim(proj), c(10L, 10L))
   })
 
   it("creates coronal projection", {
@@ -461,7 +463,7 @@ describe("volume_projection", {
 
     proj <- volume_projection(vol, "coronal")
 
-    expect_equal(dim(proj), c(10, 10))
+    expect_identical(dim(proj), c(10L, 10L))
   })
 })
 
@@ -473,8 +475,8 @@ describe("volume_projection with start/end", {
 
     proj <- volume_projection(vol, "axial", start = 3, end = 7)
 
-    expect_equal(dim(proj), c(10, 10))
-    expect_equal(proj[5, 5], 1)
+    expect_identical(dim(proj), c(10L, 10L))
+    expect_identical(proj[5, 5], 1)
   })
 
   it("respects slice boundaries", {
@@ -484,7 +486,7 @@ describe("volume_projection with start/end", {
 
     proj <- volume_projection(vol, "axial", start = 3, end = 7)
 
-    expect_equal(max(proj), 0)
+    expect_identical(max(proj), 0)
   })
 })
 
@@ -506,7 +508,7 @@ describe("snapshot_brain_helper", {
   })
 
   it("calls ggseg3d pipeline when file doesn't exist", {
-    snapshot_called <- FALSE
+    .cap$snapshot_called <- FALSE
     local_mocked_bindings(
       ggseg3d = function(...) structure(list(), class = "ggseg3d"),
       set_flat_shading = function(x, ...) x,
@@ -515,7 +517,7 @@ describe("snapshot_brain_helper", {
       set_background = function(x, ...) x,
       set_legend = function(x, ...) x,
       snapshot_brain = function(p, file, ...) {
-        snapshot_called <<- TRUE
+        .cap$snapshot_called <- TRUE
         file.create(file)
       }
     )
@@ -528,14 +530,14 @@ describe("snapshot_brain_helper", {
       surface = "inflated",
       outfile = tmp
     )
-    expect_true(snapshot_called)
+    expect_true(.cap$snapshot_called)
   })
 })
 
 
 describe("snapshot_brain_full (full brain)", {
   it("constructs correct output filename", {
-    captured_outfile <- NULL
+    .cap$captured_outfile <- NULL
     local_mocked_bindings(
       snapshot_brain_helper = function(
         atlas,
@@ -545,13 +547,13 @@ describe("snapshot_brain_full (full brain)", {
         outfile,
         ...
       ) {
-        captured_outfile <<- outfile
+        .cap$captured_outfile <- outfile
         invisible(outfile)
       }
     )
 
     tmp_dir <- withr::local_tempdir()
-    ggseg.extra:::snapshot_brain_full(
+    snapshot_brain_full(
       atlas = NULL,
       hemisphere = "lh",
       view = "lateral",
@@ -559,14 +561,14 @@ describe("snapshot_brain_full (full brain)", {
       output_dir = tmp_dir
     )
 
-    expect_match(basename(captured_outfile), "full_lh_lateral\\.png")
+    expect_match(basename(.cap$captured_outfile), "full_lh_lateral\\.png")
   })
 })
 
 
 describe("snapshot_region", {
   it("constructs correct output filename and highlight data", {
-    captured <- list()
+    captured <- new.env()
     local_mocked_bindings(
       snapshot_brain_helper = function(
         atlas,
@@ -579,16 +581,19 @@ describe("snapshot_region", {
         na_colour,
         ...
       ) {
-        captured$outfile <<- outfile
-        captured$.data <<- .data
-        captured$colour <<- colour
-        captured$na_colour <<- na_colour
+        captured$outfile <- outfile
+        captured$.data <- .data
+        captured$colour <- colour
+        captured$na_colour <- na_colour
         invisible(outfile)
       }
     )
 
     mock_atlas <- list(
-      core = data.frame(label = c("lh_frontal", "lh_parietal"))
+      core = data.frame(
+        stringsAsFactors = FALSE,
+        label = c("lh_frontal", "lh_parietal")
+      )
     )
     tmp_dir <- withr::local_tempdir()
 
@@ -602,13 +607,13 @@ describe("snapshot_region", {
     )
 
     expect_match(basename(captured$outfile), "lh_frontal_lh_lateral\\.png")
-    expect_equal(captured$colour, "highlight")
-    expect_equal(captured$na_colour, "#FFFFFF")
-    expect_equal(
+    expect_identical(captured$colour, "highlight")
+    expect_identical(captured$na_colour, "#FFFFFF")
+    expect_identical(
       captured$.data$highlight[captured$.data$label == "lh_frontal"],
       "#FF0000"
     )
-    expect_equal(
+    expect_identical(
       captured$.data$highlight[captured$.data$label == "lh_parietal"],
       "#FFFFFF"
     )
@@ -676,7 +681,10 @@ describe("filter_visible_regions", {
       .package = "ggseg.formats"
     )
 
-    vertices_df <- data.frame(label = c("lh_outer", "lh_inner"))
+    vertices_df <- data.frame(
+      stringsAsFactors = FALSE,
+      label = c("lh_outer", "lh_inner")
+    )
     vertices_df$vertices <- list(
       c(0L, 1L, 2L),
       c(3L, 4L, 5L)
@@ -690,8 +698,8 @@ describe("filter_visible_regions", {
     )
 
     result <- filter_visible_regions(grid, vertices_df)
-    expect_equal(nrow(result), 1)
-    expect_equal(result$region_label, "lh_outer")
+    expect_identical(nrow(result), 1L)
+    expect_identical(result$region_label, "lh_outer")
   })
 
   it("keeps all regions for unknown view", {
@@ -700,7 +708,7 @@ describe("filter_visible_regions", {
       .package = "ggseg.formats"
     )
 
-    vertices_df <- data.frame(label = "lh_test")
+    vertices_df <- data.frame(stringsAsFactors = FALSE, label = "lh_test")
     vertices_df$vertices <- list(0L)
 
     grid <- data.frame(
@@ -711,14 +719,14 @@ describe("filter_visible_regions", {
     )
 
     result <- filter_visible_regions(grid, vertices_df)
-    expect_equal(nrow(result), 1)
+    expect_identical(nrow(result), 1L)
   })
 })
 
 
 describe("snapshot_na_regions", {
   it("constructs correct filename and white highlight data", {
-    captured <- list()
+    captured <- new.env()
     local_mocked_bindings(
       snapshot_brain_helper = function(
         atlas,
@@ -731,14 +739,14 @@ describe("snapshot_na_regions", {
         na_colour,
         ...
       ) {
-        captured$outfile <<- outfile
-        captured$na_colour <<- na_colour
+        captured$outfile <- outfile
+        captured$na_colour <- na_colour
         invisible(outfile)
       }
     )
 
     mock_atlas <- list(
-      core = data.frame(label = c("lh_frontal"))
+      core = data.frame(stringsAsFactors = FALSE, label = "lh_frontal")
     )
     tmp_dir <- withr::local_tempdir()
 
@@ -751,7 +759,7 @@ describe("snapshot_na_regions", {
     )
 
     expect_match(basename(captured$outfile), "nolabel")
-    expect_equal(captured$na_colour, "#FF0000")
+    expect_identical(captured$na_colour, "#FF0000")
   })
 })
 
@@ -800,11 +808,11 @@ describe("snapshot_brain_full_batch", {
     for (v in views) {
       file.create(file.path(tmp_dir, sprintf("full_lh_%s.png", v)))
     }
-    widget_called <- FALSE
+    .cap$widget_called <- FALSE
     local_mocked_bindings(
       hemi_to_long = function(h) "left",
       build_brain_widget = function(...) {
-        widget_called <<- TRUE
+        .cap$widget_called <- TRUE
         NULL
       },
       snapshot_widget_batch = function(...) invisible(character(0))
@@ -817,7 +825,7 @@ describe("snapshot_brain_full_batch", {
       output_dir = tmp_dir,
       skip_existing = TRUE
     )
-    expect_false(widget_called)
+    expect_false(.cap$widget_called)
   })
 
   it("only snapshots missing views", {
@@ -827,14 +835,14 @@ describe("snapshot_brain_full_batch", {
     )
     views <- c("lateral", "medial")
     file.create(file.path(tmp_dir, "full_lh_lateral.png"))
-    captured_files <- NULL
+    .cap$captured_files <- NULL
     local_mocked_bindings(
       hemi_to_long = function(h) "left",
       build_brain_widget = function(...) {
         structure(list(), class = "ggseg3d")
       },
       snapshot_widget_batch = function(widget, views, files, ...) {
-        captured_files <<- files
+        .cap$captured_files <- files
         invisible(files)
       }
     )
@@ -846,8 +854,8 @@ describe("snapshot_brain_full_batch", {
       output_dir = tmp_dir,
       skip_existing = TRUE
     )
-    expect_length(captured_files, 1)
-    expect_true(grepl("medial", captured_files))
+    expect_length(.cap$captured_files, 1)
+    expect_true(grepl("medial", .cap$captured_files, fixed = TRUE))
   })
 
   it("renders all views with grey na_colour", {
@@ -855,7 +863,7 @@ describe("snapshot_brain_full_batch", {
     mock_atlas <- list(
       core = data.frame(label = "lh_frontal", stringsAsFactors = FALSE)
     )
-    captured_na <- NULL
+    .cap$captured_na <- NULL
     local_mocked_bindings(
       hemi_to_long = function(h) "left",
       build_brain_widget = function(
@@ -865,7 +873,7 @@ describe("snapshot_brain_full_batch", {
         na_colour = NULL,
         ...
       ) {
-        captured_na <<- na_colour
+        .cap$captured_na <- na_colour
         structure(list(), class = "ggseg3d")
       },
       snapshot_widget_batch = function(...) invisible(character(0))
@@ -878,7 +886,7 @@ describe("snapshot_brain_full_batch", {
       output_dir = tmp_dir,
       skip_existing = FALSE
     )
-    expect_equal(captured_na, "#CCCCCC")
+    expect_identical(.cap$captured_na, "#CCCCCC")
   })
 })
 
@@ -898,11 +906,11 @@ describe("snapshot_region_batch", {
         file.path(tmp_dir, sprintf("lh_frontal_lh_%s.png", v))
       )
     }
-    widget_called <- FALSE
+    .cap$widget_called <- FALSE
     local_mocked_bindings(
       hemi_to_long = function(h) "left",
       build_brain_widget = function(...) {
-        widget_called <<- TRUE
+        .cap$widget_called <- TRUE
         NULL
       },
       snapshot_widget_batch = function(...) invisible(character(0))
@@ -916,7 +924,7 @@ describe("snapshot_region_batch", {
       output_dir = tmp_dir,
       skip_existing = TRUE
     )
-    expect_false(widget_called)
+    expect_false(.cap$widget_called)
   })
 
   it("highlights target region in red, others in white", {
@@ -927,7 +935,7 @@ describe("snapshot_region_batch", {
         stringsAsFactors = FALSE
       )
     )
-    captured_data <- NULL
+    .cap$captured_data <- NULL
     local_mocked_bindings(
       hemi_to_long = function(h) "left",
       build_brain_widget = function(
@@ -939,7 +947,7 @@ describe("snapshot_region_batch", {
         na_colour = NULL,
         ...
       ) {
-        captured_data <<- .data
+        .cap$captured_data <- .data
         structure(list(), class = "ggseg3d")
       },
       snapshot_widget_batch = function(...) invisible(character(0))
@@ -953,12 +961,12 @@ describe("snapshot_region_batch", {
       output_dir = tmp_dir,
       skip_existing = FALSE
     )
-    expect_equal(
-      captured_data$highlight[captured_data$label == "lh_frontal"],
+    expect_identical(
+      .cap$captured_data$highlight[.cap$captured_data$label == "lh_frontal"],
       "#FF0000"
     )
-    expect_equal(
-      captured_data$highlight[captured_data$label == "lh_parietal"],
+    expect_identical(
+      .cap$captured_data$highlight[.cap$captured_data$label == "lh_parietal"],
       "#FFFFFF"
     )
   })
@@ -978,11 +986,11 @@ describe("snapshot_na_regions_batch", {
         sprintf("lh____nolabel____lh_%s.png", v)
       ))
     }
-    widget_called <- FALSE
+    .cap$widget_called <- FALSE
     local_mocked_bindings(
       hemi_to_long = function(h) "left",
       build_brain_widget = function(...) {
-        widget_called <<- TRUE
+        .cap$widget_called <- TRUE
         NULL
       },
       snapshot_widget_batch = function(...) invisible(character(0))
@@ -995,7 +1003,7 @@ describe("snapshot_na_regions_batch", {
       output_dir = tmp_dir,
       skip_existing = TRUE
     )
-    expect_false(widget_called)
+    expect_false(.cap$widget_called)
   })
 
   it("only snapshots missing views", {
@@ -1005,14 +1013,14 @@ describe("snapshot_na_regions_batch", {
     )
     views <- c("lateral", "medial")
     file.create(file.path(tmp_dir, "lh____nolabel____lh_lateral.png"))
-    captured_files <- NULL
+    .cap$captured_files <- NULL
     local_mocked_bindings(
       hemi_to_long = function(h) "left",
       build_brain_widget = function(...) {
         structure(list(), class = "ggseg3d")
       },
       snapshot_widget_batch = function(widget, views, files, ...) {
-        captured_files <<- files
+        .cap$captured_files <- files
         invisible(files)
       }
     )
@@ -1024,8 +1032,8 @@ describe("snapshot_na_regions_batch", {
       output_dir = tmp_dir,
       skip_existing = TRUE
     )
-    expect_length(captured_files, 1)
-    expect_true(grepl("medial", captured_files))
+    expect_length(.cap$captured_files, 1)
+    expect_true(grepl("medial", .cap$captured_files, fixed = TRUE))
   })
 
   it("uses white highlight and red na_colour", {
@@ -1036,7 +1044,7 @@ describe("snapshot_na_regions_batch", {
         stringsAsFactors = FALSE
       )
     )
-    captured_args <- NULL
+    .cap$captured_args <- NULL
     local_mocked_bindings(
       hemi_to_long = function(h) "left",
       build_brain_widget = function(
@@ -1048,7 +1056,7 @@ describe("snapshot_na_regions_batch", {
         na_colour = NULL,
         ...
       ) {
-        captured_args <<- list(
+        .cap$captured_args <- list(
           .data = .data,
           colour = colour,
           na_colour = na_colour
@@ -1065,9 +1073,9 @@ describe("snapshot_na_regions_batch", {
       output_dir = tmp_dir,
       skip_existing = FALSE
     )
-    expect_equal(captured_args$na_colour, "#FF0000")
-    expect_equal(captured_args$colour, "highlight")
-    expect_true(all(captured_args$.data$highlight == "#FFFFFF"))
+    expect_identical(.cap$captured_args$na_colour, "#FF0000")
+    expect_identical(.cap$captured_args$colour, "highlight")
+    expect_true(all(.cap$captured_args$.data$highlight == "#FFFFFF"))
   })
 })
 
@@ -1089,7 +1097,7 @@ describe("snapshot_partial_projection skip and zero paths", {
       skip_existing = TRUE
     )
 
-    expect_equal(result, outfile, ignore_attr = TRUE)
+    expect_identical(result, outfile, ignore_attr = TRUE)
   })
 
   it("returns NULL when projection is all zeros", {
@@ -1119,11 +1127,11 @@ describe("snapshot_brain_helper skip_existing", {
     outfile <- file.path(tmp_dir, "test_skip.png")
     file.create(outfile)
 
-    render_called <- FALSE
+    .cap$render_called <- FALSE
     local_mocked_bindings(
       hemi_to_long = function(h) "left",
       ggseg3d = function(...) {
-        render_called <<- TRUE
+        .cap$render_called <- TRUE
         structure(list(), class = "ggseg3d")
       }
     )
@@ -1138,20 +1146,20 @@ describe("snapshot_brain_helper skip_existing", {
     )
 
     expect_null(result)
-    expect_false(render_called)
+    expect_false(.cap$render_called)
   })
 })
 
 
 describe("build_brain_widget", {
   it("calls ggseg3d with correct parameters and returns styled widget", {
-    captured_args <- NULL
+    .cap$captured_args <- NULL
     mock_widget <- structure(list(), class = c("ggseg3d", "htmlwidget"))
 
     local_mocked_bindings(
       hemi_to_long = function(h) "left",
       ggseg3d = function(...) {
-        captured_args <<- list(...)
+        .cap$captured_args <- list(...)
         mock_widget
       },
       set_flat_shading = function(x, ...) x,
@@ -1167,20 +1175,20 @@ describe("build_brain_widget", {
       na_colour = "#AABBCC"
     )
 
-    expect_equal(captured_args$hemisphere, "left")
-    expect_equal(captured_args$surface, "inflated")
-    expect_equal(captured_args$na_colour, "#AABBCC")
-    expect_equal(captured_args$atlas, "test_atlas")
+    expect_identical(.cap$captured_args$hemisphere, "left")
+    expect_identical(.cap$captured_args$surface, "inflated")
+    expect_identical(.cap$captured_args$na_colour, "#AABBCC")
+    expect_identical(.cap$captured_args$atlas, "test_atlas")
   })
 
   it("passes custom .data and colour arguments", {
-    captured_args <- NULL
+    .cap$captured_args <- NULL
     mock_widget <- structure(list(), class = c("ggseg3d", "htmlwidget"))
 
     local_mocked_bindings(
       hemi_to_long = function(h) "left",
       ggseg3d = function(...) {
-        captured_args <<- list(...)
+        .cap$captured_args <- list(...)
         mock_widget
       },
       set_flat_shading = function(x, ...) x,
@@ -1189,7 +1197,11 @@ describe("build_brain_widget", {
       set_legend = function(x, ...) x
     )
 
-    custom_data <- data.frame(label = "a", highlight = "#FF0000")
+    custom_data <- data.frame(
+      stringsAsFactors = FALSE,
+      label = "a",
+      highlight = "#FF0000"
+    )
     build_brain_widget(
       atlas = "test",
       hemisphere = "lh",
@@ -1198,8 +1210,8 @@ describe("build_brain_widget", {
       colour = "highlight"
     )
 
-    expect_equal(captured_args$.data, custom_data)
-    expect_equal(captured_args$colour, "highlight")
+    expect_identical(.cap$captured_args$.data, custom_data)
+    expect_identical(.cap$captured_args$colour, "highlight")
   })
 })
 
@@ -1207,7 +1219,7 @@ describe("build_brain_widget", {
 describe("snapshot_brain_helper rendering", {
   it("calls the ggseg3d pipeline when file doesn't exist", {
     env <- new.env(parent = emptyenv())
-    env$snapshot_called <- FALSE
+    env$.cap$snapshot_called <- FALSE
     local_mocked_bindings(
       ggseg3d = function(...) structure(list(), class = "ggseg3d"),
       set_flat_shading = function(x, ...) x,
@@ -1216,7 +1228,7 @@ describe("snapshot_brain_helper rendering", {
       set_background = function(x, ...) x,
       set_legend = function(x, ...) x,
       snapshot_brain = function(p, file, ...) {
-        env$snapshot_called <- TRUE
+        env$.cap$snapshot_called <- TRUE
         file.create(file)
       }
     )
@@ -1229,6 +1241,6 @@ describe("snapshot_brain_helper rendering", {
       surface = "inflated",
       outfile = outfile
     )
-    expect_true(env$snapshot_called)
+    expect_true(env$.cap$snapshot_called)
   })
 })

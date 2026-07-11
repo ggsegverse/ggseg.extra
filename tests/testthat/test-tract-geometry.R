@@ -1,3 +1,5 @@
+.cap <- new.env()
+
 # A valid tract atlas carrying the given centerline labels. The volumetric
 # geometry code only reads `centerlines$label` (coordinates come from the
 # separate `streamlines` argument), but ggseg.formats requires real point and
@@ -77,10 +79,10 @@ describe("generate_tube_mesh", {
 
     mesh <- generate_tube_mesh(centerline, radius = 0.5, segments = 8)
 
-    expect_true(is.list(mesh))
+    expect_type(mesh, "list")
     expect_true(all(c("vertices", "faces") %in% names(mesh)))
-    expect_true(nrow(mesh$vertices) > 0)
-    expect_true(nrow(mesh$faces) > 0)
+    expect_gt(nrow(mesh$vertices), 0)
+    expect_gt(nrow(mesh$faces), 0)
   })
 
   it("creates correct number of vertices", {
@@ -94,8 +96,8 @@ describe("generate_tube_mesh", {
 
     mesh <- generate_tube_mesh(centerline, radius = 1, segments = segments)
 
-    expected_vertices <- n_points * segments
-    expect_equal(nrow(mesh$vertices), expected_vertices)
+    expected_vertices <- as.integer(n_points * segments)
+    expect_identical(nrow(mesh$vertices), expected_vertices)
   })
 
   it("creates correct number of faces", {
@@ -109,8 +111,8 @@ describe("generate_tube_mesh", {
 
     mesh <- generate_tube_mesh(centerline, radius = 1, segments = segments)
 
-    expected_faces <- (n_points - 1) * segments * 2
-    expect_equal(nrow(mesh$faces), expected_faces)
+    expected_faces <- as.integer((n_points - 1) * segments * 2)
+    expect_identical(nrow(mesh$faces), expected_faces)
   })
 
   it("respects radius parameter", {
@@ -123,7 +125,7 @@ describe("generate_tube_mesh", {
     small_range <- max(mesh_small$vertices$y) - min(mesh_small$vertices$y)
     large_range <- max(mesh_large$vertices$y) - min(mesh_large$vertices$y)
 
-    expect_true(large_range > small_range * 5)
+    expect_gt(large_range, small_range * 5)
   })
 
   it("errors with too few points", {
@@ -142,7 +144,7 @@ describe("extract_centerline", {
 
     centerline <- extract_centerline(streamline, n_points = 5)
 
-    expect_equal(nrow(centerline), 5)
+    expect_identical(nrow(centerline), 5L)
     expect_true(all(c("x", "y", "z") %in% colnames(centerline)))
   })
 
@@ -155,8 +157,8 @@ describe("extract_centerline", {
 
     centerline <- extract_centerline(streamlines, method = "mean", n_points = 5)
 
-    expect_equal(nrow(centerline), 5)
-    expect_equal(mean(centerline[, 2]), 1, tolerance = 0.5)
+    expect_identical(nrow(centerline), 5L)
+    expect_identical(mean(centerline[, 2]), 1, tolerance = 0.5)
   })
 
   it("resamples to specified number of points", {
@@ -165,7 +167,7 @@ describe("extract_centerline", {
 
     centerline <- extract_centerline(streamline, n_points = 20)
 
-    expect_equal(nrow(centerline), 20)
+    expect_identical(nrow(centerline), 20L)
   })
 
   it("returns NULL for empty input", {
@@ -202,18 +204,18 @@ describe("compute_parallel_transport_frames", {
     frames <- compute_parallel_transport_frames(curve)
 
     expect_true(all(c("tangents", "normals", "binormals") %in% names(frames)))
-    expect_equal(nrow(frames$tangents), nrow(curve))
-    expect_equal(nrow(frames$normals), nrow(curve))
-    expect_equal(nrow(frames$binormals), nrow(curve))
+    expect_identical(nrow(frames$tangents), nrow(curve))
+    expect_identical(nrow(frames$normals), nrow(curve))
+    expect_identical(nrow(frames$binormals), nrow(curve))
 
     for (i in seq_len(nrow(curve))) {
       t <- frames$tangents[i, ]
       n <- frames$normals[i, ]
       b <- frames$binormals[i, ]
 
-      expect_equal(sqrt(sum(n^2)), 1, tolerance = 1e-6)
-      expect_equal(sqrt(sum(b^2)), 1, tolerance = 1e-6)
-      expect_equal(sum(n * b), 0, tolerance = 1e-6)
+      expect_identical(sqrt(sum(n^2)), 1, tolerance = 1e-6)
+      expect_identical(sqrt(sum(b^2)), 1, tolerance = 1e-6)
+      expect_identical(sum(n * b), 0, tolerance = 1e-6)
     }
   })
 })
@@ -226,7 +228,7 @@ describe("resample_streamline", {
 
     resampled <- resample_streamline(streamline, 20)
 
-    expect_equal(nrow(resampled), 20)
+    expect_identical(nrow(resampled), 20L)
   })
 
   it("preserves endpoints", {
@@ -235,8 +237,8 @@ describe("resample_streamline", {
 
     resampled <- resample_streamline(streamline, 5)
 
-    expect_equal(as.numeric(resampled[1, 1]), 0, tolerance = 1e-6)
-    expect_equal(as.numeric(resampled[5, 1]), 10, tolerance = 1e-6)
+    expect_identical(as.numeric(resampled[1, 1]), 0, tolerance = 1e-6)
+    expect_identical(as.numeric(resampled[5, 1]), 10, tolerance = 1e-6)
   })
 
   it("returns NULL for invalid input", {
@@ -253,7 +255,7 @@ describe("cross_product", {
 
     result <- cross_product(a, b)
 
-    expect_equal(result, c(0, 0, 1))
+    expect_identical(result, c(0, 0, 1))
   })
 
   it("returns zero for parallel vectors", {
@@ -262,7 +264,7 @@ describe("cross_product", {
 
     result <- cross_product(a, b)
 
-    expect_equal(result, c(0, 0, 0))
+    expect_identical(result, c(0, 0, 0))
   })
 
   it("is anti-commutative", {
@@ -272,7 +274,7 @@ describe("cross_product", {
     result1 <- cross_product(a, b)
     result2 <- cross_product(b, a)
 
-    expect_equal(result1, -result2)
+    expect_identical(result1, -result2)
   })
 })
 
@@ -285,9 +287,9 @@ describe("rotate_vector", {
 
     result <- rotate_vector(v, axis, angle)
 
-    expect_equal(result[1], 0, tolerance = 1e-6)
-    expect_equal(result[2], 1, tolerance = 1e-6)
-    expect_equal(result[3], 0, tolerance = 1e-6)
+    expect_identical(result[1], 0, tolerance = 1e-6)
+    expect_identical(result[2], 1, tolerance = 1e-6)
+    expect_identical(result[3], 0, tolerance = 1e-6)
   })
 
   it("does not change vector when angle is 0", {
@@ -296,7 +298,7 @@ describe("rotate_vector", {
 
     result <- rotate_vector(v, axis, 0)
 
-    expect_equal(result, v, tolerance = 1e-6)
+    expect_identical(result, v, tolerance = 1e-6)
   })
 
   it("returns original vector when rotating around itself", {
@@ -305,7 +307,7 @@ describe("rotate_vector", {
 
     result <- rotate_vector(v, axis, pi / 4)
 
-    expect_equal(result, v, tolerance = 1e-6)
+    expect_identical(result, v, tolerance = 1e-6)
   })
 })
 
@@ -364,9 +366,9 @@ describe("center_meshes", {
     all_verts <- do.call(rbind, lapply(result, function(m) m$vertices))
     centroid <- c(mean(all_verts$x), mean(all_verts$y), mean(all_verts$z))
 
-    expect_equal(centroid[1], 0, tolerance = 1e-6)
-    expect_equal(centroid[2], 0, tolerance = 1e-6)
-    expect_equal(centroid[3], 0, tolerance = 1e-6)
+    expect_identical(centroid[1], 0, tolerance = 1e-6)
+    expect_identical(centroid[2], 0, tolerance = 1e-6)
+    expect_identical(centroid[3], 0, tolerance = 1e-6)
   })
 
   it("preserves mesh structure", {
@@ -380,8 +382,8 @@ describe("center_meshes", {
     result <- center_meshes(meshes)
 
     expect_true(all(c("vertices", "faces") %in% names(result$mesh1)))
-    expect_equal(nrow(result$mesh1$vertices), 3)
-    expect_equal(nrow(result$mesh1$faces), 1)
+    expect_identical(nrow(result$mesh1$vertices), 3L)
+    expect_identical(nrow(result$mesh1$faces), 1L)
   })
 
   it("also centers metadata centerline if present", {
@@ -398,7 +400,7 @@ describe("center_meshes", {
     result <- center_meshes(meshes)
 
     cl <- result$mesh1$metadata$centerline
-    expect_true(mean(cl[, 1]) < 5)
+    expect_lt(mean(cl[, 1]), 5)
   })
 })
 
@@ -406,20 +408,20 @@ describe("center_meshes", {
 describe("coord_to_voxel", {
   it("adds 1 when coords_are_voxels is TRUE", {
     result <- coord_to_voxel(c(10, 20, 30), c(256, 256, 256), NULL, TRUE)
-    expect_equal(result, c(11, 21, 31))
+    expect_identical(result, c(11, 21, 31))
   })
 
   it("uses vox2ras inverse when matrix provided", {
     vox2ras <- diag(4)
     vox2ras[1:3, 4] <- c(-128, -128, -128)
     result <- coord_to_voxel(c(0, 0, 0), c(256, 256, 256), vox2ras, FALSE)
-    expect_equal(result, c(129, 129, 129))
+    expect_identical(result, c(129, 129, 129))
   })
 
   it("uses fallback formula without vox2ras", {
     dims <- c(256, 256, 256)
     result <- coord_to_voxel(c(0, 0, 0), dims, NULL, FALSE)
-    expect_equal(result, c(129, 129, 129))
+    expect_identical(result, c(129, 129, 129))
   })
 })
 
@@ -444,16 +446,16 @@ describe("set_sphere_voxels", {
     vol <- array(0L, dim = c(10, 10, 10))
     result <- set_sphere_voxels(vol, c(5, 5, 5), 1, 1L, c(10, 10, 10))
 
-    expect_equal(result[5, 5, 5], 1L)
-    expect_equal(result[6, 5, 5], 1L)
-    expect_equal(result[5, 6, 5], 1L)
+    expect_identical(result[5, 5, 5], 1L)
+    expect_identical(result[6, 5, 5], 1L)
+    expect_identical(result[5, 6, 5], 1L)
   })
 
   it("does not set voxels outside bounds", {
     vol <- array(0L, dim = c(5, 5, 5))
     result <- set_sphere_voxels(vol, c(1, 1, 1), 2, 1L, c(5, 5, 5))
 
-    expect_equal(sum(result), sum(result[result > 0]))
+    expect_identical(sum(result), sum(result[result > 0]))
   })
 })
 
@@ -503,7 +505,7 @@ describe("extract_centerline medoid", {
       n_points = 5
     )
 
-    expect_equal(nrow(result), 5)
+    expect_identical(nrow(result), 5L)
   })
 })
 
@@ -525,7 +527,7 @@ describe("extract_centerline", {
   it("returns resampled single streamline from list", {
     sl <- list(matrix(c(1:10, rep(0, 20)), ncol = 3))
     result <- extract_centerline(sl, n_points = 5)
-    expect_equal(nrow(result), 5)
+    expect_identical(nrow(result), 5L)
   })
 
   it("returns NULL when all resampled streamlines are invalid", {
@@ -543,10 +545,10 @@ describe("resample_streamline", {
   it("handles 2-point streamline where some segments have zero length", {
     streamline <- matrix(c(0, 0, 0, 0, 0, 5), ncol = 3, byrow = TRUE)
     result <- resample_streamline(streamline, 3)
-    expect_equal(nrow(result), 3)
-    expect_equal(colnames(result), c("x", "y", "z"))
-    expect_equal(as.numeric(result[1, 3]), 0, tolerance = 1e-6)
-    expect_equal(as.numeric(result[3, 3]), 5, tolerance = 1e-6)
+    expect_identical(nrow(result), 3L)
+    expect_identical(colnames(result), c("x", "y", "z"))
+    expect_identical(as.numeric(result[1, 3]), 0, tolerance = 1e-6)
+    expect_identical(as.numeric(result[3, 3]), 5, tolerance = 1e-6)
   })
 
   it("handles streamline where segment_end equals segment_start", {
@@ -556,7 +558,7 @@ describe("resample_streamline", {
       byrow = TRUE
     )
     result <- resample_streamline(streamline, 5)
-    expect_equal(nrow(result), 5)
+    expect_identical(nrow(result), 5L)
   })
 
   it("returns NULL when all points are identical (zero total length)", {
@@ -571,8 +573,8 @@ describe("resample_streamline", {
       byrow = TRUE
     )
     result <- resample_streamline(streamline, 5)
-    expect_equal(nrow(result), 5)
-    expect_equal(as.numeric(result[5, 1]), 5, tolerance = 1e-6)
+    expect_identical(nrow(result), 5L)
+    expect_identical(as.numeric(result[5, 1]), 5, tolerance = 1e-6)
   })
 })
 
@@ -595,8 +597,8 @@ describe("generate_tube_mesh", {
       radius = c(0.5, 1.0, 0.5),
       segments = 4
     )
-    expect_equal(nrow(mesh$vertices), 3 * 4)
-    expect_equal(nrow(mesh$faces), 2 * 4 * 2)
+    expect_identical(nrow(mesh$vertices), 3L * 4L)
+    expect_identical(nrow(mesh$faces), 2L * 4L * 2L)
   })
 })
 
@@ -616,7 +618,7 @@ describe("compute_streamline_density", {
     )
 
     expect_length(result, 3)
-    expect_true(result[1] >= 1)
+    expect_gte(result[1], 1)
   })
 })
 
@@ -639,7 +641,7 @@ describe("load_vox2ras_matrix", {
 
     result <- load_vox2ras_matrix(tmp, FALSE)
     expect_true(is.matrix(result))
-    expect_equal(dim(result), c(4, 4))
+    expect_identical(dim(result), c(4L, 4L))
   })
 
   it("loads vox2ras from nii file", {
@@ -651,7 +653,7 @@ describe("load_vox2ras_matrix", {
 
     result <- load_vox2ras_matrix(tmp, FALSE)
     expect_true(is.matrix(result))
-    expect_equal(dim(result), c(4, 4))
+    expect_identical(dim(result), c(4L, 4L))
   })
 
   it("returns NULL for mgz when freesurferformats unavailable", {
@@ -718,8 +720,8 @@ describe("streamlines_to_volume", {
     )
 
     expect_true(is.array(result))
-    expect_equal(length(dim(result)), 3)
-    expect_true(sum(result > 0) > 0)
+    expect_length(dim(result), 3)
+    expect_gt(sum(result > 0), 0)
   })
 
   it("creates volume from centerline with RAS coordinates", {
@@ -741,7 +743,7 @@ describe("streamlines_to_volume", {
     )
 
     expect_true(is.array(result))
-    expect_equal(length(dim(result)), 3)
+    expect_length(dim(result), 3)
   })
 
   it("reorients volume to RAS when template is not RAS", {
@@ -766,7 +768,7 @@ describe("streamlines_to_volume", {
     )
 
     expect_true(is.array(result))
-    expect_equal(length(dim(result)), 3)
+    expect_length(dim(result), 3)
   })
 })
 
@@ -888,12 +890,14 @@ describe("create_tract_geometry_volumetric", {
     )
 
     expect_messages(
-      result <- create_tract_geometry_volumetric(
-        atlas = fake_atlas,
-        aseg_file = aseg_tmp,
-        streamlines = fake_streamlines,
-        verbose = TRUE
-      )
+      {
+        result <- create_tract_geometry_volumetric(
+          atlas = fake_atlas,
+          aseg_file = aseg_tmp,
+          streamlines = fake_streamlines,
+          verbose = TRUE
+        )
+      }
     )
 
     expect_s3_class(result, "sf")
@@ -1066,12 +1070,14 @@ describe("create_tract_geometry_volumetric", {
     )
 
     expect_messages(
-      result <- create_tract_geometry_volumetric(
-        atlas = fake_atlas,
-        aseg_file = aseg_tmp,
-        streamlines = list(tract_a = matrix(1:6, ncol = 3)),
-        verbose = TRUE
-      )
+      {
+        result <- create_tract_geometry_volumetric(
+          atlas = fake_atlas,
+          aseg_file = aseg_tmp,
+          streamlines = list(tract_a = matrix(1:6, ncol = 3)),
+          verbose = TRUE
+        )
+      }
     )
 
     expect_s3_class(result, "sf")
@@ -1270,7 +1276,7 @@ describe("create_tract_geometry_volumetric", {
       streamlines = list(tract_a = matrix(1:6, ncol = 3))
     )
 
-    expect_equal(result$label, "unknown_thing")
+    expect_identical(result$label, "unknown_thing")
   })
 
   it("skips existing snapshots when enough exist", {
@@ -1357,12 +1363,14 @@ describe("create_tract_geometry_volumetric", {
     )
 
     expect_messages(
-      result <- create_tract_geometry_volumetric(
-        atlas = fake_atlas,
-        aseg_file = aseg_tmp,
-        streamlines = list(tract_a = matrix(1:6, ncol = 3)),
-        verbose = TRUE
-      )
+      {
+        result <- create_tract_geometry_volumetric(
+          atlas = fake_atlas,
+          aseg_file = aseg_tmp,
+          streamlines = list(tract_a = matrix(1:6, ncol = 3)),
+          verbose = TRUE
+        )
+      }
     )
 
     expect_s3_class(result, "sf")
@@ -1505,7 +1513,7 @@ describe("create_tract_geometry_volumetric", {
     )
     fake_sf$view <- "axial_1"
 
-    detected_space <- NULL
+    .cap$detected_space <- NULL
     local_mocked_bindings(
       is_verbose = function(...) TRUE,
       get_cleanup = function(...) FALSE,
@@ -1523,7 +1531,7 @@ describe("create_tract_geometry_volumetric", {
         )
       },
       detect_coords_are_voxels = function(...) {
-        detected_space <<- TRUE
+        .cap$detected_space <- TRUE
         TRUE
       },
       make_multipolygon = function(...) fake_sf,
@@ -1531,16 +1539,18 @@ describe("create_tract_geometry_volumetric", {
     )
 
     expect_messages(
-      result <- create_tract_geometry_volumetric(
-        atlas = fake_atlas,
-        aseg_file = aseg_tmp,
-        streamlines = list(tract_a = matrix(c(5:14, rep(0, 20)), ncol = 3)),
-        coords_are_voxels = NULL,
-        verbose = TRUE
-      )
+      {
+        result <- create_tract_geometry_volumetric(
+          atlas = fake_atlas,
+          aseg_file = aseg_tmp,
+          streamlines = list(tract_a = matrix(c(5:14, rep(0, 20)), ncol = 3)),
+          coords_are_voxels = NULL,
+          verbose = TRUE
+        )
+      }
     )
 
     expect_s3_class(result, "sf")
-    expect_true(detected_space)
+    expect_true(.cap$detected_space)
   })
 })

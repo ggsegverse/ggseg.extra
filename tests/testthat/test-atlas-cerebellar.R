@@ -1,3 +1,5 @@
+.cap <- new.env()
+
 # Test fixture helpers ----
 
 create_mock_suit_surface <- function() {
@@ -113,9 +115,9 @@ describe("read_suit_flatmap", {
 
     expect_type(result, "list")
     expect_true(all(c("verts_2d", "faces", "n_vertices") %in% names(result)))
-    expect_equal(ncol(result$verts_2d), 2)
-    expect_equal(ncol(result$faces), 3)
-    expect_equal(result$n_vertices, nrow(result$verts_2d))
+    expect_identical(ncol(result$verts_2d), 2L)
+    expect_identical(ncol(result$faces), 3L)
+    expect_identical(result$n_vertices, nrow(result$verts_2d))
   })
 
   it("errors on missing file", {
@@ -130,9 +132,9 @@ describe("read_suit_flatmap", {
 
     result <- read_suit_flatmap(suit_flatmap_path())
 
-    expect_equal(result$n_vertices, 28935)
-    expect_equal(ncol(result$verts_2d), 2)
-    expect_equal(nrow(result$faces), 56588)
+    expect_identical(result$n_vertices, 28935L)
+    expect_identical(ncol(result$verts_2d), 2L)
+    expect_identical(nrow(result$faces), 56588L)
   })
 
   it("errors on invalid GIFTI file", {
@@ -190,9 +192,9 @@ describe("build_vertex_label_vector_cerebellum", {
     result <- build_vertex_label_vector_cerebellum(vertices_df, 10)
 
     expect_length(result, 10)
-    expect_equal(result[1:4], rep("left_I-IV", 4))
-    expect_equal(result[5:8], rep("right_I-IV", 4))
-    expect_equal(result[9:10], rep("vermis_VI", 2))
+    expect_identical(result[1:4], rep("left_I-IV", 4))
+    expect_identical(result[5:8], rep("right_I-IV", 4))
+    expect_identical(result[9:10], rep("vermis_VI", 2))
   })
 
   it("returns NA for unlabelled vertices", {
@@ -204,7 +206,7 @@ describe("build_vertex_label_vector_cerebellum", {
 
     result <- build_vertex_label_vector_cerebellum(vertices_df, 5)
 
-    expect_equal(sum(is.na(result)), 2)
+    expect_identical(sum(is.na(result)), 2L)
   })
 })
 
@@ -231,7 +233,7 @@ describe("flatmap_triangles_to_polygons", {
     result <- flatmap_triangles_to_polygons(verts, faces, labels)
 
     expect_s3_class(result, "sf")
-    expect_true(nrow(result) >= 1)
+    expect_gte(nrow(result), 1)
     expect_true("label" %in% names(result))
   })
 
@@ -254,7 +256,7 @@ describe("flatmap_triangles_to_polygons", {
     result <- flatmap_triangles_to_polygons(verts, faces, labels)
 
     expect_s3_class(result, "sf")
-    expect_true(nrow(result) == 2)
+    expect_identical(nrow(result), 2L)
     expect_true(all(c("left_I", "right_I") %in% result$label))
   })
 
@@ -290,51 +292,51 @@ describe("flatmap_triangles_to_polygons", {
     result <- flatmap_triangles_to_polygons(verts, faces, labels)
 
     expect_s3_class(result, "sf")
-    expect_true(nrow(result) >= 1)
+    expect_gte(nrow(result), 1)
   })
 })
 
 
 describe("detect_cerebellar_hemi", {
   it("detects Left prefix", {
-    expect_equal(detect_cerebellar_hemi("Left I-IV"), "left")
-    expect_equal(detect_cerebellar_hemi("Left Crus I"), "left")
+    expect_identical(detect_cerebellar_hemi("Left I-IV"), "left")
+    expect_identical(detect_cerebellar_hemi("Left Crus I"), "left")
   })
 
   it("detects Right prefix", {
-    expect_equal(detect_cerebellar_hemi("Right I-IV"), "right")
+    expect_identical(detect_cerebellar_hemi("Right I-IV"), "right")
   })
 
   it("detects Vermis prefix", {
-    expect_equal(detect_cerebellar_hemi("Vermis VI"), "vermis")
-    expect_equal(detect_cerebellar_hemi("Vermis CrusII"), "vermis")
+    expect_identical(detect_cerebellar_hemi("Vermis VI"), "vermis")
+    expect_identical(detect_cerebellar_hemi("Vermis CrusII"), "vermis")
   })
 
   it("detects vermis in label body", {
-    expect_equal(detect_cerebellar_hemi("region_vermis"), "vermis")
+    expect_identical(detect_cerebellar_hemi("region_vermis"), "vermis")
   })
 
   it("defaults to midline for ambiguous labels", {
-    expect_equal(detect_cerebellar_hemi("Dentate"), "midline")
+    expect_identical(detect_cerebellar_hemi("Dentate"), "midline")
   })
 
   it("does not match single-letter prefixes", {
-    expect_equal(detect_cerebellar_hemi("Lobule_X"), "midline")
-    expect_equal(detect_cerebellar_hemi("Region_5"), "midline")
-    expect_equal(detect_cerebellar_hemi("Volume_1"), "midline")
+    expect_identical(detect_cerebellar_hemi("Lobule_X"), "midline")
+    expect_identical(detect_cerebellar_hemi("Region_5"), "midline")
+    expect_identical(detect_cerebellar_hemi("Volume_1"), "midline")
   })
 })
 
 
 describe("clean_cerebellar_region", {
   it("removes Left/Right/Vermis prefix", {
-    expect_equal(clean_cerebellar_region("Left I-IV"), "I-IV")
-    expect_equal(clean_cerebellar_region("Right Crus I"), "Crus I")
-    expect_equal(clean_cerebellar_region("Vermis VI"), "VI")
+    expect_identical(clean_cerebellar_region("Left I-IV"), "I-IV")
+    expect_identical(clean_cerebellar_region("Right Crus I"), "Crus I")
+    expect_identical(clean_cerebellar_region("Vermis VI"), "VI")
   })
 
   it("preserves full name when no prefix", {
-    expect_equal(clean_cerebellar_region("Dentate"), "Dentate")
+    expect_identical(clean_cerebellar_region("Dentate"), "Dentate")
   })
 })
 
@@ -356,7 +358,7 @@ describe("read_suit_parcellation", {
     expect_s3_class(result, "tbl_df")
     expected_cols <- c("hemi", "region", "label", "colour", "vertices")
     expect_true(all(expected_cols %in% names(result)))
-    expect_true(nrow(result) > 0)
+    expect_gt(nrow(result), 0)
     expect_true(all(result$hemi %in% c("left", "right", "vermis", "midline")))
   })
 })
@@ -396,9 +398,9 @@ describe("extract_gifti_label_table", {
     )
     gii <- list(label = as.data.frame(lt))
     result <- extract_gifti_label_table(gii)
-    expect_equal(nrow(result), 3)
+    expect_identical(nrow(result), 3L)
     expect_true(all(c("id", "name", "colour") %in% names(result)))
-    expect_equal(result$name, c("Background", "Left I-IV", "Vermis VI"))
+    expect_identical(result$name, c("Background", "Left I-IV", "Vermis VI"))
   })
 })
 
@@ -427,9 +429,9 @@ describe("create_cerebellar_from_gifti", {
 
     expect_s3_class(atlas, "ggseg_atlas")
     expect_s3_class(atlas, "cerebellar_atlas")
-    expect_equal(atlas$type, "cerebellar")
+    expect_identical(atlas$type, "cerebellar")
     expect_s3_class(atlas$data, "ggseg_data_cerebellar")
-    expect_true(nrow(atlas$core) > 0)
+    expect_gt(nrow(atlas$core), 0)
 
     sf_data <- ggseg.formats::atlas_sf(atlas)
     expect_s3_class(sf_data, "sf")
@@ -501,12 +503,12 @@ describe("read_cerebellar_annotation", {
     result <- read_cerebellar_annotation(tmp)
 
     expect_s3_class(result, "tbl_df")
-    expect_equal(nrow(result), 3)
+    expect_identical(nrow(result), 3L)
     expected_cols <- c("hemi", "region", "label", "colour", "vertices")
     expect_true(all(expected_cols %in% names(result)))
-    expect_equal(result$hemi, c("left", "right", "vermis"))
-    expect_equal(result$region, c("I-IV", "Crus I", "VI"))
-    expect_equal(lengths(result$vertices), c(2L, 2L, 1L))
+    expect_identical(result$hemi, c("left", "right", "vermis"))
+    expect_identical(result$region, c("I-IV", "Crus I", "VI"))
+    expect_identical(lengths(result$vertices), c(2L, 2L, 1L))
   })
 
   it("errors when no regions found", {
@@ -549,14 +551,15 @@ describe("resolve_cerebellar_lut", {
     result <- resolve_cerebellar_lut(vol, vertex_labels)
 
     expect_true(all(c("idx", "label") %in% names(result)))
-    expect_equal(result$idx, c(1L, 2L))
-    expect_equal(result$label, c("region_1", "region_2"))
+    expect_identical(result$idx, c(1L, 2L))
+    expect_identical(result$label, c("region_1", "region_2"))
   })
 
   it("uses data.frame LUT when provided", {
     vol <- array(c(0L, 1L, 2L, 0L, 1L, 2L, 0L, 0L), dim = c(2, 2, 2))
     vertex_labels <- c(1L, 2L)
     lut <- data.frame(
+      stringsAsFactors = FALSE,
       idx = c(1L, 2L, 3L),
       label = c("Left I-IV", "Vermis VI", "Right V"),
       R = c(255, 0, 0),
@@ -566,13 +569,13 @@ describe("resolve_cerebellar_lut", {
 
     result <- resolve_cerebellar_lut(vol, vertex_labels, lut)
 
-    expect_equal(nrow(result), 2)
+    expect_identical(nrow(result), 2L)
     expect_true("color" %in% names(result))
   })
 
   it("errors on data.frame LUT missing required columns", {
     vol <- array(c(0L, 1L, 0L, 0L, 0L, 0L, 0L, 0L), dim = c(2, 2, 2))
-    vertex_labels <- c(1L)
+    vertex_labels <- 1L
     lut <- data.frame(name = "test", stringsAsFactors = FALSE)
 
     expect_error(
@@ -596,7 +599,7 @@ describe("resolve_cerebellar_lut", {
 
     result <- resolve_cerebellar_lut(vol, vertex_labels, tmp)
 
-    expect_equal(nrow(result), 2)
+    expect_identical(nrow(result), 2L)
     expect_true("label" %in% names(result))
   })
 })
@@ -621,9 +624,9 @@ describe("read_suit_parcellation edge cases", {
 
     result <- read_suit_parcellation(label_file)
 
-    expect_true(nrow(result) > 0)
+    expect_gt(nrow(result), 0)
     expect_true(all(grepl("^region_", result$region)))
-    expect_false(any(is.na(result$colour)))
+    expect_false(anyNA(result$colour))
   })
 
   it("warns and skips GIFTI files with empty data arrays", {
@@ -638,10 +641,12 @@ describe("read_suit_parcellation edge cases", {
     )
 
     expect_warning(
-      result <- read_suit_parcellation(label_file),
+      {
+        result <- read_suit_parcellation(label_file)
+      },
       "No data arrays"
     )
-    expect_equal(nrow(result), 0)
+    expect_identical(nrow(result), 0L)
   })
 
   it("handles matrix-format data arrays", {
@@ -661,7 +666,7 @@ describe("read_suit_parcellation edge cases", {
     )
 
     result <- read_suit_parcellation(label_file)
-    expect_equal(nrow(result), 2)
+    expect_identical(nrow(result), 2L)
   })
 
   it("returns empty tibble when all labels are zero", {
@@ -678,7 +683,7 @@ describe("read_suit_parcellation edge cases", {
     )
 
     result <- read_suit_parcellation(label_file)
-    expect_equal(nrow(result), 0)
+    expect_identical(nrow(result), 0L)
   })
 
   it("skips regions with zero vertices after filtering", {
@@ -724,8 +729,8 @@ describe("read_suit_parcellation edge cases", {
     label_file <- create_mock_suit_labels(n_vertices = 4)
     result <- read_suit_parcellation(label_file)
 
-    expect_equal(nrow(result), 1)
-    expect_equal(result$hemi[1], "left")
+    expect_identical(nrow(result), 1L)
+    expect_identical(result$hemi[1], "left")
   })
 })
 
@@ -743,8 +748,8 @@ describe("extract_gifti_label_table edge cases", {
       )
     )
     result <- extract_gifti_label_table(gii)
-    expect_equal(nrow(result), 3)
-    expect_equal(result$name, c("Background", "Left I-IV", "Vermis VI"))
+    expect_identical(nrow(result), 3L)
+    expect_identical(result$name, c("Background", "Left I-IV", "Vermis VI"))
     expect_true("colour" %in% names(result))
   })
 
@@ -757,7 +762,7 @@ describe("extract_gifti_label_table edge cases", {
     )
     gii <- list(label = as.data.frame(lt))
     result <- extract_gifti_label_table(gii)
-    expect_equal(nrow(result), 2)
+    expect_identical(nrow(result), 2L)
     expect_true(all(is.na(result$colour)))
   })
 
@@ -770,7 +775,7 @@ describe("extract_gifti_label_table edge cases", {
       )
     )
     result <- extract_gifti_label_table(gii)
-    expect_equal(nrow(result), 2)
+    expect_identical(nrow(result), 2L)
     expect_true(all(is.na(result$colour)))
   })
 
@@ -783,8 +788,8 @@ describe("extract_gifti_label_table edge cases", {
 
 describe("clean_cerebellar_region edge cases", {
   it("returns original name when prefix removal leaves empty string", {
-    expect_equal(clean_cerebellar_region("Left"), "Left")
-    expect_equal(clean_cerebellar_region("Right"), "Right")
+    expect_identical(clean_cerebellar_region("Left"), "Left")
+    expect_identical(clean_cerebellar_region("Right"), "Right")
   })
 })
 
@@ -809,7 +814,7 @@ describe("read_cerebellar_volume", {
     result <- read_cerebellar_volume(vol_file, "mock_3d.surf.gii", NULL)
 
     expect_s3_class(result, "tbl_df")
-    expect_true(nrow(result) > 0)
+    expect_gt(nrow(result), 0)
     expected_cols <- c("hemi", "region", "label", "colour", "vertices")
     expect_true(all(expected_cols %in% names(result)))
   })
@@ -849,7 +854,7 @@ describe("sample_volume_at_surface", {
     result <- sample_volume_at_surface(vol, vol_file, suit_3d_path())
 
     expect_length(result, 28935)
-    expect_true(is.integer(result))
+    expect_type(result, "integer")
   })
 })
 
@@ -868,7 +873,7 @@ describe("cerebellar pipeline orchestration", {
       verbose = FALSE
     )
 
-    expect_true(nchar(atlas$atlas) > 0)
+    expect_gt(nchar(atlas$atlas), 0)
   })
 
   it("create_cerebellar_from_annotation derives atlas_name", {
@@ -924,7 +929,7 @@ describe("cerebellar pipeline orchestration", {
     )
 
     expect_s3_class(atlas, "cerebellar_atlas")
-    expect_equal(atlas$type, "cerebellar")
+    expect_identical(atlas$type, "cerebellar")
   })
 })
 
@@ -1082,7 +1087,7 @@ describe("suit_deformation_field", {
     writeBin(raw(1e6 + 1), cached)
 
     result <- suit_deformation_field(cache_dir = tmp)
-    expect_equal(result, cached)
+    expect_identical(result, cached)
   })
 
   it("accepts both MNI template options", {
@@ -1135,9 +1140,9 @@ describe("fill_unlabelled_from_voxel_neighbors", {
       vol,
       dim(vol)
     )
-    expect_equal(result[1], 1L)
-    expect_equal(result[2], 1L)
-    expect_equal(result[3], 2L)
+    expect_identical(result[1], 1L)
+    expect_identical(result[2], 1L)
+    expect_identical(result[3], 2L)
     expect_true(result[4] %in% c(1L, 2L))
   })
 
@@ -1151,7 +1156,7 @@ describe("fill_unlabelled_from_voxel_neighbors", {
       vol,
       dim(vol)
     )
-    expect_equal(result, 1L)
+    expect_identical(result, 1L)
   })
 
   it("expands to radius 2 when radius 1 finds no neighbors", {
@@ -1179,8 +1184,8 @@ describe("fill_unlabelled_from_voxel_neighbors", {
       dim(vol),
       max_radius = 3L
     )
-    expect_equal(result[1], 5L)
-    expect_equal(result[2], 5L)
+    expect_identical(result[1], 5L)
+    expect_identical(result[2], 5L)
   })
 })
 
@@ -1203,10 +1208,10 @@ describe("fill_unlabelled_from_mesh_neighbors", {
 
     result <- fill_unlabelled_from_mesh_neighbors(labels, faces, 5)
 
-    expect_equal(result[1], 1L)
-    expect_equal(result[2], 1L)
-    expect_equal(result[3], 1L)
-    expect_equal(result[5], 2L)
+    expect_identical(result[1], 1L)
+    expect_identical(result[2], 1L)
+    expect_identical(result[3], 1L)
+    expect_identical(result[5], 2L)
     expect_true(result[4] %in% c(1L, 2L))
   })
 
@@ -1214,7 +1219,7 @@ describe("fill_unlabelled_from_mesh_neighbors", {
     faces <- matrix(c(1L, 2L, 3L), ncol = 3)
     labels <- c(1L, 2L, 3L)
     result <- fill_unlabelled_from_mesh_neighbors(labels, faces, 3)
-    expect_equal(result, c(1L, 2L, 3L))
+    expect_identical(result, c(1L, 2L, 3L))
   })
 
   it("stops when isolated vertices cannot be reached", {
@@ -1223,11 +1228,11 @@ describe("fill_unlabelled_from_mesh_neighbors", {
 
     result <- fill_unlabelled_from_mesh_neighbors(labels, faces, 5)
 
-    expect_equal(result[1], 1L)
+    expect_identical(result[1], 1L)
     expect_true(result[2] != 0L)
     expect_true(result[3] != 0L)
-    expect_equal(result[4], 0L)
-    expect_equal(result[5], 0L)
+    expect_identical(result[4], 0L)
+    expect_identical(result[5], 0L)
   })
 })
 
@@ -1347,7 +1352,7 @@ describe("rescue_orphaned_region", {
     )
 
     expect_length(result, 1)
-    expect_equal(result, 0L)
+    expect_identical(result, 0L)
   })
 })
 
@@ -1376,18 +1381,20 @@ describe("read_cerebellar_volume deep nucleus and orphan branches", {
     )
 
     expect_warning(
-      result <- read_cerebellar_volume(vol_file, "mock.surf.gii", lut),
+      {
+        result <- read_cerebellar_volume(vol_file, "mock.surf.gii", lut)
+      },
       "deep"
     )
 
-    dentate_row <- result[grepl("Dentate", result$region), ]
-    expect_true(nrow(dentate_row) == 1)
+    dentate_row <- result[grepl("Dentate", result$region, fixed = TRUE), ]
+    expect_identical(nrow(dentate_row), 1L)
     expect_true(dentate_row$deep)
-    expect_equal(lengths(dentate_row$vertices), 0L)
+    expect_identical(lengths(dentate_row$vertices), 0L)
 
-    lobule_row <- result[grepl("Lobule", result$region), ]
+    lobule_row <- result[grepl("Lobule", result$region, fixed = TRUE), ]
     expect_false(lobule_row$deep)
-    expect_true(lengths(lobule_row$vertices) > 0)
+    expect_gt(lengths(lobule_row$vertices), 0)
   })
 
   it("rescues orphaned non-nucleus region via nearest vertices", {
@@ -1411,11 +1418,13 @@ describe("read_cerebellar_volume deep nucleus and orphan branches", {
     )
 
     expect_warning(
-      result <- read_cerebellar_volume(vol_file, "mock.surf.gii", lut),
+      {
+        result <- read_cerebellar_volume(vol_file, "mock.surf.gii", lut)
+      },
       "assigned.*nearest"
     )
 
-    expect_equal(lengths(result$vertices), 2L)
+    expect_identical(lengths(result$vertices), 2L)
     expect_false(result$deep)
   })
 
@@ -1441,7 +1450,7 @@ describe("read_cerebellar_volume deep nucleus and orphan branches", {
 
     result <- read_cerebellar_volume(vol_file, "mock.surf.gii", lut)
 
-    expect_true(all(!is.na(result$colour)))
+    expect_false(anyNA(result$colour))
     expect_true(all(grepl("^#", result$colour)))
   })
 
@@ -1471,7 +1480,7 @@ describe("read_cerebellar_volume deep nucleus and orphan branches", {
     )
 
     result <- read_cerebellar_volume(vol_file, "mock.surf.gii", lut)
-    expect_equal(result$colour, "#FF0000")
+    expect_identical(result$colour, "#FF0000")
   })
 })
 
@@ -1513,18 +1522,20 @@ describe("cerebellar_create_meshes", {
     )
 
     expect_warning(
-      result <- cerebellar_create_meshes(
-        vol_file,
-        components,
-        dirs,
-        skip_existing = FALSE,
-        verbose = FALSE,
-        decimate = 0.5
-      ),
+      {
+        result <- cerebellar_create_meshes(
+          vol_file,
+          components,
+          dirs,
+          skip_existing = FALSE,
+          verbose = FALSE,
+          decimate = 0.5
+        )
+      },
       "Volume has 3.*but atlas has 2"
     )
 
-    expect_equal(nrow(result), 2)
+    expect_identical(nrow(result), 2L)
     expect_true(all(c("label", "mesh") %in% names(result)))
   })
 
@@ -1548,11 +1559,11 @@ describe("cerebellar_create_meshes", {
     )
     dirs <- mock_dirs()
 
-    captured_ct <- NULL
+    .cap$captured_ct <- NULL
     local_mocked_bindings(
       check_fs = function(...) TRUE,
       subcort_create_meshes = function(input_volume, colortable, ...) {
-        captured_ct <<- colortable
+        .cap$captured_ct <- colortable
         stats::setNames(
           lapply(colortable$label, function(l) list()),
           colortable$label
@@ -1569,9 +1580,9 @@ describe("cerebellar_create_meshes", {
       decimate = 0.5
     )
 
-    expect_equal(sort(captured_ct$label), c("lobule_I", "lobule_II"))
-    expect_false("lobule_III" %in% captured_ct$label)
-    expect_equal(sort(captured_ct$idx), c(10L, 20L))
+    expect_identical(sort(.cap$captured_ct$label), c("lobule_I", "lobule_II"))
+    expect_false("lobule_III" %in% .cap$captured_ct$label)
+    expect_identical(sort(.cap$captured_ct$idx), c(10L, 20L))
   })
 
   it("errors when volume file not found", {
@@ -1594,7 +1605,7 @@ describe("cerebellar_create_meshes", {
 
 describe("clean_cerebellar_region with whitespace collapsing", {
   it("collapses multiple internal spaces", {
-    expect_equal(
+    expect_identical(
       clean_cerebellar_region("Left  Crus   I"),
       "Crus I"
     )
@@ -1614,7 +1625,7 @@ describe("cerebellar_read_data", {
         stringsAsFactors = FALSE
       ),
       palette = c("left_I-IV" = "#FF0000"),
-      vertices_df = data.frame(label = "left_I-IV")
+      vertices_df = data.frame(stringsAsFactors = FALSE, label = "left_I-IV")
     )
     mock_components$vertices_df$vertices <- list(0:3)
 
@@ -1638,7 +1649,7 @@ describe("cerebellar_read_data", {
       stop("should not be called")
     })
 
-    expect_equal(result$components, mock_components)
+    expect_identical(result$components, mock_components)
     expect_null(result$deep_data)
   })
 
@@ -1714,8 +1725,8 @@ describe("cerebellar_read_data", {
     })
 
     expect_false(is.null(result$deep_data))
-    expect_equal(nrow(result$deep_data), 1)
-    expect_equal(result$deep_data$label, "midline_Dentate")
+    expect_identical(nrow(result$deep_data), 1L)
+    expect_identical(result$deep_data$label, "midline_Dentate")
     expect_true("midline_Dentate" %in% result$components$core$label)
     expect_true(file.exists(file.path(dirs$base, "deep_data.rds")))
   })
@@ -1752,7 +1763,7 @@ describe("cerebellar_read_data", {
     })
 
     deep_colour <- result$components$palette["midline_Dentate"]
-    expect_true(!is.na(deep_colour))
+    expect_false(is.na(deep_colour))
     expect_true(grepl("^#", deep_colour))
   })
 })
@@ -1793,8 +1804,8 @@ describe("cerebellar_project_and_build", {
 
     expect_s3_class(atlas, "ggseg_atlas")
     expect_s3_class(atlas, "cerebellar_atlas")
-    expect_equal(atlas$type, "cerebellar")
-    expect_true(nrow(atlas$core) > 0)
+    expect_identical(atlas$type, "cerebellar")
+    expect_gt(nrow(atlas$core), 0)
   })
 })
 
@@ -1815,12 +1826,14 @@ describe("cerebellar_process_deep_nuclei", {
     dirs <- mock_dirs()
 
     expect_warning(
-      result <- cerebellar_process_deep_nuclei(
-        volume = "unused.nii.gz",
-        deep_data = deep_data,
-        dirs = dirs,
-        verbose = TRUE
-      ),
+      {
+        result <- cerebellar_process_deep_nuclei(
+          volume = "unused.nii.gz",
+          deep_data = deep_data,
+          dirs = dirs,
+          verbose = TRUE
+        )
+      },
       "vol_idx"
     )
 
@@ -1860,9 +1873,9 @@ describe("cerebellar_process_deep_nuclei", {
     )
 
     expect_s3_class(result$sf, "sf")
-    expect_true(nrow(result$sf) > 0)
-    expect_equal(result$sf$label, "midline_Dentate")
-    expect_equal(result$sf$view, "nuclei")
+    expect_gt(nrow(result$sf), 0)
+    expect_identical(result$sf$label, "midline_Dentate")
+    expect_identical(result$sf$view, "nuclei")
     expect_null(result$meshes)
   })
 
@@ -1896,8 +1909,8 @@ describe("cerebellar_process_deep_nuclei", {
       verbose = FALSE
     )
 
-    expect_equal(nrow(result$sf), 1)
-    expect_equal(result$sf$label, "midline_Dentate")
+    expect_identical(nrow(result$sf), 1L)
+    expect_identical(result$sf$label, "midline_Dentate")
   })
 
   it("creates 3D meshes when FreeSurfer available", {
@@ -1932,7 +1945,7 @@ describe("cerebellar_process_deep_nuclei", {
 
     expect_s3_class(result$sf, "sf")
     if (!is.null(result$meshes)) {
-      expect_true(nrow(result$meshes) > 0)
+      expect_gt(nrow(result$meshes), 0)
       expect_true("mesh" %in% names(result$meshes))
     }
   })
@@ -1951,8 +1964,8 @@ describe("get_tkras_to_world", {
     result <- get_tkras_to_world(vol_file)
 
     expect_true(is.matrix(result))
-    expect_equal(dim(result), c(4, 4))
-    expect_equal(result[4, ], c(0, 0, 0, 1))
+    expect_identical(dim(result), c(4L, 4L))
+    expect_identical(result[4, ], c(0, 0, 0, 1))
   })
 })
 
@@ -2088,12 +2101,14 @@ describe("read_suit_parcellation vertex overlap warning", {
     file2 <- make_label_gii(c(0L, 2L, 2L, 0L), lt)
 
     expect_warning(
-      result <- read_suit_parcellation(c(file1, file2)),
+      {
+        result <- read_suit_parcellation(c(file1, file2))
+      },
       "overlaps"
     )
 
     expect_s3_class(result, "tbl_df")
-    expect_true(nrow(result) >= 2)
+    expect_gte(nrow(result), 2)
   })
 })
 
@@ -2135,7 +2150,7 @@ describe("create_cerebellar_from_volume integration", {
 
     expect_s3_class(atlas, "ggseg_atlas")
     expect_s3_class(atlas, "cerebellar_atlas")
-    expect_true(nrow(atlas$core) >= 2)
+    expect_gte(nrow(atlas$core), 2)
 
     sf_data <- ggseg.formats::atlas_sf(atlas)
     expect_s3_class(sf_data, "sf")

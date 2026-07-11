@@ -36,7 +36,7 @@ layout_cortical_views <- function(atlas_df) {
   )
 
   atlas_list <- lapply(view_order, function(v) {
-    parts <- strsplit(v, " ")[[1]]
+    parts <- strsplit(v, " ", fixed = TRUE)[[1]]
     hemi <- parts[1]
     vw <- parts[2]
     find_group(c(hemi, substr(hemi, 1, 1)), vw)
@@ -174,7 +174,7 @@ gather_geometry <- function(df) {
 
 
 center_coord <- function(x) {
-  apply(range_coord(x), 2, mean)
+  colMeans(range_coord(x))
 }
 
 

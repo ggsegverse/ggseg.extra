@@ -482,7 +482,7 @@ validate_pipeline_opts <- function(opts, pipeline, allowed) {
   if (length(opts) == 0L) {
     return(list())
   }
-  if (is.null(names(opts)) || any(!nzchar(names(opts)))) {
+  if (is.null(names(opts)) || !all(nzchar(names(opts)))) {
     cli::cli_abort("All entries in {.arg {pipeline}_opts} must be named")
   }
   dupes <- names(opts)[duplicated(names(opts))]
@@ -600,7 +600,7 @@ wholebrain_resolve_projection <- function(config, dirs) {
     cli::cli_warn(c(
       "No color lookup table provided",
       "i" = "Region names will be generic (e.g., 'region_0010')",
-      "i" = "Colours will be auto-generated"
+      "i" = "Colours will be auto-generated" # nolint
     ))
     generate_colortable_from_volume(config$input_volume)
   } else {
@@ -737,7 +737,7 @@ wholebrain_project_to_surface <- function(
       cli::cli_abort(c(
         "mri_vol2surf failed to produce output for {hemi_short}",
         "i" = "Expected: {.path {output_mgz}}",
-        "i" = "Check that the volume is in the correct space (MNI152 or native)"
+        "i" = "Check that the volume is in the correct space (MNI152 or native)" # nolint
       ))
     }
 
@@ -1430,7 +1430,9 @@ load_cortex_mask <- function(hemi, subject = "fsaverage5", n_vertices) {
         "This file is required to prevent",
         "label dilation into the medial wall."
       ),
-      "i" = paste(
+      "i" = paste( # nolint
+        # nolint
+        # nolint
         "It should exist for {.val {subject}}.",
         "Check your FreeSurfer installation."
       )

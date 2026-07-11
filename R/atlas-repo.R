@@ -335,9 +335,9 @@ template_replace <- function(file, atlas_name) {
   tryCatch(
     {
       input <- readLines(file, warn = FALSE)
-      output <- gsub("\\{GGSEG\\}", atlas_name, input)
-      output <- gsub("\\{REPO\\}", repo_name, output)
-      output <- gsub("\\{YEAR\\}", format(Sys.Date(), "%Y"), output)
+      output <- gsub("{GGSEG}", atlas_name, input, fixed = TRUE)
+      output <- gsub("{REPO}", repo_name, output, fixed = TRUE)
+      output <- gsub("{YEAR}", format(Sys.Date(), "%Y"), output, fixed = TRUE)
       writeLines(output, file)
     },
     error = function(e) {

@@ -60,6 +60,7 @@ Rodrigues
 Rvcg
 Schaefer
 Serret
+Shen
 Sturges
 Subcortical
 TCK
@@ -101,7 +102,9 @@ coloured
 colouring
 colours
 commissural
+contextualise
 coregister
+coregisters
 coregistration
 corpuscallosum
 ctab
@@ -136,6 +139,7 @@ labelled
 lh
 lifecycle
 lobule
+materialising
 medoid
 mgz
 midline
@@ -153,6 +157,7 @@ neuromaps
 niftiImage
 nii
 parcellation
+parcellation's
 parcellations
 pial
 pkgdown
@@ -169,6 +174,7 @@ ras
 rasterisation
 rda
 readme
+recognises
 renderers
 repositions
 reticulate

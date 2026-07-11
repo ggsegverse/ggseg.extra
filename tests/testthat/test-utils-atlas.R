@@ -1,30 +1,30 @@
 describe("detect_hemi", {
   it("detects left from prefix", {
-    expect_equal(detect_hemi("Left-Thalamus"), "left")
-    expect_equal(detect_hemi("left_amygdala"), "left")
-    expect_equal(detect_hemi("lh.aparc"), "left")
-    expect_equal(detect_hemi("lh_region"), "left")
-    expect_equal(detect_hemi("L_motor"), "left")
+    expect_identical(detect_hemi("Left-Thalamus"), "left")
+    expect_identical(detect_hemi("left_amygdala"), "left")
+    expect_identical(detect_hemi("lh.aparc"), "left")
+    expect_identical(detect_hemi("lh_region"), "left")
+    expect_identical(detect_hemi("L_motor"), "left")
   })
 
   it("detects right from prefix", {
-    expect_equal(detect_hemi("Right-Thalamus"), "right")
-    expect_equal(detect_hemi("right_amygdala"), "right")
-    expect_equal(detect_hemi("rh.aparc"), "right")
-    expect_equal(detect_hemi("rh_region"), "right")
-    expect_equal(detect_hemi("R_motor"), "right")
+    expect_identical(detect_hemi("Right-Thalamus"), "right")
+    expect_identical(detect_hemi("right_amygdala"), "right")
+    expect_identical(detect_hemi("rh.aparc"), "right")
+    expect_identical(detect_hemi("rh_region"), "right")
+    expect_identical(detect_hemi("R_motor"), "right")
   })
 
   it("detects from suffix", {
-    expect_equal(detect_hemi("cst_left"), "left")
-    expect_equal(detect_hemi("cst_right"), "right")
-    expect_equal(detect_hemi("tract_lh"), "left")
-    expect_equal(detect_hemi("tract_rh"), "right")
+    expect_identical(detect_hemi("cst_left"), "left")
+    expect_identical(detect_hemi("cst_right"), "right")
+    expect_identical(detect_hemi("tract_lh"), "left")
+    expect_identical(detect_hemi("tract_rh"), "right")
   })
 
   it("detects from anywhere when not strict", {
-    expect_equal(detect_hemi("motor_left_area"), "left")
-    expect_equal(detect_hemi("rightHemisphere"), "right")
+    expect_identical(detect_hemi("motor_left_area"), "left")
+    expect_identical(detect_hemi("rightHemisphere"), "right")
   })
 
   it("returns NA for ambiguous labels", {
@@ -43,32 +43,35 @@ describe("detect_hemi_vec", {
   it("works on vectors", {
     labels <- c("Left-Thalamus", "Right-Amygdala", "brainstem")
     result <- detect_hemi_vec(labels)
-    expect_equal(result, c("left", "right", NA_character_))
+    expect_identical(result, c("left", "right", NA_character_))
   })
 })
 
 
 describe("clean_region_name", {
   it("removes hemisphere prefix and normalizes", {
-    expect_equal(clean_region_name("Left-Thalamus"), "thalamus")
-    expect_equal(clean_region_name("right_Amygdala"), "amygdala")
-    expect_equal(clean_region_name("lh.superior_frontal"), "superior frontal")
+    expect_identical(clean_region_name("Left-Thalamus"), "thalamus")
+    expect_identical(clean_region_name("right_Amygdala"), "amygdala")
+    expect_identical(
+      clean_region_name("lh.superior_frontal"),
+      "superior frontal"
+    )
   })
 
   it("converts underscores and dashes to spaces", {
-    expect_equal(clean_region_name("superior_frontal"), "superior frontal")
-    expect_equal(clean_region_name("pre-central"), "pre central")
+    expect_identical(clean_region_name("superior_frontal"), "superior frontal")
+    expect_identical(clean_region_name("pre-central"), "pre central")
   })
 
   it("can skip hemisphere removal", {
-    expect_equal(
+    expect_identical(
       clean_region_name("Left-Thalamus", remove_hemi = FALSE),
       "left thalamus"
     )
   })
 
   it("can skip normalization", {
-    expect_equal(
+    expect_identical(
       clean_region_name("Left-Thalamus", normalize = FALSE),
       "Thalamus"
     )
@@ -78,26 +81,26 @@ describe("clean_region_name", {
 
 describe("hemi_to_long", {
   it("converts short to long form", {
-    expect_equal(hemi_to_long("lh"), "left")
-    expect_equal(hemi_to_long("rh"), "right")
+    expect_identical(hemi_to_long("lh"), "left")
+    expect_identical(hemi_to_long("rh"), "right")
   })
 
   it("returns unchanged for non-short forms", {
-    expect_equal(hemi_to_long("left"), "left")
-    expect_equal(hemi_to_long("subcort"), "subcort")
+    expect_identical(hemi_to_long("left"), "left")
+    expect_identical(hemi_to_long("subcort"), "subcort")
   })
 })
 
 
 describe("hemi_to_short", {
   it("converts long to short form", {
-    expect_equal(hemi_to_short("left"), "lh")
-    expect_equal(hemi_to_short("right"), "rh")
+    expect_identical(hemi_to_short("left"), "lh")
+    expect_identical(hemi_to_short("right"), "rh")
   })
 
   it("returns unchanged for non-long forms", {
-    expect_equal(hemi_to_short("lh"), "lh")
-    expect_equal(hemi_to_short("subcort"), "subcort")
+    expect_identical(hemi_to_short("lh"), "lh")
+    expect_identical(hemi_to_short("subcort"), "subcort")
   })
 })
 
@@ -106,7 +109,7 @@ describe("clean_region_names", {
   it("works on vectors", {
     labels <- c("Left-Thalamus", "right_Amygdala", "lh.superior_frontal")
     result <- clean_region_names(labels)
-    expect_equal(result, c("thalamus", "amygdala", "superior frontal"))
+    expect_identical(result, c("thalamus", "amygdala", "superior frontal"))
   })
 })
 
@@ -136,7 +139,7 @@ describe("setup_atlas_dirs", {
     expect_no_error({
       dirs2 <- setup_atlas_dirs(tmp, "test_atlas")
     })
-    expect_equal(dirs1$base, dirs2$base)
+    expect_identical(dirs1$base, dirs2$base)
   })
 })
 
@@ -146,9 +149,9 @@ describe("setup_atlas_dirs with NULL atlas_name", {
     tmp <- withr::local_tempdir()
     dirs <- setup_atlas_dirs(tmp, atlas_name = NULL)
 
-    expect_equal(dirs$base, tmp)
+    expect_identical(dirs$base, tmp)
     expect_true(dir.exists(dirs$snapshots))
-    expect_equal(dirs$snapshots, file.path(tmp, "snapshots"))
+    expect_identical(dirs$snapshots, file.path(tmp, "snapshots"))
   })
 })
 
@@ -170,9 +173,9 @@ describe("build_atlas_components", {
     expect_true("palette" %in% names(result))
     expect_true("vertices_df" %in% names(result))
 
-    expect_equal(nrow(result$core), 3)
-    expect_equal(length(result$palette), 3)
-    expect_equal(nrow(result$vertices_df), 3)
+    expect_identical(nrow(result$core), 3L)
+    expect_length(result$palette, 3)
+    expect_identical(nrow(result$vertices_df), 3L)
   })
 
   it("builds meshes_df when mesh column present", {
@@ -192,7 +195,7 @@ describe("build_atlas_components", {
     result <- build_atlas_components(atlas_data)
 
     expect_true("meshes_df" %in% names(result))
-    expect_equal(nrow(result$meshes_df), 2)
+    expect_identical(nrow(result$meshes_df), 2L)
   })
 
   it("auto-generates colours when all are NA", {
@@ -208,7 +211,7 @@ describe("build_atlas_components", {
     result <- build_atlas_components(atlas_data)
 
     expect_false(is.null(result$palette))
-    expect_equal(length(result$palette), 2)
+    expect_length(result$palette, 2)
     expect_true(all(grepl("^#", result$palette)))
   })
 
@@ -220,12 +223,12 @@ describe("build_atlas_components", {
       colour = c("#FF0000", NA_character_, "#0000FF"),
       stringsAsFactors = FALSE
     )
-    atlas_data$vertices <- list(c(1L, 2L), c(3L), c(4L, 5L))
+    atlas_data$vertices <- list(c(1L, 2L), 3L, c(4L, 5L))
 
     result <- build_atlas_components(atlas_data)
 
-    expect_equal(result$palette[["lh_motor"]], "#FF0000")
-    expect_equal(result$palette[["rh_motor"]], "#0000FF")
+    expect_identical(result$palette[["lh_motor"]], "#FF0000")
+    expect_identical(result$palette[["rh_motor"]], "#0000FF")
     expect_true(grepl("^#", result$palette[["lh_visual"]]))
     expect_false(is.na(result$palette[["lh_visual"]]))
   })
@@ -238,7 +241,7 @@ describe("build_atlas_components", {
       colour = c(NA_character_, NA_character_),
       stringsAsFactors = FALSE
     )
-    atlas_data$vertices <- list(c(1L), c(2L, 3L))
+    atlas_data$vertices <- list(1L, c(2L, 3L))
 
     result <- build_atlas_components(atlas_data)
 
@@ -258,7 +261,7 @@ describe("build_atlas_components", {
 
     result <- build_atlas_components(atlas_data)
 
-    expect_equal(length(result$palette), 1)
-    expect_equal(names(result$palette), "lh_motor")
+    expect_length(result$palette, 1)
+    expect_named(result$palette, "lh_motor")
   })
 })

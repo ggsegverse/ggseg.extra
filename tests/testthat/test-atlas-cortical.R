@@ -1,8 +1,10 @@
+.cap <- new.env()
+
 describe("create_cortical_from_annotation", {
   it("validates annotation files exist", {
     expect_error(
       create_cortical_from_annotation(
-        input_annot = c("nonexistent.annot"),
+        input_annot = "nonexistent.annot",
         verbose = FALSE
       ),
       "not found"
@@ -21,8 +23,8 @@ describe("create_cortical_from_annotation", {
     )
 
     expect_s3_class(atlas, "ggseg_atlas")
-    expect_equal(atlas$type, "cortical")
-    expect_true(nrow(atlas$core) > 0)
+    expect_identical(atlas$type, "cortical")
+    expect_gt(nrow(atlas$core), 0)
   })
 
   it("includes vertices for 3D rendering", {
@@ -37,7 +39,7 @@ describe("create_cortical_from_annotation", {
     )
 
     vertices <- ggseg.formats::atlas_vertices(atlas)
-    expect_true(nrow(vertices) > 0)
+    expect_gt(nrow(vertices), 0)
     expect_true("vertices" %in% names(vertices))
   })
 
@@ -65,6 +67,7 @@ describe("cortical_project_and_build", {
 
     components <- mock_components("lh_frontal", "left", "frontal", "#FF0000")
     components$vertices_df <- data.frame(
+      stringsAsFactors = FALSE,
       label = "lh_frontal",
       vertices = I(list(1:10))
     )
@@ -73,7 +76,7 @@ describe("cortical_project_and_build", {
       components = components,
       atlas_name = "test",
       hemisphere = c("lh", "rh"),
-      views = c("lateral"),
+      views = "lateral",
       config = list(
         steps = 1:2,
         skip_existing = FALSE,
@@ -92,10 +95,10 @@ describe("cortical_project_and_build", {
 
 describe("create_cortical_from_annotation pipeline flow", {
   it("passes input_annot to read_annotation_data", {
-    captured <- list()
+    .cap$captured <- list()
     local_mocked_bindings(
       read_annotation_data = function(annot_files) {
-        captured$annot <<- annot_files
+        .cap$captured$annot <- annot_files
         dplyr::tibble(
           hemi = "left",
           region = "frontal",
@@ -114,6 +117,7 @@ describe("create_cortical_from_annotation pipeline flow", {
           ),
           palette = c(lh_frontal = "#FF0000"),
           vertices_df = data.frame(
+            stringsAsFactors = FALSE,
             label = "lh_frontal",
             vertices = I(list(1:10))
           )
@@ -128,11 +132,11 @@ describe("create_cortical_from_annotation pipeline flow", {
     withr::local_options(ggseg.extra.output_dir = withr::local_tempdir())
 
     result <- create_cortical_from_annotation(
-      input_annot = c("lh.test.annot"),
+      input_annot = "lh.test.annot",
       verbose = FALSE
     )
 
-    expect_equal(captured$annot, c("lh.test.annot"))
+    expect_identical(.cap$captured$annot, "lh.test.annot")
     expect_s3_class(result, "ggseg_atlas")
   })
 })
@@ -152,7 +156,7 @@ describe("read_annotation_data", {
       c("hemi", "region", "label", "colour", "vertices") %in%
         names(atlas_data)
     ))
-    expect_true(nrow(atlas_data) > 0)
+    expect_gt(nrow(atlas_data), 0)
   })
 
   it("returns data for both hemispheres", {
@@ -194,18 +198,12 @@ describe("read_annotation_data", {
     expect_true(all(
       vapply(atlas_data$vertices, is.integer, logical(1))
     ))
-    expect_true(all(
-      vapply(
-        atlas_data$vertices,
-        function(x) length(x) > 0,
-        logical(1)
-      )
-    ))
+    expect_true(all(lengths(atlas_data$vertices) > 0))
   })
 
   it("errors when files not found", {
     expect_error(
-      read_annotation_data(c("nonexistent.annot")),
+      read_annotation_data("nonexistent.annot"),
       "not found"
     )
   })
@@ -224,9 +222,9 @@ describe("create_cortical_from_labels", {
     )
 
     expect_s3_class(atlas, "ggseg_atlas")
-    expect_equal(atlas$atlas, "test_atlas")
-    expect_equal(atlas$type, "cortical")
-    expect_equal(nrow(atlas$core), 3)
+    expect_identical(atlas$atlas, "test_atlas")
+    expect_identical(atlas$type, "cortical")
+    expect_identical(nrow(atlas$core), 3L)
   })
 
   it("correctly parses hemisphere from filename", {
@@ -240,8 +238,8 @@ describe("create_cortical_from_labels", {
 
     expect_true("left" %in% atlas$core$hemi)
     expect_true("right" %in% atlas$core$hemi)
-    expect_equal(sum(atlas$core$hemi == "left"), 2)
-    expect_equal(sum(atlas$core$hemi == "right"), 1)
+    expect_identical(sum(atlas$core$hemi == "left"), 2L)
+    expect_identical(sum(atlas$core$hemi == "right"), 1L)
   })
 
   it("stores vertices correctly", {
@@ -254,8 +252,8 @@ describe("create_cortical_from_labels", {
     )
 
     vertices <- ggseg.formats::atlas_vertices(atlas)
-    expect_true(nrow(vertices) > 0)
-    expect_equal(length(vertices$vertices[[1]]), 5)
+    expect_gt(nrow(vertices), 0)
+    expect_length(vertices$vertices[[1]], 5)
   })
 
   it("accepts custom names and colours via input_lut", {
@@ -263,6 +261,7 @@ describe("create_cortical_from_labels", {
 
     labels <- unlist(test_label_files())
     custom_lut <- data.frame(
+      stringsAsFactors = FALSE,
       region = c("Motor", "Visual", "Motor"),
       hex = c("#FF0000", "#00FF00", "#0000FF")
     )
@@ -273,7 +272,7 @@ describe("create_cortical_from_labels", {
       verbose = FALSE
     )
 
-    expect_equal(atlas$core$region, custom_lut$region)
+    expect_identical(atlas$core$region, custom_lut$region)
     expect_true(all(custom_lut$hex %in% atlas$palette))
   })
 
@@ -284,7 +283,7 @@ describe("create_cortical_from_labels", {
     )
     expect_error(
       create_cortical_from_labels(
-        c("nonexistent.label"),
+        "nonexistent.label",
         verbose = FALSE
       ),
       "Label files not found"
@@ -313,23 +312,23 @@ describe("read_label_vertices", {
     vertices <- read_label_vertices(label_file)
 
     expect_type(vertices, "integer")
-    expect_equal(length(vertices), 5)
-    expect_equal(vertices, c(100L, 101L, 102L, 150L, 151L))
+    expect_length(vertices, 5)
+    expect_identical(vertices, c(100L, 101L, 102L, 150L, 151L))
   })
 
   it("handles different label files", {
     label_file <- test_label_files()$lh_region2
     vertices <- read_label_vertices(label_file)
 
-    expect_equal(length(vertices), 3)
-    expect_equal(vertices, c(200L, 201L, 202L))
+    expect_length(vertices, 3)
+    expect_identical(vertices, c(200L, 201L, 202L))
   })
 
   it("handles right hemisphere labels", {
     label_file <- test_label_files()$rh_region1
     vertices <- read_label_vertices(label_file)
 
-    expect_equal(length(vertices), 4)
+    expect_length(vertices, 4)
   })
 })
 
@@ -339,9 +338,18 @@ describe("cortical_read_data", {
     tmp_dir <- withr::local_tempdir()
     mock_atlas <- structure(list(atlas = "test"), class = "ggseg_atlas")
     mock_components <- list(
-      core = data.frame(hemi = "left", region = "r", label = "lh_r"),
+      core = data.frame(
+        stringsAsFactors = FALSE,
+        hemi = "left",
+        region = "r",
+        label = "lh_r"
+      ),
       palette = c(lh_r = "#FF0000"),
-      vertices_df = data.frame(label = "lh_r", vertices = I(list(1:5)))
+      vertices_df = data.frame(
+        stringsAsFactors = FALSE,
+        label = "lh_r",
+        vertices = I(list(1:5))
+      )
     )
     saveRDS(mock_atlas, file.path(tmp_dir, "atlas_3d.rds"))
     saveRDS(mock_components, file.path(tmp_dir, "components.rds"))
@@ -356,7 +364,7 @@ describe("cortical_read_data", {
     )
 
     expect_s3_class(result$atlas_3d, "ggseg_atlas")
-    expect_equal(result$components$palette, mock_components$palette)
+    expect_identical(result$components$palette, mock_components$palette)
   })
 })
 
@@ -369,22 +377,31 @@ describe("cortical_finalize", {
       preview_atlas = function(x) x
     )
     mock_atlas <- structure(
-      list(core = data.frame(hemi = "left", region = "r", label = "lh_r")),
+      list(
+        core = data.frame(
+          stringsAsFactors = FALSE,
+          hemi = "left",
+          region = "r",
+          label = "lh_r"
+        )
+      ),
       class = "ggseg_atlas"
     )
     dirs <- list(base = withr::local_tempdir())
 
     expect_messages(
-      result <- cortical_finalize(
-        mock_atlas,
-        config = list(
-          steps = 1:2,
-          cleanup = FALSE,
-          verbose = TRUE
-        ),
-        dirs = dirs,
-        start_time = Sys.time()
-      ),
+      {
+        result <- cortical_finalize(
+          mock_atlas,
+          config = list(
+            steps = 1:2,
+            cleanup = FALSE,
+            verbose = TRUE
+          ),
+          dirs = dirs,
+          start_time = Sys.time()
+        )
+      },
       "1 regions"
     )
 
@@ -398,7 +415,14 @@ describe("cortical_finalize", {
       preview_atlas = function(x) x
     )
     mock_atlas <- structure(
-      list(core = data.frame(hemi = "left", region = "r", label = "lh_r")),
+      list(
+        core = data.frame(
+          stringsAsFactors = FALSE,
+          hemi = "left",
+          region = "r",
+          label = "lh_r"
+        )
+      ),
       class = "ggseg_atlas"
     )
     base_dir <- withr::local_tempdir()
@@ -487,16 +511,22 @@ describe("cortical_project_and_build verbose and cleanup paths", {
 
 describe("cortical pipeline does not require ImageMagick", {
   it("check_magick is not called during cortical creation", {
-    magick_called <- FALSE
+    .cap$magick_called <- FALSE
     local_mocked_bindings(
       check_magick = function() {
-        magick_called <<- TRUE
+        .cap$magick_called <- TRUE
         cli::cli_abort("ImageMagick not found")
       },
       cortical_read_data = function(...) {
         list(
           atlas_3d = structure(
-            list(core = data.frame(hemi = "left", region = "a")),
+            list(
+              core = data.frame(
+                stringsAsFactors = FALSE,
+                hemi = "left",
+                region = "a"
+              )
+            ),
             class = "ggseg_atlas"
           ),
           components = mock_components()
@@ -507,11 +537,11 @@ describe("cortical pipeline does not require ImageMagick", {
 
     expect_no_error(
       create_cortical_from_annotation(
-        input_annot = c("lh.test.annot"),
+        input_annot = "lh.test.annot",
         verbose = FALSE
       )
     )
-    expect_false(magick_called)
+    expect_false(.cap$magick_called)
   })
 })
 
@@ -538,6 +568,7 @@ describe("create_cortical_from_annotation verbose output", {
           ),
           palette = c(lh_frontal = "#FF0000"),
           vertices_df = data.frame(
+            stringsAsFactors = FALSE,
             label = "lh_frontal",
             vertices = I(list(1:10))
           )
@@ -557,7 +588,7 @@ describe("create_cortical_from_annotation verbose output", {
     }
     expect_snapshot(
       invisible(create_cortical_from_annotation(
-        input_annot = c("lh.test.annot"),
+        input_annot = "lh.test.annot",
         verbose = TRUE
       )),
       transform = scrub
@@ -568,7 +599,7 @@ describe("create_cortical_from_annotation verbose output", {
 
 describe("create_cortical_from_annotation full pipeline path", {
   it("passes correct components and config to cortical_project_and_build", {
-    captured_pipeline_args <- NULL
+    .cap$captured_pipeline_args <- NULL
     local_mocked_bindings(
       check_fs = function(abort = FALSE) invisible(TRUE),
       check_magick = function() invisible(TRUE),
@@ -591,6 +622,7 @@ describe("create_cortical_from_annotation full pipeline path", {
           ),
           palette = c(lh_frontal = "#FF0000"),
           vertices_df = data.frame(
+            stringsAsFactors = FALSE,
             label = "lh_frontal",
             vertices = I(list(1:10))
           )
@@ -599,7 +631,7 @@ describe("create_cortical_from_annotation full pipeline path", {
       ggseg_atlas = function(...) structure(list(...), class = "ggseg_atlas"),
       ggseg_data_cortical = function(...) list(...),
       cortical_project_and_build = function(...) {
-        captured_pipeline_args <<- list(...)
+        .cap$captured_pipeline_args <- list(...)
         structure(list(), class = "ggseg_atlas")
       }
     )
@@ -607,14 +639,14 @@ describe("create_cortical_from_annotation full pipeline path", {
     withr::local_options(ggseg.extra.output_dir = withr::local_tempdir())
 
     result <- create_cortical_from_annotation(
-      input_annot = c("lh.test.annot"),
+      input_annot = "lh.test.annot",
       verbose = FALSE
     )
 
     expect_s3_class(result, "ggseg_atlas")
-    expect_equal(captured_pipeline_args$atlas_name, "test")
-    expect_equal(
-      captured_pipeline_args$components$palette,
+    expect_identical(.cap$captured_pipeline_args$atlas_name, "test")
+    expect_identical(
+      .cap$captured_pipeline_args$components$palette,
       c(lh_frontal = "#FF0000")
     )
   })
@@ -681,9 +713,18 @@ describe("cortical_read_data verbose paths", {
     tmp_dir <- withr::local_tempdir()
     mock_atlas <- structure(list(atlas = "test"), class = "ggseg_atlas")
     mock_components <- list(
-      core = data.frame(hemi = "left", region = "r", label = "lh_r"),
+      core = data.frame(
+        stringsAsFactors = FALSE,
+        hemi = "left",
+        region = "r",
+        label = "lh_r"
+      ),
       palette = c(lh_r = "#FF0000"),
-      vertices_df = data.frame(label = "lh_r", vertices = I(list(1:5)))
+      vertices_df = data.frame(
+        stringsAsFactors = FALSE,
+        label = "lh_r",
+        vertices = I(list(1:5))
+      )
     )
     saveRDS(mock_atlas, file.path(tmp_dir, "atlas_3d.rds"))
     saveRDS(mock_components, file.path(tmp_dir, "components.rds"))
@@ -731,6 +772,7 @@ describe("create_cortical_from_labels verbose and LUT paths", {
   it("extracts colours from RGB columns in LUT", {
     labels <- unlist(test_label_files())
     rgb_lut <- data.frame(
+      stringsAsFactors = FALSE,
       region = c("Motor", "Visual", "Motor"),
       R = c(255, 0, 0),
       G = c(0, 255, 0),
@@ -762,13 +804,14 @@ describe("create_cortical_from_labels verbose and LUT paths", {
       verbose = FALSE
     )
 
-    expect_true(!is.null(atlas$palette))
+    expect_false(is.null(atlas$palette))
     expect_true(any(grepl("^#", atlas$palette)))
   })
 
   it("sets NULL colour when LUT lacks hex and RGB columns", {
     labels <- unlist(test_label_files())
     bad_lut <- data.frame(
+      stringsAsFactors = FALSE,
       region = c("Motor", "Visual", "Motor"),
       score = c(1, 2, 3)
     )
@@ -802,14 +845,14 @@ describe("create_cortical_from_labels verbose and LUT paths", {
   })
 
   it("passes correct atlas_name and components to cortical_project_and_build", {
-    captured_args <- NULL
+    .cap$captured_args <- NULL
     local_mocked_bindings(
       check_fs = function(abort = FALSE) invisible(TRUE),
       check_magick = function() invisible(TRUE),
       ggseg_atlas = function(...) structure(list(...), class = "ggseg_atlas"),
       ggseg_data_cortical = function(...) list(...),
       cortical_project_and_build = function(...) {
-        captured_args <<- list(...)
+        .cap$captured_args <- list(...)
         structure(list(), class = "ggseg_atlas")
       }
     )
@@ -824,15 +867,15 @@ describe("create_cortical_from_labels verbose and LUT paths", {
     )
 
     expect_s3_class(result, "ggseg_atlas")
-    expect_equal(captured_args$atlas_name, "test_atlas")
-    expect_true(nrow(captured_args$components$core) > 0)
+    expect_identical(.cap$captured_args$atlas_name, "test_atlas")
+    expect_gt(nrow(.cap$captured_args$components$core), 0)
   })
 })
 
 
 describe("create_cortical_from_labels hemi fallback", {
   it("defaults to both hemispheres when all hemi values are NA", {
-    captured_hemisphere <- NULL
+    .cap$captured_hemisphere <- NULL
     local_mocked_bindings(
       check_fs = function(abort = FALSE) invisible(TRUE),
       check_magick = function() invisible(TRUE),
@@ -840,7 +883,7 @@ describe("create_cortical_from_labels hemi fallback", {
       ggseg_data_cortical = function(...) list(...),
       cortical_project_and_build = function(...) {
         args <- list(...)
-        captured_hemisphere <<- args$hemisphere
+        .cap$captured_hemisphere <- args$hemisphere
         structure(list(), class = "ggseg_atlas")
       }
     )
@@ -866,7 +909,7 @@ describe("create_cortical_from_labels hemi fallback", {
       verbose = FALSE
     )
 
-    expect_equal(captured_hemisphere, c("lh", "rh"))
+    expect_identical(.cap$captured_hemisphere, c("lh", "rh"))
   })
 })
 
@@ -1073,7 +1116,7 @@ describe("create_cortical_from_neuromaps verbose", {
 
 describe("cortical_region_snapshots invisible-region filtering", {
   it("skips regions that face away from the camera", {
-    captured <- list()
+    .cap$captured <- list()
     local_mocked_bindings(
       snapshot_region_batch = function(
         atlas,
@@ -1082,7 +1125,7 @@ describe("cortical_region_snapshots invisible-region filtering", {
         views,
         ...
       ) {
-        captured[[length(captured) + 1]] <<- list(
+        .cap$captured[[length(.cap$captured) + 1]] <- list(
           region_label = region_label,
           hemisphere = hemisphere,
           view = views[1]
@@ -1099,7 +1142,7 @@ describe("cortical_region_snapshots invisible-region filtering", {
         label = c("lh_visible", "lh_hidden"),
         stringsAsFactors = FALSE
       ),
-      vertices_df = data.frame(label = character(0))
+      vertices_df = data.frame(stringsAsFactors = FALSE, label = character(0))
     )
     atlas_3d <- structure(list(), class = "ggseg_atlas")
     dirs <- list(snapshots = tempdir())
@@ -1113,7 +1156,7 @@ describe("cortical_region_snapshots invisible-region filtering", {
       skip_existing = FALSE
     )
 
-    labels <- vapply(captured, `[[`, character(1), "region_label")
+    labels <- vapply(.cap$captured, `[[`, character(1), "region_label")
     expect_true("lh_visible" %in% labels)
     expect_false("lh_hidden" %in% labels)
   })
@@ -1138,14 +1181,17 @@ describe("filter_visible_regions with empty vertices", {
       stringsAsFactors = FALSE
     )
     vertices_df <- data.frame(
+      stringsAsFactors = FALSE,
       label = "lh_empty",
       vertices = I(list(integer(0)))
     )
 
     expect_messages(
-      result <- filter_visible_regions(region_grid, vertices_df),
+      {
+        result <- filter_visible_regions(region_grid, vertices_df)
+      },
       "Empty vertices"
     )
-    expect_equal(nrow(result), 1)
+    expect_identical(nrow(result), 1L)
   })
 })

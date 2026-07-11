@@ -1,3 +1,5 @@
+.cap <- new.env()
+
 describe("setup_sitrep", {
   it("returns list of results invisibly", {
     local_mocked_bindings(
@@ -6,7 +8,9 @@ describe("setup_sitrep", {
       .package = "freesurfer"
     )
 
-    expect_messages(result <- setup_sitrep("simple"))
+    expect_messages({
+      result <- setup_sitrep("simple")
+    })
 
     expect_type(result, "list")
     expect_true("freesurfer" %in% names(result))
@@ -38,7 +42,9 @@ describe("check_freesurfer", {
       .package = "freesurfer"
     )
 
-    expect_messages(result <- check_freesurfer("simple"))
+    expect_messages({
+      result <- check_freesurfer("simple")
+    })
 
     expect_type(result, "list")
     expect_true("available" %in% names(result))
@@ -49,7 +55,9 @@ describe("check_freesurfer", {
 
 describe("check_other_system_deps", {
   it("returns list with imagemagick and chrome fields", {
-    expect_messages(result <- check_other_system_deps("simple"))
+    expect_messages({
+      result <- check_other_system_deps("simple")
+    })
 
     expect_type(result, "list")
     expect_true("imagemagick" %in% names(result))
@@ -62,7 +70,9 @@ describe("check_other_system_deps", {
 
 describe("check_fsaverage", {
   it("returns list with fsaverage5 field", {
-    expect_messages(result <- check_fsaverage("simple"))
+    expect_messages({
+      result <- check_fsaverage("simple")
+    })
 
     expect_type(result, "list")
     expect_true("fsaverage5" %in% names(result))
@@ -78,6 +88,16 @@ describe("check_freesurfer", {
       .package = "freesurfer"
     )
     expect_messages(check_freesurfer("simple"), "not configured")
+  })
+
+  it("degrades gracefully in full mode when fs_sitrep is unavailable", {
+    local_mocked_bindings(
+      have_fs = function() TRUE,
+      .package = "freesurfer"
+    )
+    local_mocked_bindings(has_fs_sitrep = function() FALSE)
+    # older/CRAN `freesurfer` has no `fs_sitrep`: must fall back, not abort.
+    expect_messages(check_freesurfer("full"), "FreeSurfer")
   })
 })
 
@@ -186,16 +206,16 @@ describe("check_freesurfer when freesurfer package absent", {
       is_installed = function(pkg, ...) FALSE,
       .package = "rlang"
     )
-    msgs <- character()
+    .cap$msgs <- character()
     result <- withCallingHandlers(
       check_freesurfer("minimal"),
       message = function(m) {
-        msgs <<- c(msgs, conditionMessage(m))
+        .cap$msgs <- c(.cap$msgs, conditionMessage(m))
         invokeRestart("muffleMessage")
       }
     )
     expect_false(result$available)
-    expect_length(msgs, 0)
+    expect_length(.cap$msgs, 0)
   })
 
   it("returns available=FALSE with danger message in simple detail", {
@@ -204,7 +224,9 @@ describe("check_freesurfer when freesurfer package absent", {
       .package = "rlang"
     )
     expect_messages(
-      result <- check_freesurfer("simple"),
+      {
+        result <- check_freesurfer("simple")
+      },
       "not installed"
     )
     expect_false(result$available)
@@ -230,7 +252,9 @@ describe("check_fsaverage additional branches", {
       .package = "rlang"
     )
     expect_messages(
-      result <- check_fsaverage("simple"),
+      {
+        result <- check_fsaverage("simple")
+      },
       "not found"
     )
     expect_false(result$fsaverage5)
@@ -264,15 +288,15 @@ describe("check_fsaverage additional branches", {
 
 describe("check_optional_packages additional branches", {
   it("returns results silently in minimal detail", {
-    msgs <- character()
+    .cap$msgs <- character()
     result <- withCallingHandlers(
       check_optional_packages("minimal"),
       message = function(m) {
-        msgs <<- c(msgs, conditionMessage(m))
+        .cap$msgs <- c(.cap$msgs, conditionMessage(m))
         invokeRestart("muffleMessage")
       }
     )
-    expect_length(msgs, 0)
+    expect_length(.cap$msgs, 0)
     expect_type(result, "list")
   })
 
@@ -291,15 +315,15 @@ describe("check_optional_packages additional branches", {
 
 describe("check_suit_surfaces additional branches", {
   it("runs silently in minimal detail", {
-    msgs <- character()
+    .cap$msgs <- character()
     withCallingHandlers(
       check_suit_surfaces("minimal"),
       message = function(m) {
-        msgs <<- c(msgs, conditionMessage(m))
+        .cap$msgs <- c(.cap$msgs, conditionMessage(m))
         invokeRestart("muffleMessage")
       }
     )
-    expect_length(msgs, 0)
+    expect_length(.cap$msgs, 0)
   })
 
   it("alerts only flatmap missing when 3D exists", {
@@ -417,7 +441,7 @@ describe("find_chrome_path", {
     )
 
     result <- find_chrome_path()
-    expect_equal(result, "/usr/bin/google-chrome")
+    expect_identical(result, "/usr/bin/google-chrome")
   })
 
   it("returns NULL when no chrome found anywhere", {

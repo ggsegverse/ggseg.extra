@@ -65,8 +65,8 @@ describe("read_trk", {
 
     expect_type(result, "list")
     expect_length(result, 1)
-    expect_equal(nrow(result[[1]]), 3)
-    expect_equal(colnames(result[[1]]), c("x", "y", "z"))
+    expect_identical(nrow(result[[1]]), 3L)
+    expect_identical(colnames(result[[1]]), c("x", "y", "z"))
   })
 
   it("reads TRK file with multiple streamlines", {
@@ -87,8 +87,8 @@ describe("read_trk", {
     result <- read_trk(tmp)
 
     expect_length(result, 2)
-    expect_equal(nrow(result[[1]]), 2)
-    expect_equal(nrow(result[[2]]), 2)
+    expect_identical(nrow(result[[1]]), 2L)
+    expect_identical(nrow(result[[2]]), 2L)
   })
 
   it("handles TRK with scalars", {
@@ -107,7 +107,7 @@ describe("read_trk", {
     result <- read_trk(tmp)
 
     expect_length(result, 1)
-    expect_equal(ncol(result[[1]]), 3)
+    expect_identical(ncol(result[[1]]), 3L)
   })
 
   it("handles TRK with properties", {
@@ -121,13 +121,13 @@ describe("read_trk", {
     writeBin(header, con)
     writeBin(2L, con, size = 4)
     writeBin(as.numeric(c(1, 2, 3, 4, 5, 6)), con, size = 4)
-    writeBin(as.numeric(42.0), con, size = 4)
+    writeBin(42.0, con, size = 4)
     close(con)
 
     result <- read_trk(tmp)
 
     expect_length(result, 1)
-    expect_equal(nrow(result[[1]]), 2)
+    expect_identical(nrow(result[[1]]), 2L)
   })
 })
 
@@ -167,8 +167,8 @@ describe("read_tck", {
     result <- read_tck(tmp)
 
     expect_length(result, 2)
-    expect_equal(nrow(result[[1]]), 2)
-    expect_equal(nrow(result[[2]]), 1)
+    expect_identical(nrow(result[[1]]), 2L)
+    expect_identical(nrow(result[[2]]), 1L)
   })
 
   it("handles trailing streamline without NaN separator", {
@@ -182,7 +182,7 @@ describe("read_tck", {
     result <- read_tck(tmp)
 
     expect_length(result, 1)
-    expect_equal(nrow(result[[1]]), 2)
+    expect_identical(nrow(result[[1]]), 2L)
   })
 
   it("handles Float64LE datatype", {
@@ -196,7 +196,7 @@ describe("read_tck", {
     result <- read_tck(tmp)
 
     expect_length(result, 1)
-    expect_equal(nrow(result[[1]]), 1)
+    expect_identical(nrow(result[[1]]), 1L)
   })
 
   it("breaks when file is truncated (coords length < 3)", {
@@ -205,13 +205,13 @@ describe("read_tck", {
     writeLines(c("mrtrix tracks", "datatype: Float32LE", "END"), con)
     writeBin(as.numeric(c(1, 2, 3)), con, size = 4)
     writeBin(as.numeric(c(NaN, NaN, NaN)), con, size = 4)
-    writeBin(as.numeric(c(7)), con, size = 4)
+    writeBin(7, con, size = 4)
     close(con)
 
     result <- read_tck(tmp)
 
     expect_length(result, 1)
-    expect_equal(nrow(result[[1]]), 1)
+    expect_identical(nrow(result[[1]]), 1L)
   })
 })
 
@@ -234,7 +234,7 @@ describe("read_trk early break", {
     result <- read_trk(tmp)
 
     expect_length(result, 1)
-    expect_equal(nrow(result[[1]]), 3)
+    expect_identical(nrow(result[[1]]), 3L)
   })
 
   it("breaks when n_pts is negative", {
@@ -254,6 +254,6 @@ describe("read_trk early break", {
     result <- read_trk(tmp)
 
     expect_length(result, 1)
-    expect_equal(nrow(result[[1]]), 3)
+    expect_identical(nrow(result[[1]]), 3L)
   })
 })

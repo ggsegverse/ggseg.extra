@@ -1,3 +1,5 @@
+.cap <- new.env()
+
 describe("tract_read_input", {
   it("reads from named list", {
     tracts <- list(
@@ -7,8 +9,8 @@ describe("tract_read_input", {
 
     result <- tract_read_input(tracts, NULL)
 
-    expect_equal(result$tract_names, c("cst", "af"))
-    expect_equal(length(result$streamlines_data), 2)
+    expect_identical(result$tract_names, c("cst", "af"))
+    expect_length(result$streamlines_data, 2)
   })
 
   it("generates default names for unnamed list", {
@@ -19,12 +21,12 @@ describe("tract_read_input", {
 
     result <- tract_read_input(tracts, NULL)
 
-    expect_equal(result$tract_names, c("tract_1", "tract_2"))
+    expect_identical(result$tract_names, c("tract_1", "tract_2"))
   })
 
   it("errors when files not found", {
     expect_error(
-      tract_read_input(c("nonexistent.trk"), NULL),
+      tract_read_input("nonexistent.trk", NULL),
       "not found"
     )
   })
@@ -70,10 +72,10 @@ describe("tract_build_core", {
       c("cst_left", "cst_right")
     )
 
-    expect_equal(nrow(result$core), 2)
-    expect_equal(length(result$palette), 2)
-    expect_equal(nrow(result$centerlines_df), 2)
-    expect_equal(result$atlas_name, "tracts")
+    expect_identical(nrow(result$core), 2L)
+    expect_length(result$palette, 2)
+    expect_identical(nrow(result$centerlines_df), 2L)
+    expect_identical(result$atlas_name, "tracts")
   })
 
   it("uses single tract name as atlas_name", {
@@ -92,7 +94,7 @@ describe("tract_build_core", {
 
     result <- tract_build_core(meshes_list, c(cst = "#FF0000"), "cst")
 
-    expect_equal(result$atlas_name, "cst")
+    expect_identical(result$atlas_name, "cst")
   })
 })
 
@@ -109,8 +111,8 @@ describe("tract_read_input file path branch", {
 
     result <- tract_read_input(tract_file, NULL)
 
-    expect_equal(length(result$streamlines_data), 1)
-    expect_equal(
+    expect_length(result$streamlines_data, 1)
+    expect_identical(
       result$tract_names,
       tools::file_path_sans_ext(basename(tract_file))
     )
@@ -127,14 +129,14 @@ describe("tract_read_input file path branch", {
 
     result <- tract_read_input(tract_file, "custom_name")
 
-    expect_equal(result$tract_names, "custom_name")
+    expect_identical(result$tract_names, "custom_name")
   })
 })
 
 
 describe("tract_create_meshes", {
   it("creates meshes and filters out NULL results", {
-    call_count <- 0L
+    .cap$call_count <- 0L
     local_mocked_bindings(
       progressor = function(...) function(...) NULL,
       future_map2 = mock_future_map2,
@@ -144,8 +146,8 @@ describe("tract_create_meshes", {
       },
       resolve_tube_radius = function(...) rep(1, 3),
       generate_tube_mesh = function(...) {
-        call_count <<- call_count + 1L
-        if (call_count == 1L) {
+        .cap$call_count <- .cap$call_count + 1L
+        if (.cap$call_count == 1L) {
           list(
             vertices = list(x = 1:3, y = 1:3, z = 1:3),
             faces = list(i = 1, j = 2, k = 3)
@@ -172,8 +174,8 @@ describe("tract_create_meshes", {
       c(0.2, 1.0)
     )
 
-    expect_equal(length(result), 1)
-    expect_equal(names(result), "t1")
+    expect_length(result, 1)
+    expect_named(result, "t1")
   })
 
   it("skips tracts with NULL or too-short centerlines", {
@@ -234,8 +236,8 @@ describe("tract_create_meshes", {
 
 describe("tract_create_snapshots", {
   it("creates snapshots for tracts and cortex slices", {
-    snapshot_calls <- 0L
-    cortex_calls <- 0L
+    .cap$snapshot_calls <- 0L
+    .cap$cortex_calls <- 0L
 
     local_mocked_bindings(
       read_volume = function(f) {
@@ -272,11 +274,11 @@ describe("tract_create_snapshots", {
       future_pmap = mock_future_pmap,
       furrr_options = function(...) list(),
       snapshot_partial_projection = function(...) {
-        snapshot_calls <<- snapshot_calls + 1L
+        .cap$snapshot_calls <- .cap$snapshot_calls + 1L
         invisible(NULL)
       },
       snapshot_cortex_slice = function(...) {
-        cortex_calls <<- cortex_calls + 1L
+        .cap$cortex_calls <- .cap$cortex_calls + 1L
         invisible(NULL)
       }
     )
@@ -286,25 +288,27 @@ describe("tract_create_snapshots", {
     dirs <- list(snapshots = withr::local_tempdir())
 
     expect_messages(
-      result <- tract_create_snapshots(
-        streamlines_data,
-        centerlines_df,
-        "fake_aseg.mgz",
-        NULL,
-        dirs,
-        TRUE,
-        FALSE,
-        3,
-        TRUE
-      ),
+      {
+        result <- tract_create_snapshots(
+          streamlines_data,
+          centerlines_df,
+          "fake_aseg.mgz",
+          NULL,
+          dirs,
+          TRUE,
+          FALSE,
+          3,
+          TRUE
+        )
+      },
       "Creating cortex reference slices"
     )
 
-    expect_true(is.list(result))
+    expect_type(result, "list")
     expect_true("views" %in% names(result))
     expect_true("cortex_slices" %in% names(result))
-    expect_true(snapshot_calls > 0)
-    expect_true(cortex_calls > 0)
+    expect_gt(.cap$snapshot_calls, 0)
+    expect_gt(.cap$cortex_calls, 0)
   })
 
   it("uses provided views instead of defaults", {
@@ -359,8 +363,8 @@ describe("tract_create_snapshots", {
       FALSE
     )
 
-    expect_equal(result$views$name, "cor_1")
-    expect_equal(result$views$type, "coronal")
+    expect_identical(result$views$name, "cor_1")
+    expect_identical(result$views$type, "coronal")
   })
 
   it("handles streamlines as list of lists", {
@@ -418,7 +422,7 @@ describe("tract_create_snapshots", {
       FALSE
     )
 
-    expect_true(is.list(result))
+    expect_type(result, "list")
   })
 })
 
@@ -441,7 +445,7 @@ describe("resolve_tube_radius", {
 
     result <- resolve_tube_radius(radii, streamlines, centerline, c(0.2, 1.0))
 
-    expect_equal(result, radii)
+    expect_identical(result, radii)
   })
 
   it("errors when vector has wrong length", {
@@ -533,10 +537,10 @@ describe("default_tract_views", {
     result <- default_tract_views(dims)
 
     sagittal <- result[result$type == "sagittal", ]
-    expect_equal(nrow(sagittal), 3)
-    expect_true(any(grepl("midline", sagittal$name)))
-    expect_true(any(grepl("left", sagittal$name)))
-    expect_true(any(grepl("right", sagittal$name)))
+    expect_identical(nrow(sagittal), 3L)
+    expect_true(any(grepl("midline", sagittal$name, fixed = TRUE)))
+    expect_true(any(grepl("left", sagittal$name, fixed = TRUE)))
+    expect_true(any(grepl("right", sagittal$name, fixed = TRUE)))
   })
 
   it("sagittal projections are lateralised around midline", {
@@ -544,9 +548,9 @@ describe("default_tract_views", {
     result <- default_tract_views(dims)
 
     sagittal <- result[result$type == "sagittal", ]
-    left <- sagittal[grepl("left", sagittal$name), ]
-    right <- sagittal[grepl("right", sagittal$name), ]
-    midline <- sagittal[grepl("midline", sagittal$name), ]
+    left <- sagittal[grepl("left", sagittal$name, fixed = TRUE), ]
+    right <- sagittal[grepl("right", sagittal$name, fixed = TRUE), ]
+    midline <- sagittal[grepl("midline", sagittal$name, fixed = TRUE), ]
 
     expect_gt(left$start, midline$end)
     expect_lt(right$end, midline$start)
@@ -562,7 +566,7 @@ describe("default_tract_views", {
     axial_256 <- result_256[result_256$type == "axial", ]
     axial_128 <- result_128[result_128$type == "axial", ]
 
-    expect_equal(axial_128$start[1] / axial_256$start[1], 0.5)
+    expect_identical(axial_128$start[1] / axial_256$start[1], 0.5)
   })
 })
 
@@ -601,7 +605,7 @@ describe("validate_tract_config", {
       "tract_radius"
     )
     expect_true(all(expected_fields %in% names(result)))
-    expect_true(is.list(result))
+    expect_type(result, "list")
   })
 
   it("defaults steps to 1:7", {
@@ -621,7 +625,7 @@ describe("validate_tract_config", {
       n_points = 50
     )
 
-    expect_equal(result$steps, 1L:7L)
+    expect_identical(result$steps, 1L:7L)
   })
 
   it("validates centerline_method via match.arg", {
@@ -678,8 +682,8 @@ describe("validate_tract_config", {
       n_points = 50
     )
 
-    expect_equal(result$density_radius_range, c(0.2, 1.0))
-    expect_equal(result$tract_radius, 3)
+    expect_identical(result$density_radius_range, c(0.2, 1.0))
+    expect_identical(result$tract_radius, 3)
   })
 })
 
@@ -709,7 +713,7 @@ describe("tract_resolve_step1", {
     test_dir <- withr::local_tempdir()
     cached_step1 <- list(
       streamlines_data = list(t1 = matrix(1:30, ncol = 3)),
-      centerlines_df = data.frame(label = "t1"),
+      centerlines_df = data.frame(stringsAsFactors = FALSE, label = "t1"),
       core = data.frame(
         hemi = "midline",
         region = "t1",
@@ -748,8 +752,8 @@ describe("tract_resolve_step1", {
 
     result <- tract_resolve_step1(config, dirs, list(), NULL, NULL)
 
-    expect_equal(result$atlas_name, "t1")
-    expect_equal(result$tube_radius, 5)
+    expect_identical(result$atlas_name, "t1")
+    expect_identical(result$tube_radius, 5)
     expect_true(result$coords_are_voxels)
   })
 
@@ -790,7 +794,7 @@ describe("tract_resolve_step1", {
             stringsAsFactors = FALSE
           ),
           palette = NULL,
-          centerlines_df = data.frame(label = "t1"),
+          centerlines_df = data.frame(stringsAsFactors = FALSE, label = "t1"),
           atlas_name = "t1"
         )
       }
@@ -925,14 +929,14 @@ describe("tract_resolve_snapshots", {
     dirs <- list(base = test_dir, snapshots = test_dir)
     step1 <- list(
       streamlines_data = list(t1 = matrix(1:30, ncol = 3)),
-      centerlines_df = data.frame(label = "t1"),
+      centerlines_df = data.frame(stringsAsFactors = FALSE, label = "t1"),
       coords_are_voxels = TRUE
     )
 
     result <- tract_resolve_snapshots(config, dirs, step1, "aseg.mgz", NULL)
 
-    expect_equal(result$views$name, "ax_1")
-    expect_equal(result$cortex_slices$name, "ax_1")
+    expect_identical(result$views$name, "ax_1")
+    expect_identical(result$cortex_slices$name, "ax_1")
   })
 
   it("returns expected structure when run", {
@@ -972,7 +976,7 @@ describe("tract_resolve_snapshots", {
     dirs <- list(base = test_dir, snapshots = test_dir)
     step1 <- list(
       streamlines_data = list(t1 = matrix(1:30, ncol = 3)),
-      centerlines_df = data.frame(label = "t1"),
+      centerlines_df = data.frame(stringsAsFactors = FALSE, label = "t1"),
       coords_are_voxels = TRUE
     )
 
@@ -986,7 +990,7 @@ describe("tract_resolve_snapshots", {
 
     expect_true("views" %in% names(result))
     expect_true("cortex_slices" %in% names(result))
-    expect_equal(result$views$type, "axial")
+    expect_identical(result$views$type, "axial")
   })
 })
 
@@ -994,11 +998,11 @@ describe("tract_resolve_snapshots", {
 describe("run_image_steps (tract step_map)", {
   tract_step_map <- list(process = 3L, extract = 4L, smooth = 5L, reduce = 6L)
 
-  it("calls process_and_mask_images for step 3", {
-    process_called <- FALSE
+  it(".cap$calls process_and_mask_images for step 3", {
+    .cap$process_called <- FALSE
     local_mocked_bindings(
       process_and_mask_images = function(...) {
-        process_called <<- TRUE
+        .cap$process_called <- TRUE
         invisible(NULL)
       }
     )
@@ -1008,14 +1012,14 @@ describe("run_image_steps (tract step_map)", {
 
     run_image_steps(config, dirs, tract_step_map, 7L)
 
-    expect_true(process_called)
+    expect_true(.cap$process_called)
   })
 
-  it("calls extract_contours for step 4", {
-    extract_called <- FALSE
+  it(".cap$calls extract_contours for step 4", {
+    .cap$extract_called <- FALSE
     local_mocked_bindings(
       extract_contours = function(...) {
-        extract_called <<- TRUE
+        .cap$extract_called <- TRUE
         invisible(NULL)
       }
     )
@@ -1025,14 +1029,14 @@ describe("run_image_steps (tract step_map)", {
 
     run_image_steps(config, dirs, tract_step_map, 7L)
 
-    expect_true(extract_called)
+    expect_true(.cap$extract_called)
   })
 
-  it("calls smooth_contours for step 5", {
-    smooth_called <- FALSE
+  it(".cap$calls smooth_contours for step 5", {
+    .cap$smooth_called <- FALSE
     local_mocked_bindings(
       smooth_contours = function(...) {
-        smooth_called <<- TRUE
+        .cap$smooth_called <- TRUE
         invisible(NULL)
       }
     )
@@ -1042,14 +1046,14 @@ describe("run_image_steps (tract step_map)", {
 
     run_image_steps(config, dirs, tract_step_map, 7L)
 
-    expect_true(smooth_called)
+    expect_true(.cap$smooth_called)
   })
 
-  it("calls reduce_vertex for step 6", {
-    reduce_called <- FALSE
+  it(".cap$calls reduce_vertex for step 6", {
+    .cap$reduce_called <- FALSE
     local_mocked_bindings(
       reduce_vertex = function(...) {
-        reduce_called <<- TRUE
+        .cap$reduce_called <- TRUE
         invisible(NULL)
       }
     )
@@ -1059,26 +1063,26 @@ describe("run_image_steps (tract step_map)", {
 
     run_image_steps(config, dirs, tract_step_map, 7L)
 
-    expect_true(reduce_called)
+    expect_true(.cap$reduce_called)
   })
 
-  it("calls all functions for steps 3-6", {
-    calls <- character()
+  it(".cap$calls all functions for steps 3-6", {
+    .cap$calls <- character()
     local_mocked_bindings(
       process_and_mask_images = function(...) {
-        calls <<- c(calls, "process")
+        .cap$calls <- c(.cap$calls, "process")
         invisible(NULL)
       },
       extract_contours = function(...) {
-        calls <<- c(calls, "extract")
+        .cap$calls <- c(.cap$calls, "extract")
         invisible(NULL)
       },
       smooth_contours = function(...) {
-        calls <<- c(calls, "smooth")
+        .cap$calls <- c(.cap$calls, "smooth")
         invisible(NULL)
       },
       reduce_vertex = function(...) {
-        calls <<- c(calls, "reduce")
+        .cap$calls <- c(.cap$calls, "reduce")
         invisible(NULL)
       }
     )
@@ -1094,7 +1098,7 @@ describe("run_image_steps (tract step_map)", {
 
     run_image_steps(config, dirs, tract_step_map, 7L)
 
-    expect_equal(calls, c("process", "extract", "smooth", "reduce"))
+    expect_identical(.cap$calls, c("process", "extract", "smooth", "reduce"))
   })
 })
 
@@ -1126,7 +1130,7 @@ describe("tract_assemble_3d", {
         stringsAsFactors = FALSE
       ),
       palette = c(t1 = "#FF0000"),
-      centerlines_df = data.frame(label = "t1"),
+      centerlines_df = data.frame(stringsAsFactors = FALSE, label = "t1"),
       tube_radius = 5,
       tube_segments = 8
     )
@@ -1134,7 +1138,7 @@ describe("tract_assemble_3d", {
     result <- tract_assemble_3d(step1)
 
     expect_s3_class(result, "ggseg_atlas")
-    expect_equal(result$type, "tract")
+    expect_identical(result$type, "tract")
   })
 })
 
@@ -1152,7 +1156,7 @@ describe("tract_assemble_full", {
         stringsAsFactors = FALSE
       ),
       palette = c(t1 = "#FF0000"),
-      centerlines_df = data.frame(label = "t1"),
+      centerlines_df = data.frame(stringsAsFactors = FALSE, label = "t1"),
       tube_radius = 5,
       tube_segments = 8
     )

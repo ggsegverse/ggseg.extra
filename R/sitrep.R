@@ -56,9 +56,9 @@ check_freesurfer <- function(detail = "simple") {
   }
   has_fs <- freesurfer::have_fs()
 
-  if (detail == "full") {
+  if (detail == "full" && has_fs_sitrep()) {
     freesurfer::fs_sitrep()
-  } else if (detail == "simple") {
+  } else if (detail != "minimal") {
     if (has_fs) {
       cli::cli_alert_success("FreeSurfer")
     } else {
@@ -67,6 +67,15 @@ check_freesurfer <- function(detail = "simple") {
   }
 
   list(available = has_fs)
+}
+
+
+# `fs_sitrep()` is only exported by newer `freesurfer` versions; guard so the
+# diagnostic degrades gracefully on older/CRAN installs rather than aborting.
+# `check_freesurfer()` only reaches here once `freesurfer` is installed.
+#' @noRd
+has_fs_sitrep <- function() {
+  "fs_sitrep" %in% getNamespaceExports("freesurfer")
 }
 
 
@@ -85,7 +94,7 @@ check_other_system_deps <- function(detail = "simple") {
             "Install from",
             "{.url https://imagemagick.org/script/download.php}"
           ),
-          "i" = "macOS: {.code brew install imagemagick}"
+          "i" = "macOS: {.code brew install imagemagick}" # nolint
         ))
       }
     }
@@ -231,7 +240,7 @@ check_suit_surfaces <- function(detail = "simple") {
         )
         cli::cli_bullets(c(
           "i" = "These should be bundled with the package.",
-          "i" = "Try reinstalling: {.code {reinstall}}"
+          "i" = "Try reinstalling: {.code {reinstall}}" # nolint
         ))
         # nolint end
       }
@@ -268,7 +277,7 @@ check_pipeline_options <- function(detail = "simple") {
       "Set via {.code options(ggseg.extra.<name> = value)} or",
       "environment variables {.envvar GGSEG_EXTRA_<NAME>}"
     ),
-    "i" = "See {.code vignette(\"pipeline-configuration\")} for details"
+    "i" = "See {.code vignette(\"pipeline-configuration\")} for details" # nolint
   ))
 
   opts
@@ -517,10 +526,7 @@ summarize_pipeline_entry <- function(p, detail) {
     character(1)
   )
   # nolint start: object_usage_linter.
-  missing_str <- paste(
-    missing_labels,
-    collapse = ", "
-  )
+  missing_str <- toString(missing_labels)
   # nolint end
   cli::cli_alert_danger("{p$name}: needs {missing_str}")
 

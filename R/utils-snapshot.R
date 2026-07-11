@@ -156,7 +156,7 @@ load_reduced_contours <- function(base_dir) {
 #' @noRd
 parse_contour_filenames <- function(filenames) {
   filenames_no_ext <- tools::file_path_sans_ext(filenames)
-  fn_parts <- strsplit(filenames_no_ext, "_")
+  fn_parts <- strsplit(filenames_no_ext, "_", fixed = TRUE)
   too_short <- vapply(fn_parts, length, integer(1)) < 3
   if (any(too_short)) {
     cli::cli_abort(paste(
@@ -173,11 +173,9 @@ parse_contour_filenames <- function(filenames) {
     stringsAsFactors = FALSE
   )
 
-  result$hemi <- ifelse(
-    result$hemi_short == "lh",
-    "left",
-    ifelse(result$hemi_short == "rh", "right", result$hemi_short)
-  )
+  hemi_lookup <- c(lh = "left", rh = "right")
+  mapped <- unname(hemi_lookup[result$hemi_short])
+  result$hemi <- ifelse(is.na(mapped), result$hemi_short, mapped)
 
   result$label <- vapply(
     fn_parts,
@@ -196,7 +194,7 @@ parse_contour_filenames <- function(filenames) {
 #' @noRd
 has_magick <- function() {
   k <- magick_version()
-  any(grepl("Version: ImageMagick", k))
+  any(grepl("Version: ImageMagick", k, fixed = TRUE))
 }
 
 check_magick <- function() {
@@ -229,7 +227,7 @@ run_cmd <- function(cmd, verbose = get_verbose(), no_ui = FALSE) {
       fv_args <- sub("^freeview[[:space:]]*", "", cmd)
       cmd <- paste(
         "open -g -j -n -W",
-        shQuote(paste0(Sys.getenv("FREESURFER_HOME"), "/Freeview.app")),
+        shQuote(file.path(Sys.getenv("FREESURFER_HOME"), "Freeview.app")),
         "--args",
         fv_args
       )

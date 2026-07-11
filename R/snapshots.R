@@ -155,7 +155,7 @@ snapshot_slice <- function(
   height = 400
 ) {
   coords <- sprintf(c(x, y, z), fmt = "%03d")
-  vv <- paste0(strsplit(view, "")[[1]][1:5], collapse = "")
+  vv <- paste(strsplit(view, "", fixed = TRUE)[[1]][1:5], collapse = "")
   lab_name <- tools::file_path_sans_ext(basename(lab))
 
   filenm <- paste0(
@@ -639,7 +639,7 @@ render_slice_png <- function(
   }
 
   png(outfile, width = width, height = height, bg = "black")
-  on.exit(dev.off())
+  on.exit(dev.off(), add = TRUE)
   par(mar = c(0, 0, 0, 0))
 
   image(
@@ -710,7 +710,7 @@ snapshot_volume_slice <- function(
 ) {
   output_dir <- path.expand(output_dir)
   coords <- sprintf(c(x, y, z), fmt = "%03d")
-  vv <- paste0(strsplit(view, "")[[1]][1:5], collapse = "")
+  vv <- paste(strsplit(view, "", fixed = TRUE)[[1]][1:5], collapse = "")
 
   outfile <- file.path(
     output_dir,

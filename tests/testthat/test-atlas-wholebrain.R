@@ -1,3 +1,5 @@
+.cap <- new.env()
+
 describe("wholebrain_classify_labels", {
   make_atlas_data <- function(labels, vertex_counts) {
     rows <- mapply(
@@ -93,7 +95,7 @@ describe("wholebrain_classify_labels", {
       subcortical_labels = "region_a"
     )
     expect_setequal(result$cortical_labels, c("region_b", "region_c"))
-    expect_equal(result$subcortical_labels, "region_a")
+    expect_identical(result$subcortical_labels, "region_a")
   })
 
   it("sums vertex counts across hemispheres", {
@@ -125,8 +127,8 @@ describe("wholebrain_classify_labels", {
     ad <- make_atlas_data(c("a", "b"), c(100, 10))
     result <- wholebrain_classify_labels(ad, min_vertices = 50L)
     expect_true("vertex_counts" %in% names(result))
-    expect_equal(as.integer(result$vertex_counts["a"]), 100L)
-    expect_equal(as.integer(result$vertex_counts["b"]), 10L)
+    expect_identical(as.integer(result$vertex_counts["a"]), 100L)
+    expect_identical(as.integer(result$vertex_counts["b"]), 10L)
   })
 
   it("handles empty atlas data", {
@@ -179,9 +181,9 @@ describe("wholebrain_classify_labels", {
       colortable = ct,
       min_vertices = 50L
     )
-    expect_equal(result$cortical_labels, "cortex_a")
-    expect_equal(result$subcortical_labels, "thalamus")
-    expect_equal(result$cerebellar_labels, "lobule_I")
+    expect_identical(result$cortical_labels, "cortex_a")
+    expect_identical(result$subcortical_labels, "thalamus")
+    expect_identical(result$cerebellar_labels, "lobule_I")
   })
 
   it("cerebellar_labels override takes precedence over LUT type", {
@@ -213,11 +215,11 @@ describe("wholebrain_classify_labels", {
       cerebellar_labels = "b"
     )
     expect_true("cerebellar_labels" %in% names(result))
-    expect_equal(result$cerebellar_labels, "b")
+    expect_identical(result$cerebellar_labels, "b")
   })
 
   it("finds volume-only labels via LUT type column", {
-    ad <- make_atlas_data(c("cortex_a"), c(100))
+    ad <- make_atlas_data("cortex_a", 100)
     ct <- data.frame(
       idx = 1:3,
       label = c("cortex_a", "thalamus", "lobule_I"),
@@ -229,13 +231,13 @@ describe("wholebrain_classify_labels", {
       colortable = ct,
       min_vertices = 50L
     )
-    expect_equal(result$cortical_labels, "cortex_a")
-    expect_equal(result$subcortical_labels, "thalamus")
-    expect_equal(result$cerebellar_labels, "lobule_I")
+    expect_identical(result$cortical_labels, "cortex_a")
+    expect_identical(result$subcortical_labels, "thalamus")
+    expect_identical(result$cerebellar_labels, "lobule_I")
   })
 
   it("defaults volume-only labels without type to subcortical", {
-    ad <- make_atlas_data(c("cortex_a"), c(100))
+    ad <- make_atlas_data("cortex_a", 100)
     ct <- data.frame(
       idx = 1:2,
       label = c("cortex_a", "deep_nucleus"),
@@ -246,13 +248,13 @@ describe("wholebrain_classify_labels", {
       colortable = ct,
       min_vertices = 50L
     )
-    expect_equal(result$cortical_labels, "cortex_a")
+    expect_identical(result$cortical_labels, "cortex_a")
     expect_true("deep_nucleus" %in% result$subcortical_labels)
     expect_length(result$cerebellar_labels, 0)
   })
 
   it("manual cerebellar override works for volume-only labels", {
-    ad <- make_atlas_data(c("cortex_a"), c(100))
+    ad <- make_atlas_data("cortex_a", 100)
     ct <- data.frame(
       idx = 1:3,
       label = c("cortex_a", "lobule_I", "lobule_II"),
@@ -264,7 +266,7 @@ describe("wholebrain_classify_labels", {
       min_vertices = 50L,
       cerebellar_labels = c("lobule_I", "lobule_II")
     )
-    expect_equal(result$cortical_labels, "cortex_a")
+    expect_identical(result$cortical_labels, "cortex_a")
     expect_setequal(result$cerebellar_labels, c("lobule_I", "lobule_II"))
     expect_length(result$subcortical_labels, 0)
   })
@@ -313,18 +315,18 @@ describe("create_wholebrain_from_volume validation", {
   })
 
   it("derives atlas_name from volume filename", {
-    captured_name <- NULL
+    .cap$captured_name <- NULL
     test_dir <- withr::local_tempdir()
     local_mocked_bindings(
       check_fs = function(...) TRUE,
       setup_atlas_dirs = function(output_dir, atlas_name, ...) {
-        captured_name <<- atlas_name
+        .cap$captured_name <- atlas_name
         list(
           base = test_dir,
           snapshots = test_dir,
           processed = test_dir,
           masks = test_dir,
-          snapshots = test_dir
+          snapshots = test_dir # nolint
         )
       },
       load_or_run_step = function(step, steps, ...) {
@@ -368,14 +370,16 @@ describe("create_wholebrain_from_volume validation", {
     file.create(vol_file)
 
     expect_warning(
-      result <- create_wholebrain_from_volume(
-        input_volume = vol_file,
-        steps = 1:2,
-        verbose = FALSE
-      ),
+      {
+        result <- create_wholebrain_from_volume(
+          input_volume = vol_file,
+          steps = 1:2,
+          verbose = FALSE
+        )
+      },
       "No color lookup table"
     )
-    expect_equal(captured_name, "test_vol")
+    expect_identical(.cap$captured_name, "test_vol")
   })
 })
 
@@ -391,7 +395,7 @@ describe("create_wholebrain_from_volume pipeline flow", {
           snapshots = test_dir,
           processed = test_dir,
           masks = test_dir,
-          snapshots = test_dir
+          snapshots = test_dir # nolint
         )
       },
       load_or_run_step = function(step, steps, ...) {
@@ -438,11 +442,13 @@ describe("create_wholebrain_from_volume pipeline flow", {
     file.create(vol_file)
 
     expect_warning(
-      result <- create_wholebrain_from_volume(
-        input_volume = vol_file,
-        steps = 1:2,
-        verbose = FALSE
-      ),
+      {
+        result <- create_wholebrain_from_volume(
+          input_volume = vol_file,
+          steps = 1:2,
+          verbose = FALSE
+        )
+      },
       "No color lookup table"
     )
 
@@ -455,7 +461,7 @@ describe("create_wholebrain_from_volume pipeline flow", {
 
   it("passes cortical labels to cortical pipeline for step 3", {
     test_dir <- withr::local_tempdir()
-    captured_step1_args <- NULL
+    .cap$captured_step1_args <- NULL
 
     local_mocked_bindings(
       check_fs = function(...) TRUE,
@@ -509,11 +515,12 @@ describe("create_wholebrain_from_volume pipeline flow", {
         )
       },
       cortical_read_data = function(...) {
-        captured_step1_args <<- list(...)
+        .cap$captured_step1_args <- list(...)
         list(
           atlas_3d = structure(
             list(
               core = data.frame(
+                stringsAsFactors = FALSE,
                 hemi = "left",
                 region = "a",
                 label = "lh_a"
@@ -524,12 +531,13 @@ describe("create_wholebrain_from_volume pipeline flow", {
           ),
           components = list(
             core = data.frame(
+              stringsAsFactors = FALSE,
               hemi = "left",
               region = "a",
               label = "lh_a"
             ),
             palette = c(lh_a = "#FF0000"),
-            vertices_df = data.frame(label = "lh_a")
+            vertices_df = data.frame(stringsAsFactors = FALSE, label = "lh_a")
           )
         )
       },
@@ -550,12 +558,12 @@ describe("create_wholebrain_from_volume pipeline flow", {
 
     expect_false(is.null(result$cortical))
     expect_null(result$subcortical)
-    expect_false(is.null(captured_step1_args))
+    expect_false(is.null(.cap$captured_step1_args))
   })
 
   it("passes subcortical labels to subcortical pipeline for step 4", {
     test_dir <- withr::local_tempdir()
-    captured_subcort_args <- NULL
+    .cap$captured_subcort_args <- NULL
 
     local_mocked_bindings(
       check_fs = function(...) TRUE,
@@ -608,10 +616,15 @@ describe("create_wholebrain_from_volume pipeline flow", {
         invisible("filtered.nii.gz")
       },
       create_subcortical_from_volume = function(...) {
-        captured_subcort_args <<- list(...)
+        .cap$captured_subcort_args <- list(...)
         structure(
           list(
-            core = data.frame(hemi = NA, region = "b", label = "b"),
+            core = data.frame(
+              stringsAsFactors = FALSE,
+              hemi = NA,
+              region = "b",
+              label = "b"
+            ),
             type = "subcortical"
           ),
           class = "ggseg_atlas"
@@ -631,8 +644,8 @@ describe("create_wholebrain_from_volume pipeline flow", {
 
     expect_null(result$cortical)
     expect_false(is.null(result$subcortical))
-    expect_false(is.null(captured_subcort_args))
-    expect_false(is.null(captured_subcort_args$input_volume))
+    expect_false(is.null(.cap$captured_subcort_args))
+    expect_false(is.null(.cap$captured_subcort_args$input_volume))
   })
 
   it("skips cortical when no cortical labels", {
@@ -646,7 +659,7 @@ describe("create_wholebrain_from_volume pipeline flow", {
           snapshots = test_dir,
           processed = test_dir,
           masks = test_dir,
-          snapshots = test_dir
+          snapshots = test_dir # nolint
         )
       },
       load_or_run_step = function(step, steps, ...) {
@@ -687,7 +700,14 @@ describe("create_wholebrain_from_volume pipeline flow", {
       },
       create_subcortical_from_volume = function(...) {
         structure(
-          list(core = data.frame(hemi = NA, region = "b", label = "b")),
+          list(
+            core = data.frame(
+              stringsAsFactors = FALSE,
+              hemi = NA,
+              region = "b",
+              label = "b"
+            )
+          ),
           class = "ggseg_atlas"
         )
       }
@@ -802,7 +822,13 @@ describe("create_wholebrain_from_volume verbose and cleanup", {
       },
       wholebrain_run_cortical = function(...) {
         structure(
-          list(core = data.frame(hemi = "left", region = "a")),
+          list(
+            core = data.frame(
+              stringsAsFactors = FALSE,
+              hemi = "left",
+              region = "a"
+            )
+          ),
           class = "ggseg_atlas"
         )
       },
@@ -831,7 +857,7 @@ describe("create_wholebrain_from_volume verbose and cleanup", {
     sub_dir <- file.path(test_dir, "wb_early")
     dir.create(sub_dir)
 
-    elapsed_called <- FALSE
+    .cap$elapsed_called <- FALSE
 
     local_mocked_bindings(
       check_fs = function(...) TRUE,
@@ -871,7 +897,7 @@ describe("create_wholebrain_from_volume verbose and cleanup", {
         )
       },
       log_elapsed = function(...) {
-        elapsed_called <<- TRUE
+        .cap$elapsed_called <- TRUE
       }
     )
 
@@ -887,7 +913,7 @@ describe("create_wholebrain_from_volume verbose and cleanup", {
       )
     ))
 
-    expect_true(elapsed_called)
+    expect_true(.cap$elapsed_called)
   })
 })
 
@@ -936,12 +962,14 @@ describe("wholebrain_resolve_projection cached path", {
     config <- list(steps = 1L, skip_existing = TRUE, verbose = TRUE)
 
     expect_messages(
-      result <- wholebrain_resolve_projection(config, dirs),
+      {
+        result <- wholebrain_resolve_projection(config, dirs)
+      },
       "Loaded existing"
     )
 
-    expect_equal(result$atlas_data, cached_atlas)
-    expect_equal(result$colortable, cached_ct)
+    expect_identical(result$atlas_data, cached_atlas)
+    expect_identical(result$colortable, cached_ct)
   })
 })
 
@@ -983,11 +1011,13 @@ describe("wholebrain_resolve_split cached path", {
     )
 
     expect_messages(
-      result <- wholebrain_resolve_split(config, dirs, projection),
+      {
+        result <- wholebrain_resolve_split(config, dirs, projection)
+      },
       "Loaded existing"
     )
 
-    expect_equal(result, cached_split)
+    expect_identical(result, cached_split)
   })
 })
 
@@ -1026,7 +1056,13 @@ describe("wholebrain_run_cortical verbose logging", {
       cortical_read_data = function(...) {
         list(
           atlas_3d = structure(
-            list(core = data.frame(hemi = "left", region = "a")),
+            list(
+              core = data.frame(
+                stringsAsFactors = FALSE,
+                hemi = "left",
+                region = "a"
+              )
+            ),
             class = "ggseg_atlas"
           ),
           components = list()
@@ -1085,7 +1121,9 @@ describe("wholebrain_run_subcortical verbose logging", {
       },
       create_subcortical_from_volume = function(...) {
         structure(
-          list(core = data.frame(hemi = NA, region = "b")),
+          list(
+            core = data.frame(stringsAsFactors = FALSE, hemi = NA, region = "b")
+          ),
           class = "ggseg_atlas"
         )
       }
@@ -1122,7 +1160,7 @@ describe("wholebrain_run_subcortical verbose logging", {
       masks = test_dir
     )
 
-    captured_lut <- NULL
+    .cap$captured_lut <- NULL
     colortable <- data.frame(
       idx = c(1L, 2L, 3L),
       label = c("cortical_a", "subcort_b", "subcort_c"),
@@ -1137,7 +1175,7 @@ describe("wholebrain_run_subcortical verbose logging", {
 
     local_mocked_bindings(
       write_ctab = function(ct, ...) {
-        captured_lut <<- ct
+        .cap$captured_lut <- ct
         invisible(NULL)
       },
       wholebrain_prepare_subcortical_volume = function(...) {
@@ -1145,7 +1183,13 @@ describe("wholebrain_run_subcortical verbose logging", {
       },
       create_subcortical_from_volume = function(...) {
         structure(
-          list(core = data.frame(hemi = NA, region = "subcort_b")),
+          list(
+            core = data.frame(
+              stringsAsFactors = FALSE,
+              hemi = NA,
+              region = "subcort_b"
+            )
+          ),
           class = "ggseg_atlas"
         )
       }
@@ -1169,8 +1213,11 @@ describe("wholebrain_run_subcortical verbose logging", {
       colortable = colortable
     )
 
-    expect_equal(sort(captured_lut$label), sort(c("subcort_b", "subcort_c")))
-    expect_false("cortical_a" %in% captured_lut$label)
+    expect_identical(
+      sort(.cap$captured_lut$label),
+      sort(c("subcort_b", "subcort_c"))
+    )
+    expect_false("cortical_a" %in% .cap$captured_lut$label)
   })
 })
 
@@ -1195,11 +1242,11 @@ describe("create_wholebrain_from_volume integration", {
     expect_true("cortical_labels" %in% names(result))
     expect_true("subcortical_labels" %in% names(result))
     expect_true("cerebellar_labels" %in% names(result))
-    expect_true(
+    expect_gt(
       length(result$cortical_labels) +
         length(result$subcortical_labels) +
-        length(result$cerebellar_labels) >
-        0
+        length(result$cerebellar_labels),
+      0
     )
   })
 })
@@ -1214,10 +1261,12 @@ describe("fill_surface_labels", {
 
     overlay <- c(1L, 0L, 2L, 0L)
     expect_warning(
-      result <- fill_surface_labels(overlay, "lh", "fsaverage5"),
+      {
+        result <- fill_surface_labels(overlay, "lh", "fsaverage5")
+      },
       "skipping dilation"
     )
-    expect_equal(result, overlay)
+    expect_identical(result, overlay)
   })
 
   it("breaks when no newly_labeled vertices remain", {
@@ -1251,11 +1300,11 @@ describe("fill_surface_labels", {
 
     overlay <- c(1L, 0L, 2L, 0L, 0L)
     result <- fill_surface_labels(overlay, "lh", "fsaverage5")
-    expect_equal(result[1], 1L)
-    expect_equal(result[3], 2L)
+    expect_identical(result[1], 1L)
+    expect_identical(result[3], 2L)
     expect_true(result[2] != 0L)
-    expect_equal(result[4], 0L)
-    expect_equal(result[5], 0L)
+    expect_identical(result[4], 0L)
+    expect_identical(result[5], 0L)
   })
 })
 
@@ -1279,7 +1328,7 @@ describe("load_cortex_mask", {
     mask <- load_cortex_mask("lh", "fsaverage5", n_vertices = 6L)
     expect_type(mask, "logical")
     expect_length(mask, 6L)
-    expect_equal(mask, c(TRUE, FALSE, TRUE, FALSE, TRUE, FALSE))
+    expect_identical(mask, c(TRUE, FALSE, TRUE, FALSE, TRUE, FALSE))
   })
 
   it("errors when cortex label file missing", {
@@ -1335,12 +1384,12 @@ describe("fill_surface_labels with cortex mask", {
     overlay <- c(1L, 0L, 0L, 0L, 0L, 0L)
     result <- fill_surface_labels(overlay, "lh", "fsaverage5")
 
-    expect_equal(result[1], 1L)
+    expect_identical(result[1], 1L)
     expect_true(result[2] != 0L)
     expect_true(result[3] != 0L)
-    expect_equal(result[4], 0L)
-    expect_equal(result[5], 0L)
-    expect_equal(result[6], 0L)
+    expect_identical(result[4], 0L)
+    expect_identical(result[5], 0L)
+    expect_identical(result[6], 0L)
   })
 })
 
@@ -1636,7 +1685,7 @@ describe("wholebrain_project_to_surface", {
     )
 
     expect_true(all(grepl("^#", result$colour)))
-    expect_equal(result$colour[1], "#FF0000")
+    expect_identical(result$colour[1], "#FF0000")
   })
 })
 
@@ -1662,7 +1711,14 @@ describe("wholebrain_run_cortical verbose progress_done", {
     )
 
     mock_atlas <- structure(
-      list(core = data.frame(hemi = "left", region = "a", label = "lh_a")),
+      list(
+        core = data.frame(
+          stringsAsFactors = FALSE,
+          hemi = "left",
+          region = "a",
+          label = "lh_a"
+        )
+      ),
       class = "ggseg_atlas"
     )
 
@@ -1681,9 +1737,14 @@ describe("wholebrain_run_cortical verbose progress_done", {
         list(
           atlas_3d = mock_atlas,
           components = list(
-            core = data.frame(hemi = "left", region = "a", label = "lh_a"),
+            core = data.frame(
+              stringsAsFactors = FALSE,
+              hemi = "left",
+              region = "a",
+              label = "lh_a"
+            ),
             palette = c(lh_a = "#FF0000"),
-            vertices_df = data.frame(label = "lh_a")
+            vertices_df = data.frame(stringsAsFactors = FALSE, label = "lh_a")
           )
         )
       },
@@ -1704,7 +1765,9 @@ describe("wholebrain_run_cortical verbose progress_done", {
     split <- list(cortical_labels = "a")
 
     expect_messages(
-      result <- wholebrain_run_cortical(config, dirs, projection, split),
+      {
+        result <- wholebrain_run_cortical(config, dirs, projection, split)
+      },
       "Cortical"
     )
 
@@ -1715,11 +1778,14 @@ describe("wholebrain_run_cortical verbose progress_done", {
 
 describe("validate_pipeline_opts", {
   it("returns empty list for NULL opts", {
-    expect_equal(validate_pipeline_opts(NULL, "cortical", "views"), list())
+    expect_identical(validate_pipeline_opts(NULL, "cortical", "views"), list())
   })
 
   it("returns empty list for empty list opts", {
-    expect_equal(validate_pipeline_opts(list(), "cortical", "views"), list())
+    expect_identical(
+      validate_pipeline_opts(list(), "cortical", "views"),
+      list()
+    )
   })
 
   it("errors when opts is not a list", {
@@ -1731,7 +1797,7 @@ describe("validate_pipeline_opts", {
 
   it("errors on unnamed entries", {
     expect_error(
-      validate_pipeline_opts(list(1, 2), "cortical", c("views")),
+      validate_pipeline_opts(list(1, 2), "cortical", "views"),
       "must be named"
     )
   })
@@ -1741,7 +1807,7 @@ describe("validate_pipeline_opts", {
       validate_pipeline_opts(
         list(views = "lat", 2),
         "cortical",
-        c("views")
+        "views"
       ),
       "must be named"
     )
@@ -1750,9 +1816,9 @@ describe("validate_pipeline_opts", {
   it("errors on duplicate names", {
     expect_error(
       validate_pipeline_opts(
-        list(views = "lat", views = "med"),
+        list(views = "lat", views = "med"), # nolint
         "cortical",
-        c("views")
+        "views"
       ),
       "Duplicate"
     )
@@ -1775,7 +1841,7 @@ describe("validate_pipeline_opts", {
       "cortical",
       c("views", "tolerance")
     )
-    expect_equal(result$views, c("lateral", "medial"))
+    expect_identical(result$views, c("lateral", "medial"))
   })
 })
 
@@ -1842,7 +1908,7 @@ describe("wholebrain_refine_cortical_projection", {
     dirs <- list(base = withr::local_tempdir())
     projection <- list(
       atlas_data = tibble(),
-      colortable = data.frame(idx = 1L, label = "a")
+      colortable = data.frame(stringsAsFactors = FALSE, idx = 1L, label = "a")
     )
     split <- list(
       subcortical_labels = character(),
@@ -1973,14 +2039,16 @@ describe("fill_missing_rgb", {
       stringsAsFactors = FALSE
     )
     expect_messages(
-      result <- fill_missing_rgb(ct, "test"),
+      {
+        result <- fill_missing_rgb(ct, "test")
+      },
       "Auto-generating colours"
     )
     expect_true(all(c("R", "G", "B", "A") %in% names(result)))
-    expect_true(all(!is.na(result$R)))
-    expect_true(all(!is.na(result$G)))
-    expect_true(all(!is.na(result$B)))
-    expect_equal(result$A, c(0L, 0L))
+    expect_false(anyNA(result$R))
+    expect_false(anyNA(result$G))
+    expect_false(anyNA(result$B))
+    expect_identical(result$A, c(0L, 0L))
   })
 
   it("preserves existing colours and only fills NAs", {
@@ -1994,9 +2062,9 @@ describe("fill_missing_rgb", {
       stringsAsFactors = FALSE
     )
     result <- fill_missing_rgb(ct, "test")
-    expect_equal(result$R[1], 255L)
-    expect_true(!is.na(result$R[2]))
-    expect_equal(result$A, c(0L, 0L, 0L))
+    expect_identical(result$R[1], 255L)
+    expect_false(is.na(result$R[2]))
+    expect_identical(result$A, c(0L, 0L, 0L))
   })
 
   it("returns unchanged when no missing RGB", {
@@ -2010,9 +2078,9 @@ describe("fill_missing_rgb", {
       stringsAsFactors = FALSE
     )
     result <- fill_missing_rgb(ct, "test")
-    expect_equal(result$R, 100L)
-    expect_equal(result$G, 150L)
-    expect_equal(result$B, 200L)
+    expect_identical(result$R, 100L)
+    expect_identical(result$G, 150L)
+    expect_identical(result$B, 200L)
   })
 })
 
@@ -2035,9 +2103,9 @@ describe("wholebrain_prepare_cerebellar_volume", {
     )
 
     result <- drop(as.array(RNifti::readNifti(out_file)))
-    expect_equal(result[1, 1, 1], 1)
-    expect_equal(result[2, 2, 2], 0)
-    expect_equal(result[3, 3, 3], 3)
+    expect_identical(result[1, 1, 1], 1L)
+    expect_identical(result[2, 2, 2], 0L)
+    expect_identical(result[3, 3, 3], 3L)
   })
 
   it("returns output_file invisibly", {
@@ -2053,7 +2121,7 @@ describe("wholebrain_prepare_cerebellar_volume", {
       cerebellar_idx = integer(0),
       output_file = out_file
     )
-    expect_equal(result, out_file)
+    expect_identical(result, out_file)
   })
 })
 
@@ -2077,8 +2145,8 @@ describe("wholebrain_prepare_subcortical_volume", {
     )
 
     result <- drop(as.array(RNifti::readNifti(out_file)))
-    expect_equal(result[1, 1, 1], 10)
-    expect_equal(result[5, 1, 1], 0)
+    expect_identical(result[1, 1, 1], 10L)
+    expect_identical(result[5, 1, 1], 0L)
     expect_true(result[3, 1, 1] %in% c(3, 42))
   })
 })
@@ -2110,20 +2178,23 @@ describe("wholebrain_run_cerebellar", {
       skip_existing = FALSE,
       cleanup = FALSE
     )
-    captured <- NULL
+    .cap$captured <- NULL
     local_mocked_bindings(
       wholebrain_prepare_cerebellar_volume = function(...) {
         invisible("cer_vol.nii.gz")
       },
       create_cerebellar_from_volume = function(...) {
-        captured <<- list(...)
+        .cap$captured <- list(...)
         structure(list(), class = "ggseg_atlas")
       }
     )
     wholebrain_run_cerebellar(config, dirs, split, colortable)
-    expect_false(is.null(captured))
-    expect_equal(sort(captured$input_lut$label), c("lobule_I", "lobule_II"))
-    expect_null(captured$smooth_refinements)
+    expect_false(is.null(.cap$captured))
+    expect_identical(
+      sort(.cap$captured$input_lut$label),
+      c("lobule_I", "lobule_II")
+    )
+    expect_null(.cap$captured$smooth_refinements)
   })
 
   it("passes opts overriding defaults", {
@@ -2146,13 +2217,13 @@ describe("wholebrain_run_cerebellar", {
       skip_existing = FALSE,
       cleanup = FALSE
     )
-    captured <- NULL
+    .cap$captured <- NULL
     local_mocked_bindings(
       wholebrain_prepare_cerebellar_volume = function(...) {
         invisible("cer_vol.nii.gz")
       },
       create_cerebellar_from_volume = function(...) {
-        captured <<- list(...)
+        .cap$captured <- list(...)
         structure(list(), class = "ggseg_atlas")
       }
     )
@@ -2163,7 +2234,7 @@ describe("wholebrain_run_cerebellar", {
       colortable,
       opts = list(smooth_refinements = 5L)
     )
-    expect_equal(captured$smooth_refinements, 5L)
+    expect_identical(.cap$captured$smooth_refinements, 5L)
   })
 
   it("prints verbose header", {
@@ -2257,6 +2328,7 @@ describe("create_wholebrain_from_volume step 5 cerebellar", {
         structure(
           list(
             core = data.frame(
+              stringsAsFactors = FALSE,
               hemi = NA,
               region = "lobule_I",
               label = "lobule_I"

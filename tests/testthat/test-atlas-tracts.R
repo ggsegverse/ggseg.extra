@@ -1,3 +1,5 @@
+.cap <- new.env()
+
 describe("create_tract_from_tractography", {
   it("creates atlas from coordinate matrices", {
     tracts <- list(
@@ -12,9 +14,9 @@ describe("create_tract_from_tractography", {
     )
 
     expect_s3_class(atlas, "ggseg_atlas")
-    expect_equal(atlas$type, "tract")
+    expect_identical(atlas$type, "tract")
     expect_false(is.null(atlas$data$centerlines))
-    expect_equal(nrow(atlas$data$centerlines), 2)
+    expect_identical(nrow(atlas$data$centerlines), 2L)
   })
 
   it("assigns correct labels", {
@@ -40,6 +42,7 @@ describe("create_tract_from_tractography", {
     )
 
     custom_lut <- data.frame(
+      stringsAsFactors = FALSE,
       region = c("Tract A", "Tract B"),
       hex = c("#FF0000", "#00FF00")
     )
@@ -111,12 +114,12 @@ describe("create_tract_from_tractography", {
 
 describe("create_tract_from_tractography pipeline flow", {
   it("passes correct args to tract_read_input and tract_create_meshes", {
-    captured_read_args <- NULL
-    captured_mesh_args <- NULL
+    .cap$captured_read_args <- NULL
+    .cap$captured_mesh_args <- NULL
     dirs <- mock_dirs()
     local_mocked_bindings(
       tract_read_input = function(input_tracts, tract_names) {
-        captured_read_args <<- list(
+        .cap$captured_read_args <- list(
           input_tracts = input_tracts,
           tract_names = tract_names
         )
@@ -127,7 +130,7 @@ describe("create_tract_from_tractography pipeline flow", {
       },
       detect_coords_are_voxels = function(...) TRUE,
       tract_create_meshes = function(...) {
-        captured_mesh_args <<- list(...)
+        .cap$captured_mesh_args <- list(...)
         list(
           t1 = list(
             metadata = list(
@@ -150,7 +153,7 @@ describe("create_tract_from_tractography pipeline flow", {
             stringsAsFactors = FALSE
           ),
           palette = c(t1 = "#FF0000"),
-          centerlines_df = data.frame(label = "t1"),
+          centerlines_df = data.frame(stringsAsFactors = FALSE, label = "t1"),
           atlas_name = "t1"
         )
       },
@@ -172,15 +175,15 @@ describe("create_tract_from_tractography pipeline flow", {
       verbose = FALSE
     )
 
-    expect_identical(captured_read_args$input_tracts, input)
-    expect_false(is.null(captured_mesh_args))
+    expect_identical(.cap$captured_read_args$input_tracts, input)
+    expect_false(is.null(.cap$captured_mesh_args))
   })
 
   it("errors when input_aseg is NULL for steps beyond 1", {
     dirs <- mock_dirs()
     cached <- list(
       streamlines_data = list(t1 = matrix(1:30, ncol = 3)),
-      centerlines_df = data.frame(label = "t1"),
+      centerlines_df = data.frame(stringsAsFactors = FALSE, label = "t1"),
       core = data.frame(
         hemi = "midline",
         region = "t1",
@@ -223,6 +226,7 @@ describe("create_tract_from_tractography pipeline flow", {
     )
 
     custom_lut <- data.frame(
+      stringsAsFactors = FALSE,
       region = "Tract A",
       R = 255,
       G = 0,
@@ -236,7 +240,7 @@ describe("create_tract_from_tractography pipeline flow", {
       verbose = FALSE
     )
 
-    expect_true(!is.na(atlas$palette[1]))
+    expect_false(is.na(atlas$palette[1]))
   })
 
   it("handles LUT without colour columns", {
@@ -244,9 +248,7 @@ describe("create_tract_from_tractography pipeline flow", {
       matrix(c(1:20, rep(0, 40)), ncol = 3)
     )
 
-    custom_lut <- data.frame(
-      region = "Tract A"
-    )
+    custom_lut <- data.frame(stringsAsFactors = FALSE, region = "Tract A")
 
     atlas <- create_tract_from_tractography(
       input_tracts = tracts,
@@ -263,7 +265,7 @@ describe("create_tract_from_tractography pipeline flow", {
     dirs <- mock_dirs()
     cached <- list(
       streamlines_data = list(t1 = matrix(1:30, ncol = 3)),
-      centerlines_df = data.frame(label = "t1"),
+      centerlines_df = data.frame(stringsAsFactors = FALSE, label = "t1"),
       core = data.frame(
         hemi = "midline",
         region = "t1",
@@ -286,6 +288,7 @@ describe("create_tract_from_tractography pipeline flow", {
             run = FALSE,
             data = list(
               "views.rds" = data.frame(
+                stringsAsFactors = FALSE,
                 name = "ax_1",
                 type = "axial",
                 start = 1,
@@ -358,7 +361,7 @@ describe("create_tract_from_tractography pipeline flow", {
             stringsAsFactors = FALSE
           ),
           palette = c(t1 = "#FF0000"),
-          centerlines_df = data.frame(label = "t1"),
+          centerlines_df = data.frame(stringsAsFactors = FALSE, label = "t1"),
           atlas_name = "t1"
         )
       },
@@ -392,7 +395,7 @@ describe("create_tract_from_tractography pipeline flow", {
 
     cached <- list(
       streamlines_data = list(t1 = matrix(1:30, ncol = 3)),
-      centerlines_df = data.frame(label = "t1"),
+      centerlines_df = data.frame(stringsAsFactors = FALSE, label = "t1"),
       core = data.frame(
         hemi = "midline",
         region = "t1",
@@ -418,6 +421,7 @@ describe("create_tract_from_tractography pipeline flow", {
             run = FALSE,
             data = list(
               "views.rds" = data.frame(
+                stringsAsFactors = FALSE,
                 name = "ax_1",
                 type = "axial",
                 start = 1,
@@ -469,7 +473,7 @@ describe("create_tract_from_tractography pipeline flow", {
     dirs <- mock_dirs()
     cached <- list(
       streamlines_data = list(t1 = matrix(1:30, ncol = 3)),
-      centerlines_df = data.frame(label = "t1"),
+      centerlines_df = data.frame(stringsAsFactors = FALSE, label = "t1"),
       core = data.frame(
         hemi = "midline",
         region = "t1",
@@ -492,6 +496,7 @@ describe("create_tract_from_tractography pipeline flow", {
             run = FALSE,
             data = list(
               "views.rds" = data.frame(
+                stringsAsFactors = FALSE,
                 name = "ax_1",
                 type = "axial",
                 start = 1,

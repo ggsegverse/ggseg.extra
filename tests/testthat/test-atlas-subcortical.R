@@ -1,3 +1,5 @@
+.cap <- new.env()
+
 describe("create_subcortical_from_volume decimate validation", {
   it("errors for values outside (0, 1)", {
     local_mocked_bindings(check_fs = function(...) TRUE)
@@ -131,17 +133,19 @@ describe("create_subcortical_from_volume", {
     skip_if(!file.exists(vol_file), "Test volume file not found")
 
     expect_warnings(
-      atlas <- create_subcortical_from_volume(
-        input_volume = vol_file,
-        input_lut = NULL,
-        steps = 1:3,
-        verbose = FALSE
-      ),
+      {
+        atlas <- create_subcortical_from_volume(
+          input_volume = vol_file,
+          input_lut = NULL,
+          steps = 1:3,
+          verbose = FALSE
+        )
+      },
       "No color lookup table"
     )
 
     expect_s3_class(atlas, "ggseg_atlas")
-    expect_true(nrow(atlas$core) > 0)
+    expect_gt(nrow(atlas$core), 0)
     expect_true(all(grepl("^region_", atlas$core$label)))
     expect_false(is.null(atlas$palette))
     expect_true(all(grepl("^#", atlas$palette)))
@@ -167,7 +171,7 @@ describe("create_subcortical_from_volume with meshes", {
 
   it("creates atlas with meshes component", {
     expect_s3_class(atlas, "ggseg_atlas")
-    expect_equal(atlas$type, "subcortical")
+    expect_identical(atlas$type, "subcortical")
     expect_false(is.null(atlas$data$meshes))
     expect_true("mesh" %in% names(atlas$data$meshes))
   })
@@ -208,12 +212,12 @@ describe("create_subcortical_from_volume with meshes", {
 
 describe("create_subcortical_from_volume pipeline flow", {
   it("passes correct volume path to generate_colortable_from_volume", {
-    captured_gen_args <- NULL
+    .cap$captured_gen_args <- NULL
     dirs <- mock_subcort_dirs()
     local_mocked_bindings(
       check_fs = function(...) TRUE,
       generate_colortable_from_volume = function(vol) {
-        captured_gen_args <<- list(vol = vol)
+        .cap$captured_gen_args <- list(vol = vol)
         data.frame(
           idx = 10,
           label = "test_region",
@@ -247,7 +251,10 @@ describe("create_subcortical_from_volume pipeline flow", {
             stringsAsFactors = FALSE
           ),
           palette = c(test_region = "#E78AC3"),
-          meshes_df = data.frame(label = "test_region")
+          meshes_df = data.frame(
+            stringsAsFactors = FALSE,
+            label = "test_region"
+          )
         )
       },
       ggseg_atlas = function(...) structure(list(...), class = "ggseg_atlas"),
@@ -259,16 +266,18 @@ describe("create_subcortical_from_volume pipeline flow", {
     file.create(vol_file)
 
     expect_warning(
-      atlas <- create_subcortical_from_volume(
-        input_volume = vol_file,
-        input_lut = NULL,
-        steps = 1:3,
-        verbose = FALSE
-      ),
+      {
+        atlas <- create_subcortical_from_volume(
+          input_volume = vol_file,
+          input_lut = NULL,
+          steps = 1:3,
+          verbose = FALSE
+        )
+      },
       "No color lookup table"
     )
 
-    expect_identical(captured_gen_args$vol, vol_file)
+    expect_identical(.cap$captured_gen_args$vol, vol_file)
     expect_false(is.null(atlas$palette))
   })
 
@@ -315,7 +324,10 @@ describe("create_subcortical_from_volume pipeline flow", {
             stringsAsFactors = FALSE
           ),
           palette = c(region_a = "#FF0000", region_b = "#00FF00"),
-          meshes_df = data.frame(label = c("region_a", "region_b"))
+          meshes_df = data.frame(
+            stringsAsFactors = FALSE,
+            label = c("region_a", "region_b")
+          )
         )
       },
       ggseg_atlas = function(...) structure(list(...), class = "ggseg_atlas"),
@@ -329,17 +341,19 @@ describe("create_subcortical_from_volume pipeline flow", {
     withr::local_options(ggseg.extra.output_dir = withr::local_tempdir())
 
     expect_messages(
-      atlas <- create_subcortical_from_volume(
-        input_volume = vol_file,
-        input_lut = lut_file,
-        steps = 1:3,
-        verbose = TRUE
-      ),
+      {
+        atlas <- create_subcortical_from_volume(
+          input_volume = vol_file,
+          input_lut = lut_file,
+          steps = 1:3,
+          verbose = TRUE
+        )
+      },
       "Creating subcortical atlas"
     )
 
     expect_s3_class(atlas, "ggseg_atlas")
-    expect_equal(nrow(atlas$core), 2)
+    expect_identical(nrow(atlas$core), 2L)
   })
 
   it("errors when no matching labels found", {
@@ -404,7 +418,7 @@ describe("create_subcortical_from_volume pipeline flow", {
         stringsAsFactors = FALSE
       ),
       palette = c(cached_r = "#AABBCC"),
-      meshes_df = data.frame(label = "cached_r")
+      meshes_df = data.frame(stringsAsFactors = FALSE, label = "cached_r")
     )
     cached_views <- data.frame(
       name = "ax_1",
@@ -423,7 +437,7 @@ describe("create_subcortical_from_volume pipeline flow", {
             run = FALSE,
             data = list(
               "colortable.rds" = cached_colortable,
-              "vol_labels.rds" = c(10)
+              "vol_labels.rds" = 10
             )
           )
         } else if (step == 2L) {
@@ -455,12 +469,14 @@ describe("create_subcortical_from_volume pipeline flow", {
     withr::local_options(ggseg.extra.output_dir = withr::local_tempdir())
 
     expect_messages(
-      result <- create_subcortical_from_volume(
-        input_volume = vol_file,
-        input_lut = lut_file,
-        steps = 5:8,
-        verbose = TRUE
-      ),
+      {
+        result <- create_subcortical_from_volume(
+          input_volume = vol_file,
+          input_lut = lut_file,
+          steps = 5:8,
+          verbose = TRUE
+        )
+      },
       "Creating subcortical atlas"
     )
 
@@ -479,15 +495,25 @@ describe("create_subcortical_from_volume pipeline flow", {
           list(
             run = FALSE,
             data = list(
-              "colortable.rds" = data.frame(idx = 10, label = "r"),
-              "vol_labels.rds" = c(10),
+              "colortable.rds" = data.frame(
+                stringsAsFactors = FALSE,
+                idx = 10,
+                label = "r"
+              ),
+              "vol_labels.rds" = 10,
               "meshes_list.rds" = list(),
               "components.rds" = list(
-                core = data.frame(hemi = NA, region = "r", label = "r"),
+                core = data.frame(
+                  stringsAsFactors = FALSE,
+                  hemi = NA,
+                  region = "r",
+                  label = "r"
+                ),
                 palette = c(r = "#FF0000"),
-                meshes_df = data.frame(label = "r")
+                meshes_df = data.frame(stringsAsFactors = FALSE, label = "r")
               ),
               "views.rds" = data.frame(
+                stringsAsFactors = FALSE,
                 name = "ax_1",
                 type = "axial",
                 start = 1,
@@ -501,6 +527,7 @@ describe("create_subcortical_from_volume pipeline flow", {
       subcort_create_snapshots = function(...) {
         list(
           views = data.frame(
+            stringsAsFactors = FALSE,
             name = "ax_1",
             type = "axial",
             start = 1,
@@ -534,7 +561,7 @@ describe("create_subcortical_from_volume pipeline flow", {
 
   it("passes correct args to snapshot and image step functions", {
     dirs <- mock_subcort_dirs()
-    captured_snapshot_args <- NULL
+    .cap$captured_snapshot_args <- NULL
 
     local_mocked_bindings(
       check_fs = function(...) TRUE,
@@ -550,7 +577,7 @@ describe("create_subcortical_from_volume pipeline flow", {
                 color = "#FF0000",
                 stringsAsFactors = FALSE
               ),
-              "vol_labels.rds" = c(10),
+              "vol_labels.rds" = 10,
               "meshes_list.rds" = list(),
               "components.rds" = list(
                 core = data.frame(
@@ -560,7 +587,10 @@ describe("create_subcortical_from_volume pipeline flow", {
                   stringsAsFactors = FALSE
                 ),
                 palette = c(region = "#FF0000"),
-                meshes_df = data.frame(label = "region")
+                meshes_df = data.frame(
+                  stringsAsFactors = FALSE,
+                  label = "region"
+                )
               )
             )
           )
@@ -571,7 +601,7 @@ describe("create_subcortical_from_volume pipeline flow", {
         }
       },
       subcort_create_snapshots = function(...) {
-        captured_snapshot_args <<- list(...)
+        .cap$captured_snapshot_args <- list(...)
         list(
           views = data.frame(
             name = "ax_1",
@@ -602,7 +632,7 @@ describe("create_subcortical_from_volume pipeline flow", {
       verbose = FALSE
     )
 
-    expect_false(is.null(captured_snapshot_args))
+    expect_false(is.null(.cap$captured_snapshot_args))
     expect_null(result)
   })
 
@@ -616,7 +646,7 @@ describe("create_subcortical_from_volume pipeline flow", {
         stringsAsFactors = FALSE
       ),
       palette = c(region = "#FF0000"),
-      meshes_df = data.frame(label = "region")
+      meshes_df = data.frame(stringsAsFactors = FALSE, label = "region")
     )
     cached_views <- data.frame(
       name = "ax_1",
@@ -636,8 +666,12 @@ describe("create_subcortical_from_volume pipeline flow", {
         list(
           run = FALSE,
           data = list(
-            "colortable.rds" = data.frame(idx = 10, label = "region"),
-            "vol_labels.rds" = c(10),
+            "colortable.rds" = data.frame(
+              stringsAsFactors = FALSE,
+              idx = 10,
+              label = "region"
+            ),
+            "vol_labels.rds" = 10,
             "meshes_list.rds" = list(),
             "components.rds" = cached_components,
             "views.rds" = cached_views,
@@ -672,13 +706,15 @@ describe("create_subcortical_from_volume pipeline flow", {
     withr::local_options(ggseg.extra.output_dir = withr::local_tempdir())
 
     expect_messages(
-      atlas <- create_subcortical_from_volume(
-        input_volume = vol_file,
-        input_lut = lut_file,
-        steps = 9,
-        verbose = TRUE,
-        cleanup = TRUE
-      ),
+      {
+        atlas <- create_subcortical_from_volume(
+          input_volume = vol_file,
+          input_lut = lut_file,
+          steps = 9,
+          verbose = TRUE,
+          cleanup = TRUE
+        )
+      },
       "Creating subcortical atlas"
     )
 
@@ -694,15 +730,25 @@ describe("create_subcortical_from_volume pipeline flow", {
         list(
           run = FALSE,
           data = list(
-            "colortable.rds" = data.frame(idx = 10, label = "r"),
-            "vol_labels.rds" = c(10),
+            "colortable.rds" = data.frame(
+              stringsAsFactors = FALSE,
+              idx = 10,
+              label = "r"
+            ),
+            "vol_labels.rds" = 10,
             "meshes_list.rds" = list(),
             "components.rds" = list(
-              core = data.frame(hemi = NA, region = "r", label = "r"),
+              core = data.frame(
+                stringsAsFactors = FALSE,
+                hemi = NA,
+                region = "r",
+                label = "r"
+              ),
               palette = c(r = "#FF0000"),
-              meshes_df = data.frame(label = "r")
+              meshes_df = data.frame(stringsAsFactors = FALSE, label = "r")
             ),
             "views.rds" = data.frame(
+              stringsAsFactors = FALSE,
               name = "ax_1",
               type = "axial",
               start = 1,
@@ -723,12 +769,14 @@ describe("create_subcortical_from_volume pipeline flow", {
     withr::local_options(ggseg.extra.output_dir = withr::local_tempdir())
 
     expect_messages(
-      result <- create_subcortical_from_volume(
-        input_volume = vol_file,
-        input_lut = lut_file,
-        steps = 5:6,
-        verbose = TRUE
-      ),
+      {
+        result <- create_subcortical_from_volume(
+          input_volume = vol_file,
+          input_lut = lut_file,
+          steps = 5:6,
+          verbose = TRUE
+        )
+      },
       "Creating subcortical atlas"
     )
 
@@ -747,7 +795,7 @@ describe("subcort_resolve_meshes early-return NULL", {
 
     config <- list(steps = 1L, verbose = FALSE)
     dirs <- list(base = withr::local_tempdir())
-    colortable <- data.frame(idx = 10, label = "r")
+    colortable <- data.frame(stringsAsFactors = FALSE, idx = 10, label = "r")
 
     result <- subcort_resolve_meshes(config, dirs, colortable)
     expect_null(result)
@@ -765,7 +813,7 @@ describe("subcort_resolve_components early-return NULL", {
 
     config <- list(steps = 1:2, verbose = FALSE)
     dirs <- list(base = withr::local_tempdir())
-    colortable <- data.frame(idx = 10, label = "r")
+    colortable <- data.frame(stringsAsFactors = FALSE, idx = 10, label = "r")
     meshes_list <- list()
 
     result <- subcort_resolve_components(config, dirs, colortable, meshes_list)
@@ -782,7 +830,10 @@ describe("subcort_assemble_full sf_data as data.frame", {
       file = file.path(test_dir, "contours_reduced.rda")
     )
 
-    sf_df <- data.frame(label = c("lh_region1", "rh_region2", NA))
+    sf_df <- data.frame(
+      stringsAsFactors = FALSE,
+      label = c("lh_region1", "rh_region2", NA)
+    )
 
     local_mocked_bindings(
       build_contour_sf = function(...) sf_df,
@@ -818,7 +869,7 @@ describe("subcort_assemble_full sf_data as data.frame", {
       "test",
       components,
       list(base = test_dir),
-      c("axial"),
+      "axial",
       NULL
     )
     expect_s3_class(result, "ggseg_atlas")
@@ -839,7 +890,7 @@ describe("subcort_resolve_snapshots early-return NULL", {
 
     config <- list(steps = 1:3, verbose = FALSE)
     dirs <- list(base = withr::local_tempdir())
-    colortable <- data.frame(idx = 10, label = "r")
+    colortable <- data.frame(stringsAsFactors = FALSE, idx = 10, label = "r")
     views <- c("axial", "coronal", "sagittal")
 
     result <- subcort_resolve_snapshots(config, dirs, colortable, views)
