@@ -124,6 +124,7 @@ template_url <- function() {
 
 
 #' @keywords internal
+#' @noRd
 download_atlas_template <- function(url = template_url()) {
   tmp_tar <- tempfile(fileext = ".tar.gz")
   tmp_dir <- tempfile("ggseg-template-")
@@ -176,6 +177,7 @@ download_atlas_template <- function(url = template_url()) {
 
 
 #' @keywords internal
+#' @noRd
 populate_from_template <- function(path, template_dir, atlas_name, repo_name) {
   mkdir(path)
   create_template_dirs(path, template_dir)
@@ -193,6 +195,7 @@ populate_from_template <- function(path, template_dir, atlas_name, repo_name) {
 
 
 #' @keywords internal
+#' @noRd
 create_template_dirs <- function(path, template_dir) {
   dirs <- list.dirs(template_dir, full.names = FALSE, recursive = TRUE)
   dirs <- dirs[nchar(dirs) > 0 & !grepl("^\\.", dirs)]
@@ -218,6 +221,7 @@ create_template_dirs <- function(path, template_dir) {
 
 
 #' @keywords internal
+#' @noRd
 copy_template_files <- function(path, template_dir) {
   files <- list.files(
     template_dir,
@@ -240,6 +244,7 @@ copy_template_files <- function(path, template_dir) {
 
 
 #' @keywords internal
+#' @noRd
 replace_template_placeholders <- function(path, atlas_name) {
   all_files <- list.files(
     path,
@@ -269,6 +274,7 @@ replace_template_placeholders <- function(path, atlas_name) {
 
 
 #' @keywords internal
+#' @noRd
 create_rproj_file <- function(path, repo_name) {
   rproj_content <- c(
     "Version: 1.0",
@@ -303,6 +309,7 @@ create_rproj_file <- function(path, repo_name) {
 
 
 #' @keywords internal
+#' @noRd
 open_rstudio_project <- function(path) {
   if (!rstudioapi_available()) {
     return(invisible(FALSE))
@@ -322,6 +329,7 @@ open_rstudio_project <- function(path) {
 
 
 #' @keywords internal
+#' @noRd
 rstudioapi_available <- function() {
   requireNamespace("rstudioapi", quietly = TRUE) &&
     rstudioapi::isAvailable()
@@ -329,6 +337,7 @@ rstudioapi_available <- function() {
 
 
 #' @keywords internal
+#' @noRd
 template_replace <- function(file, atlas_name) {
   repo_name <- paste0("ggseg", tools::toTitleCase(atlas_name))
 
@@ -349,6 +358,7 @@ template_replace <- function(file, atlas_name) {
 
 
 #' @keywords internal
+#' @noRd
 new_project_setup_atlas_repo <- function(dir, ...) {
   params <- list(...)
   atlas_name <- params$atlas_name

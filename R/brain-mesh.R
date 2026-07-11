@@ -15,6 +15,7 @@
 #' @return list with vertices (data.frame with x, y, z) and
 #'   faces (data.frame with i, j, k)
 #' @keywords internal
+#' @noRd
 read_fs_mesh <- function(
   subject = "fsaverage5",
   hemisphere = c("lh", "rh"),
@@ -109,6 +110,7 @@ read_fs_mesh <- function(
 #'
 #' @return Named list of meshes, with names like "lh_inflated", "rh_white", etc.
 #' @keywords internal
+#' @noRd
 make_brain_meshes <- function(
   subject = "fsaverage5",
   surfaces = c("inflated", "white", "pial"),

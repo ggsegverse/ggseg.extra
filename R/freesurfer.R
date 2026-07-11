@@ -5,6 +5,7 @@
 #'     if Freesurfer is not installed. Defaults to FALSE.
 #' @return logical
 #' @keywords internal
+#' @noRd
 check_fs <- function(abort = FALSE) {
   rlang::check_installed("freesurfer", reason = "to interact with FreeSurfer")
   x <- freesurfer::have_fs()

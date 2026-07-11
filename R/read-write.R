@@ -5,6 +5,7 @@
 #' @param file Path to file
 #' @return Logical
 #' @keywords internal
+#' @noRd
 is_volume_file <- function(file) {
   grepl("\\.(mgz|nii|nii\\.gz)$", file, ignore.case = TRUE)
 }
@@ -25,6 +26,7 @@ is_volume_file <- function(file) {
 #'   file's native orientation (preserves header for downstream use).
 #' @return 3D array (reorient=TRUE) or niftiImage (reorient=FALSE)
 #' @keywords internal
+#' @noRd
 read_volume <- function(file, reorient = TRUE) {
   if (!file.exists(file)) {
     cli::cli_abort("Volume file not found: {.path {file}}")
@@ -76,6 +78,7 @@ read_volume <- function(file, reorient = TRUE) {
 #' @return list with vertices (data.frame with x, y, z) and
 #'   faces (data.frame with i, j, k)
 #' @keywords internal
+#' @noRd
 read_ply_mesh <- function(ply, ...) {
   if (!is.character(ply)) {
     cli::cli_abort("{.arg ply} must be a file path")
@@ -274,6 +277,7 @@ read_annotation_data <- function(annot_files) {
 #' @param label_file Path to .label file
 #' @return Integer vector of vertex indices (0-indexed)
 #' @keywords internal
+#' @noRd
 read_label_vertices <- function(label_file) {
   rlang::check_installed(
     "freesurferformats",
@@ -578,6 +582,7 @@ lut_combine <- function(...) {
 #' @param filename Basename of the GIFTI file
 #' @return "lh" or "rh", or NA if undetectable
 #' @keywords internal
+#' @noRd
 # nolint next: object_length_linter.
 detect_hemi_from_gifti_filename <- function(filename) {
   if (grepl("^lh\\.|[._]lh[._]|\\.L\\.", filename)) {

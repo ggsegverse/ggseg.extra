@@ -5,7 +5,7 @@
 \title{Create cerebellar atlas from volume segmentation}
 \usage{
 create_cerebellar_from_volume(
-  volume,
+  volume = NULL,
   input_lut = NULL,
   atlas_name = NULL,
   output_dir = NULL,

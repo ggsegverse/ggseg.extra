@@ -300,6 +300,7 @@ tract_create_snapshots <- function(
 #'
 #' @return data.frame with columns: name, type, start, end
 #' @keywords internal
+#' @noRd
 default_tract_views <- function(dims) {
   scale <- dims[1] / 256
   chunk_size <- round(30 * scale)
@@ -339,6 +340,7 @@ default_tract_views <- function(dims) {
 
 #' Resolve tube radius specification
 #' @keywords internal
+#' @noRd
 resolve_tube_radius <- function(
   tube_radius,
   streamlines,

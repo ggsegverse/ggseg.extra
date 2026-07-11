@@ -238,6 +238,7 @@ subcort_create_snapshots <- function(
 #'
 #' @return data.frame with columns: name, type, start, end
 #' @keywords internal
+#' @noRd
 default_subcortical_views <- function(dims) {
   mid_x <- dims[1] %/% 2
   chunk_size <- 10

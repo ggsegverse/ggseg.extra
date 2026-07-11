@@ -20,6 +20,7 @@
 #'
 #' @return 2D matrix ready for image() display
 #' @keywords internal
+#' @noRd
 extract_slice_2d <- function(vol, view, pos, hemi = NULL) {
   # nolint start: commas_linter.
   slice <- switch(
@@ -62,6 +63,7 @@ extract_slice_2d <- function(vol, view, pos, hemi = NULL) {
 #'
 #' @return 2D matrix ready for image() display
 #' @keywords internal
+#' @noRd
 volume_projection <- function(
   vol,
   view,
@@ -116,6 +118,7 @@ volume_projection <- function(
 #'
 #' @return Transformed 2D matrix
 #' @keywords internal
+#' @noRd
 orient_slice_2d <- function(slice, view, hemi = NULL) {
   if (view == "sagittal" && identical(hemi, "left")) {
     return(slice[rev(seq_len(nrow(slice))), ])
@@ -142,6 +145,7 @@ orient_slice_2d <- function(slice, view, hemi = NULL) {
 #' @importFrom grDevices png dev.off
 #' @importFrom graphics par image
 #' @keywords internal
+#' @noRd
 snapshot_slice <- function(
   lab,
   x,
@@ -695,6 +699,7 @@ snapshot_cortex_slice <- function(
 #'
 #' @return Invisible path to output file, or NULL if no voxels in slice
 #' @keywords internal
+#' @noRd
 snapshot_volume_slice <- function(
   vol,
   x,
@@ -745,6 +750,7 @@ snapshot_volume_slice <- function(
 #'
 #' @return Invisible path to output file, or NULL if no voxels
 #' @keywords internal
+#' @noRd
 snapshot_partial_projection <- function(
   vol,
   view,

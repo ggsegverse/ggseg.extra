@@ -17,6 +17,7 @@
 #'
 #' @return A matrix with `n_points` rows and 3 columns (x, y, z).
 #' @keywords internal
+#' @noRd
 extract_centerline <- function(
   streamlines,
   method = c("mean", "medoid"),
@@ -93,6 +94,7 @@ centerline_medoid <- function(resampled) {
 
 #' Resample streamline to fixed number of points
 #' @keywords internal
+#' @noRd
 resample_streamline <- function(streamline, n_points) {
   if (!is.matrix(streamline) || nrow(streamline) < 2) {
     return(NULL)
@@ -160,6 +162,7 @@ resample_streamline <- function(streamline, n_points) {
 #'     \item metadata: list with n_centerline_points, centerline, tangents
 #'   }
 #' @keywords internal
+#' @noRd
 generate_tube_mesh <- function(centerline, radius = 0.5, segments = 8) {
   if (!is.matrix(centerline) || nrow(centerline) < 2) {
     cli::cli_abort("centerline must be a matrix with at least 2 rows")
@@ -223,6 +226,7 @@ generate_tube_mesh <- function(centerline, radius = 0.5, segments = 8) {
 #' @param curve Matrix with N rows and 3 columns
 #' @return List with tangents, normals, and binormals matrices
 #' @keywords internal
+#' @noRd
 # nolint next: object_length_linter.
 compute_parallel_transport_frames <- function(curve) {
   n <- nrow(curve)
@@ -270,19 +274,9 @@ compute_parallel_transport_frames <- function(curve) {
 }
 
 
-#' Cross product of two 3D vectors
-#' @keywords internal
-cross_product <- function(a, b) {
-  c(
-    a[2] * b[3] - a[3] * b[2],
-    a[3] * b[1] - a[1] * b[3],
-    a[1] * b[2] - a[2] * b[1]
-  )
-}
-
-
 #' Rotate vector around axis by angle (Rodrigues' formula)
 #' @keywords internal
+#' @noRd
 rotate_vector <- function(v, axis, angle) {
   cos_a <- cos(angle)
   sin_a <- sin(angle)
@@ -303,6 +297,7 @@ rotate_vector <- function(v, axis, angle) {
 #'
 #' @return Numeric vector of density values (one per centerline point)
 #' @keywords internal
+#' @noRd
 compute_streamline_density <- function(
   streamlines,
   centerline,
@@ -350,6 +345,7 @@ compute_streamline_density <- function(
 #'
 #' @return 3D array in RAS+ orientation, tract voxels set to label_value
 #' @keywords internal
+#' @noRd
 streamlines_to_volume <- function(
   centerline,
   template_file,
@@ -930,7 +926,7 @@ tract_generate_geometry <- function(
 create_tract_geometry_volumetric <- function(
   atlas,
   aseg_file,
-  streamlines,
+  streamlines = NULL,
   views = NULL,
   cortex_slices = NULL,
   output_dir = NULL,
@@ -954,7 +950,7 @@ create_tract_geometry_volumetric <- function(
   validate_tract_geometry_inputs(
     atlas,
     aseg_file,
-    missing(streamlines) || is.null(streamlines)
+    is.null(streamlines)
   )
 
   if (is.null(coords_are_voxels)) {
@@ -1038,6 +1034,7 @@ create_tract_geometry_volumetric <- function(
 #' @param meshes_list Named list of meshes
 #' @return Centered meshes list
 #' @keywords internal
+#' @noRd
 center_meshes <- function(meshes_list) {
   all_vertices <- do.call(rbind, lapply(meshes_list, function(m) m$vertices))
 

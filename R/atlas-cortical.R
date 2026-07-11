@@ -501,7 +501,7 @@ create_cortical_from_gifti <- function(
 #' Build a brain atlas from a CIFTI dense label file (`.dlabel.nii`).
 #' The file must be in fsaverage5 space (10,242 vertices per hemisphere).
 #'
-#' @param cifti_file Path to a `.dlabel.nii` CIFTI file.
+#' @inheritParams read_cifti_annotation
 #' @template atlas_name
 #' @template output_dir
 #' @param hemisphere Which hemispheres to include: "lh", "rh", or both.

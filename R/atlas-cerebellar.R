@@ -522,7 +522,7 @@ create_cerebellar_from_annotation <- function(
 #' }
 # nolint next: object_length_linter.
 create_cerebellar_from_volume <- function(
-  volume,
+  volume = NULL,
   input_lut = NULL,
   atlas_name = NULL,
   output_dir = NULL,
@@ -533,7 +533,7 @@ create_cerebellar_from_volume <- function(
   verbose = get_verbose(),
   skip_existing = NULL
 ) {
-  if (missing(volume) || is.null(volume)) {
+  if (is.null(volume)) {
     cli::cli_abort("{.arg volume} is required")
   }
   if (!file.exists(volume)) {

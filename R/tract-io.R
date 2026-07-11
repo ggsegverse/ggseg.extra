@@ -41,6 +41,7 @@ read_tractography <- function(file) {
 #'   x, y, z.
 #' @seealso [read_tractography()] for format auto-detection
 #' @keywords internal
+#' @noRd
 read_trk <- function(file) {
   con <- file(file, "rb")
   on.exit(close(con), add = TRUE)
@@ -93,6 +94,7 @@ read_trk <- function(file) {
 #'   x, y, z.
 #' @seealso [read_tractography()] for format auto-detection
 #' @keywords internal
+#' @noRd
 read_tck <- function(file) {
   con <- file(file, "rb")
   on.exit(close(con), add = TRUE)

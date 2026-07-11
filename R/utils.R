@@ -2,6 +2,16 @@
 
 fsaverage5_nverts <- 10242L
 
+#' Cross product of two 3D vectors
+#' @noRd
+cross_product <- function(a, b) {
+  c(
+    a[2] * b[3] - a[3] * b[2],
+    a[3] * b[1] - a[1] * b[3],
+    a[1] * b[2] - a[2] * b[1]
+  )
+}
+
 #' @importFrom future plan sequential multisession
 #' @noRd
 with_safe_plan <- function(expr) {
@@ -271,7 +281,8 @@ load_or_run_step <- function(
     cli::cli_abort(c(
       "{step_name} was not run but required files are missing",
       "i" = "Missing: {.path {missing}}",
-      "i" = paste( # nolint
+      "i" = paste(
+        # nolint
         # nolint
         # nolint
         "Include step {step_num} in the steps",
@@ -526,7 +537,8 @@ warn_if_large_atlas <- function(atlas, max_vertices = 10000, per_region = 50) {
         "(threshold: {.val {threshold}})"
       ),
       "i" = "Large atlases may be slow to plot and increase package size",
-      "i" = paste( # nolint
+      "i" = paste(
+        # nolint
         # nolint
         # nolint
         "Call {.code atlas_smooth(atlas, keep = 0.2, exclude = \"cortex_\")}",

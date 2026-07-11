@@ -3,15 +3,6 @@
 # Projects 3D inflated mesh triangles directly to 2D sf polygons,
 # replacing the screenshot-based pipeline (steps 2-5).
 
-#' @noRd
-cross3 <- function(a, b) {
-  c(
-    a[2] * b[3] - a[3] * b[2],
-    a[3] * b[1] - a[1] * b[3],
-    a[1] * b[2] - a[2] * b[1]
-  )
-}
-
 #' Compute orthonormal view basis from camera position
 #'
 #' Replicates the Three.js OrthographicCamera look-at with up = (0,0,1).
@@ -22,17 +13,17 @@ compute_view_basis <- function(camera_pos) {
   forward <- -camera_pos / sqrt(sum(camera_pos^2))
   up <- c(0, 0, 1)
 
-  right <- cross3(forward, up)
+  right <- cross_product(forward, up)
   right_len <- sqrt(sum(right^2))
 
   if (right_len < 1e-10) {
     up <- c(0, 1, 0)
-    right <- cross3(forward, up)
+    right <- cross_product(forward, up)
     right_len <- sqrt(sum(right^2))
   }
   right <- right / right_len
 
-  up_corrected <- cross3(right, forward)
+  up_corrected <- cross_product(right, forward)
   list(right = right, up = up_corrected)
 }
 

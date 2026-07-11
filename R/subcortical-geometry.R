@@ -112,6 +112,7 @@ tessellate_smooth_mesh <- function(
 
 #' @return list with vertices (data.frame) and faces (data.frame)
 #' @keywords internal
+#' @noRd
 tessellate_label <- function(
   volume_file,
   label_id,
@@ -193,6 +194,7 @@ tessellate_label <- function(
 #'
 #' @return Decimated mesh in the same format
 #' @keywords internal
+#' @noRd
 decimate_mesh <- function(mesh, percent = 0.5) {
   rlang::check_installed("Rvcg", reason = "for mesh decimation")
 
@@ -233,6 +235,7 @@ decimate_mesh <- function(mesh, percent = 0.5) {
 #' @param verbose Verbosity level (0/1/2)
 #' @return list with vertices and faces data.frames (faces are 1-indexed)
 #' @keywords internal
+#' @noRd
 read_fs_surface <- function(file, verbose = get_verbose()) {
   dpv_file <- paste0(file, ".dpv")
 
@@ -292,6 +295,7 @@ read_fs_surface <- function(file, verbose = get_verbose()) {
 #' @return data.frame with columns: idx, label, R, G, B, A, roi, color
 #' @keywords internal
 #' @importFrom grDevices col2rgb hcl
+#' @noRd
 # nolint next: object_length_linter.
 generate_colortable_from_volume <- function(volume_file) {
   vol <- read_volume(volume_file)
@@ -321,6 +325,7 @@ generate_colortable_from_volume <- function(volume_file) {
 #' @return Character vector of `n` hex colours.
 #' @keywords internal
 #' @importFrom grDevices hcl
+#' @noRd
 generate_region_palette <- function(n) {
   if (n <= 0) {
     return(character(0))
@@ -358,6 +363,7 @@ generate_region_palette <- function(n) {
 #'
 #' @return sf data.frame with label, view, and geometry columns
 #' @keywords internal
+#' @noRd
 # nolint next: object_length_linter.
 create_subcortical_geometry_projection <- function(
   input_volume,
