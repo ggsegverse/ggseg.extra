@@ -189,16 +189,52 @@ create_wholebrain_from_volume <- function(
   steps = NULL
 ) {
   start_time <- Sys.time()
-
   opts <- validate_wholebrain_opts(
     cortical_opts,
     subcortical_opts,
     cerebellar_opts
   )
-  cortical_opts <- opts$cortical
-  subcortical_opts <- opts$subcortical
-  cerebellar_opts <- opts$cerebellar
+  setup <- wholebrain_setup(
+    input_volume,
+    input_lut,
+    atlas_name,
+    output_dir,
+    projfrac,
+    projfrac_range,
+    subject,
+    regheader,
+    min_vertices,
+    verbose,
+    cleanup,
+    skip_existing,
+    steps
+  )
+  labels <- list(
+    cortical = cortical_labels,
+    subcortical = subcortical_labels,
+    cerebellar = cerebellar_labels
+  )
+  wholebrain_run_pipeline(setup, opts, labels, start_time)
+}
 
+
+#' Validate the wholebrain config, create the output dirs and log the header
+#' @noRd
+wholebrain_setup <- function(
+  input_volume,
+  input_lut,
+  atlas_name,
+  output_dir,
+  projfrac,
+  projfrac_range,
+  subject,
+  regheader,
+  min_vertices,
+  verbose,
+  cleanup,
+  skip_existing,
+  steps
+) {
   config <- validate_wholebrain_config(
     input_volume = input_volume,
     input_lut = input_lut,
@@ -225,15 +261,25 @@ create_wholebrain_from_volume <- function(
     wholebrain_log_header(config)
   }
 
+  list(config = config, dirs = dirs)
+}
+
+
+#' Run the wholebrain pipeline steps and return the atlases (or the split)
+#' @noRd
+wholebrain_run_pipeline <- function(setup, opts, labels, start_time) {
+  config <- setup$config
+  dirs <- setup$dirs
+
   projection <- wholebrain_resolve_projection(config, dirs)
 
   split <- wholebrain_resolve_split(
     config,
     dirs,
     projection,
-    cortical_labels = cortical_labels,
-    subcortical_labels = subcortical_labels,
-    cerebellar_labels = cerebellar_labels
+    cortical_labels = labels$cortical,
+    subcortical_labels = labels$subcortical,
+    cerebellar_labels = labels$cerebellar
   )
 
   if (max(config$steps) <= 2L) {
@@ -248,11 +294,20 @@ create_wholebrain_from_volume <- function(
     dirs,
     projection,
     split,
-    cortical_opts = cortical_opts,
-    subcortical_opts = subcortical_opts,
-    cerebellar_opts = cerebellar_opts
+    cortical_opts = opts$cortical,
+    subcortical_opts = opts$subcortical,
+    cerebellar_opts = opts$cerebellar
   )
 
+  wholebrain_finalize(config, dirs, result, start_time)
+
+  result
+}
+
+
+#' Remove temporary files and log the final wholebrain summary
+#' @noRd
+wholebrain_finalize <- function(config, dirs, result, start_time) {
   if (config$cleanup) {
     unlink(dirs$base, recursive = TRUE)
     if (config$verbose) cli::cli_alert_success("Temporary files removed")
@@ -267,7 +322,7 @@ create_wholebrain_from_volume <- function(
     )
   }
 
-  result
+  invisible(NULL)
 }
 
 
@@ -591,6 +646,13 @@ wholebrain_resolve_projection <- function(config, dirs) {
     ))
   }
 
+  wholebrain_compute_projection(config, dirs)
+}
+
+
+#' Project the volume onto the surface and cache the result
+#' @noRd
+wholebrain_compute_projection <- function(config, dirs) {
   if (config$verbose) {
     cli::cli_h2("Surface projection")
     cli::cli_progress_step("Projecting volume onto surface")
@@ -644,30 +706,7 @@ overlay_to_atlas_data <- function(
   unique_labels <- sort(unique(overlay[overlay != 0L]))
 
   rows <- lapply(unique_labels, function(label_val) {
-    ct_row <- colortable[colortable$idx == label_val, ]
-    if (nrow(ct_row) == 0) {
-      return(NULL)
-    }
-
-    label_name <- ct_row$label[1]
-    safe_name <- sanitize_label(label_name)
-    colour <- if ("color" %in% names(ct_row)) {
-      ct_row$color[1]
-    } else if (all(c("R", "G", "B") %in% names(ct_row))) {
-      rgb(ct_row$R[1], ct_row$G[1], ct_row$B[1], maxColorValue = 255)
-    } else {
-      NA_character_
-    }
-
-    tibble(
-      hemi = hemi,
-      region = clean_region_name(label_name),
-      label = paste(hemi_short, safe_name, sep = "_"),
-      colour = colour,
-      vertices = list(which(overlay == label_val) - 1L),
-      source_label = label_name,
-      source_idx = label_val
-    )
+    overlay_label_row(label_val, overlay, hemi, hemi_short, colortable)
   })
 
   result <- bind_rows(Filter(Negate(is.null), rows))
@@ -694,6 +733,42 @@ overlay_to_atlas_data <- function(
 }
 
 
+#' Build the atlas_data row for a single label value of an overlay
+#' @noRd
+overlay_label_row <- function(
+  label_val,
+  overlay,
+  hemi,
+  hemi_short,
+  colortable
+) {
+  ct_row <- colortable[colortable$idx == label_val, ]
+  if (nrow(ct_row) == 0) {
+    return(NULL)
+  }
+
+  label_name <- ct_row$label[1]
+  safe_name <- sanitize_label(label_name)
+  colour <- if ("color" %in% names(ct_row)) {
+    ct_row$color[1]
+  } else if (all(c("R", "G", "B") %in% names(ct_row))) {
+    rgb(ct_row$R[1], ct_row$G[1], ct_row$B[1], maxColorValue = 255)
+  } else {
+    NA_character_
+  }
+
+  tibble(
+    hemi = hemi,
+    region = clean_region_name(label_name),
+    label = paste(hemi_short, safe_name, sep = "_"),
+    colour = colour,
+    vertices = list(which(overlay == label_val) - 1L),
+    source_label = label_name,
+    source_idx = label_val
+  )
+}
+
+
 #' @noRd
 wholebrain_project_to_surface <- function(
   input_volume,
@@ -712,56 +787,21 @@ wholebrain_project_to_surface <- function(
 
   for (hemi_short in c("lh", "rh")) {
     hemi <- hemi_to_long(hemi_short) # nolint: object_usage_linter
-    output_mgz <- file.path(surf_dir, paste0(hemi_short, "_overlay.nii.gz"))
-
-    reg_opts <- paste0(
-      "--interp nearest --trgsubject ",
-      subject
-    )
-    if (regheader) {
-      reg_opts <- paste(reg_opts, "--regheader", subject)
-    }
-
-    mri_vol2surf(
-      input_file = input_volume,
-      output_file = output_mgz,
-      hemisphere = hemi_short,
+    overlay <- wholebrain_vol2surf_overlay(
+      input_volume = input_volume,
+      hemi_short = hemi_short,
+      subject = subject,
       projfrac = projfrac,
       projfrac_range = projfrac_range,
-      mni152reg = !regheader,
-      opts = reg_opts,
+      regheader = regheader,
+      surf_dir = surf_dir,
       verbose = verbose
     )
 
-    if (!file.exists(output_mgz)) {
-      cli::cli_abort(c(
-        "mri_vol2surf failed to produce output for {hemi_short}",
-        "i" = "Expected: {.path {output_mgz}}",
-        "i" = "Check that the volume is in the correct space (MNI152 or native)" # nolint
-      ))
-    }
-
-    overlay <- as.integer(c(RNifti::readNifti(output_mgz)))
-
-    n_before <- sum(overlay != 0L) # nolint: object_usage_linter.
+    n_before <- sum(overlay != 0L)
     overlay <- fill_surface_labels(overlay, hemi_short, subject)
     if (verbose) {
-      n_after <- sum(overlay != 0L) # nolint: object_usage_linter.
-      n_total <- length(overlay)
-      n_medial <- n_total - n_after # nolint: object_usage_linter.
-      # nolint start: object_usage_linter.
-      pct <- sprintf(
-        "%.0f%%",
-        100 * n_after / n_total
-      )
-      # nolint end
-      cli::cli_alert(
-        paste(
-          "{hemi_short}: {n_before} -> {n_after}",
-          "labeled vertices ({pct} cortex,",
-          "{n_medial} medial wall)"
-        )
-      )
+      wholebrain_log_hemi_coverage(hemi_short, n_before, overlay)
     }
 
     all_data[[hemi_short]] <- overlay_to_atlas_data(
@@ -773,6 +813,74 @@ wholebrain_project_to_surface <- function(
   }
 
   bind_rows(all_data)
+}
+
+
+#' Run mri_vol2surf for one hemisphere and read the resulting overlay
+#' @noRd
+wholebrain_vol2surf_overlay <- function(
+  input_volume,
+  hemi_short,
+  subject,
+  projfrac,
+  projfrac_range,
+  regheader,
+  surf_dir,
+  verbose
+) {
+  output_mgz <- file.path(surf_dir, paste0(hemi_short, "_overlay.nii.gz"))
+
+  reg_opts <- paste0(
+    "--interp nearest --trgsubject ",
+    subject
+  )
+  if (regheader) {
+    reg_opts <- paste(reg_opts, "--regheader", subject)
+  }
+
+  mri_vol2surf(
+    input_file = input_volume,
+    output_file = output_mgz,
+    hemisphere = hemi_short,
+    projfrac = projfrac,
+    projfrac_range = projfrac_range,
+    mni152reg = !regheader,
+    opts = reg_opts,
+    verbose = verbose
+  )
+
+  if (!file.exists(output_mgz)) {
+    cli::cli_abort(c(
+      "mri_vol2surf failed to produce output for {hemi_short}",
+      "i" = "Expected: {.path {output_mgz}}",
+      "i" = "Check that the volume is in the correct space (MNI152 or native)" # nolint
+    ))
+  }
+
+  as.integer(c(RNifti::readNifti(output_mgz)))
+}
+
+
+#' Report labeled-vertex coverage for one hemisphere after label dilation
+#' @noRd
+wholebrain_log_hemi_coverage <- function(hemi_short, n_before, overlay) {
+  # nolint start: object_usage_linter.
+  n_after <- sum(overlay != 0L)
+  n_total <- length(overlay)
+  n_medial <- n_total - n_after
+  pct <- sprintf(
+    "%.0f%%",
+    100 * n_after / n_total
+  )
+  # nolint end
+  cli::cli_alert(
+    paste(
+      "{hemi_short}: {n_before} -> {n_after}",
+      "labeled vertices ({pct} cortex,",
+      "{n_medial} medial wall)"
+    )
+  )
+  invisible(NULL)
 }
 
 
@@ -862,71 +970,24 @@ wholebrain_classify_labels <- function(
   cerebellar_labels = NULL,
   verbose = FALSE
 ) {
-  vertex_counts <- tapply(
-    vapply(atlas_data$vertices, length, integer(1)),
-    atlas_data$source_label,
-    sum
-  )
+  prep <- classify_labels_inputs(atlas_data, colortable)
+  vertex_counts <- prep$vertex_counts
 
-  projected_labels <- names(vertex_counts)
-
-  # Include all volume labels (from colortable) so cerebellar/subcortical
-
-  # labels that didn't project onto the cortical surface are still classified.
-  volume_labels <- if (!is.null(colortable)) colortable$label else character(0)
-  all_labels <- union(projected_labels, volume_labels)
-
-  manual <- classify_labels_manual(
-    all_labels,
+  assigned <- classify_labels_assign(
+    prep,
+    colortable,
     cortical_labels,
     subcortical_labels,
     cerebellar_labels
   )
-  classified_cortical <- manual$cortical
-  classified_subcortical <- manual$subcortical
-  classified_cerebellar <- manual$cerebellar
+  classified_cortical <- assigned$cortical
+  classified_subcortical <- assigned$subcortical
+  classified_cerebellar <- assigned$cerebellar
 
-  remaining <- setdiff(
-    all_labels,
-    c(classified_cortical, classified_subcortical, classified_cerebellar)
-  )
-
-  has_type <- !is.null(colortable) && "type" %in% names(colortable)
-  if (has_type && length(remaining) > 0) {
-    by_type <- classify_labels_by_type(colortable, remaining)
-    classified_cortical <- c(classified_cortical, by_type$cortical)
-    classified_subcortical <- c(classified_subcortical, by_type$subcortical)
-    classified_cerebellar <- c(classified_cerebellar, by_type$cerebellar)
-    remaining <- setdiff(
-      remaining,
-      c(classified_cortical, classified_subcortical, classified_cerebellar)
-    )
-  }
-
-  if (length(remaining) > 0) {
-    # Only apply vertex-count heuristic to labels that actually projected
-    # onto the cortical surface. Labels only in the volume (not projected)
-    # are left unclassified here — they stay subcortical by default.
-    projected_remaining <- intersect(remaining, projected_labels)
-    volume_only <- setdiff(remaining, projected_labels)
-
-    if (verbose && !has_type && length(projected_remaining) > 0) {
-      cli::cli_alert_info(
-        paste(
-          "No {.field type} column in LUT;",
-          "classifying {length(projected_remaining)} labels by vertex count"
-        )
-      )
-    }
-    auto_cortical <- projected_remaining[
-      vertex_counts[projected_remaining] >= min_vertices
-    ]
-    auto_subcortical <- c(
-      projected_remaining[vertex_counts[projected_remaining] < min_vertices],
-      volume_only
-    )
-    classified_cortical <- c(classified_cortical, auto_cortical)
-    classified_subcortical <- c(classified_subcortical, auto_subcortical)
+  if (length(assigned$remaining) > 0) {
+    auto <- classify_labels_auto(assigned, prep, min_vertices, verbose)
+    classified_cortical <- c(classified_cortical, auto$cortical)
+    classified_subcortical <- c(classified_subcortical, auto$subcortical)
   }
 
   if (verbose) {
@@ -944,6 +1005,109 @@ wholebrain_classify_labels <- function(
     cerebellar_labels = classified_cerebellar,
     vertex_counts = vertex_counts
   )
+}
+
+
+#' Vertex counts and the full label universe used for classification
+#' @noRd
+classify_labels_inputs <- function(atlas_data, colortable) {
+  vertex_counts <- tapply(
+    vapply(atlas_data$vertices, length, integer(1)),
+    atlas_data$source_label,
+    sum
+  )
+
+  projected_labels <- names(vertex_counts)
+
+  # Include all volume labels (from colortable) so cerebellar/subcortical
+  # labels that didn't project onto the cortical surface are still classified.
+  volume_labels <- if (!is.null(colortable)) colortable$label else character(0)
+  all_labels <- union(projected_labels, volume_labels)
+
+  list(
+    vertex_counts = vertex_counts,
+    projected_labels = projected_labels,
+    all_labels = all_labels
+  )
+}
+
+
+#' Assign labels from the manual overrides and the LUT `type` column
+#'
+#' @return List with the labels classified so far plus the still-unassigned
+#'   `remaining` labels and whether the colortable had a `type` column.
+#' @noRd
+classify_labels_assign <- function(
+  prep,
+  colortable,
+  cortical_labels,
+  subcortical_labels,
+  cerebellar_labels
+) {
+  manual <- classify_labels_manual(
+    prep$all_labels,
+    cortical_labels,
+    subcortical_labels,
+    cerebellar_labels
+  )
+  classified_cortical <- manual$cortical
+  classified_subcortical <- manual$subcortical
+  classified_cerebellar <- manual$cerebellar
+
+  remaining <- setdiff(
+    prep$all_labels,
+    c(classified_cortical, classified_subcortical, classified_cerebellar)
+  )
+
+  has_type <- !is.null(colortable) && "type" %in% names(colortable)
+  if (has_type && length(remaining) > 0) {
+    by_type <- classify_labels_by_type(colortable, remaining)
+    classified_cortical <- c(classified_cortical, by_type$cortical)
+    classified_subcortical <- c(classified_subcortical, by_type$subcortical)
+    classified_cerebellar <- c(classified_cerebellar, by_type$cerebellar)
+    remaining <- setdiff(
+      remaining,
+      c(classified_cortical, classified_subcortical, classified_cerebellar)
+    )
+  }
+
+  list(
+    cortical = classified_cortical,
+    subcortical = classified_subcortical,
+    cerebellar = classified_cerebellar,
+    remaining = remaining,
+    has_type = has_type
+  )
+}
+
+
+#' Classify the still-unassigned labels with the vertex-count heuristic
+#' @noRd
+classify_labels_auto <- function(assigned, prep, min_vertices, verbose) {
+  # Only apply vertex-count heuristic to labels that actually projected
+  # onto the cortical surface. Labels only in the volume (not projected)
+  # are left unclassified here — they stay subcortical by default.
+  vertex_counts <- prep$vertex_counts
+  projected_remaining <- intersect(assigned$remaining, prep$projected_labels)
+  volume_only <- setdiff(assigned$remaining, prep$projected_labels)
+
+  if (verbose && !assigned$has_type && length(projected_remaining) > 0) {
+    cli::cli_alert_info(
+      paste(
+        "No {.field type} column in LUT;",
+        "classifying {length(projected_remaining)} labels by vertex count"
+      )
+    )
+  }
+  auto_cortical <- projected_remaining[
+    vertex_counts[projected_remaining] >= min_vertices
+  ]
+  auto_subcortical <- c(
+    projected_remaining[vertex_counts[projected_remaining] < min_vertices],
+    volume_only
+  )
+
+  list(cortical = auto_cortical, subcortical = auto_subcortical)
 }
 
 
@@ -1074,6 +1238,28 @@ wholebrain_refine_cortical_projection <- function(
     projection$colortable$label %in% split$cortical_labels,
   ]
 
+  atlas_data <- refine_cortical_overlays(
+    config,
+    surf_dir,
+    subcort_idx,
+    colortable
+  )
+
+  list(
+    atlas_data = atlas_data,
+    colortable = colortable
+  )
+}
+
+
+#' Re-fill both hemisphere overlays with the subcortical labels removed
+#' @noRd
+refine_cortical_overlays <- function(
+  config,
+  surf_dir,
+  subcort_idx,
+  colortable
+) {
   if (config$verbose) {
     cli::cli_progress_step(
       paste(
@@ -1105,10 +1291,7 @@ wholebrain_refine_cortical_projection <- function(
     cli::cli_progress_done()
   }
 
-  list(
-    atlas_data = bind_rows(all_data),
-    colortable = colortable
-  )
+  bind_rows(all_data)
 }
 
 
@@ -1128,6 +1311,42 @@ wholebrain_run_cortical <- function(
     )
   }
 
+  prep <- wholebrain_cortical_inputs(config, dirs, projection, split, opts)
+
+  step1 <- cortical_read_data(
+    prep$config,
+    prep$dirs,
+    prep$name,
+    read_fn = function() prep$data,
+    step_label = "Reading projected cortical data",
+    cache_label = "Cortical step 1"
+  )
+
+  hemisphere <- unique(prep$data$hemi)
+  hemi_short <- vapply(
+    hemisphere,
+    hemi_to_short,
+    character(1),
+    USE.NAMES = FALSE
+  )
+
+  atlas <- cortical_project_and_build(
+    components = step1$components,
+    atlas_name = prep$name,
+    hemisphere = hemi_short,
+    views = prep$views,
+    config = prep$config,
+    dirs = prep$dirs,
+    start_time = Sys.time()
+  )
+
+  atlas
+}
+
+
+#' Assemble the cortical sub-pipeline inputs (data, dirs, config, views)
+#' @noRd
+wholebrain_cortical_inputs <- function(config, dirs, projection, split, opts) {
   views <- opts$views
   if (is.null(views)) {
     views <- c("lateral", "medial", "superior", "inferior")
@@ -1164,34 +1383,13 @@ wholebrain_run_cortical <- function(
     smooth_refinements = opts$smooth_refinements
   )
 
-  step1 <- cortical_read_data(
-    cortical_config,
-    cortical_dirs,
-    cortical_name,
-    read_fn = function() cortical_data,
-    step_label = "Reading projected cortical data",
-    cache_label = "Cortical step 1"
-  )
-
-  hemisphere <- unique(cortical_data$hemi)
-  hemi_short <- vapply(
-    hemisphere,
-    hemi_to_short,
-    character(1),
-    USE.NAMES = FALSE
-  )
-
-  atlas <- cortical_project_and_build(
-    components = step1$components,
-    atlas_name = cortical_name,
-    hemisphere = hemi_short,
-    views = views,
-    config = cortical_config,
+  list(
+    data = cortical_data,
+    name = cortical_name,
     dirs = cortical_dirs,
-    start_time = Sys.time()
+    config = cortical_config,
+    views = views
   )
-
-  atlas
 }
 
 
