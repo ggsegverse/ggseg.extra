@@ -1,5 +1,648 @@
 # File I/O functions ----
 
+#' Read annotation data from files
+#'
+#' Reads FreeSurfer annotation files and extracts region information
+#' including vertices, colours, and labels for both hemispheres.
+#'
+#' @param annot_files Character vector of paths to annotation files.
+#'   Files should follow FreeSurfer naming convention with `lh.` or `rh.`
+#'   prefix (e.g., `c("lh.aparc.annot", "rh.aparc.annot")`).
+#'
+#' @return A tibble with columns: hemi, region, label, colour, vertices
+#' @export
+#' @importFrom dplyr tibble bind_rows
+#'
+#' @examples
+#' \dontrun{
+#' atlas_data <- read_annotation_data(c(
+#'   "path/to/lh.aparc.annot",
+#'   "path/to/rh.aparc.annot"
+#' ))
+#' }
+read_annotation_data <- function(annot_files) {
+  rlang::check_installed(
+    "freesurferformats",
+    reason = "to read annotation files"
+  )
+
+  if (!all(file.exists(annot_files))) {
+    missing <- annot_files[!file.exists(annot_files)] # nolint: object_usage_linter
+    cli::cli_abort("Annotation file{?s} not found: {.path {missing}}")
+  }
+
+  all_data <- list()
+
+  for (annot_file in annot_files) {
+    filename <- basename(annot_file)
+    hemi_short <- detect_hemi_from_gifti_filename(filename)
+
+    if (is.na(hemi_short)) {
+      cli::cli_warn(
+        "Cannot detect hemisphere from filename: {.file {filename}}"
+      )
+      next
+    }
+    hemi <- hemi_to_long(hemi_short)
+
+    annot <- freesurferformats::read.fs.annot(annot_file)
+    all_data <- c(all_data, annot_to_atlas_data(annot, hemi, hemi_short))
+  }
+
+  bind_rows(all_data)
+}
+
+#' Read FreeSurfer color table
+#'
+#' Read a FreeSurfer color lookup table file (e.g., `FreeSurferColorLUT.txt`
+#' or `ASegStatsLUT.txt`). These files map label indices to region names
+#' and RGBA colours.
+#'
+#' @param path Path to the color table file.
+#' @return A data.frame with columns: idx, label, R, G, B, A, and
+#'   optionally type when a 7th field is present.
+#' @seealso [get_ctab()] to read and add hex colours, [write_ctab()] to write
+#' @export
+#' @importFrom utils read.table
+#' @examples
+#' ctab_file <- tempfile()
+#' writeLines(c(
+#'   "  0  Unknown                         0   0   0   0",
+#'   "  1  Left-Cerebral-Cortex          205 130 176   0"
+#' ), ctab_file)
+#' read_ctab(ctab_file)
+read_ctab <- function(path) {
+  lines <- trimws(readLines(path))
+  lines <- lines[nzchar(lines)]
+  lut_pattern <- paste0(
+    "^\\s*(\\d+)\\s+(.+?)\\s+(\\d+)\\s+(\\d+)",
+    "\\s+(\\d+)\\s+(\\d+)(?:\\s+(\\w+))?\\s*$"
+  )
+  parsed <- regmatches(lines, regexec(lut_pattern, lines))
+  rows <- lapply(parsed, function(m) {
+    if (length(m) == 0) {
+      return(NULL)
+    }
+    data.frame(
+      idx = as.integer(m[2]),
+      label = trimws(m[3]),
+      R = as.integer(m[4]),
+      G = as.integer(m[5]),
+      B = as.integer(m[6]),
+      A = as.integer(m[7]),
+      type = if (nzchar(m[8])) m[8] else NA_character_,
+      stringsAsFactors = FALSE
+    )
+  })
+  result <- do.call(rbind, Filter(Negate(is.null), rows))
+  if (all(is.na(result$type))) {
+    result$type <- NULL
+  }
+  result
+}
+
+#' Write FreeSurfer color table
+#'
+#' Write a color table to file in FreeSurfer format.
+#'
+#' @param x A data.frame with columns: idx, label, R, G, B, A.
+#' @param path Path to write to.
+#' @return Invisibly returns the lines written.
+#' @seealso [read_ctab()], [is_ctab()]
+#' @export
+#' @examples
+#' ct <- data.frame(
+#'   idx = 0:1, label = c("Unknown", "Region1"),
+#'   R = c(0L, 205L), G = c(0L, 130L), B = c(0L, 176L), A = c(0L, 0L)
+#' )
+#' out <- tempfile()
+#' write_ctab(ct, out)
+write_ctab <- function(x, path) {
+  lls <- apply(x, 1, function(row) {
+    ctab_line(row[1], row[2], row[3], row[4], row[5], row[6])
+  })
+  lls[length(lls) + 1] <- ""
+  writeLines(lls, path)
+  invisible(lls)
+}
+
+#' Check if object is a color table
+#'
+#' @param x Object to check.
+#' @return TRUE if x is a data.frame with the required color table columns.
+#' @export
+#' @examples
+#' ct <- data.frame(
+#'   idx = 0L, label = "Unknown",
+#'   R = 0L, G = 0L, B = 0L, A = 0L
+#' )
+#' is_ctab(ct)
+#' is_ctab(data.frame(x = 1))
+is_ctab <- function(x) {
+  if (!is.data.frame(x)) {
+    return(FALSE)
+  }
+  required <- c("idx", "label", "R", "G", "B", "A") #nolint
+  all(required %in% names(x))
+}
+
+#' Read color table and add hex colours
+#'
+#' Reads a FreeSurfer color lookup table and adds hex colour codes for
+#' use in plotting.
+#'
+#' @param color_lut Path to a color table file, or a data.frame that
+#'   passes [is_ctab()].
+#' @return A data.frame with the original columns plus `roi` (zero-padded
+#'   index) and `color` (hex colour code).
+#' @seealso [read_ctab()], [is_ctab()]
+#' @export
+#' @importFrom grDevices rgb
+#' @examples
+#' ct <- data.frame(
+#'   idx = 0:1, label = c("Unknown", "Region1"),
+#'   R = c(0L, 205L), G = c(0L, 130L), B = c(0L, 176L), A = c(0L, 0L)
+#' )
+#' get_ctab(ct)
+get_ctab <- function(color_lut) {
+  colourtable <- if (is.character(color_lut)) {
+    read_ctab(color_lut)
+  } else {
+    color_lut
+  }
+
+  if (!is_ctab(colourtable)) {
+    cli::cli_abort(c(
+      "color_lut does not have the correct format.",
+      "i" = "Required columns: idx, label, R, G, B, A"
+    ))
+  }
+
+  colourtable$roi <- sprintf("%04d", colourtable$idx)
+  colourtable$color <- rgb(
+    colourtable$R,
+    colourtable$G,
+    colourtable$B,
+    maxColorValue = 255
+  )
+
+  colourtable
+}
+
+#' Add rows to a FreeSurfer color table
+#'
+#' Append custom label entries to a color table (as read by [read_ctab()]).
+#' Scalar inputs are recycled to the length of `idx`. Useful for adding
+#' custom subregion labels (e.g. hemisphere-prefixed or split structures)
+#' before passing the table to [create_subcortical_from_volume()].
+#'
+#' @param lut A color table data.frame (passes [is_ctab()]).
+#' @param idx Integer label indices to add.
+#' @param label Character region labels.
+#' @param R,G,B,A Integer colour channels (0-255); `A` defaults to `0`.
+#' @return `lut` with the new rows appended (a `type` column, if present, is
+#'   filled with `NA` for the new rows).
+#' @seealso [read_ctab()], [lut_combine()]
+#' @export
+#' @examples
+#' ct <- data.frame(
+#'   idx = 0L, label = "Unknown", R = 0L, G = 0L, B = 0L, A = 0L
+#' )
+#' lut_add(ct, idx = 20001:20002,
+#'         label = c("Left-Hippocampus-ant", "Left-Hippocampus-post"),
+#'         R = c(220, 60), G = c(190, 140), B = c(30, 200))
+# nolint start: object_name_linter.
+lut_add <- function(lut, idx, label, R, G, B, A = 0L) {
+  # nolint end
+  if (!is_ctab(lut)) {
+    cli::cli_abort("{.arg lut} must be a color table; see {.fn is_ctab}.")
+  }
+  n <- length(idx)
+  new <- data.frame(
+    idx = as.integer(idx),
+    label = rep_len(as.character(label), n),
+    R = as.integer(rep_len(R, n)),
+    G = as.integer(rep_len(G, n)),
+    B = as.integer(rep_len(B, n)),
+    A = as.integer(rep_len(A, n)),
+    stringsAsFactors = FALSE
+  )
+  lut_combine(lut, new)
+}
+
+#' Combine FreeSurfer color tables
+#'
+#' Row-binds several color tables (as read by [read_ctab()] or built with
+#' [lut_add()]) into one, aligning columns (a `type` column present in only
+#' some tables is filled with `NA`) and warning on duplicate label indices.
+#'
+#' @param ... Color table data.frames, each passing [is_ctab()]. `NULL`
+#'   inputs are dropped.
+#' @return A single combined color table.
+#' @seealso [read_ctab()], [lut_add()]
+#' @export
+#' @examples
+#' a <- data.frame(idx = 0L, label = "Unknown", R = 0L, G = 0L, B = 0L, A = 0L)
+#' b <- data.frame(idx = 1L, label = "Region1", R = 5L, G = 5L, B = 5L, A = 0L)
+#' lut_combine(a, b)
+lut_combine <- function(...) {
+  luts <- Filter(Negate(is.null), list(...))
+  if (length(luts) == 0) {
+    cli::cli_abort("Provide at least one color table.")
+  }
+  if (!all(vapply(luts, is_ctab, logical(1)))) {
+    cli::cli_abort("All inputs must be color tables; see {.fn is_ctab}.")
+  }
+  cols <- Reduce(union, lapply(luts, names))
+  luts <- lapply(luts, function(d) {
+    for (cc in setdiff(cols, names(d))) {
+      d[[cc]] <- NA
+    }
+    d[cols]
+  })
+  out <- do.call(rbind, luts)
+  dup <- unique(out$idx[duplicated(out$idx)])
+  if (length(dup) > 0) {
+    cli::cli_warn("Duplicate label indices in combined table: {.val {dup}}.")
+  }
+  rownames(out) <- NULL
+  out
+}
+
+#' Read GIFTI annotation files
+#'
+#' Reads GIFTI annotation (`.label.gii`) files and extracts region
+#' information including vertices, colours, and labels. Returns data in
+#' the same format as [read_annotation_data()] for use with the cortical
+#' atlas pipeline.
+#'
+#' Hemisphere is detected from filename patterns: `lh.`, `rh.`, `.L.`, `.R.`
+#'
+#' @param gifti_files Character vector of paths to `.label.gii` files.
+#'
+#' @return A tibble with columns: hemi, region, label, colour, vertices
+#' @export
+#' @importFrom dplyr tibble bind_rows
+#' @importFrom grDevices rgb
+#'
+#' @examples
+#' \dontrun{
+#' atlas_data <- read_gifti_annotation(c(
+#'   "lh.aparc.label.gii",
+#'   "rh.aparc.label.gii"
+#' ))
+#' }
+read_gifti_annotation <- function(gifti_files) {
+  rlang::check_installed(
+    "freesurferformats",
+    reason = "to read GIFTI annotation files"
+  )
+
+  if (!all(file.exists(gifti_files))) {
+    # nolint start: object_usage_linter.
+    missing <- gifti_files[!file.exists(gifti_files)]
+    # nolint end
+    cli::cli_abort(
+      "GIFTI file{?s} not found: {.path {missing}}"
+    )
+  }
+
+  all_data <- list()
+
+  for (gifti_file in gifti_files) {
+    filename <- basename(gifti_file)
+    hemi_short <- detect_hemi_from_gifti_filename(filename)
+
+    if (is.na(hemi_short)) {
+      cli::cli_warn(
+        "Cannot detect hemisphere from filename: {.file {filename}}"
+      )
+      next
+    }
+    hemi <- hemi_to_long(hemi_short)
+
+    annot <- freesurferformats::read.fs.annot.gii(gifti_file)
+    all_data <- c(all_data, annot_to_atlas_data(annot, hemi, hemi_short))
+  }
+
+  bind_rows(all_data)
+}
+
+#' Read CIFTI annotation file
+#'
+#' Reads a CIFTI dense label file (`.dlabel.nii`) and extracts region
+#' information for both hemispheres. Returns data in the same format as
+#' [read_annotation_data()] for use with the cortical atlas pipeline.
+#'
+#' The CIFTI file must be in fsaverage5 space (10,242 vertices per
+#' hemisphere). If your file uses a different resolution, resample it first
+#' with Connectome Workbench:
+#' ```
+#' wb_command -cifti-resample input.dlabel.nii ...
+#' ```
+#'
+#' @param cifti_file Path to a `.dlabel.nii` CIFTI file.
+#'
+#' @return A tibble with columns: hemi, region, label, colour, vertices
+#' @export
+#' @importFrom dplyr tibble bind_rows
+#' @importFrom grDevices rgb
+#'
+#' @examples
+#' \dontrun{
+#' atlas_data <- read_cifti_annotation("parcellation.dlabel.nii")
+#' }
+read_cifti_annotation <- function(cifti_file) {
+  rlang::check_installed("ciftiTools", reason = "to read CIFTI files")
+
+  if (!file.exists(cifti_file)) {
+    cli::cli_abort("CIFTI file not found: {.path {cifti_file}}")
+  }
+
+  cii <- ciftiTools::read_cifti(cifti_file)
+
+  all_data <- list()
+
+  hemi_info <- list(
+    list(
+      data = cii$data$cortex_left,
+      hemi = "left",
+      hemi_short = "lh",
+      expected_n = fsaverage5_nverts
+    ),
+    list(
+      data = cii$data$cortex_right,
+      hemi = "right",
+      hemi_short = "rh",
+      expected_n = fsaverage5_nverts
+    )
+  )
+
+  label_table <- cii$meta$cifti$labels[[1]]
+
+  regions <- data.frame(
+    code = label_table$Key,
+    name = label_table$Label,
+    colour = rgb(
+      label_table$Red,
+      label_table$Green,
+      label_table$Blue,
+      maxColorValue = 1
+    ),
+    stringsAsFactors = FALSE
+  )
+
+  for (hi in hemi_info) {
+    if (is.null(hi$data)) {
+      next
+    }
+
+    vertex_labels <- as.integer(hi$data[, 1])
+    n_verts <- length(vertex_labels)
+
+    if (n_verts != hi$expected_n) {
+      cli::cli_abort(c(
+        paste(
+          "CIFTI {hi$hemi} hemisphere has {n_verts} vertices,",
+          "expected {hi$expected_n} (fsaverage5)"
+        ),
+        "i" = paste(
+          "Resample to fsaverage5 first using",
+          "{.code wb_command -cifti-resample}"
+        )
+      ))
+    }
+
+    all_data <- c(
+      all_data,
+      extract_vertex_regions(vertex_labels, regions, hi$hemi, hi$hemi_short)
+    )
+  }
+
+  bind_rows(all_data)
+}
+
+#' Read neuromaps annotation files
+#'
+#' Reads neuromaps GIFTI metric files (`.func.gii`) and converts them to
+#' the standard annotation format used by the cortical atlas pipeline.
+#'
+#' Automatically detects whether data contains integer parcel IDs
+#' (parcellation) or continuous values (brain map). For parcellations,
+#' vertex value 0 is treated as medial wall. For continuous data, NaN
+#' vertices are medial wall and values are discretized into quantile
+#' bins via `n_bins`.
+#'
+#' Files must be in fsaverage5 space (10,242 vertices per hemisphere).
+#' Use `space = "fsaverage"` with `density = "10k"` when fetching from
+#' neuromaps.
+#'
+#' @param gifti_files Character vector of paths to `.func.gii` files.
+#'   Hemisphere is detected from BIDS filename patterns (`hemi-L`, `hemi-R`).
+#' @param label_table Optional data.frame mapping integer parcel IDs to
+#'   region names. Must have columns `id` (integer) and `region` (character).
+#'   Optionally include `colour` (hex string). When `NULL`, regions are
+#'   named `parcel_1`, `parcel_2`, etc. (parcellation) or
+#'   `bin_1`, `bin_2`, etc. (continuous).
+#' @param n_bins Number of quantile bins for continuous data. When `NULL`
+#'   (default), auto-detected via Sturges' rule (`1 + log2(n)`, clamped
+#'   to 5--20). Ignored for integer parcellation data.
+#'
+#' @return A tibble with columns: hemi, region, label, colour, vertices
+#' @export
+#' @importFrom dplyr tibble bind_rows
+#' @importFrom grDevices hcl.colors
+#'
+#' @examples
+#' \dontrun{
+#' files <- neuromapr::fetch_neuromaps_annotation(
+#'   "abagen", "genepc1", "fsaverage", density = "10k"
+#' )
+#' atlas_data <- read_neuromaps_annotation(files, n_bins = 7)
+#' }
+read_neuromaps_annotation <- function(
+  gifti_files,
+  label_table = NULL,
+  n_bins = NULL
+) {
+  rlang::check_installed("gifti", reason = "to read GIFTI metric files")
+
+  if (!all(file.exists(gifti_files))) {
+    # nolint start: object_usage_linter.
+    missing <- gifti_files[!file.exists(gifti_files)]
+    # nolint end
+    cli::cli_abort(
+      "GIFTI file{?s} not found: {.path {missing}}"
+    )
+  }
+
+  volume_files <- grepl("\\.(nii|nii\\.gz)$", gifti_files, ignore.case = TRUE)
+  if (any(volume_files)) {
+    cli::cli_abort(c(
+      "Volume files are not supported for cortical atlas creation.",
+      "i" = "Found volume file{?s}: {.path {gifti_files[volume_files]}}",
+      "i" = "Use only surface (.func.gii) files." # nolint
+    ))
+  }
+
+  if (!is.null(label_table)) {
+    if (!all(c("id", "region") %in% names(label_table))) {
+      cli::cli_abort(c(
+        "{.arg label_table} must have columns {.field id} and {.field region}",
+        "i" = paste(
+          "Optionally include a {.field colour}",
+          "column with hex colour codes."
+        )
+      ))
+    }
+  }
+
+  all_data <- list()
+
+  for (gifti_file in gifti_files) {
+    filename <- basename(gifti_file)
+    hemi_short <- detect_hemi_from_neuromaps_filename(filename)
+
+    if (is.na(hemi_short)) {
+      cli::cli_warn(
+        "Cannot detect hemisphere from filename: {.file {filename}}"
+      )
+      next
+    }
+    hemi <- hemi_to_long(hemi_short)
+
+    gii <- gifti::read_gifti(gifti_file)
+    values <- as.numeric(gii$data[[1]])
+    n_verts <- length(values)
+
+    if (n_verts != fsaverage5_nverts) {
+      cli::cli_abort(c(
+        paste(
+          "{hemi} hemisphere has {n_verts} vertices,",
+          "expected {fsaverage5_nverts} (fsaverage5)"
+        ),
+        "i" = paste(
+          "Use space='fsaverage' with density='10k'",
+          "for fsaverage5 compatibility."
+        )
+      ))
+    }
+
+    is_parcellation <- is_integer_valued(values)
+
+    if (is_parcellation) {
+      hemi_data <- parse_parcellation_values(
+        values,
+        hemi,
+        hemi_short,
+        label_table
+      )
+    } else {
+      hemi_data <- parse_continuous_values(
+        values,
+        hemi,
+        hemi_short,
+        n_bins
+      )
+    }
+
+    all_data <- c(all_data, hemi_data)
+  }
+
+  result <- bind_rows(all_data)
+
+  if (nrow(result) == 0) {
+    return(result)
+  }
+
+  result
+}
+
+#' Read neuromaps volume annotation via surface projection
+#'
+#' Projects an MNI152-space NIfTI volume onto the fsaverage5 surface via
+#' FreeSurfer's `mri_vol2surf`, then discretizes the projected per-vertex
+#' values using the same binning logic as [read_neuromaps_annotation()].
+#'
+#' @param nifti_file Path to a `.nii` or `.nii.gz` file in MNI152 space.
+#' @param n_bins Number of quantile bins for continuous data. When `NULL`
+#'   (default), auto-detected via Sturges' rule. Ignored for integer data.
+#' @param output_dir Directory for intermediate surface overlay files.
+#'
+#' @return A tibble with columns: hemi, region, label, colour, vertices
+#' @export
+#' @importFrom dplyr tibble bind_rows
+#' @importFrom grDevices hcl.colors
+#' @examples
+#' \dontrun{
+#' atlas_data <- read_neuromaps_volume("map.nii.gz", n_bins = 7)
+#' }
+read_neuromaps_volume <- function(
+  nifti_file,
+  n_bins = NULL,
+  output_dir = tempdir()
+) {
+  check_fs(abort = TRUE)
+  rlang::check_installed("RNifti", reason = "to read NIfTI volume files")
+
+  surf_dir <- file.path(output_dir, "surface_overlays")
+  mkdir(surf_dir)
+
+  all_data <- list()
+
+  for (hemi_short in c("lh", "rh")) {
+    hemi <- hemi_to_long(hemi_short)
+    output_nii <- file.path(surf_dir, paste0(hemi_short, "_overlay.nii.gz"))
+
+    mri_vol2surf(
+      input_file = nifti_file,
+      output_file = output_nii,
+      hemisphere = hemi_short,
+      projfrac_range = c(0, 1, 0.1),
+      mni152reg = TRUE,
+      opts = paste("--interp trilinear --trgsubject fsaverage5")
+    )
+
+    if (!file.exists(output_nii)) {
+      cli::cli_abort(c(
+        "mri_vol2surf failed to produce output for {hemi_short}",
+        "i" = "Expected: {.path {output_nii}}"
+      ))
+    }
+
+    values <- as.numeric(c(RNifti::readNifti(output_nii)))
+    values[values == 0] <- NaN
+
+    if (length(values) != fsaverage5_nverts) {
+      cli::cli_abort(c(
+        paste(
+          "{hemi} hemisphere has {length(values)} vertices,",
+          "expected {fsaverage5_nverts} (fsaverage5)"
+        )
+      ))
+    }
+
+    hemi_data <- if (is_integer_valued(values)) {
+      parse_parcellation_values(values, hemi, hemi_short, label_table = NULL)
+    } else {
+      parse_continuous_values(values, hemi, hemi_short, n_bins)
+    }
+    all_data <- c(all_data, hemi_data)
+  }
+
+  result <- bind_rows(all_data)
+
+  needs_colour <- is.na(result$colour) & result$region != "unknown"
+  if (any(needs_colour)) {
+    result$colour[needs_colour] <- grDevices::hcl.colors(
+      sum(needs_colour),
+      "Set2"
+    )
+  }
+
+  result
+}
+
 #' Check if file is a supported volume format
 #'
 #' @param file Path to file
@@ -219,59 +862,6 @@ annot_to_atlas_data <- function(annot, hemi, hemi_short) {
 }
 
 
-#' Read annotation data from files
-#'
-#' Reads FreeSurfer annotation files and extracts region information
-#' including vertices, colours, and labels for both hemispheres.
-#'
-#' @param annot_files Character vector of paths to annotation files.
-#'   Files should follow FreeSurfer naming convention with `lh.` or `rh.`
-#'   prefix (e.g., `c("lh.aparc.annot", "rh.aparc.annot")`).
-#'
-#' @return A tibble with columns: hemi, region, label, colour, vertices
-#' @export
-#' @importFrom dplyr tibble bind_rows
-#'
-#' @examples
-#' \dontrun{
-#' atlas_data <- read_annotation_data(c(
-#'   "path/to/lh.aparc.annot",
-#'   "path/to/rh.aparc.annot"
-#' ))
-#' }
-read_annotation_data <- function(annot_files) {
-  rlang::check_installed(
-    "freesurferformats",
-    reason = "to read annotation files"
-  )
-
-  if (!all(file.exists(annot_files))) {
-    missing <- annot_files[!file.exists(annot_files)] # nolint: object_usage_linter
-    cli::cli_abort("Annotation file{?s} not found: {.path {missing}}")
-  }
-
-  all_data <- list()
-
-  for (annot_file in annot_files) {
-    filename <- basename(annot_file)
-    hemi_short <- detect_hemi_from_gifti_filename(filename)
-
-    if (is.na(hemi_short)) {
-      cli::cli_warn(
-        "Cannot detect hemisphere from filename: {.file {filename}}"
-      )
-      next
-    }
-    hemi <- hemi_to_long(hemi_short)
-
-    annot <- freesurferformats::read.fs.annot(annot_file)
-    all_data <- c(all_data, annot_to_atlas_data(annot, hemi, hemi_short))
-  }
-
-  bind_rows(all_data)
-}
-
-
 #' Read vertex indices from a FreeSurfer label file
 #'
 #' @param label_file Path to .label file
@@ -353,228 +943,6 @@ read_dpv <- function(path) {
 
 # FreeSurfer color table functions ----
 
-#' Read FreeSurfer color table
-#'
-#' Read a FreeSurfer color lookup table file (e.g., `FreeSurferColorLUT.txt`
-#' or `ASegStatsLUT.txt`). These files map label indices to region names
-#' and RGBA colours.
-#'
-#' @param path Path to the color table file.
-#' @return A data.frame with columns: idx, label, R, G, B, A, and
-#'   optionally type when a 7th field is present.
-#' @seealso [get_ctab()] to read and add hex colours, [write_ctab()] to write
-#' @export
-#' @importFrom utils read.table
-#' @examples
-#' ctab_file <- tempfile()
-#' writeLines(c(
-#'   "  0  Unknown                         0   0   0   0",
-#'   "  1  Left-Cerebral-Cortex          205 130 176   0"
-#' ), ctab_file)
-#' read_ctab(ctab_file)
-read_ctab <- function(path) {
-  lines <- trimws(readLines(path))
-  lines <- lines[nzchar(lines)]
-  lut_pattern <- paste0(
-    "^\\s*(\\d+)\\s+(.+?)\\s+(\\d+)\\s+(\\d+)",
-    "\\s+(\\d+)\\s+(\\d+)(?:\\s+(\\w+))?\\s*$"
-  )
-  parsed <- regmatches(lines, regexec(lut_pattern, lines))
-  rows <- lapply(parsed, function(m) {
-    if (length(m) == 0) {
-      return(NULL)
-    }
-    data.frame(
-      idx = as.integer(m[2]),
-      label = trimws(m[3]),
-      R = as.integer(m[4]),
-      G = as.integer(m[5]),
-      B = as.integer(m[6]),
-      A = as.integer(m[7]),
-      type = if (nzchar(m[8])) m[8] else NA_character_,
-      stringsAsFactors = FALSE
-    )
-  })
-  result <- do.call(rbind, Filter(Negate(is.null), rows))
-  if (all(is.na(result$type))) {
-    result$type <- NULL
-  }
-  result
-}
-
-
-#' Write FreeSurfer color table
-#'
-#' Write a color table to file in FreeSurfer format.
-#'
-#' @param x A data.frame with columns: idx, label, R, G, B, A.
-#' @param path Path to write to.
-#' @return Invisibly returns the lines written.
-#' @seealso [read_ctab()], [is_ctab()]
-#' @export
-#' @examples
-#' ct <- data.frame(
-#'   idx = 0:1, label = c("Unknown", "Region1"),
-#'   R = c(0L, 205L), G = c(0L, 130L), B = c(0L, 176L), A = c(0L, 0L)
-#' )
-#' out <- tempfile()
-#' write_ctab(ct, out)
-write_ctab <- function(x, path) {
-  lls <- apply(x, 1, function(row) {
-    ctab_line(row[1], row[2], row[3], row[4], row[5], row[6])
-  })
-  lls[length(lls) + 1] <- ""
-  writeLines(lls, path)
-  invisible(lls)
-}
-
-
-#' Check if object is a color table
-#'
-#' @param x Object to check.
-#' @return TRUE if x is a data.frame with the required color table columns.
-#' @export
-#' @examples
-#' ct <- data.frame(
-#'   idx = 0L, label = "Unknown",
-#'   R = 0L, G = 0L, B = 0L, A = 0L
-#' )
-#' is_ctab(ct)
-#' is_ctab(data.frame(x = 1))
-is_ctab <- function(x) {
-  if (!is.data.frame(x)) {
-    return(FALSE)
-  }
-  required <- c("idx", "label", "R", "G", "B", "A") #nolint
-  all(required %in% names(x))
-}
-
-
-#' Read color table and add hex colours
-#'
-#' Reads a FreeSurfer color lookup table and adds hex colour codes for
-#' use in plotting.
-#'
-#' @param color_lut Path to a color table file, or a data.frame that
-#'   passes [is_ctab()].
-#' @return A data.frame with the original columns plus `roi` (zero-padded
-#'   index) and `color` (hex colour code).
-#' @seealso [read_ctab()], [is_ctab()]
-#' @export
-#' @importFrom grDevices rgb
-#' @examples
-#' ct <- data.frame(
-#'   idx = 0:1, label = c("Unknown", "Region1"),
-#'   R = c(0L, 205L), G = c(0L, 130L), B = c(0L, 176L), A = c(0L, 0L)
-#' )
-#' get_ctab(ct)
-get_ctab <- function(color_lut) {
-  colourtable <- if (is.character(color_lut)) {
-    read_ctab(color_lut)
-  } else {
-    color_lut
-  }
-
-  if (!is_ctab(colourtable)) {
-    cli::cli_abort(c(
-      "color_lut does not have the correct format.",
-      "i" = "Required columns: idx, label, R, G, B, A"
-    ))
-  }
-
-  colourtable$roi <- sprintf("%04d", colourtable$idx)
-  colourtable$color <- rgb(
-    colourtable$R,
-    colourtable$G,
-    colourtable$B,
-    maxColorValue = 255
-  )
-
-  colourtable
-}
-
-
-#' Add rows to a FreeSurfer color table
-#'
-#' Append custom label entries to a color table (as read by [read_ctab()]).
-#' Scalar inputs are recycled to the length of `idx`. Useful for adding
-#' custom subregion labels (e.g. hemisphere-prefixed or split structures)
-#' before passing the table to [create_subcortical_from_volume()].
-#'
-#' @param lut A color table data.frame (passes [is_ctab()]).
-#' @param idx Integer label indices to add.
-#' @param label Character region labels.
-#' @param R,G,B,A Integer colour channels (0-255); `A` defaults to `0`.
-#' @return `lut` with the new rows appended (a `type` column, if present, is
-#'   filled with `NA` for the new rows).
-#' @seealso [read_ctab()], [lut_combine()]
-#' @export
-#' @examples
-#' ct <- data.frame(
-#'   idx = 0L, label = "Unknown", R = 0L, G = 0L, B = 0L, A = 0L
-#' )
-#' lut_add(ct, idx = 20001:20002,
-#'         label = c("Left-Hippocampus-ant", "Left-Hippocampus-post"),
-#'         R = c(220, 60), G = c(190, 140), B = c(30, 200))
-# nolint start: object_name_linter.
-lut_add <- function(lut, idx, label, R, G, B, A = 0L) {
-  # nolint end
-  if (!is_ctab(lut)) {
-    cli::cli_abort("{.arg lut} must be a color table; see {.fn is_ctab}.")
-  }
-  n <- length(idx)
-  new <- data.frame(
-    idx = as.integer(idx),
-    label = rep_len(as.character(label), n),
-    R = as.integer(rep_len(R, n)),
-    G = as.integer(rep_len(G, n)),
-    B = as.integer(rep_len(B, n)),
-    A = as.integer(rep_len(A, n)),
-    stringsAsFactors = FALSE
-  )
-  lut_combine(lut, new)
-}
-
-
-#' Combine FreeSurfer color tables
-#'
-#' Row-binds several color tables (as read by [read_ctab()] or built with
-#' [lut_add()]) into one, aligning columns (a `type` column present in only
-#' some tables is filled with `NA`) and warning on duplicate label indices.
-#'
-#' @param ... Color table data.frames, each passing [is_ctab()]. `NULL`
-#'   inputs are dropped.
-#' @return A single combined color table.
-#' @seealso [read_ctab()], [lut_add()]
-#' @export
-#' @examples
-#' a <- data.frame(idx = 0L, label = "Unknown", R = 0L, G = 0L, B = 0L, A = 0L)
-#' b <- data.frame(idx = 1L, label = "Region1", R = 5L, G = 5L, B = 5L, A = 0L)
-#' lut_combine(a, b)
-lut_combine <- function(...) {
-  luts <- Filter(Negate(is.null), list(...))
-  if (length(luts) == 0) {
-    cli::cli_abort("Provide at least one color table.")
-  }
-  if (!all(vapply(luts, is_ctab, logical(1)))) {
-    cli::cli_abort("All inputs must be color tables; see {.fn is_ctab}.")
-  }
-  cols <- Reduce(union, lapply(luts, names))
-  luts <- lapply(luts, function(d) {
-    for (cc in setdiff(cols, names(d))) {
-      d[[cc]] <- NA
-    }
-    d[cols]
-  })
-  out <- do.call(rbind, luts)
-  dup <- unique(out$idx[duplicated(out$idx)])
-  if (length(dup) > 0) {
-    cli::cli_warn("Duplicate label indices in combined table: {.val {dup}}.")
-  }
-  rownames(out) <- NULL
-  out
-}
-
 # GIFTI annotation reading ----
 
 #' Detect hemisphere from GIFTI filename
@@ -608,301 +976,9 @@ detect_hemi_from_neuromaps_filename <- function(filename) {
 }
 
 
-#' Read GIFTI annotation files
-#'
-#' Reads GIFTI annotation (`.label.gii`) files and extracts region
-#' information including vertices, colours, and labels. Returns data in
-#' the same format as [read_annotation_data()] for use with the cortical
-#' atlas pipeline.
-#'
-#' Hemisphere is detected from filename patterns: `lh.`, `rh.`, `.L.`, `.R.`
-#'
-#' @param gifti_files Character vector of paths to `.label.gii` files.
-#'
-#' @return A tibble with columns: hemi, region, label, colour, vertices
-#' @export
-#' @importFrom dplyr tibble bind_rows
-#' @importFrom grDevices rgb
-#'
-#' @examples
-#' \dontrun{
-#' atlas_data <- read_gifti_annotation(c(
-#'   "lh.aparc.label.gii",
-#'   "rh.aparc.label.gii"
-#' ))
-#' }
-read_gifti_annotation <- function(gifti_files) {
-  rlang::check_installed(
-    "freesurferformats",
-    reason = "to read GIFTI annotation files"
-  )
-
-  if (!all(file.exists(gifti_files))) {
-    # nolint start: object_usage_linter.
-    missing <- gifti_files[!file.exists(gifti_files)]
-    # nolint end
-    cli::cli_abort(
-      "GIFTI file{?s} not found: {.path {missing}}"
-    )
-  }
-
-  all_data <- list()
-
-  for (gifti_file in gifti_files) {
-    filename <- basename(gifti_file)
-    hemi_short <- detect_hemi_from_gifti_filename(filename)
-
-    if (is.na(hemi_short)) {
-      cli::cli_warn(
-        "Cannot detect hemisphere from filename: {.file {filename}}"
-      )
-      next
-    }
-    hemi <- hemi_to_long(hemi_short)
-
-    annot <- freesurferformats::read.fs.annot.gii(gifti_file)
-    all_data <- c(all_data, annot_to_atlas_data(annot, hemi, hemi_short))
-  }
-
-  bind_rows(all_data)
-}
-
-
 # CIFTI annotation reading ----
 
-#' Read CIFTI annotation file
-#'
-#' Reads a CIFTI dense label file (`.dlabel.nii`) and extracts region
-#' information for both hemispheres. Returns data in the same format as
-#' [read_annotation_data()] for use with the cortical atlas pipeline.
-#'
-#' The CIFTI file must be in fsaverage5 space (10,242 vertices per
-#' hemisphere). If your file uses a different resolution, resample it first
-#' with Connectome Workbench:
-#' ```
-#' wb_command -cifti-resample input.dlabel.nii ...
-#' ```
-#'
-#' @param cifti_file Path to a `.dlabel.nii` CIFTI file.
-#'
-#' @return A tibble with columns: hemi, region, label, colour, vertices
-#' @export
-#' @importFrom dplyr tibble bind_rows
-#' @importFrom grDevices rgb
-#'
-#' @examples
-#' \dontrun{
-#' atlas_data <- read_cifti_annotation("parcellation.dlabel.nii")
-#' }
-read_cifti_annotation <- function(cifti_file) {
-  rlang::check_installed("ciftiTools", reason = "to read CIFTI files")
-
-  if (!file.exists(cifti_file)) {
-    cli::cli_abort("CIFTI file not found: {.path {cifti_file}}")
-  }
-
-  cii <- ciftiTools::read_cifti(cifti_file)
-
-  all_data <- list()
-
-  hemi_info <- list(
-    list(
-      data = cii$data$cortex_left,
-      hemi = "left",
-      hemi_short = "lh",
-      expected_n = fsaverage5_nverts
-    ),
-    list(
-      data = cii$data$cortex_right,
-      hemi = "right",
-      hemi_short = "rh",
-      expected_n = fsaverage5_nverts
-    )
-  )
-
-  label_table <- cii$meta$cifti$labels[[1]]
-
-  regions <- data.frame(
-    code = label_table$Key,
-    name = label_table$Label,
-    colour = rgb(
-      label_table$Red,
-      label_table$Green,
-      label_table$Blue,
-      maxColorValue = 1
-    ),
-    stringsAsFactors = FALSE
-  )
-
-  for (hi in hemi_info) {
-    if (is.null(hi$data)) {
-      next
-    }
-
-    vertex_labels <- as.integer(hi$data[, 1])
-    n_verts <- length(vertex_labels)
-
-    if (n_verts != hi$expected_n) {
-      cli::cli_abort(c(
-        paste(
-          "CIFTI {hi$hemi} hemisphere has {n_verts} vertices,",
-          "expected {hi$expected_n} (fsaverage5)"
-        ),
-        "i" = paste(
-          "Resample to fsaverage5 first using",
-          "{.code wb_command -cifti-resample}"
-        )
-      ))
-    }
-
-    all_data <- c(
-      all_data,
-      extract_vertex_regions(vertex_labels, regions, hi$hemi, hi$hemi_short)
-    )
-  }
-
-  bind_rows(all_data)
-}
-
-
 # Neuromaps annotation reading ----
-
-#' Read neuromaps annotation files
-#'
-#' Reads neuromaps GIFTI metric files (`.func.gii`) and converts them to
-#' the standard annotation format used by the cortical atlas pipeline.
-#'
-#' Automatically detects whether data contains integer parcel IDs
-#' (parcellation) or continuous values (brain map). For parcellations,
-#' vertex value 0 is treated as medial wall. For continuous data, NaN
-#' vertices are medial wall and values are discretized into quantile
-#' bins via `n_bins`.
-#'
-#' Files must be in fsaverage5 space (10,242 vertices per hemisphere).
-#' Use `space = "fsaverage"` with `density = "10k"` when fetching from
-#' neuromaps.
-#'
-#' @param gifti_files Character vector of paths to `.func.gii` files.
-#'   Hemisphere is detected from BIDS filename patterns (`hemi-L`, `hemi-R`).
-#' @param label_table Optional data.frame mapping integer parcel IDs to
-#'   region names. Must have columns `id` (integer) and `region` (character).
-#'   Optionally include `colour` (hex string). When `NULL`, regions are
-#'   named `parcel_1`, `parcel_2`, etc. (parcellation) or
-#'   `bin_1`, `bin_2`, etc. (continuous).
-#' @param n_bins Number of quantile bins for continuous data. When `NULL`
-#'   (default), auto-detected via Sturges' rule (`1 + log2(n)`, clamped
-#'   to 5--20). Ignored for integer parcellation data.
-#'
-#' @return A tibble with columns: hemi, region, label, colour, vertices
-#' @export
-#' @importFrom dplyr tibble bind_rows
-#' @importFrom grDevices hcl.colors
-#'
-#' @examples
-#' \dontrun{
-#' files <- neuromapr::fetch_neuromaps_annotation(
-#'   "abagen", "genepc1", "fsaverage", density = "10k"
-#' )
-#' atlas_data <- read_neuromaps_annotation(files, n_bins = 7)
-#' }
-read_neuromaps_annotation <- function(
-  gifti_files,
-  label_table = NULL,
-  n_bins = NULL
-) {
-  rlang::check_installed("gifti", reason = "to read GIFTI metric files")
-
-  if (!all(file.exists(gifti_files))) {
-    # nolint start: object_usage_linter.
-    missing <- gifti_files[!file.exists(gifti_files)]
-    # nolint end
-    cli::cli_abort(
-      "GIFTI file{?s} not found: {.path {missing}}"
-    )
-  }
-
-  volume_files <- grepl("\\.(nii|nii\\.gz)$", gifti_files, ignore.case = TRUE)
-  if (any(volume_files)) {
-    cli::cli_abort(c(
-      "Volume files are not supported for cortical atlas creation.",
-      "i" = "Found volume file{?s}: {.path {gifti_files[volume_files]}}",
-      "i" = "Use only surface (.func.gii) files." # nolint
-    ))
-  }
-
-  if (!is.null(label_table)) {
-    if (!all(c("id", "region") %in% names(label_table))) {
-      cli::cli_abort(c(
-        "{.arg label_table} must have columns {.field id} and {.field region}",
-        "i" = paste(
-          "Optionally include a {.field colour}",
-          "column with hex colour codes."
-        )
-      ))
-    }
-  }
-
-  all_data <- list()
-
-  for (gifti_file in gifti_files) {
-    filename <- basename(gifti_file)
-    hemi_short <- detect_hemi_from_neuromaps_filename(filename)
-
-    if (is.na(hemi_short)) {
-      cli::cli_warn(
-        "Cannot detect hemisphere from filename: {.file {filename}}"
-      )
-      next
-    }
-    hemi <- hemi_to_long(hemi_short)
-
-    gii <- gifti::read_gifti(gifti_file)
-    values <- as.numeric(gii$data[[1]])
-    n_verts <- length(values)
-
-    if (n_verts != fsaverage5_nverts) {
-      cli::cli_abort(c(
-        paste(
-          "{hemi} hemisphere has {n_verts} vertices,",
-          "expected {fsaverage5_nverts} (fsaverage5)"
-        ),
-        "i" = paste(
-          "Use space='fsaverage' with density='10k'",
-          "for fsaverage5 compatibility."
-        )
-      ))
-    }
-
-    is_parcellation <- is_integer_valued(values)
-
-    if (is_parcellation) {
-      hemi_data <- parse_parcellation_values(
-        values,
-        hemi,
-        hemi_short,
-        label_table
-      )
-    } else {
-      hemi_data <- parse_continuous_values(
-        values,
-        hemi,
-        hemi_short,
-        n_bins
-      )
-    }
-
-    all_data <- c(all_data, hemi_data)
-  }
-
-  result <- bind_rows(all_data)
-
-  if (nrow(result) == 0) {
-    return(result)
-  }
-
-  result
-}
-
 
 #' @noRd
 is_integer_valued <- function(values) {
@@ -1010,92 +1086,6 @@ parse_continuous_values <- function(values, hemi, hemi_short, n_bins) {
   }
 
   data
-}
-
-
-#' Read neuromaps volume annotation via surface projection
-#'
-#' Projects an MNI152-space NIfTI volume onto the fsaverage5 surface via
-#' FreeSurfer's `mri_vol2surf`, then discretizes the projected per-vertex
-#' values using the same binning logic as [read_neuromaps_annotation()].
-#'
-#' @param nifti_file Path to a `.nii` or `.nii.gz` file in MNI152 space.
-#' @param n_bins Number of quantile bins for continuous data. When `NULL`
-#'   (default), auto-detected via Sturges' rule. Ignored for integer data.
-#' @param output_dir Directory for intermediate surface overlay files.
-#'
-#' @return A tibble with columns: hemi, region, label, colour, vertices
-#' @export
-#' @importFrom dplyr tibble bind_rows
-#' @importFrom grDevices hcl.colors
-#' @examples
-#' \dontrun{
-#' atlas_data <- read_neuromaps_volume("map.nii.gz", n_bins = 7)
-#' }
-read_neuromaps_volume <- function(
-  nifti_file,
-  n_bins = NULL,
-  output_dir = tempdir()
-) {
-  check_fs(abort = TRUE)
-  rlang::check_installed("RNifti", reason = "to read NIfTI volume files")
-
-  surf_dir <- file.path(output_dir, "surface_overlays")
-  mkdir(surf_dir)
-
-  all_data <- list()
-
-  for (hemi_short in c("lh", "rh")) {
-    hemi <- hemi_to_long(hemi_short)
-    output_nii <- file.path(surf_dir, paste0(hemi_short, "_overlay.nii.gz"))
-
-    mri_vol2surf(
-      input_file = nifti_file,
-      output_file = output_nii,
-      hemisphere = hemi_short,
-      projfrac_range = c(0, 1, 0.1),
-      mni152reg = TRUE,
-      opts = paste("--interp trilinear --trgsubject fsaverage5")
-    )
-
-    if (!file.exists(output_nii)) {
-      cli::cli_abort(c(
-        "mri_vol2surf failed to produce output for {hemi_short}",
-        "i" = "Expected: {.path {output_nii}}"
-      ))
-    }
-
-    values <- as.numeric(c(RNifti::readNifti(output_nii)))
-    values[values == 0] <- NaN
-
-    if (length(values) != fsaverage5_nverts) {
-      cli::cli_abort(c(
-        paste(
-          "{hemi} hemisphere has {length(values)} vertices,",
-          "expected {fsaverage5_nverts} (fsaverage5)"
-        )
-      ))
-    }
-
-    hemi_data <- if (is_integer_valued(values)) {
-      parse_parcellation_values(values, hemi, hemi_short, label_table = NULL)
-    } else {
-      parse_continuous_values(values, hemi, hemi_short, n_bins)
-    }
-    all_data <- c(all_data, hemi_data)
-  }
-
-  result <- bind_rows(all_data)
-
-  needs_colour <- is.na(result$colour) & result$region != "unknown"
-  if (any(needs_colour)) {
-    result$colour[needs_colour] <- grDevices::hcl.colors(
-      sum(needs_colour),
-      "Set2"
-    )
-  }
-
-  result
 }
 
 

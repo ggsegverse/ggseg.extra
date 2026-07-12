@@ -1,5 +1,67 @@
 # FreeSurfer check ----
 
+#' Re-register an annotation file
+#'
+#' Annotation files are subject specific.
+#' Most are registered for fsaverage, but
+#' we recommend using fsaverage5 for the mesh
+#' plots in ggseg3d, as these contain a decent
+#' balance in number of vertices for detailed
+#' rendering and speed.
+#'
+#' @param subject subject the original annotation file is registered to
+#' @param annot annotation file name (as found in subjects_dir)
+#' @param hemi hemisphere (one of "lh" or "rh")
+#' @param target_subject subject to re-register the annotation
+#'   (default fsaverage5)
+#' @template output_dir
+#' @template verbose
+#' @return nothing
+#' @export
+#' @examples
+#' \dontrun{
+#' # For help see:
+#' freesurfer::fs_help("mri_surf2surf")
+#'
+#' mri_surf2surf_rereg(
+#'   subject = "bert",
+#'   annot = "aparc.DKTatlas",
+#'   target_subject = "fsaverage5"
+#' )
+#' }
+mri_surf2surf_rereg <- function(
+  subject,
+  annot,
+  hemi = c("lh", "rh"),
+  target_subject = "fsaverage5",
+  output_dir = file.path(freesurfer::fs_subj_dir(), subject, "label"),
+  verbose = get_verbose() # nolint: object_usage_linter
+) {
+  check_fs(abort = TRUE)
+
+  hemi <- match.arg(hemi, c("lh", "rh"))
+
+  mkdir(output_dir)
+
+  fscmd <- "mri_surf2surf"
+
+  cmd <- paste(
+    fscmd,
+    "--srcsubject",
+    shQuote(subject),
+    "--sval-annot",
+    shQuote(annot),
+    "--trgsubject",
+    shQuote(target_subject),
+    "--tval",
+    shQuote(file.path(output_dir, paste(hemi, annot, sep = "."))),
+    "--hemi",
+    hemi
+  )
+
+  run_cmd(cmd, verbose = verbose)
+}
+
 #' Check if FS can be run
 #' @param abort logical. If function should error
 #'     if Freesurfer is not installed. Defaults to FALSE.
@@ -181,69 +243,6 @@ mri_smooth <- function(input_file, output_file, verbose, opts = NULL) {
 
   k <- run_cmd(cmd, verbose = verbose)
   invisible(k)
-}
-
-
-#' Re-register an annotation file
-#'
-#' Annotation files are subject specific.
-#' Most are registered for fsaverage, but
-#' we recommend using fsaverage5 for the mesh
-#' plots in ggseg3d, as these contain a decent
-#' balance in number of vertices for detailed
-#' rendering and speed.
-#'
-#' @param subject subject the original annotation file is registered to
-#' @param annot annotation file name (as found in subjects_dir)
-#' @param hemi hemisphere (one of "lh" or "rh")
-#' @param target_subject subject to re-register the annotation
-#'   (default fsaverage5)
-#' @template output_dir
-#' @template verbose
-#' @return nothing
-#' @export
-#' @examples
-#' \dontrun{
-#' # For help see:
-#' freesurfer::fs_help("mri_surf2surf")
-#'
-#' mri_surf2surf_rereg(
-#'   subject = "bert",
-#'   annot = "aparc.DKTatlas",
-#'   target_subject = "fsaverage5"
-#' )
-#' }
-mri_surf2surf_rereg <- function(
-  subject,
-  annot,
-  hemi = c("lh", "rh"),
-  target_subject = "fsaverage5",
-  output_dir = file.path(freesurfer::fs_subj_dir(), subject, "label"),
-  verbose = get_verbose() # nolint: object_usage_linter
-) {
-  check_fs(abort = TRUE)
-
-  hemi <- match.arg(hemi, c("lh", "rh"))
-
-  mkdir(output_dir)
-
-  fscmd <- "mri_surf2surf"
-
-  cmd <- paste(
-    fscmd,
-    "--srcsubject",
-    shQuote(subject),
-    "--sval-annot",
-    shQuote(annot),
-    "--trgsubject",
-    shQuote(target_subject),
-    "--tval",
-    shQuote(file.path(output_dir, paste(hemi, annot, sep = "."))),
-    "--hemi",
-    hemi
-  )
-
-  run_cmd(cmd, verbose = verbose)
 }
 
 

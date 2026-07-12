@@ -50,7 +50,6 @@ suit_3d_path <- function() {
   path
 }
 
-
 #' Download SUIT deformation field for MNI-to-SUIT transforms
 #'
 #' @description
@@ -138,23 +137,6 @@ suit_deformation_field <- function(
   cli::cli_alert_success("Cached at {.path {cached_path}}")
   cached_path
 }
-
-
-#' Check internet connectivity
-#' @noRd
-can_reach_github <- function() {
-  tryCatch(
-    {
-      con <- url("https://raw.githubusercontent.com", open = "r")
-      on.exit(try(close(con), silent = TRUE), add = TRUE)
-      TRUE
-    },
-    error = function(e) FALSE
-  )
-}
-
-
-# MNI to SUIT transform ----
 
 #' Transform a volume from MNI space to SUIT cerebellar space
 #'
@@ -258,72 +240,6 @@ transform_mni_to_suit <- function(
   invisible(output_file)
 }
 
-
-#' Nearest-neighbour resample of MNI volume into SUIT grid
-#' @noRd
-resample_nearest <- function(result, vox_coords, mni_arr, mni_dims) {
-  vox_round <- round(vox_coords)
-  valid <- vox_round[, 1] >= 1 &
-    vox_round[, 1] <= mni_dims[1] &
-    vox_round[, 2] >= 1 &
-    vox_round[, 2] <= mni_dims[2] &
-    vox_round[, 3] >= 1 &
-    vox_round[, 3] <= mni_dims[3]
-  idx <- which(valid)
-  lin_idx <- vox_round[idx, 1] +
-    (vox_round[idx, 2] - 1L) * mni_dims[1] +
-    (vox_round[idx, 3] - 1L) * mni_dims[1] * mni_dims[2]
-  result[idx] <- mni_arr[lin_idx]
-  result
-}
-
-
-#' Trilinear resample of MNI volume into SUIT grid
-#' @noRd
-resample_trilinear <- function(result, vox_coords, mni_arr, mni_dims) {
-  cli::cli_alert_info(
-    "Trilinear interpolation (may be slow for large volumes)"
-  )
-  for (i in seq_len(nrow(vox_coords))) {
-    vi <- vox_coords[i, ]
-    if (
-      any(vi < 1) ||
-        vi[1] > mni_dims[1] ||
-        vi[2] > mni_dims[2] ||
-        vi[3] > mni_dims[3]
-    ) {
-      next
-    }
-
-    x0 <- floor(vi[1])
-    x1 <- min(x0 + 1L, mni_dims[1])
-    y0 <- floor(vi[2])
-    y1 <- min(y0 + 1L, mni_dims[2])
-    z0 <- floor(vi[3])
-    z1 <- min(z0 + 1L, mni_dims[3])
-    xd <- vi[1] - x0
-    yd <- vi[2] - y0
-    zd <- vi[3] - z0
-
-    result[i] <-
-      mni_arr[x0, y0, z0] *
-      (1 - xd) *
-      (1 - yd) *
-      (1 - zd) +
-      mni_arr[x1, y0, z0] * xd * (1 - yd) * (1 - zd) +
-      mni_arr[x0, y1, z0] * (1 - xd) * yd * (1 - zd) +
-      mni_arr[x0, y0, z1] * (1 - xd) * (1 - yd) * zd +
-      mni_arr[x1, y1, z0] * xd * yd * (1 - zd) +
-      mni_arr[x0, y1, z1] * (1 - xd) * yd * zd +
-      mni_arr[x1, y0, z1] * xd * (1 - yd) * zd +
-      mni_arr[x1, y1, z1] * xd * yd * zd
-  }
-  result
-}
-
-
-# Cerebellar atlas creation ----
-
 #' Create cerebellar atlas from SUIT flatmap
 #'
 #' @description
@@ -410,7 +326,6 @@ create_cerebellar_from_gifti <- function(
   )
 }
 
-
 #' Create cerebellar atlas from FreeSurfer annotation
 #'
 #' @description
@@ -485,7 +400,6 @@ create_cerebellar_from_annotation <- function(
     input_files = input_annot
   )
 }
-
 
 #' Create cerebellar atlas from volume segmentation
 #'
@@ -571,6 +485,149 @@ create_cerebellar_from_volume <- function(
   )
 }
 
+#' Read SUIT cerebellar parcellation from GIFTI
+#'
+#' @description
+#' `r lifecycle::badge("experimental")`
+#'
+#' Reads GIFTI label files containing cerebellar parcellations and returns
+#' a data frame compatible with `build_atlas_components()`. Handles
+#' SUIT-specific label conventions where regions are prefixed with
+#' "Left", "Right", or "Vermis".
+#'
+#' @param gifti_files Character vector of paths to GIFTI label files.
+#' @return A tibble with columns: `hemi`, `region`, `label`, `colour`,
+#'   `vertices` (list-column of 0-indexed integer vectors).
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' parcellation <- read_suit_parcellation("Lobules-SUIT.label.gii")
+#' }
+read_suit_parcellation <- function(gifti_files) {
+  rlang::check_installed("gifti", reason = "to read GIFTI label files")
+
+  if (!all(file.exists(gifti_files))) {
+    missing <- gifti_files[!file.exists(gifti_files)] # nolint
+    cli::cli_abort(
+      "GIFTI file{?s} not found: {.path {missing}}"
+    )
+  }
+
+  all_data <- list()
+  seen_vertices <- integer(0)
+
+  for (gifti_file in gifti_files) {
+    parsed <- read_suit_gifti_rows(gifti_file, seen_vertices)
+    all_data <- c(all_data, parsed$rows)
+    seen_vertices <- parsed$seen_vertices
+  }
+
+  if (length(all_data) == 0) {
+    return(dplyr::tibble(
+      hemi = character(),
+      region = character(),
+      label = character(),
+      colour = character(),
+      vertices = list()
+    ))
+  }
+
+  result <- dplyr::bind_rows(all_data)
+
+  needs_colour <- is.na(result$colour) & result$region != "unknown"
+  if (any(needs_colour)) {
+    n_missing <- sum(needs_colour)
+    result$colour[needs_colour] <- grDevices::hcl.colors(
+      n_missing,
+      palette = "Set2"
+    )
+  }
+
+  result
+}
+
+
+#' Check internet connectivity
+#' @noRd
+can_reach_github <- function() {
+  tryCatch(
+    {
+      con <- url("https://raw.githubusercontent.com", open = "r")
+      on.exit(try(close(con), silent = TRUE), add = TRUE)
+      TRUE
+    },
+    error = function(e) FALSE
+  )
+}
+
+
+# MNI to SUIT transform ----
+
+#' Nearest-neighbour resample of MNI volume into SUIT grid
+#' @noRd
+resample_nearest <- function(result, vox_coords, mni_arr, mni_dims) {
+  vox_round <- round(vox_coords)
+  valid <- vox_round[, 1] >= 1 &
+    vox_round[, 1] <= mni_dims[1] &
+    vox_round[, 2] >= 1 &
+    vox_round[, 2] <= mni_dims[2] &
+    vox_round[, 3] >= 1 &
+    vox_round[, 3] <= mni_dims[3]
+  idx <- which(valid)
+  lin_idx <- vox_round[idx, 1] +
+    (vox_round[idx, 2] - 1L) * mni_dims[1] +
+    (vox_round[idx, 3] - 1L) * mni_dims[1] * mni_dims[2]
+  result[idx] <- mni_arr[lin_idx]
+  result
+}
+
+
+#' Trilinear resample of MNI volume into SUIT grid
+#' @noRd
+resample_trilinear <- function(result, vox_coords, mni_arr, mni_dims) {
+  cli::cli_alert_info(
+    "Trilinear interpolation (may be slow for large volumes)"
+  )
+  for (i in seq_len(nrow(vox_coords))) {
+    vi <- vox_coords[i, ]
+    if (
+      any(vi < 1) ||
+        vi[1] > mni_dims[1] ||
+        vi[2] > mni_dims[2] ||
+        vi[3] > mni_dims[3]
+    ) {
+      next
+    }
+
+    x0 <- floor(vi[1])
+    x1 <- min(x0 + 1L, mni_dims[1])
+    y0 <- floor(vi[2])
+    y1 <- min(y0 + 1L, mni_dims[2])
+    z0 <- floor(vi[3])
+    z1 <- min(z0 + 1L, mni_dims[3])
+    xd <- vi[1] - x0
+    yd <- vi[2] - y0
+    zd <- vi[3] - z0
+
+    result[i] <-
+      mni_arr[x0, y0, z0] *
+      (1 - xd) *
+      (1 - yd) *
+      (1 - zd) +
+      mni_arr[x1, y0, z0] * xd * (1 - yd) * (1 - zd) +
+      mni_arr[x0, y1, z0] * (1 - xd) * yd * (1 - zd) +
+      mni_arr[x0, y0, z1] * (1 - xd) * (1 - yd) * zd +
+      mni_arr[x1, y1, z0] * xd * yd * (1 - zd) +
+      mni_arr[x0, y1, z1] * (1 - xd) * yd * zd +
+      mni_arr[x1, y0, z1] * xd * (1 - yd) * zd +
+      mni_arr[x1, y1, z1] * xd * yd * zd
+  }
+  result
+}
+
+
+# Cerebellar atlas creation ----
 
 # Cerebellar pipeline helpers ----
 
@@ -1086,69 +1143,6 @@ cerebellar_create_meshes <- function(
 
 
 # SUIT parcellation reader ----
-
-#' Read SUIT cerebellar parcellation from GIFTI
-#'
-#' @description
-#' `r lifecycle::badge("experimental")`
-#'
-#' Reads GIFTI label files containing cerebellar parcellations and returns
-#' a data frame compatible with `build_atlas_components()`. Handles
-#' SUIT-specific label conventions where regions are prefixed with
-#' "Left", "Right", or "Vermis".
-#'
-#' @param gifti_files Character vector of paths to GIFTI label files.
-#' @return A tibble with columns: `hemi`, `region`, `label`, `colour`,
-#'   `vertices` (list-column of 0-indexed integer vectors).
-#' @export
-#'
-#' @examples
-#' \dontrun{
-#' parcellation <- read_suit_parcellation("Lobules-SUIT.label.gii")
-#' }
-read_suit_parcellation <- function(gifti_files) {
-  rlang::check_installed("gifti", reason = "to read GIFTI label files")
-
-  if (!all(file.exists(gifti_files))) {
-    missing <- gifti_files[!file.exists(gifti_files)] # nolint
-    cli::cli_abort(
-      "GIFTI file{?s} not found: {.path {missing}}"
-    )
-  }
-
-  all_data <- list()
-  seen_vertices <- integer(0)
-
-  for (gifti_file in gifti_files) {
-    parsed <- read_suit_gifti_rows(gifti_file, seen_vertices)
-    all_data <- c(all_data, parsed$rows)
-    seen_vertices <- parsed$seen_vertices
-  }
-
-  if (length(all_data) == 0) {
-    return(dplyr::tibble(
-      hemi = character(),
-      region = character(),
-      label = character(),
-      colour = character(),
-      vertices = list()
-    ))
-  }
-
-  result <- dplyr::bind_rows(all_data)
-
-  needs_colour <- is.na(result$colour) & result$region != "unknown"
-  if (any(needs_colour)) {
-    n_missing <- sum(needs_colour)
-    result$colour[needs_colour] <- grDevices::hcl.colors(
-      n_missing,
-      palette = "Set2"
-    )
-  }
-
-  result
-}
-
 
 #' Parse one SUIT GIFTI file into region rows
 #'

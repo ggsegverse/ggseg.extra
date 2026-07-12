@@ -6,38 +6,6 @@
 # a couple of helper calls. They compose the ggseg.formats atlas_* ops and
 # the internal volume reader; the orchestrators can dispatch to them.
 
-#' Escape regex metacharacters in a string
-#'
-#' Character class is ordered for TRE (the engine `grepl()` uses by default):
-#' `]` must come first to be literal, and metacharacters are listed plainly
-#' rather than backslash-escaped (backslash is literal inside a TRE class).
-#' @noRd
-rx_escape <- function(x) {
-  gsub("([][{}()*+?.^$|])", "\\\\\\1", x)
-}
-
-#' Evenly spaced, contiguous slabs covering `lo` to `hi` along one axis
-#'
-#' Slab i spans `edges[i]` to `edges[i + 1] - 1`; the final slab is inclusive
-#' of `hi` so the whole bounding box is covered.
-#' @noRd
-view_slabs <- function(lo, hi, n, type) {
-  edges <- round(seq(lo, hi, length.out = n + 1))
-  do.call(
-    rbind,
-    lapply(seq_len(n), function(i) {
-      end <- if (i == n) edges[i + 1] else edges[i + 1] - 1L
-      data.frame(
-        name = sprintf("%s_%d", type, i),
-        type = type,
-        start = edges[i],
-        end = max(end, edges[i]),
-        stringsAsFactors = FALSE
-      )
-    })
-  )
-}
-
 #' Build subcortical slice views from a label bounding box
 #'
 #' Computes evenly spaced coronal, axial and/or sagittal slabs spanning the
@@ -124,7 +92,6 @@ subcortical_views <- function(
   out
 }
 
-
 #' Standard FreeSurfer aseg labels stripped from a subcortical atlas
 #'
 #' The default set of [ggseg.formats::atlas_region_remove()] patterns applied
@@ -150,7 +117,6 @@ aseg_hidden_labels <- function() {
     "CC_"
   )
 }
-
 
 #' Reduce a subcortical atlas to focus regions on grey anatomical context
 #'
@@ -274,4 +240,36 @@ aseg_context <- function(
   }
 
   atlas
+}
+
+#' Escape regex metacharacters in a string
+#'
+#' Character class is ordered for TRE (the engine `grepl()` uses by default):
+#' `]` must come first to be literal, and metacharacters are listed plainly
+#' rather than backslash-escaped (backslash is literal inside a TRE class).
+#' @noRd
+rx_escape <- function(x) {
+  gsub("([][{}()*+?.^$|])", "\\\\\\1", x)
+}
+
+#' Evenly spaced, contiguous slabs covering `lo` to `hi` along one axis
+#'
+#' Slab i spans `edges[i]` to `edges[i + 1] - 1`; the final slab is inclusive
+#' of `hi` so the whole bounding box is covered.
+#' @noRd
+view_slabs <- function(lo, hi, n, type) {
+  edges <- round(seq(lo, hi, length.out = n + 1))
+  do.call(
+    rbind,
+    lapply(seq_len(n), function(i) {
+      end <- if (i == n) edges[i + 1] else edges[i + 1] - 1L
+      data.frame(
+        name = sprintf("%s_%d", type, i),
+        type = type,
+        start = edges[i],
+        end = max(end, edges[i]),
+        stringsAsFactors = FALSE
+      )
+    })
+  )
 }

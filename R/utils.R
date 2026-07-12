@@ -2,6 +2,80 @@
 
 fsaverage5_nverts <- 10242L
 
+#' Coerce a value to a verbosity level
+#'
+#' Converts logical, numeric, or character input to an integer verbosity
+#' level: `0L` (silent), `1L` (standard), or `2L` (debug).
+#'
+#' @param x Value to coerce. Logical `FALSE` becomes `0L`, `TRUE` becomes
+#'   `1L`. Numeric values are clamped to 0--2. Invalid input defaults to `1L`.
+#' @return Integer `0L`, `1L`, or `2L`
+#' @export
+#' @examples
+#' as_verbosity(FALSE)
+#' as_verbosity(TRUE)
+#' as_verbosity(2)
+as_verbosity <- function(x) {
+  if (is.logical(x) && !is.na(x)) {
+    return(as.integer(x))
+  }
+  x <- suppressWarnings(as.integer(x))
+  if (is.na(x) || x < 0L) {
+    return(1L)
+  }
+  min(x, 2L)
+}
+
+#' Get verbose setting
+#'
+#' Returns the verbosity level from option, environment variable, or default.
+#' Checks in order: `ggseg.extra.verbose` option, `GGSEG_EXTRA_VERBOSE` env var,
+#' then defaults to `1L`.
+#'
+#' Verbosity levels:
+#' - `0` — Silent: no console output
+#' - `1` — Standard (default): pipeline progress and step summaries
+#' - `2` — Debug: includes FreeSurfer command output
+#'
+#' Logical values are accepted for backward compatibility
+#' (`FALSE` = 0, `TRUE` = 1).
+#'
+#' @return Integer `0L`, `1L`, or `2L`
+#' @export
+#' @examples
+#' get_verbose()
+#' options(ggseg.extra.verbose = 0)
+#' get_verbose()
+#' options(ggseg.extra.verbose = NULL)
+get_verbose <- function() {
+  val <- getOption("ggseg.extra.verbose")
+  if (!is.null(val)) {
+    return(as_verbosity(val))
+  }
+  env <- Sys.getenv("GGSEG_EXTRA_VERBOSE", unset = NA)
+  if (!is.na(env)) {
+    return(as_verbosity(env))
+  }
+  1L
+}
+
+#' Get verbosity level
+#'
+#' @param verbose Optional explicit value. If NULL, reads from
+#'   option/env via [get_verbose()]. Accepts logical or integer (0/1/2).
+#' @return Integer `0L`, `1L`, or `2L`
+#' @export
+#' @examples
+#' is_verbose()
+#' is_verbose(FALSE)
+#' is_verbose(2)
+is_verbose <- function(verbose = NULL) {
+  if (is.null(verbose)) {
+    return(get_verbose())
+  }
+  as_verbosity(verbose)
+}
+
 #' Cross product of two 3D vectors
 #' @noRd
 cross_product <- function(a, b) {
@@ -149,80 +223,6 @@ preview_atlas <- function(atlas) {
 
 # Verbosity control ----
 
-#' Coerce a value to a verbosity level
-#'
-#' Converts logical, numeric, or character input to an integer verbosity
-#' level: `0L` (silent), `1L` (standard), or `2L` (debug).
-#'
-#' @param x Value to coerce. Logical `FALSE` becomes `0L`, `TRUE` becomes
-#'   `1L`. Numeric values are clamped to 0--2. Invalid input defaults to `1L`.
-#' @return Integer `0L`, `1L`, or `2L`
-#' @export
-#' @examples
-#' as_verbosity(FALSE)
-#' as_verbosity(TRUE)
-#' as_verbosity(2)
-as_verbosity <- function(x) {
-  if (is.logical(x) && !is.na(x)) {
-    return(as.integer(x))
-  }
-  x <- suppressWarnings(as.integer(x))
-  if (is.na(x) || x < 0L) {
-    return(1L)
-  }
-  min(x, 2L)
-}
-
-#' Get verbose setting
-#'
-#' Returns the verbosity level from option, environment variable, or default.
-#' Checks in order: `ggseg.extra.verbose` option, `GGSEG_EXTRA_VERBOSE` env var,
-#' then defaults to `1L`.
-#'
-#' Verbosity levels:
-#' - `0` — Silent: no console output
-#' - `1` — Standard (default): pipeline progress and step summaries
-#' - `2` — Debug: includes FreeSurfer command output
-#'
-#' Logical values are accepted for backward compatibility
-#' (`FALSE` = 0, `TRUE` = 1).
-#'
-#' @return Integer `0L`, `1L`, or `2L`
-#' @export
-#' @examples
-#' get_verbose()
-#' options(ggseg.extra.verbose = 0)
-#' get_verbose()
-#' options(ggseg.extra.verbose = NULL)
-get_verbose <- function() {
-  val <- getOption("ggseg.extra.verbose")
-  if (!is.null(val)) {
-    return(as_verbosity(val))
-  }
-  env <- Sys.getenv("GGSEG_EXTRA_VERBOSE", unset = NA)
-  if (!is.na(env)) {
-    return(as_verbosity(env))
-  }
-  1L
-}
-
-#' Get verbosity level
-#'
-#' @param verbose Optional explicit value. If NULL, reads from
-#'   option/env via [get_verbose()]. Accepts logical or integer (0/1/2).
-#' @return Integer `0L`, `1L`, or `2L`
-#' @export
-#' @examples
-#' is_verbose()
-#' is_verbose(FALSE)
-#' is_verbose(2)
-is_verbose <- function(verbose = NULL) {
-  if (is.null(verbose)) {
-    return(get_verbose())
-  }
-  as_verbosity(verbose)
-}
-
 #' Log elapsed pipeline time
 #'
 #' @param start_time POSIXct start time
@@ -278,17 +278,16 @@ load_or_run_step <- function(
 
   if (!files_exist) {
     missing <- files[!file.exists(files)] # nolint: object_usage_linter
+    # nolint start
     cli::cli_abort(c(
       "{step_name} was not run but required files are missing",
       "i" = "Missing: {.path {missing}}",
       "i" = paste(
-        # nolint
-        # nolint
-        # nolint
         "Include step {step_num} in the steps",
         "argument to generate these files"
       )
     ))
+    # nolint end
   }
 
   data <- lapply(files, readRDS)
@@ -531,6 +530,7 @@ warn_if_large_atlas <- function(atlas, max_vertices = 10000, per_region = 50) {
   threshold <- max(max_vertices, per_region * n_regions)
 
   if (n_vertices > threshold) {
+    # nolint start
     cli::cli_warn(c(
       paste(
         "Atlas has {.val {n_vertices}} vertices",
@@ -538,13 +538,11 @@ warn_if_large_atlas <- function(atlas, max_vertices = 10000, per_region = 50) {
       ),
       "i" = "Large atlases may be slow to plot and increase package size",
       "i" = paste(
-        # nolint
-        # nolint
-        # nolint
         "Call {.code atlas_smooth(atlas, keep = 0.2, exclude = \"cortex_\")}",
         "to reduce vertices"
       )
     ))
+    # nolint end
   }
 
   invisible(NULL)

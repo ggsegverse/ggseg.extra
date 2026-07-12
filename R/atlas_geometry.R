@@ -1,6 +1,116 @@
 # Geometry processing functions for atlas creation ----
 # These functions are shared across volumetric and cortical atlas pipelines
 
+#' Smooth and simplify atlas 2D contours
+#'
+#' Topology-preserving simplification of atlas sf geometry via
+#' [rmapshaper::ms_simplify()], with optional morphological closing
+#' (positive then negative [sf::st_buffer()]) layered on top to round
+#' off voxel-edge stair-steps into smooth curves. Shared boundaries
+#' between adjacent regions are simplified together, preventing gaps.
+#'
+#' By default all labels are smoothed equally. Use `labels` to smooth only
+#' matching labels, or `exclude` to smooth everything except matching labels.
+#' Only one of `labels` or `exclude` may be specified.
+#'
+#' @param atlas A `ggseg_atlas` object with sf data.
+#' @param keep Proportion of vertices to retain (0--1), or `NULL` to skip
+#'   vertex simplification. Lower values produce simpler shapes; values
+#'   near 1 are an effective no-op. Default 0.05.
+#' @param smoothness Buffer distance in geometry units for morphological
+#'   closing after simplification. 0 (the default) skips closing. Values
+#'   of 2--3 round off voxel-edge stair-steps on millimetre voxel grids
+#'   without merging adjacent regions; larger values produce rounder
+#'   shapes but can bleed nearby region boundaries together.
+#' @param labels Optional regex pattern. Only labels matching this pattern
+#'   are smoothed; others are left unchanged.
+#' @param exclude Optional regex pattern. Labels matching this pattern are
+#'   left unchanged; all others are smoothed.
+#'
+#' @return A modified `ggseg_atlas` with simplified sf geometry.
+#' @export
+#' @importFrom sf st_make_valid
+#'
+#' @examples
+#' \dontrun{
+#' # Vertex reduction only (legacy behaviour).
+#' atlas <- atlas_smooth(my_atlas, keep = 0.05)
+#'
+#' # Keep cortex outline detailed, simplify everything else.
+#' atlas <- atlas_smooth(my_atlas, keep = 0.2, exclude = "cortex_|Cortex")
+#'
+#' # Round off jagged voxel edges without dropping vertices.
+#' atlas <- atlas_smooth(my_atlas, keep = NULL, smoothness = 3)
+#'
+#' # Per-region tuning: hard simplification for tiny nuclei, gentle
+#' # closing for the brain outline.
+#' atlas <- atlas_smooth(my_atlas, keep = 0.05, exclude = "cortex_")
+#' atlas <- atlas_smooth(atlas, keep = NULL, smoothness = 3, labels = "cortex_")
+#' }
+atlas_smooth <- function(
+  atlas,
+  keep = 0.05,
+  smoothness = 0,
+  labels = NULL,
+  exclude = NULL
+) {
+  geom <- ggseg.formats::atlas_geom(atlas)
+  if (is.null(geom)) {
+    cli::cli_warn("Atlas has no 2D geometry, nothing to smooth")
+    return(atlas)
+  }
+
+  if (!is.null(labels) && !is.null(exclude)) {
+    cli::cli_abort(
+      "Specify only one of {.arg labels} or {.arg exclude}, not both."
+    )
+  }
+
+  do_simplify <- !is.null(keep) && !is.na(keep)
+  do_close <- isTRUE(smoothness > 0)
+  if (!do_simplify && !do_close) {
+    return(atlas)
+  }
+
+  # Smoothing is an sf/GEOS operation; work on the sf representation and
+  # restore the atlas's original representation afterwards.
+  was_polygon <- ggseg.formats::is_atlas_polygon(atlas)
+  sf_data <- ggseg.formats::atlas_geom(ggseg.formats::as_sf_atlas(atlas))
+
+  if (!is.null(labels) || !is.null(exclude)) {
+    sf_data <- smooth_sf_subset(
+      sf_data,
+      labels,
+      exclude,
+      do_simplify,
+      do_close,
+      keep,
+      smoothness
+    )
+  } else {
+    sf_data <- apply_smooth_ops(
+      sf_data,
+      do_simplify,
+      do_close,
+      keep,
+      smoothness
+    )
+  }
+
+  rehydrate_smoothed_atlas(atlas, sf_data, was_polygon)
+}
+
+#' @rdname atlas_smooth
+#' @export
+atlas_simplify <- function(atlas, keep = 0.05) {
+  lifecycle::deprecate_warn(
+    "1.9.9.9003",
+    "atlas_simplify()",
+    "atlas_smooth()"
+  )
+  atlas_smooth(atlas, keep = keep)
+}
+
 #' @noRd
 #' @importFrom dplyr bind_rows group_by summarise
 #' @importFrom furrr future_map furrr_options
@@ -185,106 +295,6 @@ filter_valid_geometries <- function(sf_obj) {
 
 # Atlas geometry post-processing ----
 
-#' Smooth and simplify atlas 2D contours
-#'
-#' Topology-preserving simplification of atlas sf geometry via
-#' [rmapshaper::ms_simplify()], with optional morphological closing
-#' (positive then negative [sf::st_buffer()]) layered on top to round
-#' off voxel-edge stair-steps into smooth curves. Shared boundaries
-#' between adjacent regions are simplified together, preventing gaps.
-#'
-#' By default all labels are smoothed equally. Use `labels` to smooth only
-#' matching labels, or `exclude` to smooth everything except matching labels.
-#' Only one of `labels` or `exclude` may be specified.
-#'
-#' @param atlas A `ggseg_atlas` object with sf data.
-#' @param keep Proportion of vertices to retain (0--1), or `NULL` to skip
-#'   vertex simplification. Lower values produce simpler shapes; values
-#'   near 1 are an effective no-op. Default 0.05.
-#' @param smoothness Buffer distance in geometry units for morphological
-#'   closing after simplification. 0 (the default) skips closing. Values
-#'   of 2--3 round off voxel-edge stair-steps on millimetre voxel grids
-#'   without merging adjacent regions; larger values produce rounder
-#'   shapes but can bleed nearby region boundaries together.
-#' @param labels Optional regex pattern. Only labels matching this pattern
-#'   are smoothed; others are left unchanged.
-#' @param exclude Optional regex pattern. Labels matching this pattern are
-#'   left unchanged; all others are smoothed.
-#'
-#' @return A modified `ggseg_atlas` with simplified sf geometry.
-#' @export
-#' @importFrom sf st_make_valid
-#'
-#' @examples
-#' \dontrun{
-#' # Vertex reduction only (legacy behaviour).
-#' atlas <- atlas_smooth(my_atlas, keep = 0.05)
-#'
-#' # Keep cortex outline detailed, simplify everything else.
-#' atlas <- atlas_smooth(my_atlas, keep = 0.2, exclude = "cortex_|Cortex")
-#'
-#' # Round off jagged voxel edges without dropping vertices.
-#' atlas <- atlas_smooth(my_atlas, keep = NULL, smoothness = 3)
-#'
-#' # Per-region tuning: hard simplification for tiny nuclei, gentle
-#' # closing for the brain outline.
-#' atlas <- atlas_smooth(my_atlas, keep = 0.05, exclude = "cortex_")
-#' atlas <- atlas_smooth(atlas, keep = NULL, smoothness = 3, labels = "cortex_")
-#' }
-atlas_smooth <- function(
-  atlas,
-  keep = 0.05,
-  smoothness = 0,
-  labels = NULL,
-  exclude = NULL
-) {
-  geom <- ggseg.formats::atlas_geom(atlas)
-  if (is.null(geom)) {
-    cli::cli_warn("Atlas has no 2D geometry, nothing to smooth")
-    return(atlas)
-  }
-
-  if (!is.null(labels) && !is.null(exclude)) {
-    cli::cli_abort(
-      "Specify only one of {.arg labels} or {.arg exclude}, not both."
-    )
-  }
-
-  do_simplify <- !is.null(keep) && !is.na(keep)
-  do_close <- isTRUE(smoothness > 0)
-  if (!do_simplify && !do_close) {
-    return(atlas)
-  }
-
-  # Smoothing is an sf/GEOS operation; work on the sf representation and
-  # restore the atlas's original representation afterwards.
-  was_polygon <- ggseg.formats::is_atlas_polygon(atlas)
-  sf_data <- ggseg.formats::atlas_geom(ggseg.formats::as_sf_atlas(atlas))
-
-  if (!is.null(labels) || !is.null(exclude)) {
-    sf_data <- smooth_sf_subset(
-      sf_data,
-      labels,
-      exclude,
-      do_simplify,
-      do_close,
-      keep,
-      smoothness
-    )
-  } else {
-    sf_data <- apply_smooth_ops(
-      sf_data,
-      do_simplify,
-      do_close,
-      keep,
-      smoothness
-    )
-  }
-
-  rehydrate_smoothed_atlas(atlas, sf_data, was_polygon)
-}
-
-
 #' Apply the configured simplify/close operations to an sf data.frame
 #' @noRd
 apply_smooth_ops <- function(d, do_simplify, do_close, keep, smoothness) {
@@ -343,18 +353,6 @@ rehydrate_smoothed_atlas <- function(atlas, sf_data, was_polygon) {
   } else {
     ggseg.formats::as_sf_atlas(atlas)
   }
-}
-
-
-#' @rdname atlas_smooth
-#' @export
-atlas_simplify <- function(atlas, keep = 0.05) {
-  lifecycle::deprecate_warn(
-    "1.9.9.9003",
-    "atlas_simplify()",
-    "atlas_smooth()"
-  )
-  atlas_smooth(atlas, keep = keep)
 }
 
 

@@ -1424,19 +1424,19 @@ load_cortex_mask <- function(hemi, subject = "fsaverage5", n_vertices) {
     paste0(hemi, ".cortex.label")
   )
   if (!file.exists(label_file)) {
+    # nolint start
     cli::cli_abort(c(
       "Cortex label not found: {.path {label_file}}",
       "i" = paste(
         "This file is required to prevent",
         "label dilation into the medial wall."
       ),
-      "i" = paste( # nolint
-        # nolint
-        # nolint
+      "i" = paste(
         "It should exist for {.val {subject}}.",
         "Check your FreeSurfer installation."
       )
     ))
+    # nolint end
   }
 
   cortex_vertices <- read_label_vertices(label_file)
