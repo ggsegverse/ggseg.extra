@@ -363,60 +363,15 @@ read_cifti_annotation <- function(cifti_file) {
 
   all_data <- list()
 
-  hemi_info <- list(
-    list(
-      data = cii$data$cortex_left,
-      hemi = "left",
-      hemi_short = "lh",
-      expected_n = fsaverage5_nverts
-    ),
-    list(
-      data = cii$data$cortex_right,
-      hemi = "right",
-      hemi_short = "rh",
-      expected_n = fsaverage5_nverts
-    )
-  )
-
-  label_table <- cii$meta$cifti$labels[[1]]
-
-  regions <- data.frame(
-    code = label_table$Key,
-    name = label_table$Label,
-    colour = rgb(
-      label_table$Red,
-      label_table$Green,
-      label_table$Blue,
-      maxColorValue = 1
-    ),
-    stringsAsFactors = FALSE
-  )
+  hemi_info <- cifti_hemi_info(cii)
+  regions <- cifti_label_regions(cii)
 
   for (hi in hemi_info) {
     if (is.null(hi$data)) {
       next
     }
 
-    vertex_labels <- as.integer(hi$data[, 1])
-    n_verts <- length(vertex_labels)
-
-    if (n_verts != hi$expected_n) {
-      cli::cli_abort(c(
-        paste(
-          "CIFTI {hi$hemi} hemisphere has {n_verts} vertices,",
-          "expected {hi$expected_n} (fsaverage5)"
-        ),
-        "i" = paste(
-          "Resample to fsaverage5 first using",
-          "{.code wb_command -cifti-resample}"
-        )
-      ))
-    }
-
-    all_data <- c(
-      all_data,
-      extract_vertex_regions(vertex_labels, regions, hi$hemi, hi$hemi_short)
-    )
+    all_data <- c(all_data, cifti_hemi_regions(hi, regions))
   }
 
   bind_rows(all_data)
@@ -467,35 +422,7 @@ read_neuromaps_annotation <- function(
 ) {
   rlang::check_installed("gifti", reason = "to read GIFTI metric files")
 
-  if (!all(file.exists(gifti_files))) {
-    # nolint start: object_usage_linter.
-    missing <- gifti_files[!file.exists(gifti_files)]
-    # nolint end
-    cli::cli_abort(
-      "GIFTI file{?s} not found: {.path {missing}}"
-    )
-  }
-
-  volume_files <- grepl("\\.(nii|nii\\.gz)$", gifti_files, ignore.case = TRUE)
-  if (any(volume_files)) {
-    cli::cli_abort(c(
-      "Volume files are not supported for cortical atlas creation.",
-      "i" = "Found volume file{?s}: {.path {gifti_files[volume_files]}}",
-      "i" = "Use only surface (.func.gii) files." # nolint
-    ))
-  }
-
-  if (!is.null(label_table)) {
-    if (!all(c("id", "region") %in% names(label_table))) {
-      cli::cli_abort(c(
-        "{.arg label_table} must have columns {.field id} and {.field region}",
-        "i" = paste(
-          "Optionally include a {.field colour}",
-          "column with hex colour codes."
-        )
-      ))
-    }
-  }
+  validate_neuromaps_inputs(gifti_files, label_table)
 
   all_data <- list()
 
@@ -511,39 +438,13 @@ read_neuromaps_annotation <- function(
     }
     hemi <- hemi_to_long(hemi_short)
 
-    gii <- gifti::read_gifti(gifti_file)
-    values <- as.numeric(gii$data[[1]])
-    n_verts <- length(values)
-
-    if (n_verts != fsaverage5_nverts) {
-      cli::cli_abort(c(
-        paste(
-          "{hemi} hemisphere has {n_verts} vertices,",
-          "expected {fsaverage5_nverts} (fsaverage5)"
-        ),
-        "i" = paste(
-          "Use space='fsaverage' with density='10k'",
-          "for fsaverage5 compatibility."
-        )
-      ))
-    }
-
+    values <- read_neuromaps_values(gifti_file, hemi)
     is_parcellation <- is_integer_valued(values)
 
-    if (is_parcellation) {
-      hemi_data <- parse_parcellation_values(
-        values,
-        hemi,
-        hemi_short,
-        label_table
-      )
+    hemi_data <- if (is_parcellation) {
+      parse_parcellation_values(values, hemi, hemi_short, label_table)
     } else {
-      hemi_data <- parse_continuous_values(
-        values,
-        hemi,
-        hemi_short,
-        n_bins
-      )
+      parse_continuous_values(values, hemi, hemi_short, n_bins)
     }
 
     all_data <- c(all_data, hemi_data)
@@ -610,17 +511,7 @@ read_neuromaps_volume <- function(
       ))
     }
 
-    values <- as.numeric(c(RNifti::readNifti(output_nii)))
-    values[values == 0] <- NaN
-
-    if (length(values) != fsaverage5_nverts) {
-      cli::cli_abort(c(
-        paste(
-          "{hemi} hemisphere has {length(values)} vertices,",
-          "expected {fsaverage5_nverts} (fsaverage5)"
-        )
-      ))
-    }
+    values <- read_surface_overlay(output_nii, hemi)
 
     hemi_data <- if (is_integer_valued(values)) {
       parse_parcellation_values(values, hemi, hemi_short, label_table = NULL)
@@ -631,7 +522,148 @@ read_neuromaps_volume <- function(
   }
 
   result <- bind_rows(all_data)
+  fill_missing_colours(result)
+}
 
+#' Build the per-hemisphere CIFTI data descriptors
+#' @noRd
+cifti_hemi_info <- function(cii) {
+  list(
+    list(
+      data = cii$data$cortex_left,
+      hemi = "left",
+      hemi_short = "lh",
+      expected_n = fsaverage5_nverts
+    ),
+    list(
+      data = cii$data$cortex_right,
+      hemi = "right",
+      hemi_short = "rh",
+      expected_n = fsaverage5_nverts
+    )
+  )
+}
+
+#' Build the region lookup table from CIFTI label metadata
+#' @noRd
+cifti_label_regions <- function(cii) {
+  label_table <- cii$meta$cifti$labels[[1]]
+
+  data.frame(
+    code = label_table$Key,
+    name = label_table$Label,
+    colour = rgb(
+      label_table$Red,
+      label_table$Green,
+      label_table$Blue,
+      maxColorValue = 1
+    ),
+    stringsAsFactors = FALSE
+  )
+}
+
+#' Validate CIFTI hemisphere vertex count and extract region rows
+#' @noRd
+cifti_hemi_regions <- function(hi, regions) {
+  vertex_labels <- as.integer(hi$data[, 1])
+  n_verts <- length(vertex_labels)
+
+  if (n_verts != hi$expected_n) {
+    cli::cli_abort(c(
+      paste(
+        "CIFTI {hi$hemi} hemisphere has {n_verts} vertices,",
+        "expected {hi$expected_n} (fsaverage5)"
+      ),
+      "i" = paste(
+        "Resample to fsaverage5 first using",
+        "{.code wb_command -cifti-resample}"
+      )
+    ))
+  }
+
+  extract_vertex_regions(vertex_labels, regions, hi$hemi, hi$hemi_short)
+}
+
+#' Validate neuromaps GIFTI file paths and optional label table
+#' @noRd
+validate_neuromaps_inputs <- function(gifti_files, label_table) {
+  if (!all(file.exists(gifti_files))) {
+    # nolint start: object_usage_linter.
+    missing <- gifti_files[!file.exists(gifti_files)]
+    # nolint end
+    cli::cli_abort(
+      "GIFTI file{?s} not found: {.path {missing}}"
+    )
+  }
+
+  volume_files <- grepl("\\.(nii|nii\\.gz)$", gifti_files, ignore.case = TRUE)
+  if (any(volume_files)) {
+    cli::cli_abort(c(
+      "Volume files are not supported for cortical atlas creation.",
+      "i" = "Found volume file{?s}: {.path {gifti_files[volume_files]}}",
+      "i" = "Use only surface (.func.gii) files." # nolint
+    ))
+  }
+
+  if (!is.null(label_table)) {
+    if (!all(c("id", "region") %in% names(label_table))) {
+      cli::cli_abort(c(
+        "{.arg label_table} must have columns {.field id} and {.field region}",
+        "i" = paste(
+          "Optionally include a {.field colour}",
+          "column with hex colour codes."
+        )
+      ))
+    }
+  }
+
+  invisible(NULL)
+}
+
+#' Read per-vertex values from a neuromaps GIFTI metric file
+#' @noRd
+read_neuromaps_values <- function(gifti_file, hemi) {
+  gii <- gifti::read_gifti(gifti_file)
+  values <- as.numeric(gii$data[[1]])
+  n_verts <- length(values)
+
+  if (n_verts != fsaverage5_nverts) {
+    cli::cli_abort(c(
+      paste(
+        "{hemi} hemisphere has {n_verts} vertices,",
+        "expected {fsaverage5_nverts} (fsaverage5)"
+      ),
+      "i" = paste(
+        "Use space='fsaverage' with density='10k'",
+        "for fsaverage5 compatibility."
+      )
+    ))
+  }
+
+  values
+}
+
+#' Read a projected surface overlay and validate its vertex count
+#' @noRd
+read_surface_overlay <- function(output_nii, hemi) {
+  values <- as.numeric(c(RNifti::readNifti(output_nii)))
+  values[values == 0] <- NaN
+
+  if (length(values) != fsaverage5_nverts) {
+    cli::cli_abort(c(
+      paste(
+        "{hemi} hemisphere has {length(values)} vertices,",
+        "expected {fsaverage5_nverts} (fsaverage5)"
+      )
+    ))
+  }
+
+  values
+}
+
+#' Assign fallback colours to regions that have none
+#' @noRd
+fill_missing_colours <- function(result) {
   needs_colour <- is.na(result$colour) & result$region != "unknown"
   if (any(needs_colour)) {
     result$colour[needs_colour] <- grDevices::hcl.colors(
@@ -733,6 +765,22 @@ read_ply_mesh <- function(ply, ...) {
     cli::cli_abort("Not a valid PLY file: {.path {ply}}")
   }
 
+  header <- parse_ply_header(lines)
+
+  vertices <- parse_ply_vertices(lines, header$header_end, header$n_vertices)
+  faces <- parse_ply_faces(
+    lines,
+    header$header_end,
+    header$n_vertices,
+    header$n_faces
+  )
+
+  list(vertices = vertices, faces = faces)
+}
+
+#' Parse PLY header counts and header end position
+#' @noRd
+parse_ply_header <- function(lines) {
   n_vertices <- 0L
   n_faces <- 0L
   header_end <- 0L
@@ -749,6 +797,12 @@ read_ply_mesh <- function(ply, ...) {
     }
   }
 
+  list(n_vertices = n_vertices, n_faces = n_faces, header_end = header_end)
+}
+
+#' Parse the vertex block of a PLY file
+#' @noRd
+parse_ply_vertices <- function(lines, header_end, n_vertices) {
   vert_lines <- lines[(header_end + 1):(header_end + n_vertices)]
   vert_data <- do.call(
     rbind,
@@ -758,12 +812,16 @@ read_ply_mesh <- function(ply, ...) {
     )
   )
 
-  vertices <- data.frame(
+  data.frame(
     x = vert_data[, 1],
     y = vert_data[, 2],
     z = vert_data[, 3]
   )
+}
 
+#' Parse the face block of a PLY file
+#' @noRd
+parse_ply_faces <- function(lines, header_end, n_vertices, n_faces) {
   face_lines <- lines[
     (header_end + n_vertices + 1):(header_end + n_vertices + n_faces)
   ]
@@ -775,13 +833,11 @@ read_ply_mesh <- function(ply, ...) {
     )
   )
 
-  faces <- data.frame(
+  data.frame(
     i = face_data[, 1],
     j = face_data[, 2],
     k = face_data[, 3]
   )
-
-  list(vertices = vertices, faces = faces)
 }
 
 # Annotation reading ----

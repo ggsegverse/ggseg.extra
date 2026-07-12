@@ -179,28 +179,8 @@ generate_tube_mesh <- function(centerline, radius = 0.5, segments = 8) {
     )
   }
 
-  n_faces <- (n_points - 1) * segments * 2
-
-  angles <- seq(0, 2 * pi, length.out = segments + 1)[1:segments]
-
-  grid <- expand.grid(j = seq_len(segments), i = seq_len(n_points))
-  cos_a <- cos(angles[grid$j])
-  sin_a <- sin(angles[grid$j])
-  r <- radius[grid$i]
-  offsets <- r *
-    (cos_a * frames$normals[grid$i, ] + sin_a * frames$binormals[grid$i, ])
-  vertices <- centerline[grid$i, ] + offsets
-
-  fg <- expand.grid(j = seq_len(segments), i = seq_len(n_points - 1))
-  j_next <- ifelse(fg$j == segments, 1L, fg$j + 1L)
-  v1 <- (fg$i - 1L) * segments + fg$j
-  v2 <- (fg$i - 1L) * segments + j_next
-  v3 <- fg$i * segments + fg$j
-  v4 <- fg$i * segments + j_next
-  faces <- matrix(0L, nrow = n_faces, ncol = 3)
-  odds <- seq(1, n_faces, by = 2)
-  faces[odds, ] <- cbind(v1, v2, v3)
-  faces[odds + 1L, ] <- cbind(v2, v4, v3)
+  vertices <- tube_ring_vertices(centerline, radius, frames, segments)
+  faces <- tube_ring_faces(n_points, segments)
 
   list(
     vertices = data.frame(
@@ -215,6 +195,41 @@ generate_tube_mesh <- function(centerline, radius = 0.5, segments = 8) {
       tangents = frames$tangents
     )
   )
+}
+
+
+#' Offset centerline points into a ring of tube vertices
+#' @noRd
+tube_ring_vertices <- function(centerline, radius, frames, segments) {
+  n_points <- nrow(centerline)
+  angles <- seq(0, 2 * pi, length.out = segments + 1)[1:segments]
+
+  grid <- expand.grid(j = seq_len(segments), i = seq_len(n_points))
+  cos_a <- cos(angles[grid$j])
+  sin_a <- sin(angles[grid$j])
+  r <- radius[grid$i]
+  offsets <- r *
+    (cos_a * frames$normals[grid$i, ] + sin_a * frames$binormals[grid$i, ])
+  centerline[grid$i, ] + offsets
+}
+
+
+#' Triangulate consecutive tube rings into faces
+#' @noRd
+tube_ring_faces <- function(n_points, segments) {
+  n_faces <- (n_points - 1) * segments * 2
+
+  fg <- expand.grid(j = seq_len(segments), i = seq_len(n_points - 1))
+  j_next <- ifelse(fg$j == segments, 1L, fg$j + 1L)
+  v1 <- (fg$i - 1L) * segments + fg$j
+  v2 <- (fg$i - 1L) * segments + j_next
+  v3 <- fg$i * segments + fg$j
+  v4 <- fg$i * segments + j_next
+  faces <- matrix(0L, nrow = n_faces, ncol = 3)
+  odds <- seq(1, n_faces, by = 2)
+  faces[odds, ] <- cbind(v1, v2, v3)
+  faces[odds + 1L, ] <- cbind(v2, v4, v3)
+  faces
 }
 
 
@@ -654,13 +669,36 @@ tract_snapshot_projections <- function(
     cli::cli_alert_info("Creating projections")
   }
 
+  cortex_vol <- build_cortex_volume(aseg_vol, dims)
+
+  snapshot_tract_views(tract_volumes, tract_labels, views, dirs, skip_existing)
+
+  snapshot_cortex_views(cortex_vol, cortex_slices, dirs, skip_existing)
+}
+
+
+#' Build a binary cortex mask volume from an aseg volume
+#' @noRd
+build_cortex_volume <- function(aseg_vol, dims) {
   cortex_labels <- detect_cortex_labels(aseg_vol)
 
   cortex_vol <- array(0L, dim = dims)
   for (lbl in c(cortex_labels$left, cortex_labels$right)) {
     cortex_vol[aseg_vol == lbl] <- 1L
   }
+  cortex_vol
+}
 
+
+#' Snapshot every tract volume across every projection view
+#' @noRd
+snapshot_tract_views <- function(
+  tract_volumes,
+  tract_labels,
+  views,
+  dirs,
+  skip_existing
+) {
   snapshot_grid <- expand.grid(
     view_idx = seq_len(nrow(views)),
     label = tract_labels,
@@ -701,7 +739,17 @@ tract_snapshot_projections <- function(
       globals = c("tract_volumes", "dirs", "skip_existing", "p")
     )
   ))
+}
 
+
+#' Snapshot cortex reference slices for anatomical context
+#' @noRd
+snapshot_cortex_views <- function(
+  cortex_vol,
+  cortex_slices,
+  dirs,
+  skip_existing
+) {
   p2 <- progressor(steps = nrow(cortex_slices))
 
   invisible(safe_future_pmap(
@@ -850,37 +898,82 @@ detect_tract_coord_space <- function(streamlines, verbose) {
 tract_generate_geometry <- function(
   aseg_file,
   streamlines,
-  tract_labels,
   views,
   cortex_slices,
   views_file,
-  dirs,
-  tract_radius,
-  coords_are_voxels,
-  dilate,
-  vertex_size_limits,
-  smoothness,
-  tolerance,
-  skip_existing,
-  verbose
+  ctx,
+  opts
 ) {
   aseg_vol <- read_volume(aseg_file)
   dims <- dim(aseg_vol)
 
+  views <- resolve_tract_views(views, dims)
+  saveRDS(views, views_file)
+  cortex_slices <- resolve_cortex_slices(cortex_slices, views, dims)
+
+  tract_build_snapshots(
+    aseg_file,
+    aseg_vol,
+    dims,
+    streamlines,
+    views,
+    cortex_slices,
+    ctx,
+    opts
+  )
+
+  tract_process_and_extract(
+    ctx$dirs,
+    opts$dilate,
+    opts$skip_existing,
+    opts$verbose,
+    opts$vertex_size_limits,
+    opts$smoothness,
+    opts$tolerance
+  )
+
+  list(views = views, cortex_slices = cortex_slices)
+}
+
+
+#' Fall back to the default tract views when none are supplied
+#' @noRd
+resolve_tract_views <- function(views, dims) {
   if (is.null(views)) {
     views <- default_tract_views(dims)
   }
-  saveRDS(views, views_file)
+  views
+}
 
+
+#' Fall back to default cortex reference slices when none are supplied
+#' @noRd
+resolve_cortex_slices <- function(cortex_slices, views, dims) {
   if (is.null(cortex_slices)) {
     cortex_slices <- create_cortex_slices(views, dims)
   }
+  cortex_slices
+}
 
+
+#' Rasterise tracts and snapshot them, reusing cached snapshots when complete
+#' @noRd
+tract_build_snapshots <- function(
+  aseg_file,
+  aseg_vol,
+  dims,
+  streamlines,
+  views,
+  cortex_slices,
+  ctx,
+  opts
+) {
+  tract_labels <- ctx$tract_labels
   n_snapshots <- nrow(views) * length(tract_labels) + nrow(cortex_slices)
-  existing_snaps <- length(list.files(dirs$snapshots, pattern = "\\.png$"))
+  existing_snaps <- length(list.files(ctx$dirs$snapshots, pattern = "\\.png$"))
 
-  if (skip_existing && existing_snaps >= n_snapshots) {
-    if (verbose) {
+  if (opts$skip_existing && existing_snaps >= n_snapshots) {
+    if (opts$verbose) {
       cli::cli_alert_success(
         "Using existing snapshots ({existing_snaps} files)"
       )
@@ -890,9 +983,9 @@ tract_generate_geometry <- function(
       tract_labels,
       streamlines,
       aseg_file,
-      tract_radius,
-      coords_are_voxels,
-      verbose
+      opts$tract_radius,
+      ctx$coords_are_voxels,
+      opts$verbose
     )
 
     tract_snapshot_projections(
@@ -902,23 +995,11 @@ tract_generate_geometry <- function(
       dims,
       views,
       cortex_slices,
-      dirs,
-      skip_existing,
-      verbose
+      ctx$dirs,
+      opts$skip_existing,
+      opts$verbose
     )
   }
-
-  tract_process_and_extract(
-    dirs,
-    dilate,
-    skip_existing,
-    verbose,
-    vertex_size_limits,
-    smoothness,
-    tolerance
-  )
-
-  list(views = views, cortex_slices = cortex_slices)
 }
 
 
@@ -940,26 +1021,80 @@ create_tract_geometry_volumetric <- function(
   cleanup = NULL,
   skip_existing = NULL
 ) {
-  verbose <- is_verbose(verbose)
-  cleanup <- get_cleanup(cleanup)
-  skip_existing <- get_skip_existing(skip_existing)
-  tolerance <- get_tolerance(tolerance)
-  smoothness <- get_smoothness(smoothness)
-  output_dir <- get_output_dir(output_dir)
+  opts <- resolve_tract_geom_opts(
+    verbose,
+    cleanup,
+    skip_existing,
+    tolerance,
+    smoothness,
+    output_dir,
+    tract_radius,
+    coords_are_voxels,
+    dilate,
+    vertex_size_limits
+  )
 
+  ctx <- setup_tract_geom_context(atlas, aseg_file, streamlines, opts)
+
+  geom <- tract_geometry_or_cache(
+    aseg_file,
+    streamlines,
+    views,
+    cortex_slices,
+    ctx,
+    opts
+  )
+
+  finalize_tract_sf(ctx$dirs, geom$views, geom$cortex_slices, opts)
+}
+
+
+#' Resolve tract geometry options from their package-level defaults
+#' @noRd
+resolve_tract_geom_opts <- function(
+  verbose,
+  cleanup,
+  skip_existing,
+  tolerance,
+  smoothness,
+  output_dir,
+  tract_radius,
+  coords_are_voxels,
+  dilate,
+  vertex_size_limits
+) {
+  list(
+    verbose = is_verbose(verbose),
+    cleanup = get_cleanup(cleanup),
+    skip_existing = get_skip_existing(skip_existing),
+    tolerance = get_tolerance(tolerance),
+    smoothness = get_smoothness(smoothness),
+    output_dir = get_output_dir(output_dir),
+    tract_radius = tract_radius,
+    coords_are_voxels = coords_are_voxels,
+    dilate = dilate,
+    vertex_size_limits = vertex_size_limits
+  )
+}
+
+
+#' Validate inputs and set up output dirs, tract labels, and coordinate space
+#' @noRd
+setup_tract_geom_context <- function(atlas, aseg_file, streamlines, opts) {
   validate_tract_geometry_inputs(
     atlas,
     aseg_file,
     is.null(streamlines)
   )
 
+  coords_are_voxels <- opts$coords_are_voxels
   if (is.null(coords_are_voxels)) {
-    coords_are_voxels <- detect_tract_coord_space(streamlines, verbose)
+    coords_are_voxels <- detect_tract_coord_space(streamlines, opts$verbose)
   }
 
-  output_dir <- path.expand(output_dir)
+  output_dir <- path.expand(opts$output_dir)
   output_dir <- normalizePath(output_dir, mustWork = FALSE)
-  if (verbose) {
+  if (opts$verbose) {
     cli::cli_alert_info("Setting output directory to {.path {output_dir}}")
   }
 
@@ -974,41 +1109,58 @@ create_tract_geometry_volumetric <- function(
 
   validate_streamline_labels(tract_labels, names(streamlines))
 
-  contours_file <- file.path(dirs$base, "contours_reduced.rda")
-  views_file <- file.path(dirs$base, "views.rds")
-  if (skip_existing && file.exists(contours_file)) {
+  list(
+    dirs = dirs,
+    tract_labels = tract_labels,
+    coords_are_voxels = coords_are_voxels
+  )
+}
+
+
+#' Reuse cached 2D geometry when available, otherwise generate it
+#' @noRd
+tract_geometry_or_cache <- function(
+  aseg_file,
+  streamlines,
+  views,
+  cortex_slices,
+  ctx,
+  opts
+) {
+  contours_file <- file.path(ctx$dirs$base, "contours_reduced.rda")
+  views_file <- file.path(ctx$dirs$base, "views.rds")
+  if (opts$skip_existing && file.exists(contours_file)) {
     if (file.exists(views_file)) {
       views <- readRDS(views_file)
     } else {
       dims <- dim(read_volume(aseg_file))
       views <- default_tract_views(dims)
     }
-    if (verbose) {
+    if (opts$verbose) {
       cli::cli_alert_success("Loaded existing 2D geometry from cache")
     }
   } else {
     generated <- tract_generate_geometry(
       aseg_file,
       streamlines,
-      tract_labels,
       views,
       cortex_slices,
       views_file,
-      dirs,
-      tract_radius,
-      coords_are_voxels,
-      dilate,
-      vertex_size_limits,
-      smoothness,
-      tolerance,
-      skip_existing,
-      verbose
+      ctx,
+      opts
     )
     views <- generated$views
     cortex_slices <- generated$cortex_slices
   }
 
-  if (verbose) {
+  list(views = views, cortex_slices = cortex_slices)
+}
+
+
+#' Build the sf geometry from reduced contours and clean up scratch dirs
+#' @noRd
+finalize_tract_sf <- function(dirs, views, cortex_slices, opts) {
+  if (opts$verbose) {
     cli::cli_alert_info("Building sf geometry")
   }
 
@@ -1018,7 +1170,7 @@ create_tract_geometry_volumetric <- function(
     cortex_slices
   )
 
-  if (cleanup) {
+  if (opts$cleanup) {
     unlink(dirs$base, recursive = TRUE)
   }
 
