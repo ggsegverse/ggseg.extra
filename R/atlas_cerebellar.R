@@ -99,6 +99,13 @@ suit_deformation_field <- function(
     return(cached_path)
   }
 
+  download_suit_xfm(filename, cached_path)
+}
+
+
+#' Download and validate a SUIT deformation field file
+#' @noRd
+download_suit_xfm <- function(filename, cached_path) {
   if (!can_reach_github()) {
     cli::cli_abort(c(
       "Cannot reach GitHub to download deformation field",
@@ -198,6 +205,35 @@ transform_mni_to_suit <- function(
   mni_vol <- RNifti::readNifti(input_volume, internal = FALSE)
   xfm <- RNifti::readNifti(deformation_field, internal = FALSE)
 
+  prep <- prepare_suit_resample(xfm, mni_vol)
+
+  if (interpolation == "nearest") {
+    result <- resample_nearest(
+      prep$result,
+      prep$vox_coords,
+      prep$mni_arr,
+      prep$mni_dims
+    )
+  } else {
+    result <- resample_trilinear(
+      prep$result,
+      prep$vox_coords,
+      prep$mni_arr,
+      prep$mni_dims
+    )
+  }
+
+  ref_nii <- RNifti::asNifti(array(0, dim = prep$suit_dims), reference = xfm)
+  out_nii <- RNifti::asNifti(result, reference = ref_nii)
+  RNifti::writeNifti(out_nii, output_file)
+
+  invisible(output_file)
+}
+
+
+#' Validate the deformation field and build SUIT resampling inputs
+#' @noRd
+prepare_suit_resample <- function(xfm, mni_vol) {
   xfm_dims <- dim(xfm)
   if (length(xfm_dims) != 5 || xfm_dims[4] != 1 || xfm_dims[5] != 3) {
     cli::cli_abort(c(
@@ -227,17 +263,13 @@ transform_mni_to_suit <- function(
     cli::cli_abort("Input volume must be 3D, got {length(mni_dims)}D")
   }
 
-  if (interpolation == "nearest") {
-    result <- resample_nearest(result, vox_coords, mni_arr, mni_dims)
-  } else {
-    result <- resample_trilinear(result, vox_coords, mni_arr, mni_dims)
-  }
-
-  ref_nii <- RNifti::asNifti(array(0, dim = suit_dims), reference = xfm)
-  out_nii <- RNifti::asNifti(result, reference = ref_nii)
-  RNifti::writeNifti(out_nii, output_file)
-
-  invisible(output_file)
+  list(
+    suit_dims = suit_dims,
+    result = result,
+    vox_coords = vox_coords,
+    mni_arr = mni_arr,
+    mni_dims = mni_dims
+  )
 }
 
 #' Create cerebellar atlas from SUIT flatmap
@@ -722,6 +754,24 @@ cerebellar_read_data <- function(config, dirs, read_fn) {
     cli::cli_abort("No regions found in input files")
   }
 
+  split <- split_cerebellar_surface_deep(atlas_data, config)
+  components <- build_atlas_components(split$surface_data)
+  components <- merge_deep_into_components(
+    components,
+    split$deep_data,
+    deep_file
+  )
+
+  saveRDS(components, file.path(dirs$base, "components.rds"))
+  cli::cli_progress_done()
+
+  list(components = components, deep_data = split$deep_data)
+}
+
+
+#' Split cerebellar atlas data into surface and deep-nuclei parts
+#' @noRd
+split_cerebellar_surface_deep <- function(atlas_data, config) {
   has_deep <- "deep" %in% names(atlas_data) && any(atlas_data$deep)
   deep_data <- NULL
 
@@ -738,8 +788,13 @@ cerebellar_read_data <- function(config, dirs, read_fn) {
     surface_data <- atlas_data
   }
 
-  components <- build_atlas_components(surface_data)
+  list(surface_data = surface_data, deep_data = deep_data)
+}
 
+
+#' Merge deep-nuclei core/palette into surface components and cache them
+#' @noRd
+merge_deep_into_components <- function(components, deep_data, deep_file) {
   if (!is.null(deep_data) && nrow(deep_data) > 0) {
     deep_core <- dplyr::distinct(deep_data, hemi, region, label)
     components$core <- rbind(components$core, deep_core)
@@ -757,10 +812,7 @@ cerebellar_read_data <- function(config, dirs, read_fn) {
     saveRDS(deep_data, deep_file)
   }
 
-  saveRDS(components, file.path(dirs$base, "components.rds"))
-  cli::cli_progress_done()
-
-  list(components = components, deep_data = deep_data)
+  components
 }
 
 
@@ -1097,32 +1149,7 @@ cerebellar_create_meshes <- function(
   vol_ids <- sort(unique(as.integer(vol)))
   vol_ids <- vol_ids[vol_ids > 0L]
 
-  if (!is.null(components$vol_idx)) {
-    idx_map <- components$vol_idx
-    matched <- names(idx_map)[unname(idx_map) %in% vol_ids]
-    colortable <- data.frame(
-      idx = unname(idx_map[matched]),
-      label = matched,
-      stringsAsFactors = FALSE
-    )
-  } else {
-    labels <- components$core$label
-    n_ids <- min(length(vol_ids), length(labels))
-    if (length(vol_ids) != length(labels)) {
-      cli::cli_warn(c(
-        paste(
-          "Volume has {length(vol_ids)} non-zero labels but atlas",
-          "has {length(labels)} regions"
-        ),
-        "i" = "Only the first {n_ids} will get 3D meshes"
-      ))
-    }
-    colortable <- data.frame(
-      idx = vol_ids[seq_len(n_ids)],
-      label = labels[seq_len(n_ids)],
-      stringsAsFactors = FALSE
-    )
-  }
+  colortable <- build_cerebellar_colortable(components, vol_ids)
 
   meshes_list <- subcort_create_meshes(
     input_volume = volume,
@@ -1139,6 +1166,38 @@ cerebellar_create_meshes <- function(
   )
   meshes_df$mesh <- unname(meshes_list)
   meshes_df
+}
+
+
+#' Build the idx/label colortable for cerebellar mesh tessellation
+#' @noRd
+build_cerebellar_colortable <- function(components, vol_ids) {
+  if (!is.null(components$vol_idx)) {
+    idx_map <- components$vol_idx
+    matched <- names(idx_map)[unname(idx_map) %in% vol_ids]
+    return(data.frame(
+      idx = unname(idx_map[matched]),
+      label = matched,
+      stringsAsFactors = FALSE
+    ))
+  }
+
+  labels <- components$core$label
+  n_ids <- min(length(vol_ids), length(labels))
+  if (length(vol_ids) != length(labels)) {
+    cli::cli_warn(c(
+      paste(
+        "Volume has {length(vol_ids)} non-zero labels but atlas",
+        "has {length(labels)} regions"
+      ),
+      "i" = "Only the first {n_ids} will get 3D meshes"
+    ))
+  }
+  data.frame(
+    idx = vol_ids[seq_len(n_ids)],
+    label = labels[seq_len(n_ids)],
+    stringsAsFactors = FALSE
+  )
 }
 
 
@@ -1375,43 +1434,7 @@ read_cerebellar_annotation <- function(annot_files) {
     cli::cli_abort("Annotation file{?s} not found: {.path {missing}}")
   }
 
-  all_data <- lapply(annot_files, function(annot_file) {
-    annot <- freesurferformats::read.fs.annot(annot_file)
-    ct <- annot$colortable_df
-    ct <- ct[!is.na(ct$r), ]
-    label_codes <- annot$label_codes
-
-    skip <- tolower(ct$struct_name) %in% c("unknown", "corpuscallosum")
-    ct <- ct[!skip, ]
-    if (nrow(ct) == 0) {
-      return(NULL)
-    }
-
-    region_verts <- lapply(ct$code, function(code) {
-      which(label_codes == code) - 1L
-    })
-    has_verts <- lengths(region_verts) > 0
-    ct <- ct[has_verts, ]
-    region_verts <- region_verts[has_verts]
-    if (nrow(ct) == 0) {
-      return(NULL)
-    }
-
-    hemi <- unname(vapply(ct$struct_name, detect_cerebellar_hemi, character(1)))
-    region <- unname(vapply(
-      ct$struct_name,
-      clean_cerebellar_region,
-      character(1)
-    ))
-
-    dplyr::tibble(
-      hemi = hemi,
-      region = region,
-      label = paste(hemi, region, sep = "_"),
-      colour = ct$hex_color_string_rgb,
-      vertices = region_verts
-    )
-  })
+  all_data <- lapply(annot_files, read_one_cerebellar_annotation)
 
   all_data <- Filter(Negate(is.null), all_data)
 
@@ -1420,6 +1443,49 @@ read_cerebellar_annotation <- function(annot_files) {
   }
 
   dplyr::bind_rows(all_data)
+}
+
+
+#' Read one cerebellar annotation file into a region tibble
+#'
+#' Returns NULL when the file yields no usable regions.
+#' @noRd
+read_one_cerebellar_annotation <- function(annot_file) {
+  annot <- freesurferformats::read.fs.annot(annot_file)
+  ct <- annot$colortable_df
+  ct <- ct[!is.na(ct$r), ]
+  label_codes <- annot$label_codes
+
+  skip <- tolower(ct$struct_name) %in% c("unknown", "corpuscallosum")
+  ct <- ct[!skip, ]
+  if (nrow(ct) == 0) {
+    return(NULL)
+  }
+
+  region_verts <- lapply(ct$code, function(code) {
+    which(label_codes == code) - 1L
+  })
+  has_verts <- lengths(region_verts) > 0
+  ct <- ct[has_verts, ]
+  region_verts <- region_verts[has_verts]
+  if (nrow(ct) == 0) {
+    return(NULL)
+  }
+
+  hemi <- unname(vapply(ct$struct_name, detect_cerebellar_hemi, character(1)))
+  region <- unname(vapply(
+    ct$struct_name,
+    clean_cerebellar_region,
+    character(1)
+  ))
+
+  dplyr::tibble(
+    hemi = hemi,
+    region = region,
+    label = paste(hemi, region, sep = "_"),
+    colour = ct$hex_color_string_rgb,
+    vertices = region_verts
+  )
 }
 
 
@@ -1449,67 +1515,18 @@ read_cerebellar_volume <- function(volume, suit_3d_surface, input_lut = NULL) {
   all_data <- list()
 
   for (i in seq_len(nrow(colortable))) {
-    idx <- colortable$idx[i]
-    region_name <- colortable$label[i]
-    colour <- if ("color" %in% names(colortable)) {
-      colortable$color[i]
-    } else {
-      NA_character_
-    }
-
-    region_vertices <- which(vertex_labels == idx) - 1L
-    n_voxels <- sum(vol == idx)
-
-    if (length(region_vertices) == 0 && n_voxels == 0) {
-      next
-    }
-
-    hemi <- detect_cerebellar_hemi(region_name)
-    region <- clean_cerebellar_region(region_name)
-    label <- paste(hemi, region, sep = "_")
-
-    is_deep <- FALSE
-    if (length(region_vertices) == 0 && n_voxels > 0) {
-      is_known_nucleus <- grepl(
-        "Dentate|Interposed|Fastigial",
-        region_name,
-        ignore.case = TRUE
-      )
-      if (is_known_nucleus) {
-        is_deep <- TRUE
-        cli::cli_warn(c(
-          "Region {.val {region_name}} has {n_voxels} volume voxel{?s} but",
-          "0 surface vertices (deep/non-surface structure)",
-          "i" = "Will be treated as a deep cerebellar nucleus"
-        ))
-      } else {
-        nearest <- rescue_orphaned_region(
-          vol,
-          idx,
-          volume,
-          suit_3d_surface,
-          vertex_labels
-        )
-        if (length(nearest) > 0) {
-          region_vertices <- nearest
-          vertex_labels[nearest + 1L] <- idx
-          cli::cli_warn(c(
-            "Region {.val {region_name}} ({n_voxels} voxels) had 0 surface",
-            "vertices; assigned {length(nearest)} nearest vertex{?es}"
-          ))
-        }
-      }
-    }
-
-    all_data[[length(all_data) + 1]] <- dplyr::tibble(
-      hemi = hemi,
-      region = region,
-      label = label,
-      colour = colour,
-      vol_idx = idx,
-      vertices = list(region_vertices),
-      deep = is_deep
+    built <- build_cerebellar_volume_row(
+      i,
+      colortable,
+      vol,
+      vertex_labels,
+      volume,
+      suit_3d_surface
     )
+    vertex_labels <- built$vertex_labels
+    if (!is.null(built$row)) {
+      all_data[[length(all_data) + 1]] <- built$row
+    }
   }
 
   if (length(all_data) == 0) {
@@ -1517,7 +1534,92 @@ read_cerebellar_volume <- function(volume, suit_3d_surface, input_lut = NULL) {
   }
 
   result <- dplyr::bind_rows(all_data)
+  fill_missing_region_colours(result)
+}
 
+
+#' Build one cerebellar volume region row and update surface labels
+#'
+#' Returns a list with `row` (a region tibble or NULL when the region has no
+#' voxels or vertices) and the possibly-updated `vertex_labels` vector (the
+#' orphan-rescue branch reassigns nearest vertices in place).
+#' @noRd
+build_cerebellar_volume_row <- function(
+  i,
+  colortable,
+  vol,
+  vertex_labels,
+  volume,
+  suit_3d_surface
+) {
+  idx <- colortable$idx[i]
+  region_name <- colortable$label[i]
+  colour <- if ("color" %in% names(colortable)) {
+    colortable$color[i]
+  } else {
+    NA_character_
+  }
+
+  region_vertices <- which(vertex_labels == idx) - 1L
+  n_voxels <- sum(vol == idx)
+
+  if (length(region_vertices) == 0 && n_voxels == 0) {
+    return(list(row = NULL, vertex_labels = vertex_labels))
+  }
+
+  hemi <- detect_cerebellar_hemi(region_name)
+  region <- clean_cerebellar_region(region_name)
+  label <- paste(hemi, region, sep = "_")
+
+  is_deep <- FALSE
+  if (length(region_vertices) == 0 && n_voxels > 0) {
+    is_known_nucleus <- grepl(
+      "Dentate|Interposed|Fastigial",
+      region_name,
+      ignore.case = TRUE
+    )
+    if (is_known_nucleus) {
+      is_deep <- TRUE
+      cli::cli_warn(c(
+        "Region {.val {region_name}} has {n_voxels} volume voxel{?s} but",
+        "0 surface vertices (deep/non-surface structure)",
+        "i" = "Will be treated as a deep cerebellar nucleus"
+      ))
+    } else {
+      nearest <- rescue_orphaned_region(
+        vol,
+        idx,
+        volume,
+        suit_3d_surface,
+        vertex_labels
+      )
+      if (length(nearest) > 0) {
+        region_vertices <- nearest
+        vertex_labels[nearest + 1L] <- idx
+        cli::cli_warn(c(
+          "Region {.val {region_name}} ({n_voxels} voxels) had 0 surface",
+          "vertices; assigned {length(nearest)} nearest vertex{?es}"
+        ))
+      }
+    }
+  }
+
+  row <- dplyr::tibble(
+    hemi = hemi,
+    region = region,
+    label = label,
+    colour = colour,
+    vol_idx = idx,
+    vertices = list(region_vertices),
+    deep = is_deep
+  )
+  list(row = row, vertex_labels = vertex_labels)
+}
+
+
+#' Assign fallback palette colours to regions missing a colour
+#' @noRd
+fill_missing_region_colours <- function(result) {
   needs_colour <- is.na(result$colour) & result$region != "unknown"
   if (any(needs_colour)) {
     n_missing <- sum(needs_colour)

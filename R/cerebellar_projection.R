@@ -223,36 +223,14 @@ cerebellar_build_sf_flatmap <- function(
 
   flatmap <- read_suit_flatmap(suit_surface)
 
-  max_vertex <- max(vapply(
-    components$vertices_df$vertices,
-    function(v) if (length(v) == 0) 0L else max(v),
-    integer(1)
-  ))
-  if (max_vertex >= flatmap$n_vertices) {
-    cli::cli_warn(c(
-      paste(
-        "Parcellation references vertex {max_vertex} but flatmap",
-        "has only {flatmap$n_vertices} vertices"
-      ),
-      "i" = "Out-of-range vertices will be ignored"
-    ))
-  }
+  warn_flatmap_vertex_range(components, flatmap)
 
   vertex_labels <- build_vertex_label_vector_cerebellum(
     components$vertices_df,
     flatmap$n_vertices
   )
 
-  n_labelled <- sum(!is.na(vertex_labels))
-  if (n_labelled == 0) {
-    cli::cli_abort(c(
-      "No vertices matched between parcellation and flatmap",
-      "i" = paste(
-        "The parcellation has {nrow(components$vertices_df)} regions",
-        "but none map to the {flatmap$n_vertices}-vertex flatmap"
-      )
-    ))
-  }
+  check_flatmap_label_overlap(vertex_labels, components, flatmap)
 
   if (verbose) {
     n_v <- flatmap$n_vertices # nolint: object_usage_linter.
@@ -272,6 +250,42 @@ cerebellar_build_sf_flatmap <- function(
 
   sf_data$view <- "flatmap"
   sf::st_as_sf(sf_data)
+}
+
+
+#' Warn when the parcellation references vertices outside the flatmap
+#' @noRd
+warn_flatmap_vertex_range <- function(components, flatmap) {
+  max_vertex <- max(vapply(
+    components$vertices_df$vertices,
+    function(v) if (length(v) == 0) 0L else max(v),
+    integer(1)
+  ))
+  if (max_vertex >= flatmap$n_vertices) {
+    cli::cli_warn(c(
+      paste(
+        "Parcellation references vertex {max_vertex} but flatmap",
+        "has only {flatmap$n_vertices} vertices"
+      ),
+      "i" = "Out-of-range vertices will be ignored"
+    ))
+  }
+}
+
+
+#' Abort when no parcellation vertices map onto the flatmap
+#' @noRd
+check_flatmap_label_overlap <- function(vertex_labels, components, flatmap) {
+  n_labelled <- sum(!is.na(vertex_labels))
+  if (n_labelled == 0) {
+    cli::cli_abort(c(
+      "No vertices matched between parcellation and flatmap",
+      "i" = paste(
+        "The parcellation has {nrow(components$vertices_df)} regions",
+        "but none map to the {flatmap$n_vertices}-vertex flatmap"
+      )
+    ))
+  }
 }
 
 
