@@ -186,26 +186,45 @@ aseg_context <- function(
   }
 
   if (punch_white_matter) {
-    if (any(grepl(cortex, sf_labels)) && any(grepl(white_matter, sf_labels))) {
-      atlas <- atlas_region_op(
-        atlas,
-        x = cortex,
-        y = white_matter,
-        action = "difference",
-        into = "cortex"
-      )
-    } else {
-      cli::cli_alert_info(
-        "Skipping white-matter punch: {.val {cortex}} and
-        {.val {white_matter}} not both present."
-      )
-    }
+    atlas <- aseg_punch_white_matter(atlas, cortex, white_matter, sf_labels)
   }
 
   for (pat in remove) {
     atlas <- atlas_region_remove(atlas, pat, match_on = "label")
   }
 
+  atlas <- aseg_demote_context(atlas, focus, match_on)
+
+  if (drop_empty_views && !is.null(ggseg.formats::atlas_geom(atlas))) {
+    atlas <- aseg_drop_empty_views(atlas)
+  }
+
+  atlas
+}
+
+#' Subtract the cerebral white matter from the brain silhouette
+#' @noRd
+aseg_punch_white_matter <- function(atlas, cortex, white_matter, sf_labels) {
+  if (any(grepl(cortex, sf_labels)) && any(grepl(white_matter, sf_labels))) {
+    atlas <- atlas_region_op(
+      atlas,
+      x = cortex,
+      y = white_matter,
+      action = "difference",
+      into = "cortex"
+    )
+  } else {
+    cli::cli_alert_info(
+      "Skipping white-matter punch: {.val {cortex}} and
+      {.val {white_matter}} not both present."
+    )
+  }
+  atlas
+}
+
+#' Demote every core region not matched by `focus` to grey context
+#' @noRd
+aseg_demote_context <- function(atlas, focus, match_on) {
   focus_mask <- grepl(focus, atlas$core[[match_on]], ignore.case = TRUE)
   context_labels <- atlas$core$label[!focus_mask]
   if (length(context_labels) > 0) {
@@ -221,24 +240,26 @@ aseg_context <- function(
       ignore.case = FALSE
     )
   }
+  atlas
+}
 
-  if (drop_empty_views && !is.null(ggseg.formats::atlas_geom(atlas))) {
-    # atlas was rebuilt by the region ops above, so re-derive its 2D rows.
-    sf_rows <- ggseg.formats::atlas_sf(atlas)
-    views <- unique(sf_rows$view)
-    empty <- vapply(
-      views,
-      function(v) {
-        rows <- sf_rows[sf_rows$view == v, ]
-        !any(rows$label %in% atlas$core$label)
-      },
-      logical(1)
-    )
-    if (any(empty)) {
-      atlas <- atlas_view_remove(atlas, views[empty])
-    }
+#' Remove views left with no focus (core) geometry
+#' @noRd
+aseg_drop_empty_views <- function(atlas) {
+  # atlas was rebuilt by the region ops above, so re-derive its 2D rows.
+  sf_rows <- ggseg.formats::atlas_sf(atlas)
+  views <- unique(sf_rows$view)
+  empty <- vapply(
+    views,
+    function(v) {
+      rows <- sf_rows[sf_rows$view == v, ]
+      !any(rows$label %in% atlas$core$label)
+    },
+    logical(1)
+  )
+  if (any(empty)) {
+    atlas <- atlas_view_remove(atlas, views[empty])
   }
-
   atlas
 }
 

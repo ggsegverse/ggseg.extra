@@ -79,12 +79,7 @@ coregister_volume <- function(
   }
 
   if (skip_existing && file.exists(output_lta)) {
-    if (verbose) {
-      cli::cli_alert_info(
-        "Reusing existing registration: {.path {output_lta}}"
-      )
-    }
-    return(invisible(output_lta))
+    return(coreg_reuse_lta(output_lta, verbose))
   }
 
   if (binarise) {
@@ -96,6 +91,35 @@ coregister_volume <- function(
     ref <- ref_mgz
   }
 
+  run_mri_coreg(mov, ref, output_lta, in_path, target_subject, dof, verbose)
+
+  invisible(output_lta)
+}
+
+
+#' Report and return a cached registration
+#' @noRd
+coreg_reuse_lta <- function(output_lta, verbose) {
+  if (verbose) {
+    cli::cli_alert_info(
+      "Reusing existing registration: {.path {output_lta}}"
+    )
+  }
+  invisible(output_lta)
+}
+
+
+#' Run mri_coreg on the (optionally binarised) moving and reference volumes
+#' @noRd
+run_mri_coreg <- function(
+  mov,
+  ref,
+  output_lta,
+  in_path,
+  target_subject,
+  dof,
+  verbose
+) {
   if (verbose) {
     cli::cli_alert_info(
       "Coregistering {.path {basename(in_path)}} to \\
@@ -115,8 +139,6 @@ coregister_volume <- function(
     dof
   )
   run_cmd(cmd, verbose = verbose)
-
-  invisible(output_lta)
 }
 
 
@@ -232,14 +254,37 @@ project_volume_anatomical <- function(
     ))
   }
 
+  aparc_nii <- tempfile(fileext = ".nii.gz")
+  on.exit(unlink(aparc_nii), add = TRUE)
+
+  prep <- project_load_volumes(in_path, lut, aparc_mgz, aparc_nii)
+
+  check_registration_grid(registration, dim(prep$arr_aparc))
+
+  project_start_message(prep$label_ids, target_subject, verbose)
+
+  merged <- project_merged_labels(
+    prep,
+    registration,
+    threshold,
+    protect_cortex,
+    id_offset,
+    verbose
+  )
+
+  invisible(project_finalize(merged, prep, output_file, id_offset, verbose))
+}
+
+
+#' Read the atlas volume, its labels, and the target aparc+aseg grid
+#' @noRd
+project_load_volumes <- function(in_path, lut, aparc_mgz, aparc_nii) {
   vol <- RNifti::readNifti(in_path)
   arr <- as.array(vol)
 
   lut_df <- if (is.null(lut)) NULL else read_lut_arg(lut)
   label_ids <- resolve_label_ids(arr, in_path, lut_df)
 
-  aparc_nii <- tempfile(fileext = ".nii.gz")
-  on.exit(unlink(aparc_nii), add = TRUE)
   run_cmd(
     paste("mri_convert", shQuote(aparc_mgz), shQuote(aparc_nii)),
     verbose = 0L
@@ -248,41 +293,77 @@ project_volume_anatomical <- function(
   arr_aparc <- as.array(aparc)
   storage.mode(arr_aparc) <- "integer"
 
-  check_registration_grid(registration, dim(arr_aparc))
+  list(
+    vol = vol,
+    arr = arr,
+    lut_df = lut_df,
+    label_ids = label_ids,
+    aparc_mgz = aparc_mgz,
+    aparc = aparc,
+    arr_aparc = arr_aparc
+  )
+}
 
+
+#' Announce the projection about to run
+#' @noRd
+project_start_message <- function(label_ids, target_subject, verbose) {
   if (verbose) {
     cli::cli_alert_info(
       "Projecting {length(label_ids)} label{?s} onto \\
        {.val {target_subject}} aparc+aseg grid"
     )
   }
+  invisible(NULL)
+}
 
+
+#' Argmax the resampled label probabilities into the aparc+aseg volume
+#' @noRd
+project_merged_labels <- function(
+  prep,
+  registration,
+  threshold,
+  protect_cortex,
+  id_offset,
+  verbose
+) {
   am <- project_label_argmax(
-    label_ids = label_ids,
-    arr = arr,
-    vol = vol,
-    aparc_mgz = aparc_mgz,
+    label_ids = prep$label_ids,
+    arr = prep$arr,
+    vol = prep$vol,
+    aparc_mgz = prep$aparc_mgz,
     registration = registration,
-    n_voxels = prod(dim(arr_aparc)),
+    n_voxels = prod(dim(prep$arr_aparc)),
     verbose = verbose
   )
 
   argmax_idx <- am$argmax_idx
   keep <- am$max_prob > threshold
 
-  keep <- apply_cortex_protection(keep, arr_aparc, protect_cortex, verbose)
+  keep <- apply_cortex_protection(keep, prep$arr_aparc, protect_cortex, verbose)
 
-  merged <- build_merged_volume(
-    arr_aparc,
+  build_merged_volume(
+    prep$arr_aparc,
     keep,
     argmax_idx,
-    label_ids,
+    prep$label_ids,
     id_offset
   )
+}
 
-  output_file <- write_merged_volume(merged, aparc, output_file)
 
-  combined_lut <- build_anatomical_lut(merged, label_ids, id_offset, lut_df)
+#' Write the merged volume and build the colour table that matches it
+#' @noRd
+project_finalize <- function(merged, prep, output_file, id_offset, verbose) {
+  output_file <- write_merged_volume(merged, prep$aparc, output_file)
+
+  combined_lut <- build_anatomical_lut(
+    merged,
+    prep$label_ids,
+    id_offset,
+    prep$lut_df
+  )
 
   if (verbose) {
     cli::cli_alert_success(
@@ -291,11 +372,11 @@ project_volume_anatomical <- function(
     )
   }
 
-  invisible(list(
+  list(
     volume = output_file,
     lut = combined_lut,
     id_offset = id_offset
-  ))
+  )
 }
 
 

@@ -180,39 +180,47 @@ check_optional_packages <- function(detail = "simple") {
   }
 
   if (detail != "minimal") {
-    # nolint start: object_usage_linter.
-    if (length(installed) > 0) {
-      installed_str <- paste0(
-        "{.pkg ",
-        installed,
-        "}",
-        collapse = ", "
-      )
-      cli::cli_alert_success("R packages: {installed_str}")
-    }
-    if (length(missing) > 0) {
-      missing_str <- paste0(
-        "{.pkg ",
-        missing,
-        "}",
-        collapse = ", "
-      )
-      cli::cli_alert_danger("Missing R packages: {missing_str}")
-      if (detail == "full") {
-        install_cmd <- paste0(
-          'install.packages(c("',
-          paste(missing, collapse = '", "'),
-          '"))'
-        )
-        cli::cli_bullets(c(
-          "i" = "Install with: {.code {install_cmd}}"
-        ))
-      }
-    }
-    # nolint end
+    report_optional_packages(installed, missing, detail)
   }
 
   results
+}
+
+
+#' Report which optional R packages are installed and how to get the rest
+#' @noRd
+report_optional_packages <- function(installed, missing, detail) {
+  # nolint start: object_usage_linter.
+  if (length(installed) > 0) {
+    installed_str <- paste0(
+      "{.pkg ",
+      installed,
+      "}",
+      collapse = ", "
+    )
+    cli::cli_alert_success("R packages: {installed_str}")
+  }
+  if (length(missing) > 0) {
+    missing_str <- paste0(
+      "{.pkg ",
+      missing,
+      "}",
+      collapse = ", "
+    )
+    cli::cli_alert_danger("Missing R packages: {missing_str}")
+    if (detail == "full") {
+      install_cmd <- paste0(
+        'install.packages(c("',
+        paste(missing, collapse = '", "'),
+        '"))'
+      )
+      cli::cli_bullets(c(
+        "i" = "Install with: {.code {install_cmd}}"
+      ))
+    }
+  }
+  # nolint end
+  invisible(NULL)
 }
 
 
@@ -305,102 +313,12 @@ find_chrome_path <- function() {
 
 #' @noRd
 pipeline_registry <- function(results) {
-  has_fs <- isTRUE(results$freesurfer$available)
-  has_fsavg <- isTRUE(results$fsaverage$fsaverage5)
-  has_gifti <- isTRUE(results$packages$gifti)
-  has_fsformats <- isTRUE(results$packages$freesurferformats)
-  has_rnifti <- isTRUE(results$packages$RNifti)
-  has_cifti <- isTRUE(results$packages$ciftiTools)
-  has_neuromapr <- isTRUE(results$packages$neuromapr)
-  has_flatmap <- isTRUE(results$suit$flatmap)
-  has_3d <- isTRUE(results$suit$surface_3d)
-
-  make_pipeline <- function(name, fn, needs, install_hints = NULL) {
-    checks <- vapply(needs, function(n) n$ok, logical(1))
-    missing <- lapply(needs[!checks], function(n) {
-      list(label = n$label, hint = n$hint)
-    })
-    list(
-      name = name,
-      fn = fn,
-      ready = all(checks),
-      missing = missing,
-      install_hints = install_hints
-    )
-  }
-
-  need <- function(ok, label, hint) list(ok = ok, label = label, hint = hint)
-
-  # nolint start: indentation_linter.
-  fs_need <- need(
-    has_fs,
-    "FreeSurfer",
-    "Install from https://surfer.nmr.mgh.harvard.edu/"
-  )
-  fsavg_need <- need(
-    has_fsavg,
-    "fsaverage5",
-    "Ships with FreeSurfer ($SUBJECTS_DIR/fsaverage5)"
-  )
-  gifti_need <- need(has_gifti, "{gifti}", 'install.packages("gifti")')
-  fsf_need <- need(
-    has_fsformats,
-    "{freesurferformats}",
-    'install.packages("freesurferformats")'
-  )
-  rnifti_need <- need(has_rnifti, "{RNifti}", 'install.packages("RNifti")')
-  cifti_need <- need(
-    has_cifti,
-    "{ciftiTools}",
-    'install.packages("ciftiTools")'
-  )
-  neuromapr_need <- need(
-    has_neuromapr,
-    "{neuromapr}",
-    'remotes::install_github("ggseg/neuromapr")'
-  )
-  flatmap_need <- need(
-    has_flatmap,
-    "SUIT flatmap",
-    "Bundled; reinstall ggseg.extra"
-  )
-  surf3d_need <- need(
-    has_3d,
-    "SUIT 3D surface",
-    "Bundled; reinstall ggseg.extra"
-  )
-  # nolint end
+  needs <- c(pipeline_tool_needs(results), pipeline_pkg_needs(results))
 
   list(
     cortical = list(
       header = "Cortical",
-      pipelines = list(
-        make_pipeline(
-          "from annotation",
-          "create_cortical_from_annotation()",
-          list(fs_need, fsavg_need, fsf_need)
-        ),
-        make_pipeline(
-          "from GIFTI",
-          "create_cortical_from_gifti()",
-          list(fsf_need)
-        ),
-        make_pipeline(
-          "from CIFTI",
-          "create_cortical_from_cifti()",
-          list(cifti_need)
-        ),
-        make_pipeline(
-          "from neuromaps",
-          "create_cortical_from_neuromaps()",
-          list(gifti_need, neuromapr_need)
-        ),
-        make_pipeline(
-          "from labels",
-          "create_cortical_from_labels()",
-          list(fsf_need)
-        )
-      )
+      pipelines = cortical_pipelines(needs)
     ),
     subcortical = list(
       header = "Subcortical",
@@ -408,7 +326,7 @@ pipeline_registry <- function(results) {
         make_pipeline(
           "from volume",
           "create_subcortical_from_volume()",
-          list(fs_need, rnifti_need)
+          list(needs$fs, needs$rnifti)
         )
       )
     ),
@@ -418,7 +336,7 @@ pipeline_registry <- function(results) {
         make_pipeline(
           "from tractography",
           "create_tract_from_tractography()",
-          list(rnifti_need)
+          list(needs$rnifti)
         )
       )
     ),
@@ -428,34 +346,159 @@ pipeline_registry <- function(results) {
         make_pipeline(
           "from volume",
           "create_wholebrain_from_volume()",
-          list(fs_need, fsavg_need, rnifti_need)
+          list(needs$fs, needs$fsavg, needs$rnifti)
         )
       )
     ),
     cerebellar = list(
       header = "Cerebellar",
-      pipelines = list(
-        make_pipeline(
-          "from GIFTI",
-          "create_cerebellar_from_gifti()",
-          list(gifti_need, flatmap_need)
-        ),
-        make_pipeline(
-          "from annotation",
-          "create_cerebellar_from_annotation()",
-          list(fsf_need, flatmap_need)
-        ),
-        make_pipeline(
-          "from volume",
-          "create_cerebellar_from_volume()",
-          list(fs_need, rnifti_need, gifti_need, flatmap_need, surf3d_need)
-        ),
-        make_pipeline(
-          "MNI to SUIT transform",
-          "transform_mni_to_suit()",
-          list(rnifti_need)
-        )
-      )
+      pipelines = cerebellar_pipelines(needs)
+    )
+  )
+}
+
+
+#' A single pipeline requirement: whether it is met, and how to meet it
+#' @noRd
+pipeline_need <- function(ok, label, hint) {
+  list(ok = ok, label = label, hint = hint)
+}
+
+
+#' Describe one pipeline and which of its requirements are missing
+#' @noRd
+make_pipeline <- function(name, fn, needs, install_hints = NULL) {
+  checks <- vapply(needs, function(n) n$ok, logical(1))
+  missing <- lapply(needs[!checks], function(n) {
+    list(label = n$label, hint = n$hint)
+  })
+  list(
+    name = name,
+    fn = fn,
+    ready = all(checks),
+    missing = missing,
+    install_hints = install_hints
+  )
+}
+
+
+#' Requirements met by external tools and bundled data
+#' @noRd
+pipeline_tool_needs <- function(results) {
+  list(
+    fs = pipeline_need(
+      isTRUE(results$freesurfer$available),
+      "FreeSurfer",
+      "Install from https://surfer.nmr.mgh.harvard.edu/"
+    ),
+    fsavg = pipeline_need(
+      isTRUE(results$fsaverage$fsaverage5),
+      "fsaverage5",
+      "Ships with FreeSurfer ($SUBJECTS_DIR/fsaverage5)"
+    ),
+    flatmap = pipeline_need(
+      isTRUE(results$suit$flatmap),
+      "SUIT flatmap",
+      "Bundled; reinstall ggseg.extra"
+    ),
+    surf3d = pipeline_need(
+      isTRUE(results$suit$surface_3d),
+      "SUIT 3D surface",
+      "Bundled; reinstall ggseg.extra"
+    )
+  )
+}
+
+
+#' Requirements met by optional R packages
+#' @noRd
+pipeline_pkg_needs <- function(results) {
+  list(
+    gifti = pipeline_need(
+      isTRUE(results$packages$gifti),
+      "{gifti}",
+      'install.packages("gifti")'
+    ),
+    fsf = pipeline_need(
+      isTRUE(results$packages$freesurferformats),
+      "{freesurferformats}",
+      'install.packages("freesurferformats")'
+    ),
+    rnifti = pipeline_need(
+      isTRUE(results$packages$RNifti),
+      "{RNifti}",
+      'install.packages("RNifti")'
+    ),
+    cifti = pipeline_need(
+      isTRUE(results$packages$ciftiTools),
+      "{ciftiTools}",
+      'install.packages("ciftiTools")'
+    ),
+    neuromapr = pipeline_need(
+      isTRUE(results$packages$neuromapr),
+      "{neuromapr}",
+      'remotes::install_github("ggseg/neuromapr")'
+    )
+  )
+}
+
+
+#' Cortical pipeline entries
+#' @noRd
+cortical_pipelines <- function(needs) {
+  list(
+    make_pipeline(
+      "from annotation",
+      "create_cortical_from_annotation()",
+      list(needs$fs, needs$fsavg, needs$fsf)
+    ),
+    make_pipeline(
+      "from GIFTI",
+      "create_cortical_from_gifti()",
+      list(needs$fsf)
+    ),
+    make_pipeline(
+      "from CIFTI",
+      "create_cortical_from_cifti()",
+      list(needs$cifti)
+    ),
+    make_pipeline(
+      "from neuromaps",
+      "create_cortical_from_neuromaps()",
+      list(needs$gifti, needs$neuromapr)
+    ),
+    make_pipeline(
+      "from labels",
+      "create_cortical_from_labels()",
+      list(needs$fsf)
+    )
+  )
+}
+
+
+#' Cerebellar pipeline entries
+#' @noRd
+cerebellar_pipelines <- function(needs) {
+  list(
+    make_pipeline(
+      "from GIFTI",
+      "create_cerebellar_from_gifti()",
+      list(needs$gifti, needs$flatmap)
+    ),
+    make_pipeline(
+      "from annotation",
+      "create_cerebellar_from_annotation()",
+      list(needs$fsf, needs$flatmap)
+    ),
+    make_pipeline(
+      "from volume",
+      "create_cerebellar_from_volume()",
+      list(needs$fs, needs$rnifti, needs$gifti, needs$flatmap, needs$surf3d)
+    ),
+    make_pipeline(
+      "MNI to SUIT transform",
+      "transform_mni_to_suit()",
+      list(needs$rnifti)
     )
   )
 }

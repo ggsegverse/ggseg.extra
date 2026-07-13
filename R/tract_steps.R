@@ -53,30 +53,14 @@ tract_create_meshes <- function(
     streamlines_data,
     tract_names,
     function(streamlines, tract_name) {
-      centerline <- extract_centerline(
+      mesh <- tract_tube_mesh(
         streamlines,
-        method = centerline_method,
-        n_points = n_points
-      )
-
-      if (is.null(centerline) || nrow(centerline) < 2) {
-        p()
-        return(NULL)
-      }
-
-      radius <- resolve_tube_radius(
+        centerline_method,
+        n_points,
         tube_radius,
-        streamlines,
-        centerline,
+        tube_segments,
         density_radius_range
       )
-
-      mesh <- generate_tube_mesh(
-        centerline = centerline,
-        radius = radius,
-        segments = tube_segments
-      )
-
       p()
       mesh
     },
@@ -100,6 +84,41 @@ tract_create_meshes <- function(
   }
 
   center_meshes(meshes_list)
+}
+
+
+#' Tube mesh for one tract, NULL when the centerline is degenerate
+#' @noRd
+tract_tube_mesh <- function(
+  streamlines,
+  centerline_method,
+  n_points,
+  tube_radius,
+  tube_segments,
+  density_radius_range
+) {
+  centerline <- extract_centerline(
+    streamlines,
+    method = centerline_method,
+    n_points = n_points
+  )
+
+  if (is.null(centerline) || nrow(centerline) < 2) {
+    return(NULL)
+  }
+
+  radius <- resolve_tube_radius(
+    tube_radius,
+    streamlines,
+    centerline,
+    density_radius_range
+  )
+
+  generate_tube_mesh(
+    centerline = centerline,
+    radius = radius,
+    segments = tube_segments
+  )
 }
 
 
@@ -168,6 +187,42 @@ tract_create_snapshots <- function(
 
   tract_labels <- centerlines_df$label
 
+  tract_volumes <- tract_volume_map(
+    streamlines_data,
+    tract_labels,
+    input_aseg,
+    tract_radius,
+    coords_are_voxels
+  )
+
+  cortex_labels <- detect_cortex_labels(aseg_vol)
+
+  cortex_vol <- array(0L, dim = dims)
+  for (lbl in c(cortex_labels$left, cortex_labels$right)) {
+    cortex_vol[aseg_vol == lbl] <- 1L
+  }
+
+  tract_snapshot_views(tract_volumes, views, tract_labels, dirs, skip_existing)
+
+  if (verbose) {
+    cli::cli_alert_info("Creating cortex reference slices")
+  }
+
+  tract_snapshot_cortex(cortex_vol, cortex_slices, dirs, skip_existing)
+
+  list(views = views, cortex_slices = cortex_slices)
+}
+
+
+#' Rasterise every tract centerline into its own label volume
+#' @noRd
+tract_volume_map <- function(
+  streamlines_data,
+  tract_labels,
+  input_aseg,
+  tract_radius,
+  coords_are_voxels
+) {
   p <- progressor(steps = length(tract_labels))
 
   tract_volumes <- safe_future_pmap(
@@ -203,13 +258,19 @@ tract_create_snapshots <- function(
   )
   names(tract_volumes) <- tract_labels
 
-  cortex_labels <- detect_cortex_labels(aseg_vol)
+  tract_volumes
+}
 
-  cortex_vol <- array(0L, dim = dims)
-  for (lbl in c(cortex_labels$left, cortex_labels$right)) {
-    cortex_vol[aseg_vol == lbl] <- 1L
-  }
 
+#' Snapshot every tract x view combination
+#' @noRd
+tract_snapshot_views <- function(
+  tract_volumes,
+  views,
+  tract_labels,
+  dirs,
+  skip_existing
+) {
   snapshot_grid <- expand.grid(
     view_idx = seq_len(nrow(views)),
     label = tract_labels,
@@ -249,11 +310,17 @@ tract_create_snapshots <- function(
       globals = c("tract_volumes", "dirs", "skip_existing", "p")
     )
   ))
+}
 
-  if (verbose) {
-    cli::cli_alert_info("Creating cortex reference slices")
-  }
 
+#' Snapshot the cortex reference slices behind the tracts
+#' @noRd
+tract_snapshot_cortex <- function(
+  cortex_vol,
+  cortex_slices,
+  dirs,
+  skip_existing
+) {
   p2 <- progressor(steps = nrow(cortex_slices))
 
   invisible(safe_future_pmap(
@@ -285,8 +352,6 @@ tract_create_snapshots <- function(
       globals = c("cortex_vol", "dirs", "skip_existing", "p2")
     )
   ))
-
-  list(views = views, cortex_slices = cortex_slices)
 }
 
 

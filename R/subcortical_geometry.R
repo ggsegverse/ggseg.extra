@@ -122,15 +122,10 @@ tessellate_label <- function(
 ) {
   check_fs(abort = TRUE)
 
-  label_str <- sprintf("%04d", label_id)
-  base_name <- file.path(output_dir, label_str)
+  paths <- tessellate_paths(output_dir, label_id)
 
-  pretess_file <- paste0(base_name, "_pretess.mgz")
-  tess_file <- paste0(base_name, "_tess")
-  smooth_file <- paste0(base_name, "_smooth")
-
-  if (skip_existing && file.exists(smooth_file)) {
-    return(read_fs_surface(smooth_file, verbose = verbose))
+  if (skip_existing && file.exists(paths$smooth)) {
+    return(read_fs_surface(paths$smooth, verbose = verbose))
   }
 
   volume_file <- ensure_fs_compatible_nifti(volume_file, output_dir)
@@ -138,48 +133,82 @@ tessellate_label <- function(
   remapped <- tessellate_remap_label(
     volume_file,
     label_id,
-    base_name,
+    paths$base,
     skip_existing
   )
-  pretess_input <- remapped$pretess_input
-  tess_label <- remapped$tess_label
 
-  if (!skip_existing || !file.exists(pretess_file)) {
-    mri_pretess(
-      template = pretess_input,
-      label = tess_label,
-      output_file = pretess_file,
-      verbose = verbose
-    )
-  }
+  tessellate_run_pretess(remapped, paths$pretess, skip_existing, verbose)
 
-  if (!file.exists(pretess_file)) {
+  if (!file.exists(paths$pretess)) {
     cli::cli_abort("Pre-tessellation failed for label {label_id}")
   }
 
-  if (!skip_existing || !file.exists(tess_file)) {
-    mri_tessellate(
-      input_file = pretess_file,
-      label = tess_label,
-      output_file = tess_file,
-      verbose = verbose
-    )
-  }
+  tessellate_run_tess(remapped, paths, skip_existing, verbose)
 
-  if (!file.exists(tess_file)) {
+  if (!file.exists(paths$tess)) {
     cli::cli_abort("Tessellation failed for label {label_id}")
   }
 
   tessellate_smooth_mesh(
-    tess_file,
-    smooth_file,
+    paths$tess,
+    paths$smooth,
     label_id,
     skip_existing,
     verbose
   )
 
-  surf_file <- if (file.exists(smooth_file)) smooth_file else tess_file
+  surf_file <- if (file.exists(paths$smooth)) paths$smooth else paths$tess
   read_fs_surface(surf_file, verbose = verbose)
+}
+
+
+#' Intermediate file paths used by the tessellation pipeline
+#' @noRd
+tessellate_paths <- function(output_dir, label_id) {
+  label_str <- sprintf("%04d", label_id)
+  base_name <- file.path(output_dir, label_str)
+
+  list(
+    base = base_name,
+    pretess = paste0(base_name, "_pretess.mgz"),
+    tess = paste0(base_name, "_tess"),
+    smooth = paste0(base_name, "_smooth")
+  )
+}
+
+
+#' Run mri_pretess unless the pre-tessellated volume is already cached
+#' @noRd
+tessellate_run_pretess <- function(
+  remapped,
+  pretess_file,
+  skip_existing,
+  verbose
+) {
+  if (!skip_existing || !file.exists(pretess_file)) {
+    mri_pretess(
+      template = remapped$pretess_input,
+      label = remapped$tess_label,
+      output_file = pretess_file,
+      verbose = verbose
+    )
+  }
+  invisible(NULL)
+}
+
+
+#' Run mri_tessellate unless the tessellated surface is already cached
+#' @noRd
+tessellate_run_tess <- function(remapped, paths, skip_existing, verbose) {
+  if (!skip_existing || !file.exists(paths$tess)) {
+    mri_tessellate(
+      input_file = paths$pretess,
+      label = remapped$tess_label,
+      output_file = paths$tess,
+      verbose = verbose
+    )
+  }
+  invisible(NULL)
 }
 
 
@@ -388,6 +417,31 @@ create_subcortical_geometry_projection <- function(
 
   output_dir <- normalizePath(output_dir, mustWork = FALSE)
 
+  dirs <- geom_proj_dirs(output_dir)
+
+  prep <- geom_proj_inputs(input_volume, views, cortex_slices, verbose)
+
+  geom_proj_snapshots(prep, colortable, dirs, dilate, skip_existing, verbose)
+
+  geom_proj_contours(dirs, vertex_size_limits, tolerance, smoothness, verbose)
+
+  if (verbose) {
+    cli::cli_alert_info("Building sf geometry")
+  }
+
+  sf_data <- build_projection_sf(dirs, prep$views, prep$cortex_slices)
+
+  if (cleanup) {
+    unlink(dirs$base, recursive = TRUE)
+  }
+
+  sf_data
+}
+
+
+#' Create and return the working directories for projection geometry
+#' @noRd
+geom_proj_dirs <- function(output_dir) {
   dirs <- list(
     base = file.path(output_dir, "subcort_proj_geom"),
     snapshots = file.path(output_dir, "subcort_proj_geom", "snapshots"),
@@ -397,7 +451,13 @@ create_subcortical_geometry_projection <- function(
   for (d in dirs) {
     mkdir(d)
   }
+  dirs
+}
 
+
+#' Read the volume and resolve the views/slices/labels it drives
+#' @noRd
+geom_proj_inputs <- function(input_volume, views, cortex_slices, verbose) {
   if (verbose) {
     cli::cli_alert_info("Reading volume")
   }
@@ -415,6 +475,26 @@ create_subcortical_geometry_projection <- function(
 
   cortex_labels <- detect_cortex_labels(vol)
 
+  list(
+    vol = vol,
+    dims = dims,
+    views = views,
+    cortex_slices = cortex_slices,
+    cortex_labels = cortex_labels
+  )
+}
+
+
+#' Render structure and cortex snapshots, then process them into masks
+#' @noRd
+geom_proj_snapshots <- function(
+  prep,
+  colortable,
+  dirs,
+  dilate,
+  skip_existing,
+  verbose
+) {
   if (verbose) {
     cli::cli_alert_info(
       "Creating projections for {nrow(colortable)} structures"
@@ -422,10 +502,10 @@ create_subcortical_geometry_projection <- function(
   }
 
   snapshot_projection_structures(
-    vol,
-    dims,
+    prep$vol,
+    prep$dims,
     colortable,
-    views,
+    prep$views,
     dirs,
     skip_existing = skip_existing
   )
@@ -435,10 +515,10 @@ create_subcortical_geometry_projection <- function(
   }
 
   snapshot_projection_cortex(
-    vol,
-    dims,
-    cortex_labels,
-    cortex_slices,
+    prep$vol,
+    prep$dims,
+    prep$cortex_labels,
+    prep$cortex_slices,
     dirs,
     skip_existing = skip_existing
   )
@@ -448,7 +528,18 @@ create_subcortical_geometry_projection <- function(
   }
 
   process_projection_images(dirs, dilate, skip_existing)
+}
 
+
+#' Extract, smooth and reduce the contours of the projection masks
+#' @noRd
+geom_proj_contours <- function(
+  dirs,
+  vertex_size_limits,
+  tolerance,
+  smoothness,
+  verbose
+) {
   extract_contours(
     dirs$masks,
     dirs$base,
@@ -464,18 +555,6 @@ create_subcortical_geometry_projection <- function(
     step = "",
     verbose = verbose
   )
-
-  if (verbose) {
-    cli::cli_alert_info("Building sf geometry")
-  }
-
-  sf_data <- build_projection_sf(dirs, views, cortex_slices)
-
-  if (cleanup) {
-    unlink(dirs$base, recursive = TRUE)
-  }
-
-  sf_data
 }
 
 

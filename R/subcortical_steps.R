@@ -15,22 +15,13 @@ subcort_create_meshes <- function(
     colortable$idx,
     colortable$label,
     function(label_id, label_name) {
-      mesh <- tryCatch(
-        tessellate_label(
-          volume_file = input_volume,
-          label_id = label_id,
-          output_dir = dirs$meshes,
-          verbose = get_verbose(), # nolint: object_usage_linter
-          skip_existing = skip_existing
-        ),
-        error = function(e) {
-          if (verbose) {
-            cli::cli_warn(
-              "Failed to create mesh for {label_name}: {e$message}"
-            )
-          }
-          NULL
-        }
+      mesh <- subcort_mesh_one(
+        input_volume,
+        label_id,
+        label_name,
+        dirs,
+        skip_existing,
+        verbose
       )
       p()
       mesh
@@ -49,6 +40,49 @@ subcort_create_meshes <- function(
 
   meshes_list <- center_meshes(meshes_list)
 
+  meshes_list <- subcort_decimate_meshes(meshes_list, decimate, verbose)
+
+  if (verbose) {
+    cli::cli_alert_success("Created {length(meshes_list)} meshes")
+  }
+
+  meshes_list
+}
+
+
+#' Tessellate one label, warning and returning NULL when it fails
+#' @noRd
+subcort_mesh_one <- function(
+  input_volume,
+  label_id,
+  label_name,
+  dirs,
+  skip_existing,
+  verbose
+) {
+  tryCatch(
+    tessellate_label(
+      volume_file = input_volume,
+      label_id = label_id,
+      output_dir = dirs$meshes,
+      verbose = get_verbose(), # nolint: object_usage_linter
+      skip_existing = skip_existing
+    ),
+    error = function(e) {
+      if (verbose) {
+        cli::cli_warn(
+          "Failed to create mesh for {label_name}: {e$message}"
+        )
+      }
+      NULL
+    }
+  )
+}
+
+
+#' Decimate meshes to a proportion of their original face count
+#' @noRd
+subcort_decimate_meshes <- function(meshes_list, decimate, verbose) {
   if (!is.null(decimate) && decimate < 1) {
     if (verbose) {
       orig_faces <- sum(vapply(
@@ -73,10 +107,6 @@ subcort_create_meshes <- function(
         "Reduced from {orig_faces} to {new_faces} faces ({pct}%)"
       )
     }
-  }
-
-  if (verbose) {
-    cli::cli_alert_success("Created {length(meshes_list)} meshes")
   }
 
   meshes_list
@@ -119,6 +149,40 @@ subcort_create_snapshots <- function(
   cortex_slices <- create_cortex_slices(views, dims)
   cortex_labels <- detect_cortex_labels(vol)
 
+  subcort_snapshot_structures(vol, dims, colortable, views, dirs, skip_existing)
+
+  cortex_vol <- subcort_cortex_volume(vol, dims, cortex_labels)
+
+  # Cortex outline must use the same slice-range projection as structures,
+  # otherwise structures (max-projected over start..end) appear larger than
+  # the single-slice cortex silhouette and overflow the brain shape. For
+  # sagittal cortex slices (hemisphere-specific, no start/end), keep the
+  # single-slice rendering. Skip entirely if cortex_vol has no voxels
+  # (consistent with how empty structures are skipped above).
+  if (sum(cortex_vol) > 0) {
+    subcort_snapshot_cortex(
+      cortex_vol,
+      cortex_slices,
+      views,
+      dirs,
+      skip_existing
+    )
+  }
+
+  list(views = views, cortex_slices = cortex_slices)
+}
+
+
+#' Snapshot every structure x view combination of a subcortical atlas
+#' @noRd
+subcort_snapshot_structures <- function(
+  vol,
+  dims,
+  colortable,
+  views,
+  dirs,
+  skip_existing
+) {
   snapshot_grid <- expand.grid(
     struct_idx = seq_len(nrow(colortable)),
     view_idx = seq_len(nrow(views)),
@@ -128,14 +192,7 @@ subcort_create_snapshots <- function(
   p <- progressor(steps = nrow(snapshot_grid))
 
   invisible(safe_future_pmap(
-    list(
-      label_id = colortable$idx[snapshot_grid$struct_idx],
-      label_name = colortable$label[snapshot_grid$struct_idx],
-      view_type = views$type[snapshot_grid$view_idx],
-      view_start = views$start[snapshot_grid$view_idx],
-      view_end = views$end[snapshot_grid$view_idx],
-      view_name = views$name[snapshot_grid$view_idx]
-    ),
+    subcort_snapshot_args(colortable, views, snapshot_grid),
     function(
       label_id,
       label_name,
@@ -144,24 +201,18 @@ subcort_create_snapshots <- function(
       view_end,
       view_name
     ) {
-      structure_vol <- array(0L, dim = dims)
-      structure_vol[vol == label_id] <- 1L
-
-      if (sum(structure_vol) > 0) {
-        hemi <- extract_hemi_from_view(view_type, view_name)
-        snapshot_partial_projection(
-          vol = structure_vol,
-          view = view_type,
-          start = view_start,
-          end = view_end,
-          view_name = view_name,
-          label = label_name,
-          output_dir = dirs$snapshots,
-          colour = "red",
-          hemi = hemi,
-          skip_existing = skip_existing
-        )
-      }
+      subcort_snapshot_one(
+        vol = vol,
+        dims = dims,
+        dirs = dirs,
+        skip_existing = skip_existing,
+        label_id = label_id,
+        label_name = label_name,
+        view_type = view_type,
+        view_start = view_start,
+        view_end = view_end,
+        view_name = view_name
+      )
       p()
       NULL
     },
@@ -170,7 +221,62 @@ subcort_create_snapshots <- function(
       globals = c("dims", "vol", "dirs", "skip_existing", "p")
     )
   ))
+}
 
+
+#' Column vectors driving the structure x view snapshot grid
+#' @noRd
+subcort_snapshot_args <- function(colortable, views, snapshot_grid) {
+  list(
+    label_id = colortable$idx[snapshot_grid$struct_idx],
+    label_name = colortable$label[snapshot_grid$struct_idx],
+    view_type = views$type[snapshot_grid$view_idx],
+    view_start = views$start[snapshot_grid$view_idx],
+    view_end = views$end[snapshot_grid$view_idx],
+    view_name = views$name[snapshot_grid$view_idx]
+  )
+}
+
+
+#' Snapshot a single structure in a single view, skipping empty structures
+#' @noRd
+subcort_snapshot_one <- function(
+  vol,
+  dims,
+  dirs,
+  skip_existing,
+  label_id,
+  label_name,
+  view_type,
+  view_start,
+  view_end,
+  view_name
+) {
+  structure_vol <- array(0L, dim = dims)
+  structure_vol[vol == label_id] <- 1L
+
+  if (sum(structure_vol) > 0) {
+    hemi <- extract_hemi_from_view(view_type, view_name)
+    snapshot_partial_projection(
+      vol = structure_vol,
+      view = view_type,
+      start = view_start,
+      end = view_end,
+      view_name = view_name,
+      label = label_name,
+      output_dir = dirs$snapshots,
+      colour = "red",
+      hemi = hemi,
+      skip_existing = skip_existing
+    )
+  }
+  invisible(NULL)
+}
+
+
+#' Binary brain-outline volume: cortex plus cerebellum and brainstem
+#' @noRd
+subcort_cortex_volume <- function(vol, dims, cortex_labels) {
   cortex_vol <- array(0L, dim = dims)
   for (lbl in c(cortex_labels$left, cortex_labels$right)) {
     cortex_vol[vol == lbl] <- 1L
@@ -184,48 +290,51 @@ subcort_create_snapshots <- function(
     cortex_vol[vol == lbl] <- 1L
   }
 
-  # Cortex outline must use the same slice-range projection as structures,
-  # otherwise structures (max-projected over start..end) appear larger than
-  # the single-slice cortex silhouette and overflow the brain shape. For
-  # sagittal cortex slices (hemisphere-specific, no start/end), keep the
-  # single-slice rendering. Skip entirely if cortex_vol has no voxels
-  # (consistent with how empty structures are skipped above).
-  if (sum(cortex_vol) > 0) {
-    invisible(lapply(seq_len(nrow(cortex_slices)), function(i) {
-      cs <- cortex_slices[i, ]
-      hemi <- extract_hemi_from_view(cs$view, cs$name)
-      matched_view <- views[views$name == cs$name, ]
+  cortex_vol
+}
 
-      if (cs$view %in% c("axial", "coronal") && nrow(matched_view) == 1) {
-        snapshot_partial_projection(
-          vol = cortex_vol,
-          view = cs$view,
-          start = matched_view$start,
-          end = matched_view$end,
-          view_name = cs$name,
-          label = paste0("cortex_", hemi),
-          output_dir = dirs$snapshots,
-          colour = "red",
-          hemi = hemi,
-          skip_existing = skip_existing
-        )
-      } else {
-        snapshot_cortex_slice(
-          vol = cortex_vol,
-          x = cs$x,
-          y = cs$y,
-          z = cs$z,
-          slice_view = cs$view,
-          view_name = cs$name,
-          hemi = hemi,
-          output_dir = dirs$snapshots,
-          skip_existing = skip_existing
-        )
-      }
-    }))
-  }
 
-  list(views = views, cortex_slices = cortex_slices)
+#' Render the cortex reference outline for each cortex slice
+#' @noRd
+subcort_snapshot_cortex <- function(
+  cortex_vol,
+  cortex_slices,
+  views,
+  dirs,
+  skip_existing
+) {
+  invisible(lapply(seq_len(nrow(cortex_slices)), function(i) {
+    cs <- cortex_slices[i, ]
+    hemi <- extract_hemi_from_view(cs$view, cs$name)
+    matched_view <- views[views$name == cs$name, ]
+
+    if (cs$view %in% c("axial", "coronal") && nrow(matched_view) == 1) {
+      snapshot_partial_projection(
+        vol = cortex_vol,
+        view = cs$view,
+        start = matched_view$start,
+        end = matched_view$end,
+        view_name = cs$name,
+        label = paste0("cortex_", hemi),
+        output_dir = dirs$snapshots,
+        colour = "red",
+        hemi = hemi,
+        skip_existing = skip_existing
+      )
+    } else {
+      snapshot_cortex_slice(
+        vol = cortex_vol,
+        x = cs$x,
+        y = cs$y,
+        z = cs$z,
+        slice_view = cs$view,
+        view_name = cs$name,
+        hemi = hemi,
+        output_dir = dirs$snapshots,
+        skip_existing = skip_existing
+      )
+    }
+  }))
 }
 
 

@@ -393,44 +393,20 @@ snapshot_widget_batch <- function(
 
   htmlwidgets::saveWidget(widget, tmphtml, selfcontained = FALSE)
 
-  take_batch <- function() {
-    session <- chromote::ChromoteSession$new()
-    on.exit(session$close(), add = TRUE)
-
-    session$Emulation$setDeviceMetricsOverride(
-      width = as.integer(width),
-      height = as.integer(height),
-      deviceScaleFactor = 1,
-      mobile = FALSE
-    )
-    session$Emulation$setScrollbarsHidden(hidden = TRUE)
-
-    session$Page$navigate(url = paste0("file://", tmphtml))
-    session$Page$loadEventFired()
-    Sys.sleep(delay)
-
-    js_tpl <- paste0(
-      "document.querySelector('.ggseg3d.html-widget')",
-      "._ggseg3d_renderer.setCamera('%s')"
-    )
-
-    for (i in seq_along(views)) {
-      session$Runtime$evaluate(sprintf(js_tpl, views[i]))
-      Sys.sleep(render_delay)
-      session$screenshot(filename = files[i], scale = zoom)
-    }
-
-    session$Runtime$evaluate(
-      paste0(
-        "var el = document.querySelector('.ggseg3d.html-widget');",
-        " if (el && el._ggseg3d_renderer) {",
-        " cancelAnimationFrame(el._ggseg3d_renderer.animationId); }"
-      )
-    )
-  }
-
   for (attempt in seq_len(max_retries + 1L)) {
-    result <- tryCatch(take_batch(), error = function(e) e)
+    result <- tryCatch(
+      snapshot_widget_session(
+        tmphtml = tmphtml,
+        views = views,
+        files = files,
+        width = width,
+        height = height,
+        zoom = zoom,
+        delay = delay,
+        render_delay = render_delay
+      ),
+      error = function(e) e
+    )
     if (!inherits(result, "error")) {
       break
     }
@@ -443,6 +419,54 @@ snapshot_widget_batch <- function(
   }
 
   invisible(files)
+}
+
+
+#' Screenshot every view of a saved widget in one chromote session
+#' @noRd
+snapshot_widget_session <- function(
+  tmphtml,
+  views,
+  files,
+  width,
+  height,
+  zoom,
+  delay,
+  render_delay
+) {
+  session <- chromote::ChromoteSession$new()
+  on.exit(session$close(), add = TRUE)
+
+  session$Emulation$setDeviceMetricsOverride(
+    width = as.integer(width),
+    height = as.integer(height),
+    deviceScaleFactor = 1,
+    mobile = FALSE
+  )
+  session$Emulation$setScrollbarsHidden(hidden = TRUE)
+
+  session$Page$navigate(url = paste0("file://", tmphtml))
+  session$Page$loadEventFired()
+  Sys.sleep(delay)
+
+  js_tpl <- paste0(
+    "document.querySelector('.ggseg3d.html-widget')",
+    "._ggseg3d_renderer.setCamera('%s')"
+  )
+
+  for (i in seq_along(views)) {
+    session$Runtime$evaluate(sprintf(js_tpl, views[i]))
+    Sys.sleep(render_delay)
+    session$screenshot(filename = files[i], scale = zoom)
+  }
+
+  session$Runtime$evaluate(
+    paste0(
+      "var el = document.querySelector('.ggseg3d.html-widget');",
+      " if (el && el._ggseg3d_renderer) {",
+      " cancelAnimationFrame(el._ggseg3d_renderer.animationId); }"
+    )
+  )
 }
 
 

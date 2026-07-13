@@ -50,19 +50,7 @@ setup_atlas_repo <- function(
 ) {
   path <- normalizePath(path, mustWork = FALSE)
 
-  if (is.null(atlas_name)) {
-    dir_name <- basename(path)
-    if (grepl("^ggseg[A-Z]", dir_name)) {
-      atlas_name <- sub("^ggseg", "", dir_name)
-    } else if (grepl("^ggseg", dir_name, ignore.case = TRUE)) {
-      atlas_name <- sub("^ggseg", "", dir_name, ignore.case = TRUE)
-    } else {
-      atlas_name <- dir_name
-    }
-  }
-
-  atlas_name <- tolower(atlas_name)
-  atlas_name <- gsub("[^a-z0-9]", "", atlas_name)
+  atlas_name <- atlas_name_from_path(path, atlas_name)
   repo_name <- paste0("ggseg", tools::toTitleCase(atlas_name))
 
   if (nchar(atlas_name) == 0) {
@@ -94,6 +82,38 @@ setup_atlas_repo <- function(
     cli::cli_alert_success("Created {.file {repo_name}.Rproj}")
   }
 
+  report_atlas_repo_created(repo_name, path)
+
+  if (open && rstudio) {
+    open_rstudio_project(path)
+  }
+
+  invisible(path)
+}
+
+
+#' Clean an atlas name, deriving it from the directory name when absent
+#' @noRd
+atlas_name_from_path <- function(path, atlas_name) {
+  if (is.null(atlas_name)) {
+    dir_name <- basename(path)
+    if (grepl("^ggseg[A-Z]", dir_name)) {
+      atlas_name <- sub("^ggseg", "", dir_name)
+    } else if (grepl("^ggseg", dir_name, ignore.case = TRUE)) {
+      atlas_name <- sub("^ggseg", "", dir_name, ignore.case = TRUE)
+    } else {
+      atlas_name <- dir_name
+    }
+  }
+
+  atlas_name <- tolower(atlas_name)
+  gsub("[^a-z0-9]", "", atlas_name)
+}
+
+
+#' Report the created package and the next steps for the user
+#' @noRd
+report_atlas_repo_created <- function(repo_name, path) {
   cli::cli_rule()
   cli::cli_alert_success("Created atlas package {.pkg {repo_name}}")
   cli::cli_alert_info("Location: {.path {path}}")
@@ -107,11 +127,7 @@ setup_atlas_repo <- function(
     "5" = "Run {.code devtools::check()} to verify the package"
   ))
 
-  if (open && rstudio) {
-    open_rstudio_project(path)
-  }
-
-  invisible(path)
+  invisible(NULL)
 }
 
 
