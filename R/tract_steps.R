@@ -202,13 +202,19 @@ tract_create_snapshots <- function(
     cortex_vol[aseg_vol == lbl] <- 1L
   }
 
-  tract_snapshot_views(tract_volumes, views, tract_labels, dirs, skip_existing)
+  snapshot_tract_views(
+    tract_volumes = tract_volumes,
+    tract_labels = tract_labels,
+    views = views,
+    dirs = dirs,
+    skip_existing = skip_existing
+  )
 
   if (verbose) {
     cli::cli_alert_info("Creating cortex reference slices")
   }
 
-  tract_snapshot_cortex(cortex_vol, cortex_slices, dirs, skip_existing)
+  snapshot_cortex_views(cortex_vol, cortex_slices, dirs, skip_existing)
 
   list(views = views, cortex_slices = cortex_slices)
 }
@@ -259,99 +265,6 @@ tract_volume_map <- function(
   names(tract_volumes) <- tract_labels
 
   tract_volumes
-}
-
-
-#' Snapshot every tract x view combination
-#' @noRd
-tract_snapshot_views <- function(
-  tract_volumes,
-  views,
-  tract_labels,
-  dirs,
-  skip_existing
-) {
-  snapshot_grid <- expand.grid(
-    view_idx = seq_len(nrow(views)),
-    label = tract_labels,
-    stringsAsFactors = FALSE
-  )
-
-  p <- progressor(steps = nrow(snapshot_grid))
-
-  invisible(safe_future_pmap(
-    list(
-      view_type = views$type[snapshot_grid$view_idx],
-      view_start = views$start[snapshot_grid$view_idx],
-      view_end = views$end[snapshot_grid$view_idx],
-      view_name = views$name[snapshot_grid$view_idx],
-      label = snapshot_grid$label
-    ),
-    function(view_type, view_start, view_end, view_name, label) {
-      tract_vol <- tract_volumes[[label]]
-      hemi <- extract_hemi_from_view(view_type, view_name)
-      snapshot_partial_projection(
-        vol = tract_vol,
-        view = view_type,
-        start = view_start,
-        end = view_end,
-        view_name = view_name,
-        label = label,
-        output_dir = dirs$snapshots,
-        colour = "red",
-        hemi = hemi,
-        skip_existing = skip_existing
-      )
-      p()
-      NULL
-    },
-    .options = furrr_options(
-      packages = "ggseg.extra",
-      globals = c("tract_volumes", "dirs", "skip_existing", "p")
-    )
-  ))
-}
-
-
-#' Snapshot the cortex reference slices behind the tracts
-#' @noRd
-tract_snapshot_cortex <- function(
-  cortex_vol,
-  cortex_slices,
-  dirs,
-  skip_existing
-) {
-  p2 <- progressor(steps = nrow(cortex_slices))
-
-  invisible(safe_future_pmap(
-    list(
-      x = cortex_slices$x,
-      y = cortex_slices$y,
-      z = cortex_slices$z,
-      slice_view = cortex_slices$view,
-      view_name = cortex_slices$name
-    ),
-    function(x, y, z, slice_view, view_name) {
-      hemi <- extract_hemi_from_view(slice_view, view_name)
-      snapshot_cortex_slice(
-        vol = cortex_vol,
-        x = x,
-        y = y,
-        z = z,
-        slice_view = slice_view,
-        view_name = view_name,
-        hemi = hemi,
-        output_dir = dirs$snapshots,
-        skip_existing = skip_existing
-      )
-      p2()
-      NULL
-    },
-    .options = furrr_options(
-      packages = "ggseg.extra",
-      globals = c("cortex_vol", "dirs", "skip_existing", "p2")
-    )
-  ))
 }
 
 

@@ -173,58 +173,6 @@ create_cortical_from_labels <- function(
   )
 }
 
-
-#' Derive, read and build a cortical atlas from FreeSurfer label files
-#' @noRd
-run_label_atlas_creation <- function(
-  label_files,
-  atlas_name,
-  input_lut,
-  config,
-  views
-) {
-  if (is.null(atlas_name)) {
-    atlas_name <- derive_atlas_name(label_files[1])
-  }
-
-  lut_result <- parse_lut_colours(input_lut)
-  default_colours <- rep(NA_character_, length(label_files))
-
-  run_cortical_creation(
-    atlas_name = atlas_name,
-    config = config,
-    read_fn = function() {
-      labels_read_files(
-        label_files,
-        lut_result$region_names,
-        lut_result$colours,
-        default_colours
-      )
-    },
-    step_label = paste("Reading", length(label_files), "label files"),
-    cache_label = "Read labels",
-    header_msg = "Creating brain atlas {.val {atlas_name}}",
-    input_files = label_files,
-    hemisphere_fn = derive_label_hemisphere,
-    views = views
-  )
-}
-
-
-#' @noRd
-derive_label_hemisphere <- function(step1) {
-  hemisphere <- unique(
-    step1$components$core$hemi[!is.na(step1$components$core$hemi)]
-  )
-  hemi_short <- vapply(
-    hemisphere,
-    hemi_to_short,
-    character(1),
-    USE.NAMES = FALSE
-  )
-  if (length(hemi_short) == 0) c("lh", "rh") else hemi_short
-}
-
 #' Create cortical atlas from GIFTI annotation files
 #'
 #' @description
@@ -466,6 +414,58 @@ create_cortical_from_neuromaps <- function(
     hemisphere = hemisphere,
     views = views
   )
+}
+
+
+#' Derive, read and build a cortical atlas from FreeSurfer label files
+#' @noRd
+run_label_atlas_creation <- function(
+  label_files,
+  atlas_name,
+  input_lut,
+  config,
+  views
+) {
+  if (is.null(atlas_name)) {
+    atlas_name <- derive_atlas_name(label_files[1])
+  }
+
+  lut_result <- parse_lut_colours(input_lut)
+  default_colours <- rep(NA_character_, length(label_files))
+
+  run_cortical_creation(
+    atlas_name = atlas_name,
+    config = config,
+    read_fn = function() {
+      labels_read_files(
+        label_files,
+        lut_result$region_names,
+        lut_result$colours,
+        default_colours
+      )
+    },
+    step_label = paste("Reading", length(label_files), "label files"),
+    cache_label = "Read labels",
+    header_msg = "Creating brain atlas {.val {atlas_name}}",
+    input_files = label_files,
+    hemisphere_fn = derive_label_hemisphere,
+    views = views
+  )
+}
+
+
+#' @noRd
+derive_label_hemisphere <- function(step1) {
+  hemisphere <- unique(
+    step1$components$core$hemi[!is.na(step1$components$core$hemi)]
+  )
+  hemi_short <- vapply(
+    hemisphere,
+    hemi_to_short,
+    character(1),
+    USE.NAMES = FALSE
+  )
+  if (length(hemi_short) == 0) c("lh", "rh") else hemi_short
 }
 
 

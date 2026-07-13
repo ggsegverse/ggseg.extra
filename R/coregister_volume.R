@@ -96,52 +96,6 @@ coregister_volume <- function(
   invisible(output_lta)
 }
 
-
-#' Report and return a cached registration
-#' @noRd
-coreg_reuse_lta <- function(output_lta, verbose) {
-  if (verbose) {
-    cli::cli_alert_info(
-      "Reusing existing registration: {.path {output_lta}}"
-    )
-  }
-  invisible(output_lta)
-}
-
-
-#' Run mri_coreg on the (optionally binarised) moving and reference volumes
-#' @noRd
-run_mri_coreg <- function(
-  mov,
-  ref,
-  output_lta,
-  in_path,
-  target_subject,
-  dof,
-  verbose
-) {
-  if (verbose) {
-    cli::cli_alert_info(
-      "Coregistering {.path {basename(in_path)}} to \\
-       {.val {target_subject}} ({dof}-DOF)"
-    )
-  }
-
-  cmd <- paste(
-    "mri_coreg",
-    "--mov",
-    shQuote(mov),
-    "--ref",
-    shQuote(ref),
-    "--reg",
-    shQuote(output_lta),
-    "--dof",
-    dof
-  )
-  run_cmd(cmd, verbose = verbose)
-}
-
-
 #' Project atlas labels onto FreeSurfer anatomical context
 #'
 #' For each label in an atlas volume, resamples a binary indicator with
@@ -275,6 +229,119 @@ project_volume_anatomical <- function(
   invisible(project_finalize(merged, prep, output_file, id_offset, verbose))
 }
 
+#' Prepare an atlas for the subcortical pipeline with anatomical context
+#'
+#' Convenience wrapper that runs [coregister_volume()] followed by
+#' [project_volume_anatomical()] in one call, producing a merged volume
+#' on a FreeSurfer subject's `aparc+aseg` grid together with a matching
+#' colour table, ready to feed [create_subcortical_from_volume()].
+#'
+#' @inheritParams coregister_volume
+#' @inheritParams project_volume_anatomical
+#'
+#' @return Invisibly, the `list(volume, lut, id_offset)` returned by
+#'   [project_volume_anatomical()]. Pass it straight to
+#'   [create_subcortical_from_volume()], which unpacks `volume` and `lut`.
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' merged <- prepare_subcortical_anatomical(
+#'   input_volume = "shen_2mm_268_parcellation.nii.gz",
+#'   lut = subcortical_lut
+#' )
+#' atlas <- create_subcortical_from_volume(
+#'   input_volume = merged,
+#'   context = list(focus = "my-structures")
+#' )
+#' }
+prepare_subcortical_anatomical <- function(
+  input_volume,
+  lut = NULL,
+  target_subject = "cvs_avg35_inMNI152",
+  target_volume = "brain",
+  threshold = 0.3,
+  id_offset = 200L,
+  protect_cortex = TRUE,
+  dof = 12,
+  output_file = NULL,
+  output_lta = NULL,
+  binarise = TRUE,
+  subjects_dir = freesurfer::fs_subj_dir(),
+  skip_existing = FALSE,
+  verbose = get_verbose() # nolint: object_usage_linter
+) {
+  lta <- coregister_volume(
+    input_volume = input_volume,
+    target_subject = target_subject,
+    target_volume = target_volume,
+    output_lta = output_lta,
+    dof = dof,
+    binarise = binarise,
+    subjects_dir = subjects_dir,
+    skip_existing = skip_existing,
+    verbose = verbose
+  )
+
+  project_volume_anatomical(
+    input_volume = input_volume,
+    lut = lut,
+    registration = lta,
+    target_subject = target_subject,
+    threshold = threshold,
+    id_offset = id_offset,
+    protect_cortex = protect_cortex,
+    output_file = output_file,
+    subjects_dir = subjects_dir,
+    verbose = verbose
+  )
+}
+
+
+#' Report and return a cached registration
+#' @noRd
+coreg_reuse_lta <- function(output_lta, verbose) {
+  if (verbose) {
+    cli::cli_alert_info(
+      "Reusing existing registration: {.path {output_lta}}"
+    )
+  }
+  invisible(output_lta)
+}
+
+
+#' Run mri_coreg on the (optionally binarised) moving and reference volumes
+#' @noRd
+run_mri_coreg <- function(
+  mov,
+  ref,
+  output_lta,
+  in_path,
+  target_subject,
+  dof,
+  verbose
+) {
+  if (verbose) {
+    cli::cli_alert_info(
+      "Coregistering {.path {basename(in_path)}} to \\
+       {.val {target_subject}} ({dof}-DOF)"
+    )
+  }
+
+  cmd <- paste(
+    "mri_coreg",
+    "--mov",
+    shQuote(mov),
+    "--ref",
+    shQuote(ref),
+    "--reg",
+    shQuote(output_lta),
+    "--dof",
+    dof
+  )
+  run_cmd(cmd, verbose = verbose)
+}
+
 
 #' Read the atlas volume, its labels, and the target aparc+aseg grid
 #' @noRd
@@ -376,75 +443,6 @@ project_finalize <- function(merged, prep, output_file, id_offset, verbose) {
     volume = output_file,
     lut = combined_lut,
     id_offset = id_offset
-  )
-}
-
-
-#' Prepare an atlas for the subcortical pipeline with anatomical context
-#'
-#' Convenience wrapper that runs [coregister_volume()] followed by
-#' [project_volume_anatomical()] in one call, producing a merged volume
-#' on a FreeSurfer subject's `aparc+aseg` grid together with a matching
-#' colour table, ready to feed [create_subcortical_from_volume()].
-#'
-#' @inheritParams coregister_volume
-#' @inheritParams project_volume_anatomical
-#'
-#' @return Invisibly, the `list(volume, lut, id_offset)` returned by
-#'   [project_volume_anatomical()]. Pass it straight to
-#'   [create_subcortical_from_volume()], which unpacks `volume` and `lut`.
-#' @export
-#'
-#' @examples
-#' \dontrun{
-#' merged <- prepare_subcortical_anatomical(
-#'   input_volume = "shen_2mm_268_parcellation.nii.gz",
-#'   lut = subcortical_lut
-#' )
-#' atlas <- create_subcortical_from_volume(
-#'   input_volume = merged,
-#'   context = list(focus = "my-structures")
-#' )
-#' }
-prepare_subcortical_anatomical <- function(
-  input_volume,
-  lut = NULL,
-  target_subject = "cvs_avg35_inMNI152",
-  target_volume = "brain",
-  threshold = 0.3,
-  id_offset = 200L,
-  protect_cortex = TRUE,
-  dof = 12,
-  output_file = NULL,
-  output_lta = NULL,
-  binarise = TRUE,
-  subjects_dir = freesurfer::fs_subj_dir(),
-  skip_existing = FALSE,
-  verbose = get_verbose() # nolint: object_usage_linter
-) {
-  lta <- coregister_volume(
-    input_volume = input_volume,
-    target_subject = target_subject,
-    target_volume = target_volume,
-    output_lta = output_lta,
-    dof = dof,
-    binarise = binarise,
-    subjects_dir = subjects_dir,
-    skip_existing = skip_existing,
-    verbose = verbose
-  )
-
-  project_volume_anatomical(
-    input_volume = input_volume,
-    lut = lut,
-    registration = lta,
-    target_subject = target_subject,
-    threshold = threshold,
-    id_offset = id_offset,
-    protect_cortex = protect_cortex,
-    output_file = output_file,
-    subjects_dir = subjects_dir,
-    verbose = verbose
   )
 }
 

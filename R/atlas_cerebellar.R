@@ -102,49 +102,6 @@ suit_deformation_field <- function(
   download_suit_xfm(filename, cached_path)
 }
 
-
-#' Download and validate a SUIT deformation field file
-#' @noRd
-download_suit_xfm <- function(filename, cached_path) {
-  if (!can_reach_github()) {
-    cli::cli_abort(c(
-      "Cannot reach GitHub to download deformation field",
-      "i" = "The deformation field {.file {filename}} is not cached",
-      "i" = "Check your internet connection and try again" # nolint
-    ))
-  }
-
-  url <- paste0(
-    "https://raw.githubusercontent.com/DiedrichsenLab/",
-    "cerebellar_atlases/master/tpl-SUIT/",
-    filename
-  )
-
-  cli::cli_alert_info("Downloading {.file {filename}} (~13 MB)")
-
-  tryCatch(
-    utils::download.file(url, cached_path, mode = "wb", quiet = TRUE),
-    error = function(e) {
-      unlink(cached_path)
-      cli::cli_abort(c(
-        "Failed to download deformation field",
-        "i" = "URL: {.url {url}}",
-        "x" = "{conditionMessage(e)}"
-      ))
-    }
-  )
-
-  if (!file.exists(cached_path) || file.size(cached_path) < 1e6) {
-    unlink(cached_path)
-    cli::cli_abort(
-      "Download appears incomplete. Please try again."
-    )
-  }
-
-  cli::cli_alert_success("Cached at {.path {cached_path}}")
-  cached_path
-}
-
 #' Transform a volume from MNI space to SUIT cerebellar space
 #'
 #' @description
@@ -228,48 +185,6 @@ transform_mni_to_suit <- function(
   RNifti::writeNifti(out_nii, output_file)
 
   invisible(output_file)
-}
-
-
-#' Validate the deformation field and build SUIT resampling inputs
-#' @noRd
-prepare_suit_resample <- function(xfm, mni_vol) {
-  xfm_dims <- dim(xfm)
-  if (length(xfm_dims) != 5 || xfm_dims[4] != 1 || xfm_dims[5] != 3) {
-    cli::cli_abort(c(
-      "Deformation field must be a 5D NIfTI (x, y, z, 1, 3)",
-      "i" = "Got dimensions: {paste(xfm_dims, collapse = ' x ')}"
-    ))
-  }
-
-  suit_dims <- xfm_dims[1:3]
-  result <- array(0, dim = suit_dims)
-
-  mni_coords_x <- xfm[,,, 1, 1] # nolint: commas_linter.
-  mni_coords_y <- xfm[,,, 1, 2] # nolint: commas_linter.
-  mni_coords_z <- xfm[,,, 1, 3] # nolint: commas_linter.
-
-  mni_coords <- cbind(
-    c(mni_coords_x),
-    c(mni_coords_y),
-    c(mni_coords_z)
-  )
-
-  vox_coords <- RNifti::worldToVoxel(mni_coords, mni_vol)
-
-  mni_arr <- drop(as.array(mni_vol))
-  mni_dims <- dim(mni_arr)
-  if (length(mni_dims) != 3) {
-    cli::cli_abort("Input volume must be 3D, got {length(mni_dims)}D")
-  }
-
-  list(
-    suit_dims = suit_dims,
-    result = result,
-    vox_coords = vox_coords,
-    mni_arr = mni_arr,
-    mni_dims = mni_dims
-  )
 }
 
 #' Create cerebellar atlas from SUIT flatmap
@@ -577,6 +492,91 @@ read_suit_parcellation <- function(gifti_files) {
   }
 
   result
+}
+
+
+#' Download and validate a SUIT deformation field file
+#' @noRd
+download_suit_xfm <- function(filename, cached_path) {
+  if (!can_reach_github()) {
+    cli::cli_abort(c(
+      "Cannot reach GitHub to download deformation field",
+      "i" = "The deformation field {.file {filename}} is not cached",
+      "i" = "Check your internet connection and try again" # nolint
+    ))
+  }
+
+  url <- paste0(
+    "https://raw.githubusercontent.com/DiedrichsenLab/",
+    "cerebellar_atlases/master/tpl-SUIT/",
+    filename
+  )
+
+  cli::cli_alert_info("Downloading {.file {filename}} (~13 MB)")
+
+  tryCatch(
+    utils::download.file(url, cached_path, mode = "wb", quiet = TRUE),
+    error = function(e) {
+      unlink(cached_path)
+      cli::cli_abort(c(
+        "Failed to download deformation field",
+        "i" = "URL: {.url {url}}",
+        "x" = "{conditionMessage(e)}"
+      ))
+    }
+  )
+
+  if (!file.exists(cached_path) || file.size(cached_path) < 1e6) {
+    unlink(cached_path)
+    cli::cli_abort(
+      "Download appears incomplete. Please try again."
+    )
+  }
+
+  cli::cli_alert_success("Cached at {.path {cached_path}}")
+  cached_path
+}
+
+
+#' Validate the deformation field and build SUIT resampling inputs
+#' @noRd
+prepare_suit_resample <- function(xfm, mni_vol) {
+  xfm_dims <- dim(xfm)
+  if (length(xfm_dims) != 5 || xfm_dims[4] != 1 || xfm_dims[5] != 3) {
+    cli::cli_abort(c(
+      "Deformation field must be a 5D NIfTI (x, y, z, 1, 3)",
+      "i" = "Got dimensions: {paste(xfm_dims, collapse = ' x ')}"
+    ))
+  }
+
+  suit_dims <- xfm_dims[1:3]
+  result <- array(0, dim = suit_dims)
+
+  mni_coords_x <- xfm[,,, 1, 1] # nolint: commas_linter.
+  mni_coords_y <- xfm[,,, 1, 2] # nolint: commas_linter.
+  mni_coords_z <- xfm[,,, 1, 3] # nolint: commas_linter.
+
+  mni_coords <- cbind(
+    c(mni_coords_x),
+    c(mni_coords_y),
+    c(mni_coords_z)
+  )
+
+  vox_coords <- RNifti::worldToVoxel(mni_coords, mni_vol)
+
+  mni_arr <- drop(as.array(mni_vol))
+  mni_dims <- dim(mni_arr)
+  if (length(mni_dims) != 3) {
+    cli::cli_abort("Input volume must be 3D, got {length(mni_dims)}D")
+  }
+
+  list(
+    suit_dims = suit_dims,
+    result = result,
+    vox_coords = vox_coords,
+    mni_arr = mni_arr,
+    mni_dims = mni_dims
+  )
 }
 
 
@@ -1554,11 +1554,7 @@ build_cerebellar_volume_row <- function(
 ) {
   idx <- colortable$idx[i]
   region_name <- colortable$label[i]
-  colour <- if ("color" %in% names(colortable)) {
-    colortable$color[i]
-  } else {
-    NA_character_
-  }
+  colour <- colortable_colour(colortable, i)
 
   region_vertices <- which(vertex_labels == idx) - 1L
   n_voxels <- sum(vol == idx)
@@ -1571,6 +1567,59 @@ build_cerebellar_volume_row <- function(
   region <- clean_cerebellar_region(region_name)
   label <- paste(hemi, region, sep = "_")
 
+  resolved <- resolve_orphan_region(
+    region_vertices,
+    n_voxels,
+    region_name,
+    vol,
+    idx,
+    volume,
+    suit_3d_surface,
+    vertex_labels
+  )
+  region_vertices <- resolved$region_vertices
+  vertex_labels <- resolved$vertex_labels
+  is_deep <- resolved$is_deep
+
+  row <- dplyr::tibble(
+    hemi = hemi,
+    region = region,
+    label = label,
+    colour = colour,
+    vol_idx = idx,
+    vertices = list(region_vertices),
+    deep = is_deep
+  )
+  list(row = row, vertex_labels = vertex_labels)
+}
+
+
+#' Colour for a colortable row, NA when the table carries no colours
+#' @noRd
+colortable_colour <- function(colortable, i) {
+  if ("color" %in% names(colortable)) {
+    colortable$color[i]
+  } else {
+    NA_character_
+  }
+}
+
+
+#' Classify a region with no surface vertices as deep, or rescue it
+#'
+#' Known deep nuclei are flagged; anything else is reassigned to its nearest
+#' surface vertices.
+#' @noRd
+resolve_orphan_region <- function(
+  region_vertices,
+  n_voxels,
+  region_name,
+  vol,
+  idx,
+  volume,
+  suit_3d_surface,
+  vertex_labels
+) {
   is_deep <- FALSE
   if (length(region_vertices) == 0 && n_voxels > 0) {
     is_known_nucleus <- grepl(
@@ -1604,16 +1653,11 @@ build_cerebellar_volume_row <- function(
     }
   }
 
-  row <- dplyr::tibble(
-    hemi = hemi,
-    region = region,
-    label = label,
-    colour = colour,
-    vol_idx = idx,
-    vertices = list(region_vertices),
-    deep = is_deep
+  list(
+    region_vertices = region_vertices,
+    vertex_labels = vertex_labels,
+    is_deep = is_deep
   )
-  list(row = row, vertex_labels = vertex_labels)
 }
 
 
