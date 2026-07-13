@@ -27,19 +27,7 @@ read_fs_mesh <- function(
   hemisphere <- match.arg(hemisphere)
   surface <- match.arg(surface)
 
-  surf_file <- file.path(
-    subjects_dir,
-    subject,
-    "surf",
-    paste(hemisphere, surface, sep = ".")
-  )
-
-  if (!file.exists(surf_file)) {
-    cli::cli_abort(c(
-      "Surface file not found:",
-      surf_file
-    ))
-  }
+  surf_file <- fs_surface_path(subjects_dir, subject, hemisphere, surface)
 
   # Use temporary file for conversion
   tmp_dir <- tempdir()
@@ -56,7 +44,46 @@ read_fs_mesh <- function(
 
   # Read ascii file
   asc_lines <- readLines(tmp_asc)
+  mesh <- parse_fs_asc_mesh(asc_lines)
 
+  # Clean up
+
+  unlink(tmp_asc)
+
+  list(
+    vertices = mesh$vertices,
+    faces = mesh$faces,
+    hemisphere = hemisphere,
+    surface = surface,
+    subject = subject
+  )
+}
+
+
+#' Build the path to a FreeSurfer surface file and check it exists
+#' @noRd
+fs_surface_path <- function(subjects_dir, subject, hemisphere, surface) {
+  surf_file <- file.path(
+    subjects_dir,
+    subject,
+    "surf",
+    paste(hemisphere, surface, sep = ".")
+  )
+
+  if (!file.exists(surf_file)) {
+    cli::cli_abort(c(
+      "Surface file not found:",
+      surf_file
+    ))
+  }
+
+  surf_file
+}
+
+
+#' Parse vertices and faces from the lines of a FreeSurfer ascii surface
+#' @noRd
+parse_fs_asc_mesh <- function(asc_lines) {
   # First line is comment, second has vertex/face counts
   counts <- as.integer(strsplit(trimws(asc_lines[2]), "\\s+")[[1]])
   n_vertices <- counts[1]
@@ -84,17 +111,7 @@ read_fs_mesh <- function(
   faces <- as.data.frame(faces)
   names(faces) <- c("i", "j", "k")
 
-  # Clean up
-
-  unlink(tmp_asc)
-
-  list(
-    vertices = vertices,
-    faces = faces,
-    hemisphere = hemisphere,
-    surface = surface,
-    subject = subject
-  )
+  list(vertices = vertices, faces = faces)
 }
 
 

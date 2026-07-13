@@ -117,6 +117,47 @@ create_tract_from_tractography <- function(
 
   start_time <- Sys.time()
 
+  setup <- tract_setup_pipeline(
+    input_tracts,
+    input_aseg,
+    input_lut,
+    atlas_name,
+    output_dir,
+    verbose,
+    cleanup,
+    skip_existing,
+    tolerance,
+    smoothness,
+    steps,
+    centerline_method,
+    tube_radius,
+    tube_segments,
+    n_points
+  )
+
+  tract_run_pipeline(setup, start_time, views, dilate, vertex_size_limits)
+}
+
+
+#' Validate arguments, create the output directories and parse the LUT
+#' @noRd
+tract_setup_pipeline <- function(
+  input_tracts,
+  input_aseg,
+  input_lut,
+  atlas_name,
+  output_dir,
+  verbose,
+  cleanup,
+  skip_existing,
+  tolerance,
+  smoothness,
+  steps,
+  centerline_method,
+  tube_radius,
+  tube_segments,
+  n_points
+) {
   config <- validate_tract_config(
     output_dir,
     verbose,
@@ -139,41 +180,74 @@ create_tract_from_tractography <- function(
   lut_result <- parse_lut_colours(input_lut)
   tract_log_header(config, input_tracts, input_aseg)
 
+  config$input_tracts <- input_tracts
+  config$input_aseg <- input_aseg
+  list(config = config, dirs = dirs, lut = lut_result)
+}
+
+
+#' Run the tract pipeline steps and assemble the atlas
+#' @noRd
+tract_run_pipeline <- function(
+  setup,
+  start_time,
+  views,
+  dilate,
+  vertex_size_limits
+) {
+  config <- setup$config
+  dirs <- setup$dirs
+
   step1 <- tract_resolve_step1(
     config,
     dirs,
-    input_tracts,
-    lut_result$region_names,
-    lut_result$colours
+    config$input_tracts,
+    setup$lut$region_names,
+    setup$lut$colours
   )
-
-  tract_final <- function(atlas) {
-    finalize_atlas(
-      atlas,
-      config,
-      dirs,
-      start_time,
-      type_label = "Tract",
-      unit = "tracts",
-      early_step = 1L
-    )
-  }
 
   if (max(config$steps) == 1L) {
     atlas <- tract_assemble_3d(step1)
-    return(tract_final(atlas))
+    return(tract_finalize(atlas, config, dirs, start_time))
   }
 
-  tract_check_aseg(input_aseg, config$steps)
+  tract_check_aseg(config$input_aseg, config$steps)
 
   snaps <- tract_resolve_snapshots(
     config,
     dirs,
     step1,
-    input_aseg,
+    config$input_aseg,
     views
   )
 
+  tract_image_steps(config, dirs, dilate, vertex_size_limits)
+
+  if (7L %in% config$steps) {
+    atlas <- tract_assemble_full(step1, dirs, snaps$views, snaps$cortex_slices)
+    return(tract_finalize(atlas, config, dirs, start_time))
+  }
+
+  tract_finalize(NULL, config, dirs, start_time)
+}
+
+
+#' @noRd
+tract_finalize <- function(atlas, config, dirs, start_time) {
+  finalize_atlas(
+    atlas,
+    config,
+    dirs,
+    start_time,
+    type_label = "Tract",
+    unit = "tracts",
+    early_step = 1L
+  )
+}
+
+
+#' @noRd
+tract_image_steps <- function(config, dirs, dilate, vertex_size_limits) {
   run_image_steps(
     config,
     dirs,
@@ -182,13 +256,6 @@ create_tract_from_tractography <- function(
     dilate = dilate,
     vertex_size_limits = vertex_size_limits
   )
-
-  if (7L %in% config$steps) {
-    atlas <- tract_assemble_full(step1, dirs, snaps$views, snaps$cortex_slices)
-    return(tract_final(atlas))
-  }
-
-  tract_final(NULL)
 }
 
 
@@ -270,6 +337,35 @@ tract_resolve_step1 <- function(
     return(cached$data[["step1_data.rds"]])
   }
 
+  prepared <- tract_prepare_inputs(
+    input_tracts,
+    tract_names,
+    colours,
+    config$verbose
+  )
+
+  meshes_list <- tract_build_meshes(
+    config,
+    prepared$streamlines_data,
+    prepared$tract_names
+  )
+
+  built <- tract_build_core(
+    meshes_list,
+    prepared$colours,
+    prepared$tract_names
+  )
+
+  step1_data <- tract_step1_data(config, prepared, built)
+
+  saveRDS(step1_data, file.path(dirs$base, "step1_data.rds"))
+  step1_data
+}
+
+
+#' Read the tractography input, sanitize names and resolve colours
+#' @noRd
+tract_prepare_inputs <- function(input_tracts, tract_names, colours, verbose) {
   input_result <- tract_read_input(input_tracts, tract_names)
   streamlines_data <- input_result$streamlines_data
   tract_names <- sanitize_label(input_result$tract_names)
@@ -277,7 +373,7 @@ tract_resolve_step1 <- function(
 
   coords_are_voxels <- detect_tract_coord_space(
     streamlines_data,
-    config$verbose
+    verbose
   )
 
   if (is.null(colours)) {
@@ -285,6 +381,17 @@ tract_resolve_step1 <- function(
   }
   names(colours) <- tract_names
 
+  list(
+    streamlines_data = streamlines_data,
+    tract_names = tract_names,
+    colours = colours,
+    coords_are_voxels = coords_are_voxels
+  )
+}
+
+
+#' @noRd
+tract_build_meshes <- function(config, streamlines_data, tract_names) {
   if (config$verbose) {
     cli::cli_progress_step(
       "1/7 Creating tube meshes for {length(streamlines_data)} tracts"
@@ -305,21 +412,22 @@ tract_resolve_step1 <- function(
     cli::cli_progress_done()
   }
 
-  built <- tract_build_core(meshes_list, colours, tract_names)
+  meshes_list
+}
 
-  step1_data <- list(
-    streamlines_data = streamlines_data,
+
+#' @noRd
+tract_step1_data <- function(config, prepared, built) {
+  list(
+    streamlines_data = prepared$streamlines_data,
     centerlines_df = built$centerlines_df,
     core = built$core,
     palette = built$palette,
     atlas_name = built$atlas_name,
     tube_radius = config$tube_radius,
     tube_segments = config$tube_segments,
-    coords_are_voxels = coords_are_voxels
+    coords_are_voxels = prepared$coords_are_voxels
   )
-
-  saveRDS(step1_data, file.path(dirs$base, "step1_data.rds"))
-  step1_data
 }
 
 
@@ -361,16 +469,7 @@ tract_resolve_snapshots <- function(config, dirs, step1, input_aseg, views) {
   )
 
   if (!cached$run) {
-    if (any(config$steps > 2L)) {
-      if (config$verbose) {
-        cli::cli_alert_success("2/7 Loaded existing snapshots")
-      }
-      return(list(
-        views = cached$data[["views.rds"]],
-        cortex_slices = cached$data[["cortex_slices.rds"]]
-      ))
-    }
-    return(list(views = NULL, cortex_slices = NULL))
+    return(tract_cached_snapshots(cached, config))
   }
 
   if (config$verbose) {
@@ -403,6 +502,21 @@ tract_resolve_snapshots <- function(config, dirs, step1, input_aseg, views) {
     cli::cli_progress_done()
   }
   result
+}
+
+
+#' @noRd
+tract_cached_snapshots <- function(cached, config) {
+  if (any(config$steps > 2L)) {
+    if (config$verbose) {
+      cli::cli_alert_success("2/7 Loaded existing snapshots")
+    }
+    return(list(
+      views = cached$data[["views.rds"]],
+      cortex_slices = cached$data[["cortex_slices.rds"]]
+    ))
+  }
+  list(views = NULL, cortex_slices = NULL)
 }
 
 

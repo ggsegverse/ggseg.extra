@@ -114,6 +114,48 @@ create_subcortical_from_volume <- function(
   steps = NULL,
   context = NULL
 ) {
+  unpacked <- subcort_unpack_input(
+    input_volume,
+    input_lut,
+    tolerance,
+    smoothness
+  )
+
+  start_time <- Sys.time()
+
+  setup <- subcort_setup_pipeline(
+    unpacked,
+    atlas_name,
+    output_dir,
+    verbose,
+    cleanup,
+    skip_existing,
+    decimate,
+    steps,
+    tolerance,
+    smoothness,
+    context
+  )
+
+  subcort_run_pipeline(
+    setup,
+    start_time,
+    views,
+    context,
+    dilate,
+    vertex_size_limits
+  )
+}
+
+
+#' Warn about deprecated sf smoothing arguments and unpack the volume input
+#' @noRd
+subcort_unpack_input <- function(
+  input_volume,
+  input_lut,
+  tolerance,
+  smoothness
+) {
   # nolint start: object_usage_linter.
   warn_deprecated_sf_smoothing(
     tolerance = tolerance,
@@ -122,15 +164,28 @@ create_subcortical_from_volume <- function(
   )
   # nolint end
 
-  unpacked <- unpack_anatomical_input(input_volume, input_lut)
-  input_volume <- unpacked$input_volume
-  input_lut <- unpacked$input_lut
+  unpack_anatomical_input(input_volume, input_lut)
+}
 
-  start_time <- Sys.time()
 
+#' Validate arguments, create the output directories and log the header
+#' @noRd
+subcort_setup_pipeline <- function(
+  unpacked,
+  atlas_name,
+  output_dir,
+  verbose,
+  cleanup,
+  skip_existing,
+  decimate,
+  steps,
+  tolerance,
+  smoothness,
+  context
+) {
   config <- validate_subcort_config(
-    input_volume,
-    input_lut,
+    unpacked$input_volume,
+    unpacked$input_lut,
     atlas_name,
     output_dir,
     verbose,
@@ -151,6 +206,23 @@ create_subcortical_from_volume <- function(
   )
   subcort_log_header(config)
 
+  list(config = config, dirs = dirs)
+}
+
+
+#' Run the subcortical pipeline steps and assemble the atlas
+#' @noRd
+subcort_run_pipeline <- function(
+  setup,
+  start_time,
+  views,
+  context,
+  dilate,
+  vertex_size_limits
+) {
+  config <- setup$config
+  dirs <- setup$dirs
+
   labels <- subcort_resolve_labels(config, dirs)
   meshes_list <- subcort_resolve_meshes(config, dirs, labels$colortable)
   components <- subcort_resolve_components(
@@ -160,25 +232,40 @@ create_subcortical_from_volume <- function(
     meshes_list
   )
 
-  subcort_final <- function(atlas) {
-    finalize_atlas(
-      atlas,
-      config,
-      dirs,
-      start_time,
-      type_label = "Subcortical",
-      unit = "structures",
-      early_step = 3L
-    )
-  }
-
   if (max(config$steps) == 3L) {
     atlas <- subcort_assemble_3d(config$atlas_name, components)
-    return(subcort_final(atlas))
+    return(subcort_finalize(atlas, config, dirs, start_time))
   }
 
-  views <- resolve_subcort_views_spec(views, input_volume)
+  views <- resolve_subcort_views_spec(views, config$input_volume)
   snaps <- subcort_resolve_snapshots(config, dirs, labels$colortable, views)
+  subcort_image_steps(config, dirs, dilate, vertex_size_limits)
+
+  if (9L %in% config$steps) {
+    atlas <- subcort_build_2d_atlas(config, components, dirs, snaps, context)
+    return(subcort_finalize(atlas, config, dirs, start_time))
+  }
+
+  subcort_finalize(NULL, config, dirs, start_time)
+}
+
+
+#' @noRd
+subcort_finalize <- function(atlas, config, dirs, start_time) {
+  finalize_atlas(
+    atlas,
+    config,
+    dirs,
+    start_time,
+    type_label = "Subcortical",
+    unit = "structures",
+    early_step = 3L
+  )
+}
+
+
+#' @noRd
+subcort_image_steps <- function(config, dirs, dilate, vertex_size_limits) {
   run_image_steps(
     config,
     dirs,
@@ -187,20 +274,19 @@ create_subcortical_from_volume <- function(
     dilate = dilate,
     vertex_size_limits = vertex_size_limits
   )
+}
 
-  if (9L %in% config$steps) {
-    atlas <- subcort_assemble_full(
-      config$atlas_name,
-      components,
-      dirs,
-      snaps$views,
-      snaps$cortex_slices
-    )
-    atlas <- apply_subcort_context_spec(atlas, context)
-    return(subcort_final(atlas))
-  }
 
-  subcort_final(NULL)
+#' @noRd
+subcort_build_2d_atlas <- function(config, components, dirs, snaps, context) {
+  atlas <- subcort_assemble_full(
+    config$atlas_name,
+    components,
+    dirs,
+    snaps$views,
+    snaps$cortex_slices
+  )
+  apply_subcort_context_spec(atlas, context)
 }
 
 
@@ -390,25 +476,10 @@ subcort_resolve_labels <- function(config, dirs) {
   )
 
   if (!cached$run) {
-    if (config$verbose) {
-      cli::cli_alert_success("1/9 Loaded existing labels")
-    }
-    return(list(
-      colortable = cached$data[["colortable.rds"]],
-      vol_labels = cached$data[["vol_labels.rds"]]
-    ))
+    return(subcort_cached_labels(cached, config$verbose))
   }
 
-  colortable <- if (is.null(config$input_lut)) {
-    cli::cli_warn(c(
-      "No color lookup table provided",
-      "i" = "Region names will be generic (e.g., 'region_0010')",
-      "i" = "Colours will be auto-generated" # nolint
-    ))
-    generate_colortable_from_volume(config$input_volume)
-  } else {
-    get_ctab(config$input_lut)
-  }
+  colortable <- subcort_load_colortable(config$input_lut, config$input_volume)
 
   if (config$verbose) {
     cli::cli_progress_step("1/9 Extracting labels from volume")
@@ -436,6 +507,32 @@ subcort_resolve_labels <- function(config, dirs) {
   }
 
   list(colortable = colortable, vol_labels = vol_labels)
+}
+
+
+#' @noRd
+subcort_cached_labels <- function(cached, verbose) {
+  if (verbose) {
+    cli::cli_alert_success("1/9 Loaded existing labels")
+  }
+  list(
+    colortable = cached$data[["colortable.rds"]],
+    vol_labels = cached$data[["vol_labels.rds"]]
+  )
+}
+
+
+#' @noRd
+subcort_load_colortable <- function(input_lut, input_volume) {
+  if (is.null(input_lut)) {
+    cli::cli_warn(c(
+      "No color lookup table provided",
+      "i" = "Region names will be generic (e.g., 'region_0010')",
+      "i" = "Colours will be auto-generated" # nolint
+    ))
+    return(generate_colortable_from_volume(input_volume))
+  }
+  get_ctab(input_lut)
 }
 
 
@@ -592,7 +689,27 @@ subcort_assemble_full <- function(
   }
 
   sf_data <- build_contour_sf(contours_file, views, cortex_slices)
+  components <- subcort_drop_missing_labels(components, sf_data)
 
+  atlas <- ggseg_atlas(
+    atlas = atlas_name,
+    type = "subcortical",
+    palette = components$palette,
+    core = components$core,
+    data = ggseg_data_subcortical(geom = sf_data, meshes = components$meshes_df)
+  )
+
+  atlas <- ggseg.formats::atlas_view_gather(atlas)
+
+  warn_if_large_atlas(atlas)
+  preview_atlas(atlas)
+  atlas
+}
+
+
+#' Drop core/palette/mesh entries that have no contour geometry
+#' @noRd
+subcort_drop_missing_labels <- function(components, sf_data) {
   sf_labels <- if (is.data.frame(sf_data)) {
     unique(sf_data$label[!is.na(sf_data$label)])
   } else {
@@ -621,18 +738,5 @@ subcort_assemble_full <- function(
       "No labels with valid contour data remain. Cannot build atlas."
     )
   }
-
-  atlas <- ggseg_atlas(
-    atlas = atlas_name,
-    type = "subcortical",
-    palette = components$palette,
-    core = components$core,
-    data = ggseg_data_subcortical(geom = sf_data, meshes = components$meshes_df)
-  )
-
-  atlas <- ggseg.formats::atlas_view_gather(atlas)
-
-  warn_if_large_atlas(atlas)
-  preview_atlas(atlas)
-  atlas
+  components
 }
