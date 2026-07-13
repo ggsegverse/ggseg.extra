@@ -432,18 +432,6 @@ tract_step1_data <- function(config, prepared, built) {
 
 
 #' @noRd
-detect_tract_coord_space <- function(streamlines_data, verbose) {
-  all_streamlines <- unlist(streamlines_data, recursive = FALSE)
-  coords_are_voxels <- detect_coords_are_voxels(all_streamlines)
-  if (verbose) {
-    space <- if (coords_are_voxels) "voxel" else "RAS" # nolint: object_usage_linter
-    cli::cli_alert_info("Auto-detected coordinate space: {.val {space}}")
-  }
-  coords_are_voxels
-}
-
-
-#' @noRd
 tract_check_aseg <- function(input_aseg, steps) {
   if (any(2L:7L %in% steps) && is.null(input_aseg)) {
     cli::cli_abort(c(
