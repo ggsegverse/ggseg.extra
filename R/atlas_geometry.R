@@ -135,6 +135,31 @@ extract_contours <- function(
   regions <- list.files(input_dir, full.names = TRUE)
   region_names <- file_path_sans_ext(basename(regions))
 
+  max_val <- probe_raster_max(regions)
+
+  contourobjs <- map_region_contours(
+    regions = regions,
+    max_val = max_val,
+    vertex_size_limits = vertex_size_limits,
+    step = step
+  )
+  names(contourobjs) <- region_names
+
+  contours <- combine_region_contours(contourobjs)
+
+  save(contours, file = file.path(output_dir, "contours.rda"))
+
+  if (verbose) {
+    cli::cli_progress_done()
+  }
+
+  invisible(contours)
+}
+
+
+#' Find the maximum raster value across the first regions with data
+#' @noRd
+probe_raster_max <- function(regions) {
   max_val <- 0
   for (f in regions[seq_len(min(10, length(regions)))]) {
     r <- suppressWarnings(terra::rast(f))
@@ -147,12 +172,20 @@ extract_contours <- function(
   if (max_val == 0) {
     max_val <- 1
   }
+  max_val
+}
 
+
+#' Extract contours from each region raster in parallel
+#' @noRd
+#' @importFrom furrr furrr_options
+#' @importFrom progressr progressor
+map_region_contours <- function(regions, max_val, vertex_size_limits, step) {
   p <- progressor(
     steps = length(regions),
     label = paste(step, "Extracting contours")
   )
-  contourobjs <- safe_future_map(
+  safe_future_map(
     regions,
     function(region_file) {
       r <- suppressWarnings(terra::rast(region_file))
@@ -170,8 +203,14 @@ extract_contours <- function(
       globals = c("max_val", "vertex_size_limits", "p")
     )
   )
-  names(contourobjs) <- region_names
+}
 
+
+#' Combine per-region contours into a single valid sf data.frame
+#' @noRd
+#' @importFrom dplyr bind_rows group_by summarise
+#' @importFrom sf st_as_sf st_combine st_make_valid
+combine_region_contours <- function(contourobjs) {
   kp <- !vapply(contourobjs, is.null, logical(1))
   contourobjs2 <- contourobjs[kp]
 
@@ -179,15 +218,7 @@ extract_contours <- function(
   contours <- group_by(contours, filenm)
   contours <- summarise(contours, geometry = st_combine(geometry))
   contours <- st_as_sf(contours)
-  contours <- st_make_valid(contours)
-
-  save(contours, file = file.path(output_dir, "contours.rda"))
-
-  if (verbose) {
-    cli::cli_progress_done()
-  }
-
-  invisible(contours)
+  st_make_valid(contours)
 }
 
 
@@ -455,7 +486,24 @@ build_contour_sf <- function(contours_file, views, cortex_slices = NULL) {
     views$name
   }
 
-  conts$view <- vapply(
+  conts$view <- match_contour_views(filenm_base, all_view_names)
+
+  # Flip y-axis: snapshot PNGs have origin top-left, sf expects bottom-left
+  conts$geometry <- conts$geometry * matrix(c(1, 0, 0, -1), 2, 2)
+
+  conts <- layout_volumetric_views(conts) # nolint: object_usage_linter.
+
+  filenm_base <- sub("\\.png$", "", conts$filenm)
+  conts$label <- strip_view_prefix(filenm_base, conts$view)
+
+  arrange_contour_sf(conts)
+}
+
+
+#' Match each contour filename to the view name it starts with
+#' @noRd
+match_contour_views <- function(filenm_base, all_view_names) {
+  vapply(
     filenm_base,
     function(fn) {
       for (vn in all_view_names) {
@@ -467,18 +515,17 @@ build_contour_sf <- function(contours_file, views, cortex_slices = NULL) {
     },
     character(1)
   )
+}
 
-  # Flip y-axis: snapshot PNGs have origin top-left, sf expects bottom-left
-  conts$geometry <- conts$geometry * matrix(c(1, 0, 0, -1), 2, 2)
 
-  conts <- layout_volumetric_views(conts) # nolint: object_usage_linter.
-
-  filenm_base <- sub("\\.png$", "", conts$filenm)
-  conts$label <- vapply(
+#' Strip the leading view name from each contour filename
+#' @noRd
+strip_view_prefix <- function(filenm_base, views) {
+  vapply(
     seq_along(filenm_base),
     function(i) {
       fn <- filenm_base[i]
-      vn <- conts$view[i]
+      vn <- views[i]
       if (is.na(vn)) {
         return(fn)
       }
@@ -486,7 +533,14 @@ build_contour_sf <- function(contours_file, views, cortex_slices = NULL) {
     },
     character(1)
   )
+}
 
+
+#' Select the atlas columns and sort the cortex outline to the bottom layer
+#' @noRd
+#' @importFrom dplyr arrange select
+#' @importFrom sf st_as_sf
+arrange_contour_sf <- function(conts) {
   sf_data <- dplyr::select(conts, label, view, geometry)
   sf_data <- sf::st_as_sf(sf_data)
   # Ensure the cortex outline is the first row per view so it draws as

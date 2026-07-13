@@ -19,6 +19,36 @@ layout_cortical_views <- function(atlas_df) {
   keys <- group_keys(atlas_grouped)
   splits <- group_split(atlas_grouped)
 
+  atlas_list <- collect_cortical_views(keys, splits)
+
+  if (length(atlas_list) == 0) {
+    cli::cli_abort("No valid hemi/view combinations found")
+  }
+
+  widths <- vapply(
+    atlas_list,
+    function(df) {
+      bbox <- st_bbox(df$geometry)
+      unname(bbox["xmax"] - bbox["xmin"])
+    },
+    numeric(1)
+  )
+
+  gap <- max(widths) * 0.05
+  offsets <- cumsum(c(0, widths[-length(widths)] + gap))
+
+  atlas_list <- lapply(seq_along(atlas_list), function(i) {
+    correct_coords_sf(atlas_list[[i]], offsets[i])
+  })
+
+  atlas_df_r <- do.call(rbind, atlas_list)
+  ungroup(atlas_df_r)
+}
+
+
+#' Collect the hemi/view groups present in the atlas, in display order
+#' @noRd
+collect_cortical_views <- function(keys, splits) {
   find_group <- function(h_vals, s) {
     idx <- which(keys$hemi %in% h_vals & keys$view == s)
     if (length(idx) == 1) splits[[idx]] else NULL
@@ -44,30 +74,7 @@ layout_cortical_views <- function(atlas_df) {
   names(atlas_list) <- view_order
 
   present <- !vapply(atlas_list, is.null, logical(1))
-  atlas_list <- atlas_list[present]
-
-  if (length(atlas_list) == 0) {
-    cli::cli_abort("No valid hemi/view combinations found")
-  }
-
-  widths <- vapply(
-    atlas_list,
-    function(df) {
-      bbox <- st_bbox(df$geometry)
-      unname(bbox["xmax"] - bbox["xmin"])
-    },
-    numeric(1)
-  )
-
-  gap <- max(widths) * 0.05
-  offsets <- cumsum(c(0, widths[-length(widths)] + gap))
-
-  atlas_list <- lapply(seq_along(atlas_list), function(i) {
-    correct_coords_sf(atlas_list[[i]], offsets[i])
-  })
-
-  atlas_df_r <- do.call(rbind, atlas_list)
-  ungroup(atlas_df_r)
+  atlas_list[present]
 }
 
 

@@ -164,25 +164,31 @@ create_cortical_from_labels <- function(
     cli::cli_abort("Label files not found: {missing}")
   }
 
+  run_label_atlas_creation(
+    label_files = label_files,
+    atlas_name = atlas_name,
+    input_lut = input_lut,
+    config = config,
+    views = views
+  )
+}
+
+
+#' Derive, read and build a cortical atlas from FreeSurfer label files
+#' @noRd
+run_label_atlas_creation <- function(
+  label_files,
+  atlas_name,
+  input_lut,
+  config,
+  views
+) {
   if (is.null(atlas_name)) {
     atlas_name <- derive_atlas_name(label_files[1])
   }
 
   lut_result <- parse_lut_colours(input_lut)
   default_colours <- rep(NA_character_, length(label_files))
-
-  derive_hemisphere <- function(step1) {
-    hemisphere <- unique(
-      step1$components$core$hemi[!is.na(step1$components$core$hemi)]
-    )
-    hemi_short <- vapply(
-      hemisphere,
-      hemi_to_short,
-      character(1),
-      USE.NAMES = FALSE
-    )
-    if (length(hemi_short) == 0) c("lh", "rh") else hemi_short
-  }
 
   run_cortical_creation(
     atlas_name = atlas_name,
@@ -199,9 +205,24 @@ create_cortical_from_labels <- function(
     cache_label = "Read labels",
     header_msg = "Creating brain atlas {.val {atlas_name}}",
     input_files = label_files,
-    hemisphere_fn = derive_hemisphere,
+    hemisphere_fn = derive_label_hemisphere,
     views = views
   )
+}
+
+
+#' @noRd
+derive_label_hemisphere <- function(step1) {
+  hemisphere <- unique(
+    step1$components$core$hemi[!is.na(step1$components$core$hemi)]
+  )
+  hemi_short <- vapply(
+    hemisphere,
+    hemi_to_short,
+    character(1),
+    USE.NAMES = FALSE
+  )
+  if (length(hemi_short) == 0) c("lh", "rh") else hemi_short
 }
 
 #' Create cortical atlas from GIFTI annotation files
@@ -424,14 +445,47 @@ create_cortical_from_neuromaps <- function(
     reason = "to download neuromaps annotations"
   )
 
+  config <- setup_neuromaps_config(
+    output_dir = output_dir,
+    verbose = verbose,
+    cleanup = cleanup,
+    skip_existing = skip_existing,
+    tolerance = tolerance,
+    smooth_refinements = smooth_refinements
+  )
+
+  run_neuromaps_creation(
+    source = source,
+    desc = desc,
+    space = space,
+    density = density,
+    label_table = label_table,
+    n_bins = n_bins,
+    atlas_name = atlas_name,
+    config = config,
+    hemisphere = hemisphere,
+    views = views
+  )
+}
+
+
+#' Warn about deprecated smoothing args and resolve the cortical config
+#' @noRd
+setup_neuromaps_config <- function(
+  output_dir,
+  verbose,
+  cleanup,
+  skip_existing,
+  tolerance,
+  smooth_refinements
+) {
   warn_deprecated_sf_smoothing(
-    # nolint: object_usage_linter.
     tolerance = tolerance,
     smooth_refinements = smooth_refinements,
     fn = "create_cortical_from_neuromaps"
   )
 
-  config <- validate_cortical_config(
+  validate_cortical_config(
     output_dir,
     verbose,
     cleanup,
@@ -439,49 +493,34 @@ create_cortical_from_neuromaps <- function(
     tolerance,
     smooth_refinements
   )
+}
 
-  if (space != "fsaverage" || density != "10k") {
-    cli::cli_warn(c(
-      "Non-default space/density: {.val {space}} / {.val {density}}",
-      "i" = paste(
-        "The cortical pipeline requires fsaverage5",
-        "(space='fsaverage', density='10k').",
-        "Other values may cause vertex count mismatches."
-      )
-    ))
-  }
 
-  if (config$verbose) {
-    cli::cli_alert_info(
-      "Fetching neuromaps: source={.val {source}}, desc={.val {desc}}"
-    )
-  }
+#' Fetch a neuromaps annotation and run the cortical creation sequence
+#' @noRd
+run_neuromaps_creation <- function(
+  source,
+  desc,
+  space,
+  density,
+  label_table,
+  n_bins,
+  atlas_name,
+  config,
+  hemisphere,
+  views
+) {
+  warn_neuromaps_space(space, density)
 
-  gifti_files <- neuromapr::fetch_neuromaps_annotation(
+  gifti_files <- fetch_neuromaps_files(
     source = source,
     desc = desc,
     space = space,
     density = density,
-    verbose = config$verbose
+    config = config
   )
 
-  is_volume <- any(grepl(
-    "\\.(nii|nii\\.gz)$",
-    gifti_files,
-    ignore.case = TRUE
-  ))
-
-  if (is_volume) {
-    check_fs(abort = TRUE)
-    if (config$verbose) {
-      cli::cli_alert_info(
-        paste(
-          "Volume annotation detected --",
-          "projecting to fsaverage5 surface via mri_vol2surf"
-        )
-      )
-    }
-  }
+  is_volume <- detect_neuromaps_volume(gifti_files, config)
 
   if (is.null(atlas_name)) {
     atlas_name <- paste(source, desc, sep = "_")
@@ -507,6 +546,66 @@ create_cortical_from_neuromaps <- function(
     hemisphere = hemisphere,
     views = views
   )
+}
+
+
+#' Warn when the neuromaps space/density is not fsaverage5
+#' @noRd
+warn_neuromaps_space <- function(space, density) {
+  if (space != "fsaverage" || density != "10k") {
+    cli::cli_warn(c(
+      "Non-default space/density: {.val {space}} / {.val {density}}",
+      "i" = paste(
+        "The cortical pipeline requires fsaverage5",
+        "(space='fsaverage', density='10k').",
+        "Other values may cause vertex count mismatches."
+      )
+    ))
+  }
+}
+
+
+#' Download the neuromaps annotation files
+#' @noRd
+fetch_neuromaps_files <- function(source, desc, space, density, config) {
+  if (config$verbose) {
+    cli::cli_alert_info(
+      "Fetching neuromaps: source={.val {source}}, desc={.val {desc}}"
+    )
+  }
+
+  neuromapr::fetch_neuromaps_annotation(
+    source = source,
+    desc = desc,
+    space = space,
+    density = density,
+    verbose = config$verbose
+  )
+}
+
+
+#' Detect a volume annotation and check FreeSurfer is available for it
+#' @noRd
+detect_neuromaps_volume <- function(gifti_files, config) {
+  is_volume <- any(grepl(
+    "\\.(nii|nii\\.gz)$",
+    gifti_files,
+    ignore.case = TRUE
+  ))
+
+  if (is_volume) {
+    check_fs(abort = TRUE)
+    if (config$verbose) {
+      cli::cli_alert_info(
+        paste(
+          "Volume annotation detected --",
+          "projecting to fsaverage5 surface via mri_vol2surf"
+        )
+      )
+    }
+  }
+
+  is_volume
 }
 
 

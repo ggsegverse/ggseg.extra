@@ -61,50 +61,66 @@ filter_visible_regions <- function(region_grid, vertices_df) {
   keep <- vapply(
     seq_len(nrow(region_grid)),
     function(i) {
-      label <- region_grid$region_label[i]
-      hemi <- region_grid$hemisphere[i]
-      view <- region_grid$view[i]
-
-      key <- paste(hemi, view, sep = "_")
-      cam <- camera_presets[[key]]
-      if (is.null(cam)) {
-        return(TRUE)
-      }
-
-      idx <- which(vertices_df$label == label)
-      if (length(idx) == 0) {
-        if (verbose) {
-          cli::cli_alert_info(
-            "No vertex data for {.val {label}}, keeping"
-          )
-        }
-        return(TRUE)
-      }
-
-      v_indices <- vertices_df$vertices[[idx[1]]]
-      if (length(v_indices) == 0) {
-        if (verbose) {
-          cli::cli_alert_info(
-            "Empty vertices for {.val {label}}, keeping"
-          )
-        }
-        return(TRUE)
-      }
-
-      n_verts <- nrow(vnormals[[hemi]])
-      r_indices <- v_indices + 1L
-      r_indices <- r_indices[r_indices >= 1L & r_indices <= n_verts]
-      if (length(r_indices) == 0) {
-        return(TRUE)
-      }
-
-      region_normals <- vnormals[[hemi]][r_indices, , drop = FALSE]
-      region_faces_camera(region_normals, cam)
+      region_visible_in_view(
+        label = region_grid$region_label[i],
+        hemi = region_grid$hemisphere[i],
+        view = region_grid$view[i],
+        vertices_df = vertices_df,
+        vnormals = vnormals,
+        verbose = verbose
+      )
     },
     logical(1)
   )
 
   region_grid[keep, , drop = FALSE]
+}
+
+
+#' @noRd
+region_visible_in_view <- function(
+  label,
+  hemi,
+  view,
+  vertices_df,
+  vnormals,
+  verbose
+) {
+  key <- paste(hemi, view, sep = "_")
+  cam <- camera_presets[[key]]
+  if (is.null(cam)) {
+    return(TRUE)
+  }
+
+  idx <- which(vertices_df$label == label)
+  if (length(idx) == 0) {
+    if (verbose) {
+      cli::cli_alert_info(
+        "No vertex data for {.val {label}}, keeping"
+      )
+    }
+    return(TRUE)
+  }
+
+  v_indices <- vertices_df$vertices[[idx[1]]]
+  if (length(v_indices) == 0) {
+    if (verbose) {
+      cli::cli_alert_info(
+        "Empty vertices for {.val {label}}, keeping"
+      )
+    }
+    return(TRUE)
+  }
+
+  n_verts <- nrow(vnormals[[hemi]])
+  r_indices <- v_indices + 1L
+  r_indices <- r_indices[r_indices >= 1L & r_indices <= n_verts]
+  if (length(r_indices) == 0) {
+    return(TRUE)
+  }
+
+  region_normals <- vnormals[[hemi]][r_indices, , drop = FALSE]
+  region_faces_camera(region_normals, cam)
 }
 
 
@@ -172,6 +188,24 @@ cortical_region_snapshots <- function(
 
   region_grid <- filter_visible_regions(region_grid, components$vertices_df)
 
+  run_region_snapshot_batches(
+    atlas_3d = atlas_3d,
+    region_grid = region_grid,
+    dirs = dirs,
+    skip_existing = skip_existing,
+    snapshot_dim = snapshot_dim
+  )
+}
+
+
+#' @noRd
+run_region_snapshot_batches <- function(
+  atlas_3d,
+  region_grid,
+  dirs,
+  skip_existing,
+  snapshot_dim
+) {
   batch_grid <- unique(region_grid[, c("region_label", "hemisphere")])
 
   p <- progressor(steps = nrow(batch_grid))
@@ -342,41 +376,34 @@ labels_region_snapshots <- function(
 
   region_grid <- filter_visible_regions(region_grid, components$vertices_df)
 
-  batch_grid <- unique(region_grid[, c("region_label", "hemisphere")])
+  run_region_snapshot_batches(
+    atlas_3d = atlas_3d,
+    region_grid = region_grid,
+    dirs = dirs,
+    skip_existing = skip_existing,
+    snapshot_dim = snapshot_dim
+  )
 
-  p <- progressor(steps = nrow(batch_grid))
-  invisible(safe_future_pmap(
-    batch_grid,
-    function(region_label, hemisphere) {
-      batch_views <- region_grid$view[
-        region_grid$region_label == region_label &
-          region_grid$hemisphere == hemisphere
-      ]
-      snapshot_region_batch(
-        atlas = atlas_3d,
-        region_label = region_label,
-        hemisphere = hemisphere,
-        views = batch_views,
-        surface = "inflated",
-        output_dir = dirs$snapshots,
-        skip_existing = skip_existing,
-        snapshot_dim = snapshot_dim
-      )
-      p()
-    },
-    .options = furrr_options(
-      packages = "ggseg.extra",
-      globals = c(
-        "atlas_3d",
-        "region_grid",
-        "dirs",
-        "skip_existing",
-        "snapshot_dim",
-        "p"
-      )
-    )
-  ))
+  run_na_region_snapshots(
+    atlas_3d = atlas_3d,
+    hemi_short = hemi_short,
+    views = views,
+    dirs = dirs,
+    skip_existing = skip_existing,
+    snapshot_dim = snapshot_dim
+  )
+}
 
+
+#' @noRd
+run_na_region_snapshots <- function(
+  atlas_3d,
+  hemi_short,
+  views,
+  dirs,
+  skip_existing,
+  snapshot_dim
+) {
   invisible(safe_future_map(
     hemi_short,
     function(hemi) {
