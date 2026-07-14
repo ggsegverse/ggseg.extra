@@ -38,8 +38,8 @@
 #' @param centerline_method How to extract the centerline from multiple
 #'   streamlines: `"mean"` averages coordinates point-by-point, `"medoid"`
 #'   selects the single most representative streamline.
-#' @param views A data.frame specifying projection views. If NULL, uses
-#'   [default_tract_views()].
+#' @param views A data.frame specifying projection views. If NULL, a default
+#'   set of tract views is derived from the volume dimensions.
 #' @template output_dir
 #' @template verbose
 #' @template smoothness

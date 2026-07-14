@@ -8,7 +8,8 @@
 #' @param file Path to a `.trk` or `.tck` file.
 #' @return A list of matrices, one per streamline. Each matrix has N rows
 #'   (points along the streamline) and 3 columns (x, y, z coordinates).
-#' @seealso [read_trk()], [read_tck()] for format-specific readers
+#' @details Format-specific readers are used internally depending on the
+#'   file extension: `.trk` (TrackVis) and `.tck` (MRtrix).
 #' @export
 #' @examples
 #' \dontrun{

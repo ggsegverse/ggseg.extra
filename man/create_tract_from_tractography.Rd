@@ -56,8 +56,8 @@ are resampled to this length for consistent tube generation.}
 streamlines: \code{"mean"} averages coordinates point-by-point, \code{"medoid"}
 selects the single most representative streamline.}
 
-\item{views}{A data.frame specifying projection views. If NULL, uses
-\code{\link[=default_tract_views]{default_tract_views()}}.}
+\item{views}{A data.frame specifying projection views. If NULL, a default
+set of tract views is derived from the volume dimensions.}
 
 \item{output_dir}{Directory to store intermediate files (screenshots, masks,
 contours). Defaults to \code{\link[=tempdir]{tempdir()}}.}
