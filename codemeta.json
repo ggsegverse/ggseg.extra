@@ -2,18 +2,18 @@
   "@context": "https://doi.org/10.5063/schema/codemeta-2.0",
   "@type": "SoftwareSourceCode",
   "identifier": "ggseg.extra",
-  "description": "Create brain atlas data sets compatible with the 'ggsegverse' plotting packages in 'R'. Provides pipelines for building cortical, subcortical, white-matter tract, and cerebellar atlases from 'FreeSurfer' annotation files, 'GIFTI' and 'CIFTI' surface formats, 'neuromaps', 'SUIT' flatmap surfaces, and volumetric 'NIfTI' images.",
+  "description": "Create brain atlas data sets compatible with the 'ggsegverse' plotting packages in 'R'. Provides pipelines for building cortical, subcortical, and white-matter tract atlases from 'FreeSurfer' annotation files, 'GIFTI' and 'CIFTI' surface formats, 'neuromaps', and volumetric 'NIfTI' images.",
   "name": "ggseg.extra: Create Brain Atlases for the 'ggsegverse' Plotting Ecosystem",
   "codeRepository": "https://github.com/ggsegverse/ggseg.extra",
   "issueTracker": "https://github.com/ggsegverse/ggseg.extra/issues",
   "license": "https://spdx.org/licenses/MIT",
-  "version": "1.9.9.9003",
+  "version": "1.9.9.9001",
   "programmingLanguage": {
     "@type": "ComputerLanguage",
     "name": "R",
     "url": "https://r-project.org"
   },
-  "runtimePlatform": "R version 4.5.2 (2025-10-31)",
+  "runtimePlatform": "R version 4.6.1 (2026-06-24)",
   "author": [
     {
       "@type": "Person",
@@ -65,18 +65,6 @@
     }
   ],
   "softwareSuggestions": [
-    {
-      "@type": "SoftwareApplication",
-      "identifier": "base64enc",
-      "name": "base64enc",
-      "provider": {
-        "@id": "https://cran.r-project.org",
-        "@type": "Organization",
-        "name": "Comprehensive R Archive Network (CRAN)",
-        "url": "https://cran.r-project.org"
-      },
-      "sameAs": "https://CRAN.R-project.org/package=base64enc"
-    },
     {
       "@type": "SoftwareApplication",
       "identifier": "chromote",
@@ -268,6 +256,18 @@
         "url": "https://cran.r-project.org"
       },
       "sameAs": "https://CRAN.R-project.org/package=Rvcg"
+    },
+    {
+      "@type": "SoftwareApplication",
+      "identifier": "smoothr",
+      "name": "smoothr",
+      "provider": {
+        "@id": "https://cran.r-project.org",
+        "@type": "Organization",
+        "name": "Comprehensive R Archive Network (CRAN)",
+        "url": "https://cran.r-project.org"
+      },
+      "sameAs": "https://CRAN.R-project.org/package=smoothr"
     },
     {
       "@type": "SoftwareApplication",
@@ -478,18 +478,6 @@
     },
     "12": {
       "@type": "SoftwareApplication",
-      "identifier": "rmapshaper",
-      "name": "rmapshaper",
-      "provider": {
-        "@id": "https://cran.r-project.org",
-        "@type": "Organization",
-        "name": "Comprehensive R Archive Network (CRAN)",
-        "url": "https://cran.r-project.org"
-      },
-      "sameAs": "https://CRAN.R-project.org/package=rmapshaper"
-    },
-    "13": {
-      "@type": "SoftwareApplication",
       "identifier": "sf",
       "name": "sf",
       "provider": {
@@ -500,24 +488,24 @@
       },
       "sameAs": "https://CRAN.R-project.org/package=sf"
     },
-    "14": {
+    "13": {
       "@type": "SoftwareApplication",
       "identifier": "stats",
       "name": "stats"
     },
-    "15": {
+    "14": {
       "@type": "SoftwareApplication",
       "identifier": "tools",
       "name": "tools"
     },
-    "16": {
+    "15": {
       "@type": "SoftwareApplication",
       "identifier": "utils",
       "name": "utils"
     },
     "SystemRequirements": "FreeSurfer (subcortical/tract/wholebrain pipelines,\n    and annotation reading for cortical pipelines), ImageMagick\n    (subcortical/tract pipelines only), Connectome Workbench (optional,\n    for CIFTI resampling)."
   },
-  "fileSize": "NAKB",
+  "fileSize": "5230.494KB",
   "citation": [
     {
       "@type": "CreativeWork",
@@ -536,5 +524,9 @@
       ],
       "name": "Visualisation of Brain Statistics with R-packages ggseg and ggseg3d"
     }
-  ]
+  ],
+  "releaseNotes": "https://github.com/ggsegverse/ggseg.extra/blob/main/NEWS.md",
+  "readme": "https://github.com/ggsegverse/ggseg.extra/blob/main/README.md",
+  "contIntegration": ["https://github.com/ggsegverse/ggseg.extra/actions/workflows/test-coverage.yaml", "https://github.com/ggsegverse/ggseg.extra/actions"],
+  "developmentStatus": "https://lifecycle.r-lib.org/articles/stages.html"
 }
