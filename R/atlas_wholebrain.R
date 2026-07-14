@@ -705,9 +705,14 @@ overlay_to_atlas_data <- function(
   hemi <- hemi_to_long(hemi_short)
   unique_labels <- sort(unique(overlay[overlay != 0L]))
 
-  rows <- lapply(unique_labels, function(label_val) {
-    overlay_label_row(label_val, overlay, hemi, hemi_short, colortable)
-  })
+  rows <- lapply(
+    unique_labels,
+    overlay_label_row,
+    overlay = overlay,
+    hemi = hemi,
+    hemi_short = hemi_short,
+    colortable = colortable
+  )
 
   result <- bind_rows(Filter(Negate(is.null), rows))
 
