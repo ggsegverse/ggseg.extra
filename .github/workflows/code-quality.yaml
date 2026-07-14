@@ -68,7 +68,24 @@ jobs:
 
           gp_result <- goodpractice::gp(checks = checks)
 
-          writeLines(capture.output(print(gp_result)), "gp-results.txt")
+          # goodpractice's print method can abort while cli-formatting a check
+          # message ("cannot coerce type 'special'"), which would kill this
+          # advisory job. Fall back to the plain list of failed checks so a
+          # rendering bug upstream never masks or blocks the report.
+          results <- tryCatch(
+            capture.output(print(gp_result)),
+            error = function(e) {
+              c(
+                "goodpractice could not render its full report:",
+                conditionMessage(e),
+                "",
+                "Failed checks:",
+                paste0("  - ", goodpractice::failed_checks(gp_result))
+              )
+            }
+          )
+          writeLines(results, "gp-results.txt")
+
           all_passed <- length(goodpractice::failed_checks(gp_result)) == 0
           if (!all_passed) {
             cat("status=failure\n", file = Sys.getenv("GITHUB_OUTPUT"), append = TRUE)
