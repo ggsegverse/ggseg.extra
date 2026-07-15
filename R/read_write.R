@@ -734,68 +734,6 @@ read_volume <- function(file, reorient = TRUE) {
 }
 
 
-#' Parse PLY header counts and header end position
-#' @noRd
-parse_ply_header <- function(lines) {
-  n_vertices <- 0L
-  n_faces <- 0L
-  header_end <- 0L
-
-  for (i in seq_along(lines)) {
-    line <- trimws(lines[i])
-    if (grepl("^element vertex", line)) {
-      n_vertices <- as.integer(sub("element vertex ", "", line, fixed = TRUE))
-    } else if (grepl("^element face", line)) {
-      n_faces <- as.integer(sub("element face ", "", line, fixed = TRUE))
-    } else if (line == "end_header") {
-      header_end <- i
-      break
-    }
-  }
-
-  list(n_vertices = n_vertices, n_faces = n_faces, header_end = header_end)
-}
-
-#' Parse the vertex block of a PLY file
-#' @noRd
-parse_ply_vertices <- function(lines, header_end, n_vertices) {
-  vert_lines <- lines[(header_end + 1):(header_end + n_vertices)]
-  vert_data <- do.call(
-    rbind,
-    lapply(
-      strsplit(vert_lines, "\\s+"),
-      function(x) as.numeric(x[1:3])
-    )
-  )
-
-  data.frame(
-    x = vert_data[, 1],
-    y = vert_data[, 2],
-    z = vert_data[, 3]
-  )
-}
-
-#' Parse the face block of a PLY file
-#' @noRd
-parse_ply_faces <- function(lines, header_end, n_vertices, n_faces) {
-  face_lines <- lines[
-    (header_end + n_vertices + 1):(header_end + n_vertices + n_faces)
-  ]
-  face_data <- do.call(
-    rbind,
-    lapply(
-      strsplit(face_lines, "\\s+"),
-      function(x) as.integer(x[2:4])
-    )
-  )
-
-  data.frame(
-    i = face_data[, 1],
-    j = face_data[, 2],
-    k = face_data[, 3]
-  )
-}
-
 # Annotation reading ----
 
 #' Extract vertex-to-region mapping into atlas tibble rows

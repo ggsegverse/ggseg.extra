@@ -120,74 +120,7 @@ process_and_mask_images <- function(
 
 # Contour loading ----
 
-#' Load and parse reduced contours file
-#'
-#' Loads the contours_reduced.rda file, flips coordinates, and parses
-#' filenames into view/hemi/label components.
-#'
-#' @param base_dir Directory containing contours_reduced.rda
-#' @return sf object with view, hemi_short, hemi, label columns added
-#' @noRd
-load_reduced_contours <- function(base_dir) {
-  load_rda(file.path(base_dir, "contours_reduced.rda"))
-  contours <- terra::vect(contours) |>
-    terra::flip() |>
-    sf::st_as_sf()
-
-  parsed <- parse_contour_filenames(contours$filenm)
-  contours$view <- parsed$view
-  contours$hemi_short <- parsed$hemi_short
-  contours$hemi <- parsed$hemi
-  contours$label <- parsed$label
-
-  contours
-}
-
-
 # Filename parsing ----
-
-#' Parse contour filename into components
-#'
-#' Extracts view, hemisphere, and label from standardized filename format.
-#' Supports formats like: "label_hemi_view.png" or "coords_view_label.png"
-#'
-#' @param filenames Character vector of filenames (without path)
-#' @return Data frame with label, hemi_short, hemi, view columns
-#' @noRd
-parse_contour_filenames <- function(filenames) {
-  filenames_no_ext <- tools::file_path_sans_ext(filenames)
-  fn_parts <- strsplit(filenames_no_ext, "_", fixed = TRUE)
-  too_short <- vapply(fn_parts, length, integer(1)) < 3
-  if (any(too_short)) {
-    cli::cli_abort(paste(
-      "Contour filenames must have at least",
-      "3 underscore-separated parts:",
-      "{.val {filenames[too_short]}}"
-    ))
-  }
-
-  result <- data.frame(
-    filenm = filenames,
-    view = vapply(fn_parts, function(x) x[length(x)], character(1)),
-    hemi_short = vapply(fn_parts, function(x) x[length(x) - 1], character(1)),
-    stringsAsFactors = FALSE
-  )
-
-  hemi_lookup <- c(lh = "left", rh = "right")
-  mapped <- unname(hemi_lookup[result$hemi_short])
-  result$hemi <- ifelse(is.na(mapped), result$hemi_short, mapped)
-
-  result$label <- vapply(
-    fn_parts,
-    function(x) {
-      paste(x[1:(length(x) - 2)], collapse = "_")
-    },
-    character(1)
-  )
-
-  result
-}
-
 
 # ImageMagick utilities ----
 
@@ -274,51 +207,6 @@ get_contours <- function(
 }
 
 
-#' Isolate region to alpha channel
-#'
-#' @param input_file image file path
-#' @param output_file output file path
-#' @param interim_file interim image path
-#' @param skip_existing If TRUE, skip if output file already exists
-#' @noRd
-isolate_region <- function(
-  input_file,
-  output_file,
-  interim_file = tempfile(),
-  skip_existing = get_skip_existing()
-) {
-  rlang::check_installed("magick", reason = "for snapshot image processing")
-  if (skip_existing && file.exists(output_file)) {
-    return(invisible(output_file))
-  }
-
-  tmp <- magick::image_read(input_file)
-  tmp <- magick::image_convert(tmp, "png")
-
-  tmp <- magick::image_transparent(tmp, "white", fuzz = 30)
-  magick::image_write(tmp, interim_file)
-
-  if (has_magick()) {
-    system2(
-      "magick",
-      args = c(
-        shQuote(interim_file),
-        "-alpha",
-        "extract",
-        shQuote(output_file)
-      ),
-      stdout = FALSE,
-      stderr = FALSE
-    )
-  } else {
-    cli::cli_abort(paste(
-      "Cannot complete last extraction step,",
-      "missing imagemagick. Please install"
-    ))
-  }
-}
-
-
 # View generation utilities ----
 
 #' Create chunked view ranges for projections
@@ -354,7 +242,7 @@ make_view_chunks <- function(lo, hi, chunk_size, type) {
 #' For axial/coronal views, uses the midpoint of the projection range.
 #'
 #' @param views data.frame with columns: name, type, start, end
-#' @param dims Volume dimensions (3-element vector)
+#' @inheritParams default_subcortical_views
 #' @param cortex_x X coordinate for non-hemisphere-specific sagittal slices
 #'
 #' @return data.frame with columns: x, y, z, view, name

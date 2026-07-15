@@ -1100,38 +1100,6 @@ get_tkras_to_world <- function(volume_path) {
 }
 
 
-#' Build the idx/label colortable for cerebellar mesh tessellation
-#' @noRd
-build_cerebellar_colortable <- function(components, vol_ids) {
-  if (!is.null(components$vol_idx)) {
-    idx_map <- components$vol_idx
-    matched <- names(idx_map)[unname(idx_map) %in% vol_ids]
-    return(data.frame(
-      idx = unname(idx_map[matched]),
-      label = matched,
-      stringsAsFactors = FALSE
-    ))
-  }
-
-  labels <- components$core$label
-  n_ids <- min(length(vol_ids), length(labels))
-  if (length(vol_ids) != length(labels)) {
-    cli::cli_warn(c(
-      paste(
-        "Volume has {length(vol_ids)} non-zero labels but atlas",
-        "has {length(labels)} regions"
-      ),
-      "i" = "Only the first {n_ids} will get 3D meshes"
-    ))
-  }
-  data.frame(
-    idx = vol_ids[seq_len(n_ids)],
-    label = labels[seq_len(n_ids)],
-    stringsAsFactors = FALSE
-  )
-}
-
-
 # SUIT parcellation reader ----
 
 #' Parse one SUIT GIFTI file into region rows

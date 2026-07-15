@@ -91,6 +91,31 @@ setup_atlas_repo <- function(
   invisible(path)
 }
 
+#' RStudio project template binding
+#'
+#' Backs the "Create ggseg brain atlas" entry in the RStudio New Project wizard,
+#' declared in `inst/rstudio/templates/project/create-ggseg-atlas.dcf`. RStudio
+#' resolves the `Binding:` field against the package's exports, so this must be
+#' exported even though it is not meant to be called directly — use
+#' [setup_atlas_repo()] instead.
+#'
+#' @param dir Directory RStudio creates for the new project.
+#' @param ... Template parameters supplied by the wizard, notably `atlas_name`.
+#' @return Invisible `NULL`, called for its side effects.
+#' @keywords internal
+#' @export
+new_project_setup_atlas_repo <- function(dir, ...) {
+  params <- list(...)
+  atlas_name <- params$atlas_name
+
+  setup_atlas_repo(
+    path = dir,
+    atlas_name = atlas_name,
+    open = FALSE,
+    rstudio = TRUE
+  )
+}
+
 
 #' Clean an atlas name, deriving it from the directory name when absent
 #' @noRd
@@ -369,31 +394,5 @@ template_replace <- function(file, atlas_name) {
       cli::cli_warn("Failed to process template {.file {file}}: {e$message}")
       invisible(NULL)
     }
-  )
-}
-
-
-#' RStudio project template binding
-#'
-#' Backs the "Create ggseg brain atlas" entry in RStudio's New Project wizard,
-#' declared in `inst/rstudio/templates/project/create-ggseg-atlas.dcf`. RStudio
-#' resolves the `Binding:` field against the package's exports, so this must be
-#' exported even though it is not meant to be called directly — use
-#' [setup_atlas_repo()] instead.
-#'
-#' @param dir Directory RStudio creates for the new project.
-#' @param ... Template parameters supplied by the wizard, notably `atlas_name`.
-#' @return Invisible `NULL`, called for its side effects.
-#' @keywords internal
-#' @export
-new_project_setup_atlas_repo <- function(dir, ...) {
-  params <- list(...)
-  atlas_name <- params$atlas_name
-
-  setup_atlas_repo(
-    path = dir,
-    atlas_name = atlas_name,
-    open = FALSE,
-    rstudio = TRUE
   )
 }

@@ -274,7 +274,7 @@ tract_volume_map <- function(
 #' Tracts typically span large portions of the brain, so projections cover
 #' wider ranges than subcortical views.
 #'
-#' @param dims Volume dimensions (3-element vector)
+#' @inheritParams default_subcortical_views
 #'
 #' @return data.frame with columns: name, type, start, end
 #' @keywords internal

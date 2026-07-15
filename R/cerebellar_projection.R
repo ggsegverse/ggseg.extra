@@ -50,8 +50,7 @@ read_suit_flatmap <- function(suit_surface) {
 #' Unlike the cortical version, there is no hemisphere prefix filtering —
 #' all labels share a single flatmap mesh.
 #'
-#' @param vertices_df Data frame with `label` and `vertices` (list-column of
-#'   0-indexed integer vectors).
+#' @inheritParams build_vertex_label_vector
 #' @param n_vertices Total number of vertices in the flatmap.
 #' @return Character vector of length `n_vertices` (NA for unlabelled).
 #' @noRd

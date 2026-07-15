@@ -15,7 +15,7 @@ new_project_setup_atlas_repo(dir, ...)
 Invisible \code{NULL}, called for its side effects.
 }
 \description{
-Backs the "Create ggseg brain atlas" entry in RStudio's New Project wizard,
+Backs the "Create ggseg brain atlas" entry in the RStudio New Project wizard,
 declared in \code{inst/rstudio/templates/project/create-ggseg-atlas.dcf}. RStudio
 resolves the \verb{Binding:} field against the package's exports, so this must be
 exported even though it is not meant to be called directly — use

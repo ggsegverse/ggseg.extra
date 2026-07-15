@@ -1070,37 +1070,3 @@ describe("create_cortical_from_neuromaps verbose", {
     )
   })
 })
-
-
-describe("filter_visible_regions with empty vertices", {
-  it("keeps region when vertices list is empty", {
-    fake_mesh <- list(
-      vertices = data.frame(x = 1:10, y = 1:10, z = 1:10),
-      faces = data.frame(i = 0:7, j = 1:8, k = 2:9)
-    )
-    local_mocked_bindings(
-      get_brain_mesh = function(...) fake_mesh,
-      .package = "ggseg.formats"
-    )
-
-    region_grid <- data.frame(
-      region_label = "lh_empty",
-      hemisphere = "lh",
-      view = "lateral",
-      stringsAsFactors = FALSE
-    )
-    vertices_df <- data.frame(
-      stringsAsFactors = FALSE,
-      label = "lh_empty",
-      vertices = I(list(integer(0)))
-    )
-
-    expect_messages(
-      {
-        result <- filter_visible_regions(region_grid, vertices_df)
-      },
-      "Empty vertices"
-    )
-    expect_identical(nrow(result), 1L)
-  })
-})
