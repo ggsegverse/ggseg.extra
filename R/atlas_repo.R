@@ -373,8 +373,19 @@ template_replace <- function(file, atlas_name) {
 }
 
 
+#' RStudio project template binding
+#'
+#' Backs the "Create ggseg brain atlas" entry in RStudio's New Project wizard,
+#' declared in `inst/rstudio/templates/project/create-ggseg-atlas.dcf`. RStudio
+#' resolves the `Binding:` field against the package's exports, so this must be
+#' exported even though it is not meant to be called directly — use
+#' [setup_atlas_repo()] instead.
+#'
+#' @param dir Directory RStudio creates for the new project.
+#' @param ... Template parameters supplied by the wizard, notably `atlas_name`.
+#' @return Invisible `NULL`, called for its side effects.
 #' @keywords internal
-#' @noRd
+#' @export
 new_project_setup_atlas_repo <- function(dir, ...) {
   params <- list(...)
   atlas_name <- params$atlas_name

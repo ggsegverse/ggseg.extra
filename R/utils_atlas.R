@@ -308,6 +308,35 @@ build_atlas_components <- function(atlas_data) {
 
 # Shared pipeline helpers ----
 
+#' Resolve config for the surface-based pipelines
+#'
+#' Shared by the cortical and cerebellar builders, which both run two steps and
+#' support refinement smoothing.
+#' @noRd
+validate_surface_config <- function(
+  output_dir,
+  verbose,
+  cleanup,
+  skip_existing,
+  tolerance,
+  smooth_refinements = NULL
+) {
+  config <- resolve_common_config(
+    output_dir,
+    verbose,
+    cleanup,
+    skip_existing,
+    tolerance,
+    smoothness = NULL,
+    steps = NULL,
+    max_step = 2L
+  )
+  config$smooth_refinements <- get_smooth_refinements(smooth_refinements)
+
+  config
+}
+
+
 #' @noRd
 resolve_common_config <- function(
   output_dir,

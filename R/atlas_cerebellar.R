@@ -252,7 +252,7 @@ create_cerebellar_from_gifti <- function(
     fn = "create_cerebellar_from_gifti"
   )
 
-  config <- validate_cerebellar_config(
+  config <- validate_surface_config(
     output_dir,
     verbose,
     cleanup,
@@ -327,7 +327,7 @@ create_cerebellar_from_annotation <- function(
     fn = "create_cerebellar_from_annotation"
   )
 
-  config <- validate_cerebellar_config(
+  config <- validate_surface_config(
     output_dir,
     verbose,
     cleanup,
@@ -408,7 +408,7 @@ create_cerebellar_from_volume <- function(
     fn = "create_cerebellar_from_volume"
   )
 
-  config <- validate_cerebellar_config(
+  config <- validate_surface_config(
     output_dir,
     verbose,
     cleanup,
@@ -662,31 +662,6 @@ resample_trilinear <- function(result, vox_coords, mni_arr, mni_dims) {
 # Cerebellar atlas creation ----
 
 # Cerebellar pipeline helpers ----
-
-#' @noRd
-validate_cerebellar_config <- function(
-  output_dir,
-  verbose,
-  cleanup,
-  skip_existing,
-  tolerance,
-  smooth_refinements = NULL
-) {
-  config <- resolve_common_config(
-    output_dir,
-    verbose,
-    cleanup,
-    skip_existing,
-    tolerance,
-    smoothness = NULL,
-    steps = NULL,
-    max_step = 2L
-  )
-  config$smooth_refinements <- get_smooth_refinements(smooth_refinements)
-
-  config
-}
-
 
 #' @noRd
 run_cerebellar_creation <- function(

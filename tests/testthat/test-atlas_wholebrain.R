@@ -505,7 +505,7 @@ describe("create_wholebrain_from_volume pipeline flow", {
           )
         }
       },
-      validate_cortical_config = function(...) {
+      validate_surface_config = function(...) {
         list(
           output_dir = test_dir,
           verbose = FALSE,
@@ -1044,7 +1044,7 @@ describe("wholebrain_run_cortical verbose logging", {
 
     local_mocked_bindings(
       setup_atlas_dirs = function(...) dirs,
-      validate_cortical_config = function(...) {
+      validate_surface_config = function(...) {
         list(
           output_dir = test_dir,
           verbose = TRUE,
@@ -1724,7 +1724,7 @@ describe("wholebrain_run_cortical verbose progress_done", {
 
     local_mocked_bindings(
       setup_atlas_dirs = function(...) dirs,
-      validate_cortical_config = function(...) {
+      validate_surface_config = function(...) {
         list(
           output_dir = test_dir,
           verbose = TRUE,

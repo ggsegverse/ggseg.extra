@@ -66,7 +66,7 @@ create_cortical_from_annotation <- function(
     fn = "create_cortical_from_annotation"
   )
 
-  config <- validate_cortical_config(
+  config <- validate_surface_config(
     output_dir,
     verbose,
     cleanup,
@@ -149,7 +149,7 @@ create_cortical_from_labels <- function(
     fn = "create_cortical_from_labels"
   )
 
-  config <- validate_cortical_config(
+  config <- validate_surface_config(
     output_dir,
     verbose,
     cleanup,
@@ -226,7 +226,7 @@ create_cortical_from_gifti <- function(
     fn = "create_cortical_from_gifti"
   )
 
-  config <- validate_cortical_config(
+  config <- validate_surface_config(
     output_dir,
     verbose,
     cleanup,
@@ -304,7 +304,7 @@ create_cortical_from_cifti <- function(
     fn = "create_cortical_from_cifti"
   )
 
-  config <- validate_cortical_config(
+  config <- validate_surface_config(
     output_dir,
     verbose,
     cleanup,
@@ -485,7 +485,7 @@ setup_neuromaps_config <- function(
     fn = "create_cortical_from_neuromaps"
   )
 
-  validate_cortical_config(
+  validate_surface_config(
     output_dir,
     verbose,
     cleanup,
@@ -660,30 +660,6 @@ run_cortical_creation <- function(
 
 
 # Cortical pipeline helpers ----
-
-#' @noRd
-validate_cortical_config <- function(
-  output_dir,
-  verbose,
-  cleanup,
-  skip_existing,
-  tolerance,
-  smooth_refinements = NULL
-) {
-  config <- resolve_common_config(
-    output_dir,
-    verbose,
-    cleanup,
-    skip_existing,
-    tolerance,
-    smoothness = NULL,
-    steps = NULL,
-    max_step = 2L
-  )
-  config$smooth_refinements <- get_smooth_refinements(smooth_refinements)
-  config
-}
-
 
 #' @noRd
 cortical_read_data <- function(

@@ -1379,7 +1379,7 @@ wholebrain_cortical_inputs <- function(config, dirs, projection, split, opts) {
     type = "cortical"
   )
 
-  cortical_config <- validate_cortical_config(
+  cortical_config <- validate_surface_config(
     output_dir = dirs$base,
     verbose = config$verbose,
     cleanup = FALSE,

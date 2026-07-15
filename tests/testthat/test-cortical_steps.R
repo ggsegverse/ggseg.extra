@@ -246,7 +246,7 @@ describe("labels_region_snapshots", {
 })
 
 
-describe("validate_cortical_config", {
+describe("validate_surface_config", {
   it("returns list with all expected fields", {
     local_mocked_bindings(
       is_verbose = function(x) TRUE,
@@ -256,7 +256,7 @@ describe("validate_cortical_config", {
       get_output_dir = function(x) tempdir()
     )
 
-    result <- validate_cortical_config(
+    result <- validate_surface_config(
       NULL,
       NULL,
       NULL,
