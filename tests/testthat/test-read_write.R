@@ -1,28 +1,3 @@
-describe("is_volume_file", {
-  it("detects MGZ files", {
-    expect_true(is_volume_file("atlas.mgz"))
-    expect_true(is_volume_file("/path/to/aseg.mgz"))
-  })
-
-  it("detects NIfTI files", {
-    expect_true(is_volume_file("atlas.nii"))
-    expect_true(is_volume_file("atlas.nii.gz"))
-    expect_true(is_volume_file("/path/to/data.nii.gz"))
-  })
-
-  it("rejects non-volume files", {
-    expect_false(is_volume_file("atlas.txt"))
-    expect_false(is_volume_file("atlas.label"))
-    expect_false(is_volume_file("atlas.png"))
-  })
-
-  it("is case insensitive", {
-    expect_true(is_volume_file("atlas.MGZ"))
-    expect_true(is_volume_file("atlas.NII"))
-    expect_true(is_volume_file("atlas.NII.GZ"))
-  })
-})
-
 describe("read_volume", {
   it("errors on missing file", {
     expect_error(
@@ -77,95 +52,6 @@ describe("read_volume with reorient FALSE", {
     result <- read_volume(tmp, reorient = FALSE)
 
     expect_s3_class(result, "niftiImage")
-  })
-})
-
-
-describe("read_ply_mesh", {
-  make_ply_file <- function(vertices, faces) {
-    tmp <- tempfile(fileext = ".ply")
-    lines <- c(
-      "ply",
-      "format ascii 1.0",
-      paste("element vertex", nrow(vertices)),
-      "property float x",
-      "property float y",
-      "property float z",
-      paste("element face", nrow(faces)),
-      "property list uchar int vertex_index",
-      "end_header"
-    )
-    for (i in seq_len(nrow(vertices))) {
-      lines <- c(lines, paste(vertices[i, ], collapse = " "))
-    }
-    for (i in seq_len(nrow(faces))) {
-      lines <- c(lines, paste(c(3, faces[i, ]), collapse = " "))
-    }
-    writeLines(lines, tmp)
-    tmp
-  }
-
-  it("reads PLY file and returns vertices and faces", {
-    verts <- matrix(
-      c(0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 1, 0),
-      ncol = 3,
-      byrow = TRUE
-    )
-    fcs <- matrix(c(0, 1, 2, 1, 3, 2), ncol = 3, byrow = TRUE)
-    ply_file <- make_ply_file(verts, fcs)
-    withr::defer(unlink(ply_file))
-
-    result <- read_ply_mesh(ply_file)
-
-    expect_type(result, "list")
-    expect_named(result, c("vertices", "faces"))
-    expect_s3_class(result$vertices, "data.frame")
-    expect_s3_class(result$faces, "data.frame")
-    expect_identical(nrow(result$vertices), 4L)
-    expect_identical(nrow(result$faces), 2L)
-    expect_named(result$vertices, c("x", "y", "z"))
-    expect_named(result$faces, c("i", "j", "k"))
-  })
-
-  it("extracts correct vertex coordinates", {
-    verts <- matrix(c(1, 4, 7, 2, 5, 8, 3, 6, 9), ncol = 3, byrow = TRUE)
-    fcs <- matrix(c(0, 1, 2), ncol = 3, byrow = TRUE)
-    ply_file <- make_ply_file(verts, fcs)
-    withr::defer(unlink(ply_file))
-
-    result <- read_ply_mesh(ply_file)
-
-    expect_identical(result$vertices$x, c(1, 2, 3))
-    expect_identical(result$vertices$y, c(4, 5, 6))
-    expect_identical(result$vertices$z, c(7, 8, 9))
-  })
-
-  it("extracts correct face indices", {
-    verts <- matrix(
-      c(0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 1, 0),
-      ncol = 3,
-      byrow = TRUE
-    )
-    fcs <- matrix(c(1, 2, 3, 2, 3, 1), ncol = 3, byrow = TRUE)
-    ply_file <- make_ply_file(verts, fcs)
-    withr::defer(unlink(ply_file))
-
-    result <- read_ply_mesh(ply_file)
-
-    expect_identical(result$faces$i, c(1L, 2L))
-    expect_identical(result$faces$j, c(2L, 3L))
-    expect_identical(result$faces$k, c(3L, 1L))
-  })
-
-  it("errors on non-string input", {
-    expect_error(read_ply_mesh(list(vb = matrix(1:12, nrow = 4))), "file path")
-  })
-
-  it("errors on non-PLY file", {
-    tmp <- tempfile(fileext = ".ply")
-    writeLines("not a ply file", tmp)
-    withr::defer(unlink(tmp))
-    expect_error(read_ply_mesh(tmp), "Not a valid PLY")
   })
 })
 
@@ -385,35 +271,30 @@ describe("read_label_vertices", {
 })
 
 
-describe("write_dpv and read_dpv", {
-  it("round-trips vertex and face data", {
-    vertices <- data.frame(x = c(0, 1, 0), y = c(0, 0, 1), z = c(0, 0, 0))
-    faces <- data.frame(i = 1, j = 2, k = 3)
-
+describe("read_dpv", {
+  it("reads vertices and 0-indexed faces from a .dpv file", {
     tmp <- withr::local_tempfile(fileext = ".dpv")
-    write_dpv(tmp, vertices, faces)
+    writeLines(
+      c(
+        "#!ascii",
+        "3 1",
+        "0 0 0 0",
+        "1 0 0 0",
+        "0 1 0 0",
+        "0 1 2 0"
+      ),
+      tmp
+    )
 
     result <- read_dpv(tmp)
 
     expect_type(result, "list")
     expect_true(all(c("vertices", "faces") %in% names(result)))
-  })
-
-  it("converts 1-indexed faces to 0-indexed", {
-    vertices <- data.frame(x = c(0, 1, 0), y = c(0, 0, 1), z = c(0, 0, 0))
-    faces <- data.frame(i = 1, j = 2, k = 3)
-
-    tmp <- withr::local_tempfile(fileext = ".dpv")
-    write_dpv(tmp, vertices, faces)
-
-    content <- readLines(tmp)
-    last_line <- content[length(content)]
-    face_values <- as.numeric(strsplit(trimws(last_line), " ", fixed = TRUE)[[
-      1
-    ]])
-
-    expect_true(all(face_values[1:3] >= 0))
-    expect_true(all(face_values[1:3] < 3))
+    expect_identical(nrow(result$vertices), 3L)
+    expect_identical(nrow(result$faces), 1L)
+    expect_named(result$vertices, c("x", "y", "z"))
+    expect_named(result$faces, c("i", "j", "k"))
+    expect_equal(as.numeric(result$faces[1, ]), c(0, 1, 2))
   })
 })
 

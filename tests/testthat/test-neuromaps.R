@@ -443,7 +443,6 @@ describe("create_cortical_from_neuromaps", {
     )
     local_mocked_bindings(
       check_fs = function(...) invisible(TRUE),
-      check_magick = function() invisible(TRUE),
       cortical_project_and_build = function(...) {
         .cap$pipeline_called <- TRUE
         structure(list(), class = "ggseg_atlas")

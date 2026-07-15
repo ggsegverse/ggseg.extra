@@ -84,22 +84,6 @@ detect_hemi_contains <- function(label_name) {
   NULL
 }
 
-#' Vectorized hemisphere detection
-#' @noRd
-detect_hemi_vec <- function(
-  label_names,
-  strict = FALSE,
-  default = NA_character_
-) {
-  vapply(
-    label_names,
-    detect_hemi,
-    character(1),
-    strict = strict,
-    default = default,
-    USE.NAMES = FALSE
-  )
-}
 
 #' Map short hemisphere code to long form
 #' @noRd
@@ -157,23 +141,6 @@ clean_region_name <- function(
   }
 
   region
-}
-
-#' Vectorized region name cleaning
-#' @noRd
-clean_region_names <- function(
-  label_names,
-  remove_hemi = TRUE,
-  normalize = TRUE
-) {
-  vapply(
-    label_names,
-    clean_region_name,
-    character(1),
-    remove_hemi = remove_hemi,
-    normalize = normalize,
-    USE.NAMES = FALSE
-  )
 }
 
 

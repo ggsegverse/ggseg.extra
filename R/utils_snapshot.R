@@ -197,15 +197,6 @@ has_magick <- function() {
   any(grepl("Version: ImageMagick", k, fixed = TRUE))
 }
 
-check_magick <- function() {
-  k <- has_magick()
-  if (!k) {
-    cli::cli_abort(c(
-      "ImageMagick not installed, cannot run pipeline.",
-      "i" = "See {.url https://imagemagick.org/script/download.php}"
-    ))
-  }
-}
 
 #' @noRd
 magick_version <- function() {

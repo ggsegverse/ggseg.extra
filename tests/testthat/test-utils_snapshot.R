@@ -9,21 +9,6 @@ describe("has_magick", {
 })
 
 
-describe("check_magick", {
-  it("does not error when ImageMagick is installed", {
-    skip_if_no_imagemagick()
-    expect_no_error(check_magick())
-  })
-
-  it("aborts when ImageMagick is not installed", {
-    local_mocked_bindings(
-      has_magick = function() FALSE
-    )
-    expect_error(check_magick(), "ImageMagick")
-  })
-})
-
-
 describe("process_and_mask_images", {
   it("calls process_snapshot_image for each png then extract_alpha_mask", {
     snap_dir <- withr::local_tempdir("snap_")

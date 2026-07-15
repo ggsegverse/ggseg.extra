@@ -125,80 +125,6 @@ region_visible_in_view <- function(
 
 
 #' @noRd
-cortical_brain_snapshots <- function(
-  atlas_3d,
-  hemisphere,
-  views,
-  dirs,
-  skip_existing,
-  snapshot_dim = 800
-) {
-  p <- progressor(steps = length(hemisphere))
-  invisible(safe_future_map(
-    hemisphere,
-    function(hemi) {
-      snapshot_brain_full_batch(
-        atlas = atlas_3d,
-        hemisphere = hemi,
-        views = views,
-        surface = "inflated",
-        output_dir = dirs$base,
-        skip_existing = skip_existing,
-        snapshot_dim = snapshot_dim
-      )
-      p()
-    },
-    .options = furrr_options(
-      packages = "ggseg.extra",
-      globals = c("atlas_3d", "dirs", "skip_existing", "snapshot_dim", "p")
-    )
-  ))
-}
-
-
-#' @noRd
-cortical_region_snapshots <- function(
-  atlas_3d,
-  components,
-  hemisphere,
-  views,
-  dirs,
-  skip_existing,
-  snapshot_dim = 800
-) {
-  region_labels <- unique(components$core$label[
-    !is.na(components$core$label)
-  ])
-
-  region_grid <- expand.grid(
-    region_label = region_labels,
-    hemisphere = hemisphere,
-    view = views,
-    stringsAsFactors = FALSE
-  )
-
-  # nolint start: indentation_linter.
-  region_grid <- region_grid[
-    (grepl("^lh_", region_grid$region_label) &
-      region_grid$hemisphere == "lh") |
-      (grepl("^rh_", region_grid$region_label) &
-        region_grid$hemisphere == "rh"),
-  ]
-  # nolint end
-
-  region_grid <- filter_visible_regions(region_grid, components$vertices_df)
-
-  run_region_snapshot_batches(
-    atlas_3d = atlas_3d,
-    region_grid = region_grid,
-    dirs = dirs,
-    skip_existing = skip_existing,
-    snapshot_dim = snapshot_dim
-  )
-}
-
-
-#' @noRd
 run_region_snapshot_batches <- function(
   atlas_3d,
   region_grid,
@@ -240,47 +166,6 @@ run_region_snapshot_batches <- function(
       )
     )
   ))
-}
-
-
-#' @noRd
-cortical_isolate_regions <- function(dirs, skip_existing) {
-  ffs <- list.files(dirs$snapshots, full.names = TRUE)
-  file_grid <- data.frame(
-    input_file = ffs,
-    output_file = file.path(dirs$masks, basename(ffs)),
-    interim_file = file.path(dirs$processed, basename(ffs))
-  )
-
-  p <- progressor(steps = nrow(file_grid))
-  invisible(safe_future_pmap(
-    file_grid,
-    function(input_file, output_file, interim_file) {
-      isolate_region(
-        input_file = input_file,
-        output_file = output_file,
-        interim_file = interim_file,
-        skip_existing = skip_existing
-      )
-      p()
-    },
-    .options = furrr_options(
-      packages = "ggseg.extra",
-      globals = c("skip_existing", "p")
-    )
-  ))
-}
-
-
-#' @noRd
-cortical_build_sf <- function(dirs) {
-  load_reduced_contours(dirs$base) |>
-    layout_cortical_views() |> # nolint: object_usage_linter.
-    group_by(view, label) |>
-    mutate(geometry = st_combine(geometry)) |>
-    ungroup() |>
-    select(label, view, geometry) |>
-    sf::st_as_sf()
 }
 
 
@@ -341,57 +226,6 @@ labels_read_files <- function(
   )
 
   bind_rows(all_data)
-}
-
-
-#' @noRd
-labels_region_snapshots <- function(
-  atlas_3d,
-  components,
-  hemi_short,
-  views,
-  dirs,
-  skip_existing,
-  snapshot_dim = 800
-) {
-  region_labels <- unique(
-    components$core$label[!is.na(components$core$region)]
-  )
-  region_grid <- expand.grid(
-    region_label = region_labels,
-    hemisphere = hemi_short,
-    view = views,
-    stringsAsFactors = FALSE
-  )
-
-  # nolint start: indentation_linter.
-  region_grid <- region_grid[
-    (grepl("^lh_", region_grid$region_label) &
-      region_grid$hemisphere == "lh") |
-      (grepl("^rh_", region_grid$region_label) &
-        region_grid$hemisphere == "rh") |
-      (!grepl("^[lr]h_", region_grid$region_label)),
-  ]
-  # nolint end
-
-  region_grid <- filter_visible_regions(region_grid, components$vertices_df)
-
-  run_region_snapshot_batches(
-    atlas_3d = atlas_3d,
-    region_grid = region_grid,
-    dirs = dirs,
-    skip_existing = skip_existing,
-    snapshot_dim = snapshot_dim
-  )
-
-  run_na_region_snapshots(
-    atlas_3d = atlas_3d,
-    hemi_short = hemi_short,
-    views = views,
-    dirs = dirs,
-    skip_existing = skip_existing,
-    snapshot_dim = snapshot_dim
-  )
 }
 
 

@@ -208,31 +208,6 @@ describe("get_smoothness", {
 })
 
 
-describe("get_snapshot_dim", {
-  it("returns explicit value when provided", {
-    expect_identical(get_snapshot_dim(1024), 1024)
-    expect_identical(get_snapshot_dim(400), 400)
-  })
-
-  it("reads from option when explicit value is NULL", {
-    withr::local_options(ggseg.extra.snapshot_dim = 512)
-    expect_identical(get_snapshot_dim(), 512)
-  })
-
-  it("reads from environment variable when option is NULL", {
-    withr::local_options(ggseg.extra.snapshot_dim = NULL)
-    withr::local_envvar(GGSEG_EXTRA_SNAPSHOT_DIM = "1200")
-    expect_identical(get_snapshot_dim(), 1200)
-  })
-
-  it("returns default of 800 when nothing is set", {
-    withr::local_options(ggseg.extra.snapshot_dim = NULL)
-    withr::local_envvar(GGSEG_EXTRA_SNAPSHOT_DIM = NA)
-    expect_identical(get_snapshot_dim(), 800)
-  })
-})
-
-
 describe("load_or_run_step", {
   it("returns run=TRUE when step is requested and files don't exist", {
     result <- load_or_run_step(

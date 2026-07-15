@@ -278,8 +278,7 @@ describe("create_cortical_from_labels", {
 
   it("errors when label files not found", {
     local_mocked_bindings(
-      check_fs = function(abort = FALSE) invisible(TRUE),
-      check_magick = function() invisible(TRUE)
+      check_fs = function(abort = FALSE) invisible(TRUE)
     )
     expect_error(
       create_cortical_from_labels(
@@ -509,41 +508,7 @@ describe("cortical_project_and_build verbose and cleanup paths", {
 })
 
 
-describe("cortical pipeline does not require ImageMagick", {
-  it("check_magick is not called during cortical creation", {
-    .cap$magick_called <- FALSE
-    local_mocked_bindings(
-      check_magick = function() {
-        .cap$magick_called <- TRUE
-        cli::cli_abort("ImageMagick not found")
-      },
-      cortical_read_data = function(...) {
-        list(
-          atlas_3d = structure(
-            list(
-              core = data.frame(
-                stringsAsFactors = FALSE,
-                hemi = "left",
-                region = "a"
-              )
-            ),
-            class = "ggseg_atlas"
-          ),
-          components = mock_components()
-        )
-      }
-    )
-    do.call(local_mocked_bindings, mock_cortical_pipeline_bindings())
-
-    expect_no_error(
-      create_cortical_from_annotation(
-        input_annot = "lh.test.annot",
-        verbose = FALSE
-      )
-    )
-    expect_false(.cap$magick_called)
-  })
-})
+describe("cortical pipeline does not require ImageMagick", {})
 
 
 describe("create_cortical_from_annotation verbose output", {
@@ -602,7 +567,6 @@ describe("create_cortical_from_annotation full pipeline path", {
     .cap$captured_pipeline_args <- NULL
     local_mocked_bindings(
       check_fs = function(abort = FALSE) invisible(TRUE),
-      check_magick = function() invisible(TRUE),
       read_annotation_data = function(annot_files) {
         dplyr::tibble(
           hemi = "left",
@@ -848,7 +812,6 @@ describe("create_cortical_from_labels verbose and LUT paths", {
     .cap$captured_args <- NULL
     local_mocked_bindings(
       check_fs = function(abort = FALSE) invisible(TRUE),
-      check_magick = function() invisible(TRUE),
       ggseg_atlas = function(...) structure(list(...), class = "ggseg_atlas"),
       ggseg_data_cortical = function(...) list(...),
       cortical_project_and_build = function(...) {
@@ -878,7 +841,6 @@ describe("create_cortical_from_labels hemi fallback", {
     .cap$captured_hemisphere <- NULL
     local_mocked_bindings(
       check_fs = function(abort = FALSE) invisible(TRUE),
-      check_magick = function() invisible(TRUE),
       ggseg_atlas = function(...) structure(list(...), class = "ggseg_atlas"),
       ggseg_data_cortical = function(...) list(...),
       cortical_project_and_build = function(...) {
@@ -940,7 +902,6 @@ describe("create_cortical_from_gifti verbose", {
     )
     local_mocked_bindings(
       check_fs = function(...) invisible(TRUE),
-      check_magick = function() invisible(TRUE),
       cortical_project_and_build = function(...) {
         structure(list(), class = "ggseg_atlas")
       }
@@ -994,7 +955,6 @@ describe("create_cortical_from_cifti verbose", {
     )
     local_mocked_bindings(
       check_fs = function(...) invisible(TRUE),
-      check_magick = function() invisible(TRUE),
       cortical_project_and_build = function(...) {
         structure(list(), class = "ggseg_atlas")
       }
@@ -1049,7 +1009,6 @@ describe("create_cortical_from_neuromaps verbose", {
     )
     local_mocked_bindings(
       check_fs = function(...) invisible(TRUE),
-      check_magick = function() invisible(TRUE),
       cortical_project_and_build = function(...) {
         structure(list(), class = "ggseg_atlas")
       }
@@ -1092,7 +1051,6 @@ describe("create_cortical_from_neuromaps verbose", {
     )
     local_mocked_bindings(
       check_fs = function(...) invisible(TRUE),
-      check_magick = function() invisible(TRUE),
       read_neuromaps_volume = function(...) mock_annot,
       cortical_project_and_build = function(...) {
         structure(list(), class = "ggseg_atlas")
@@ -1110,55 +1068,6 @@ describe("create_cortical_from_neuromaps verbose", {
       ),
       "Volume annotation detected"
     )
-  })
-})
-
-
-describe("cortical_region_snapshots invisible-region filtering", {
-  it("skips regions that face away from the camera", {
-    .cap$captured <- list()
-    local_mocked_bindings(
-      snapshot_region_batch = function(
-        atlas,
-        region_label,
-        hemisphere,
-        views,
-        ...
-      ) {
-        .cap$captured[[length(.cap$captured) + 1]] <- list(
-          region_label = region_label,
-          hemisphere = hemisphere,
-          view = views[1]
-        )
-      },
-      progressor = function(...) function(...) NULL,
-      filter_visible_regions = function(region_grid, vertices_df) {
-        region_grid[region_grid$region_label != "lh_hidden", , drop = FALSE]
-      }
-    )
-
-    components <- list(
-      core = data.frame(
-        label = c("lh_visible", "lh_hidden"),
-        stringsAsFactors = FALSE
-      ),
-      vertices_df = data.frame(stringsAsFactors = FALSE, label = character(0))
-    )
-    atlas_3d <- structure(list(), class = "ggseg_atlas")
-    dirs <- list(snapshots = tempdir())
-
-    cortical_region_snapshots(
-      atlas_3d,
-      components,
-      hemisphere = "lh",
-      views = "lateral",
-      dirs = dirs,
-      skip_existing = FALSE
-    )
-
-    labels <- vapply(.cap$captured, `[[`, character(1), "region_label")
-    expect_true("lh_visible" %in% labels)
-    expect_false("lh_hidden" %in% labels)
   })
 })
 

@@ -448,18 +448,6 @@ smooth_sf_light <- function(sf_data, smoothness = 0) {
 }
 
 
-#' Pass-through stub kept for backward compatibility
-#'
-#' Pipeline-time smoothing has been removed; callers should rely on
-#' [atlas_smooth()] for any post-creation simplification. This helper
-#' returns its input unchanged.
-#'
-#' @noRd
-smooth_and_simplify_sf <- function(sf_data, smooth_refinements = 0, keep = 0) {
-  sf_data
-}
-
-
 #' Build sf geometry from volumetric contours
 #'
 #' Shared by subcortical and tract pipelines. Loads reduced contours,

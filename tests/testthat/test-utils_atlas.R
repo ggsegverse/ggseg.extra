@@ -39,15 +39,6 @@ describe("detect_hemi", {
 })
 
 
-describe("detect_hemi_vec", {
-  it("works on vectors", {
-    labels <- c("Left-Thalamus", "Right-Amygdala", "brainstem")
-    result <- detect_hemi_vec(labels)
-    expect_identical(result, c("left", "right", NA_character_))
-  })
-})
-
-
 describe("clean_region_name", {
   it("removes hemisphere prefix and normalizes", {
     expect_identical(clean_region_name("Left-Thalamus"), "thalamus")
@@ -101,15 +92,6 @@ describe("hemi_to_short", {
   it("returns unchanged for non-long forms", {
     expect_identical(hemi_to_short("lh"), "lh")
     expect_identical(hemi_to_short("subcort"), "subcort")
-  })
-})
-
-
-describe("clean_region_names", {
-  it("works on vectors", {
-    labels <- c("Left-Thalamus", "right_Amygdala", "lh.superior_frontal")
-    result <- clean_region_names(labels)
-    expect_identical(result, c("thalamus", "amygdala", "superior frontal"))
   })
 })
 

@@ -148,15 +148,6 @@ mkdir <- function(path, ...) {
   dir.create(path, recursive = TRUE, showWarnings = FALSE, ...)
 }
 
-#' @noRd
-close_chromote_workers <- function() {
-  if (!requireNamespace("chromote", quietly = TRUE)) {
-    return(invisible(NULL))
-  }
-  try(chromote::default_chromote_object()$close(), silent = TRUE)
-  invisible(NULL)
-}
-
 
 #' @noRd
 load_rda <- function(path, envir = parent.frame()) {
@@ -419,22 +410,6 @@ warn_deprecated_sf_smoothing <- function(
   }
 }
 
-#' Get snapshot dimension setting
-#'
-#' Returns the snapshot dimension (width and height in pixels) for brain
-#' surface snapshots. Higher values capture more detail for dense parcellations.
-#'
-#' @param snapshot_dim Optional explicit value. If NULL, reads from options/env.
-#' @return Numeric pixel dimension
-#' @noRd
-get_snapshot_dim <- function(snapshot_dim = NULL) {
-  get_numeric_option(
-    snapshot_dim,
-    "ggseg.extra.snapshot_dim",
-    "GGSEG_EXTRA_SNAPSHOT_DIM",
-    800
-  )
-}
 
 #' Helper to get boolean option with fallback
 #' @noRd

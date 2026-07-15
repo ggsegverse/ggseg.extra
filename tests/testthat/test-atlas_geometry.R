@@ -749,30 +749,6 @@ describe("simplify_sf_topology", {
 })
 
 
-describe("smooth_and_simplify_sf", {
-  it("returns input unchanged regardless of keep and smooth_refinements", {
-    poly <- sf::st_polygon(list(matrix(
-      c(0, 0, 0.5, 0.01, 1, 0, 1, 1, 0.5, 0.99, 0, 1, 0, 0),
-      ncol = 2,
-      byrow = TRUE
-    )))
-    sf_data <- sf::st_sf(
-      label = "a",
-      geometry = sf::st_sfc(poly)
-    )
-
-    expect_identical(
-      smooth_and_simplify_sf(sf_data, smooth_refinements = 0, keep = 0),
-      sf_data
-    )
-    expect_identical(
-      smooth_and_simplify_sf(sf_data, smooth_refinements = 2, keep = 0.5),
-      sf_data
-    )
-  })
-})
-
-
 describe("atlas_smooth", {
   it("warns when atlas has no 2D geometry", {
     atlas <- ggseg.formats::ggseg_atlas(

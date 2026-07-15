@@ -54,36 +54,6 @@ describe("read_fs_mesh", {
 })
 
 
-describe("make_brain_meshes", {
-  it("requires FreeSurfer", {
-    local_mocked_bindings(
-      check_fs = function(msg = NULL, abort = FALSE) {
-        if (abort) {
-          cli::cli_abort("Freesurfer not found")
-        }
-        FALSE
-      }
-    )
-    expect_error(make_brain_meshes(), "Freesurfer")
-  })
-
-  it("creates meshes for all hemisphere/surface combos", {
-    skip_if_no_freesurfer()
-
-    expect_messages(
-      {
-        meshes <- make_brain_meshes(surfaces = "inflated")
-      },
-      "Extracting"
-    )
-
-    expect_s3_class(meshes, "brain_meshes")
-    expect_true("lh_inflated" %in% names(meshes))
-    expect_true("rh_inflated" %in% names(meshes))
-  })
-})
-
-
 describe("read_fs_mesh surface file not found", {
   it("errors when surface file does not exist", {
     local_mocked_bindings(

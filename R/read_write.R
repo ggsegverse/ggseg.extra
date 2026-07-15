@@ -675,15 +675,6 @@ fill_missing_colours <- function(result) {
   result
 }
 
-#' Check if file is a supported volume format
-#'
-#' @param file Path to file
-#' @return Logical
-#' @keywords internal
-#' @noRd
-is_volume_file <- function(file) {
-  grepl("\\.(mgz|nii|nii\\.gz)$", file, ignore.case = TRUE)
-}
 
 #' Read neuroimaging volume file
 #'
@@ -742,41 +733,6 @@ read_volume <- function(file, reorient = TRUE) {
   vol
 }
 
-#' Read mesh data from PLY file
-#'
-#' Reads an ASCII PLY file and extracts vertices and faces into
-#' a list format suitable for ggseg3d.
-#'
-#' @param ply path to ply-file
-#' @param ... ignored, kept for backward compatibility
-#'
-#' @return list with vertices (data.frame with x, y, z) and
-#'   faces (data.frame with i, j, k)
-#' @keywords internal
-#' @noRd
-read_ply_mesh <- function(ply, ...) {
-  if (!is.character(ply)) {
-    cli::cli_abort("{.arg ply} must be a file path")
-  }
-
-  lines <- readLines(ply)
-
-  if (lines[1] != "ply") {
-    cli::cli_abort("Not a valid PLY file: {.path {ply}}")
-  }
-
-  header <- parse_ply_header(lines)
-
-  vertices <- parse_ply_vertices(lines, header$header_end, header$n_vertices)
-  faces <- parse_ply_faces(
-    lines,
-    header$header_end,
-    header$n_vertices,
-    header$n_faces
-  )
-
-  list(vertices = vertices, faces = faces)
-}
 
 #' Parse PLY header counts and header end position
 #' @noRd
@@ -943,33 +899,6 @@ read_label_vertices <- function(label_file) {
 
 
 # DPV file format ----
-
-#' Write DPV file
-#'
-#' @param path path to file
-#' @param vertices object with vertices
-#' @param faces object with faces
-#' @noRd
-write_dpv <- function(path, vertices, faces) {
-  if (min(faces) == 1) {
-    faces <- faces - 1
-  }
-
-  vert_lines <- sprintf("%f %f %f %g", vertices$x, vertices$y, vertices$z, 0)
-  face_lines <- sprintf("%g %g %g %g", faces$i, faces$j, faces$k, 0)
-
-  file_content <- c(
-    "#!ascii",
-    sprintf("%g %g", nrow(vertices), nrow(faces)),
-    vert_lines,
-    face_lines
-  )
-
-  con <- file(path)
-  on.exit(close(con), add = TRUE)
-  writeLines(file_content, con)
-}
-
 
 #' Read DPV file
 #'

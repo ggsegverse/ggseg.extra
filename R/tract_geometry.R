@@ -488,15 +488,6 @@ axis_in_bounds <- function(value, dim_size) {
 }
 
 
-#' Check if voxel coordinates are within volume bounds
-#' @noRd
-voxel_in_bounds <- function(x, y, z, dims) {
-  axis_in_bounds(x, dims[1]) &&
-    axis_in_bounds(y, dims[2]) &&
-    axis_in_bounds(z, dims[3])
-}
-
-
 #' Detect if streamline coordinates are in voxel space
 #'
 #' Uses heuristics to guess whether coordinates are in voxel space (0 to dims)
@@ -1000,52 +991,6 @@ tract_build_snapshots <- function(
       opts$verbose
     )
   }
-}
-
-
-# nolint next: object_length_linter.
-create_tract_geometry_volumetric <- function(
-  atlas,
-  aseg_file,
-  streamlines = NULL,
-  views = NULL,
-  cortex_slices = NULL,
-  output_dir = NULL,
-  tract_radius = 3,
-  coords_are_voxels = NULL,
-  vertex_size_limits = NULL,
-  dilate = NULL,
-  tolerance = NULL,
-  smoothness = NULL,
-  verbose = get_verbose(), # nolint: object_usage_linter
-  cleanup = NULL,
-  skip_existing = NULL
-) {
-  opts <- resolve_tract_geom_opts(
-    verbose,
-    cleanup,
-    skip_existing,
-    tolerance,
-    smoothness,
-    output_dir,
-    tract_radius,
-    coords_are_voxels,
-    dilate,
-    vertex_size_limits
-  )
-
-  ctx <- setup_tract_geom_context(atlas, aseg_file, streamlines, opts)
-
-  geom <- tract_geometry_or_cache(
-    aseg_file,
-    streamlines,
-    views,
-    cortex_slices,
-    ctx,
-    opts
-  )
-
-  finalize_tract_sf(ctx$dirs, geom$views, geom$cortex_slices, opts)
 }
 
 

@@ -1100,50 +1100,6 @@ get_tkras_to_world <- function(volume_path) {
 }
 
 
-#' Tessellate per-region 3D meshes from cerebellar volume
-#'
-#' Wraps the subcortical tessellation machinery to create per-region meshes
-#' from a cerebellar segmentation volume.
-#'
-#' @noRd
-cerebellar_create_meshes <- function(
-  volume,
-  components,
-  dirs,
-  skip_existing,
-  verbose,
-  decimate
-) {
-  check_fs(abort = TRUE)
-
-  if (!file.exists(volume)) {
-    cli::cli_abort("Volume file not found: {.path {volume}}")
-  }
-
-  vol <- read_volume(volume)
-  vol_ids <- sort(unique(as.integer(vol)))
-  vol_ids <- vol_ids[vol_ids > 0L]
-
-  colortable <- build_cerebellar_colortable(components, vol_ids)
-
-  meshes_list <- subcort_create_meshes(
-    input_volume = volume,
-    colortable = colortable,
-    dirs = dirs,
-    skip_existing = skip_existing,
-    verbose = verbose,
-    decimate = decimate
-  )
-
-  meshes_df <- data.frame(
-    label = names(meshes_list),
-    stringsAsFactors = FALSE
-  )
-  meshes_df$mesh <- unname(meshes_list)
-  meshes_df
-}
-
-
 #' Build the idx/label colortable for cerebellar mesh tessellation
 #' @noRd
 build_cerebellar_colortable <- function(components, vol_ids) {

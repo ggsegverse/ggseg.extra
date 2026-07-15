@@ -465,7 +465,6 @@ describe("create_wholebrain_from_volume pipeline flow", {
 
     local_mocked_bindings(
       check_fs = function(...) TRUE,
-      check_magick = function(...) TRUE,
       setup_atlas_dirs = function(...) {
         list(
           base = test_dir,
@@ -784,7 +783,6 @@ describe("create_wholebrain_from_volume verbose and cleanup", {
 
     local_mocked_bindings(
       check_fs = function(...) TRUE,
-      check_magick = function(...) TRUE,
       setup_atlas_dirs = function(...) {
         list(
           base = sub_dir,
