@@ -203,6 +203,7 @@ describe("create_subcortical_from_volume with meshes", {
   })
 
   it("can render with ggseg3d", {
+    skip_render_on_windows()
     expect_no_error({
       p <- ggseg3d::ggseg3d(atlas = atlas, hemisphere = "subcort")
     })

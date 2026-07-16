@@ -36,6 +36,13 @@ skip_if_no_freesurfer <- function() {
   }
 }
 
+# Helper to skip 3D-render checks on Windows. ggseg3d's renderer relies on a
+# native geometry/plotly stack that segfaults intermittently on the parallel
+# Windows CI runner; the render path is not OS-specific, so skip it there.
+skip_render_on_windows <- function() {
+  testthat::skip_on_os("windows")
+}
+
 # Helper to skip tests requiring ImageMagick
 skip_if_no_imagemagick <- function() {
   if (Sys.which("convert") == "") {

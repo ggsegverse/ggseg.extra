@@ -1,5 +1,6 @@
 describe("integration tests", {
   it("creates atlas from labels and renders with ggseg3d", {
+    skip_render_on_windows()
     skip_if_not_installed("freesurferformats")
 
     labels <- unlist(test_label_files())
@@ -18,6 +19,7 @@ describe("integration tests", {
   })
 
   it("creates atlas from annotation and renders with ggseg3d", {
+    skip_render_on_windows()
     skip_if_not_installed("freesurferformats")
 
     annots <- test_annot_files()

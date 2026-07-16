@@ -44,6 +44,7 @@ describe("create_cortical_from_annotation", {
   })
 
   it("can render with ggseg3d", {
+    skip_render_on_windows()
     skip_if_not_installed("freesurferformats")
 
     annots <- test_annot_files()
