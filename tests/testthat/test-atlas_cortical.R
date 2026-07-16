@@ -508,9 +508,6 @@ describe("cortical_project_and_build verbose and cleanup paths", {
 })
 
 
-describe("cortical pipeline does not require ImageMagick", {})
-
-
 describe("create_cortical_from_annotation verbose output", {
   it("prints atlas name and paths when verbose is TRUE", {
     local_mocked_bindings(
