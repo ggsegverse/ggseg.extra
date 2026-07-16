@@ -24,8 +24,12 @@ skip_if_not_installed <- function(pkg) {
   }
 }
 
-# Helper to skip tests requiring FreeSurfer
+# Helper to skip tests requiring FreeSurfer.
+# FreeSurfer is Unix-only, so anything that shells out to it is skipped on
+# Windows unconditionally (the runner also segfaults intermittently under the
+# parallel native geometry stack there).
 skip_if_no_freesurfer <- function() {
+  testthat::skip_on_os("windows")
   testthat::skip_if_not_installed("freesurfer")
   if (!freesurfer::have_fs()) {
     testthat::skip("FreeSurfer not available")
