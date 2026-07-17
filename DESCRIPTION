@@ -37,6 +37,7 @@ Depends:
 Imports:
     cli,
     dplyr,
+    fs,
     future,
     furrr,
     ggseg,

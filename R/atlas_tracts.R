@@ -321,7 +321,7 @@ tract_resolve_step1 <- function(
   tract_names,
   colours
 ) {
-  files <- file.path(dirs$base, "step1_data.rds")
+  files <- as.character(fs::path(dirs$base, "step1_data.rds"))
   cached <- load_or_run_step(
     1L,
     config$steps,
@@ -358,7 +358,7 @@ tract_resolve_step1 <- function(
 
   step1_data <- tract_step1_data(config, prepared, built)
 
-  saveRDS(step1_data, file.path(dirs$base, "step1_data.rds"))
+  saveRDS(step1_data, as.character(fs::path(dirs$base, "step1_data.rds")))
   step1_data
 }
 
@@ -445,8 +445,8 @@ tract_check_aseg <- function(input_aseg, steps) {
 #' @noRd
 tract_resolve_snapshots <- function(config, dirs, step1, input_aseg, views) {
   files <- c(
-    file.path(dirs$base, "views.rds"),
-    file.path(dirs$base, "cortex_slices.rds")
+    as.character(fs::path(dirs$base, "views.rds")),
+    as.character(fs::path(dirs$base, "cortex_slices.rds"))
   )
   cached <- load_or_run_step(
     2L,
@@ -484,8 +484,11 @@ tract_resolve_snapshots <- function(config, dirs, step1, input_aseg, views) {
     config$verbose
   )
 
-  saveRDS(result$views, file.path(dirs$base, "views.rds"))
-  saveRDS(result$cortex_slices, file.path(dirs$base, "cortex_slices.rds"))
+  saveRDS(result$views, as.character(fs::path(dirs$base, "views.rds")))
+  saveRDS(
+    result$cortex_slices,
+    as.character(fs::path(dirs$base, "cortex_slices.rds"))
+  )
   if (config$verbose) {
     cli::cli_progress_done()
   }
@@ -524,7 +527,7 @@ tract_assemble_3d <- function(step1) {
 
 #' @noRd
 tract_assemble_full <- function(step1, dirs, views, cortex_slices) {
-  contours_file <- file.path(dirs$base, "contours_reduced.rda")
+  contours_file <- as.character(fs::path(dirs$base, "contours_reduced.rda"))
   if (!file.exists(contours_file)) {
     cli::cli_abort(c(
       "Step 7 requires contours_reduced.rda which doesn't exist",

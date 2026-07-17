@@ -92,10 +92,11 @@ with_safe_plan <- function(expr) {
   if (inherits(plan(), "multicore")) {
     old_plan <- plan(multisession)
     on.exit(plan(old_plan), add = TRUE)
-    cli::cli_alert_info(paste0(
-      "Switching from multicore to multisession:",
-      " fork is incompatible with chromote."
-    ))
+    cli::cli_alert_info(
+      "Switching from multicore to multisession: fork is
+      incompatible with chromote.",
+      wrap = TRUE
+    )
   }
   withCallingHandlers(
     force(expr),
@@ -252,7 +253,7 @@ load_or_run_step <- function(
   steps,
   files,
   skip_existing,
-  step_name = paste("Step", step_num)
+  step_name = cli::format_inline("Step {step_num}")
 ) {
   files_exist <- all(file.exists(files))
   step_requested <- step_num %in% steps
@@ -273,10 +274,8 @@ load_or_run_step <- function(
     cli::cli_abort(c(
       "{step_name} was not run but required files are missing",
       "i" = "Missing: {.path {missing}}",
-      "i" = paste(
-        "Include step {step_num} in the steps",
-        "argument to generate these files"
-      )
+      "i" = "Include step {step_num} in the steps argument to
+      generate these files"
     ))
     # nolint end
   }
@@ -507,15 +506,10 @@ warn_if_large_atlas <- function(atlas, max_vertices = 10000, per_region = 50) {
   if (n_vertices > threshold) {
     # nolint start
     cli::cli_warn(c(
-      paste(
-        "Atlas has {.val {n_vertices}} vertices",
-        "(threshold: {.val {threshold}})"
-      ),
+      "Atlas has {.val {n_vertices}} vertices (threshold: {.val {threshold}})",
       "i" = "Large atlases may be slow to plot and increase package size",
-      "i" = paste(
-        "Call {.code atlas_smooth(atlas, keep = 0.2, exclude = \"cortex_\")}",
-        "to reduce vertices"
-      )
+      "i" = "Call {.code atlas_smooth(atlas, keep = 0.2, exclude = \"cortex_\")}
+      to reduce vertices"
     ))
     # nolint end
   }

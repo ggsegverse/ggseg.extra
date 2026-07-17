@@ -444,7 +444,9 @@ run_label_atlas_creation <- function(
         default_colours
       )
     },
-    step_label = paste("Reading", length(label_files), "label files"),
+    step_label = cli::format_inline(
+      "Reading {length(label_files)} label files"
+    ),
     cache_label = "Read labels",
     header_msg = "Creating brain atlas {.val {atlas_name}}",
     input_files = label_files,
@@ -526,7 +528,7 @@ run_neuromaps_creation <- function(
     atlas_name <- paste(source, desc, sep = "_")
   }
 
-  output_base <- file.path(config$output_dir, atlas_name)
+  output_base <- as.character(fs::path(config$output_dir, atlas_name))
   mkdir(output_base)
 
   read_fn <- if (is_volume) {
@@ -555,11 +557,8 @@ warn_neuromaps_space <- function(space, density) {
   if (space != "fsaverage" || density != "10k") {
     cli::cli_warn(c(
       "Non-default space/density: {.val {space}} / {.val {density}}",
-      "i" = paste(
-        "The cortical pipeline requires fsaverage5",
-        "(space='fsaverage', density='10k').",
-        "Other values may cause vertex count mismatches."
-      )
+      "i" = "The cortical pipeline requires fsaverage5 (space='fsaverage',
+      density='10k'). Other values may cause vertex count mismatches."
     ))
   }
 }
@@ -597,10 +596,9 @@ detect_neuromaps_volume <- function(gifti_files, config) {
     check_fs(abort = TRUE)
     if (config$verbose) {
       cli::cli_alert_info(
-        paste(
-          "Volume annotation detected --",
-          "projecting to fsaverage5 surface via mri_vol2surf"
-        )
+        "Volume annotation detected -- projecting to fsaverage5 surface via
+        mri_vol2surf",
+        wrap = TRUE
       )
     }
   }
@@ -671,8 +669,8 @@ cortical_read_data <- function(
   cache_label
 ) {
   files <- c(
-    file.path(dirs$base, "atlas_3d.rds"),
-    file.path(dirs$base, "components.rds")
+    as.character(fs::path(dirs$base, "atlas_3d.rds")),
+    as.character(fs::path(dirs$base, "components.rds"))
   )
   cached <- load_or_run_step(
     1L,
@@ -710,8 +708,8 @@ cortical_read_data <- function(
     data = ggseg_data_cortical(vertices = components$vertices_df)
   )
 
-  saveRDS(atlas_3d, file.path(dirs$base, "atlas_3d.rds"))
-  saveRDS(components, file.path(dirs$base, "components.rds"))
+  saveRDS(atlas_3d, as.character(fs::path(dirs$base, "atlas_3d.rds")))
+  saveRDS(components, as.character(fs::path(dirs$base, "components.rds")))
   cli::cli_progress_done()
 
   list(atlas_3d = atlas_3d, components = components)

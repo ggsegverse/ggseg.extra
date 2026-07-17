@@ -65,8 +65,8 @@ coregister_volume <- function(
   }
 
   in_path <- resolve_volume_path(input_volume)
-  target_dir <- file.path(subjects_dir, target_subject, "mri")
-  ref_mgz <- file.path(target_dir, paste0(target_volume, ".mgz"))
+  target_dir <- as.character(fs::path(subjects_dir, target_subject, "mri"))
+  ref_mgz <- as.character(fs::path(target_dir, paste0(target_volume, ".mgz")))
   if (!file.exists(ref_mgz)) {
     cli::cli_abort(c(
       "Target volume not found: {.path {ref_mgz}}",
@@ -199,8 +199,8 @@ project_volume_anatomical <- function(
   id_offset <- as.integer(id_offset)
 
   in_path <- resolve_volume_path(input_volume)
-  target_dir <- file.path(subjects_dir, target_subject, "mri")
-  aparc_mgz <- file.path(target_dir, "aparc+aseg.mgz")
+  target_dir <- as.character(fs::path(subjects_dir, target_subject, "mri"))
+  aparc_mgz <- as.character(fs::path(target_dir, "aparc+aseg.mgz"))
   if (!file.exists(aparc_mgz)) {
     cli::cli_abort(c(
       "aparc+aseg not found: {.path {aparc_mgz}}",
@@ -748,7 +748,7 @@ write_brain_mask_from_mgz <- function(mgz_path, fileext = ".nii.gz") {
 #' @noRd
 read_fs_color_lut <- function() {
   fs_home <- freesurfer::fs_dir()
-  lut_path <- file.path(fs_home, "FreeSurferColorLUT.txt")
+  lut_path <- as.character(fs::path(fs_home, "FreeSurferColorLUT.txt"))
   if (!nzchar(fs_home) || !file.exists(lut_path)) {
     cli::cli_abort(c(
       "FreeSurfer colour table not found: {.path {lut_path}}",

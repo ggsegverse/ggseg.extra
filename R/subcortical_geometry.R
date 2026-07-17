@@ -26,10 +26,10 @@ ensure_fs_compatible_nifti <- function(volume_file, output_dir) {
     return(volume_file)
   }
 
-  converted <- file.path(
+  converted <- as.character(fs::path(
     output_dir,
     paste0("_fs_compat_", basename(volume_file))
-  )
+  ))
   if (file.exists(converted)) {
     return(converted)
   }
@@ -166,7 +166,7 @@ tessellate_label <- function(
 #' @noRd
 tessellate_paths <- function(output_dir, label_id) {
   label_str <- sprintf("%04d", label_id)
-  base_name <- file.path(output_dir, label_str)
+  base_name <- as.character(fs::path(output_dir, label_str))
 
   list(
     base = base_name,

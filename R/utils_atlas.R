@@ -156,22 +156,22 @@ setup_atlas_dirs <- function(output_dir, atlas_name = NULL, type = "cortical") {
   base <- if (is.null(atlas_name)) {
     output_dir
   } else {
-    file.path(output_dir, atlas_name)
+    as.character(fs::path(output_dir, atlas_name))
   }
 
   dirs <- list(
     base = base,
-    snapshots = file.path(base, "snapshots"),
-    processed = file.path(base, "processed"),
-    masks = file.path(base, "masks")
+    snapshots = as.character(fs::path(base, "snapshots")),
+    processed = as.character(fs::path(base, "processed")),
+    masks = as.character(fs::path(base, "masks"))
   )
 
   if (type %in% c("subcortical", "cerebellar")) {
-    dirs$meshes <- file.path(base, "meshes")
+    dirs$meshes <- as.character(fs::path(base, "meshes"))
   }
 
   if (type == "tract") {
-    dirs$volumes <- file.path(base, "volumes")
+    dirs$volumes <- as.character(fs::path(base, "volumes"))
   }
 
   invisible(

@@ -1080,10 +1080,10 @@ describe("suit_deformation_field", {
 
   it("returns cached path without downloading", {
     tmp <- withr::local_tempdir()
-    cached <- file.path(
+    cached <- as.character(fs::path(
       tmp,
       "tpl-SUIT_from-MNI152NLin6AsymC_mode-image_xfm.nii"
-    )
+    ))
     writeBin(raw(1e6 + 1), cached)
 
     result <- suit_deformation_field(cache_dir = tmp)

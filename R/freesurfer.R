@@ -34,7 +34,11 @@ mri_surf2surf_rereg <- function(
   annot,
   hemi = c("lh", "rh"),
   target_subject = "fsaverage5",
-  output_dir = file.path(freesurfer::fs_subj_dir(), subject, "label"),
+  output_dir = as.character(fs::path(
+    freesurfer::fs_subj_dir(),
+    subject,
+    "label"
+  )),
   verbose = get_verbose() # nolint: object_usage_linter
 ) {
   check_fs(abort = TRUE)
@@ -54,7 +58,7 @@ mri_surf2surf_rereg <- function(
     "--trgsubject",
     shQuote(target_subject),
     "--tval",
-    shQuote(file.path(output_dir, paste(hemi, annot, sep = "."))),
+    shQuote(as.character(fs::path(output_dir, paste(hemi, annot, sep = ".")))),
     "--hemi",
     hemi
   )
@@ -73,15 +77,12 @@ check_fs <- function(abort = FALSE) {
   x <- freesurfer::have_fs()
 
   if (!x) {
-    msg <- paste0(
-      "System does not have Freesurfer or ",
-      "Freesurfer has not been setup correctly.\n",
-      "Aborting.\n"
-    )
+    msg <- "System does not have Freesurfer or Freesurfer has not been setup
+      correctly. Aborting."
     if (abort) {
       cli::cli_abort(msg)
     }
-    cli::cli_alert_danger(msg)
+    cli::cli_alert_danger(msg, wrap = TRUE)
   }
   invisible(x)
 }

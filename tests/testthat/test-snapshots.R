@@ -152,7 +152,7 @@ describe("snapshot_cortex_slice", {
     vol[4:6, 4:6, 5] <- 1L
 
     outdir <- withr::local_tempdir("cortex_slice_")
-    outfile <- file.path(outdir, "axial_1_cortex_left.png")
+    outfile <- as.character(fs::path(outdir, "axial_1_cortex_left.png"))
     file.create(outfile)
 
     result <- snapshot_cortex_slice(
@@ -263,7 +263,7 @@ describe("snapshot_cortex_slice when extract_slice_2d returns NULL", {
 describe("snapshot_partial_projection skip and zero paths", {
   it("returns outfile when skip_existing is TRUE and file exists", {
     outdir <- withr::local_tempdir("partial_skip_")
-    outfile <- file.path(outdir, "axial_1_test.png")
+    outfile <- as.character(fs::path(outdir, "axial_1_test.png"))
     file.create(outfile)
 
     result <- snapshot_partial_projection(

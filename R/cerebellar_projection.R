@@ -262,10 +262,8 @@ warn_flatmap_vertex_range <- function(components, flatmap) {
   ))
   if (max_vertex >= flatmap$n_vertices) {
     cli::cli_warn(c(
-      paste(
-        "Parcellation references vertex {max_vertex} but flatmap",
-        "has only {flatmap$n_vertices} vertices"
-      ),
+      "Parcellation references vertex {max_vertex} but flatmap has only
+      {flatmap$n_vertices} vertices",
       "i" = "Out-of-range vertices will be ignored"
     ))
   }
@@ -279,10 +277,8 @@ check_flatmap_label_overlap <- function(vertex_labels, components, flatmap) {
   if (n_labelled == 0) {
     cli::cli_abort(c(
       "No vertices matched between parcellation and flatmap",
-      "i" = paste(
-        "The parcellation has {nrow(components$vertices_df)} regions",
-        "but none map to the {flatmap$n_vertices}-vertex flatmap"
-      )
+      "i" = "The parcellation has {nrow(components$vertices_df)} regions but
+      none map to the {flatmap$n_vertices}-vertex flatmap"
     ))
   }
 }

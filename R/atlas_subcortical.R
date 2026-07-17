@@ -464,8 +464,8 @@ subcort_log_header <- function(config) {
 #' @noRd
 subcort_resolve_labels <- function(config, dirs) {
   files <- c(
-    file.path(dirs$base, "colortable.rds"),
-    file.path(dirs$base, "vol_labels.rds")
+    as.character(fs::path(dirs$base, "colortable.rds")),
+    as.character(fs::path(dirs$base, "vol_labels.rds"))
   )
   cached <- load_or_run_step(
     1L,
@@ -500,8 +500,8 @@ subcort_resolve_labels <- function(config, dirs) {
     cli::cli_alert_success("Found {nrow(colortable)} subcortical structures")
   }
 
-  saveRDS(colortable, file.path(dirs$base, "colortable.rds"))
-  saveRDS(vol_labels, file.path(dirs$base, "vol_labels.rds"))
+  saveRDS(colortable, as.character(fs::path(dirs$base, "colortable.rds")))
+  saveRDS(vol_labels, as.character(fs::path(dirs$base, "vol_labels.rds")))
   if (config$verbose) {
     cli::cli_progress_done()
   }
@@ -538,7 +538,7 @@ subcort_load_colortable <- function(input_lut, input_volume) {
 
 #' @noRd
 subcort_resolve_meshes <- function(config, dirs, colortable) {
-  files <- file.path(dirs$base, "meshes_list.rds")
+  files <- as.character(fs::path(dirs$base, "meshes_list.rds"))
   cached <- load_or_run_step(
     2L,
     config$steps,
@@ -573,14 +573,14 @@ subcort_resolve_meshes <- function(config, dirs, colortable) {
   if (config$verbose) {
     cli::cli_progress_done()
   }
-  saveRDS(meshes_list, file.path(dirs$base, "meshes_list.rds"))
+  saveRDS(meshes_list, as.character(fs::path(dirs$base, "meshes_list.rds")))
   meshes_list
 }
 
 
 #' @noRd
 subcort_resolve_components <- function(config, dirs, colortable, meshes_list) {
-  files <- file.path(dirs$base, "components.rds")
+  files <- as.character(fs::path(dirs$base, "components.rds"))
   cached <- load_or_run_step(
     3L,
     config$steps,
@@ -604,7 +604,7 @@ subcort_resolve_components <- function(config, dirs, colortable, meshes_list) {
   }
 
   components <- subcort_build_components(colortable, meshes_list)
-  saveRDS(components, file.path(dirs$base, "components.rds"))
+  saveRDS(components, as.character(fs::path(dirs$base, "components.rds")))
   if (config$verbose) {
     cli::cli_progress_done()
   }
@@ -615,8 +615,8 @@ subcort_resolve_components <- function(config, dirs, colortable, meshes_list) {
 #' @noRd
 subcort_resolve_snapshots <- function(config, dirs, colortable, views) {
   files <- c(
-    file.path(dirs$base, "views.rds"),
-    file.path(dirs$base, "cortex_slices.rds")
+    as.character(fs::path(dirs$base, "views.rds")),
+    as.character(fs::path(dirs$base, "cortex_slices.rds"))
   )
   cached <- load_or_run_step(
     4L,
@@ -651,8 +651,11 @@ subcort_resolve_snapshots <- function(config, dirs, colortable, views) {
     config$skip_existing
   )
 
-  saveRDS(result$views, file.path(dirs$base, "views.rds"))
-  saveRDS(result$cortex_slices, file.path(dirs$base, "cortex_slices.rds"))
+  saveRDS(result$views, as.character(fs::path(dirs$base, "views.rds")))
+  saveRDS(
+    result$cortex_slices,
+    as.character(fs::path(dirs$base, "cortex_slices.rds"))
+  )
   if (config$verbose) {
     cli::cli_progress_done()
   }
@@ -680,7 +683,7 @@ subcort_assemble_full <- function(
   views,
   cortex_slices
 ) {
-  contours_file <- file.path(dirs$base, "contours_reduced.rda")
+  contours_file <- as.character(fs::path(dirs$base, "contours_reduced.rda"))
   if (!file.exists(contours_file)) {
     cli::cli_abort(c(
       "Step 9 requires contours_reduced.rda which doesn't exist",

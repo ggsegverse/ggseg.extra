@@ -486,14 +486,17 @@ read_neuromaps_volume <- function(
   check_fs(abort = TRUE)
   rlang::check_installed("RNifti", reason = "to read NIfTI volume files")
 
-  surf_dir <- file.path(output_dir, "surface_overlays")
+  surf_dir <- as.character(fs::path(output_dir, "surface_overlays"))
   mkdir(surf_dir)
 
   all_data <- list()
 
   for (hemi_short in c("lh", "rh")) {
     hemi <- hemi_to_long(hemi_short)
-    output_nii <- file.path(surf_dir, paste0(hemi_short, "_overlay.nii.gz"))
+    output_nii <- as.character(fs::path(
+      surf_dir,
+      paste0(hemi_short, "_overlay.nii.gz")
+    ))
 
     mri_vol2surf(
       input_file = nifti_file,
@@ -570,14 +573,10 @@ cifti_hemi_regions <- function(hi, regions) {
 
   if (n_verts != hi$expected_n) {
     cli::cli_abort(c(
-      paste(
-        "CIFTI {hi$hemi} hemisphere has {n_verts} vertices,",
-        "expected {hi$expected_n} (fsaverage5)"
-      ),
-      "i" = paste(
-        "Resample to fsaverage5 first using",
-        "{.code wb_command -cifti-resample}"
-      )
+      "CIFTI {hi$hemi} hemisphere has {n_verts} vertices,
+      expected {hi$expected_n} (fsaverage5)",
+      "i" = "Resample to fsaverage5 first using
+      {.code wb_command -cifti-resample}"
     ))
   }
 
@@ -609,10 +608,8 @@ validate_neuromaps_inputs <- function(gifti_files, label_table) {
     if (!all(c("id", "region") %in% names(label_table))) {
       cli::cli_abort(c(
         "{.arg label_table} must have columns {.field id} and {.field region}",
-        "i" = paste(
-          "Optionally include a {.field colour}",
-          "column with hex colour codes."
-        )
+        "i" = "Optionally include a {.field colour} column with hex colour
+        codes."
       ))
     }
   }
@@ -629,14 +626,10 @@ read_neuromaps_values <- function(gifti_file, hemi) {
 
   if (n_verts != fsaverage5_nverts) {
     cli::cli_abort(c(
-      paste(
-        "{hemi} hemisphere has {n_verts} vertices,",
-        "expected {fsaverage5_nverts} (fsaverage5)"
-      ),
-      "i" = paste(
-        "Use space='fsaverage' with density='10k'",
-        "for fsaverage5 compatibility."
-      )
+      "{hemi} hemisphere has {n_verts} vertices,
+      expected {fsaverage5_nverts} (fsaverage5)",
+      "i" = "Use space='fsaverage' with density='10k'
+      for fsaverage5 compatibility."
     ))
   }
 
@@ -651,10 +644,8 @@ read_surface_overlay <- function(output_nii, hemi) {
 
   if (length(values) != fsaverage5_nverts) {
     cli::cli_abort(c(
-      paste(
-        "{hemi} hemisphere has {length(values)} vertices,",
-        "expected {fsaverage5_nverts} (fsaverage5)"
-      )
+      "{hemi} hemisphere has {length(values)} vertices,
+      expected {fsaverage5_nverts} (fsaverage5)"
     ))
   }
 

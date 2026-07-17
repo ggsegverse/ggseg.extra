@@ -133,7 +133,7 @@ describe("setup_atlas_dirs with NULL atlas_name", {
 
     expect_identical(dirs$base, tmp)
     expect_true(dir.exists(dirs$snapshots))
-    expect_identical(dirs$snapshots, file.path(tmp, "snapshots"))
+    expect_identical(dirs$snapshots, as.character(fs::path(tmp, "snapshots")))
   })
 })
 

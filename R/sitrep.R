@@ -90,10 +90,8 @@ check_other_system_deps <- function(detail = "simple") {
       cli::cli_alert_danger("ImageMagick not found")
       if (detail == "full") {
         cli::cli_bullets(c(
-          "i" = paste(
-            "Install from",
-            "{.url https://imagemagick.org/script/download.php}"
-          ),
+          "i" = "Install from
+          {.url https://imagemagick.org/script/download.php}",
           "i" = "macOS: {.code brew install imagemagick}" # nolint
         ))
       }
@@ -133,7 +131,7 @@ check_fsaverage <- function(detail = "simple") {
   }
 
   subj <- "fsaverage5"
-  subj_path <- file.path(subj_dir, subj)
+  subj_path <- as.character(fs::path(subj_dir, subj))
   results[[subj]] <- dir.exists(subj_path)
   if (detail != "minimal") {
     if (results[[subj]]) {
@@ -243,9 +241,7 @@ check_suit_surfaces <- function(detail = "simple") {
       }
       if (detail == "full") {
         # nolint start: object_usage_linter.
-        reinstall <- paste0(
-          'remotes::install_github("ggsegverse/ggseg.extra")'
-        )
+        reinstall <- 'remotes::install_github("ggsegverse/ggseg.extra")'
         cli::cli_bullets(c(
           "i" = "These should be bundled with the package.",
           "i" = "Try reinstalling: {.code {reinstall}}" # nolint
@@ -281,10 +277,8 @@ check_pipeline_options <- function(detail = "simple") {
 
   cli::cli_text("")
   cli::cli_bullets(c(
-    "i" = paste(
-      "Set via {.code options(ggseg.extra.<name> = value)} or",
-      "environment variables {.envvar GGSEG_EXTRA_<NAME>}"
-    ),
+    "i" = "Set via {.code options(ggseg.extra.<name> = value)} or
+    environment variables {.envvar GGSEG_EXTRA_<NAME>}",
     "i" = "See {.code vignette(\"pipeline-configuration\")} for details" # nolint
   ))
 
@@ -600,10 +594,7 @@ summarize_pipeline_footer <- function(n_ready, n_total, detail) {
     ))
   } else if (detail == "simple") {
     cli::cli_bullets(c(
-      "i" = paste(
-        "Run {.code setup_sitrep(\"full\")} for",
-        "install instructions"
-      )
+      "i" = "Run {.code setup_sitrep(\"full\")} for install instructions"
     ))
   }
 

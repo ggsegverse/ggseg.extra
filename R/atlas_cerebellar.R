@@ -93,7 +93,7 @@ suit_deformation_field <- function(
     template,
     "_mode-image_xfm.nii"
   )
-  cached_path <- file.path(cache_dir, filename)
+  cached_path <- as.character(fs::path(cache_dir, filename))
 
   if (file.exists(cached_path)) {
     return(cached_path)
@@ -699,8 +699,8 @@ run_cerebellar_creation <- function(
 
 #' @noRd
 cerebellar_read_data <- function(config, dirs, read_fn) {
-  files <- file.path(dirs$base, "components.rds")
-  deep_file <- file.path(dirs$base, "deep_data.rds")
+  files <- as.character(fs::path(dirs$base, "components.rds"))
+  deep_file <- as.character(fs::path(dirs$base, "deep_data.rds"))
   cached <- load_or_run_step(
     1L,
     config$steps,
@@ -737,7 +737,7 @@ cerebellar_read_data <- function(config, dirs, read_fn) {
     deep_file
   )
 
-  saveRDS(components, file.path(dirs$base, "components.rds"))
+  saveRDS(components, as.character(fs::path(dirs$base, "components.rds")))
   cli::cli_progress_done()
 
   list(components = components, deep_data = split$deep_data)
@@ -1027,7 +1027,7 @@ build_deep_nuclei_meshes <- function(volume, deep_data, dirs, verbose) {
     return(NULL)
   }
 
-  mesh_dir <- file.path(dirs$base, "deep_meshes")
+  mesh_dir <- as.character(fs::path(dirs$base, "deep_meshes"))
   dir.create(mesh_dir, showWarnings = FALSE, recursive = TRUE)
 
   tkr_to_world <- get_tkras_to_world(volume)
@@ -1166,10 +1166,8 @@ warn_vertex_overlap <- function(
   overlap <- intersect(region_vertices, seen_vertices)
   if (length(overlap) > 0) {
     cli::cli_warn(c(
-      paste(
-        "Region {.val {pid}} in {.path {gifti_file}} overlaps",
-        "{length(overlap)} previously assigned vertex{?es}"
-      ),
+      "Region {.val {pid}} in {.path {gifti_file}} overlaps
+      {length(overlap)} previously assigned vertex{?es}",
       "i" = "Last file wins for overlapping vertices"
     ))
   }

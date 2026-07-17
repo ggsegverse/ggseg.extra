@@ -147,7 +147,7 @@ extract_contours <- function(
 
   contours <- combine_region_contours(contourobjs)
 
-  save(contours, file = file.path(output_dir, "contours.rda"))
+  save(contours, file = as.character(fs::path(output_dir, "contours.rda")))
 
   if (verbose) {
     cli::cli_progress_done()
@@ -237,14 +237,14 @@ smooth_contours <- function(
   step = "",
   verbose = get_verbose() # nolint: object_usage_linter
 ) {
-  load_rda(file.path(dir, "contours.rda"))
+  load_rda(as.character(fs::path(dir, "contours.rda")))
 
   contours <- filter_valid_geometries(contours)
   if (nrow(contours) == 0) {
     cli::cli_warn("No valid contours found after extraction")
   }
 
-  save(contours, file = file.path(dir, "contours_smoothed.rda"))
+  save(contours, file = as.character(fs::path(dir, "contours_smoothed.rda")))
   invisible(contours)
 }
 
@@ -263,13 +263,13 @@ reduce_vertex <- function(
   step = "",
   verbose = get_verbose() # nolint: object_usage_linter
 ) {
-  load_rda(file.path(dir, "contours_smoothed.rda"))
+  load_rda(as.character(fs::path(dir, "contours_smoothed.rda")))
 
   contours <- filter_valid_geometries(contours)
   if (nrow(contours) == 0) {
     cli::cli_warn("No valid contours to simplify")
   }
-  save(contours, file = file.path(dir, "contours_reduced.rda"))
+  save(contours, file = as.character(fs::path(dir, "contours_reduced.rda")))
   invisible(contours)
 }
 

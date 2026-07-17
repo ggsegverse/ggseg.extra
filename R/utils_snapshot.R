@@ -98,7 +98,7 @@ process_and_mask_images <- function(
   invisible(lapply(files, function(f) {
     process_snapshot_image(
       input_file = f,
-      output_file = file.path(processed_dir, basename(f)),
+      output_file = as.character(fs::path(processed_dir, basename(f))),
       dilate = dilate,
       skip_existing = skip_existing
     )
@@ -109,7 +109,7 @@ process_and_mask_images <- function(
   invisible(lapply(processed_files, function(f) {
     extract_alpha_mask(
       f,
-      file.path(mask_dir, basename(f)),
+      as.character(fs::path(mask_dir, basename(f))),
       skip_existing = skip_existing
     )
   }))
@@ -151,7 +151,10 @@ run_cmd <- function(cmd, verbose = get_verbose(), no_ui = FALSE) {
       fv_args <- sub("^freeview[[:space:]]*", "", cmd)
       cmd <- paste(
         "open -g -j -n -W",
-        shQuote(file.path(Sys.getenv("FREESURFER_HOME"), "Freeview.app")),
+        shQuote(as.character(fs::path(
+          Sys.getenv("FREESURFER_HOME"),
+          "Freeview.app"
+        ))),
         "--args",
         fv_args
       )

@@ -38,7 +38,7 @@ set_tutorial_options <- function() {
     collapse = TRUE,
     comment = "#>",
     error = FALSE,
-    fig.path = paste0("figures/", name, "-"),
+    fig.path = as.character(fs::path("figures", paste0(name, "-"))),
     fig.retina = 2,
     dpi = 96
   )

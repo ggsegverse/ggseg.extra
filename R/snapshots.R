@@ -189,7 +189,10 @@ snapshot_cortex_slice <- function(
   skip_existing = get_skip_existing()
 ) {
   output_dir <- path.expand(output_dir)
-  outfile <- file.path(output_dir, paste0(view_name, "_cortex_", hemi, ".png"))
+  outfile <- as.character(fs::path(
+    output_dir,
+    paste0(view_name, "_cortex_", hemi, ".png")
+  ))
 
   if (skip_existing && file.exists(outfile)) {
     return(invisible(outfile))
@@ -230,7 +233,10 @@ snapshot_partial_projection <- function(
 ) {
   output_dir <- path.expand(output_dir)
   label <- sanitize_label(label)
-  outfile <- file.path(output_dir, paste0(view_name, "_", label, ".png"))
+  outfile <- as.character(fs::path(
+    output_dir,
+    paste0(view_name, "_", label, ".png")
+  ))
 
   if (skip_existing && file.exists(outfile)) {
     return(invisible(outfile))

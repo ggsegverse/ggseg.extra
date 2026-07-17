@@ -388,13 +388,13 @@ wholebrain_build_atlases <- function(
 #' Print the inspect-the-split guidance for a steps = 1:2 run
 #' @noRd
 wholebrain_log_split_inspect <- function(start_time) {
-  cli::cli_alert_info(paste(
-    "Inspect {.code split$cortical_labels},",
-    "{.code split$subcortical_labels}, and",
-    "{.code split$cerebellar_labels}.",
-    "Override with {.arg cortical_labels}/{.arg subcortical_labels}/",
-    "{.arg cerebellar_labels} if needed, then re-run with all steps."
-  ))
+  cli::cli_alert_info(
+    "Inspect {.code split$cortical_labels}, {.code split$subcortical_labels},
+    and {.code split$cerebellar_labels}. Override with
+    {.arg cortical_labels}/{.arg subcortical_labels}/
+    {.arg cerebellar_labels} if needed, then re-run with all steps.",
+    wrap = TRUE
+  )
   log_elapsed(start_time)
   invisible(NULL)
 }
@@ -437,12 +437,13 @@ validate_wholebrain_opts <- function(
 #' @noRd
 wholebrain_log_header <- function(config) {
   cli::cli_h1("Creating whole-brain atlas {.val {config$atlas_name}}")
-  cli::cli_alert_warning(paste(
-    "This pipeline combines volume-to-surface projection with automatic",
-    "cortical/subcortical classification. Both steps are heuristic and",
-    "require manual validation. Run with {.code steps = 1:2} first to",
-    "inspect the label split before committing to the full pipeline."
-  ))
+  cli::cli_alert_warning(
+    "This pipeline combines volume-to-surface projection with automatic
+    cortical/subcortical classification. Both steps are heuristic and
+    require manual validation. Run with {.code steps = 1:2} first to
+    inspect the label split before committing to the full pipeline.",
+    wrap = TRUE
+  )
   cli::cli_alert_info("Volume: {.path {config$input_volume}}")
   if (!is.null(config$input_lut) && is.character(config$input_lut)) {
     cli::cli_alert_info("Color LUT: {.path {config$input_lut}}")
@@ -480,10 +481,9 @@ wholebrain_log_summary <- function(
   }
   # nolint end
   cli::cli_alert_success(
-    paste(
-      "Whole-brain atlas created:",
-      "{n_cort} cortical, {n_sub} subcortical, {n_cer} cerebellar"
-    )
+    "Whole-brain atlas created: {n_cort} cortical, {n_sub} subcortical,
+    {n_cer} cerebellar",
+    wrap = TRUE
   )
   log_elapsed(start_time)
   invisible(NULL)
@@ -624,8 +624,8 @@ validate_wholebrain_config <- function(
 #' @noRd
 wholebrain_resolve_projection <- function(config, dirs) {
   files <- c(
-    file.path(dirs$base, "atlas_data.rds"),
-    file.path(dirs$base, "colortable.rds")
+    as.character(fs::path(dirs$base, "atlas_data.rds")),
+    as.character(fs::path(dirs$base, "colortable.rds"))
   )
   cached <- load_or_run_step(
     1L,
@@ -680,8 +680,8 @@ wholebrain_compute_projection <- function(config, dirs) {
     verbose = config$verbose
   )
 
-  saveRDS(atlas_data, file.path(dirs$base, "atlas_data.rds"))
-  saveRDS(colortable, file.path(dirs$base, "colortable.rds"))
+  saveRDS(atlas_data, as.character(fs::path(dirs$base, "atlas_data.rds")))
+  saveRDS(colortable, as.character(fs::path(dirs$base, "colortable.rds")))
   if (config$verbose) {
     cli::cli_progress_done()
   }
@@ -785,7 +785,7 @@ wholebrain_project_to_surface <- function(
   output_dir,
   verbose
 ) {
-  surf_dir <- file.path(output_dir, "surface_overlays")
+  surf_dir <- as.character(fs::path(output_dir, "surface_overlays"))
   mkdir(surf_dir)
 
   all_data <- list()
@@ -833,7 +833,10 @@ wholebrain_vol2surf_overlay <- function(
   surf_dir,
   verbose
 ) {
-  output_mgz <- file.path(surf_dir, paste0(hemi_short, "_overlay.nii.gz"))
+  output_mgz <- as.character(fs::path(
+    surf_dir,
+    paste0(hemi_short, "_overlay.nii.gz")
+  ))
 
   reg_opts <- paste0(
     "--interp nearest --trgsubject ",
@@ -879,11 +882,9 @@ wholebrain_log_hemi_coverage <- function(hemi_short, n_before, overlay) {
   )
   # nolint end
   cli::cli_alert(
-    paste(
-      "{hemi_short}: {n_before} -> {n_after}",
-      "labeled vertices ({pct} cortex,",
-      "{n_medial} medial wall)"
-    )
+    "{hemi_short}: {n_before} -> {n_after} labeled vertices ({pct} cortex,
+    {n_medial} medial wall)",
+    wrap = TRUE
   )
   invisible(NULL)
 }
@@ -900,7 +901,7 @@ wholebrain_resolve_split <- function(
   subcortical_labels = NULL,
   cerebellar_labels = NULL
 ) {
-  files <- file.path(dirs$base, "label_split.rds")
+  files <- as.character(fs::path(dirs$base, "label_split.rds"))
   cached <- load_or_run_step(
     2L,
     config$steps,
@@ -934,7 +935,7 @@ wholebrain_resolve_split <- function(
     verbose = config$verbose
   )
 
-  saveRDS(split, file.path(dirs$base, "label_split.rds"))
+  saveRDS(split, as.character(fs::path(dirs$base, "label_split.rds")))
   if (config$verbose) {
     cli::cli_progress_done()
   }
@@ -1098,10 +1099,9 @@ classify_labels_auto <- function(assigned, prep, min_vertices, verbose) {
 
   if (verbose && !assigned$has_type && length(projected_remaining) > 0) {
     cli::cli_alert_info(
-      paste(
-        "No {.field type} column in LUT;",
-        "classifying {length(projected_remaining)} labels by vertex count"
-      )
+      "No {.field type} column in LUT; classifying
+      {length(projected_remaining)} labels by vertex count",
+      wrap = TRUE
     )
   }
   auto_cortical <- projected_remaining[
@@ -1174,11 +1174,10 @@ classify_labels_log_summary <- function(
   vertex_counts
 ) {
   cli::cli_alert_info(
-    paste(
-      "{length(classified_cortical)} cortical,",
-      "{length(classified_subcortical)} subcortical,",
-      "{length(classified_cerebellar)} cerebellar labels"
-    )
+    "{length(classified_cortical)} cortical,
+    {length(classified_subcortical)} subcortical,
+    {length(classified_cerebellar)} cerebellar labels",
+    wrap = TRUE
   )
   if (length(classified_subcortical) > 0) {
     # nolint start: object_usage_linter.
@@ -1238,7 +1237,7 @@ wholebrain_refine_cortical_projection <- function(
     return(projection)
   }
 
-  surf_dir <- file.path(dirs$base, "surface_overlays")
+  surf_dir <- as.character(fs::path(dirs$base, "surface_overlays"))
   colortable <- projection$colortable[
     projection$colortable$label %in% split$cortical_labels,
   ]
@@ -1267,15 +1266,16 @@ refine_cortical_overlays <- function(
 ) {
   if (config$verbose) {
     cli::cli_progress_step(
-      paste(
-        "Refining cortical projection",
-        "(removing {length(subcort_idx)} subcortical labels from surface)"
-      )
+      "Refining cortical projection (removing {length(subcort_idx)}
+      subcortical labels from surface)"
     )
   }
 
   all_data <- lapply(c("lh", "rh"), function(hemi_short) {
-    overlay_file <- file.path(surf_dir, paste0(hemi_short, "_overlay.nii.gz"))
+    overlay_file <- as.character(fs::path(
+      surf_dir,
+      paste0(hemi_short, "_overlay.nii.gz")
+    ))
     if (!file.exists(overlay_file)) {
       cli::cli_abort(
         "Overlay file missing: {.path {overlay_file}}. Re-run step 1."
@@ -1418,7 +1418,7 @@ wholebrain_run_subcortical <- function(
     colortable$label %in% split$subcortical_labels,
   ]
 
-  subcort_lut <- file.path(dirs$base, "subcort_lut.txt")
+  subcort_lut <- as.character(fs::path(dirs$base, "subcort_lut.txt"))
   required_cols <- c("idx", "label", "R", "G", "B", "A")
   subcort_ct <- fill_missing_rgb(subcort_ct, "subcort")
   write_ctab(subcort_ct[, required_cols], subcort_lut)
@@ -1427,7 +1427,7 @@ wholebrain_run_subcortical <- function(
     colortable$label %in% split$cortical_labels
   ]
 
-  filtered_vol <- file.path(dirs$base, "subcort_volume.nii.gz")
+  filtered_vol <- as.character(fs::path(dirs$base, "subcort_volume.nii.gz"))
   wholebrain_prepare_subcortical_volume(
     input_volume = config$input_volume,
     subcortical_idx = subcort_ct$idx,
@@ -1487,7 +1487,7 @@ wholebrain_run_cerebellar <- function(
     stringsAsFactors = FALSE
   )
 
-  filtered_vol <- file.path(dirs$base, "cerebellar_volume.nii.gz")
+  filtered_vol <- as.character(fs::path(dirs$base, "cerebellar_volume.nii.gz"))
   wholebrain_prepare_cerebellar_volume(
     input_volume = config$input_volume,
     cerebellar_idx = cer_ct$idx,
@@ -1620,24 +1620,20 @@ wholebrain_prepare_subcortical_volume <- function(
 #' @return Logical vector of length `n_vertices`.
 #' @noRd
 load_cortex_mask <- function(hemi, subject = "fsaverage5", n_vertices) {
-  label_file <- file.path(
+  label_file <- as.character(fs::path(
     freesurfer::fs_subj_dir(),
     subject,
     "label",
     paste0(hemi, ".cortex.label")
-  )
+  ))
   if (!file.exists(label_file)) {
     # nolint start
     cli::cli_abort(c(
       "Cortex label not found: {.path {label_file}}",
-      "i" = paste(
-        "This file is required to prevent",
-        "label dilation into the medial wall."
-      ),
-      "i" = paste(
-        "It should exist for {.val {subject}}.",
-        "Check your FreeSurfer installation."
-      )
+      "i" = "This file is required to prevent label dilation into
+      the medial wall.",
+      "i" = "It should exist for {.val {subject}}. Check your
+      FreeSurfer installation."
     ))
     # nolint end
   }
@@ -1667,12 +1663,12 @@ load_cortex_mask <- function(hemi, subject = "fsaverage5", n_vertices) {
 #' @return Integer vector of same length with gaps filled.
 #' @noRd
 fill_surface_labels <- function(overlay, hemi, subject = "fsaverage5") {
-  surf_file <- file.path(
+  surf_file <- as.character(fs::path(
     freesurfer::fs_subj_dir(),
     subject,
     "surf",
     paste0(hemi, ".white")
-  )
+  ))
   if (!file.exists(surf_file)) {
     cli::cli_warn(
       "Surface file not found: {.path {surf_file}}, skipping dilation"

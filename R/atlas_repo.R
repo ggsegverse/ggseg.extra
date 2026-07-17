@@ -194,10 +194,11 @@ download_atlas_template <- function(url = template_url()) {
   cli::cli_alert_warning(
     "Download failed, using bundled fallback template"
   )
-  cli::cli_alert_info(paste0(
-    "Workflows not included \u2014 copy from ",
-    "{.url https://github.com/ggsegverse/ggseg-atlas-template}"
-  ))
+  cli::cli_alert_info(
+    "Workflows not included \u2014 copy from
+    {.url https://github.com/ggsegverse/ggseg-atlas-template}",
+    wrap = TRUE
+  )
 
   fallback <- system.file(
     "templates",
@@ -224,9 +225,12 @@ populate_from_template <- function(path, template_dir, atlas_name, repo_name) {
   create_template_dirs(path, template_dir)
   copy_template_files(path, template_dir)
 
-  pkg_file <- file.path(path, "R", "REPO-package.R")
+  pkg_file <- as.character(fs::path(path, "R", "REPO-package.R"))
   if (file.exists(pkg_file)) {
-    file.rename(pkg_file, file.path(path, "R", paste0(repo_name, "-package.R")))
+    file.rename(
+      pkg_file,
+      as.character(fs::path(path, "R", paste0(repo_name, "-package.R")))
+    )
   }
 
   replace_template_placeholders(path, atlas_name)
@@ -241,18 +245,18 @@ create_template_dirs <- function(path, template_dir) {
   dirs <- list.dirs(template_dir, full.names = FALSE, recursive = TRUE)
   dirs <- dirs[nchar(dirs) > 0 & !grepl("^\\.", dirs)]
   for (d in dirs) {
-    mkdir(file.path(path, d))
+    mkdir(as.character(fs::path(path, d)))
   }
   cli::cli_alert_success(
     "Created {.path R/}, {.path tests/}, {.path data-raw/}"
   )
 
-  has_workflows <- dir.exists(file.path(template_dir, ".github"))
+  has_workflows <- dir.exists(as.character(fs::path(template_dir, ".github")))
   if (has_workflows) {
     dirs_hidden <- list.dirs(template_dir, full.names = FALSE, recursive = TRUE)
     dirs_hidden <- dirs_hidden[grepl("^\\.github", dirs_hidden)]
     for (d in dirs_hidden) {
-      mkdir(file.path(path, d))
+      mkdir(as.character(fs::path(path, d)))
     }
     cli::cli_alert_success("Created {.path .github/workflows/}")
   }
@@ -273,9 +277,9 @@ copy_template_files <- function(path, template_dir) {
   files <- files[!grepl("^\\.git/", files) & files != ".git"]
 
   for (f in files) {
-    src <- file.path(template_dir, f)
+    src <- as.character(fs::path(template_dir, f))
     dst_name <- gsub("(^|/)dot-", "\\1.", f)
-    dst <- file.path(path, dst_name)
+    dst <- as.character(fs::path(path, dst_name))
     mkdir(dirname(dst))
     file.copy(src, dst, overwrite = TRUE)
   }
@@ -342,7 +346,7 @@ create_rproj_file <- function(path, repo_name) {
     "PackageRoxygenize: rd,collate,namespace"
   )
 
-  rproj_file <- file.path(path, paste0(repo_name, ".Rproj"))
+  rproj_file <- as.character(fs::path(path, paste0(repo_name, ".Rproj")))
   writeLines(rproj_content, rproj_file)
 
   invisible(rproj_file)
