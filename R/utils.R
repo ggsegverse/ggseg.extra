@@ -397,7 +397,7 @@ warn_deprecated_sf_smoothing <- function(
 
   for (arg in supplied) {
     what <- if (is.null(fn)) {
-      paste0(arg, " = ")
+      paste0(arg, "()")
     } else {
       paste0(fn, "(", arg, " = )")
     }

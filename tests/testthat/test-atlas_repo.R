@@ -411,9 +411,10 @@ describe("rstudioapi_available", {
 
 
 describe("template_replace error handling", {
-  it("returns NULL for unreadable files", {
-    result <- suppressWarnings(
-      template_replace("/nonexistent/path/file.txt", "test")
+  it("returns NULL and warns for unreadable files", {
+    result <- expect_warnings(
+      template_replace("/nonexistent/path/file.txt", "test"),
+      "cannot open file|Failed to process template"
     )
 
     expect_null(result)

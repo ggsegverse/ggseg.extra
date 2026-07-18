@@ -213,7 +213,8 @@ project_volume_anatomical <- function(
 
   prep <- project_load_volumes(in_path, lut, aparc_mgz, aparc_nii)
 
-  check_registration_grid(registration, dim(prep$arr_aparc))
+  check_registration_grid(registration, dim(prep$arr_aparc), dim(prep$arr))
+  validate_offset_no_collision(prep$label_ids, id_offset)
 
   project_start_message(prep$label_ids, target_subject, verbose)
 
@@ -482,6 +483,34 @@ validate_projection_args <- function(threshold, id_offset) {
   invisible(TRUE)
 }
 
+#' Abort when a shifted label ID collides with a protected FreeSurfer label
+#'
+#' `id_offset` exists to keep the user's label IDs clear of `aparc+aseg`
+#' labels (see [project_volume_anatomical()]). If the shift still lands on
+#' one of the reserved cerebral white-matter / corpus-callosum IDs, the
+#' collision is invisible downstream: `build_anatomical_lut()` excludes any
+#' FreeSurfer ID that matches a shifted user ID from its context table
+#' before checking for duplicates, so the shared ID silently gets the
+#' user's label name and colour, swallowing the FreeSurfer structure into
+#' it wherever the two overlap.
+#' @noRd
+validate_offset_no_collision <- function(label_ids, id_offset) {
+  shifted <- as.integer(label_ids) + id_offset
+  reserved <- cerebral_white_matter_labels()
+  collide <- shifted %in% reserved
+  n <- sum(collide)
+  if (n > 0L) {
+    cli::cli_abort(c(
+      "{.arg id_offset} = {id_offset} shifts {cli::qty(n)} label{?s} \\
+       {.val {label_ids[collide]}} onto reserved FreeSurfer \\
+       {cli::qty(n)} ID{?s} {.val {shifted[collide]}}.",
+      "i" = "Choose an {.arg id_offset} that keeps shifted IDs clear of \\
+             {.val {reserved}}."
+    ))
+  }
+  invisible(TRUE)
+}
+
 #' Resolve which atlas labels to project
 #'
 #' The labels come from `lut`'s `idx` (the colour table is the source of
@@ -546,21 +575,19 @@ project_label_argmax <- function(
   list(argmax_idx = argmax_idx, max_prob = max_prob)
 }
 
-#' Destination grid dimensions recorded in an LTA file
+#' Volume dims recorded under one `*** volume info` block of an LTA file
 #'
-#' `mri_coreg` stores the registration's destination ("dst") volume geometry
-#' in the LTA. Reusing that LTA against `aparc+aseg.mgz` is only valid if the
-#' two share a grid, so we read the dst `volume = a b c` dims to compare.
-#' Returns an integer length-3 vector, or `NULL` when the block isn't found
-#' (an unexpected LTA layout), in which case the caller skips the check.
+#' Shared by `lta_dst_dims()` and `lta_src_dims()`: finds `block_label`,
+#' then the first `volume = a b c` line after it. Returns an integer
+#' length-3 vector, or `NULL` when the block isn't found (an unexpected LTA
+#' layout), in which case the caller skips the check.
 #' @noRd
-lta_dst_dims <- function(lta_path) {
-  lines <- readLines(lta_path, warn = FALSE)
-  dst_start <- grep("dst volume info", lines, fixed = TRUE)
-  if (!length(dst_start)) {
+lta_block_dims <- function(lines, block_label) {
+  block_start <- grep(block_label, lines, fixed = TRUE)
+  if (!length(block_start)) {
     return(NULL)
   }
-  tail_lines <- lines[dst_start[1]:length(lines)]
+  tail_lines <- lines[block_start[1]:length(lines)]
   vol_line <- grep("^\\s*volume\\s*=", tail_lines, value = TRUE)
   if (!length(vol_line)) {
     return(NULL)
@@ -574,24 +601,48 @@ lta_dst_dims <- function(lta_path) {
   nums
 }
 
-#' Abort when a reused LTA was registered to a grid unlike aparc+aseg
+#' Destination grid dimensions recorded in an LTA file
 #'
-#' The LTA from [coregister_volume()] is registered to the subject's
-#' `target_volume` (e.g. `brain.mgz`); reusing it to resample onto
-#' `aparc+aseg.mgz` assumes both sit on that subject's conformed grid. That
-#' holds for recon-all output, but catches the real footgun of passing an LTA
-#' from a different subject or resolution.
+#' `mri_coreg` stores the registration's destination ("dst") volume geometry
+#' in the LTA. Reusing that LTA against `aparc+aseg.mgz` is only valid if the
+#' two share a grid, so we read the dst `volume = a b c` dims to compare.
 #' @noRd
-check_registration_grid <- function(registration, aparc_dim) {
+lta_dst_dims <- function(lta_path) {
+  lta_block_dims(readLines(lta_path, warn = FALSE), "dst volume info")
+}
+
+#' Source grid dimensions recorded in an LTA file
+#'
+#' `mri_coreg` also stores the registration's source ("src") volume
+#' geometry — the volume the LTA was actually computed from. Comparing this
+#' to `input_volume`'s own dims catches an LTA reused from a different atlas
+#' or resolution, which `lta_dst_dims()` alone cannot: a destination-grid
+#' match says nothing about whether the *source* side of the transform ever
+#' corresponded to this `input_volume`.
+#' @noRd
+lta_src_dims <- function(lta_path) {
+  lta_block_dims(readLines(lta_path, warn = FALSE), "src volume info")
+}
+
+#' Abort when a reused LTA doesn't match aparc+aseg or the input volume
+#'
+#' The LTA from [coregister_volume()] is registered from `input_volume` (the
+#' "src") to the subject's `target_volume` (the "dst", e.g. `brain.mgz`);
+#' reusing it in [project_volume_anatomical()] assumes the dst sits on that
+#' subject's conformed grid (true for `recon-all` output) *and* that the src
+#' still matches the `input_volume` being projected now. Checking only the
+#' destination misses the real footgun of reusing an LTA computed for a
+#' different atlas or resolution, which resamples silently onto the wrong
+#' voxels without ever erroring.
+#' @noRd
+check_registration_grid <- function(registration, aparc_dim, input_dim = NULL) {
   if (is.null(registration)) {
     return(invisible(NULL))
   }
+
   dst_dim <- lta_dst_dims(registration)
-  if (is.null(dst_dim)) {
-    return(invisible(NULL))
-  }
   aparc_dim <- as.integer(aparc_dim[1:3])
-  if (!identical(dst_dim, aparc_dim)) {
+  if (!is.null(dst_dim) && !identical(dst_dim, aparc_dim)) {
     cli::cli_abort(c(
       "Registration grid does not match the {.file aparc+aseg.mgz} grid.",
       "x" = "LTA destination is {dst_dim[1]}x{dst_dim[2]}x{dst_dim[3]}, \\
@@ -599,6 +650,20 @@ check_registration_grid <- function(registration, aparc_dim) {
       "i" = "Reuse an LTA registered to the same {.arg target_subject} on its \\
              conformed grid; re-run {.fn coregister_volume} if unsure."
     ))
+  }
+
+  if (!is.null(input_dim)) {
+    src_dim <- lta_src_dims(registration)
+    input_dim <- as.integer(input_dim[1:3])
+    if (!is.null(src_dim) && !identical(src_dim, input_dim)) {
+      cli::cli_abort(c(
+        "Registration grid does not match {.arg input_volume}.",
+        "x" = "LTA source is {src_dim[1]}x{src_dim[2]}x{src_dim[3]}, \\
+               {.arg input_volume} is {input_dim[1]}x{input_dim[2]}x{input_dim[3]}.",
+        "i" = "Reuse the LTA {.fn coregister_volume} produced for this exact \\
+               {.arg input_volume}; re-run it if unsure."
+      ))
+    }
   }
   invisible(NULL)
 }

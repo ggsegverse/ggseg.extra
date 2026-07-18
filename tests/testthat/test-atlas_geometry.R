@@ -850,6 +850,123 @@ describe("atlas_smooth", {
     expect_identical(ggseg.formats::atlas_geom(result)$label, "a")
     expect_true(all(sf::st_is_valid(ggseg.formats::atlas_sf(result))))
   })
+
+  two_region_atlas <- function(label_order = c("region_a", "region_b")) {
+    jagged <- sf::st_polygon(list(matrix(
+      c(0, 0, 0.5, 0.01, 1, 0, 1, 1, 0.5, 0.99, 0, 1, 0, 0),
+      ncol = 2,
+      byrow = TRUE
+    )))
+    square <- sf::st_polygon(list(matrix(
+      c(10, 10, 11, 10, 11, 11, 10, 11, 10, 10),
+      ncol = 2,
+      byrow = TRUE
+    )))
+    polys <- list(region_a = jagged, region_b = square)[label_order]
+
+    sf_obj <- sf::st_sf(
+      label = label_order,
+      view = "v1",
+      geometry = sf::st_sfc(polys[[1]], polys[[2]])
+    )
+    ggseg.formats::ggseg_atlas(
+      atlas = "t",
+      type = "subcortical",
+      palette = c(region_a = "#000000", region_b = "#111111"),
+      core = data.frame(
+        label = label_order,
+        region = label_order,
+        stringsAsFactors = FALSE
+      ),
+      data = ggseg.formats::ggseg_data_subcortical(geom = sf_obj)
+    )
+  }
+
+  it("errors when both labels and exclude are specified", {
+    atlas <- two_region_atlas()
+    expect_error(
+      atlas_smooth(atlas, labels = "region_a", exclude = "region_b"),
+      "only one of"
+    )
+  })
+
+  it("closes jagged edges with smoothness, independent of simplification", {
+    atlas <- two_region_atlas()
+    before <- ggseg.formats::atlas_geom(atlas)
+    n_before <- nrow(sf::st_coordinates(
+      before$geometry[before$label == "region_a"]
+    ))
+
+    result <- atlas_smooth(atlas, keep = NULL, smoothness = 3)
+    geom <- ggseg.formats::atlas_geom(result)
+
+    expect_true(all(sf::st_is_valid(geom)))
+    expect_false(
+      nrow(sf::st_coordinates(
+        geom$geometry[geom$label == "region_a"]
+      )) ==
+        n_before
+    )
+  })
+
+  it("only smooths labels matched by `labels`, leaving the rest untouched", {
+    atlas <- two_region_atlas()
+    before <- ggseg.formats::atlas_geom(atlas)
+
+    result <- atlas_smooth(atlas, keep = 0.3, labels = "region_a")
+    geom <- ggseg.formats::atlas_geom(result)
+
+    n_before_a <- nrow(sf::st_coordinates(
+      before$geometry[before$label == "region_a"]
+    ))
+    n_after_a <- nrow(sf::st_coordinates(
+      geom$geometry[geom$label == "region_a"]
+    ))
+    expect_lt(n_after_a, n_before_a)
+
+    expect_true(isTRUE(sf::st_equals(
+      geom$geometry[geom$label == "region_b"][[1]],
+      before$geometry[before$label == "region_b"][[1]],
+      sparse = FALSE
+    )[1, 1]))
+  })
+
+  it("only smooths labels not matched by `exclude`", {
+    atlas <- two_region_atlas()
+    before <- ggseg.formats::atlas_geom(atlas)
+
+    result <- atlas_smooth(atlas, keep = 0.3, exclude = "region_b")
+    geom <- ggseg.formats::atlas_geom(result)
+
+    n_before_a <- nrow(sf::st_coordinates(
+      before$geometry[before$label == "region_a"]
+    ))
+    n_after_a <- nrow(sf::st_coordinates(
+      geom$geometry[geom$label == "region_a"]
+    ))
+    expect_lt(n_after_a, n_before_a)
+
+    expect_true(isTRUE(sf::st_equals(
+      geom$geometry[geom$label == "region_b"][[1]],
+      before$geometry[before$label == "region_b"][[1]],
+      sparse = FALSE
+    )[1, 1]))
+  })
+
+  it("preserves the caller's row order when subsetting by label", {
+    atlas <- two_region_atlas(label_order = c("region_b", "region_a"))
+
+    result <- atlas_smooth(atlas, keep = 0.3, exclude = "region_a")
+    geom <- ggseg.formats::atlas_geom(result)
+
+    expect_identical(geom$label, c("region_b", "region_a"))
+  })
+
+  it("returns the atlas unchanged when keep is NULL and smoothness is 0", {
+    atlas <- two_region_atlas()
+    result <- atlas_smooth(atlas, keep = NULL, smoothness = 0)
+    expect_identical(result, atlas)
+  })
 })
 
 

@@ -134,7 +134,7 @@ has_magick <- function() {
 #' @noRd
 magick_version <- function() {
   tryCatch(
-    system2("magick", "--version", stdout = TRUE)[1],
+    system2("magick", "--version", stdout = TRUE, stderr = FALSE)[1],
     error = function(e) "",
     warning = function(w) ""
   )

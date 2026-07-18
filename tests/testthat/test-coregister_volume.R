@@ -97,6 +97,66 @@ describe("project_volume_anatomical validation", {
       "aparc\\+aseg not found"
     )
   })
+
+  it("errors when the shifted label ids collide with corpus callosum", {
+    fake_dir <- withr::local_tempdir()
+    subj_dir <- fs::path(fake_dir, "cvs_avg35_inMNI152", "mri")
+    fs::dir_create(subj_dir)
+    file.create(fs::path(subj_dir, "aparc+aseg.mgz"))
+
+    local_mocked_bindings(
+      check_fs = function(...) TRUE,
+      resolve_volume_path = function(x) x,
+      project_load_volumes = function(...) {
+        list(
+          vol = NULL,
+          arr = NULL,
+          lut_df = NULL,
+          label_ids = c(51L, 52L),
+          aparc_mgz = "aparc.nii.gz",
+          aparc = NULL,
+          arr_aparc = array(0L, dim = c(2, 2, 2))
+        )
+      }
+    )
+
+    expect_error(
+      project_volume_anatomical(
+        "atlas.nii.gz",
+        id_offset = 200L,
+        subjects_dir = fake_dir,
+        verbose = FALSE
+      ),
+      "reserved FreeSurfer"
+    )
+  })
+})
+
+describe("validate_offset_no_collision", {
+  it("passes when no shifted id collides with a reserved label", {
+    expect_true(validate_offset_no_collision(c(11L, 12L), 200L))
+  })
+
+  it("errors when a shifted id lands on a corpus callosum label", {
+    expect_error(
+      validate_offset_no_collision(c(51L, 52L), 200L),
+      "reserved FreeSurfer"
+    )
+  })
+
+  it("errors when a shifted id lands on a cerebral white matter label", {
+    expect_error(
+      validate_offset_no_collision(39L, 2L),
+      "reserved FreeSurfer"
+    )
+  })
+
+  it("reports the offending original and shifted ids", {
+    expect_error(
+      validate_offset_no_collision(c(11L, 53L), 200L),
+      "53.*253|253.*53"
+    )
+  })
 })
 
 describe("read_lut_arg", {
@@ -276,8 +336,12 @@ describe("apply_cortex_protection", {
   })
 })
 
-describe("lta_dst_dims / check_registration_grid", {
-  write_lta <- function(dst_volume = "256 256 256", with_dst = TRUE) {
+describe("lta_dst_dims / lta_src_dims / check_registration_grid", {
+  write_lta <- function(
+    dst_volume = "256 256 256",
+    with_dst = TRUE,
+    src_volume = "91 109 91"
+  ) {
     f <- tempfile(fileext = ".lta")
     lines <- c(
       "type      = 1",
@@ -289,7 +353,7 @@ describe("lta_dst_dims / check_registration_grid", {
       "0.0 0.0 0.0 1.0",
       "src volume info",
       "valid = 1",
-      "volume = 91 109 91",
+      paste("volume =", src_volume),
       "voxelsize = 2.0 2.0 2.0"
     )
     if (with_dst) {
@@ -313,6 +377,10 @@ describe("lta_dst_dims / check_registration_grid", {
     expect_null(lta_dst_dims(write_lta(with_dst = FALSE)))
   })
 
+  it("reads the src dims, not the dst dims", {
+    expect_identical(lta_src_dims(write_lta()), c(91L, 109L, 91L))
+  })
+
   it("passes when the registration grid matches", {
     expect_null(check_registration_grid(write_lta(), c(256L, 256L, 256L)))
   })
@@ -325,6 +393,33 @@ describe("lta_dst_dims / check_registration_grid", {
     expect_error(
       check_registration_grid(write_lta("128 128 128"), c(256L, 256L, 256L)),
       "does not match the"
+    )
+  })
+
+  it("passes when input_dim matches the LTA source grid", {
+    expect_null(
+      check_registration_grid(
+        write_lta(),
+        c(256L, 256L, 256L),
+        c(91L, 109L, 91L)
+      )
+    )
+  })
+
+  it("is a no-op on the source check when input_dim is not supplied", {
+    expect_null(
+      check_registration_grid(write_lta(), c(256L, 256L, 256L))
+    )
+  })
+
+  it("aborts when the LTA source grid does not match input_dim", {
+    expect_error(
+      check_registration_grid(
+        write_lta(),
+        c(256L, 256L, 256L),
+        c(64L, 64L, 64L)
+      ),
+      "does not match .{0,5}input_volume"
     )
   })
 })

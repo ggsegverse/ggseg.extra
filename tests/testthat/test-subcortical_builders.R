@@ -262,6 +262,27 @@ describe("lut_add / lut_combine", {
     expect_error(lut_combine(data.frame(x = 1)), "color table")
     expect_error(lut_add(data.frame(x = 1), 1, "a", 1, 1, 1), "color table")
   })
+
+  it("errors instead of mis-recycling a mismatched-length label", {
+    expect_error(
+      lut_add(
+        base,
+        idx = 1:4,
+        label = c("a", "b", "c"),
+        R = 1,
+        G = 1,
+        B = 1
+      ),
+      "label.*must have length 1 or 4"
+    )
+  })
+
+  it("errors instead of mis-recycling a mismatched-length channel", {
+    expect_error(
+      lut_add(base, idx = 1:4, label = "x", R = c(1, 2, 3), G = 1, B = 1),
+      "R.*must have length 1 or 4"
+    )
+  })
 })
 
 describe("aseg_hidden_labels", {

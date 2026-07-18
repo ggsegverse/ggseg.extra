@@ -304,11 +304,14 @@ describe("create_cortical_from_neuromaps", {
       preview_atlas = function(atlas) invisible(atlas)
     )
 
-    result <- create_cortical_from_neuromaps(
-      source = "abagen",
-      desc = "genepc1",
-      verbose = FALSE,
-      cleanup = FALSE
+    result <- expect_warnings(
+      create_cortical_from_neuromaps(
+        source = "abagen",
+        desc = "genepc1",
+        verbose = FALSE,
+        cleanup = FALSE
+      ),
+      "vertices"
     )
 
     expect_identical(result$atlas, "abagen_genepc1")

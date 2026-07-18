@@ -595,3 +595,58 @@ describe("prompt_user", {
     expect_identical(result, "echo:test message")
   })
 })
+
+
+describe("warn_deprecated_sf_smoothing", {
+  it("is a no-op when nothing is supplied", {
+    expect_no_warning(warn_deprecated_sf_smoothing())
+  })
+
+  it("warns when tolerance is supplied", {
+    withr::local_options(lifecycle_verbosity = "warning")
+    expect_warnings(
+      warn_deprecated_sf_smoothing(tolerance = 0.1),
+      "tolerance"
+    )
+  })
+
+  it("warns when smoothness is supplied", {
+    withr::local_options(lifecycle_verbosity = "warning")
+    expect_warnings(
+      warn_deprecated_sf_smoothing(smoothness = 2),
+      "smoothness"
+    )
+  })
+
+  it("warns when smooth_refinements is supplied", {
+    withr::local_options(lifecycle_verbosity = "warning")
+    expect_warnings(
+      warn_deprecated_sf_smoothing(smooth_refinements = 3),
+      "smooth_refinements"
+    )
+  })
+
+  it("warns once per supplied argument when several are passed together", {
+    withr::local_options(lifecycle_verbosity = "warning")
+    n_warnings <- 0L
+    withCallingHandlers(
+      warn_deprecated_sf_smoothing(tolerance = 0.1, smoothness = 2),
+      warning = function(w) {
+        n_warnings <<- n_warnings + 1L
+        invokeRestart("muffleWarning")
+      }
+    )
+    expect_identical(n_warnings, 2L)
+  })
+
+  it("includes the calling function name in the message when supplied", {
+    withr::local_options(lifecycle_verbosity = "warning")
+    expect_warnings(
+      warn_deprecated_sf_smoothing(
+        tolerance = 0.1,
+        fn = "create_cortical_from_gifti"
+      ),
+      "create_cortical_from_gifti"
+    )
+  })
+})

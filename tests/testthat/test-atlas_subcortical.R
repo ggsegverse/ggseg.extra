@@ -706,17 +706,20 @@ describe("create_subcortical_from_volume pipeline flow", {
     file.create(lut_file)
     withr::local_options(ggseg.extra.output_dir = withr::local_tempdir())
 
-    expect_messages(
-      {
-        atlas <- create_subcortical_from_volume(
-          input_volume = vol_file,
-          input_lut = lut_file,
-          steps = 9,
-          verbose = TRUE,
-          cleanup = TRUE
-        )
-      },
-      "Creating subcortical atlas"
+    expect_warnings(
+      expect_messages(
+        {
+          atlas <- create_subcortical_from_volume(
+            input_volume = vol_file,
+            input_lut = lut_file,
+            steps = 9,
+            verbose = TRUE,
+            cleanup = TRUE
+          )
+        },
+        "Creating subcortical atlas"
+      ),
+      "no 2D geometry"
     )
 
     expect_s3_class(atlas, "ggseg_atlas")
@@ -866,12 +869,15 @@ describe("subcort_assemble_full sf_data as data.frame", {
       meshes_df = dplyr::tibble(label = "lh_region1", mesh = list(NULL))
     )
 
-    result <- subcort_assemble_full(
-      "test",
-      components,
-      list(base = test_dir),
-      "axial",
-      NULL
+    result <- expect_warnings(
+      subcort_assemble_full(
+        "test",
+        components,
+        list(base = test_dir),
+        "axial",
+        NULL
+      ),
+      "no 2D geometry"
     )
     expect_s3_class(result, "ggseg_atlas")
   })

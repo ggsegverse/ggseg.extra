@@ -218,6 +218,11 @@ lut_add <- function(lut, idx, label, R, G, B, A = 0L) {
     cli::cli_abort("{.arg lut} must be a color table; see {.fn is_ctab}.")
   }
   n <- length(idx)
+  validate_lut_add_length(label, n, "label")
+  validate_lut_add_length(R, n, "R")
+  validate_lut_add_length(G, n, "G")
+  validate_lut_add_length(B, n, "B")
+  validate_lut_add_length(A, n, "A")
   new <- data.frame(
     idx = as.integer(idx),
     label = rep_len(as.character(label), n),
@@ -228,6 +233,17 @@ lut_add <- function(lut, idx, label, R, G, B, A = 0L) {
     stringsAsFactors = FALSE
   )
   lut_combine(lut, new)
+}
+
+#' @noRd
+validate_lut_add_length <- function(x, n, arg_name) {
+  if (!length(x) %in% c(1L, n)) {
+    cli::cli_abort(
+      "{.arg {arg_name}} must have length 1 or {n} (the length of \\
+       {.arg idx}); got {length(x)}."
+    )
+  }
+  invisible(TRUE)
 }
 
 #' Combine FreeSurfer color tables

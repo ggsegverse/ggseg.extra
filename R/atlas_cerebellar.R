@@ -496,6 +496,13 @@ read_suit_parcellation <- function(gifti_files) {
 
 
 #' Download and validate a SUIT deformation field file
+#'
+#' Downloads to a temporary file in the same directory as `cached_path` and
+#' only `file.rename()`s it into place once it has passed both the size and
+#' NIfTI-header checks. This keeps a partial/corrupt transfer (e.g. an
+#' interrupted download, or a captive-portal response padded past the size
+#' threshold) from ever landing at `cached_path`, since [suit_deformation_field()]
+#' trusts any file already there without re-checking it.
 #' @noRd
 download_suit_xfm <- function(filename, cached_path) {
   if (!can_reach_github()) {
@@ -514,10 +521,16 @@ download_suit_xfm <- function(filename, cached_path) {
 
   cli::cli_alert_info("Downloading {.file {filename}} (~13 MB)")
 
+  tmp_path <- tempfile(
+    pattern = paste0(filename, "-"),
+    tmpdir = dirname(cached_path),
+    fileext = ".nii"
+  )
+  on.exit(unlink(tmp_path), add = TRUE)
+
   tryCatch(
-    utils::download.file(url, cached_path, mode = "wb", quiet = TRUE),
+    utils::download.file(url, tmp_path, mode = "wb", quiet = TRUE),
     error = function(e) {
-      unlink(cached_path)
       cli::cli_abort(c(
         "Failed to download deformation field",
         "i" = "URL: {.url {url}}",
@@ -525,16 +538,32 @@ download_suit_xfm <- function(filename, cached_path) {
       ))
     }
   )
+  validate_suit_xfm_download(tmp_path)
 
-  if (!file.exists(cached_path) || file.size(cached_path) < 1e6) {
-    unlink(cached_path)
+  file.rename(tmp_path, cached_path)
+  cli::cli_alert_success("Cached at {.path {cached_path}}")
+  cached_path
+}
+
+#' @noRd
+validate_suit_xfm_download <- function(tmp_path) {
+  if (!file.exists(tmp_path) || file.size(tmp_path) < 1e6) {
     cli::cli_abort(
       "Download appears incomplete. Please try again."
     )
   }
-
-  cli::cli_alert_success("Cached at {.path {cached_path}}")
-  cached_path
+  # RNifti::niftiHeader() warns (rather than errors) and returns NULL for a
+  # malformed file; the warning is redundant with the cli_abort() below.
+  header <- suppressWarnings(tryCatch(
+    RNifti::niftiHeader(tmp_path),
+    error = function(e) NULL
+  ))
+  if (is.null(header)) {
+    cli::cli_abort(
+      "Downloaded file is not a valid NIfTI image. Please try again."
+    )
+  }
+  invisible(TRUE)
 }
 
 
@@ -1073,30 +1102,50 @@ build_deep_nuclei_meshes <- function(volume, deep_data, dirs, verbose) {
 get_tkras_to_world <- function(volume_path) {
   check_fs(abort = TRUE)
 
-  parse_matrix <- function(lines) {
-    lines <- trimws(lines)
-    lines <- lines[nzchar(lines)]
-    vals <- as.numeric(unlist(strsplit(lines, "\\s+")))
-    matrix(vals, nrow = 4, ncol = 4, byrow = TRUE)
-  }
-
-  tkr_lines <- system2(
-    "mri_info",
-    c("--vox2ras-tkr", volume_path),
-    stdout = TRUE,
-    stderr = FALSE
-  )
-  vox2ras_tkr <- parse_matrix(tkr_lines)
-
-  ras_lines <- system2(
-    "mri_info",
-    c("--vox2ras", volume_path),
-    stdout = TRUE,
-    stderr = FALSE
-  )
-  vox2ras <- parse_matrix(ras_lines)
+  vox2ras_tkr <- mri_info_matrix("--vox2ras-tkr", volume_path)
+  vox2ras <- mri_info_matrix("--vox2ras", volume_path)
 
   vox2ras %*% solve(vox2ras_tkr)
+}
+
+#' Run `mri_info` and parse its printed matrix
+#'
+#' `mri_info` can print informational/warning lines (e.g. about a missing
+#' qform) ahead of the requested matrix, so only the matrix's own 4 lines
+#' -- always the last non-empty lines of output -- are parsed; naively
+#' parsing every line would silently fold stray numbers from those messages
+#' into the matrix. Aborts loudly if the subprocess fails or the tail lines
+#' don't parse into a complete 4x4 matrix, rather than returning garbage.
+#' @noRd
+mri_info_matrix <- function(flag, volume_path) {
+  lines <- system2(
+    "mri_info",
+    c(flag, volume_path),
+    stdout = TRUE,
+    stderr = TRUE
+  )
+  status <- attr(lines, "status")
+  if (!is.null(status) && status != 0L) {
+    cli::cli_abort(c(
+      "{.code mri_info {flag}} failed for {.path {volume_path}} \\
+       (exit {status}).",
+      "x" = paste(lines, collapse = "\n")
+    ))
+  }
+
+  lines <- trimws(lines)
+  lines <- lines[nzchar(lines)]
+  vals <- suppressWarnings(as.numeric(unlist(
+    strsplit(utils::tail(lines, 4L), "\\s+")
+  )))
+
+  if (length(vals) != 16L || anyNA(vals)) {
+    cli::cli_abort(
+      "{.code mri_info {flag}} did not return a valid 4x4 matrix for \\
+       {.path {volume_path}}."
+    )
+  }
+  matrix(vals, nrow = 4, ncol = 4, byrow = TRUE)
 }
 
 

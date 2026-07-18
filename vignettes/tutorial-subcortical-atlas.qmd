@@ -196,10 +196,15 @@ aseg_raw <- create_subcortical_from_volume(
   )
 ```
 
-`focus` is matched case-sensitively against the leftover labels, so a region is
-never swallowed by a context entry that is a substring of its name --- the
-classic `Thalamus` ⊃ `hypothalamus` trap that silently produced 0-region
-atlases before.
+`focus` is matched with a loose, case-insensitive `grepl()`, so you don't have
+to spell out FreeSurfer's exact `Left-`/`Right-` label casing. The labels that
+don't match become *context*, and demoting them uses a separate, exact,
+case-sensitive `^(...)$` match against their own resolved label strings ---
+not `focus` re-applied --- so a context label that happens to contain a focus
+label as a substring (the classic `Thalamus` inside `hypothalamus`) can never
+swallow it. That substring collision used to demote the whole focus set to
+context, silently producing 0-region atlases, before this exact-match step
+was added.
 
 `subcortical_views()` derives the projection slabs from the bounding box of a
 set of labels, reading the volume in the **same** frame the builder uses, so

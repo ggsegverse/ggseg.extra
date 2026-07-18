@@ -420,10 +420,10 @@ load_vox2ras_matrix <- function(template_file, coords_are_voxels) {
       return(NULL)
     }
     tryCatch(
-      suppressWarnings({
+      {
         hdr <- RNifti::niftiHeader(template_file)
         RNifti::xform(hdr)
-      }),
+      },
       error = function(e) NULL
     )
   } else {

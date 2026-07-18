@@ -457,14 +457,17 @@ describe("create_tract_from_tractography pipeline flow", {
     aseg_file <- withr::local_tempfile(fileext = ".mgz")
     file.create(aseg_file)
 
-    atlas <- expect_messages(
-      create_tract_from_tractography(
-        input_tracts = tract_file,
-        input_aseg = aseg_file,
-        steps = 7,
-        verbose = TRUE,
-        cleanup = TRUE
-      )
+    atlas <- expect_warnings(
+      expect_messages(
+        create_tract_from_tractography(
+          input_tracts = tract_file,
+          input_aseg = aseg_file,
+          steps = 7,
+          verbose = TRUE,
+          cleanup = TRUE
+        )
+      ),
+      "no 2D geometry"
     )
 
     expect_s3_class(atlas, "ggseg_atlas")

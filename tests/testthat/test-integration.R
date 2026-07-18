@@ -25,9 +25,12 @@ describe("integration tests", {
     annots <- test_annot_files()
     annot_files <- c(annots$lh, annots$rh)
 
-    atlas <- create_cortical_from_annotation(
-      input_annot = annot_files,
-      verbose = FALSE
+    atlas <- expect_warnings(
+      create_cortical_from_annotation(
+        input_annot = annot_files,
+        verbose = FALSE
+      ),
+      "vertices"
     )
 
     expect_s3_class(atlas, "ggseg_atlas")

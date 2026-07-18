@@ -422,8 +422,6 @@ describe("create_cerebellar_from_gifti", {
     atlas <- create_cerebellar_from_gifti(
       gifti_files = label_file,
       atlas_name = "test_cerebellum",
-      smooth_refinements = 0,
-      tolerance = 0,
       verbose = FALSE
     )
 
@@ -868,8 +866,6 @@ describe("cerebellar pipeline orchestration", {
 
     atlas <- create_cerebellar_from_gifti(
       gifti_files = label_file,
-      smooth_refinements = 0,
-      tolerance = 0,
       verbose = FALSE
     )
 
@@ -1041,28 +1037,88 @@ describe("transform_mni_to_suit", {
   it("resamples volume using nearest-neighbor interpolation", {
     skip_if_not_installed("RNifti")
 
+    # Identity sform (world coordinate = 0-based voxel index), fixed
+    # independently of RNifti::voxelToWorld()/worldToVoxel() so the expected
+    # correspondence between a SUIT voxel and its source MNI voxel isn't
+    # derived from the same round-trip the code under test performs.
     mni <- array(0L, dim = c(5, 5, 5))
-    mni[3, 3, 3] <- 1L
+    mni[2, 3, 4] <- 42L
+    mni_nii <- RNifti::asNifti(mni)
+    RNifti::sform(mni_nii) <- diag(4)
+    RNifti::qform(mni_nii) <- diag(4)
     mni_file <- withr::local_tempfile(fileext = ".nii.gz")
-    RNifti::writeNifti(RNifti::asNifti(mni), mni_file)
+    RNifti::writeNifti(mni_nii, mni_file)
 
-    xfm <- array(0, dim = c(3, 3, 3, 1, 3))
-    mni_nii <- RNifti::readNifti(mni_file)
-    center_world <- RNifti::voxelToWorld(c(3, 3, 3), mni_nii)
-    for (i in 1:3) {
-      for (j in 1:3) {
-        for (k in 1:3) {
-          xfm[i, j, k, 1, ] <- center_world
-        }
-      }
-    }
+    # SUIT voxel (1,1,1) targets MNI voxel (2,3,4) (0-based world c(1,2,3));
+    # every other SUIT voxel targets an out-of-bounds world coordinate, so it
+    # should resample to background (0), not to the marker value.
+    xfm <- array(100, dim = c(2, 2, 2, 1, 3))
+    xfm[1, 1, 1, 1, ] <- c(1, 2, 3)
     xfm_file <- withr::local_tempfile(fileext = ".nii")
     RNifti::writeNifti(RNifti::asNifti(xfm, reference = mni_nii), xfm_file)
 
-    result_file <- transform_mni_to_suit(mni_file, xfm_file)
-    result <- RNifti::readNifti(result_file)
+    result_file <- transform_mni_to_suit(
+      mni_file,
+      xfm_file,
+      interpolation = "nearest"
+    )
+    result <- drop(as.array(RNifti::readNifti(result_file)))
 
-    expect_true(all(drop(as.array(result)) == 1L))
+    expect_identical(result[1, 1, 1], 42)
+    expect_true(all(result[-1] == 0))
+  })
+
+  it("resamples volume using trilinear interpolation", {
+    skip_if_not_installed("RNifti")
+
+    # Distinct values at the 8 corners of a unit cube let the expected
+    # interpolated value be computed independently from the textbook
+    # trilinear formula, rather than from the function under test.
+    mni <- array(0, dim = c(3, 3, 3))
+    mni[1, 1, 1] <- 10
+    mni[2, 1, 1] <- 20
+    mni[1, 2, 1] <- 30
+    mni[2, 2, 1] <- 40
+    mni[1, 1, 2] <- 50
+    mni[2, 1, 2] <- 60
+    mni[1, 2, 2] <- 70
+    mni[2, 2, 2] <- 80
+    mni_nii <- RNifti::asNifti(mni)
+    RNifti::sform(mni_nii) <- diag(4)
+    RNifti::qform(mni_nii) <- diag(4)
+    mni_file <- withr::local_tempfile(fileext = ".nii.gz")
+    RNifti::writeNifti(mni_nii, mni_file)
+
+    # SUIT voxel (1,1,1) targets fractional voxel-space (1.25, 1.5, 1.75)
+    # (world = voxel - 1 under the identity sform above).
+    xfm <- array(100, dim = c(2, 2, 2, 1, 3))
+    xfm[1, 1, 1, 1, ] <- c(0.25, 0.5, 0.75)
+    xfm_file <- withr::local_tempfile(fileext = ".nii")
+    RNifti::writeNifti(RNifti::asNifti(xfm, reference = mni_nii), xfm_file)
+
+    result_file <- transform_mni_to_suit(
+      mni_file,
+      xfm_file,
+      interpolation = "linear"
+    )
+    result <- drop(as.array(RNifti::readNifti(result_file)))
+
+    xd <- 0.25
+    yd <- 0.5
+    zd <- 0.75
+    expected <- 10 *
+      (1 - xd) *
+      (1 - yd) *
+      (1 - zd) +
+      20 * xd * (1 - yd) * (1 - zd) +
+      30 * (1 - xd) * yd * (1 - zd) +
+      40 * xd * yd * (1 - zd) +
+      50 * (1 - xd) * (1 - yd) * zd +
+      60 * xd * (1 - yd) * zd +
+      70 * (1 - xd) * yd * zd +
+      80 * xd * yd * zd
+
+    expect_equal(result[1, 1, 1], expected, tolerance = 1e-8)
   })
 })
 
@@ -1095,6 +1151,72 @@ describe("suit_deformation_field", {
       suit_deformation_field(template = "invalid"),
       "arg.*should be one of"
     )
+  })
+})
+
+
+describe("download_suit_xfm", {
+  it("never leaves a partial download at the cached path", {
+    tmp <- withr::local_tempdir()
+    cached <- as.character(fs::path(tmp, "xfm.nii"))
+    local_mocked_bindings(can_reach_github = function() TRUE)
+    local_mocked_bindings(
+      download.file = function(url, destfile, ...) {
+        writeBin(as.raw(sample(0:255, 2e6, replace = TRUE)), destfile)
+        0L
+      },
+      .package = "utils"
+    )
+
+    expect_error(
+      download_suit_xfm("xfm.nii", cached),
+      "not a valid NIfTI image"
+    )
+    expect_false(file.exists(cached))
+    expect_identical(list.files(tmp), character(0))
+  })
+
+  it("errors and cleans up when the download is too small", {
+    tmp <- withr::local_tempdir()
+    cached <- as.character(fs::path(tmp, "xfm.nii"))
+    local_mocked_bindings(can_reach_github = function() TRUE)
+    local_mocked_bindings(
+      download.file = function(url, destfile, ...) {
+        writeBin(raw(10), destfile)
+        0L
+      },
+      .package = "utils"
+    )
+
+    expect_error(
+      download_suit_xfm("xfm.nii", cached),
+      "incomplete"
+    )
+    expect_false(file.exists(cached))
+    expect_identical(list.files(tmp), character(0))
+  })
+
+  it("atomically caches a valid downloaded NIfTI file", {
+    tmp <- withr::local_tempdir()
+    cached <- as.character(fs::path(tmp, "xfm.nii"))
+    valid_nii_path <- withr::local_tempfile(fileext = ".nii")
+    RNifti::writeNifti(
+      RNifti::asNifti(array(0, dim = c(64, 64, 64))),
+      valid_nii_path
+    )
+    local_mocked_bindings(can_reach_github = function() TRUE)
+    local_mocked_bindings(
+      download.file = function(url, destfile, ...) {
+        file.copy(valid_nii_path, destfile, overwrite = TRUE)
+        0L
+      },
+      .package = "utils"
+    )
+
+    result <- download_suit_xfm("xfm.nii", cached)
+    expect_identical(result, cached)
+    expect_true(file.exists(cached))
+    expect_identical(list.files(tmp), basename(cached))
   })
 })
 
@@ -1835,7 +1957,7 @@ describe("cerebellar_process_deep_nuclei", {
 
 
 describe("get_tkras_to_world", {
-  it("computes transform matrix from FreeSurfer mri_info", {
+  it("computes the correct transform matrix from FreeSurfer mri_info", {
     skip_if_no_freesurfer()
     skip_if_not_installed("RNifti")
 
@@ -1847,7 +1969,66 @@ describe("get_tkras_to_world", {
 
     expect_true(is.matrix(result))
     expect_identical(dim(result), c(4L, 4L))
-    expect_identical(result[4, ], c(0, 0, 0, 1))
+    expect_equal(
+      result,
+      matrix(
+        c(1, 0, 0, 0, 0, 0, 1, 0, 0, -1, 0, 0, 5, 5, 5, 1),
+        nrow = 4,
+        ncol = 4
+      )
+    )
+  })
+})
+
+describe("mri_info_matrix", {
+  it("ignores informational lines mri_info prints ahead of the matrix", {
+    local_mocked_bindings(
+      system2 = function(...) {
+        structure(
+          c(
+            "niiRead(): detected input as 64 bit double, reading in as 32 bit float",
+            "  -1.00000    0.00000    0.00000    2.00000 ",
+            "   0.00000    0.00000    1.00000   -2.00000 ",
+            "   0.00000   -1.00000    0.00000    2.00000 ",
+            "   0.00000    0.00000    0.00000    1.00000 "
+          ),
+          status = 0L
+        )
+      },
+      .package = "base"
+    )
+
+    out <- mri_info_matrix("--vox2ras-tkr", "vol.nii.gz")
+    expect_equal(
+      out,
+      matrix(c(-1, 0, 0, 0, 0, 0, -1, 0, 0, 1, 0, 0, 2, -2, 2, 1), 4, 4)
+    )
+  })
+
+  it("errors when the mri_info subprocess fails", {
+    local_mocked_bindings(
+      system2 = function(...) {
+        structure(character(0), status = 1L)
+      },
+      .package = "base"
+    )
+
+    expect_error(
+      mri_info_matrix("--vox2ras-tkr", "vol.nii.gz"),
+      "failed for.*exit 1"
+    )
+  })
+
+  it("errors when the output doesn't parse into a complete 4x4 matrix", {
+    local_mocked_bindings(
+      system2 = function(...) c("1 2 3", "4 5 6"),
+      .package = "base"
+    )
+
+    expect_error(
+      mri_info_matrix("--vox2ras-tkr", "vol.nii.gz"),
+      "did not return a valid 4x4 matrix"
+    )
   })
 })
 
@@ -2024,8 +2205,6 @@ describe("create_cerebellar_from_volume integration", {
       volume = vol_file,
       input_lut = lut,
       atlas_name = "test_cer_integ",
-      smooth_refinements = 0,
-      tolerance = 0,
       verbose = FALSE,
       cleanup = TRUE
     )

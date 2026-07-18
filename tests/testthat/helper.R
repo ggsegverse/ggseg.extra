@@ -9,7 +9,8 @@ describe <- testthat::describe
 
 options(
   ggseg.extra.verbose = FALSE,
-  freesurfer.verbose = FALSE
+  freesurfer.verbose = FALSE,
+  rgl.useNULL = TRUE
 )
 
 # Helper to get test data directory
@@ -45,7 +46,7 @@ skip_render_on_windows <- function() {
 
 # Helper to skip tests requiring ImageMagick
 skip_if_no_imagemagick <- function() {
-  if (Sys.which("convert") == "") {
+  if (!has_magick()) {
     testthat::skip("ImageMagick not available")
   }
 }
@@ -125,8 +126,8 @@ expect_warnings <- function(expr, regexp) {
     warning = function(w) {
       if (grepl(regexp, conditionMessage(w))) {
         rec$caught[[length(rec$caught) + 1L]] <- conditionMessage(w)
+        invokeRestart("muffleWarning")
       }
-      invokeRestart("muffleWarning")
     }
   )
   testthat::expect_gt(length(rec$caught), 0)

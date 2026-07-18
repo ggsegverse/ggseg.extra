@@ -40,14 +40,14 @@ and the ggseg package:
 
 ## Installation
 
-We recommend installing the ggseg-atlases through the ggseg
-[r-universe](https://ggseg.r-universe.dev/ui#builds):
+We recommend installing the ggseg-atlases through the ggsegverse
+[r-universe](https://ggsegverse.r-universe.dev/#builds):
 
 ```{r}
 #| label: install-r-universe
 #| eval: false
 options(repos = c(
-  ggseg = "https://ggseg.r-universe.dev",
+  ggsegverse = "https://ggsegverse.r-universe.dev",
   CRAN = "https://cloud.r-project.org"
 ))
 
