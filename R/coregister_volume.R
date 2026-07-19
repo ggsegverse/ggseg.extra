@@ -659,7 +659,8 @@ check_registration_grid <- function(registration, aparc_dim, input_dim = NULL) {
       cli::cli_abort(c(
         "Registration grid does not match {.arg input_volume}.",
         "x" = "LTA source is {src_dim[1]}x{src_dim[2]}x{src_dim[3]}, \\
-               {.arg input_volume} is {input_dim[1]}x{input_dim[2]}x{input_dim[3]}.",
+               {.arg input_volume} is \\
+               {input_dim[1]}x{input_dim[2]}x{input_dim[3]}.",
         "i" = "Reuse the LTA {.fn coregister_volume} produced for this exact \\
                {.arg input_volume}; re-run it if unsure."
       ))

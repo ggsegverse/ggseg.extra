@@ -208,7 +208,7 @@ describe("triangle_fragments", {
     expect_identical(frags[[1]]$label, "b")
   })
 
-  it("delegates to split_boundary_triangle for a fully-labelled boundary triangle", {
+  it("delegates to split_boundary_triangle for a fully-labelled boundary", {
     verts_2d <- matrix(c(0, 0, 2, 0, 0, 2), ncol = 2, byrow = TRUE)
     frags <- triangle_fragments(
       labs = c("a", "b", "b"),

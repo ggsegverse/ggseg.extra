@@ -1986,7 +1986,10 @@ describe("mri_info_matrix", {
       system2 = function(...) {
         structure(
           c(
-            "niiRead(): detected input as 64 bit double, reading in as 32 bit float",
+            paste0(
+              "niiRead(): detected input as 64 bit double, ",
+              "reading in as 32 bit float"
+            ),
             "  -1.00000    0.00000    0.00000    2.00000 ",
             "   0.00000    0.00000    1.00000   -2.00000 ",
             "   0.00000   -1.00000    0.00000    2.00000 ",

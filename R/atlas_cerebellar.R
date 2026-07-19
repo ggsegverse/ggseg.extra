@@ -501,8 +501,9 @@ read_suit_parcellation <- function(gifti_files) {
 #' only `file.rename()`s it into place once it has passed both the size and
 #' NIfTI-header checks. This keeps a partial/corrupt transfer (e.g. an
 #' interrupted download, or a captive-portal response padded past the size
-#' threshold) from ever landing at `cached_path`, since [suit_deformation_field()]
-#' trusts any file already there without re-checking it.
+#' threshold) from ever landing at `cached_path`, since
+#' [suit_deformation_field()] trusts any file already there without
+#' re-checking it.
 #' @noRd
 download_suit_xfm <- function(filename, cached_path) {
   if (!can_reach_github()) {
