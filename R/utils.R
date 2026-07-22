@@ -2,18 +2,116 @@
 
 fsaverage5_nverts <- 10242L
 
+#' Coerce a value to a verbosity level
+#'
+#' Converts logical, numeric, or character input to an integer verbosity
+#' level: `0L` (silent), `1L` (standard), or `2L` (debug).
+#'
+#' @param x Value to coerce. Logical `FALSE` becomes `0L`, `TRUE` becomes
+#'   `1L`. Numeric values are clamped to 0--2. Invalid input defaults to `1L`.
+#' @return Integer `0L`, `1L`, or `2L`
+#' @export
+#' @examples
+#' as_verbosity(FALSE)
+#' as_verbosity(TRUE)
+#' as_verbosity(2)
+as_verbosity <- function(x) {
+  if (is.logical(x) && !is.na(x)) {
+    return(as.integer(x))
+  }
+  x <- suppressWarnings(as.integer(x))
+  if (is.na(x) || x < 0L) {
+    return(1L)
+  }
+  min(x, 2L)
+}
+
+#' Get verbose setting
+#'
+#' Returns the verbosity level from option, environment variable, or default.
+#' Checks in order: `ggseg.extra.verbose` option, `GGSEG_EXTRA_VERBOSE` env var,
+#' then defaults to `1L`.
+#'
+#' Verbosity levels:
+#' - `0` — Silent: no console output
+#' - `1` — Standard (default): pipeline progress and step summaries
+#' - `2` — Debug: includes FreeSurfer command output
+#'
+#' Logical values are accepted for backward compatibility
+#' (`FALSE` = 0, `TRUE` = 1).
+#'
+#' @return Integer `0L`, `1L`, or `2L`
+#' @export
+#' @examples
+#' get_verbose()
+#' options(ggseg.extra.verbose = 0)
+#' get_verbose()
+#' options(ggseg.extra.verbose = NULL)
+get_verbose <- function() {
+  val <- getOption("ggseg.extra.verbose")
+  if (!is.null(val)) {
+    return(as_verbosity(val))
+  }
+  env <- Sys.getenv("GGSEG_EXTRA_VERBOSE", unset = NA)
+  if (!is.na(env)) {
+    return(as_verbosity(env))
+  }
+  1L
+}
+
+#' Get verbosity level
+#'
+#' @param verbose Optional explicit value. If NULL, reads from
+#'   option/env via [get_verbose()]. Accepts logical or integer (0/1/2).
+#' @return Integer `0L`, `1L`, or `2L`
+#' @export
+#' @examples
+#' is_verbose()
+#' is_verbose(FALSE)
+#' is_verbose(2)
+is_verbose <- function(verbose = NULL) {
+  if (is.null(verbose)) {
+    return(get_verbose())
+  }
+  as_verbosity(verbose)
+}
+
+#' Cross product of two 3D vectors
+#' @noRd
+cross_product <- function(a, b) {
+  c(
+    a[2] * b[3] - a[3] * b[2],
+    a[3] * b[1] - a[1] * b[3],
+    a[1] * b[2] - a[2] * b[1]
+  )
+}
+
 #' @importFrom future plan sequential multisession
 #' @noRd
 with_safe_plan <- function(expr) {
   if (inherits(plan(), "multicore")) {
     old_plan <- plan(multisession)
     on.exit(plan(old_plan), add = TRUE)
-    cli::cli_alert_info(paste0(
-      "Switching from multicore to multisession:",
-      " fork is incompatible with chromote."
-    ))
+    cli::cli_alert_info(
+      "Switching from multicore to multisession: fork is
+      incompatible with chromote.",
+      wrap = TRUE
+    )
   }
-  force(expr)
+  withCallingHandlers(
+    force(expr),
+    warning = function(w) {
+      if (
+        grepl(
+          "may not be available when loading",
+          conditionMessage(w),
+          fixed = TRUE
+        )
+      ) {
+        invokeRestart("muffleWarning")
+      }
+    }
+  )
 }
 
 #' @noRd
@@ -51,15 +149,6 @@ mkdir <- function(path, ...) {
   dir.create(path, recursive = TRUE, showWarnings = FALSE, ...)
 }
 
-#' @noRd
-close_chromote_workers <- function() {
-  if (!requireNamespace("chromote", quietly = TRUE)) {
-    return(invisible(NULL))
-  }
-  try(chromote::default_chromote_object()$close(), silent = TRUE)
-  invisible(NULL)
-}
-
 
 #' @noRd
 load_rda <- function(path, envir = parent.frame()) {
@@ -82,141 +171,49 @@ prompt_user <- function(msg) readline(msg)
 #'
 #' @param atlas A ggseg_atlas object
 #' @return Invisible atlas
+#' @importFrom ggseg ggseg position_brain
+#' @importFrom ggseg3d ggseg3d pan_camera set_legend
 #' @noRd
 preview_atlas <- function(atlas) {
   if (!is_interactive()) {
     return(invisible(atlas))
   }
 
-  has_sf <- !is.null(atlas$data$sf)
   has_3d <- !is.null(atlas$data$vertices) ||
     !is.null(atlas$data$meshes)
 
-  if (!has_sf && !has_3d) {
+  if (!has_3d) {
     cli::cli_alert_danger(
       "Atlas malformed and doesn't contain compatible data."
     )
     return(invisible(atlas))
   }
 
-  if (has_3d) {
-    tryCatch(
-      {
-        if (atlas$type == "cortical") {
-          for (hemi in c("left", "right")) {
-            p3d <- ggseg3d::ggseg3d(atlas = atlas, hemisphere = hemi) |>
-              ggseg3d::pan_camera(paste(hemi, "lateral")) |>
-              ggseg3d::set_legend(show = FALSE)
-            print(p3d)
-            prompt_user(sprintf("3D %s hemisphere. Press Enter for next", hemi))
-          }
-        } else {
-          p3d <- ggseg3d::ggseg3d(atlas = atlas) |>
+  tryCatch(
+    {
+      if (ggseg.formats::is_cortical_atlas(atlas)) {
+        for (hemi in c("left", "right")) {
+          p3d <- ggseg3d::ggseg3d(atlas = atlas, hemisphere = hemi) |>
+            ggseg3d::pan_camera(paste(hemi, "lateral")) |>
             ggseg3d::set_legend(show = FALSE)
           print(p3d)
-          prompt_user("3D preview. Press Enter to continue")
+          prompt_user(sprintf("3D %s hemisphere. Press Enter for next", hemi))
         }
-      },
-      error = function(e) NULL
-    )
-  }
-
-  if (has_sf) {
-    gp <- tryCatch(
-      {
-        p <- ggplot2::ggplot() +
-          ggseg::geom_brain(
-            atlas = atlas,
-            position = ggseg::position_brain(nrow = 4),
-            show.legend = FALSE,
-            alpha = .7,
-            ggplot2::aes(fill = label)
-          )
-        if (!is.null(atlas$palette)) {
-          p <- p +
-            ggplot2::scale_fill_manual(values = atlas$palette)
-        }
-        p
-      },
-      error = function(e) {
-        plot(atlas$data$sf)
-        NULL
+      } else {
+        p3d <- ggseg3d::ggseg3d(atlas = atlas) |>
+          ggseg3d::set_legend(show = FALSE)
+        print(p3d)
+        prompt_user("3D preview. Press Enter to continue")
       }
-    )
-    if (!is.null(gp)) {
-      print(gp)
-      prompt_user("2D preview. Press Enter to continue")
-    }
-  }
+    },
+    error = function(e) NULL
+  )
+
   invisible(atlas)
 }
 
 
 # Verbosity control ----
-
-#' Coerce a value to a verbosity level
-#'
-#' Converts logical, numeric, or character input to an integer verbosity
-#' level: `0L` (silent), `1L` (standard), or `2L` (debug).
-#'
-#' @param x Value to coerce. Logical `FALSE` becomes `0L`, `TRUE` becomes
-#'   `1L`. Numeric values are clamped to 0--2. Invalid input defaults to `1L`.
-#' @return Integer `0L`, `1L`, or `2L`
-#' @export
-#' @examples
-#' as_verbosity(FALSE)
-#' as_verbosity(TRUE)
-#' as_verbosity(2)
-as_verbosity <- function(x) {
-  if (is.logical(x) && !is.na(x)) return(as.integer(x))
-  x <- suppressWarnings(as.integer(x))
-  if (is.na(x) || x < 0L) return(1L)
-  min(x, 2L)
-}
-
-#' Get verbose setting
-#'
-#' Returns the verbosity level from option, environment variable, or default.
-#' Checks in order: `ggseg.extra.verbose` option, `GGSEG_EXTRA_VERBOSE` env var,
-#' then defaults to `1L`.
-#'
-#' Verbosity levels:
-#' - `0` — Silent: no console output
-#' - `1` — Standard (default): pipeline progress and step summaries
-#' - `2` — Debug: includes FreeSurfer command output
-#'
-#' Logical values are accepted for backward compatibility
-#' (`FALSE` = 0, `TRUE` = 1).
-#'
-#' @return Integer `0L`, `1L`, or `2L`
-#' @export
-#' @examples
-#' get_verbose()
-#' options(ggseg.extra.verbose = 0)
-#' get_verbose()
-#' options(ggseg.extra.verbose = NULL)
-get_verbose <- function() {
-  val <- getOption("ggseg.extra.verbose")
-  if (!is.null(val)) return(as_verbosity(val))
-  env <- Sys.getenv("GGSEG_EXTRA_VERBOSE", unset = NA)
-  if (!is.na(env)) return(as_verbosity(env))
-  1L
-}
-
-#' Get verbosity level
-#'
-#' @param verbose Optional explicit value. If NULL, reads from
-#'   option/env via [get_verbose()]. Accepts logical or integer (0/1/2).
-#' @return Integer `0L`, `1L`, or `2L`
-#' @export
-#' @examples
-#' is_verbose()
-#' is_verbose(FALSE)
-#' is_verbose(2)
-is_verbose <- function(verbose = NULL) {
-  if (is.null(verbose)) return(get_verbose())
-  as_verbosity(verbose)
-}
 
 #' Log elapsed pipeline time
 #'
@@ -256,7 +253,7 @@ load_or_run_step <- function(
   steps,
   files,
   skip_existing,
-  step_name = paste("Step", step_num)
+  step_name = cli::format_inline("Step {step_num}")
 ) {
   files_exist <- all(file.exists(files))
   step_requested <- step_num %in% steps
@@ -273,14 +270,14 @@ load_or_run_step <- function(
 
   if (!files_exist) {
     missing <- files[!file.exists(files)] # nolint: object_usage_linter
+    # nolint start
     cli::cli_abort(c(
       "{step_name} was not run but required files are missing",
       "i" = "Missing: {.path {missing}}",
-      "i" = paste(
-        "Include step {step_num} in the steps",
-        "argument to generate these files"
-      )
+      "i" = "Include step {step_num} in the steps argument to
+      generate these files"
     ))
+    # nolint end
   }
 
   data <- lapply(files, readRDS)
@@ -327,21 +324,18 @@ get_skip_existing <- function(skip_existing = NULL) {
 #' Controls vertex reduction during contour simplification.
 #'
 #' @param tolerance Optional explicit value. If NULL, reads from options/env.
-#' @return Numeric tolerance value (0 = no simplification)
+#' @return Numeric keep proportion (0--1). 0 = no simplification.
 #' @noRd
 get_tolerance <- function(tolerance = NULL) {
   get_numeric_option(
     tolerance,
     "ggseg.extra.tolerance",
     "GGSEG_EXTRA_TOLERANCE",
-    1
+    0.05
   )
 }
 
 #' Get smoothness setting
-#'
-#' Returns the smoothness setting from options or environment variable.
-#' Controls contour smoothing during geometry extraction.
 #'
 #' @param smoothness Optional explicit value. If NULL, reads from options/env.
 #' @return Numeric smoothness value
@@ -357,39 +351,64 @@ get_smoothness <- function(smoothness = NULL) {
 
 #' Get smooth refinements setting
 #'
-#' Returns the number of Chaikin corner-cutting refinements for the
-#' vertex projection pipeline. Higher values produce smoother region
-#' boundaries.
-#'
-#' @param smooth_refinements Optional explicit value. If NULL, reads from
-#'   options/env.
-#' @return Integer refinement count (0 = no smoothing)
+#' @param smooth_refinements Ignored. Kept for API compatibility.
+#' @return Integer 0 (smoothing is now handled by topology-preserving
+#'   simplification).
 #' @noRd
 get_smooth_refinements <- function(smooth_refinements = NULL) {
-  as.integer(get_numeric_option(
-    smooth_refinements,
-    "ggseg.extra.smooth_refinements",
-    "GGSEG_EXTRA_SMOOTH_REFINEMENTS",
-    2
-  ))
+  0L
 }
 
-#' Get snapshot dimension setting
+#' Warn when deprecated sf-smoothing parameters are supplied
 #'
-#' Returns the snapshot dimension (width and height in pixels) for brain
-#' surface snapshots. Higher values capture more detail for dense parcellations.
+#' Atlas creation no longer smooths or simplifies sf geometry; users
+#' should call [atlas_smooth()] after the atlas is built. Emits a
+#' lifecycle warning for each deprecated parameter passed a non-NULL
+#' value.
 #'
-#' @param snapshot_dim Optional explicit value. If NULL, reads from options/env.
-#' @return Numeric pixel dimension
+#' @param tolerance,smoothness,smooth_refinements User-supplied values.
+#'   `NULL` means "not passed" and is silently accepted.
+#' @param fn Name of the calling function for the warning message.
 #' @noRd
-get_snapshot_dim <- function(snapshot_dim = NULL) {
-  get_numeric_option(
-    snapshot_dim,
-    "ggseg.extra.snapshot_dim",
-    "GGSEG_EXTRA_SNAPSHOT_DIM",
-    800
+warn_deprecated_sf_smoothing <- function(
+  tolerance = NULL,
+  smoothness = NULL,
+  smooth_refinements = NULL,
+  fn = NULL
+) {
+  args <- list(
+    tolerance = tolerance,
+    smoothness = smoothness,
+    smooth_refinements = smooth_refinements
   )
+  supplied <- names(args)[!vapply(args, is.null, logical(1))]
+  if (length(supplied) == 0L) {
+    return(invisible(NULL))
+  }
+
+  details <- c(
+    i = paste(
+      "Atlas creation no longer smooths or simplifies sf geometry.",
+      "Call `atlas_smooth(atlas, keep = ...)` on the returned atlas",
+      "instead. Use `exclude = \"cortex_\"` to keep the brain outline",
+      "crisp."
+    )
+  )
+
+  for (arg in supplied) {
+    what <- if (is.null(fn)) {
+      paste0(arg, "()")
+    } else {
+      paste0(fn, "(", arg, " = )")
+    }
+    lifecycle::deprecate_warn(
+      when = "1.9.9.9005",
+      what = what,
+      details = details
+    )
+  }
 }
+
 
 #' Helper to get boolean option with fallback
 #' @noRd
@@ -475,22 +494,24 @@ get_output_dir <- function(output_dir = NULL) {
 # Atlas validation ----
 
 #' @noRd
-warn_if_large_atlas <- function(atlas, max_vertices = 10000) {
-  if (is.null(atlas$data$sf)) {
+warn_if_large_atlas <- function(atlas, max_vertices = 10000, per_region = 50) {
+  if (is.null(ggseg.formats::atlas_geom(atlas))) {
     return(invisible(NULL))
   }
 
-  n_vertices <- sum(count_vertices(atlas$data$sf))
+  n_vertices <- sum(count_vertices(ggseg.formats::atlas_sf(atlas)))
+  n_regions <- if (is.null(atlas$core)) 0L else nrow(atlas$core)
+  threshold <- max(max_vertices, per_region * n_regions)
 
-  if (n_vertices > max_vertices) {
+  if (n_vertices > threshold) {
+    # nolint start
     cli::cli_warn(c(
-      paste(
-        "Atlas has {.val {n_vertices}} vertices",
-        "(threshold: {.val {max_vertices}})"
-      ),
+      "Atlas has {.val {n_vertices}} vertices (threshold: {.val {threshold}})",
       "i" = "Large atlases may be slow to plot and increase package size",
-      "i" = "Re-run with higher {.arg tolerance} to reduce vertices"
+      "i" = "Call {.code atlas_smooth(atlas, keep = 0.2, exclude = \"cortex_\")}
+      to reduce vertices"
     ))
+    # nolint end
   }
 
   invisible(NULL)

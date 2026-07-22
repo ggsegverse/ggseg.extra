@@ -89,7 +89,7 @@ ggsave(
 
 # Plot with data mapping
 test_data <- data.frame(
-  label = c(
+  stringsAsFactors = FALSE,  label = c(
     "cst_left",
     "cst_right",
     "ilf_left",

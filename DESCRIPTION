@@ -1,12 +1,12 @@
 Package: ggseg.extra
 Title: Create Brain Atlases for the 'ggsegverse' Plotting Ecosystem
-Version: 1.9.9.9001
+Version: 1.9.9.9005
 Authors@R: c(
     person(
         given = "Athanasia Mo",
         family = "Mowinckel",
         email = "a.m.mowinckel@psykologi.uio.no",
-        role = c("aut", "cre", "cph"),
+        role = c("aut", "cre"),
         comment = c(
             ORCID = "0000-0002-5756-0223",
             Github = "drmowinckels")),
@@ -14,19 +14,21 @@ Authors@R: c(
         given = "Didac",
         family = "Vidal-Piñeiro",
         email = "d.v.pineiro@psykologi.uio.no",
-        role = c("ctb", "cph"),
+        role = c("ctb"),
         comment = c(ORCID = "0000-0001-9997-9156")),
     person(
         given = "John",
         family = "Muschelli",
         email =  "muschellij2@gmail.com",
         role = "ctb",
-        comment = c(ORCID = "0000-0001-6469-1750"))
+        comment = c(ORCID = "0000-0001-6469-1750")),
+    person("Center for Lifespan Changes in Brain and Cognition (LCBC), University of Oslo",
+           role = "cph")
   )
-Description: Create brain atlas data sets compatible with the 'ggsegverse' plotting packages in 'R'. Provides pipelines for building
-    cortical, subcortical, and white-matter tract atlases from 'FreeSurfer'
-    annotation files, 'GIFTI' and 'CIFTI' surface formats, 'neuromaps', and
-    volumetric 'NIfTI' images.
+Description: Create brain atlas data sets compatible with the 'ggsegverse' plotting packages. Provides pipelines for building
+    cortical, subcortical, white-matter tract, and cerebellar atlases from
+    'FreeSurfer' annotation files, 'GIFTI' and 'CIFTI' surface formats,
+    'neuromaps', cerebellar flatmaps, and volumetric 'NIfTI' images.
 License: MIT + file LICENSE
 URL: https://github.com/ggsegverse/ggseg.extra
 BugReports: https://github.com/ggsegverse/ggseg.extra/issues
@@ -35,26 +37,29 @@ Depends:
 Imports:
     cli,
     dplyr,
+    fs,
     future,
     furrr,
-    ggseg.formats,
+    ggseg,
+    ggseg.formats (>= 0.0.3),
     ggseg3d (>= 2.0.0),
     grDevices,
     lifecycle,
     progressr,
     rlang,
+    rmapshaper,
     sf,
     stats,
     tools,
     utils
 Suggests:
+    base64enc,
     chromote,
     ciftiTools,
     freesurfer,
     freesurferformats,
     ggplot2,
     gifti,
-    ggseg,
     hexSticker,
     htmlwidgets,
     knitr,
@@ -64,7 +69,6 @@ Suggests:
     RNifti,
     rstudioapi,
     Rvcg,
-    smoothr,
     spelling,
     terra,
     testthat (>= 3.0.0),
@@ -79,10 +83,13 @@ Encoding: UTF-8
 Language: en-US
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3
-SystemRequirements: FreeSurfer (subcortical/tract/wholebrain pipelines,
-    and annotation reading for cortical pipelines), ImageMagick
-    (subcortical/tract pipelines only), Connectome Workbench (optional,
-    for CIFTI resampling).
+SystemRequirements: FreeSurfer (subcortical/tract/wholebrain pipelines), 
+    ImageMagick (subcortical/tract pipelines only), 
+    Connectome Workbench (optional, for CIFTI resampling),
+    GDAL (>= 2.0.1), 
+    GEOS (>= 3.4.0), 
+    PROJ (>= 4.8.0), 
+    sqlite3
 Config/testthat/edition: 3
 Config/testthat/parallel: true
 Config/Needs/website: ggsegverse/ggseg.docs

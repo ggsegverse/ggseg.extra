@@ -1,0 +1,30 @@
+Package: {REPO}
+Title: {GGSEG} Brain Atlas for the 'ggseg' Ecosystem
+Version: 1.0.0
+Authors@R: c(
+    person("First", "Last", , "your.email@example.com", role = c("aut", "cre"),
+           comment = c(ORCID = "0000-0000-0000-0000"))
+  )
+Description: Brain atlas data for the 'ggseg' ecosystem. Provides a unified
+    'ggseg_atlas' object with both 2D polygon geometry and 3D vertex indices,
+    for use with 'ggseg' and 'ggseg3d'.
+License: CC0
+Encoding: UTF-8
+Depends:
+    R (>= 3.5)
+Imports:
+    ggseg.formats
+Suggests:
+    ggseg,
+    ggseg3d,
+    ggplot2,
+    knitr,
+    rmarkdown,
+    testthat (>= 3.0.0),
+    vdiffr
+URL: https://github.com/ggsegverse/{REPO}
+BugReports: https://github.com/ggsegverse/{REPO}/issues
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.3
+Config/testthat/edition: 3
+LazyData: true

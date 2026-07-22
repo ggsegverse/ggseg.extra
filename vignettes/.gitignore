@@ -10,3 +10,4 @@
 # Tangled R scripts (auto-extracted from vignettes)
 *.R
 !precompile.R
+data-raw

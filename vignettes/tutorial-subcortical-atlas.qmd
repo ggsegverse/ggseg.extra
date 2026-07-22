@@ -1,6 +1,10 @@
 ---
 title: "Tutorial: Creating a subcortical atlas"
 format: html
+vignette: >
+  %\VignetteIndexEntry{Tutorial: Creating a subcortical atlas}
+  %\VignetteEngine{quarto::html}
+  %\VignetteEncoding{UTF-8}
 ---
 
 
@@ -54,8 +58,8 @@ aseg_raw <- create_subcortical_from_volume(
 #> 10000)
 #> ℹ Large atlases may be slow to plot and
 #>   increase package size
-#> ℹ Re-run with higher `tolerance` to
-#>   reduce vertices
+#> ℹ Call `atlas_smooth(atlas, keep = 0.2,
+#>   exclude = "cortex_")` to reduce vertices
 
 aseg_raw
 #> 
@@ -172,6 +176,53 @@ Gather views into a compact arrangement:
 aseg_raw <- aseg_raw |>
   atlas_view_gather()
 ```
+
+## The shortcut: `aseg_context()`
+
+The remove → contextualise → view-keep → gather recipe above is the same for
+every subcortical atlas, so `aseg_context()` collapses it into one call. It
+punches the cortical white matter out of the brain silhouette, strips the
+structures `aseg` does not draw (`aseg_hidden_labels()`), demotes everything
+outside `focus` to grey context, and drops views with no focus region:
+
+``` r
+aseg_raw <- create_subcortical_from_volume(
+  input_volume = aseg_volume,
+  input_lut = color_lut,
+  atlas_name = "aseg"
+) |>
+  aseg_context(
+    focus = "Thalamus|Caudate|Putamen|Pallidum|Hippocampus|Amygdala|Accumbens|VentralDC|Brain-Stem"
+  )
+```
+
+`focus` is matched with a loose, case-insensitive `grepl()`, so you don't have
+to spell out FreeSurfer's exact `Left-`/`Right-` label casing. The labels that
+don't match become *context*, and demoting them uses a separate, exact,
+case-sensitive `^(...)$` match against their own resolved label strings ---
+not `focus` re-applied --- so a context label that happens to contain a focus
+label as a substring (the classic `Thalamus` inside `hypothalamus`) can never
+swallow it. That substring collision used to demote the whole focus set to
+context, silently producing 0-region atlases, before this exact-match step
+was added.
+
+`subcortical_slabs()` derives the projection slabs from the bounding box of a
+set of labels, reading the volume in the **same** frame the builder uses, so
+the slabs always land on the right slices. You can pass its arguments as a list
+to `slabs`, and run `aseg_context()` in the same call via `context`:
+
+``` r
+aseg <- create_subcortical_from_volume(
+  input_volume = aseg_volume,
+  input_lut = color_lut,
+  atlas_name = "aseg",
+  slabs = list(labels = c(10:13, 17:18, 26, 49:54, 58), coronal = 3, axial = 2),
+  context = list(focus = "Thalamus|Caudate|Putamen|Pallidum|Hippocampus|Amygdala")
+)
+```
+
+`create_wholebrain_from_volume()` forwards both `slabs` and `context` through
+its `subcortical_opts`, so a whole-brain build gets the same treatment for free.
 
 ## Adding metadata
 
@@ -329,3 +380,52 @@ plot(aseg)
 <img src="figures/tutorial-subcortical-atlas-plot-1.png" alt="2D brain atlas plot showing subcortical structures including thalamus, caudate, putamen, hippocampus, and amygdala across axial, coronal, and sagittal projection views." width="960" />
 <p class="caption">Subcortical aseg atlas plotted with ggseg.</p>
 </div>
+
+## Atlases not in FreeSurfer space
+
+`aseg` is already on the FreeSurfer grid, so its structures sit in anatomical
+context for free. An atlas that ships as a standalone parcellation volume (in
+MNI space, say) has no surrounding brain to draw.
+`prepare_subcortical_anatomical()` coregisters such a parcellation to a
+FreeSurfer subject and merges it with that subject's `aparc+aseg`, so the
+pipeline can draw the cortical ribbon and white-matter interior as context:
+
+``` r
+merged <- prepare_subcortical_anatomical(
+  input_volume = "my_parcellation_2mm.nii.gz",
+  lut = my_lut, # its idx selects + names the labels to keep
+  target_subject = "cvs_avg35_inMNI152" # subject to borrow context from
+)
+
+atlas <- create_subcortical_from_volume(
+  input_volume = merged, # carries both volume and matching colour table
+  context = list(focus = "my-structures")
+)
+```
+
+It chains `coregister_volume()` (wrapping `mri_coreg` to produce a reusable LTA
+transform) and `project_volume_anatomical()` (which resamples each label, takes
+the per-voxel argmax, shifts the atlas ids clear of the FreeSurfer ones, and
+protects the cortex). The result is a `list(volume, lut, id_offset)`: the merged
+volume *and* a colour table aligned to it --- FreeSurfer names for the
+`aparc+aseg` context labels plus your atlas labels at their shifted ids.
+`create_subcortical_from_volume()` unpacks both, so the context regions render
+with names `aseg_context()` recognises. Call the two steps separately to reuse
+one transform across several parcellations.
+
+### Custom colour tables
+
+When an atlas adds labels FreeSurfer doesn't know about, `lut_add()` appends
+them to a colour table; `lut_combine()` merges several tables and warns on
+clashing indices. Build `my_lut` from your parcellation's own labels before
+passing it as `lut` above --- `prepare_subcortical_anatomical()` shifts it and
+folds in the FreeSurfer context names for you:
+
+``` r
+my_lut <- read_lut(color_lut) |>
+  lut_add(
+    idx = c(20001, 20002),
+    label = c("Left-Hippocampus-ant", "Left-Hippocampus-post"),
+    R = c(220, 60), G = c(190, 140), B = c(30, 200)
+  )
+```
