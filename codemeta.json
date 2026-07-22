@@ -13,7 +13,7 @@
     "name": "R",
     "url": "https://r-project.org"
   },
-  "runtimePlatform": "R version 4.5.2 (2025-10-31)",
+  "runtimePlatform": "R version 4.6.1 (2026-06-24)",
   "author": [
     {
       "@type": "Person",
@@ -520,7 +520,7 @@
     },
     "SystemRequirements": "FreeSurfer (subcortical/tract/wholebrain pipelines), \n    ImageMagick (subcortical/tract pipelines only), \n    Connectome Workbench (optional, for CIFTI resampling),\n    GDAL (>= 2.0.1), \n    GEOS (>= 3.4.0), \n    PROJ (>= 4.8.0), \n    sqlite3"
   },
-  "fileSize": "6658.676KB",
+  "fileSize": "6695.126KB",
   "citation": [
     {
       "@type": "CreativeWork",
