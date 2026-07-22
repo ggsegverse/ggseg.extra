@@ -1,5 +1,18 @@
 # ggseg.extra 1.9.9.9005
 
+## Bug fixes
+
+- `read_volume()` now reorients FreeSurfer `.mgz` volumes to RAS+, matching
+  its long-standing behaviour for NIfTI inputs. Previously only `niftiImage`
+  objects were reoriented, so `.mgz` volumes (e.g. FreeSurfer's LIA-oriented
+  `aseg.mgz`) reached the RAS+-assuming projection code still in LIA order.
+  Subcortical
+  atlases built directly from a `.mgz` therefore came out left-right flipped in
+  axial views, top-bottom flipped in coronal, and 90-degrees rotated in
+  sagittal; atlases built from reoriented `.nii.gz` volumes (and tract atlases,
+  whose geometry is already in scanner RAS) were unaffected. Volumes whose
+  header carries no valid RAS information fall back to native voxel order.
+
 ## Subcortical atlas builder helpers
 
 New thin compositions of the existing `ggseg.formats` atlas ops and the

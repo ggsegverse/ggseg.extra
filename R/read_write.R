@@ -733,6 +733,43 @@ fill_missing_colours <- function(result) {
 }
 
 
+#' Reorient a voxel array to RAS+ using its vox2ras affine
+#'
+#' Derives the axis permutation and per-axis flips that map a volume's voxel
+#' axes to Right-Anterior-Superior from the direction part of its vox2ras
+#' matrix, then applies them. This is the array-level equivalent of
+#' `RNifti::orientation<-`, used for FreeSurfer MGZ volumes (read as plain
+#' arrays, e.g. the LIA-oriented conformed volumes), which would otherwise
+#' reach the RAS+-assuming projection code unreoriented.
+#'
+#' @param vol 3D array in the file's native voxel order.
+#' @param vox2ras 4x4 voxel-to-scanner-RAS affine (only the 3x3 direction
+#'   block is used).
+#' @return `vol` reordered and flipped so dim1 increases toward Right,
+#'   dim2 toward Anterior, dim3 toward Superior.
+#' @keywords internal
+#' @noRd
+reorient_volume_to_ras <- function(vol, vox2ras) {
+  direction <- vox2ras[1:3, 1:3, drop = FALSE]
+  voxel_axis <- apply(abs(direction), 1L, which.max)
+  if (!setequal(voxel_axis, 1:3)) {
+    cli::cli_abort(
+      "Cannot derive a RAS axis mapping from the volume's vox2ras affine."
+    )
+  }
+
+  vol <- aperm(vol, voxel_axis)
+  for (world_axis in 1:3) {
+    if (direction[world_axis, voxel_axis[world_axis]] < 0) {
+      index <- lapply(dim(vol), seq_len)
+      index[[world_axis]] <- rev(index[[world_axis]])
+      vol <- do.call(`[`, c(list(vol), index, list(drop = FALSE)))
+    }
+  }
+  vol
+}
+
+
 #' Read neuroimaging volume file
 #'
 #' Reads volume data from common neuroimaging formats including
@@ -762,7 +799,19 @@ read_volume <- function(file, reorient = TRUE) {
 
   vol <- switch(
     ext,
-    "mgz" = freesurferformats::read.fs.mgh(file),
+    "mgz" = {
+      mgh <- freesurferformats::read.fs.mgh(file, with_header = TRUE)
+      data <- drop(mgh$data)
+      vox2ras <- tryCatch(
+        freesurferformats::mghheader.vox2ras(mgh$header),
+        error = function(e) NULL
+      )
+      if (reorient && length(dim(data)) == 3L && !is.null(vox2ras)) {
+        reorient_volume_to_ras(data, vox2ras)
+      } else {
+        data
+      }
+    },
     "nii" = {
       rlang::check_installed("RNifti", reason = "to read NIfTI files")
       RNifti::readNifti(file)

@@ -56,6 +56,84 @@ describe("read_volume with reorient FALSE", {
 })
 
 
+describe("reorient_volume_to_ras", {
+  # LIA vox2ras: axis1 -> Left (-R), axis2 -> Inferior (-S), axis3 -> Anterior
+  lia <- rbind(c(-1, 0, 0), c(0, 0, 1), c(0, -1, 0))
+
+  it("reorients an LIA volume to RAS+", {
+    vol <- array(0L, dim = c(2, 2, 2))
+    vol[1, 1, 1] <- 1L
+
+    out <- reorient_volume_to_ras(vol, lia)
+
+    expect_identical(dim(out), c(2L, 2L, 2L))
+    # [1,1,1] in LIA = most Left, Superior, Posterior -> in RAS that voxel is at
+    # max-R (dim1=2), min-A (dim2=1), max-S (dim3=2)
+    expect_equal(
+      which(out == 1L, arr.ind = TRUE)[1, ],
+      c(2L, 1L, 2L),
+      ignore_attr = TRUE
+    )
+  })
+
+  it("leaves an already-RAS volume unchanged", {
+    vol <- array(seq_len(8), dim = c(2, 2, 2))
+    expect_equal(reorient_volume_to_ras(vol, diag(4)), vol)
+  })
+
+  it("accepts a bare 3x3 direction matrix", {
+    vol <- array(seq_len(8), dim = c(2, 2, 2))
+    expect_equal(reorient_volume_to_ras(vol, diag(3)), vol)
+  })
+
+  it("errors when the affine has no clear axis mapping", {
+    vol <- array(0L, dim = c(2, 2, 2))
+    degenerate <- rbind(c(1, 1, 0), c(1, 1, 0), c(0, 0, 1))
+    expect_error(
+      reorient_volume_to_ras(vol, degenerate),
+      "RAS axis mapping"
+    )
+  })
+})
+
+
+describe("read_volume MGZ reorientation", {
+  lia <- rbind(c(-1, 0, 0, 2), c(0, 0, 1, -2), c(0, -1, 0, 2), c(0, 0, 0, 1))
+
+  make_lia_mgz <- function() {
+    tmp <- withr::local_tempfile(
+      fileext = ".mgz",
+      .local_envir = parent.frame()
+    )
+    vol <- array(0L, dim = c(4, 4, 4))
+    vol[1, 1, 1] <- 7L
+    freesurferformats::write.fs.mgh(tmp, vol, vox2ras_matrix = lia)
+    tmp
+  }
+
+  it("reorients a native-LIA MGZ to RAS+ by default", {
+    out <- read_volume(make_lia_mgz())
+
+    expect_identical(dim(out), c(4L, 4L, 4L))
+    expect_equal(
+      which(out == 7L, arr.ind = TRUE)[1, ],
+      c(4L, 1L, 4L),
+      ignore_attr = TRUE
+    )
+  })
+
+  it("preserves native voxel order when reorient is FALSE", {
+    out <- read_volume(make_lia_mgz(), reorient = FALSE)
+
+    expect_equal(
+      which(out == 7L, arr.ind = TRUE)[1, ],
+      c(1L, 1L, 1L),
+      ignore_attr = TRUE
+    )
+  })
+})
+
+
 describe("read_lut", {
   it("reads color table from file", {
     lut_file <- test_lut_file()
