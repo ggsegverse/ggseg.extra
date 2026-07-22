@@ -11,11 +11,12 @@
 #'
 #' @param subject subject the original annotation file is registered to
 #' @param annot annotation file name (as found in subjects_dir)
-#' @param hemi hemisphere (one of "lh" or "rh")
+#' @param hemisphere hemisphere (one of "lh" or "rh")
 #' @param target_subject subject to re-register the annotation
 #'   (default fsaverage5)
 #' @template output_dir
 #' @template verbose
+#' @param hemi `r lifecycle::badge("deprecated")` Use `hemisphere` instead.
 #' @return nothing
 #' @export
 #' @examples
@@ -32,18 +33,27 @@
 mri_surf2surf_rereg <- function(
   subject,
   annot,
-  hemi = c("lh", "rh"),
+  hemisphere = c("lh", "rh"),
   target_subject = "fsaverage5",
   output_dir = as.character(fs::path(
     freesurfer::fs_subj_dir(),
     subject,
     "label"
   )),
-  verbose = get_verbose() # nolint: object_usage_linter
+  verbose = get_verbose(), # nolint: object_usage_linter
+  hemi = lifecycle::deprecated()
 ) {
   check_fs(abort = TRUE)
 
-  hemi <- match.arg(hemi, c("lh", "rh"))
+  if (lifecycle::is_present(hemi)) {
+    lifecycle::deprecate_warn(
+      "1.9.9.9005",
+      "mri_surf2surf_rereg(hemi = )",
+      "mri_surf2surf_rereg(hemisphere = )"
+    )
+    hemisphere <- hemi
+  }
+  hemisphere <- match.arg(hemisphere, c("lh", "rh"))
 
   mkdir(output_dir)
 
@@ -58,9 +68,12 @@ mri_surf2surf_rereg <- function(
     "--trgsubject",
     shQuote(target_subject),
     "--tval",
-    shQuote(as.character(fs::path(output_dir, paste(hemi, annot, sep = ".")))),
+    shQuote(as.character(fs::path(
+      output_dir,
+      paste(hemisphere, annot, sep = ".")
+    ))),
     "--hemi",
-    hemi
+    hemisphere
   )
 
   run_cmd(cmd, verbose = verbose)

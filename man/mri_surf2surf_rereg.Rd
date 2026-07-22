@@ -7,10 +7,11 @@
 mri_surf2surf_rereg(
   subject,
   annot,
-  hemi = c("lh", "rh"),
+  hemisphere = c("lh", "rh"),
   target_subject = "fsaverage5",
   output_dir = as.character(fs::path(freesurfer::fs_subj_dir(), subject, "label")),
-  verbose = get_verbose()
+  verbose = get_verbose(),
+  hemi = lifecycle::deprecated()
 )
 }
 \arguments{
@@ -18,7 +19,7 @@ mri_surf2surf_rereg(
 
 \item{annot}{annotation file name (as found in subjects_dir)}
 
-\item{hemi}{hemisphere (one of "lh" or "rh")}
+\item{hemisphere}{hemisphere (one of "lh" or "rh")}
 
 \item{target_subject}{subject to re-register the annotation
 (default fsaverage5)}
@@ -31,6 +32,8 @@ default), or \code{2} (debug, includes FreeSurfer output). Logical values
 are accepted (\code{TRUE} = 1, \code{FALSE} = 0). If not specified, uses the
 value from \code{options("ggseg.extra.verbose")} or the \code{GGSEG_EXTRA_VERBOSE}
 environment variable.}
+
+\item{hemi}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} Use \code{hemisphere} instead.}
 }
 \value{
 nothing

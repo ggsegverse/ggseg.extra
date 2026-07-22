@@ -137,7 +137,7 @@ suit_deformation_field <- function(
 #'   input_volume = "Buckner2011_7Networks.nii.gz",
 #'   deformation_field = "tpl-SUIT_from-MNI152NLin6AsymC_mode-image_xfm.nii"
 #' )
-#' atlas <- create_cerebellar_from_volume(volume = suit_vol)
+#' atlas <- create_cerebellar_from_volume(input_volume = suit_vol)
 #' }
 transform_mni_to_suit <- function(
   input_volume,
@@ -210,9 +210,9 @@ transform_mni_to_suit <- function(
 #'   using FreeSurfer tools and included in the atlas for 3D rendering.
 #' @template atlas_name
 #' @template output_dir
+#' @template decimate
 #' @template tolerance
 #' @template smooth_refinements
-#' @template decimate
 #' @template cleanup
 #' @template verbose
 #' @template skip_existing
@@ -234,9 +234,9 @@ create_cerebellar_from_gifti <- function(
   volume = NULL,
   atlas_name = NULL,
   output_dir = NULL,
+  decimate = 0.5,
   tolerance = NULL,
   smooth_refinements = NULL,
-  decimate = 0.5,
   cleanup = NULL,
   verbose = get_verbose(),
   skip_existing = NULL
@@ -287,9 +287,9 @@ create_cerebellar_from_gifti <- function(
 #'   for 3D mesh generation.
 #' @template atlas_name
 #' @template output_dir
+#' @template decimate
 #' @template tolerance
 #' @template smooth_refinements
-#' @template decimate
 #' @template cleanup
 #' @template verbose
 #' @template skip_existing
@@ -309,9 +309,9 @@ create_cerebellar_from_annotation <- function(
   volume = NULL,
   atlas_name = NULL,
   output_dir = NULL,
+  decimate = 0.5,
   tolerance = NULL,
   smooth_refinements = NULL,
-  decimate = 0.5,
   cleanup = NULL,
   verbose = get_verbose(),
   skip_existing = NULL
@@ -358,18 +358,20 @@ create_cerebellar_from_annotation <- function(
 #' for 2D polygon generation. Per-region 3D meshes are tessellated from the
 #' volume for 3D rendering.
 #'
-#' @param volume Path to a cerebellar segmentation volume (NIfTI).
+#' @param input_volume Path to a cerebellar segmentation volume (NIfTI).
 #' @param input_lut Optional path to a colour lookup table file, or a
 #'   data.frame with columns `idx`, `label`, and optionally `R`, `G`, `B`.
 #'   If NULL, labels are auto-generated from volume values.
 #' @template atlas_name
 #' @template output_dir
+#' @template decimate
 #' @template tolerance
 #' @template smooth_refinements
-#' @template decimate
 #' @template cleanup
 #' @template verbose
 #' @template skip_existing
+#' @param volume `r lifecycle::badge("deprecated")` Use `input_volume`
+#'   instead.
 #'
 #' @return A `ggseg_atlas` object of type "cerebellar" with both sf geometry
 #'   and 3D meshes.
@@ -378,24 +380,35 @@ create_cerebellar_from_annotation <- function(
 #' @examples
 #' \dontrun{
 #' atlas <- create_cerebellar_from_volume(
-#'   volume = "cerebellar_parcellation.nii.gz"
+#'   input_volume = "cerebellar_parcellation.nii.gz"
 #' )
 #' }
 # nolint next: object_length_linter.
 create_cerebellar_from_volume <- function(
-  volume = NULL,
+  input_volume = NULL,
   input_lut = NULL,
   atlas_name = NULL,
   output_dir = NULL,
+  decimate = 0.5,
   tolerance = NULL,
   smooth_refinements = NULL,
-  decimate = 0.5,
   cleanup = NULL,
   verbose = get_verbose(),
-  skip_existing = NULL
+  skip_existing = NULL,
+  volume = lifecycle::deprecated()
 ) {
+  if (lifecycle::is_present(volume)) {
+    lifecycle::deprecate_warn(
+      "1.9.9.9005",
+      "create_cerebellar_from_volume(volume = )",
+      "create_cerebellar_from_volume(input_volume = )"
+    )
+    input_volume <- volume
+  }
+  volume <- input_volume
+
   if (is.null(volume)) {
-    cli::cli_abort("{.arg volume} is required")
+    cli::cli_abort("{.arg input_volume} is required")
   }
   if (!file.exists(volume)) {
     cli::cli_abort("Volume file not found: {.path {volume}}")
@@ -1873,7 +1886,7 @@ resolve_cerebellar_lut <- function(vol, vertex_labels, input_lut = NULL) {
 #' @noRd
 resolve_provided_lut <- function(input_lut, unique_ids) {
   if (is.character(input_lut) && length(input_lut) == 1) {
-    lut <- get_ctab(input_lut)
+    lut <- get_lut(input_lut)
     return(lut[lut$idx %in% unique_ids, , drop = FALSE])
   }
 

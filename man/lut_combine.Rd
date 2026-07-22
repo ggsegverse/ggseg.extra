@@ -2,19 +2,19 @@
 % Please edit documentation in R/read_write.R
 \name{lut_combine}
 \alias{lut_combine}
-\title{Combine FreeSurfer color tables}
+\title{Combine FreeSurfer LUTs}
 \usage{
 lut_combine(...)
 }
 \arguments{
-\item{...}{Color table data.frames, each passing \code{\link[=is_ctab]{is_ctab()}}. \code{NULL}
+\item{...}{LUT data.frames, each passing \code{\link[=is_lut]{is_lut()}}. \code{NULL}
 inputs are dropped.}
 }
 \value{
-A single combined color table.
+A single combined LUT.
 }
 \description{
-Row-binds several color tables (as read by \code{\link[=read_ctab]{read_ctab()}} or built with
+Row-binds several LUTs (as read by \code{\link[=read_lut]{read_lut()}} or built with
 \code{\link[=lut_add]{lut_add()}}) into one, aligning columns (a \code{type} column present in only
 some tables is filled with \code{NA}) and warning on duplicate label indices.
 }
@@ -24,5 +24,5 @@ b <- data.frame(idx = 1L, label = "Region1", R = 5L, G = 5L, B = 5L, A = 0L)
 lut_combine(a, b)
 }
 \seealso{
-\code{\link[=read_ctab]{read_ctab()}}, \code{\link[=lut_add]{lut_add()}}
+\code{\link[=read_lut]{read_lut()}}, \code{\link[=lut_add]{lut_add()}}
 }

@@ -433,8 +433,14 @@ parse_lut_colours <- function(input_lut) {
     return(list(region_names = NULL, colours = NULL))
   }
 
-  lut <- if (is.character(input_lut)) read_ctab(input_lut) else input_lut
-  region_names <- lut$region
+  lut <- if (is.character(input_lut)) read_lut(input_lut) else input_lut
+  region_names <- if ("region" %in% names(lut)) {
+    lut$region
+  } else if ("label" %in% names(lut)) {
+    lut$label
+  } else {
+    NULL
+  }
   colours <- if ("hex" %in% names(lut)) {
     lut$hex
   } else if (all(c("R", "G", "B") %in% names(lut))) {

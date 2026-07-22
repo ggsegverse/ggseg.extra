@@ -6,8 +6,8 @@
 \usage{
 create_cortical_from_labels(
   label_files,
-  atlas_name = NULL,
   input_lut = NULL,
+  atlas_name = NULL,
   output_dir = NULL,
   views = c("lateral", "medial"),
   tolerance = NULL,
@@ -21,11 +21,13 @@ create_cortical_from_labels(
 \item{label_files}{Paths to \code{.label} files. Each file should follow
 FreeSurfer naming: \verb{\{hemi\}.\{regionname\}.label} (e.g., \code{lh.motor.label}).}
 
+\item{input_lut}{Path to a color lookup table (LUT) file, or a data.frame
+with a \code{region} column (or a FreeSurfer-style \code{label} column) plus
+colour columns (R, G, B or hex). Rows must be in the same order as
+the input files.}
+
 \item{atlas_name}{Name for the atlas. If NULL, derived from the input
 filename.}
-
-\item{input_lut}{Path to a color lookup table (LUT) file, or a data.frame
-with columns \code{region} and colour columns (R, G, B or hex).}
 
 \item{output_dir}{Directory to store intermediate files (screenshots, masks,
 contours). Defaults to \code{\link[=tempdir]{tempdir()}}.}

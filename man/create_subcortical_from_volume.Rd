@@ -8,18 +8,19 @@ create_subcortical_from_volume(
   input_volume,
   input_lut = NULL,
   atlas_name = NULL,
-  views = NULL,
   output_dir = NULL,
+  slabs = NULL,
   vertex_size_limits = NULL,
   dilate = NULL,
+  decimate = 0.5,
   tolerance = NULL,
   smoothness = NULL,
-  verbose = get_verbose(),
   cleanup = NULL,
+  verbose = get_verbose(),
   skip_existing = NULL,
-  decimate = 0.5,
   steps = NULL,
-  context = NULL
+  context = NULL,
+  views = lifecycle::deprecated()
 )
 }
 \arguments{
@@ -40,18 +41,18 @@ columns (R, G, B or hex). If NULL, region names will be generic
 \item{atlas_name}{Name for the atlas. If NULL, derived from the input
 filename.}
 
-\item{views}{A data.frame specifying projection views with columns \code{name},
+\item{output_dir}{Directory to store intermediate files (screenshots, masks,
+contours). Defaults to \code{\link[=tempdir]{tempdir()}}.}
+
+\item{slabs}{A data.frame specifying projection slabs with columns \code{name},
 \code{type} ("axial", "coronal", "sagittal"), \code{start} (first slice), \code{end}
 (last slice). Default projects entire volume from each direction.
 Unlike slices, projections show ALL structures in their spatial
 relationships - like an X-ray view. May also be a named list of
-\code{\link[=subcortical_views]{subcortical_views()}} arguments (e.g.
-\code{views = list(labels = 801:810, coronal = 3, axial = 2)}); it is expanded
-into a view table with \code{volume} defaulting to \code{input_volume}, so the slab
+\code{\link[=subcortical_slabs]{subcortical_slabs()}} arguments (e.g.
+\code{slabs = list(labels = 801:810, coronal = 3, axial = 2)}); it is expanded
+into a slab table with \code{volume} defaulting to \code{input_volume}, so the slab
 indices are computed in the builder's own frame.}
-
-\item{output_dir}{Directory to store intermediate files (screenshots, masks,
-contours). Defaults to \code{\link[=tempdir]{tempdir()}}.}
 
 \item{vertex_size_limits}{Numeric vector of length 2 setting minimum and
 maximum vertex count for polygons. Polygons outside this range are
@@ -59,6 +60,11 @@ filtered out. Default NULL applies no limits.}
 
 \item{dilate}{Dilation iterations for 2D polygons. Useful for filling small
 gaps between structures.}
+
+\item{decimate}{Mesh decimation factor between 0 and 1. Reduces the number
+of faces in 3D meshes using quadric edge decimation (via
+\code{\link[Rvcg:vcgQEdecim]{Rvcg::vcgQEdecim()}}). A value of 0.5 reduces faces by 50\%. Set to NULL
+to skip decimation. Requires the Rvcg package. Default is 0.5.}
 
 \item{tolerance}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} sf simplification is
 no longer applied during atlas creation. Use \code{\link[=atlas_smooth]{atlas_smooth()}} on the
@@ -70,25 +76,20 @@ is no longer applied during atlas creation. Use \code{\link[=atlas_smooth]{atlas
 returned atlas instead. Supplying a value emits a lifecycle warning
 and is otherwise ignored.}
 
+\item{cleanup}{Remove intermediate files after atlas creation. If not
+specified, uses \code{options("ggseg.extra.cleanup")} or the \code{GGSEG_EXTRA_CLEANUP}
+environment variable. Default is TRUE.}
+
 \item{verbose}{Verbosity level: \code{0} (silent), \code{1} (standard progress,
 default), or \code{2} (debug, includes FreeSurfer output). Logical values
 are accepted (\code{TRUE} = 1, \code{FALSE} = 0). If not specified, uses the
 value from \code{options("ggseg.extra.verbose")} or the \code{GGSEG_EXTRA_VERBOSE}
 environment variable.}
 
-\item{cleanup}{Remove intermediate files after atlas creation. If not
-specified, uses \code{options("ggseg.extra.cleanup")} or the \code{GGSEG_EXTRA_CLEANUP}
-environment variable. Default is TRUE.}
-
 \item{skip_existing}{Skip generating output files that already exist,
 allowing interrupted atlas creation to resume. If not specified, uses
 \code{options("ggseg.extra.skip_existing")} or the \code{GGSEG_EXTRA_SKIP_EXISTING}
 environment variable. Default is TRUE.}
-
-\item{decimate}{Mesh decimation factor between 0 and 1. Reduces the number
-of faces in 3D meshes using quadric edge decimation (via
-\code{\link[Rvcg:vcgQEdecim]{Rvcg::vcgQEdecim()}}). A value of 0.5 reduces faces by 50\%. Set to NULL
-to skip decimation. Requires the Rvcg package. Default is 0.5.}
 
 \item{steps}{Which pipeline steps to run. Default NULL runs all steps.
 Steps are:
@@ -111,6 +112,8 @@ smoothing and reduction parameters.}
 to keep the focus regions coloured on grey anatomical context. \code{NULL}
 (default) leaves the atlas unchanged. Only applied when the 2D build
 (step 9) runs.}
+
+\item{views}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} Use \code{slabs} instead.}
 }
 \value{
 A \code{ggseg_atlas} object with region metadata (core), 3D meshes,

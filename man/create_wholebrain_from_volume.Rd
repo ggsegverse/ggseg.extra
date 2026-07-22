@@ -86,7 +86,7 @@ Leave empty to use defaults.}
 be set here except those managed by the wholebrain pipeline
 (\code{input_volume}, \code{input_lut}, \code{atlas_name}, \code{output_dir}, \code{verbose},
 \code{cleanup}, \code{skip_existing}). Use this to tune \code{dilate},
-\code{vertex_size_limits}, \code{decimate}, \code{views}. The deprecated
+\code{vertex_size_limits}, \code{decimate}, \code{slabs}. The deprecated
 \code{tolerance}/\code{smoothness} entries trigger a lifecycle warning.}
 
 \item{cerebellar_opts}{Named list of extra arguments forwarded to

@@ -22,11 +22,14 @@
 #'   columns (x, y, z).
 #' @param input_aseg Path to a segmentation volume (`.mgz`, `.nii`) used to
 #'   draw cortex outlines in 2D views. Required for steps 2+.
-#' @template atlas_name
 #' @param input_lut Path to a color lookup table (LUT) file, or a data.frame
-#'   with columns `region` and colour columns (R, G, B or hex).
-#'   Use this to provide tract names and colours. If NULL, names are derived
-#'   from filenames or list names, and colours will be auto-generated.
+#'   with a `region` column (or a FreeSurfer-style `label` column) plus
+#'   colour columns (R, G, B or hex). Rows must be in the same order as
+#'   `input_tracts`. Use this to provide tract names and colours. If NULL,
+#'   names are derived from filenames or list names, and colours will be
+#'   auto-generated.
+#' @template atlas_name
+#' @template output_dir
 #' @param tube_radius Controls the tube thickness. Either a single numeric
 #'   value for uniform radius, or `"density"` to scale radius by how many
 #'   streamlines pass through each point.
@@ -38,16 +41,15 @@
 #' @param centerline_method How to extract the centerline from multiple
 #'   streamlines: `"mean"` averages coordinates point-by-point, `"medoid"`
 #'   selects the single most representative streamline.
-#' @param views A data.frame specifying projection views. If NULL, a default
-#'   set of tract views is derived from the volume dimensions.
-#' @template output_dir
-#' @template verbose
-#' @template smoothness
-#' @template tolerance
-#' @template cleanup
-#' @template skip_existing
-#' @template dilate
+#' @param slabs A data.frame specifying projection slabs. If NULL, a default
+#'   set of tract slabs is derived from the volume dimensions.
 #' @template vertex_size_limits
+#' @template dilate
+#' @template tolerance
+#' @template smoothness
+#' @template cleanup
+#' @template verbose
+#' @template skip_existing
 #' @param steps Which pipeline steps to run. Default NULL runs all steps.
 #'   Steps are:
 #'   \itemize{
@@ -61,6 +63,7 @@
 #'   }
 #'   Use `steps = 1` for 3D-only atlas. Use `steps = 5:7` to iterate on
 #'   smoothing and vertex reduction.
+#' @param views `r lifecycle::badge("deprecated")` Use `slabs` instead.
 #'
 #' @return A `ggseg_atlas` object with type `"tract"`, containing region
 #'   metadata, tube meshes for 3D rendering, colours, and optionally sf
@@ -91,23 +94,33 @@
 create_tract_from_tractography <- function(
   input_tracts,
   input_aseg = NULL,
-  atlas_name = NULL,
   input_lut = NULL,
+  atlas_name = NULL,
+  output_dir = NULL,
   tube_radius = 5,
   tube_segments = 8,
   n_points = 50,
   centerline_method = c("mean", "medoid"),
-  views = NULL,
-  output_dir = NULL,
-  verbose = get_verbose(), # nolint: object_usage_linter
+  slabs = NULL,
+  vertex_size_limits = NULL,
+  dilate = NULL,
   tolerance = NULL,
   smoothness = NULL,
   cleanup = NULL,
+  verbose = get_verbose(), # nolint: object_usage_linter
   skip_existing = NULL,
-  dilate = NULL,
-  vertex_size_limits = NULL,
-  steps = NULL
+  steps = NULL,
+  views = lifecycle::deprecated()
 ) {
+  if (lifecycle::is_present(views)) {
+    lifecycle::deprecate_warn(
+      "1.9.9.9005",
+      "create_tract_from_tractography(views = )",
+      "create_tract_from_tractography(slabs = )"
+    )
+    slabs <- views
+  }
+
   warn_deprecated_sf_smoothing(
     # nolint: object_usage_linter.
     tolerance = tolerance,
@@ -135,7 +148,7 @@ create_tract_from_tractography <- function(
     n_points
   )
 
-  tract_run_pipeline(setup, start_time, views, dilate, vertex_size_limits)
+  tract_run_pipeline(setup, start_time, slabs, dilate, vertex_size_limits)
 }
 
 
@@ -191,7 +204,7 @@ tract_setup_pipeline <- function(
 tract_run_pipeline <- function(
   setup,
   start_time,
-  views,
+  slabs,
   dilate,
   vertex_size_limits
 ) {
@@ -218,13 +231,13 @@ tract_run_pipeline <- function(
     dirs,
     step1,
     config$input_aseg,
-    views
+    slabs
   )
 
   tract_image_steps(config, dirs, dilate, vertex_size_limits)
 
   if (7L %in% config$steps) {
-    atlas <- tract_assemble_full(step1, dirs, snaps$views, snaps$cortex_slices)
+    atlas <- tract_assemble_full(step1, dirs, snaps$slabs, snaps$cortex_slices)
     return(tract_finalize(atlas, config, dirs, start_time))
   }
 
@@ -443,9 +456,9 @@ tract_check_aseg <- function(input_aseg, steps) {
 
 
 #' @noRd
-tract_resolve_snapshots <- function(config, dirs, step1, input_aseg, views) {
+tract_resolve_snapshots <- function(config, dirs, step1, input_aseg, slabs) {
   files <- c(
-    as.character(fs::path(dirs$base, "views.rds")),
+    as.character(fs::path(dirs$base, "slabs.rds")),
     as.character(fs::path(dirs$base, "cortex_slices.rds"))
   )
   cached <- load_or_run_step(
@@ -476,7 +489,7 @@ tract_resolve_snapshots <- function(config, dirs, step1, input_aseg, views) {
     step1$streamlines_data,
     step1$centerlines_df,
     input_aseg,
-    views,
+    slabs,
     dirs,
     coords_are_voxels,
     config$skip_existing,
@@ -484,7 +497,7 @@ tract_resolve_snapshots <- function(config, dirs, step1, input_aseg, views) {
     config$verbose
   )
 
-  saveRDS(result$views, as.character(fs::path(dirs$base, "views.rds")))
+  saveRDS(result$slabs, as.character(fs::path(dirs$base, "slabs.rds")))
   saveRDS(
     result$cortex_slices,
     as.character(fs::path(dirs$base, "cortex_slices.rds"))
@@ -503,11 +516,11 @@ tract_cached_snapshots <- function(cached, config) {
       cli::cli_alert_success("2/7 Loaded existing snapshots")
     }
     return(list(
-      views = cached$data[["views.rds"]],
+      slabs = cached$data[["slabs.rds"]],
       cortex_slices = cached$data[["cortex_slices.rds"]]
     ))
   }
-  list(views = NULL, cortex_slices = NULL)
+  list(slabs = NULL, cortex_slices = NULL)
 }
 
 
@@ -526,7 +539,7 @@ tract_assemble_3d <- function(step1) {
 
 
 #' @noRd
-tract_assemble_full <- function(step1, dirs, views, cortex_slices) {
+tract_assemble_full <- function(step1, dirs, slabs, cortex_slices) {
   contours_file <- as.character(fs::path(dirs$base, "contours_reduced.rda"))
   if (!file.exists(contours_file)) {
     cli::cli_abort(c(
@@ -537,7 +550,7 @@ tract_assemble_full <- function(step1, dirs, views, cortex_slices) {
 
   sf_data <- build_contour_sf(
     contours_file,
-    views,
+    slabs,
     cortex_slices
   )
 

@@ -588,12 +588,12 @@ coords_fit_dims <- function(max_coord, dims) {
 snapshot_tract_views <- function(
   tract_volumes,
   tract_labels,
-  views,
+  slabs,
   dirs,
   skip_existing
 ) {
   snapshot_grid <- expand.grid(
-    view_idx = seq_len(nrow(views)),
+    view_idx = seq_len(nrow(slabs)),
     label = tract_labels,
     stringsAsFactors = FALSE
   )
@@ -602,10 +602,10 @@ snapshot_tract_views <- function(
 
   invisible(safe_future_pmap(
     list(
-      view_type = views$type[snapshot_grid$view_idx],
-      view_start = views$start[snapshot_grid$view_idx],
-      view_end = views$end[snapshot_grid$view_idx],
-      view_name = views$name[snapshot_grid$view_idx],
+      view_type = slabs$type[snapshot_grid$view_idx],
+      view_start = slabs$start[snapshot_grid$view_idx],
+      view_end = slabs$end[snapshot_grid$view_idx],
+      view_name = slabs$name[snapshot_grid$view_idx],
       label = snapshot_grid$label
     ),
     function(view_type, view_start, view_end, view_name, label) {

@@ -47,12 +47,12 @@ make_test_atlas <- function() {
   )
 }
 
-describe("subcortical_views", {
+describe("subcortical_slabs", {
   vol <- array(0L, dim = c(20, 20, 20))
   vol[8:12, 6:14, 9:11] <- 17L
 
   it("produces the requested slab counts and types", {
-    v <- subcortical_views(
+    v <- subcortical_slabs(
       vol,
       labels = 17,
       coronal = 3,
@@ -67,7 +67,7 @@ describe("subcortical_views", {
   })
 
   it("slabs span the label bounding box on the right axis", {
-    v <- subcortical_views(
+    v <- subcortical_slabs(
       vol,
       labels = 17,
       coronal = 3,
@@ -83,20 +83,20 @@ describe("subcortical_views", {
   })
 
   it("pads the bounding box", {
-    v <- subcortical_views(vol, labels = 17, sagittal = 1, pad = 2)
+    v <- subcortical_slabs(vol, labels = 17, sagittal = 1, pad = 2)
     expect_identical(v$start, 6) # min 8, padded by 2
     expect_identical(v$end, 14) # max 12, padded by 2
   })
 
   it("errors when no labels are present", {
     expect_error(
-      subcortical_views(vol, labels = 999, coronal = 1),
+      subcortical_slabs(vol, labels = 999, coronal = 1),
       "None of"
     )
   })
 
   it("errors when no orientation is requested", {
-    expect_error(subcortical_views(vol, labels = 17), "at least one slab")
+    expect_error(subcortical_slabs(vol, labels = 17), "at least one slab")
   })
 
   it("reads a path volume in the builder's reorient frame (round-trip)", {
@@ -104,7 +104,7 @@ describe("subcortical_views", {
     arr <- array(0L, dim = c(10, 12, 14))
     arr[2:4, 5:9, 8:12] <- 17L
     f <- withr::local_tempfile(fileext = ".nii.gz")
-    # Non-RAS on disk so read_volume() must reorient; subcortical_views() owns
+    # Non-RAS on disk so read_volume() must reorient; subcortical_slabs() owns
     # that read, so a path must agree with the same volume already in the
     # builder's frame rather than the raw on-disk array. The RNifti
     # orientation/IO setup emits incidental warnings unrelated to the contract.
@@ -114,14 +114,28 @@ describe("subcortical_views", {
       RNifti::writeNifti(img, f)
     })
 
-    from_path <- subcortical_views(f, labels = 17, coronal = 2, axial = 2)
-    from_frame <- subcortical_views(
+    from_path <- subcortical_slabs(f, labels = 17, coronal = 2, axial = 2)
+    from_frame <- subcortical_slabs(
       read_volume(f, reorient = TRUE),
       labels = 17,
       coronal = 2,
       axial = 2
     )
     expect_identical(from_path, from_frame)
+  })
+})
+
+
+describe("subcortical_views (deprecated)", {
+  it("warns about deprecation and delegates to subcortical_slabs", {
+    vol <- array(0L, dim = c(20, 20, 20))
+    vol[8:12, 6:14, 9:11] <- 17L
+
+    lifecycle::expect_deprecated(
+      result <- subcortical_views(vol, labels = 17, coronal = 1)
+    )
+
+    expect_identical(result, subcortical_slabs(vol, labels = 17, coronal = 1))
   })
 })
 
@@ -211,7 +225,7 @@ describe("lut_add / lut_combine", {
     )
     expect_identical(nrow(out), 3L)
     expect_true(all(c(20001L, 20002L) %in% out$idx))
-    expect_true(is_ctab(out))
+    expect_true(is_lut(out))
   })
 
   it("recycles a scalar channel", {
@@ -258,9 +272,9 @@ describe("lut_add / lut_combine", {
     expect_warning(lut_combine(a, a), "Duplicate")
   })
 
-  it("rejects non-color-tables", {
-    expect_error(lut_combine(data.frame(x = 1)), "color table")
-    expect_error(lut_add(data.frame(x = 1), 1, "a", 1, 1, 1), "color table")
+  it("rejects non-LUTs", {
+    expect_error(lut_combine(data.frame(x = 1)), "LUT")
+    expect_error(lut_add(data.frame(x = 1), 1, "a", 1, 1, 1), "LUT")
   })
 
   it("errors instead of mis-recycling a mismatched-length label", {
@@ -306,16 +320,16 @@ describe("aseg_hidden_labels", {
   })
 })
 
-describe("create_subcortical_from_volume view/context specs", {
-  it("exposes views and context as formals (whole-brain forwards them)", {
+describe("create_subcortical_from_volume slab/context specs", {
+  it("exposes slabs and context as formals (whole-brain forwards them)", {
     fmls <- names(formals(create_subcortical_from_volume))
-    expect_true(all(c("views", "context") %in% fmls))
+    expect_true(all(c("slabs", "context") %in% fmls))
   })
 
-  it("expands a views list spec via subcortical_views()", {
+  it("expands a slabs list spec via subcortical_slabs()", {
     vol <- array(0L, dim = c(20, 20, 20))
     vol[8:12, 6:14, 9:11] <- 17L
-    out <- resolve_subcort_views_spec(
+    out <- resolve_subcort_slabs_spec(
       list(labels = 17, coronal = 3, axial = 2),
       vol
     )
@@ -324,7 +338,7 @@ describe("create_subcortical_from_volume view/context specs", {
     expect_setequal(out$type, c("coronal", "axial"))
   })
 
-  it("passes a data.frame views table through unchanged", {
+  it("passes a data.frame slabs table through unchanged", {
     df <- data.frame(
       stringsAsFactors = FALSE,
       name = "v",
@@ -332,15 +346,15 @@ describe("create_subcortical_from_volume view/context specs", {
       start = 1L,
       end = 2L
     )
-    expect_identical(resolve_subcort_views_spec(df, NULL), df)
+    expect_identical(resolve_subcort_slabs_spec(df, NULL), df)
   })
 
-  it("passes NULL views through unchanged", {
-    expect_null(resolve_subcort_views_spec(NULL, NULL))
+  it("passes NULL slabs through unchanged", {
+    expect_null(resolve_subcort_slabs_spec(NULL, NULL))
   })
 
-  it("errors on a non-list, non-data.frame views value", {
-    expect_error(resolve_subcort_views_spec(42, NULL), "data.frame or a list")
+  it("errors on a non-list, non-data.frame slabs value", {
+    expect_error(resolve_subcort_slabs_spec(42, NULL), "data.frame or a list")
   })
 
   it("errors when context is not a list", {

@@ -821,7 +821,7 @@ read_fs_color_lut <- function() {
       "i" = "Ensure {.envvar FREESURFER_HOME} points at a FreeSurfer install."
     ))
   }
-  ctab <- read_ctab(lut_path)
+  ctab <- read_lut(lut_path)
   ctab$type <- NULL
   ctab
 }
@@ -851,10 +851,10 @@ resolve_user_lut <- function(lut, label_ids, id_offset) {
   }
 
   tbl <- read_lut_arg(lut)
-  if (!is_ctab(tbl)) {
+  if (!is_lut(tbl)) {
     cli::cli_abort(c(
       "{.arg lut} must be a colour table with columns idx, label, R, G, B, A.",
-      "i" = "See {.fn is_ctab}."
+      "i" = "See {.fn is_lut}."
     ))
   }
   tbl <- tbl[as.integer(tbl$idx) %in% label_ids, , drop = FALSE]

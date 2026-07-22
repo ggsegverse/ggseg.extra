@@ -444,7 +444,7 @@ describe("resolve_user_lut", {
     out <- resolve_user_lut(NULL, label_ids = c(11L, 12L), id_offset = 200L)
     expect_identical(out$idx, c(211L, 212L))
     expect_identical(out$label, c("region_0011", "region_0012"))
-    expect_true(is_ctab(out))
+    expect_true(is_lut(out))
     expect_type(out$R, "integer")
   })
 
@@ -493,7 +493,7 @@ describe("build_anatomical_lut", {
     expect_false(17L %in% out$idx)
     expect_identical(out$label[out$idx == 211L], "Foo")
     expect_identical(out$label[out$idx == 2L], "Left-Cerebral-White-Matter")
-    expect_true(is_ctab(out))
+    expect_true(is_lut(out))
   })
 
   it("falls back to generic user names when no lut is given", {

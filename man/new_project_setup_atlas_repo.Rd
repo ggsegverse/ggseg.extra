@@ -4,10 +4,10 @@
 \alias{new_project_setup_atlas_repo}
 \title{RStudio project template binding}
 \usage{
-new_project_setup_atlas_repo(dir, ...)
+new_project_setup_atlas_repo(path, ...)
 }
 \arguments{
-\item{dir}{Directory RStudio creates for the new project.}
+\item{path}{Directory RStudio creates for the new project.}
 
 \item{...}{Template parameters supplied by the wizard, notably \code{atlas_name}.}
 }

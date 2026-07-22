@@ -48,6 +48,6 @@ suit_vol <- transform_mni_to_suit(
   input_volume = "Buckner2011_7Networks.nii.gz",
   deformation_field = "tpl-SUIT_from-MNI152NLin6AsymC_mode-image_xfm.nii"
 )
-atlas <- create_cerebellar_from_volume(volume = suit_vol)
+atlas <- create_cerebellar_from_volume(input_volume = suit_vol)
 }
 }

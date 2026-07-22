@@ -106,9 +106,8 @@ create_cortical_from_annotation <- function(
 #'
 #' @param label_files Paths to `.label` files. Each file should follow
 #'   FreeSurfer naming: `{hemi}.{regionname}.label` (e.g., `lh.motor.label`).
+#' @template input_lut_region
 #' @template atlas_name
-#' @param input_lut Path to a color lookup table (LUT) file, or a data.frame
-#'   with columns `region` and colour columns (R, G, B or hex).
 #' @template output_dir
 #' @param views Which views to include: "lateral", "medial",
 #'   "superior", "inferior".
@@ -132,8 +131,8 @@ create_cortical_from_annotation <- function(
 #' }
 create_cortical_from_labels <- function(
   label_files,
-  atlas_name = NULL,
   input_lut = NULL,
+  atlas_name = NULL,
   output_dir = NULL,
   views = c("lateral", "medial"),
   tolerance = NULL,

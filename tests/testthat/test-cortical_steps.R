@@ -139,9 +139,9 @@ describe("parse_lut_colours", {
     expect_null(result$colours)
   })
 
-  it("reads from file path via read_ctab", {
+  it("reads from file path via read_lut", {
     local_mocked_bindings(
-      read_ctab = function(path) {
+      read_lut = function(path) {
         data.frame(
           stringsAsFactors = FALSE,
           region = "FromFile",

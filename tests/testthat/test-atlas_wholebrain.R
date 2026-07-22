@@ -610,7 +610,7 @@ describe("create_wholebrain_from_volume pipeline flow", {
           )
         }
       },
-      write_ctab = function(...) invisible(NULL),
+      write_lut = function(...) invisible(NULL),
       wholebrain_prepare_subcortical_volume = function(...) {
         invisible("filtered.nii.gz")
       },
@@ -693,7 +693,7 @@ describe("create_wholebrain_from_volume pipeline flow", {
           )
         )
       },
-      write_ctab = function(...) invisible(NULL),
+      write_lut = function(...) invisible(NULL),
       wholebrain_prepare_subcortical_volume = function(...) {
         invisible("filtered.nii.gz")
       },
@@ -1113,7 +1113,7 @@ describe("wholebrain_run_subcortical verbose logging", {
     )
 
     local_mocked_bindings(
-      write_ctab = function(...) invisible(NULL),
+      write_lut = function(...) invisible(NULL),
       wholebrain_prepare_subcortical_volume = function(...) {
         invisible("filtered.nii.gz")
       },
@@ -1172,7 +1172,7 @@ describe("wholebrain_run_subcortical verbose logging", {
     )
 
     local_mocked_bindings(
-      write_ctab = function(ct, ...) {
+      write_lut = function(ct, ...) {
         .cap$captured_lut <- ct
         invisible(NULL)
       },
@@ -1479,7 +1479,7 @@ describe("create_wholebrain_from_volume verbose LUT path", {
       load_or_run_step = function(step, steps, ...) {
         list(run = step %in% steps, data = list())
       },
-      get_ctab = function(...) {
+      get_lut = function(...) {
         data.frame(
           idx = 1L,
           label = "a",
@@ -1840,6 +1840,50 @@ describe("validate_pipeline_opts", {
       c("views", "tolerance")
     )
     expect_identical(result$views, c("lateral", "medial"))
+  })
+})
+
+
+describe("validate_wholebrain_opts", {
+  it("derives cortical allowed names from create_cortical_from_annotation()", {
+    result <- validate_wholebrain_opts(
+      cortical_opts = list(views = c("lateral", "medial")),
+      subcortical_opts = list(),
+      cerebellar_opts = list()
+    )
+    expect_identical(result$cortical$views, c("lateral", "medial"))
+  })
+
+  it("rejects cortical_opts entries managed by the wholebrain pipeline", {
+    expect_error(
+      validate_wholebrain_opts(
+        cortical_opts = list(atlas_name = "custom"),
+        subcortical_opts = list(),
+        cerebellar_opts = list()
+      ),
+      "Unknown cortical option"
+    )
+  })
+
+  it("rejects unknown cortical_opts entries", {
+    expect_error(
+      validate_wholebrain_opts(
+        cortical_opts = list(bogus = TRUE),
+        subcortical_opts = list(),
+        cerebellar_opts = list()
+      ),
+      "Unknown cortical option"
+    )
+  })
+
+  it("still validates subcortical and cerebellar opts", {
+    result <- validate_wholebrain_opts(
+      cortical_opts = list(),
+      subcortical_opts = list(dilate = 2),
+      cerebellar_opts = list(decimate = 0.3)
+    )
+    expect_identical(result$subcortical$dilate, 2)
+    expect_identical(result$cerebellar$decimate, 0.3)
   })
 })
 

@@ -247,3 +247,54 @@ describe("build_atlas_components", {
     expect_named(result$palette, "lh_motor")
   })
 })
+
+
+describe("parse_lut_colours", {
+  it("returns NULLs for a NULL lut", {
+    result <- parse_lut_colours(NULL)
+    expect_null(result$region_names)
+    expect_null(result$colours)
+  })
+
+  it("reads region names and colours from a region-column data.frame", {
+    lut <- data.frame(
+      region = c("Unknown", "region1"),
+      R = c(0L, 205L),
+      G = c(0L, 130L),
+      B = c(0L, 176L)
+    )
+    result <- parse_lut_colours(lut)
+    expect_identical(result$region_names, c("Unknown", "region1"))
+    expect_identical(result$colours, c("#000000", "#CD82B0"))
+  })
+
+  it("falls back to a label column for ctab-schema data.frames", {
+    lut <- data.frame(
+      idx = 0:1,
+      label = c("Unknown", "region1"),
+      R = c(0L, 205L),
+      G = c(0L, 130L),
+      B = c(0L, 176L),
+      A = c(0L, 0L)
+    )
+    result <- parse_lut_colours(lut)
+    expect_identical(result$region_names, c("Unknown", "region1"))
+    expect_identical(result$colours, c("#000000", "#CD82B0"))
+  })
+
+  it("reads region names from a FreeSurfer-style ctab file path", {
+    lut_file <- withr::local_tempfile()
+    writeLines(
+      c(
+        "  0  Unknown                         0   0   0   0",
+        "  1  region1                       205 130 176   0"
+      ),
+      lut_file
+    )
+
+    result <- parse_lut_colours(lut_file)
+
+    expect_identical(result$region_names, c("Unknown", "region1"))
+    expect_identical(result$colours, c("#000000", "#CD82B0"))
+  })
+})

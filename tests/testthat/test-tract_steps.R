@@ -245,7 +245,7 @@ describe("tract_create_snapshots", {
         vol[3, 3, 3] <- 3L
         vol
       },
-      default_tract_views = function(dims) {
+      default_tract_slabs = function(dims) {
         data.frame(
           name = "ax_1",
           type = "axial",
@@ -254,7 +254,7 @@ describe("tract_create_snapshots", {
           stringsAsFactors = FALSE
         )
       },
-      create_cortex_slices = function(views, dims) {
+      create_cortex_slices = function(slabs, dims) {
         data.frame(
           x = NA,
           y = NA,
@@ -305,14 +305,14 @@ describe("tract_create_snapshots", {
     )
 
     expect_type(result, "list")
-    expect_true("views" %in% names(result))
+    expect_true("slabs" %in% names(result))
     expect_true("cortex_slices" %in% names(result))
     expect_gt(.cap$snapshot_calls, 0)
     expect_gt(.cap$cortex_calls, 0)
   })
 
-  it("uses provided views instead of defaults", {
-    custom_views <- data.frame(
+  it("uses provided slabs instead of defaults", {
+    custom_slabs <- data.frame(
       name = "cor_1",
       type = "coronal",
       start = 50,
@@ -322,7 +322,7 @@ describe("tract_create_snapshots", {
 
     local_mocked_bindings(
       read_volume = function(f) array(0L, dim = c(10, 10, 10)),
-      create_cortex_slices = function(views, dims) {
+      create_cortex_slices = function(slabs, dims) {
         data.frame(
           x = NA,
           y = 5,
@@ -355,7 +355,7 @@ describe("tract_create_snapshots", {
       streamlines_data,
       centerlines_df,
       "fake_aseg.mgz",
-      custom_views,
+      custom_slabs,
       dirs,
       TRUE,
       FALSE,
@@ -363,14 +363,14 @@ describe("tract_create_snapshots", {
       FALSE
     )
 
-    expect_identical(result$views$name, "cor_1")
-    expect_identical(result$views$type, "coronal")
+    expect_identical(result$slabs$name, "cor_1")
+    expect_identical(result$slabs$type, "coronal")
   })
 
   it("handles streamlines as list of lists", {
     local_mocked_bindings(
       read_volume = function(f) array(0L, dim = c(10, 10, 10)),
-      default_tract_views = function(dims) {
+      default_tract_slabs = function(dims) {
         data.frame(
           name = "ax_1",
           type = "axial",
@@ -379,7 +379,7 @@ describe("tract_create_snapshots", {
           stringsAsFactors = FALSE
         )
       },
-      create_cortex_slices = function(views, dims) {
+      create_cortex_slices = function(slabs, dims) {
         data.frame(
           x = NA,
           y = NA,
@@ -506,10 +506,10 @@ describe("resolve_tube_radius", {
 })
 
 
-describe("default_tract_views", {
-  it("creates views for standard 256 brain", {
+describe("default_tract_slabs", {
+  it("creates slabs for standard 256 brain", {
     dims <- c(256, 256, 256)
-    result <- default_tract_views(dims)
+    result <- default_tract_slabs(dims)
 
     expect_s3_class(result, "data.frame")
     expect_true(all(c("name", "type", "start", "end") %in% names(result)))
@@ -520,11 +520,11 @@ describe("default_tract_views", {
 
   it("creates wider projections than subcortical", {
     dims <- c(256, 256, 256)
-    tract_views <- default_tract_views(dims)
-    subcort_views <- default_subcortical_views(dims)
+    tract_slabs <- default_tract_slabs(dims)
+    subcort_slabs <- default_subcortical_slabs(dims)
 
-    tract_axial <- tract_views[tract_views$type == "axial", ]
-    subcort_axial <- subcort_views[subcort_views$type == "axial", ]
+    tract_axial <- tract_slabs[tract_slabs$type == "axial", ]
+    subcort_axial <- subcort_slabs[subcort_slabs$type == "axial", ]
 
     tract_range <- max(tract_axial$end) - min(tract_axial$start)
     subcort_range <- max(subcort_axial$end) - min(subcort_axial$start)
@@ -534,7 +534,7 @@ describe("default_tract_views", {
 
   it("creates midline, left, and right sagittal projections", {
     dims <- c(256, 256, 256)
-    result <- default_tract_views(dims)
+    result <- default_tract_slabs(dims)
 
     sagittal <- result[result$type == "sagittal", ]
     expect_identical(nrow(sagittal), 3L)
@@ -545,7 +545,7 @@ describe("default_tract_views", {
 
   it("sagittal projections are lateralised around midline", {
     dims <- c(256, 256, 256)
-    result <- default_tract_views(dims)
+    result <- default_tract_slabs(dims)
 
     sagittal <- result[result$type == "sagittal", ]
     left <- sagittal[grepl("left", sagittal$name, fixed = TRUE), ]
@@ -560,8 +560,8 @@ describe("default_tract_views", {
     dims_256 <- c(256, 256, 256)
     dims_128 <- c(128, 128, 128)
 
-    result_256 <- default_tract_views(dims_256)
-    result_128 <- default_tract_views(dims_128)
+    result_256 <- default_tract_slabs(dims_256)
+    result_128 <- default_tract_slabs(dims_128)
 
     axial_256 <- result_256[result_256$type == "axial", ]
     axial_128 <- result_128[result_128$type == "axial", ]
@@ -892,7 +892,7 @@ describe("tract_check_aseg", {
 describe("tract_resolve_snapshots", {
   it("returns cached data when not running", {
     test_dir <- withr::local_tempdir()
-    cached_views <- data.frame(
+    cached_slabs <- data.frame(
       name = "ax_1",
       type = "axial",
       start = 1,
@@ -913,7 +913,7 @@ describe("tract_resolve_snapshots", {
         list(
           run = FALSE,
           data = list(
-            "views.rds" = cached_views,
+            "slabs.rds" = cached_slabs,
             "cortex_slices.rds" = cached_cortex
           )
         )
@@ -935,7 +935,7 @@ describe("tract_resolve_snapshots", {
 
     result <- tract_resolve_snapshots(config, dirs, step1, "aseg.mgz", NULL)
 
-    expect_identical(result$views$name, "ax_1")
+    expect_identical(result$slabs$name, "ax_1")
     expect_identical(result$cortex_slices$name, "ax_1")
   })
 
@@ -948,7 +948,7 @@ describe("tract_resolve_snapshots", {
       },
       tract_create_snapshots = function(...) {
         list(
-          views = data.frame(
+          slabs = data.frame(
             name = "ax_1",
             type = "axial",
             start = 1,
@@ -988,9 +988,9 @@ describe("tract_resolve_snapshots", {
       NULL
     )
 
-    expect_true("views" %in% names(result))
+    expect_true("slabs" %in% names(result))
     expect_true("cortex_slices" %in% names(result))
-    expect_identical(result$views$type, "axial")
+    expect_identical(result$slabs$type, "axial")
   })
 })
 

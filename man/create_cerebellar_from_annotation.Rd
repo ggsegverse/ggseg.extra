@@ -9,9 +9,9 @@ create_cerebellar_from_annotation(
   volume = NULL,
   atlas_name = NULL,
   output_dir = NULL,
+  decimate = 0.5,
   tolerance = NULL,
   smooth_refinements = NULL,
-  decimate = 0.5,
   cleanup = NULL,
   verbose = get_verbose(),
   skip_existing = NULL
@@ -30,6 +30,11 @@ filename.}
 \item{output_dir}{Directory to store intermediate files (screenshots, masks,
 contours). Defaults to \code{\link[=tempdir]{tempdir()}}.}
 
+\item{decimate}{Mesh decimation factor between 0 and 1. Reduces the number
+of faces in 3D meshes using quadric edge decimation (via
+\code{\link[Rvcg:vcgQEdecim]{Rvcg::vcgQEdecim()}}). A value of 0.5 reduces faces by 50\%. Set to NULL
+to skip decimation. Requires the Rvcg package. Default is 0.5.}
+
 \item{tolerance}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} sf simplification is
 no longer applied during atlas creation. Use \code{\link[=atlas_smooth]{atlas_smooth()}} on the
 returned atlas instead. Supplying a value emits a lifecycle warning
@@ -39,11 +44,6 @@ and is otherwise ignored.}
 smoothing is no longer applied during atlas creation. Use
 \code{\link[=atlas_smooth]{atlas_smooth()}} on the returned atlas instead. Supplying a value
 emits a lifecycle warning and is otherwise ignored.}
-
-\item{decimate}{Mesh decimation factor between 0 and 1. Reduces the number
-of faces in 3D meshes using quadric edge decimation (via
-\code{\link[Rvcg:vcgQEdecim]{Rvcg::vcgQEdecim()}}). A value of 0.5 reduces faces by 50\%. Set to NULL
-to skip decimation. Requires the Rvcg package. Default is 0.5.}
 
 \item{cleanup}{Remove intermediate files after atlas creation. If not
 specified, uses \code{options("ggseg.extra.cleanup")} or the \code{GGSEG_EXTRA_CLEANUP}

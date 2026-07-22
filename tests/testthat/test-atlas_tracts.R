@@ -19,6 +19,29 @@ describe("create_tract_from_tractography", {
     expect_identical(nrow(atlas$data$centerlines), 2L)
   })
 
+  it("warns about deprecated views argument and delegates to slabs", {
+    tracts <- list(
+      cst_left = matrix(c(1:20, rep(0, 40)), ncol = 3),
+      cst_right = matrix(c(1:20, rep(1, 40)), ncol = 3)
+    )
+
+    lifecycle::expect_deprecated(
+      atlas <- create_tract_from_tractography(
+        input_tracts = tracts,
+        steps = 1,
+        views = data.frame(
+          name = "v",
+          type = "coronal",
+          start = 1L,
+          end = 2L
+        ),
+        verbose = FALSE
+      )
+    )
+
+    expect_s3_class(atlas, "ggseg_atlas")
+  })
+
   it("assigns correct labels", {
     tracts <- list(
       cst_left = matrix(c(1:20, rep(0, 40)), ncol = 3),
@@ -288,7 +311,7 @@ describe("create_tract_from_tractography pipeline flow", {
           list(
             run = FALSE,
             data = list(
-              "views.rds" = data.frame(
+              "slabs.rds" = data.frame(
                 stringsAsFactors = FALSE,
                 name = "ax_1",
                 type = "axial",
@@ -421,7 +444,7 @@ describe("create_tract_from_tractography pipeline flow", {
           list(
             run = FALSE,
             data = list(
-              "views.rds" = data.frame(
+              "slabs.rds" = data.frame(
                 stringsAsFactors = FALSE,
                 name = "ax_1",
                 type = "axial",
@@ -499,7 +522,7 @@ describe("create_tract_from_tractography pipeline flow", {
           list(
             run = FALSE,
             data = list(
-              "views.rds" = data.frame(
+              "slabs.rds" = data.frame(
                 stringsAsFactors = FALSE,
                 name = "ax_1",
                 type = "axial",
@@ -555,12 +578,12 @@ describe("extract_centerline", {
 
 
 describe("tract_resolve_snapshots early-return NULL", {
-  it("returns NULL views and cortex_slices when step skipped", {
+  it("returns NULL slabs and cortex_slices when step skipped", {
     local_mocked_bindings(
       load_or_run_step = function(step, steps, ...) {
         list(
           run = FALSE,
-          data = list("views.rds" = NULL, "cortex_slices.rds" = NULL)
+          data = list("slabs.rds" = NULL, "cortex_slices.rds" = NULL)
         )
       }
     )
@@ -573,9 +596,9 @@ describe("tract_resolve_snapshots early-return NULL", {
       dirs,
       step1 = list(),
       input_aseg = NULL,
-      views = "axial"
+      slabs = "axial"
     )
-    expect_null(result$views)
+    expect_null(result$slabs)
     expect_null(result$cortex_slices)
   })
 })

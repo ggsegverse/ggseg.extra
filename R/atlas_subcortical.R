@@ -27,29 +27,24 @@
 #'   columns (R, G, B or hex). If NULL, region names will be generic
 #'   (e.g., "region_0010") and colours will be auto-generated.
 #' @template atlas_name
-#' @param views A data.frame specifying projection views with columns `name`,
+#' @template output_dir
+#' @param slabs A data.frame specifying projection slabs with columns `name`,
 #'   `type` ("axial", "coronal", "sagittal"), `start` (first slice), `end`
 #'   (last slice). Default projects entire volume from each direction.
 #'   Unlike slices, projections show ALL structures in their spatial
 #'   relationships - like an X-ray view. May also be a named list of
-#'   [subcortical_views()] arguments (e.g.
-#'   `views = list(labels = 801:810, coronal = 3, axial = 2)`); it is expanded
-#'   into a view table with `volume` defaulting to `input_volume`, so the slab
+#'   [subcortical_slabs()] arguments (e.g.
+#'   `slabs = list(labels = 801:810, coronal = 3, axial = 2)`); it is expanded
+#'   into a slab table with `volume` defaulting to `input_volume`, so the slab
 #'   indices are computed in the builder's own frame.
-#' @param context Optional named list of [aseg_context()] arguments (e.g.
-#'   `context = list(focus = "Hippocampus")`) applied to the finished 2D atlas
-#'   to keep the focus regions coloured on grey anatomical context. `NULL`
-#'   (default) leaves the atlas unchanged. Only applied when the 2D build
-#'   (step 9) runs.
-#' @template output_dir
 #' @template vertex_size_limits
 #' @template dilate
+#' @template decimate
 #' @template tolerance
 #' @template smoothness
-#' @template verbose
 #' @template cleanup
+#' @template verbose
 #' @template skip_existing
-#' @template decimate
 #' @param steps Which pipeline steps to run. Default NULL runs all steps.
 #'   Steps are:
 #'   \itemize{
@@ -65,6 +60,12 @@
 #'   }
 #'   Use `steps = 1:3` for 3D-only atlas. Use `steps = 7:8` to iterate on
 #'   smoothing and reduction parameters.
+#' @param context Optional named list of [aseg_context()] arguments (e.g.
+#'   `context = list(focus = "Hippocampus")`) applied to the finished 2D atlas
+#'   to keep the focus regions coloured on grey anatomical context. `NULL`
+#'   (default) leaves the atlas unchanged. Only applied when the 2D build
+#'   (step 9) runs.
+#' @param views `r lifecycle::badge("deprecated")` Use `slabs` instead.
 #'
 #' @return A `ggseg_atlas` object with region metadata (core), 3D meshes,
 #'   a colour palette, and optionally sf geometry for 2D slice plots.
@@ -101,19 +102,29 @@ create_subcortical_from_volume <- function(
   input_volume,
   input_lut = NULL,
   atlas_name = NULL,
-  views = NULL,
   output_dir = NULL,
+  slabs = NULL,
   vertex_size_limits = NULL,
   dilate = NULL,
+  decimate = 0.5,
   tolerance = NULL,
   smoothness = NULL,
-  verbose = get_verbose(), # nolint: object_usage_linter
   cleanup = NULL,
+  verbose = get_verbose(), # nolint: object_usage_linter
   skip_existing = NULL,
-  decimate = 0.5,
   steps = NULL,
-  context = NULL
+  context = NULL,
+  views = lifecycle::deprecated()
 ) {
+  if (lifecycle::is_present(views)) {
+    lifecycle::deprecate_warn(
+      "1.9.9.9005",
+      "create_subcortical_from_volume(views = )",
+      "create_subcortical_from_volume(slabs = )"
+    )
+    slabs <- views
+  }
+
   unpacked <- subcort_unpack_input(
     input_volume,
     input_lut,
@@ -140,7 +151,7 @@ create_subcortical_from_volume <- function(
   subcort_run_pipeline(
     setup,
     start_time,
-    views,
+    slabs,
     context,
     dilate,
     vertex_size_limits
@@ -215,7 +226,7 @@ subcort_setup_pipeline <- function(
 subcort_run_pipeline <- function(
   setup,
   start_time,
-  views,
+  slabs,
   context,
   dilate,
   vertex_size_limits
@@ -237,8 +248,8 @@ subcort_run_pipeline <- function(
     return(subcort_finalize(atlas, config, dirs, start_time))
   }
 
-  views <- resolve_subcort_views_spec(views, config$input_volume)
-  snaps <- subcort_resolve_snapshots(config, dirs, labels$colortable, views)
+  slabs <- resolve_subcort_slabs_spec(slabs, config$input_volume)
+  snaps <- subcort_resolve_snapshots(config, dirs, labels$colortable, slabs)
   subcort_image_steps(config, dirs, dilate, vertex_size_limits)
 
   if (9L %in% config$steps) {
@@ -283,7 +294,7 @@ subcort_build_2d_atlas <- function(config, components, dirs, snaps, context) {
     config$atlas_name,
     components,
     dirs,
-    snaps$views,
+    snaps$slabs,
     snaps$cortex_slices
   )
   apply_subcort_context_spec(atlas, context)
@@ -312,23 +323,23 @@ unpack_anatomical_input <- function(input_volume, input_lut) {
 }
 
 
-#' Resolve the `views` argument of `create_subcortical_from_volume()`
+#' Resolve the `slabs` argument of `create_subcortical_from_volume()`
 #'
-#' Passes a data.frame through unchanged; expands a list spec into a view
-#' table via [subcortical_views()], defaulting `volume` to the atlas volume.
+#' Passes a data.frame through unchanged; expands a list spec into a slab
+#' table via [subcortical_slabs()], defaulting `volume` to the atlas volume.
 #' @noRd
-resolve_subcort_views_spec <- function(views, input_volume) {
-  if (is.null(views) || is.data.frame(views)) {
-    return(views)
+resolve_subcort_slabs_spec <- function(slabs, input_volume) {
+  if (is.null(slabs) || is.data.frame(slabs)) {
+    return(slabs)
   }
-  if (!is.list(views)) {
+  if (!is.list(slabs)) {
     cli::cli_abort(c(
-      "{.arg views} must be a data.frame or a list of
-       {.fn subcortical_views} arguments.",
-      "i" = "Got {.cls {class(views)}}."
+      "{.arg slabs} must be a data.frame or a list of
+       {.fn subcortical_slabs} arguments.",
+      "i" = "Got {.cls {class(slabs)}}."
     ))
   }
-  do.call(subcortical_views, c(list(volume = input_volume), views))
+  do.call(subcortical_slabs, c(list(volume = input_volume), slabs))
 }
 
 
@@ -532,7 +543,7 @@ subcort_load_colortable <- function(input_lut, input_volume) {
     ))
     return(generate_colortable_from_volume(input_volume))
   }
-  get_ctab(input_lut)
+  get_lut(input_lut)
 }
 
 
@@ -613,9 +624,9 @@ subcort_resolve_components <- function(config, dirs, colortable, meshes_list) {
 
 
 #' @noRd
-subcort_resolve_snapshots <- function(config, dirs, colortable, views) {
+subcort_resolve_snapshots <- function(config, dirs, colortable, slabs) {
   files <- c(
-    as.character(fs::path(dirs$base, "views.rds")),
+    as.character(fs::path(dirs$base, "slabs.rds")),
     as.character(fs::path(dirs$base, "cortex_slices.rds"))
   )
   cached <- load_or_run_step(
@@ -629,14 +640,14 @@ subcort_resolve_snapshots <- function(config, dirs, colortable, views) {
   if (!cached$run) {
     if (any(config$steps > 4L)) {
       if (config$verbose) {
-        cli::cli_alert_success("4/9 Loaded existing views")
+        cli::cli_alert_success("4/9 Loaded existing slabs")
       }
       return(list(
-        views = cached$data[["views.rds"]],
+        slabs = cached$data[["slabs.rds"]],
         cortex_slices = cached$data[["cortex_slices.rds"]]
       ))
     }
-    return(list(views = NULL, cortex_slices = NULL))
+    return(list(slabs = NULL, cortex_slices = NULL))
   }
 
   if (config$verbose) {
@@ -646,12 +657,12 @@ subcort_resolve_snapshots <- function(config, dirs, colortable, views) {
   result <- subcort_create_snapshots(
     config$input_volume,
     colortable,
-    views,
+    slabs,
     dirs,
     config$skip_existing
   )
 
-  saveRDS(result$views, as.character(fs::path(dirs$base, "views.rds")))
+  saveRDS(result$slabs, as.character(fs::path(dirs$base, "slabs.rds")))
   saveRDS(
     result$cortex_slices,
     as.character(fs::path(dirs$base, "cortex_slices.rds"))
@@ -680,7 +691,7 @@ subcort_assemble_full <- function(
   atlas_name,
   components,
   dirs,
-  views,
+  slabs,
   cortex_slices
 ) {
   contours_file <- as.character(fs::path(dirs$base, "contours_reduced.rda"))
@@ -691,7 +702,7 @@ subcort_assemble_full <- function(
     ))
   }
 
-  sf_data <- build_contour_sf(contours_file, views, cortex_slices)
+  sf_data <- build_contour_sf(contours_file, slabs, cortex_slices)
   components <- subcort_drop_missing_labels(components, sf_data)
 
   atlas <- ggseg_atlas(

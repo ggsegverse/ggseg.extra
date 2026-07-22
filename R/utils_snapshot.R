@@ -238,26 +238,26 @@ make_view_chunks <- function(lo, hi, chunk_size, type) {
 }
 
 
-#' Create cortex reference slices from views
+#' Create cortex reference slices from slabs
 #'
-#' Generates cortex slice positions that match the view specifications.
-#' For sagittal views, uses hemisphere-appropriate x positions.
-#' For axial/coronal views, uses the midpoint of the projection range.
+#' Generates cortex slice positions that match the slab specifications.
+#' For sagittal slabs, uses hemisphere-appropriate x positions.
+#' For axial/coronal slabs, uses the midpoint of the projection range.
 #'
-#' @param views data.frame with columns: name, type, start, end
-#' @inheritParams default_subcortical_views
+#' @param slabs data.frame with columns: name, type, start, end
+#' @inheritParams default_subcortical_slabs
 #' @param cortex_x X coordinate for non-hemisphere-specific sagittal slices
 #'
 #' @return data.frame with columns: x, y, z, view, name
 #' @noRd
-create_cortex_slices <- function(views, dims, cortex_x = NULL) {
+create_cortex_slices <- function(slabs, dims, cortex_x = NULL) {
   if (is.null(cortex_x)) {
     scale <- dims[1] / 256
     cortex_x <- round(119 * scale)
   }
 
-  slices <- lapply(seq_len(nrow(views)), function(i) {
-    v <- views[i, ]
+  slices <- lapply(seq_len(nrow(slabs)), function(i) {
+    v <- slabs[i, ]
 
     if (v$type == "sagittal") {
       if (grepl("left", v$name, ignore.case = TRUE)) {

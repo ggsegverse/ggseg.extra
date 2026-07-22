@@ -98,6 +98,33 @@ describe("create_subcortical_from_volume", {
     )
   })
 
+  it("warns about deprecated views argument and delegates to slabs", {
+    local_mocked_bindings(
+      check_fs = function(abort = FALSE) {
+        if (abort) {
+          cli::cli_abort("FreeSurfer not found")
+        }
+        FALSE
+      }
+    )
+
+    lifecycle::expect_deprecated(
+      expect_error(
+        create_subcortical_from_volume(
+          input_volume = "test.mgz",
+          views = data.frame(
+            name = "v",
+            type = "coronal",
+            start = 1L,
+            end = 2L
+          ),
+          verbose = FALSE
+        ),
+        "FreeSurfer"
+      )
+    )
+  })
+
   it("errors when volume file not found", {
     skip_if_no_freesurfer()
 
@@ -286,7 +313,7 @@ describe("create_subcortical_from_volume pipeline flow", {
     dirs <- mock_subcort_dirs()
     local_mocked_bindings(
       check_fs = function(...) TRUE,
-      get_ctab = function(f) {
+      get_lut = function(f) {
         data.frame(
           idx = c(10, 20),
           label = c("region_a", "region_b"),
@@ -361,7 +388,7 @@ describe("create_subcortical_from_volume pipeline flow", {
     dirs <- mock_subcort_dirs()
     local_mocked_bindings(
       check_fs = function(...) TRUE,
-      get_ctab = function(f) {
+      get_lut = function(f) {
         data.frame(
           idx = 999,
           label = "nonexistent",
@@ -421,7 +448,7 @@ describe("create_subcortical_from_volume pipeline flow", {
       palette = c(cached_r = "#AABBCC"),
       meshes_df = data.frame(stringsAsFactors = FALSE, label = "cached_r")
     )
-    cached_views <- data.frame(
+    cached_slabs <- data.frame(
       name = "ax_1",
       type = "axial",
       start = 1,
@@ -449,7 +476,7 @@ describe("create_subcortical_from_volume pipeline flow", {
           list(
             run = FALSE,
             data = list(
-              "views.rds" = cached_views,
+              "slabs.rds" = cached_slabs,
               "cortex_slices.rds" = NULL
             )
           )
@@ -513,7 +540,7 @@ describe("create_subcortical_from_volume pipeline flow", {
                 palette = c(r = "#FF0000"),
                 meshes_df = data.frame(stringsAsFactors = FALSE, label = "r")
               ),
-              "views.rds" = data.frame(
+              "slabs.rds" = data.frame(
                 stringsAsFactors = FALSE,
                 name = "ax_1",
                 type = "axial",
@@ -527,7 +554,7 @@ describe("create_subcortical_from_volume pipeline flow", {
       },
       subcort_create_snapshots = function(...) {
         list(
-          views = data.frame(
+          slabs = data.frame(
             stringsAsFactors = FALSE,
             name = "ax_1",
             type = "axial",
@@ -604,7 +631,7 @@ describe("create_subcortical_from_volume pipeline flow", {
       subcort_create_snapshots = function(...) {
         .cap$captured_snapshot_args <- list(...)
         list(
-          views = data.frame(
+          slabs = data.frame(
             name = "ax_1",
             type = "axial",
             start = 1,
@@ -649,7 +676,7 @@ describe("create_subcortical_from_volume pipeline flow", {
       palette = c(region = "#FF0000"),
       meshes_df = data.frame(stringsAsFactors = FALSE, label = "region")
     )
-    cached_views <- data.frame(
+    cached_slabs <- data.frame(
       name = "ax_1",
       type = "axial",
       start = 1,
@@ -675,7 +702,7 @@ describe("create_subcortical_from_volume pipeline flow", {
             "vol_labels.rds" = 10,
             "meshes_list.rds" = list(),
             "components.rds" = cached_components,
-            "views.rds" = cached_views,
+            "slabs.rds" = cached_slabs,
             "cortex_slices.rds" = NULL
           )
         )
@@ -751,7 +778,7 @@ describe("create_subcortical_from_volume pipeline flow", {
               palette = c(r = "#FF0000"),
               meshes_df = data.frame(stringsAsFactors = FALSE, label = "r")
             ),
-            "views.rds" = data.frame(
+            "slabs.rds" = data.frame(
               stringsAsFactors = FALSE,
               name = "ax_1",
               type = "axial",
@@ -885,12 +912,12 @@ describe("subcort_assemble_full sf_data as data.frame", {
 
 
 describe("subcort_resolve_snapshots early-return NULL", {
-  it("returns NULL views and cortex_slices when step skipped", {
+  it("returns NULL slabs and cortex_slices when step skipped", {
     local_mocked_bindings(
       load_or_run_step = function(step, steps, ...) {
         list(
           run = FALSE,
-          data = list("views.rds" = NULL, "cortex_slices.rds" = NULL)
+          data = list("slabs.rds" = NULL, "cortex_slices.rds" = NULL)
         )
       }
     )
@@ -898,10 +925,10 @@ describe("subcort_resolve_snapshots early-return NULL", {
     config <- list(steps = 1:3, verbose = FALSE)
     dirs <- list(base = withr::local_tempdir())
     colortable <- data.frame(stringsAsFactors = FALSE, idx = 10, label = "r")
-    views <- c("axial", "coronal", "sagittal")
+    slabs <- c("axial", "coronal", "sagittal")
 
-    result <- subcort_resolve_snapshots(config, dirs, colortable, views)
-    expect_null(result$views)
+    result <- subcort_resolve_snapshots(config, dirs, colortable, slabs)
+    expect_null(result$slabs)
     expect_null(result$cortex_slices)
   })
 })

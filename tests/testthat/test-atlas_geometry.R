@@ -21,7 +21,7 @@ describe("build_contour_sf", {
     )
     save(contours, file = contours_file)
 
-    views <- data.frame(
+    slabs <- data.frame(
       name = c("axial_1", "coronal_1"),
       type = c("axial", "coronal"),
       start = c(85, 110),
@@ -38,14 +38,14 @@ describe("build_contour_sf", {
       layout_volumetric_views = function(df) df
     )
 
-    result <- build_contour_sf(contours_file, views)
+    result <- build_contour_sf(contours_file, slabs)
 
     expect_s3_class(result, "sf")
     expect_true(all(c("label", "view") %in% names(result)))
     expect_identical(nrow(result), 2L)
   })
 
-  it("assigns views from filename prefix", {
+  it("assigns slabs from filename prefix", {
     contours_file <- withr::local_tempfile(fileext = ".rda")
 
     contours <- sf::st_sf(
@@ -70,7 +70,7 @@ describe("build_contour_sf", {
     )
     save(contours, file = contours_file)
 
-    views <- data.frame(
+    slabs <- data.frame(
       name = c("axial_1", "coronal_1"),
       type = c("axial", "coronal"),
       start = c(85, 110),
@@ -87,7 +87,7 @@ describe("build_contour_sf", {
       layout_volumetric_views = function(df) df
     )
 
-    result <- build_contour_sf(contours_file, views)
+    result <- build_contour_sf(contours_file, slabs)
 
     expect_identical(sort(unique(result$view)), c("axial_1", "coronal_1"))
   })
@@ -107,7 +107,7 @@ describe("build_contour_sf", {
     )
     save(contours, file = contours_file)
 
-    views <- data.frame(
+    slabs <- data.frame(
       name = "axial_1",
       type = "axial",
       start = 85,
@@ -124,7 +124,7 @@ describe("build_contour_sf", {
       layout_volumetric_views = function(df) df
     )
 
-    result <- build_contour_sf(contours_file, views)
+    result <- build_contour_sf(contours_file, slabs)
 
     expect_identical(result$label, "Left-Putamen")
   })
@@ -149,7 +149,7 @@ describe("build_contour_sf", {
     )
     save(contours, file = contours_file)
 
-    views <- data.frame(
+    slabs <- data.frame(
       name = "axial_1",
       type = "axial",
       start = 85,
@@ -170,7 +170,7 @@ describe("build_contour_sf", {
       layout_volumetric_views = function(df) df
     )
 
-    result <- build_contour_sf(contours_file, views, cortex_slices)
+    result <- build_contour_sf(contours_file, slabs, cortex_slices)
 
     expect_s3_class(result, "sf")
     expect_true("cortex_1" %in% result$view)
@@ -191,7 +191,7 @@ describe("build_contour_sf", {
     )
     save(contours, file = contours_file)
 
-    views <- data.frame(
+    slabs <- data.frame(
       name = "axial_1",
       type = "axial",
       start = 85,
@@ -208,7 +208,7 @@ describe("build_contour_sf", {
       layout_volumetric_views = function(df) df
     )
 
-    result <- build_contour_sf(contours_file, views)
+    result <- build_contour_sf(contours_file, slabs)
 
     expect_identical(result$label, "unmatched_region")
     expect_true(is.na(result$view))

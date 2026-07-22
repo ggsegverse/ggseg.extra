@@ -6,7 +6,7 @@ New thin compositions of the existing `ggseg.formats` atlas ops and the
 volume reader, distilled from the repeated boilerplate in the
 `ggsegFreeSurfer` subcortical build scripts:
 
-- `subcortical_views()` builds a slice-view table from the bounding box of
+- `subcortical_slabs()` builds a slab table from the bounding box of
   a set of labels, reading the volume in the **same** frame the builder
   uses so coronal/axial/sagittal slabs can't be pointed at the wrong
   slices.
@@ -18,11 +18,11 @@ volume reader, distilled from the repeated boilerplate in the
   entry that is a substring of its name (e.g. `Thalamus` vs
   `hypothalamus`). `aseg_hidden_labels()` returns the default stripped set.
 - `lut_add()` / `lut_combine()` append and merge FreeSurfer-style colour
-  tables (validating with `is_ctab()` and warning on index clashes) for
+  tables (validating with `is_lut()` and warning on index clashes) for
   atlases that add custom prefixed labels.
-- `create_subcortical_from_volume()` gained two opt-in arguments: `views`
-  now also accepts a `subcortical_views()` list spec (e.g.
-  `views = list(labels = 801:810, coronal = 3)`), and a new `context`
+- `create_subcortical_from_volume()` gained two opt-in arguments: `slabs`
+  now also accepts a `subcortical_slabs()` list spec (e.g.
+  `slabs = list(labels = 801:810, coronal = 3)`), and a new `context`
   argument runs `aseg_context()` on the finished 2D atlas (e.g.
   `context = list(focus = "Hippocampus")`). Both thread through
   `create_wholebrain_from_volume()`'s `subcortical_opts`.
@@ -60,6 +60,50 @@ atlas <- create_cortical_from_annotation(...) |>
   of the deprecated `tolerance` argument.
 - `create_wholebrain_from_volume()` no longer injects a default
   `smooth_refinements = 2L` into the cerebellar sub-pipeline.
+
+## API naming and argument consistency pass
+
+A pass over the atlas-builder family (`create_cortical_from_*()`,
+`create_subcortical_from_volume()`, `create_cerebellar_from_*()`,
+`create_wholebrain_from_volume()`, `create_tract_from_tractography()`) and
+the LUT helpers to make the API "as similar as possible" across atlas
+types. Old names/arguments keep working with a `lifecycle::deprecate_warn()`.
+
+- **Fixed:** `create_cortical_from_labels()` and
+  `create_tract_from_tractography()` silently dropped region names when
+  `input_lut` was a FreeSurfer-style LUT **file path**, because the parser
+  only looked for a `region` column and files parse into an `idx`/`label`
+  schema instead. It now falls back to `label` when `region` is absent.
+- **Renamed** the colour-table reader/writer family for consistency with
+  the already-dominant `input_lut` vocabulary used by every atlas builder:
+  `read_ctab()` -> `read_lut()`, `write_ctab()` -> `write_lut()`,
+  `is_ctab()` -> `is_lut()`, `get_ctab()` -> `get_lut()`. `lut_add()` and
+  `lut_combine()` are unchanged.
+- **Renamed** `create_cerebellar_from_volume()`'s `volume` argument to
+  `input_volume`, matching its `create_subcortical_from_volume()` and
+  `create_wholebrain_from_volume()` siblings.
+- **Renamed** `mri_surf2surf_rereg()`'s `hemi` argument to `hemisphere`,
+  matching the cortical builders. The default order (`"lh"` first) is
+  unchanged.
+- **Renamed** the volumetric `views` argument to `slabs` on
+  `create_subcortical_from_volume()` and `create_tract_from_tractography()`,
+  and `subcortical_views()` to `subcortical_slabs()` to match. This
+  distinguishes it from the cortical builders' `views` (a character vector
+  selecting standard panels), which is unchanged and unrelated.
+- **Reordered** arguments across all five builder families onto one
+  shared layout: primary input(s), `input_lut`, `atlas_name`, `output_dir`,
+  type-specific structural arguments, refinement arguments
+  (`vertex_size_limits`, `dilate`, `decimate`), the deprecated
+  `tolerance`/`smoothness`/`smooth_refinements` trio, `cleanup`, `verbose`,
+  `skip_existing`, `steps`, then any function-specific trailing arguments.
+  Every call site in this package's own tests, vignettes, and examples
+  already used named arguments for everything but the first one or two
+  positional inputs, so this should be a no-op for callers doing the same;
+  it is a silent behaviour change for any positional call beyond that.
+- Internal: `create_wholebrain_from_volume()`'s `cortical_opts` allow-list
+  is now derived reflectively from `create_cortical_from_annotation()`'s
+  formals (matching how `subcortical_opts`/`cerebellar_opts` already
+  worked) instead of a hand-maintained constant that could drift.
 
 ## Anatomical-context coregistration helpers
 

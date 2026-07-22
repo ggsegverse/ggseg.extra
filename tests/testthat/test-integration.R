@@ -45,7 +45,7 @@ describe("integration tests", {
     lut_file <- test_lut_file()
     skip_if(!file.exists(lut_file), "Test LUT file not found")
 
-    ctab <- read_ctab(lut_file)
+    ctab <- read_lut(lut_file)
 
     expect_s3_class(ctab, "data.frame")
     expect_true(all(c("idx", "label", "R", "G", "B", "A") %in% names(ctab)))

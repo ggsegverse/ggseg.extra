@@ -56,12 +56,12 @@ describe("read_volume with reorient FALSE", {
 })
 
 
-describe("read_ctab", {
+describe("read_lut", {
   it("reads color table from file", {
     lut_file <- test_lut_file()
     skip_if(!file.exists(lut_file), "Test LUT file not found")
 
-    result <- read_ctab(lut_file)
+    result <- read_lut(lut_file)
 
     expect_s3_class(result, "data.frame")
     expect_true(all(c("idx", "label", "R", "G", "B", "A") %in% names(result)))
@@ -79,7 +79,7 @@ describe("read_ctab", {
       tmp
     )
 
-    result <- read_ctab(tmp)
+    result <- read_lut(tmp)
 
     expect_s3_class(result, "data.frame")
     expect_identical(nrow(result), 3L)
@@ -97,14 +97,26 @@ describe("read_ctab", {
       tmp
     )
 
-    result <- read_ctab(tmp)
+    result <- read_lut(tmp)
 
     expect_named(result, c("idx", "label", "R", "G", "B", "A"))
   })
 })
 
 
-describe("write_ctab", {
+describe("read_ctab (deprecated)", {
+  it("warns about deprecation and delegates to read_lut", {
+    lut_file <- test_lut_file()
+    skip_if(!file.exists(lut_file), "Test LUT file not found")
+
+    lifecycle::expect_deprecated(result <- read_ctab(lut_file))
+
+    expect_identical(result, read_lut(lut_file))
+  })
+})
+
+
+describe("write_lut", {
   it("writes color table to file", {
     ctab <- data.frame(
       stringsAsFactors = FALSE,
@@ -117,11 +129,11 @@ describe("write_ctab", {
     )
 
     tmp <- withr::local_tempfile(fileext = ".txt")
-    write_ctab(ctab, tmp)
+    write_lut(ctab, tmp)
 
     expect_true(file.exists(tmp))
 
-    read_back <- read_ctab(tmp)
+    read_back <- read_lut(tmp)
     expect_identical(nrow(read_back), 3L)
     expect_identical(read_back$idx, ctab$idx)
   })
@@ -138,7 +150,7 @@ describe("write_ctab", {
     )
 
     tmp <- withr::local_tempfile(fileext = ".txt")
-    write_ctab(ctab, tmp)
+    write_lut(ctab, tmp)
 
     content <- readLines(tmp)
     expect_true(all(nchar(content) < 60))
@@ -146,7 +158,27 @@ describe("write_ctab", {
 })
 
 
-describe("is_ctab", {
+describe("write_ctab (deprecated)", {
+  it("warns about deprecation and delegates to write_lut", {
+    ctab <- data.frame(
+      stringsAsFactors = FALSE,
+      idx = 1L,
+      label = "Region1",
+      R = 255,
+      G = 0,
+      B = 0,
+      A = 0
+    )
+    tmp <- withr::local_tempfile(fileext = ".txt")
+
+    lifecycle::expect_deprecated(write_ctab(ctab, tmp))
+
+    expect_true(file.exists(tmp))
+  })
+})
+
+
+describe("is_lut", {
   it("returns TRUE for valid color table", {
     ctab <- data.frame(
       stringsAsFactors = FALSE,
@@ -158,13 +190,13 @@ describe("is_ctab", {
       A = c(0, 0, 0)
     )
 
-    expect_true(is_ctab(ctab))
+    expect_true(is_lut(ctab))
   })
 
   it("returns FALSE for non-data.frame", {
-    expect_false(is_ctab(list(idx = 1, label = "a")))
-    expect_false(is_ctab("not a data.frame"))
-    expect_false(is_ctab(NULL))
+    expect_false(is_lut(list(idx = 1, label = "a")))
+    expect_false(is_lut("not a data.frame"))
+    expect_false(is_lut(NULL))
   })
 
   it("returns FALSE for missing columns", {
@@ -174,17 +206,36 @@ describe("is_ctab", {
       label = "a",
       R = 255
     )
-    expect_false(is_ctab(partial))
+    expect_false(is_lut(partial))
   })
 })
 
 
-describe("get_ctab", {
+describe("is_ctab (deprecated)", {
+  it("warns about deprecation and delegates to is_lut", {
+    ctab <- data.frame(
+      stringsAsFactors = FALSE,
+      idx = 1,
+      label = "a",
+      R = 255,
+      G = 0,
+      B = 0,
+      A = 0
+    )
+
+    lifecycle::expect_deprecated(result <- is_ctab(ctab))
+
+    expect_true(result)
+  })
+})
+
+
+describe("get_lut", {
   it("reads and adds hex colors from file path", {
     lut_file <- test_lut_file()
     skip_if(!file.exists(lut_file), "Test LUT file not found")
 
-    result <- get_ctab(lut_file)
+    result <- get_lut(lut_file)
 
     expect_true("color" %in% names(result))
     expect_true("roi" %in% names(result))
@@ -202,7 +253,7 @@ describe("get_ctab", {
       A = c(0, 0)
     )
 
-    result <- get_ctab(ctab)
+    result <- get_lut(ctab)
 
     expect_identical(result$color, c("#FF0000", "#00FF00"))
     expect_identical(result$roi, c("0001", "0002"))
@@ -211,7 +262,26 @@ describe("get_ctab", {
   it("errors for invalid color table format", {
     invalid <- data.frame(x = 1, y = 2)
 
-    expect_error(get_ctab(invalid), "correct format")
+    expect_error(get_lut(invalid), "correct format")
+  })
+})
+
+
+describe("get_ctab (deprecated)", {
+  it("warns about deprecation and delegates to get_lut", {
+    ctab <- data.frame(
+      stringsAsFactors = FALSE,
+      idx = 1,
+      label = "Region1",
+      R = 255,
+      G = 0,
+      B = 0,
+      A = 0
+    )
+
+    lifecycle::expect_deprecated(result <- get_ctab(ctab))
+
+    expect_identical(result, get_lut(ctab))
   })
 })
 

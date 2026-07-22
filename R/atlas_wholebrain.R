@@ -99,7 +99,7 @@
 #'   be set here except those managed by the wholebrain pipeline
 #'   (`input_volume`, `input_lut`, `atlas_name`, `output_dir`, `verbose`,
 #'   `cleanup`, `skip_existing`). Use this to tune `dilate`,
-#'   `vertex_size_limits`, `decimate`, `views`. The deprecated
+#'   `vertex_size_limits`, `decimate`, `slabs`. The deprecated
 #'   `tolerance`/`smoothness` entries trigger a lifecycle warning.
 #' @param cerebellar_opts Named list of extra arguments forwarded to
 #'   [create_cerebellar_from_volume()]. Allowed entries include `decimate`.
@@ -411,7 +411,10 @@ validate_wholebrain_opts <- function(
     cortical = validate_pipeline_opts(
       cortical_opts,
       "cortical",
-      CORTICAL_OPT_NAMES
+      setdiff(
+        names(formals(create_cortical_from_annotation)),
+        CORTICAL_MANAGED_ARGS
+      )
     ),
     subcortical = validate_pipeline_opts(
       subcortical_opts,
@@ -505,7 +508,8 @@ SUBCORT_MANAGED_ARGS <- c(
   "skip_existing"
 )
 CEREBELLAR_MANAGED_ARGS <- c(
-  "volume",
+  "input_volume",
+  "volume", # deprecated alias for input_volume; also managed, not user-settable
   "input_lut",
   "atlas_name",
   "output_dir",
@@ -513,9 +517,21 @@ CEREBELLAR_MANAGED_ARGS <- c(
   "cleanup",
   "skip_existing"
 )
+# create_cortical_from_annotation() stands in for the cortical family here
+# (unlike subcortical/cerebellar, wholebrain doesn't call a single public
+# cortical builder directly) purely so the allowed cortical_opts names track
+# that family's shared tail parameters instead of drifting from a hand-kept
+# list.
+CORTICAL_MANAGED_ARGS <- c(
+  "input_annot",
+  "atlas_name",
+  "output_dir",
+  "hemisphere",
+  "cleanup",
+  "verbose",
+  "skip_existing"
+)
 # nolint end
-CORTICAL_OPT_NAMES <- c("views", "tolerance", "smooth_refinements") # nolint: object_name_linter, line_length_linter.
-
 
 #' Validate a named-list of extra arguments for a sub-pipeline
 #'
@@ -666,7 +682,7 @@ wholebrain_compute_projection <- function(config, dirs) {
     ))
     generate_colortable_from_volume(config$input_volume)
   } else {
-    get_ctab(config$input_lut)
+    get_lut(config$input_lut)
   }
 
   atlas_data <- wholebrain_project_to_surface(
@@ -1421,7 +1437,7 @@ wholebrain_run_subcortical <- function(
   subcort_lut <- as.character(fs::path(dirs$base, "subcort_lut.txt"))
   required_cols <- c("idx", "label", "R", "G", "B", "A")
   subcort_ct <- fill_missing_rgb(subcort_ct, "subcort")
-  write_ctab(subcort_ct[, required_cols], subcort_lut)
+  write_lut(subcort_ct[, required_cols], subcort_lut)
 
   cortical_idx <- colortable$idx[
     colortable$label %in% split$cortical_labels
@@ -1497,7 +1513,7 @@ wholebrain_run_cerebellar <- function(
   cer_name <- paste0(config$atlas_name, "_cerebellar")
 
   managed <- list(
-    volume = filtered_vol,
+    input_volume = filtered_vol,
     input_lut = cer_lut,
     atlas_name = cer_name,
     output_dir = dirs$base,

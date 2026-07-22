@@ -170,7 +170,7 @@ tract_create_snapshots <- function(
   streamlines_data,
   centerlines_df,
   input_aseg,
-  views,
+  slabs,
   dirs,
   coords_are_voxels,
   skip_existing,
@@ -180,10 +180,10 @@ tract_create_snapshots <- function(
   aseg_vol <- read_volume(input_aseg)
   dims <- dim(aseg_vol)
 
-  if (is.null(views)) {
-    views <- default_tract_views(dims)
+  if (is.null(slabs)) {
+    slabs <- default_tract_slabs(dims)
   }
-  cortex_slices <- create_cortex_slices(views, dims)
+  cortex_slices <- create_cortex_slices(slabs, dims)
 
   tract_labels <- centerlines_df$label
 
@@ -205,7 +205,7 @@ tract_create_snapshots <- function(
   snapshot_tract_views(
     tract_volumes = tract_volumes,
     tract_labels = tract_labels,
-    views = views,
+    slabs = slabs,
     dirs = dirs,
     skip_existing = skip_existing
   )
@@ -216,7 +216,7 @@ tract_create_snapshots <- function(
 
   snapshot_cortex_views(cortex_vol, cortex_slices, dirs, skip_existing)
 
-  list(views = views, cortex_slices = cortex_slices)
+  list(slabs = slabs, cortex_slices = cortex_slices)
 }
 
 
@@ -268,18 +268,18 @@ tract_volume_map <- function(
 }
 
 
-#' Default tract atlas view configuration
+#' Default tract atlas slab configuration
 #'
-#' Creates projection views optimized for white matter tract visualization.
+#' Creates projection slabs optimized for white matter tract visualization.
 #' Tracts typically span large portions of the brain, so projections cover
-#' wider ranges than subcortical views.
+#' wider ranges than subcortical slabs.
 #'
-#' @inheritParams default_subcortical_views
+#' @inheritParams default_subcortical_slabs
 #'
 #' @return data.frame with columns: name, type, start, end
 #' @keywords internal
 #' @noRd
-default_tract_views <- function(dims) {
+default_tract_slabs <- function(dims) {
   scale <- dims[1] / 256
   chunk_size <- round(30 * scale)
   half_chunk <- chunk_size %/% 2

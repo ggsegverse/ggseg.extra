@@ -241,7 +241,7 @@ describe("mri_surf2surf_rereg", {
     mri_surf2surf_rereg(
       subject = "bert",
       annot = "aparc.DKTatlas",
-      hemi = "lh",
+      hemisphere = "lh",
       output_dir = tmp,
       verbose = FALSE
     )
@@ -253,6 +253,31 @@ describe("mri_surf2surf_rereg", {
       paste("--sval-annot", shQuote("aparc.DKTatlas"))
     )
     expect_match(.cap$captured_cmd, "--hemi lh")
+  })
+
+  it("warns about deprecated hemi argument and delegates to hemisphere", {
+    .cap$captured_cmd <- NULL
+    local_mocked_bindings(
+      check_fs = function(abort = FALSE) invisible(TRUE),
+      run_cmd = function(cmd, verbose = FALSE) {
+        .cap$captured_cmd <- cmd
+        invisible(NULL)
+      }
+    )
+
+    tmp <- withr::local_tempdir()
+
+    lifecycle::expect_deprecated(
+      mri_surf2surf_rereg(
+        subject = "bert",
+        annot = "aparc.DKTatlas",
+        hemi = "rh",
+        output_dir = tmp,
+        verbose = FALSE
+      )
+    )
+
+    expect_match(.cap$captured_cmd, "--hemi rh")
   })
 })
 

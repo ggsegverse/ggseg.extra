@@ -7,22 +7,23 @@
 create_tract_from_tractography(
   input_tracts,
   input_aseg = NULL,
-  atlas_name = NULL,
   input_lut = NULL,
+  atlas_name = NULL,
+  output_dir = NULL,
   tube_radius = 5,
   tube_segments = 8,
   n_points = 50,
   centerline_method = c("mean", "medoid"),
-  views = NULL,
-  output_dir = NULL,
-  verbose = get_verbose(),
+  slabs = NULL,
+  vertex_size_limits = NULL,
+  dilate = NULL,
   tolerance = NULL,
   smoothness = NULL,
   cleanup = NULL,
+  verbose = get_verbose(),
   skip_existing = NULL,
-  dilate = NULL,
-  vertex_size_limits = NULL,
-  steps = NULL
+  steps = NULL,
+  views = lifecycle::deprecated()
 )
 }
 \arguments{
@@ -33,13 +34,18 @@ columns (x, y, z).}
 \item{input_aseg}{Path to a segmentation volume (\code{.mgz}, \code{.nii}) used to
 draw cortex outlines in 2D views. Required for steps 2+.}
 
+\item{input_lut}{Path to a color lookup table (LUT) file, or a data.frame
+with a \code{region} column (or a FreeSurfer-style \code{label} column) plus
+colour columns (R, G, B or hex). Rows must be in the same order as
+\code{input_tracts}. Use this to provide tract names and colours. If NULL,
+names are derived from filenames or list names, and colours will be
+auto-generated.}
+
 \item{atlas_name}{Name for the atlas. If NULL, derived from the input
 filename.}
 
-\item{input_lut}{Path to a color lookup table (LUT) file, or a data.frame
-with columns \code{region} and colour columns (R, G, B or hex).
-Use this to provide tract names and colours. If NULL, names are derived
-from filenames or list names, and colours will be auto-generated.}
+\item{output_dir}{Directory to store intermediate files (screenshots, masks,
+contours). Defaults to \code{\link[=tempdir]{tempdir()}}.}
 
 \item{tube_radius}{Controls the tube thickness. Either a single numeric
 value for uniform radius, or \code{"density"} to scale radius by how many
@@ -56,17 +62,15 @@ are resampled to this length for consistent tube generation.}
 streamlines: \code{"mean"} averages coordinates point-by-point, \code{"medoid"}
 selects the single most representative streamline.}
 
-\item{views}{A data.frame specifying projection views. If NULL, a default
-set of tract views is derived from the volume dimensions.}
+\item{slabs}{A data.frame specifying projection slabs. If NULL, a default
+set of tract slabs is derived from the volume dimensions.}
 
-\item{output_dir}{Directory to store intermediate files (screenshots, masks,
-contours). Defaults to \code{\link[=tempdir]{tempdir()}}.}
+\item{vertex_size_limits}{Numeric vector of length 2 setting minimum and
+maximum vertex count for polygons. Polygons outside this range are
+filtered out. Default NULL applies no limits.}
 
-\item{verbose}{Verbosity level: \code{0} (silent), \code{1} (standard progress,
-default), or \code{2} (debug, includes FreeSurfer output). Logical values
-are accepted (\code{TRUE} = 1, \code{FALSE} = 0). If not specified, uses the
-value from \code{options("ggseg.extra.verbose")} or the \code{GGSEG_EXTRA_VERBOSE}
-environment variable.}
+\item{dilate}{Dilation iterations for 2D polygons. Useful for filling small
+gaps between structures.}
 
 \item{tolerance}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} sf simplification is
 no longer applied during atlas creation. Use \code{\link[=atlas_smooth]{atlas_smooth()}} on the
@@ -82,17 +86,16 @@ and is otherwise ignored.}
 specified, uses \code{options("ggseg.extra.cleanup")} or the \code{GGSEG_EXTRA_CLEANUP}
 environment variable. Default is TRUE.}
 
+\item{verbose}{Verbosity level: \code{0} (silent), \code{1} (standard progress,
+default), or \code{2} (debug, includes FreeSurfer output). Logical values
+are accepted (\code{TRUE} = 1, \code{FALSE} = 0). If not specified, uses the
+value from \code{options("ggseg.extra.verbose")} or the \code{GGSEG_EXTRA_VERBOSE}
+environment variable.}
+
 \item{skip_existing}{Skip generating output files that already exist,
 allowing interrupted atlas creation to resume. If not specified, uses
 \code{options("ggseg.extra.skip_existing")} or the \code{GGSEG_EXTRA_SKIP_EXISTING}
 environment variable. Default is TRUE.}
-
-\item{dilate}{Dilation iterations for 2D polygons. Useful for filling small
-gaps between structures.}
-
-\item{vertex_size_limits}{Numeric vector of length 2 setting minimum and
-maximum vertex count for polygons. Polygons outside this range are
-filtered out. Default NULL applies no limits.}
 
 \item{steps}{Which pipeline steps to run. Default NULL runs all steps.
 Steps are:
@@ -107,6 +110,8 @@ Steps are:
 }
 Use \code{steps = 1} for 3D-only atlas. Use \code{steps = 5:7} to iterate on
 smoothing and vertex reduction.}
+
+\item{views}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} Use \code{slabs} instead.}
 }
 \value{
 A \code{ggseg_atlas} object with type \code{"tract"}, containing region

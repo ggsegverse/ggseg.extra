@@ -452,14 +452,23 @@ describe("create_cerebellar_from_volume", {
   it("errors on missing volume", {
     expect_error(
       create_cerebellar_from_volume(),
-      "volume.*required"
+      "input_volume.*required"
     )
   })
 
   it("errors on nonexistent volume file", {
     expect_error(
-      create_cerebellar_from_volume(volume = "nonexistent.nii.gz"),
+      create_cerebellar_from_volume(input_volume = "nonexistent.nii.gz"),
       "not found"
+    )
+  })
+
+  it("warns about deprecated volume argument and delegates to input_volume", {
+    lifecycle::expect_deprecated(
+      expect_error(
+        create_cerebellar_from_volume(volume = "nonexistent.nii.gz"),
+        "not found"
+      )
     )
   })
 })
@@ -2205,7 +2214,7 @@ describe("create_cerebellar_from_volume integration", {
     )
 
     atlas <- create_cerebellar_from_volume(
-      volume = vol_file,
+      input_volume = vol_file,
       input_lut = lut,
       atlas_name = "test_cer_integ",
       verbose = FALSE,

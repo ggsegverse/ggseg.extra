@@ -172,7 +172,7 @@ describe("subcort_create_snapshots", {
         vol[5, 5, 5] <- 3L
         vol
       },
-      default_subcortical_views = function(dims) {
+      default_subcortical_slabs = function(dims) {
         data.frame(
           name = "ax_1",
           type = "axial",
@@ -181,7 +181,7 @@ describe("subcort_create_snapshots", {
           stringsAsFactors = FALSE
         )
       },
-      create_cortex_slices = function(views, dims) {
+      create_cortex_slices = function(slabs, dims) {
         data.frame(
           x = NA,
           y = NA,
@@ -224,7 +224,7 @@ describe("subcort_create_snapshots", {
     )
 
     expect_type(result, "list")
-    expect_true("views" %in% names(result))
+    expect_true("slabs" %in% names(result))
     expect_true("cortex_slices" %in% names(result))
     # Both structures and the cortex outline now route through
     # snapshot_partial_projection for axial/coronal views (the cortex
@@ -235,8 +235,8 @@ describe("subcort_create_snapshots", {
     expect_identical(.cap$cortex_calls, 0L)
   })
 
-  it("uses provided views instead of defaults", {
-    custom_views <- data.frame(
+  it("uses provided slabs instead of defaults", {
+    custom_slabs <- data.frame(
       name = "custom_view",
       type = "coronal",
       start = 50,
@@ -250,7 +250,7 @@ describe("subcort_create_snapshots", {
         vol[2, 2, 2] <- 10L
         vol
       },
-      create_cortex_slices = function(views, dims) {
+      create_cortex_slices = function(slabs, dims) {
         data.frame(
           x = NA,
           y = 5,
@@ -281,13 +281,13 @@ describe("subcort_create_snapshots", {
     result <- subcort_create_snapshots(
       "fake.mgz",
       colortable,
-      custom_views,
+      custom_slabs,
       dirs,
       FALSE
     )
 
-    expect_identical(result$views$name, "custom_view")
-    expect_identical(result$views$type, "coronal")
+    expect_identical(result$slabs$name, "custom_view")
+    expect_identical(result$slabs$type, "coronal")
   })
 
   it("skips structures with zero voxels in volume", {
@@ -298,7 +298,7 @@ describe("subcort_create_snapshots", {
         vol <- array(0L, dim = c(10, 10, 10))
         vol
       },
-      default_subcortical_views = function(dims) {
+      default_subcortical_slabs = function(dims) {
         data.frame(
           name = "ax_1",
           type = "axial",
@@ -307,7 +307,7 @@ describe("subcort_create_snapshots", {
           stringsAsFactors = FALSE
         )
       },
-      create_cortex_slices = function(views, dims) {
+      create_cortex_slices = function(slabs, dims) {
         data.frame(
           x = NA,
           y = NA,
@@ -351,10 +351,10 @@ describe("subcort_create_snapshots", {
 })
 
 
-describe("default_subcortical_views", {
-  it("creates views for standard 256 brain", {
+describe("default_subcortical_slabs", {
+  it("creates slabs for standard 256 brain", {
     dims <- c(256, 256, 256)
-    result <- default_subcortical_views(dims)
+    result <- default_subcortical_slabs(dims)
 
     expect_s3_class(result, "data.frame")
     expect_true(all(c("name", "type", "start", "end") %in% names(result)))
@@ -363,12 +363,12 @@ describe("default_subcortical_views", {
     expect_true("sagittal" %in% result$type)
   })
 
-  it("scales views for different volume sizes", {
+  it("scales slabs for different volume sizes", {
     dims_256 <- c(256, 256, 256)
     dims_512 <- c(512, 512, 512)
 
-    result_256 <- default_subcortical_views(dims_256)
-    result_512 <- default_subcortical_views(dims_512)
+    result_256 <- default_subcortical_slabs(dims_256)
+    result_512 <- default_subcortical_slabs(dims_512)
 
     axial_256 <- result_256[result_256$type == "axial", ]
     axial_512 <- result_512[result_512$type == "axial", ]
@@ -378,7 +378,7 @@ describe("default_subcortical_views", {
 
   it("creates single sagittal midline slice", {
     dims <- c(256, 256, 256)
-    result <- default_subcortical_views(dims)
+    result <- default_subcortical_slabs(dims)
 
     sagittal <- result[result$type == "sagittal", ]
     expect_identical(nrow(sagittal), 1L)

@@ -6,10 +6,10 @@
 # a couple of helper calls. They compose the ggseg.formats atlas_* ops and
 # the internal volume reader; the orchestrators can dispatch to them.
 
-#' Build subcortical slice views from a label bounding box
+#' Build subcortical slabs from a label bounding box
 #'
 #' Computes evenly spaced coronal, axial and/or sagittal slabs spanning the
-#' bounding box of the requested labels, ready to pass as the `views`
+#' bounding box of the requested labels, ready to pass as the `slabs`
 #' argument of [create_subcortical_from_volume()].
 #'
 #' The volume is read with the **same** axis reorientation the builder uses
@@ -17,13 +17,13 @@
 #' avoids a subtle trap: `RNifti::readNifti()` and the builder's reader can
 #' return different axis orders, so a bounding box computed from the RNifti
 #' array points the slabs at the wrong slices (silently producing empty
-#' views). Always derive views with this function rather than indexing the
+#' views). Always derive slabs with this function rather than indexing the
 #' volume by hand.
 #'
 #' @param volume Path to a label volume, or an integer array already in the
 #'   builder's frame.
 #' @param labels Integer label ids whose combined bounding box frames the
-#'   views.
+#'   slabs.
 #' @param coronal,axial,sagittal Number of slabs to produce for each
 #'   orientation (`0` = none).
 #' @param pad Voxels by which to expand the bounding box before slabbing.
@@ -35,8 +35,8 @@
 #' @examples
 #' vol <- array(0L, dim = c(20, 20, 20))
 #' vol[8:12, 6:14, 9:11] <- 17L
-#' subcortical_views(vol, labels = 17, coronal = 3, axial = 2)
-subcortical_views <- function(
+#' subcortical_slabs(vol, labels = 17, coronal = 3, axial = 2)
+subcortical_slabs <- function(
   volume,
   labels,
   coronal = 0,
@@ -90,6 +90,39 @@ subcortical_views <- function(
   }
   rownames(out) <- NULL
   out
+}
+
+#' @description
+#' `r lifecycle::badge("deprecated")`
+#'
+#' `subcortical_views()` was renamed to [subcortical_slabs()] to match the
+#' `slabs` argument of [create_subcortical_from_volume()] and
+#' [create_tract_from_tractography()].
+#' @rdname subcortical_slabs
+#' @export
+subcortical_views <- function(
+  volume,
+  labels,
+  coronal = 0,
+  axial = 0,
+  sagittal = 0,
+  pad = 0,
+  reorient = TRUE
+) {
+  lifecycle::deprecate_warn(
+    "1.9.9.9005",
+    "subcortical_views()",
+    "subcortical_slabs()"
+  )
+  subcortical_slabs(
+    volume,
+    labels,
+    coronal = coronal,
+    axial = axial,
+    sagittal = sagittal,
+    pad = pad,
+    reorient = reorient
+  )
 }
 
 #' Standard FreeSurfer aseg labels stripped from a subcortical atlas

@@ -87,7 +87,7 @@ When your parcellation is a NIfTI volume — either natively in SUIT space or tr
 
 ``` r
 atlas <- create_cerebellar_from_volume(
-  volume = "cerebellar_parcellation.nii.gz",
+  input_volume = "cerebellar_parcellation.nii.gz",
   input_lut = "cerebellar_lut.txt",
   atlas_name = "cerebellar_vol"
 )

@@ -206,22 +206,22 @@ swallow it. That substring collision used to demote the whole focus set to
 context, silently producing 0-region atlases, before this exact-match step
 was added.
 
-`subcortical_views()` derives the projection slabs from the bounding box of a
+`subcortical_slabs()` derives the projection slabs from the bounding box of a
 set of labels, reading the volume in the **same** frame the builder uses, so
 the slabs always land on the right slices. You can pass its arguments as a list
-to `views`, and run `aseg_context()` in the same call via `context`:
+to `slabs`, and run `aseg_context()` in the same call via `context`:
 
 ``` r
 aseg <- create_subcortical_from_volume(
   input_volume = aseg_volume,
   input_lut = color_lut,
   atlas_name = "aseg",
-  views = list(labels = c(10:13, 17:18, 26, 49:54, 58), coronal = 3, axial = 2),
+  slabs = list(labels = c(10:13, 17:18, 26, 49:54, 58), coronal = 3, axial = 2),
   context = list(focus = "Thalamus|Caudate|Putamen|Pallidum|Hippocampus|Amygdala")
 )
 ```
 
-`create_wholebrain_from_volume()` forwards both `views` and `context` through
+`create_wholebrain_from_volume()` forwards both `slabs` and `context` through
 its `subcortical_opts`, so a whole-brain build gets the same treatment for free.
 
 ## Adding metadata
@@ -422,7 +422,7 @@ passing it as `lut` above --- `prepare_subcortical_anatomical()` shifts it and
 folds in the FreeSurfer context names for you:
 
 ``` r
-my_lut <- read_ctab(color_lut) |>
+my_lut <- read_lut(color_lut) |>
   lut_add(
     idx = c(20001, 20002),
     label = c("Left-Hippocampus-ant", "Left-Hippocampus-post"),

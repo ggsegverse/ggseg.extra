@@ -135,21 +135,21 @@ subcort_build_components <- function(colortable, meshes_list) {
 subcort_create_snapshots <- function(
   input_volume,
   colortable,
-  views,
+  slabs,
   dirs,
   skip_existing
 ) {
   vol <- read_volume(input_volume)
   dims <- dim(vol)
 
-  if (is.null(views)) {
-    views <- default_subcortical_views(dims)
+  if (is.null(slabs)) {
+    slabs <- default_subcortical_slabs(dims)
   }
 
-  cortex_slices <- create_cortex_slices(views, dims)
+  cortex_slices <- create_cortex_slices(slabs, dims)
   cortex_labels <- detect_cortex_labels(vol)
 
-  subcort_snapshot_structures(vol, dims, colortable, views, dirs, skip_existing)
+  subcort_snapshot_structures(vol, dims, colortable, slabs, dirs, skip_existing)
 
   cortex_vol <- subcort_cortex_volume(vol, dims, cortex_labels)
 
@@ -163,13 +163,13 @@ subcort_create_snapshots <- function(
     subcort_snapshot_cortex(
       cortex_vol,
       cortex_slices,
-      views,
+      slabs,
       dirs,
       skip_existing
     )
   }
 
-  list(views = views, cortex_slices = cortex_slices)
+  list(slabs = slabs, cortex_slices = cortex_slices)
 }
 
 
@@ -179,20 +179,20 @@ subcort_snapshot_structures <- function(
   vol,
   dims,
   colortable,
-  views,
+  slabs,
   dirs,
   skip_existing
 ) {
   snapshot_grid <- expand.grid(
     struct_idx = seq_len(nrow(colortable)),
-    view_idx = seq_len(nrow(views)),
+    view_idx = seq_len(nrow(slabs)),
     stringsAsFactors = FALSE
   )
 
   p <- progressor(steps = nrow(snapshot_grid))
 
   invisible(safe_future_pmap(
-    subcort_snapshot_args(colortable, views, snapshot_grid),
+    subcort_snapshot_args(colortable, slabs, snapshot_grid),
     function(
       label_id,
       label_name,
@@ -226,14 +226,14 @@ subcort_snapshot_structures <- function(
 
 #' Column vectors driving the structure x view snapshot grid
 #' @noRd
-subcort_snapshot_args <- function(colortable, views, snapshot_grid) {
+subcort_snapshot_args <- function(colortable, slabs, snapshot_grid) {
   list(
     label_id = colortable$idx[snapshot_grid$struct_idx],
     label_name = colortable$label[snapshot_grid$struct_idx],
-    view_type = views$type[snapshot_grid$view_idx],
-    view_start = views$start[snapshot_grid$view_idx],
-    view_end = views$end[snapshot_grid$view_idx],
-    view_name = views$name[snapshot_grid$view_idx]
+    view_type = slabs$type[snapshot_grid$view_idx],
+    view_start = slabs$start[snapshot_grid$view_idx],
+    view_end = slabs$end[snapshot_grid$view_idx],
+    view_name = slabs$name[snapshot_grid$view_idx]
   )
 }
 
@@ -299,14 +299,14 @@ subcort_cortex_volume <- function(vol, dims, cortex_labels) {
 subcort_snapshot_cortex <- function(
   cortex_vol,
   cortex_slices,
-  views,
+  slabs,
   dirs,
   skip_existing
 ) {
   invisible(lapply(seq_len(nrow(cortex_slices)), function(i) {
     cs <- cortex_slices[i, ]
     hemi <- extract_hemi_from_view(cs$view, cs$name)
-    matched_view <- views[views$name == cs$name, ]
+    matched_view <- slabs[slabs$name == cs$name, ]
 
     if (cs$view %in% c("axial", "coronal") && nrow(matched_view) == 1) {
       snapshot_partial_projection(
@@ -338,9 +338,9 @@ subcort_snapshot_cortex <- function(
 }
 
 
-#' Default subcortical atlas view configuration
+#' Default subcortical atlas slab configuration
 #'
-#' Creates projection views calibrated for subcortical structures.
+#' Creates projection slabs calibrated for subcortical structures.
 #' Uses anatomically-calibrated ranges based on typical aseg label positions.
 #'
 #' @param dims Volume dimensions (3-element vector)
@@ -348,7 +348,7 @@ subcort_snapshot_cortex <- function(
 #' @return data.frame with columns: name, type, start, end
 #' @keywords internal
 #' @noRd
-default_subcortical_views <- function(dims) {
+default_subcortical_slabs <- function(dims) {
   mid_x <- dims[1] %/% 2
   chunk_size <- 10
   scale <- dims[1] / 256

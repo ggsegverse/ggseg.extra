@@ -52,26 +52,27 @@ read_annotation_data <- function(annot_files) {
   bind_rows(all_data)
 }
 
-#' Read FreeSurfer color table
+#' Read FreeSurfer LUT
 #'
 #' Read a FreeSurfer color lookup table file (e.g., `FreeSurferColorLUT.txt`
 #' or `ASegStatsLUT.txt`). These files map label indices to region names
 #' and RGBA colours.
 #'
-#' @param path Path to the color table file.
+#' @param path Path to the LUT file.
 #' @return A data.frame with columns: idx, label, R, G, B, A, and
 #'   optionally type when a 7th field is present.
-#' @seealso [get_ctab()] to read and add hex colours, [write_ctab()] to write
+#' @seealso [get_lut()] to read and add hex colours, [write_lut()] to write,
+#'   [lut_add()] and [lut_combine()] to build one up
 #' @export
 #' @importFrom utils read.table
 #' @examples
-#' ctab_file <- tempfile()
+#' lut_file <- tempfile()
 #' writeLines(c(
 #'   "  0  Unknown                         0   0   0   0",
 #'   "  1  Left-Cerebral-Cortex          205 130 176   0"
-#' ), ctab_file)
-#' read_ctab(ctab_file)
-read_ctab <- function(path) {
+#' ), lut_file)
+#' read_lut(lut_file)
+read_lut <- function(path) {
   lines <- trimws(readLines(path))
   lines <- lines[nzchar(lines)]
   lut_pattern <- paste0(
@@ -101,14 +102,26 @@ read_ctab <- function(path) {
   result
 }
 
-#' Write FreeSurfer color table
+#' @description
+#' `r lifecycle::badge("deprecated")`
 #'
-#' Write a color table to file in FreeSurfer format.
+#' `read_ctab()` was renamed to [read_lut()] for consistency with
+#' [get_lut()], [write_lut()], [is_lut()], [lut_add()], and [lut_combine()].
+#' @rdname read_lut
+#' @export
+read_ctab <- function(path) {
+  lifecycle::deprecate_warn("1.9.9.9005", "read_ctab()", "read_lut()")
+  read_lut(path)
+}
+
+#' Write FreeSurfer LUT
+#'
+#' Write a LUT to file in FreeSurfer format.
 #'
 #' @param x A data.frame with columns: idx, label, R, G, B, A.
 #' @param path Path to write to.
 #' @return Invisibly returns the lines written.
-#' @seealso [read_ctab()], [is_ctab()]
+#' @seealso [read_lut()], [is_lut()]
 #' @export
 #' @examples
 #' ct <- data.frame(
@@ -116,29 +129,41 @@ read_ctab <- function(path) {
 #'   R = c(0L, 205L), G = c(0L, 130L), B = c(0L, 176L), A = c(0L, 0L)
 #' )
 #' out <- tempfile()
-#' write_ctab(ct, out)
-write_ctab <- function(x, path) {
+#' write_lut(ct, out)
+write_lut <- function(x, path) {
   lls <- apply(x, 1, function(row) {
-    ctab_line(row[1], row[2], row[3], row[4], row[5], row[6])
+    lut_line(row[1], row[2], row[3], row[4], row[5], row[6])
   })
   lls[length(lls) + 1] <- ""
   writeLines(lls, path)
   invisible(lls)
 }
 
-#' Check if object is a color table
+#' @description
+#' `r lifecycle::badge("deprecated")`
+#'
+#' `write_ctab()` was renamed to [write_lut()] for consistency with
+#' [read_lut()], [get_lut()], [is_lut()], [lut_add()], and [lut_combine()].
+#' @rdname write_lut
+#' @export
+write_ctab <- function(x, path) {
+  lifecycle::deprecate_warn("1.9.9.9005", "write_ctab()", "write_lut()")
+  write_lut(x, path)
+}
+
+#' Check if object is a LUT
 #'
 #' @param x Object to check.
-#' @return TRUE if x is a data.frame with the required color table columns.
+#' @return TRUE if x is a data.frame with the required LUT columns.
 #' @export
 #' @examples
 #' ct <- data.frame(
 #'   idx = 0L, label = "Unknown",
 #'   R = 0L, G = 0L, B = 0L, A = 0L
 #' )
-#' is_ctab(ct)
-#' is_ctab(data.frame(x = 1))
-is_ctab <- function(x) {
+#' is_lut(ct)
+#' is_lut(data.frame(x = 1))
+is_lut <- function(x) {
   if (!is.data.frame(x)) {
     return(FALSE)
   }
@@ -146,16 +171,27 @@ is_ctab <- function(x) {
   all(required %in% names(x))
 }
 
-#' Read color table and add hex colours
+#' @description
+#' `r lifecycle::badge("deprecated")`
+#'
+#' `is_ctab()` was renamed to [is_lut()] for consistency with [read_lut()],
+#' [write_lut()], [get_lut()], [lut_add()], and [lut_combine()].
+#' @rdname is_lut
+#' @export
+is_ctab <- function(x) {
+  lifecycle::deprecate_warn("1.9.9.9005", "is_ctab()", "is_lut()")
+  is_lut(x)
+}
+
+#' Read LUT and add hex colours
 #'
 #' Reads a FreeSurfer color lookup table and adds hex colour codes for
 #' use in plotting.
 #'
-#' @param color_lut Path to a color table file, or a data.frame that
-#'   passes [is_ctab()].
+#' @param lut Path to a LUT file, or a data.frame that passes [is_lut()].
 #' @return A data.frame with the original columns plus `roi` (zero-padded
 #'   index) and `color` (hex colour code).
-#' @seealso [read_ctab()], [is_ctab()]
+#' @seealso [read_lut()], [is_lut()]
 #' @export
 #' @importFrom grDevices rgb
 #' @examples
@@ -163,17 +199,17 @@ is_ctab <- function(x) {
 #'   idx = 0:1, label = c("Unknown", "Region1"),
 #'   R = c(0L, 205L), G = c(0L, 130L), B = c(0L, 176L), A = c(0L, 0L)
 #' )
-#' get_ctab(ct)
-get_ctab <- function(color_lut) {
-  colourtable <- if (is.character(color_lut)) {
-    read_ctab(color_lut)
+#' get_lut(ct)
+get_lut <- function(lut) {
+  colourtable <- if (is.character(lut)) {
+    read_lut(lut)
   } else {
-    color_lut
+    lut
   }
 
-  if (!is_ctab(colourtable)) {
+  if (!is_lut(colourtable)) {
     cli::cli_abort(c(
-      "color_lut does not have the correct format.",
+      "lut does not have the correct format.",
       "i" = "Required columns: idx, label, R, G, B, A"
     ))
   }
@@ -189,20 +225,34 @@ get_ctab <- function(color_lut) {
   colourtable
 }
 
-#' Add rows to a FreeSurfer color table
+#' @description
+#' `r lifecycle::badge("deprecated")`
 #'
-#' Append custom label entries to a color table (as read by [read_ctab()]).
+#' `get_ctab()` was renamed to [get_lut()] for consistency with
+#' [read_lut()], [write_lut()], [is_lut()], [lut_add()], and [lut_combine()].
+#' @param color_lut Path to a LUT file, or a data.frame that passes
+#'   [is_lut()].
+#' @rdname get_lut
+#' @export
+get_ctab <- function(color_lut) {
+  lifecycle::deprecate_warn("1.9.9.9005", "get_ctab()", "get_lut()")
+  get_lut(color_lut)
+}
+
+#' Add rows to a FreeSurfer LUT
+#'
+#' Append custom label entries to a LUT (as read by [read_lut()]).
 #' Scalar inputs are recycled to the length of `idx`. Useful for adding
 #' custom subregion labels (e.g. hemisphere-prefixed or split structures)
 #' before passing the table to [create_subcortical_from_volume()].
 #'
-#' @param lut A color table data.frame (passes [is_ctab()]).
+#' @param lut A LUT data.frame (passes [is_lut()]).
 #' @param idx Integer label indices to add.
 #' @param label Character region labels.
 #' @param R,G,B,A Integer colour channels (0-255); `A` defaults to `0`.
 #' @return `lut` with the new rows appended (a `type` column, if present, is
 #'   filled with `NA` for the new rows).
-#' @seealso [read_ctab()], [lut_combine()]
+#' @seealso [read_lut()], [lut_combine()]
 #' @export
 #' @examples
 #' ct <- data.frame(
@@ -214,8 +264,8 @@ get_ctab <- function(color_lut) {
 # nolint start: object_name_linter.
 lut_add <- function(lut, idx, label, R, G, B, A = 0L) {
   # nolint end
-  if (!is_ctab(lut)) {
-    cli::cli_abort("{.arg lut} must be a color table; see {.fn is_ctab}.")
+  if (!is_lut(lut)) {
+    cli::cli_abort("{.arg lut} must be a LUT; see {.fn is_lut}.")
   }
   n <- length(idx)
   validate_lut_add_length(label, n, "label")
@@ -246,16 +296,16 @@ validate_lut_add_length <- function(x, n, arg_name) {
   invisible(TRUE)
 }
 
-#' Combine FreeSurfer color tables
+#' Combine FreeSurfer LUTs
 #'
-#' Row-binds several color tables (as read by [read_ctab()] or built with
+#' Row-binds several LUTs (as read by [read_lut()] or built with
 #' [lut_add()]) into one, aligning columns (a `type` column present in only
 #' some tables is filled with `NA`) and warning on duplicate label indices.
 #'
-#' @param ... Color table data.frames, each passing [is_ctab()]. `NULL`
+#' @param ... LUT data.frames, each passing [is_lut()]. `NULL`
 #'   inputs are dropped.
-#' @return A single combined color table.
-#' @seealso [read_ctab()], [lut_add()]
+#' @return A single combined LUT.
+#' @seealso [read_lut()], [lut_add()]
 #' @export
 #' @examples
 #' a <- data.frame(idx = 0L, label = "Unknown", R = 0L, G = 0L, B = 0L, A = 0L)
@@ -264,10 +314,10 @@ validate_lut_add_length <- function(x, n, arg_name) {
 lut_combine <- function(...) {
   luts <- Filter(Negate(is.null), list(...))
   if (length(luts) == 0) {
-    cli::cli_abort("Provide at least one color table.")
+    cli::cli_abort("Provide at least one LUT.")
   }
-  if (!all(vapply(luts, is_ctab, logical(1)))) {
-    cli::cli_abort("All inputs must be color tables; see {.fn is_ctab}.")
+  if (!all(vapply(luts, is_lut, logical(1)))) {
+    cli::cli_abort("All inputs must be LUTs; see {.fn is_lut}.")
   }
   cols <- Reduce(union, lapply(luts, names))
   luts <- lapply(luts, function(d) {
@@ -1020,7 +1070,7 @@ parse_continuous_values <- function(values, hemi, hemi_short, n_bins) {
 
 
 #' @noRd
-ctab_line <- function(idx, name, red, green, blue, alpha) {
+lut_line <- function(idx, name, red, green, blue, alpha) {
   if (nchar(name) > 29) {
     name <- substr(name, 1, 29)
   }

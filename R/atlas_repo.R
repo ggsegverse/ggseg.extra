@@ -99,17 +99,17 @@ setup_atlas_repo <- function(
 #' exported even though it is not meant to be called directly — use
 #' [setup_atlas_repo()] instead.
 #'
-#' @param dir Directory RStudio creates for the new project.
+#' @param path Directory RStudio creates for the new project.
 #' @param ... Template parameters supplied by the wizard, notably `atlas_name`.
 #' @return Invisible `NULL`, called for its side effects.
 #' @keywords internal
 #' @export
-new_project_setup_atlas_repo <- function(dir, ...) {
+new_project_setup_atlas_repo <- function(path, ...) {
   params <- list(...)
   atlas_name <- params$atlas_name
 
   setup_atlas_repo(
-    path = dir,
+    path = path,
     atlas_name = atlas_name,
     open = FALSE,
     rstudio = TRUE

@@ -455,23 +455,23 @@ smooth_sf_light <- function(sf_data, smoothness = 0) {
 #' labels from filenames.
 #'
 #' @param contours_file Path to `contours_reduced.rda`
-#' @param views data.frame with `name` column of view names
+#' @param slabs data.frame with `name` column of slab names
 #' @param cortex_slices Optional data.frame with `name` column for cortex
-#'   slice view names (appended to `views$name`)
+#'   slice view names (appended to `slabs$name`)
 #' @return sf data.frame with `label`, `view`, `geometry` columns, sorted
 #'   with cortex rows first
 #' @noRd
 #' @importFrom dplyr select arrange desc
 #' @importFrom sf st_as_sf
-build_contour_sf <- function(contours_file, views, cortex_slices = NULL) {
+build_contour_sf <- function(contours_file, slabs, cortex_slices = NULL) {
   conts <- make_multipolygon(contours_file)
 
   filenm_base <- sub("\\.png$", "", conts$filenm)
 
   all_view_names <- if (!is.null(cortex_slices)) {
-    c(views$name, cortex_slices$name)
+    c(slabs$name, cortex_slices$name)
   } else {
-    views$name
+    slabs$name
   }
 
   conts$view <- match_contour_views(filenm_base, all_view_names)

@@ -2,12 +2,12 @@
 % Please edit documentation in R/read_write.R
 \name{lut_add}
 \alias{lut_add}
-\title{Add rows to a FreeSurfer color table}
+\title{Add rows to a FreeSurfer LUT}
 \usage{
 lut_add(lut, idx, label, R, G, B, A = 0L)
 }
 \arguments{
-\item{lut}{A color table data.frame (passes \code{\link[=is_ctab]{is_ctab()}}).}
+\item{lut}{A LUT data.frame (passes \code{\link[=is_lut]{is_lut()}}).}
 
 \item{idx}{Integer label indices to add.}
 
@@ -20,7 +20,7 @@ lut_add(lut, idx, label, R, G, B, A = 0L)
 filled with \code{NA} for the new rows).
 }
 \description{
-Append custom label entries to a color table (as read by \code{\link[=read_ctab]{read_ctab()}}).
+Append custom label entries to a LUT (as read by \code{\link[=read_lut]{read_lut()}}).
 Scalar inputs are recycled to the length of \code{idx}. Useful for adding
 custom subregion labels (e.g. hemisphere-prefixed or split structures)
 before passing the table to \code{\link[=create_subcortical_from_volume]{create_subcortical_from_volume()}}.
@@ -34,5 +34,5 @@ lut_add(ct, idx = 20001:20002,
         R = c(220, 60), G = c(190, 140), B = c(30, 200))
 }
 \seealso{
-\code{\link[=read_ctab]{read_ctab()}}, \code{\link[=lut_combine]{lut_combine()}}
+\code{\link[=read_lut]{read_lut()}}, \code{\link[=lut_combine]{lut_combine()}}
 }
