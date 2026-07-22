@@ -1,5 +1,5 @@
 pandoc: 3.8.3
-pkgdown: 2.2.0
+pkgdown: 2.2.1
 pkgdown_sha: ~
 articles:
   atlas-workflows: atlas-workflows.html
@@ -9,13 +9,14 @@ articles:
   pipeline-configuration: pipeline-configuration.html
   post-processing: post-processing.html
   system-setup: system-setup.html
+  tutorial-cerebellar-atlas: tutorial-cerebellar-atlas.html
   tutorial-cortical-atlas: tutorial-cortical-atlas.html
   tutorial-label-atlas: tutorial-label-atlas.html
   tutorial-neuromaps-atlas: tutorial-neuromaps-atlas.html
   tutorial-subcortical-atlas: tutorial-subcortical-atlas.html
   tutorial-tract-atlas: tutorial-tract-atlas.html
   tutorial-wholebrain-atlas: tutorial-wholebrain-atlas.html
-last_built: 2026-07-05T14:25Z
+last_built: 2026-07-22T14:30Z
 urls:
   reference: https://ggsegverse.github.io/ggseg.extra/reference
   article: https://ggsegverse.github.io/ggseg.extra/articles

@@ -19,7 +19,7 @@ derives region names from the rest of the filename."><meta property="og:image" c
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9001</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9005</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -43,6 +43,7 @@ derives region names from the rest of the filename."><meta property="og:image" c
     <li><a class="dropdown-item" href="../articles/tutorial-neuromaps-atlas.html">Neuromaps Atlas</a></li>
     <li><a class="dropdown-item" href="../articles/tutorial-subcortical-atlas.html">Subcortical Atlas</a></li>
     <li><a class="dropdown-item" href="../articles/tutorial-wholebrain-atlas.html">Whole-Brain Atlas</a></li>
+    <li><a class="dropdown-item" href="../articles/tutorial-cerebellar-atlas.html">Cerebellar Atlas</a></li>
     <li><a class="dropdown-item" href="../articles/tutorial-tract-atlas.html">Tract Atlas</a></li>
     <li><a class="dropdown-item" href="../articles/tutorial-label-atlas.html">Label Atlas</a></li>
     <li><hr class="dropdown-divider"></li>
@@ -69,7 +70,7 @@ derives region names from the rest of the filename."><meta property="og:image" c
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.svg" class="logo" alt=""><h1>Create brain atlas from label files</h1>
-      <small class="dont-index">Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/R/atlas-cortical.R" class="external-link"><code>R/atlas-cortical.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/R/atlas_cortical.R" class="external-link"><code>R/atlas_cortical.R</code></a></small>
       <div class="d-none name"><code>create_cortical_from_labels.Rd</code></div>
     </div>
 
@@ -86,8 +87,8 @@ derives region names from the rest of the filename.</p>
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">create_cortical_from_labels</span><span class="op">(</span></span>
 <span>  <span class="va">label_files</span>,</span>
-<span>  atlas_name <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  input_lut <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  atlas_name <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  output_dir <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  views <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"lateral"</span>, <span class="st">"medial"</span><span class="op">)</span>,</span>
 <span>  tolerance <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -107,14 +108,16 @@ derives region names from the rest of the filename.</p>
 FreeSurfer naming: <code>{hemi}.{regionname}.label</code> (e.g., <code>lh.motor.label</code>).</p></dd>
 
 
+<dt id="arg-input-lut">input_lut<a class="anchor" aria-label="anchor" href="#arg-input-lut"></a></dt>
+<dd><p>Path to a color lookup table (LUT) file, or a data.frame
+with a <code>region</code> column (or a FreeSurfer-style <code>label</code> column) plus
+colour columns (R, G, B or hex). Rows must be in the same order as
+the input files.</p></dd>
+
+
 <dt id="arg-atlas-name">atlas_name<a class="anchor" aria-label="anchor" href="#arg-atlas-name"></a></dt>
 <dd><p>Name for the atlas. If NULL, derived from the input
 filename.</p></dd>
-
-
-<dt id="arg-input-lut">input_lut<a class="anchor" aria-label="anchor" href="#arg-input-lut"></a></dt>
-<dd><p>Path to a color lookup table (LUT) file, or a data.frame
-with columns <code>region</code> and colour columns (R, G, B or hex).</p></dd>
 
 
 <dt id="arg-output-dir">output_dir<a class="anchor" aria-label="anchor" href="#arg-output-dir"></a></dt>
@@ -128,19 +131,17 @@ contours). Defaults to <code><a href="https://rdrr.io/r/base/tempfile.html" clas
 
 
 <dt id="arg-tolerance">tolerance<a class="anchor" aria-label="anchor" href="#arg-tolerance"></a></dt>
-<dd><p>Simplification tolerance for 2D polygons. Higher values
-produce simpler shapes with fewer vertices (typical range: 0.1–2).
-Passed to <code><a href="https://r-spatial.github.io/sf/reference/geos_unary.html" class="external-link">sf::st_simplify()</a></code>.
-If not specified, uses <code>options("ggseg.extra.tolerance")</code> or the
-<code>GGSEG_EXTRA_TOLERANCE</code> environment variable. Default is 1.</p></dd>
+<dd><p><a href="https://lifecycle.r-lib.org/articles/stages.html#deprecated" class="external-link"><img src="figures/lifecycle-deprecated.svg" alt="[Deprecated]"></a> sf simplification is
+no longer applied during atlas creation. Use <code><a href="atlas_smooth.html">atlas_smooth()</a></code> on the
+returned atlas instead. Supplying a value emits a lifecycle warning
+and is otherwise ignored.</p></dd>
 
 
 <dt id="arg-smooth-refinements">smooth_refinements<a class="anchor" aria-label="anchor" href="#arg-smooth-refinements"></a></dt>
-<dd><p>Number of Chaikin corner-cutting refinements
-to apply to 2D polygons. Higher values produce smoother region
-boundaries (typical range: 0–3). 0 disables smoothing.
-If not specified, uses <code>options("ggseg.extra.smooth_refinements")</code> or the
-<code>GGSEG_EXTRA_SMOOTH_REFINEMENTS</code> environment variable. Default is 2.</p></dd>
+<dd><p><a href="https://lifecycle.r-lib.org/articles/stages.html#deprecated" class="external-link"><img src="figures/lifecycle-deprecated.svg" alt="[Deprecated]"></a> sf-side
+smoothing is no longer applied during atlas creation. Use
+<code><a href="atlas_smooth.html">atlas_smooth()</a></code> on the returned atlas instead. Supplying a value
+emits a lifecycle warning and is otherwise ignored.</p></dd>
 
 
 <dt id="arg-cleanup">cleanup<a class="anchor" aria-label="anchor" href="#arg-cleanup"></a></dt>

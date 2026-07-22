@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9001</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9005</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -33,6 +33,7 @@
     <li><a class="dropdown-item" href="articles/tutorial-neuromaps-atlas.html">Neuromaps Atlas</a></li>
     <li><a class="dropdown-item" href="articles/tutorial-subcortical-atlas.html">Subcortical Atlas</a></li>
     <li><a class="dropdown-item" href="articles/tutorial-wholebrain-atlas.html">Whole-Brain Atlas</a></li>
+    <li><a class="dropdown-item" href="articles/tutorial-cerebellar-atlas.html">Cerebellar Atlas</a></li>
     <li><a class="dropdown-item" href="articles/tutorial-tract-atlas.html">Tract Atlas</a></li>
     <li><a class="dropdown-item" href="articles/tutorial-label-atlas.html">Label Atlas</a></li>
     <li><hr class="dropdown-divider"></li>
@@ -103,7 +104,7 @@
 </ul></div>
 <div class="section level3">
 <h3 id="integration-points--gotchas">Integration points &amp; gotchas<a class="anchor" aria-label="anchor" href="#integration-points--gotchas"></a></h3>
-<ul><li>Heavy dependencies (<code>freesurfer</code>, <code>magick</code>, <code>chromote</code>, <code>terra</code>, <code>smoothr</code>, <code>RNifti</code>, <code>htmlwidgets</code>) are in Suggests, not Imports. They are loaded at runtime via <code><a href="https://rlang.r-lib.org/reference/is_installed.html" class="external-link">rlang::check_installed()</a></code>. The cortical pipeline needs only base Imports (<code>sf</code>, <code>dplyr</code>, <code>cli</code>, <code>ggseg.formats</code>, <code>furrr</code>). Subcortical/tract pipelines need the full set.</li>
+<ul><li>Heavy dependencies (<code>freesurfer</code>, <code>magick</code>, <code>chromote</code>, <code>terra</code>, <code>RNifti</code>, <code>htmlwidgets</code>) are in Suggests, not Imports. They are loaded at runtime via <code><a href="https://rlang.r-lib.org/reference/is_installed.html" class="external-link">rlang::check_installed()</a></code>. The cortical pipeline needs only base Imports (<code>sf</code>, <code>dplyr</code>, <code>cli</code>, <code>ggseg.formats</code>, <code>furrr</code>). Subcortical/tract pipelines need the full set.</li>
 <li>Subcortical/wholebrain pipelines require FreeSurfer and ImageMagick as system tools — CI installs them via Homebrew on macOS.</li>
 <li>Code uses <code>terra</code> and <code>sf</code> — watch for platform-specific binary issues and prefer high-level R APIs when possible.</li>
 <li>Intermediate files have expected directory layout (e.g. <code>output_dir/&lt;atlas&gt;/{img,regions,masks}</code>). If you change file naming, update all downstream readers (contour extraction, smoothing, vertex reduction).</li>

@@ -19,7 +19,7 @@ rendering and speed."><meta property="og:image" content="https://ggsegverse.gith
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9001</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9005</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -43,6 +43,7 @@ rendering and speed."><meta property="og:image" content="https://ggsegverse.gith
     <li><a class="dropdown-item" href="../articles/tutorial-neuromaps-atlas.html">Neuromaps Atlas</a></li>
     <li><a class="dropdown-item" href="../articles/tutorial-subcortical-atlas.html">Subcortical Atlas</a></li>
     <li><a class="dropdown-item" href="../articles/tutorial-wholebrain-atlas.html">Whole-Brain Atlas</a></li>
+    <li><a class="dropdown-item" href="../articles/tutorial-cerebellar-atlas.html">Cerebellar Atlas</a></li>
     <li><a class="dropdown-item" href="../articles/tutorial-tract-atlas.html">Tract Atlas</a></li>
     <li><a class="dropdown-item" href="../articles/tutorial-label-atlas.html">Label Atlas</a></li>
     <li><hr class="dropdown-divider"></li>
@@ -87,10 +88,11 @@ rendering and speed.</p>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">mri_surf2surf_rereg</span><span class="op">(</span></span>
 <span>  <span class="va">subject</span>,</span>
 <span>  <span class="va">annot</span>,</span>
-<span>  hemi <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"lh"</span>, <span class="st">"rh"</span><span class="op">)</span>,</span>
+<span>  hemisphere <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"lh"</span>, <span class="st">"rh"</span><span class="op">)</span>,</span>
 <span>  target_subject <span class="op">=</span> <span class="st">"fsaverage5"</span>,</span>
-<span>  output_dir <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="fu">freesurfer</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/freesurfer/man/fs_dir.html" class="external-link">fs_subj_dir</a></span><span class="op">(</span><span class="op">)</span>, <span class="va">subject</span>, <span class="st">"label"</span><span class="op">)</span>,</span>
-<span>  verbose <span class="op">=</span> <span class="fu"><a href="get_verbose.html">get_verbose</a></span><span class="op">(</span><span class="op">)</span></span>
+<span>  output_dir <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/character.html" class="external-link">as.character</a></span><span class="op">(</span><span class="fu">fs</span><span class="fu">::</span><span class="fu"><a href="https://fs.r-lib.org/reference/path.html" class="external-link">path</a></span><span class="op">(</span><span class="fu">freesurfer</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/freesurfer/man/fs_dir.html" class="external-link">fs_subj_dir</a></span><span class="op">(</span><span class="op">)</span>, <span class="va">subject</span>, <span class="st">"label"</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>  verbose <span class="op">=</span> <span class="fu"><a href="get_verbose.html">get_verbose</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  hemi <span class="op">=</span> <span class="fu">lifecycle</span><span class="fu">::</span><span class="fu"><a href="https://lifecycle.r-lib.org/reference/deprecated.html" class="external-link">deprecated</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -106,7 +108,7 @@ rendering and speed.</p>
 <dd><p>annotation file name (as found in subjects_dir)</p></dd>
 
 
-<dt id="arg-hemi">hemi<a class="anchor" aria-label="anchor" href="#arg-hemi"></a></dt>
+<dt id="arg-hemisphere">hemisphere<a class="anchor" aria-label="anchor" href="#arg-hemisphere"></a></dt>
 <dd><p>hemisphere (one of "lh" or "rh")</p></dd>
 
 
@@ -126,6 +128,10 @@ default), or <code>2</code> (debug, includes FreeSurfer output). Logical values
 are accepted (<code>TRUE</code> = 1, <code>FALSE</code> = 0). If not specified, uses the
 value from <code>options("ggseg.extra.verbose")</code> or the <code>GGSEG_EXTRA_VERBOSE</code>
 environment variable.</p></dd>
+
+
+<dt id="arg-hemi">hemi<a class="anchor" aria-label="anchor" href="#arg-hemi"></a></dt>
+<dd><p><a href="https://lifecycle.r-lib.org/articles/stages.html#deprecated" class="external-link"><img src="figures/lifecycle-deprecated.svg" alt="[Deprecated]"></a> Use <code>hemisphere</code> instead.</p></dd>
 
 </dl></div>
     <div class="section level2">

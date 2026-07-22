@@ -21,22 +21,23 @@ the tube thicker where more streamlines pass through.
 create_tract_from_tractography(
   input_tracts,
   input_aseg = NULL,
-  atlas_name = NULL,
   input_lut = NULL,
+  atlas_name = NULL,
+  output_dir = NULL,
   tube_radius = 5,
   tube_segments = 8,
   n_points = 50,
   centerline_method = c("mean", "medoid"),
-  views = NULL,
-  output_dir = NULL,
-  verbose = get_verbose(),
+  slabs = NULL,
+  vertex_size_limits = NULL,
+  dilate = NULL,
   tolerance = NULL,
   smoothness = NULL,
   cleanup = NULL,
+  verbose = get_verbose(),
   skip_existing = NULL,
-  dilate = NULL,
-  vertex_size_limits = NULL,
-  steps = NULL
+  steps = NULL,
+  views = lifecycle::deprecated()
 )
 ```
 
@@ -53,16 +54,23 @@ create_tract_from_tractography(
   Path to a segmentation volume (`.mgz`, `.nii`) used to draw cortex
   outlines in 2D views. Required for steps 2+.
 
+- input_lut:
+
+  Path to a color lookup table (LUT) file, or a data.frame with a
+  `region` column (or a FreeSurfer-style `label` column) plus colour
+  columns (R, G, B or hex). Rows must be in the same order as
+  `input_tracts`. Use this to provide tract names and colours. If NULL,
+  names are derived from filenames or list names, and colours will be
+  auto-generated.
+
 - atlas_name:
 
   Name for the atlas. If NULL, derived from the input filename.
 
-- input_lut:
+- output_dir:
 
-  Path to a color lookup table (LUT) file, or a data.frame with columns
-  `region` and colour columns (R, G, B or hex). Use this to provide
-  tract names and colours. If NULL, names are derived from filenames or
-  list names, and the atlas will have no palette.
+  Directory to store intermediate files (screenshots, masks, contours).
+  Defaults to [`tempdir()`](https://rdrr.io/r/base/tempfile.html).
 
 - tube_radius:
 
@@ -86,15 +94,43 @@ create_tract_from_tractography(
   averages coordinates point-by-point, `"medoid"` selects the single
   most representative streamline.
 
-- views:
+- slabs:
 
-  A data.frame specifying projection views. If NULL, uses
-  [`default_tract_views()`](https://ggsegverse.github.io/ggseg.extra/reference/default_tract_views.md).
+  A data.frame specifying projection slabs. If NULL, a default set of
+  tract slabs is derived from the volume dimensions.
 
-- output_dir:
+- vertex_size_limits:
 
-  Directory to store intermediate files (screenshots, masks, contours).
-  Defaults to [`tempdir()`](https://rdrr.io/r/base/tempfile.html).
+  Numeric vector of length 2 setting minimum and maximum vertex count
+  for polygons. Polygons outside this range are filtered out. Default
+  NULL applies no limits.
+
+- dilate:
+
+  Dilation iterations for 2D polygons. Useful for filling small gaps
+  between structures.
+
+- tolerance:
+
+  **\[deprecated\]** sf simplification is no longer applied during atlas
+  creation. Use
+  [`atlas_smooth()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_smooth.md)
+  on the returned atlas instead. Supplying a value emits a lifecycle
+  warning and is otherwise ignored.
+
+- smoothness:
+
+  **\[deprecated\]** sf contour smoothing is no longer applied during
+  atlas creation. Use
+  [`atlas_smooth()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_smooth.md)
+  on the returned atlas instead. Supplying a value emits a lifecycle
+  warning and is otherwise ignored.
+
+- cleanup:
+
+  Remove intermediate files after atlas creation. If not specified, uses
+  `options("ggseg.extra.cleanup")` or the `GGSEG_EXTRA_CLEANUP`
+  environment variable. Default is TRUE.
 
 - verbose:
 
@@ -104,45 +140,12 @@ create_tract_from_tractography(
   `options("ggseg.extra.verbose")` or the `GGSEG_EXTRA_VERBOSE`
   environment variable.
 
-- tolerance:
-
-  Simplification tolerance for 2D polygons. Higher values produce
-  simpler shapes with fewer vertices (typical range: 0.1–2). Passed to
-  [`sf::st_simplify()`](https://r-spatial.github.io/sf/reference/geos_unary.html).
-  If not specified, uses `options("ggseg.extra.tolerance")` or the
-  `GGSEG_EXTRA_TOLERANCE` environment variable. Default is 1.
-
-- smoothness:
-
-  Smoothing factor for 2D contours. Higher values produce smoother
-  region boundaries (typical range: 3–15). Passed to
-  [`smoothr::smooth()`](https://strimas.com/smoothr/reference/smooth.html).
-  If not specified, uses `options("ggseg.extra.smoothness")` or the
-  `GGSEG_EXTRA_SMOOTHNESS` environment variable. Default is 5.
-
-- cleanup:
-
-  Remove intermediate files after atlas creation. If not specified, uses
-  `options("ggseg.extra.cleanup")` or the `GGSEG_EXTRA_CLEANUP`
-  environment variable. Default is TRUE.
-
 - skip_existing:
 
   Skip generating output files that already exist, allowing interrupted
   atlas creation to resume. If not specified, uses
   `options("ggseg.extra.skip_existing")` or the
   `GGSEG_EXTRA_SKIP_EXISTING` environment variable. Default is TRUE.
-
-- dilate:
-
-  Dilation iterations for 2D polygons. Useful for filling small gaps
-  between structures.
-
-- vertex_size_limits:
-
-  Numeric vector of length 2 setting minimum and maximum vertex count
-  for polygons. Polygons outside this range are filtered out. Default
-  NULL applies no limits.
 
 - steps:
 
@@ -164,6 +167,10 @@ create_tract_from_tractography(
 
   Use `steps = 1` for 3D-only atlas. Use `steps = 5:7` to iterate on
   smoothing and vertex reduction.
+
+- views:
+
+  **\[deprecated\]** Use `slabs` instead.
 
 ## Value
 

@@ -28,7 +28,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9001</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9005</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -54,6 +54,7 @@
     <li><a class="dropdown-item" href="../articles/tutorial-neuromaps-atlas.html">Neuromaps Atlas</a></li>
     <li><a class="dropdown-item" href="../articles/tutorial-subcortical-atlas.html">Subcortical Atlas</a></li>
     <li><a class="dropdown-item" href="../articles/tutorial-wholebrain-atlas.html">Whole-Brain Atlas</a></li>
+    <li><a class="dropdown-item" href="../articles/tutorial-cerebellar-atlas.html">Cerebellar Atlas</a></li>
     <li><a class="dropdown-item" href="../articles/tutorial-tract-atlas.html">Tract Atlas</a></li>
     <li><a class="dropdown-item" href="../articles/tutorial-label-atlas.html">Label Atlas</a></li>
     <li><hr class="dropdown-divider"></li>
@@ -137,7 +138,6 @@
 <span>  input_annot <span class="op">=</span> <span class="va">annot_files</span>,</span>
 <span>  atlas_name <span class="op">=</span> <span class="st">"yeo7"</span>,</span>
 <span>  output_dir <span class="op">=</span> <span class="va">output_dir</span>,</span>
-<span>  tolerance <span class="op">=</span> <span class="fl">0.5</span>,</span>
 <span>  skip_existing <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  cleanup <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  verbose <span class="op">=</span> <span class="cn">TRUE</span></span>
@@ -186,16 +186,20 @@
 <p>A few things to note about the parameters:</p>
 <ul>
 <li>
-<strong><code>tolerance</code></strong> controls vertex simplification in the output polygons. Higher values mean simpler polygons with fewer vertices. Default is 0.5; use 0 for maximum fidelity.</li>
-<li>
 <strong><code>cleanup = FALSE</code></strong> keeps intermediate files (cached step 1 data) so you can re-run without re-reading annotations.</li>
 <li>
 <strong><code>skip_existing = TRUE</code></strong> reuses existing intermediate files when resuming an interrupted run.</li>
-</ul></section><section class="level2"><h2 id="step-3-post-processing">Step 3: Post-processing<a class="anchor" aria-label="anchor" href="#step-3-post-processing"></a>
+</ul>
+<p>The pipeline returns raw, unsmoothed polygons — smoothing is now a separate post-processing step via <code><a href="../reference/atlas_smooth.html">atlas_smooth()</a></code>. Apply it once and tune <code>keep</code> freely; you no longer have to re-run the full pipeline to try a different simplification level:</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">yeo7_smooth</span> <span class="op">&lt;-</span> <span class="va">yeo7_raw</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/atlas_smooth.html">atlas_smooth</a></span><span class="op">(</span>keep <span class="op">=</span> <span class="fl">0.2</span>, exclude <span class="op">=</span> <span class="st">"cortex_"</span><span class="op">)</span></span></code></pre></div>
+<p><code>exclude = "cortex_"</code> leaves the brain-outline geometry crisp while simplifying the labelled regions.</p>
+</section><section class="level2"><h2 id="step-3-post-processing">Step 3: Post-processing<a class="anchor" aria-label="anchor" href="#step-3-post-processing"></a>
 </h2>
 <p>The raw atlas contains every region from the annotation, including labels like “unknown” and “corpuscallosum” that you typically want as background outlines rather than filled regions.</p>
 <p><code><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_contextual()</a></code> keeps the geometry for spatial reference but removes the region from <code>$core</code>, so it renders as an outline:</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">yeo7_raw</span> <span class="op">&lt;-</span> <span class="va">yeo7_raw</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_contextual</a></span><span class="op">(</span><span class="st">"cortex"</span>, match_on <span class="op">=</span> <span class="st">"label"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_contextual</a></span><span class="op">(</span><span class="st">"unknown"</span>, match_on <span class="op">=</span> <span class="st">"label"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
@@ -204,7 +208,7 @@
 </section><section class="level2"><h2 id="step-4-adding-metadata">Step 4: Adding metadata<a class="anchor" aria-label="anchor" href="#step-4-adding-metadata"></a>
 </h2>
 <p>The raw atlas has region names derived from the annotation file. For the Yeo atlas, the annotation labels are numeric network IDs. We can map them to descriptive network names:</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">yeo7_metadata</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
 <span>  label <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
 <span>    <span class="st">"7Networks_1"</span>, <span class="st">"7Networks_2"</span>, <span class="st">"7Networks_3"</span>, <span class="st">"7Networks_4"</span>,</span>
@@ -223,7 +227,7 @@
 </section><section class="level2"><h2 id="step-5-rebuilding-the-atlas">Step 5: Rebuilding the atlas<a class="anchor" aria-label="anchor" href="#step-5-rebuilding-the-atlas"></a>
 </h2>
 <p>Construct the final atlas from the modified core:</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">yeo7</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/ggseg_atlas.html" class="external-link">ggseg_atlas</a></span><span class="op">(</span></span>
 <span>  atlas <span class="op">=</span> <span class="va">yeo7_raw</span><span class="op">$</span><span class="va">atlas</span>,</span>
 <span>  type <span class="op">=</span> <span class="va">yeo7_raw</span><span class="op">$</span><span class="va">type</span>,</span>
@@ -261,13 +265,13 @@
 <span><span class="co">#&gt; 12 right 7Networks_5 rh_7Networks_5</span></span>
 <span><span class="co">#&gt; 13 right 7Networks_6 rh_7Networks_6</span></span>
 <span><span class="co">#&gt; 14 right 7Networks_7 rh_7Networks_7</span></span></code></pre></div>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_regions.html" class="external-link">atlas_regions</a></span><span class="op">(</span><span class="va">yeo7</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://rdrr.io/r/base/sort.html" class="external-link">sort</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "7Networks_1" "7Networks_2"</span></span>
 <span><span class="co">#&gt; [3] "7Networks_3" "7Networks_4"</span></span>
 <span><span class="co">#&gt; [5] "7Networks_5" "7Networks_6"</span></span>
 <span><span class="co">#&gt; [7] "7Networks_7"</span></span></code></pre></div>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">yeo7</span><span class="op">)</span></span></code></pre></div>
 <div class="figure">
 <img src="figures/tutorial-cortical-atlas-plot-1.png" alt="2D brain atlas plot showing the Yeo 7-network cortical parcellation with seven coloured regions across lateral, medial, inferior, and superior views." width="960"><p class="caption">
@@ -277,7 +281,7 @@ Yeo 7-network cortical parcellation plotted with ggseg.
 </section><section class="level2"><h2 id="applying-the-same-pattern-to-larger-atlases">Applying the same pattern to larger atlases<a class="anchor" aria-label="anchor" href="#applying-the-same-pattern-to-larger-atlases"></a>
 </h2>
 <p>The Yeo 7-network atlas runs in seconds because it has few regions. Larger atlases like aparc (34 regions/hemisphere) or Glasser (180 regions/hemisphere) take a bit longer but follow the same pattern and still complete in under a minute:</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">dk_annots</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span></span>
 <span>  <span class="va">subjects_dir</span>, <span class="st">"fsaverage5"</span>, <span class="st">"label"</span>,</span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"lh.aparc.annot"</span>, <span class="st">"rh.aparc.annot"</span><span class="op">)</span></span>
@@ -291,7 +295,7 @@ Yeo 7-network cortical parcellation plotted with ggseg.
 </section><section class="level2"><h2 id="saving">Saving<a class="anchor" aria-label="anchor" href="#saving"></a>
 </h2>
 <p>Once you’re satisfied with the atlas, save it as package data:</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">usethis</span><span class="fu">::</span><span class="fu">use_data</span><span class="op">(</span><span class="va">yeo7</span>, overwrite <span class="op">=</span> <span class="cn">TRUE</span>, compress <span class="op">=</span> <span class="st">"xz"</span><span class="op">)</span></span></code></pre></div>
 <p>The <code>compress = "xz"</code> flag gives the best compression for sf geometry data.</p>
 </section><script id="quarto-html-after-body" type="application/javascript">

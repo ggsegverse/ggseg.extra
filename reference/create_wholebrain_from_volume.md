@@ -25,11 +25,10 @@ create_wholebrain_from_volume(
   min_vertices = 50L,
   cortical_labels = NULL,
   subcortical_labels = NULL,
-  cortical_views = c("lateral", "medial", "superior", "inferior"),
-  subcortical_views = NULL,
-  decimate = 0.5,
-  tolerance = NULL,
-  smoothness = NULL,
+  cerebellar_labels = NULL,
+  cortical_opts = list(),
+  subcortical_opts = list(),
+  cerebellar_opts = list(),
   cleanup = NULL,
   verbose = get_verbose(),
   skip_existing = NULL,
@@ -50,7 +49,8 @@ create_wholebrain_from_volume(
   with values `"cortical"` or `"subcortical"` controls label
   classification (see **Label classification**). Voxel IDs not listed in
   the LUT are automatically zeroed out before surface projection (see
-  **Volume pre-processing**). If NULL, generic names and no palette.
+  **Volume pre-processing**). If NULL, generic names and auto-generated
+  colours.
 
 - atlas_name:
 
@@ -102,34 +102,37 @@ create_wholebrain_from_volume(
   Character vector of label names to force as subcortical. Highest
   priority; overrides LUT `type` and the vertex-count heuristic.
 
-- cortical_views:
+- cerebellar_labels:
 
-  Views for cortical sub-pipeline. Default
-  `c("lateral", "medial", "superior", "inferior")`.
+  Character vector of label names to force as cerebellar. These go
+  through the cerebellar SUIT flatmap pipeline instead of cortical or
+  subcortical. Uses the bundled SUIT surfaces from
+  [`suit_flatmap_path()`](https://ggsegverse.github.io/ggseg.extra/reference/suit_flatmap_path.md)
+  and
+  [`suit_3d_path()`](https://ggsegverse.github.io/ggseg.extra/reference/suit_3d_path.md).
 
-- subcortical_views:
+- cortical_opts:
 
-  Views for subcortical sub-pipeline. Default NULL (auto-detected).
+  Named list of extra arguments forwarded to the cortical sub-pipeline.
+  Allowed entry: `views`. Unknown entries error. Leave empty to use
+  defaults.
 
-- decimate:
+- subcortical_opts:
 
-  Mesh decimation ratio for subcortical meshes (0-1). Default 0.5.
+  Named list of extra arguments forwarded to
+  [`create_subcortical_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_subcortical_from_volume.md).
+  Any argument of that function may be set here except those managed by
+  the wholebrain pipeline (`input_volume`, `input_lut`, `atlas_name`,
+  `output_dir`, `verbose`, `cleanup`, `skip_existing`). Use this to tune
+  `dilate`, `vertex_size_limits`, `decimate`, `slabs`. The deprecated
+  `tolerance`/`smoothness` entries trigger a lifecycle warning.
 
-- tolerance:
+- cerebellar_opts:
 
-  Simplification tolerance for 2D polygons. Higher values produce
-  simpler shapes with fewer vertices (typical range: 0.1–2). Passed to
-  [`sf::st_simplify()`](https://r-spatial.github.io/sf/reference/geos_unary.html).
-  If not specified, uses `options("ggseg.extra.tolerance")` or the
-  `GGSEG_EXTRA_TOLERANCE` environment variable. Default is 1.
-
-- smoothness:
-
-  Smoothing factor for 2D contours. Higher values produce smoother
-  region boundaries (typical range: 3–15). Passed to
-  [`smoothr::smooth()`](https://strimas.com/smoothr/reference/smooth.html).
-  If not specified, uses `options("ggseg.extra.smoothness")` or the
-  `GGSEG_EXTRA_SMOOTHNESS` environment variable. Default is 5.
+  Named list of extra arguments forwarded to
+  [`create_cerebellar_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_cerebellar_from_volume.md).
+  Allowed entries include `decimate`. The deprecated
+  `tolerance`/`smooth_refinements` entries trigger a lifecycle warning.
 
 - cleanup:
 
@@ -158,18 +161,20 @@ create_wholebrain_from_volume(
 
   - 1: Project volume onto surface
 
-  - 2: Split labels into cortical/subcortical
+  - 2: Split labels into cortical/subcortical/cerebellar
 
   - 3: Run cortical pipeline
 
   - 4: Run subcortical pipeline
 
+  - 5: Run cerebellar pipeline
+
   Use `steps = 1:2` to run projection and split only.
 
 ## Value
 
-A named list with elements `cortical` and `subcortical`, each a
-`ggseg_atlas` object (or NULL if no regions of that type exist).
+A named list with elements `cortical`, `subcortical`, and `cerebellar`,
+each a `ggseg_atlas` object (or NULL if no regions of that type exist).
 
 ## Label classification
 
@@ -242,7 +247,8 @@ lut <- data.frame(
 result <- create_wholebrain_from_volume(
   input_volume = "my_atlas.nii.gz",
   input_lut = lut,
-  atlas_name = "my_atlas"
+  atlas_name = "my_atlas",
+  subcortical_opts = list(dilate = 2)
 )
 result$cortical   # surface-based cortical atlas
 result$subcortical # mesh-based subcortical atlas

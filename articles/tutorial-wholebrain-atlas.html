@@ -28,7 +28,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9001</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9005</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -54,6 +54,7 @@
     <li><a class="dropdown-item" href="../articles/tutorial-neuromaps-atlas.html">Neuromaps Atlas</a></li>
     <li><a class="dropdown-item" href="../articles/tutorial-subcortical-atlas.html">Subcortical Atlas</a></li>
     <li><a class="dropdown-item" href="../articles/tutorial-wholebrain-atlas.html">Whole-Brain Atlas</a></li>
+    <li><a class="dropdown-item" href="../articles/tutorial-cerebellar-atlas.html">Cerebellar Atlas</a></li>
     <li><a class="dropdown-item" href="../articles/tutorial-tract-atlas.html">Tract Atlas</a></li>
     <li><a class="dropdown-item" href="../articles/tutorial-label-atlas.html">Label Atlas</a></li>
     <li><hr class="dropdown-divider"></li>
@@ -247,18 +248,55 @@
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://future.futureverse.org/reference/plan.html" class="external-link">plan</a></span><span class="op">(</span><span class="va">sequential</span><span class="op">)</span></span></code></pre></div>
-<p>The pipeline does four things in sequence:</p>
+<p>The pipeline does up to five things in sequence:</p>
 <ol type="1">
 <li>
 <strong>Project volume onto surface</strong> — <code>mri_vol2surf</code> samples the volume at multiple cortical depths (default 0–1 in 0.1 steps) and takes the maximum label at each vertex. Unlabeled vertices are filled by mesh-neighbor dilation, constrained to the cortex mask so labels don’t bleed into the medial wall.</li>
 <li>
-<strong>Classify labels</strong> — Splits labels into cortical and subcortical using the priority system described above.</li>
+<strong>Classify labels</strong> — Splits labels into cortical, subcortical, and cerebellar using the priority system described above.</li>
 <li>
 <strong>Run the cortical pipeline</strong> — Takes the projected cortical labels through the same 8-step pipeline used by <code><a href="../reference/create_cortical_from_annotation.html">create_cortical_from_annotation()</a></code>: screenshots, contour extraction, smoothing, and polygon conversion.</li>
 <li>
 <strong>Run the subcortical pipeline</strong> — Tessellates subcortical voxels into 3D meshes and creates projection views. Cortical labels are remapped to FreeSurfer’s reference IDs (3 for left cortex, 42 for right) so the subcortical pipeline can generate brain outline context geometry.</li>
+<li>
+<strong>Run the cerebellar pipeline</strong> — Filters the volume to keep only cerebellar labels, samples them onto the SUIT 3D surface, projects onto the SUIT flatmap, and tessellates 3D meshes. This step only runs if cerebellar labels were detected in step 2.</li>
 </ol>
-<p>The result is a list with <code>$cortical</code> and <code>$subcortical</code> — two separate <code>ggseg_atlas</code> objects.</p>
+<p>The result is a named list with <code>$cortical</code>, <code>$subcortical</code>, and <code>$cerebellar</code> — up to three separate <code>ggseg_atlas</code> objects. Any element is <code>NULL</code> if no labels of that type were found (or if the corresponding step was skipped).</p>
+</section><section class="level2"><h2 id="cerebellar-labels-in-the-mix">Cerebellar labels in the mix<a class="anchor" aria-label="anchor" href="#cerebellar-labels-in-the-mix"></a>
+</h2>
+<p>Some whole-brain parcellations include cerebellar regions alongside cortical and subcortical structures — the Buckner atlas and Schaefer+Melbourne combined parcellations are common examples.</p>
+<p>The pipeline handles this as a fifth step. Classification works the same way as the cortical/subcortical split: you can mark labels as cerebellar via the <code>type</code> column in your LUT (set to <code>"cerebellar"</code>), pass them explicitly with <code>cerebellar_labels</code>, or let the heuristic sort them out.</p>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">lut</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
+<span>  idx <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">subcort_remapped_ids</span>, <span class="fl">101</span><span class="op">:</span><span class="fl">148</span>, <span class="fl">301</span><span class="op">:</span><span class="fl">310</span><span class="op">)</span>,</span>
+<span>  label <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">subcortical_labels</span>, <span class="va">cortical_labels</span>, <span class="va">cerebellar_labels</span><span class="op">)</span>,</span>
+<span>  R <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample</a></span><span class="op">(</span><span class="fl">50</span><span class="op">:</span><span class="fl">220</span>, <span class="va">n</span>, replace <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>,</span>
+<span>  G <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample</a></span><span class="op">(</span><span class="fl">50</span><span class="op">:</span><span class="fl">220</span>, <span class="va">n</span>, replace <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>,</span>
+<span>  B <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample</a></span><span class="op">(</span><span class="fl">50</span><span class="op">:</span><span class="fl">220</span>, <span class="va">n</span>, replace <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>,</span>
+<span>  A <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">255L</span>, <span class="va">n</span><span class="op">)</span>,</span>
+<span>  type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
+<span>    <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="st">"subcortical"</span>, <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">subcortical_labels</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>    <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="st">"cortical"</span>, <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">cortical_labels</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>    <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="st">"cerebellar"</span>, <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">cerebellar_labels</span><span class="op">)</span><span class="op">)</span></span>
+<span>  <span class="op">)</span>,</span>
+<span>  stringsAsFactors <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p>When cerebellar labels are detected, step 5 filters the volume to keep only those labels, transforms them into SUIT cerebellar space, and runs them through the cerebellar pipeline. The result lands in <code>$cerebellar</code> — a <code>ggseg_atlas</code> with SUIT flatmap polygons and 3D meshes, ready for <code><a href="https://ggsegverse.github.io/ggseg/reference/ggseg.html" class="external-link">ggseg()</a></code> and <code><a href="https://ggsegverse.github.io/ggseg3d/reference/ggseg3d.html" class="external-link">ggseg3d()</a></code>.</p>
+<p>The verification workflow at <code>steps = 1:2</code> now reports three lists:</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/create_wholebrain_from_volume.html">create_wholebrain_from_volume</a></span><span class="op">(</span></span>
+<span>  input_volume <span class="op">=</span> <span class="va">remapped_path</span>,</span>
+<span>  input_lut <span class="op">=</span> <span class="va">lut</span>,</span>
+<span>  atlas_name <span class="op">=</span> <span class="st">"ho"</span>,</span>
+<span>  output_dir <span class="op">=</span> <span class="st">"data-raw"</span>,</span>
+<span>  steps <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">2</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">result</span><span class="op">$</span><span class="va">cortical_labels</span></span>
+<span><span class="va">result</span><span class="op">$</span><span class="va">subcortical_labels</span></span>
+<span><span class="va">result</span><span class="op">$</span><span class="va">cerebellar_labels</span></span></code></pre></div>
+<p>Check all three before running the full pipeline. If the automatic classification puts a cerebellar lobule into the subcortical bucket (or vice versa), override with the <code>cerebellar_labels</code> argument.</p>
+<p>For the full details on the cerebellar pipeline itself — SUIT surfaces, flatmap projection, MNI-to-SUIT transforms — see the <a href="tutorial-cerebellar-atlas.html">cerebellar tutorial</a>.</p>
 </section><section class="level2"><h2 id="what-makes-this-tricky">What makes this tricky<a class="anchor" aria-label="anchor" href="#what-makes-this-tricky"></a>
 </h2>
 <p>Three things conspire to make whole-brain atlases harder than their single-type counterparts.</p>
@@ -267,25 +305,23 @@
 <p><strong>Hemisphere splitting for subcortical context.</strong> The subcortical pipeline needs brain outline geometry to provide spatial context — a faint cortex outline behind the subcortical structures. For purely subcortical volumes, this is straightforward because FreeSurfer’s segmentation already includes cortex labels. For combined volumes, the pipeline has to synthesize this: it uses the volume’s orientation matrix to determine which side of the midline each cortical voxel sits on, then remaps them to FreeSurfer’s reference cortex labels. This works reliably for standard MNI152 volumes, but can break with unusual orientations.</p>
 </section><section class="level2"><h2 id="post-processing">Post-processing<a class="anchor" aria-label="anchor" href="#post-processing"></a>
 </h2>
-<p>The raw atlas usually needs cleanup. Smooth the contours and reduce vertex count for faster plotting:</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<p>The raw atlas usually needs cleanup. Simplify the contours for faster plotting using topology-preserving simplification:</p>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">ho_cort</span> <span class="op">&lt;-</span> <span class="va">ho</span><span class="op">$</span><span class="va">cortical</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="../reference/atlas_smooth.html">atlas_smooth</a></span><span class="op">(</span>smoothness <span class="op">=</span> <span class="fl">5</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="../reference/atlas_simplify.html">atlas_simplify</a></span><span class="op">(</span>tolerance <span class="op">=</span> <span class="fl">0.5</span><span class="op">)</span></span>
+<span>  <span class="fu"><a href="../reference/atlas_smooth.html">atlas_smooth</a></span><span class="op">(</span>keep <span class="op">=</span> <span class="fl">0.05</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">ho_sub</span> <span class="op">&lt;-</span> <span class="va">ho</span><span class="op">$</span><span class="va">subcortical</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="../reference/atlas_smooth.html">atlas_smooth</a></span><span class="op">(</span>smoothness <span class="op">=</span> <span class="fl">5</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="../reference/atlas_simplify.html">atlas_simplify</a></span><span class="op">(</span>tolerance <span class="op">=</span> <span class="fl">0.5</span><span class="op">)</span></span></code></pre></div>
-<p>Higher smoothness values produce rounder contours. Higher tolerance values produce simpler polygons with fewer vertices — important for keeping atlas file sizes manageable. The right values depend on your atlas: parcellations with many small regions need gentler settings than those with a few large ones.</p>
+<span>  <span class="fu"><a href="../reference/atlas_smooth.html">atlas_smooth</a></span><span class="op">(</span>keep <span class="op">=</span> <span class="fl">0.05</span><span class="op">)</span></span></code></pre></div>
+<p>Lower <code>keep</code> values produce simpler polygons with fewer vertices — important for keeping atlas file sizes manageable. The right value depends on your atlas: parcellations with many small regions need higher <code>keep</code> values than those with a few large ones.</p>
 <p>You can also remove unwanted regions from the subcortical atlas (ventricles, white matter) and set context regions, just like in the <a href="tutorial-subcortical-atlas.html">subcortical tutorial</a>:</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">ho_sub</span> <span class="op">&lt;-</span> <span class="va">ho_sub</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_remove</a></span><span class="op">(</span><span class="st">"Ventricle"</span>, match_on <span class="op">=</span> <span class="st">"label"</span><span class="op">)</span></span></code></pre></div>
 </section><section class="level2"><h2 id="structuring-atlas-metadata">Structuring atlas metadata<a class="anchor" aria-label="anchor" href="#structuring-atlas-metadata"></a>
 </h2>
 <p>Before saving, clean up region names and add grouping columns. The <a href="post-processing.html">post-processing vignette</a> covers this in detail — the key idea is that <code>label</code> stays machine-readable (matching the source parcellation) while <code>region</code> becomes human-readable for plot legends.</p>
 <p>The Harvard-Oxford atlas is a good example of both:</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">ho_cort</span> <span class="op">&lt;-</span> <span class="va">ho_cort</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_rename</a></span><span class="op">(</span><span class="st">"Left |Right "</span>, <span class="st">""</span>, match_on <span class="op">=</span> <span class="st">"region"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_rename</a></span><span class="op">(</span><span class="st">"-"</span>, <span class="st">" "</span>, match_on <span class="op">=</span> <span class="st">"region"</span><span class="op">)</span></span>
@@ -305,7 +341,7 @@
 </section><section class="level2"><h2 id="saving">Saving<a class="anchor" aria-label="anchor" href="#saving"></a>
 </h2>
 <p>The conventional pattern for atlas packages is to save cortical and subcortical atlases as separate internal data objects:</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">.hoCort</span> <span class="op">&lt;-</span> <span class="va">ho_cort</span></span>
 <span><span class="va">.hoSub</span> <span class="op">&lt;-</span> <span class="va">ho_sub</span></span>
 <span></span>
@@ -317,8 +353,8 @@
 <p>Prefixing with <code>.</code> keeps the objects hidden from the package namespace — users access them through wrapper functions like <code>hoCort()</code> and <code>hoSub()</code> that load and return the data on demand. See <code><a href="../reference/setup_atlas_repo.html">setup_atlas_repo()</a></code> for scaffolding an atlas package with the right structure.</p>
 </section><section class="level2"><h2 id="when-to-use-wholebrain-versus-separate-pipelines">When to use wholebrain versus separate pipelines<a class="anchor" aria-label="anchor" href="#when-to-use-wholebrain-versus-separate-pipelines"></a>
 </h2>
-<p><code><a href="../reference/create_wholebrain_from_volume.html">create_wholebrain_from_volume()</a></code> is the right choice when you have a single volume containing both cortical and subcortical labels and you want the pipeline to handle the split. If you already have cortical annotations as surface files (<code>.annot</code>, <code>.label.gii</code>, <code>.dlabel.nii</code>) and subcortical segmentations as separate volumes, you’re better off running <code><a href="../reference/create_cortical_from_annotation.html">create_cortical_from_annotation()</a></code> and <code><a href="../reference/create_subcortical_from_volume.html">create_subcortical_from_volume()</a></code> independently. The separate pipelines skip the volume-to-surface projection step entirely, which means fewer failure modes and faster execution.</p>
-<p>The wholebrain pipeline exists because many standard atlases — Harvard-Oxford, Brainnetome, Schaefer+Melbourne — ship as single volumetric files. Converting them manually would mean splitting the volume, projecting cortical labels by hand, and managing the subcortical reference geometry yourself. The pipeline automates all of that, but it’s still the most opinionated part of ggseg.extra and the one most likely to need human intervention.</p>
+<p><code><a href="../reference/create_wholebrain_from_volume.html">create_wholebrain_from_volume()</a></code> is the right choice when you have a single volume containing cortical, subcortical, and/or cerebellar labels and you want the pipeline to handle the split. If you already have cortical annotations as surface files (<code>.annot</code>, <code>.label.gii</code>, <code>.dlabel.nii</code>), subcortical segmentations as separate volumes, and cerebellar parcellations as SUIT-space GIFTI labels, you’re better off running <code><a href="../reference/create_cortical_from_annotation.html">create_cortical_from_annotation()</a></code>, <code><a href="../reference/create_subcortical_from_volume.html">create_subcortical_from_volume()</a></code>, and <code><a href="../reference/create_cerebellar_from_gifti.html">create_cerebellar_from_gifti()</a></code> independently. The separate pipelines skip the volume-to-surface projection step entirely, which means fewer failure modes and faster execution.</p>
+<p>The wholebrain pipeline exists because many standard atlases — Harvard-Oxford, Brainnetome, Schaefer+Melbourne, Buckner — ship as single volumetric files. Converting them manually would mean splitting the volume, projecting cortical labels by hand, transforming cerebellar labels into SUIT space, and managing the subcortical reference geometry yourself. The pipeline automates all of that, but it’s still the most opinionated part of ggseg.extra and the one most likely to need human intervention.</p>
 </section><script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);

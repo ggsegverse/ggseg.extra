@@ -1,12 +1,14 @@
 # Check ggseg.extra setup status
 
-Performs diagnostic checks to verify that system dependencies and
-environment variables required by ggseg.extra are properly configured.
+Performs diagnostic checks to verify that system dependencies and R
+packages required by ggseg.extra are properly configured. Shows
+per-pipeline readiness so you can see which atlas creation workflows are
+available and what to install for the ones that aren't.
 
 ## Usage
 
 ``` r
-setup_sitrep(detail = c("simple", "full"))
+setup_sitrep(detail = c("simple", "minimal", "full"))
 ```
 
 ## Arguments
@@ -15,10 +17,12 @@ setup_sitrep(detail = c("simple", "full"))
 
   Character. Level of detail to display:
 
-  - `"simple"` (default): Quick pass/fail overview
+  - `"minimal"`: Just the pipeline readiness summary
 
-  - `"full"`: Detailed diagnostics including
-    [`freesurfer::fs_sitrep()`](https://rdrr.io/pkg/freesurfer/man/fs_sitrep.html)
+  - `"simple"` (default): System checks + pipeline readiness
+
+  - `"full"`: Everything above + install commands, paths, options, and
+    FreeSurfer diagnostics
 
 ## Value
 
@@ -32,17 +36,31 @@ setup_sitrep()
 #> ✖ ImageMagick not found
 #> ✔ Chrome/Chromium
 #> ✖ fsaverage5 not found
+#> ✔ R packages: {.pkg freesurferformats}, {.pkg gifti}, {.pkg ciftiTools}, {.pkg RNifti}, {.pkg Rvcg}, {.pkg neuromapr}
+#> ✔ SUIT surfaces (bundled)
 #> 
-#> ── Pipeline options 
-#> verbose: 1
-#> cleanup: TRUE
-#> skip_existing: TRUE
-#> tolerance: 1
-#> smoothness: 5
-#> output_dir: /tmp/Rtmpw3RLnn
 #> 
-#> ✖ Missing requirements for atlas creation
-#> ℹ Run `setup_sitrep("full")` for details
+#> ── Pipeline readiness (8/12) 
+#> Cortical
+#> ✖ from annotation: needs FreeSurfer, fsaverage5
+#> ✔ from GIFTI
+#> ✔ from CIFTI
+#> ✔ from neuromaps
+#> ✔ from labels
+#> Subcortical
+#> ✖ from volume: needs FreeSurfer
+#> Tract
+#> ✔ from tractography
+#> Whole-brain
+#> ✖ from volume: needs FreeSurfer, fsaverage5
+#> Cerebellar
+#> ✔ from GIFTI
+#> ✔ from annotation
+#> ✖ from volume: needs FreeSurfer
+#> ✔ MNI to SUIT transform
+#> 
+#> ℹ 8/12 pipelines ready
+#> ℹ Run `setup_sitrep("full")` for install instructions
 setup_sitrep("full")
 #> 
 #> ── FreeSurfer Setup Report ──
@@ -80,20 +98,51 @@ setup_sitrep("full")
 #> • Use `options(freesurfer.home = '/path/to/freesurfer')` to set location
 #> ✖ ImageMagick not found
 #> ℹ Install from <https://imagemagick.org/script/download.php>
+#> ℹ macOS: `brew install imagemagick`
 #> ✔ Chrome/Chromium: /usr/bin/google-chrome
 #> ✖ fsaverage5 not found
+#> ℹ Ships with FreeSurfer in $SUBJECTS_DIR
+#> ✔ R packages: {.pkg freesurferformats}, {.pkg gifti}, {.pkg ciftiTools}, {.pkg RNifti}, {.pkg Rvcg}, {.pkg neuromapr}
+#> ✔ SUIT surfaces (bundled)
+#> 
 #> 
 #> ── Pipeline options 
 #>   verbose: 1
 #>   cleanup: TRUE
 #>   skip_existing: TRUE
-#>   tolerance: 1
+#>   tolerance: 0.05
 #>   smoothness: 5
-#>   output_dir: /tmp/Rtmpw3RLnn
+#>   output_dir: /tmp/RtmpJFEsQC
 #> 
 #> ℹ Set via `options(ggseg.extra.<name> = value)` or environment variables
 #>   `GGSEG_EXTRA_<NAME>`
 #> ℹ See `vignette("pipeline-configuration")` for details
 #> 
-#> ✖ Missing requirements for atlas creation
+#> 
+#> ── Pipeline readiness (8/12) 
+#> Cortical
+#> ✖ from annotation: needs FreeSurfer, fsaverage5
+#> ℹ `Install from https://surfer.nmr.mgh.harvard.edu/`
+#> ℹ `Ships with FreeSurfer ($SUBJECTS_DIR/fsaverage5)`
+#> ✔ from GIFTI
+#> ✔ from CIFTI
+#> ✔ from neuromaps
+#> ✔ from labels
+#> Subcortical
+#> ✖ from volume: needs FreeSurfer
+#> ℹ `Install from https://surfer.nmr.mgh.harvard.edu/`
+#> Tract
+#> ✔ from tractography
+#> Whole-brain
+#> ✖ from volume: needs FreeSurfer, fsaverage5
+#> ℹ `Install from https://surfer.nmr.mgh.harvard.edu/`
+#> ℹ `Ships with FreeSurfer ($SUBJECTS_DIR/fsaverage5)`
+#> Cerebellar
+#> ✔ from GIFTI
+#> ✔ from annotation
+#> ✖ from volume: needs FreeSurfer
+#> ℹ `Install from https://surfer.nmr.mgh.harvard.edu/`
+#> ✔ MNI to SUIT transform
+#> 
+#> ℹ 8/12 pipelines ready
 ```

@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9001</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9005</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -51,6 +51,7 @@
     <li><a class="dropdown-item" href="../articles/tutorial-neuromaps-atlas.html">Neuromaps Atlas</a></li>
     <li><a class="dropdown-item" href="../articles/tutorial-subcortical-atlas.html">Subcortical Atlas</a></li>
     <li><a class="dropdown-item" href="../articles/tutorial-wholebrain-atlas.html">Whole-Brain Atlas</a></li>
+    <li><a class="dropdown-item" href="../articles/tutorial-cerebellar-atlas.html">Cerebellar Atlas</a></li>
     <li><a class="dropdown-item" href="../articles/tutorial-tract-atlas.html">Tract Atlas</a></li>
     <li><a class="dropdown-item" href="../articles/tutorial-label-atlas.html">Label Atlas</a></li>
     <li><hr class="dropdown-divider"></li>
@@ -155,23 +156,12 @@ for specific calls.</p>
 <td><code>GGSEG_EXTRA_SKIP_EXISTING</code></td>
 <td><code>TRUE</code></td>
 </tr>
-<tr class="even">
-<td><code>tolerance</code></td>
-<td><code>ggseg.extra.tolerance</code></td>
-<td><code>GGSEG_EXTRA_TOLERANCE</code></td>
-<td><code>0.5</code></td>
-</tr>
-<tr class="odd">
-<td><code>smoothness</code></td>
-<td><code>ggseg.extra.smoothness</code></td>
-<td><code>GGSEG_EXTRA_SMOOTHNESS</code></td>
-<td><code>5</code></td>
-</tr>
 </tbody>
 </table>
-<p>Note: <code>smoothness</code> applies only to subcortical and tract
-pipelines. Cortical atlases use direct mesh projection and do not
-require smoothing.</p>
+<p>The <code>tolerance</code>, <code>smoothness</code> and
+<code>smooth_refinements</code> parameters are deprecated. sf
+simplification has moved out of atlas creation entirely — call
+<code><a href="../reference/atlas_smooth.html">atlas_smooth()</a></code> on the returned atlas instead.</p>
 </div>
 <div class="section level2">
 <h2 id="setting-options-in-r">Setting options in R<a class="anchor" aria-label="anchor" href="#setting-options-in-r"></a>
@@ -179,7 +169,6 @@ require smoothing.</p>
 <p>Use <code><a href="https://rdrr.io/r/base/options.html" class="external-link">options()</a></code> to set defaults for your R session:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span></span>
-<span>  ggseg.extra.tolerance <span class="op">=</span> <span class="fl">0.5</span>,</span>
 <span>  ggseg.extra.cleanup <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span>
 <span></span>
@@ -224,17 +213,10 @@ pipeline runs by reusing existing intermediate files:</p>
 <div class="section level3">
 <h3 id="geometry-parameters">Geometry parameters<a class="anchor" aria-label="anchor" href="#geometry-parameters"></a>
 </h3>
-<p>The <code>tolerance</code> parameter controls the quality of 2D
-polygon geometry. Higher tolerance means fewer vertices — smaller file
-size, less detail.</p>
-<p>For subcortical and tract pipelines, <code>smoothness</code> controls
-kernel smoothing of contour boundaries. Higher smoothness means rounder
-region boundaries.</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>ggseg.extra.tolerance <span class="op">=</span> <span class="fl">0.5</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># smoothness only applies to subcortical/tract pipelines</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>ggseg.extra.smoothness <span class="op">=</span> <span class="fl">15</span><span class="op">)</span></span></code></pre></div>
+<p>sf geometry simplification is no longer applied during atlas
+creation. Use <code><a href="../reference/atlas_smooth.html">atlas_smooth()</a></code> on the returned atlas to
+control the trade-off between detail and file size. See
+<code><a href="../articles/post-processing.html">vignette("post-processing")</a></code> for the full workflow.</p>
 </div>
 </div>
 <div class="section level2">
@@ -245,21 +227,19 @@ or settings that should persist across R sessions.</p>
 <p>In <code>.Renviron</code>:</p>
 <pre><code><span><span class="va">GGSEG_EXTRA_VERBOSE</span><span class="op">=</span><span class="va">false</span></span>
 <span><span class="va">GGSEG_EXTRA_CLEANUP</span><span class="op">=</span><span class="va">true</span></span>
-<span><span class="va">GGSEG_EXTRA_SKIP_EXISTING</span><span class="op">=</span><span class="va">true</span></span>
-<span><span class="va">GGSEG_EXTRA_TOLERANCE</span><span class="op">=</span><span class="fl">0.5</span></span></code></pre>
+<span><span class="va">GGSEG_EXTRA_SKIP_EXISTING</span><span class="op">=</span><span class="va">true</span></span></code></pre>
 <p>In a shell:</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="bu">export</span> <span class="va">GGSEG_EXTRA_VERBOSE</span><span class="op">=</span>false</span>
-<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a><span class="bu">export</span> <span class="va">GGSEG_EXTRA_TOLERANCE</span><span class="op">=</span>0.5</span>
-<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a><span class="ex">R</span> <span class="at">-e</span> <span class="st">"ggseg.extra::create_cortical_from_annotation(...)"</span></span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="bu">export</span> <span class="va">GGSEG_EXTRA_VERBOSE</span><span class="op">=</span>false</span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a><span class="ex">R</span> <span class="at">-e</span> <span class="st">"ggseg.extra::create_cortical_from_annotation(...)"</span></span></code></pre></div>
 <p>In Docker:</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode dockerfile"><code class="sourceCode dockerfile"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="kw">ENV</span> GGSEG_EXTRA_VERBOSE=false</span>
-<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a><span class="kw">ENV</span> GGSEG_EXTRA_CLEANUP=true</span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode dockerfile"><code class="sourceCode dockerfile"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="kw">ENV</span> GGSEG_EXTRA_VERBOSE=false</span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a><span class="kw">ENV</span> GGSEG_EXTRA_CLEANUP=true</span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="overriding-defaults">Overriding defaults<a class="anchor" aria-label="anchor" href="#overriding-defaults"></a>
 </h2>
 <p>Explicit arguments always win:</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>ggseg.extra.cleanup <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">atlas</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/create_cortical_from_annotation.html">create_cortical_from_annotation</a></span><span class="op">(</span></span>
@@ -273,7 +253,7 @@ or settings that should persist across R sessions.</p>
 <div class="section level3">
 <h3 id="development-and-debugging">Development and debugging<a class="anchor" aria-label="anchor" href="#development-and-debugging"></a>
 </h3>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span></span>
 <span>  ggseg.extra.verbose <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  ggseg.extra.cleanup <span class="op">=</span> <span class="cn">FALSE</span>,</span>
@@ -283,7 +263,7 @@ or settings that should persist across R sessions.</p>
 <div class="section level3">
 <h3 id="production-and-ci">Production and CI<a class="anchor" aria-label="anchor" href="#production-and-ci"></a>
 </h3>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span></span>
 <span>  ggseg.extra.verbose <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  ggseg.extra.cleanup <span class="op">=</span> <span class="cn">TRUE</span>,</span>
@@ -291,27 +271,25 @@ or settings that should persist across R sessions.</p>
 <span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level3">
-<h3 id="iterating-on-tolerance">Iterating on tolerance<a class="anchor" aria-label="anchor" href="#iterating-on-tolerance"></a>
+<h3 id="iterating-on-simplification-level">Iterating on simplification level<a class="anchor" aria-label="anchor" href="#iterating-on-simplification-level"></a>
 </h3>
-<p>For cortical atlases, adjusting <code>tolerance</code> is the main
-tuning knob. Use 0 for maximum mesh fidelity, or higher values for
-smaller file sizes:</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<p><code>atlas_smooth(keep = ...)</code> is the single tuning knob for
+sf simplification. Higher <code>keep</code> retains more vertices (more
+detail, larger file). Try a few values without re-running the slow
+creation pipeline:</p>
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">annot_files</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"lh.myatlas.annot"</span>, <span class="st">"rh.myatlas.annot"</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># High fidelity (no simplification)</span></span>
-<span><span class="va">atlas</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/create_cortical_from_annotation.html">create_cortical_from_annotation</a></span><span class="op">(</span></span>
+<span><span class="va">atlas_raw</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/create_cortical_from_annotation.html">create_cortical_from_annotation</a></span><span class="op">(</span></span>
 <span>  input_annot <span class="op">=</span> <span class="va">annot_files</span>,</span>
-<span>  output_dir <span class="op">=</span> <span class="st">"atlas_workdir"</span>,</span>
-<span>  tolerance <span class="op">=</span> <span class="fl">0</span></span>
+<span>  output_dir <span class="op">=</span> <span class="st">"atlas_workdir"</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Compact (more simplification)</span></span>
-<span><span class="va">atlas</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/create_cortical_from_annotation.html">create_cortical_from_annotation</a></span><span class="op">(</span></span>
-<span>  input_annot <span class="op">=</span> <span class="va">annot_files</span>,</span>
-<span>  output_dir <span class="op">=</span> <span class="st">"atlas_workdir"</span>,</span>
-<span>  tolerance <span class="op">=</span> <span class="fl">1</span></span>
-<span><span class="op">)</span></span></code></pre></div>
+<span><span class="co"># High fidelity</span></span>
+<span><span class="va">atlas</span> <span class="op">&lt;-</span> <span class="va">atlas_raw</span> <span class="op">|&gt;</span> <span class="fu"><a href="../reference/atlas_smooth.html">atlas_smooth</a></span><span class="op">(</span>keep <span class="op">=</span> <span class="fl">0.5</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Compact</span></span>
+<span><span class="va">atlas</span> <span class="op">&lt;-</span> <span class="va">atlas_raw</span> <span class="op">|&gt;</span> <span class="fu"><a href="../reference/atlas_smooth.html">atlas_smooth</a></span><span class="op">(</span>keep <span class="op">=</span> <span class="fl">0.05</span>, exclude <span class="op">=</span> <span class="st">"cortex_"</span><span class="op">)</span></span></code></pre></div>
 </div>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

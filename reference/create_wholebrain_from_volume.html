@@ -21,7 +21,7 @@ Requires FreeSurfer."><meta property="og:image" content="https://ggsegverse.gith
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9001</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9005</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -45,6 +45,7 @@ Requires FreeSurfer."><meta property="og:image" content="https://ggsegverse.gith
     <li><a class="dropdown-item" href="../articles/tutorial-neuromaps-atlas.html">Neuromaps Atlas</a></li>
     <li><a class="dropdown-item" href="../articles/tutorial-subcortical-atlas.html">Subcortical Atlas</a></li>
     <li><a class="dropdown-item" href="../articles/tutorial-wholebrain-atlas.html">Whole-Brain Atlas</a></li>
+    <li><a class="dropdown-item" href="../articles/tutorial-cerebellar-atlas.html">Cerebellar Atlas</a></li>
     <li><a class="dropdown-item" href="../articles/tutorial-tract-atlas.html">Tract Atlas</a></li>
     <li><a class="dropdown-item" href="../articles/tutorial-label-atlas.html">Label Atlas</a></li>
     <li><hr class="dropdown-divider"></li>
@@ -71,7 +72,7 @@ Requires FreeSurfer."><meta property="og:image" content="https://ggsegverse.gith
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.svg" class="logo" alt=""><h1>Create atlas from whole-brain volumetric parcellation</h1>
-      <small class="dont-index">Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/R/atlas-wholebrain.R" class="external-link"><code>R/atlas-wholebrain.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/R/atlas_wholebrain.R" class="external-link"><code>R/atlas_wholebrain.R</code></a></small>
       <div class="d-none name"><code>create_wholebrain_from_volume.Rd</code></div>
     </div>
 
@@ -99,11 +100,10 @@ the mesh-based subcortical pipeline.</p>
 <span>  min_vertices <span class="op">=</span> <span class="fl">50L</span>,</span>
 <span>  cortical_labels <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  subcortical_labels <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  cortical_views <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"lateral"</span>, <span class="st">"medial"</span>, <span class="st">"superior"</span>, <span class="st">"inferior"</span><span class="op">)</span>,</span>
-<span>  subcortical_views <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  decimate <span class="op">=</span> <span class="fl">0.5</span>,</span>
-<span>  tolerance <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  smoothness <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  cerebellar_labels <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  cortical_opts <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  subcortical_opts <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  cerebellar_opts <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  cleanup <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  verbose <span class="op">=</span> <span class="fu"><a href="get_verbose.html">get_verbose</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  skip_existing <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -127,7 +127,7 @@ An optional <code>type</code> column with values <code>"cortical"</code> or <cod
 controls label classification (see <strong>Label classification</strong>). Voxel IDs
 not listed in the LUT are automatically zeroed out before surface
 projection (see <strong>Volume pre-processing</strong>).
-If NULL, generic names and no palette.</p></dd>
+If NULL, generic names and auto-generated colours.</p></dd>
 
 
 <dt id="arg-atlas-name">atlas_name<a class="anchor" aria-label="anchor" href="#arg-atlas-name"></a></dt>
@@ -182,35 +182,34 @@ subcortical. Highest priority; overrides LUT <code>type</code> and the vertex-co
 heuristic.</p></dd>
 
 
-<dt id="arg-cortical-views">cortical_views<a class="anchor" aria-label="anchor" href="#arg-cortical-views"></a></dt>
-<dd><p>Views for cortical sub-pipeline.
-Default <code>c("lateral", "medial", "superior", "inferior")</code>.</p></dd>
+<dt id="arg-cerebellar-labels">cerebellar_labels<a class="anchor" aria-label="anchor" href="#arg-cerebellar-labels"></a></dt>
+<dd><p>Character vector of label names to force as
+cerebellar. These go through the cerebellar SUIT flatmap pipeline instead
+of cortical or subcortical. Uses the bundled SUIT surfaces from
+<code><a href="suit_flatmap_path.html">suit_flatmap_path()</a></code> and <code><a href="suit_3d_path.html">suit_3d_path()</a></code>.</p></dd>
 
 
-<dt id="arg-subcortical-views">subcortical_views<a class="anchor" aria-label="anchor" href="#arg-subcortical-views"></a></dt>
-<dd><p>Views for subcortical sub-pipeline. Default NULL
-(auto-detected).</p></dd>
+<dt id="arg-cortical-opts">cortical_opts<a class="anchor" aria-label="anchor" href="#arg-cortical-opts"></a></dt>
+<dd><p>Named list of extra arguments forwarded to the
+cortical sub-pipeline. Allowed entry: <code>views</code>. Unknown entries error.
+Leave empty to use defaults.</p></dd>
 
 
-<dt id="arg-decimate">decimate<a class="anchor" aria-label="anchor" href="#arg-decimate"></a></dt>
-<dd><p>Mesh decimation ratio for subcortical meshes (0-1).
-Default 0.5.</p></dd>
+<dt id="arg-subcortical-opts">subcortical_opts<a class="anchor" aria-label="anchor" href="#arg-subcortical-opts"></a></dt>
+<dd><p>Named list of extra arguments forwarded to
+<code><a href="create_subcortical_from_volume.html">create_subcortical_from_volume()</a></code>. Any argument of that function may
+be set here except those managed by the wholebrain pipeline
+(<code>input_volume</code>, <code>input_lut</code>, <code>atlas_name</code>, <code>output_dir</code>, <code>verbose</code>,
+<code>cleanup</code>, <code>skip_existing</code>). Use this to tune <code>dilate</code>,
+<code>vertex_size_limits</code>, <code>decimate</code>, <code>slabs</code>. The deprecated
+<code>tolerance</code>/<code>smoothness</code> entries trigger a lifecycle warning.</p></dd>
 
 
-<dt id="arg-tolerance">tolerance<a class="anchor" aria-label="anchor" href="#arg-tolerance"></a></dt>
-<dd><p>Simplification tolerance for 2D polygons. Higher values
-produce simpler shapes with fewer vertices (typical range: 0.1–2).
-Passed to <code><a href="https://r-spatial.github.io/sf/reference/geos_unary.html" class="external-link">sf::st_simplify()</a></code>.
-If not specified, uses <code>options("ggseg.extra.tolerance")</code> or the
-<code>GGSEG_EXTRA_TOLERANCE</code> environment variable. Default is 1.</p></dd>
-
-
-<dt id="arg-smoothness">smoothness<a class="anchor" aria-label="anchor" href="#arg-smoothness"></a></dt>
-<dd><p>Smoothing factor for 2D contours. Higher values produce
-smoother region boundaries (typical range: 3–15). Passed to
-<code><a href="https://strimas.com/smoothr/reference/smooth.html" class="external-link">smoothr::smooth()</a></code>. If not specified, uses
-<code>options("ggseg.extra.smoothness")</code> or the <code>GGSEG_EXTRA_SMOOTHNESS</code>
-environment variable. Default is 5.</p></dd>
+<dt id="arg-cerebellar-opts">cerebellar_opts<a class="anchor" aria-label="anchor" href="#arg-cerebellar-opts"></a></dt>
+<dd><p>Named list of extra arguments forwarded to
+<code><a href="create_cerebellar_from_volume.html">create_cerebellar_from_volume()</a></code>. Allowed entries include <code>decimate</code>.
+The deprecated <code>tolerance</code>/<code>smooth_refinements</code> entries trigger a
+lifecycle warning.</p></dd>
 
 
 <dt id="arg-cleanup">cleanup<a class="anchor" aria-label="anchor" href="#arg-cleanup"></a></dt>
@@ -237,16 +236,18 @@ environment variable. Default is TRUE.</p></dd>
 <dt id="arg-steps">steps<a class="anchor" aria-label="anchor" href="#arg-steps"></a></dt>
 <dd><p>Which pipeline steps to run. Default NULL runs all steps.
 Steps are:</p><ul><li><p>1: Project volume onto surface</p></li>
-<li><p>2: Split labels into cortical/subcortical</p></li>
+<li><p>2: Split labels into cortical/subcortical/cerebellar</p></li>
 <li><p>3: Run cortical pipeline</p></li>
 <li><p>4: Run subcortical pipeline</p></li>
+<li><p>5: Run cerebellar pipeline</p></li>
 </ul><p>Use <code>steps = 1:2</code> to run projection and split only.</p></dd>
 
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>A named list with elements <code>cortical</code> and <code>subcortical</code>, each a
-<code>ggseg_atlas</code> object (or NULL if no regions of that type exist).</p>
+    <p>A named list with elements <code>cortical</code>, <code>subcortical</code>, and
+<code>cerebellar</code>, each a <code>ggseg_atlas</code> object (or NULL if no regions of
+that type exist).</p>
     </div>
     <div class="section level2">
     <h2 id="label-classification">Label classification<a class="anchor" aria-label="anchor" href="#label-classification"></a></h2>
@@ -313,7 +314,8 @@ This file ships with fsaverage5 and is always required.</p>
 <span class="r-in"><span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu">create_wholebrain_from_volume</span><span class="op">(</span></span></span>
 <span class="r-in"><span>  input_volume <span class="op">=</span> <span class="st">"my_atlas.nii.gz"</span>,</span></span>
 <span class="r-in"><span>  input_lut <span class="op">=</span> <span class="va">lut</span>,</span></span>
-<span class="r-in"><span>  atlas_name <span class="op">=</span> <span class="st">"my_atlas"</span></span></span>
+<span class="r-in"><span>  atlas_name <span class="op">=</span> <span class="st">"my_atlas"</span>,</span></span>
+<span class="r-in"><span>  subcortical_opts <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>dilate <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">result</span><span class="op">$</span><span class="va">cortical</span>   <span class="co"># surface-based cortical atlas</span></span></span>
 <span class="r-in"><span><span class="va">result</span><span class="op">$</span><span class="va">subcortical</span> <span class="co"># mesh-based subcortical atlas</span></span></span>

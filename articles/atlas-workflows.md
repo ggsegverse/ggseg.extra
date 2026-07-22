@@ -30,6 +30,7 @@ flowchart TB
     A --> F[Neuromaps .func.gii/.nii]
     A --> G[Volume .mgz/.nii]
     A --> H[Tractography .trk/.tck]
+    A --> J[SUIT .label.gii/.annot]
 
     B --> B1[create_cortical_from_annotation]
     C --> C1[create_cortical_from_labels]
@@ -38,6 +39,7 @@ flowchart TB
     F --> F1[create_cortical_from_neuromaps]
     G --> G1[create_subcortical_from_volume<br/>create_wholebrain_from_volume]
     H --> H1[create_tract_from_tractography]
+    J --> J1[create_cerebellar_from_gifti<br/>create_cerebellar_from_annotation<br/>create_cerebellar_from_volume]
 
     B1 --> I[ggseg_atlas]
     C1 --> I
@@ -46,6 +48,7 @@ flowchart TB
     F1 --> I
     G1 --> I
     H1 --> I
+    J1 --> I
 
     style I fill:#e1f5ff
 ```
@@ -81,8 +84,9 @@ The projection uses orthographic cameras placed at standard viewpoints
 (lateral, medial, superior, inferior), culls back-facing triangles, and
 unions the front-facing triangles per region into sf polygons. Boundary
 faces are assigned to the smallest neighbouring region so small parcels
-stay visible. The `tolerance` parameter controls polygon simplification
-— use 0 for maximum fidelity, higher values for smaller file sizes.
+stay visible. The pipeline returns the raw polygons; call
+`atlas_smooth(keep = ...)` afterwards to balance fidelity against file
+size.
 
 ## Subcortical and volumetric atlases work differently
 
@@ -122,6 +126,49 @@ flowchart TB
 
 Figure 3: Subcortical and whole-brain volumetric atlas pipeline
 
+## Cerebellar atlases use the SUIT flatmap
+
+The cerebellum needs its own pipeline because standard cortical surfaces
+don’t cover it. Instead of projecting onto an inflated cortical mesh,
+cerebellar atlases use the [SUIT
+template](https://www.diedrichsenlab.org/imaging/suit.htm) — a dedicated
+cerebellar surface with a 2D flatmap that unfolds the tightly folded
+cerebellar cortex into a readable layout.
+
+ggseg.extra ships both SUIT surfaces (flatmap and 3D pial) and provides
+three entry points:
+[`create_cerebellar_from_gifti()`](https://ggsegverse.github.io/ggseg.extra/reference/create_cerebellar_from_gifti.md)
+for GIFTI label files,
+[`create_cerebellar_from_annotation()`](https://ggsegverse.github.io/ggseg.extra/reference/create_cerebellar_from_annotation.md)
+for FreeSurfer annotations on the SUIT surface, and
+[`create_cerebellar_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_cerebellar_from_volume.md)
+for NIfTI segmentation volumes.
+
+``` mermaid
+flowchart LR
+    A[Input File] --> S1["Read parcellation<br/>Map to SUIT surface"]
+    S1 --> S2["Project onto<br/>SUIT flatmap"]
+    S2 --> F[Complete atlas<br/>2D flatmap + optional 3D]
+
+    style S1 fill:#fff9c4
+    style S2 fill:#c8e6c9
+    style F fill:#e1f5ff
+```
+
+Figure 4: Cerebellar atlas creation pipeline
+
+The flatmap projection converts mesh triangles directly into sf polygons
+— no rendering or screenshots needed. Boundary triangles (where vertices
+belong to different regions) are split at edge midpoints so region
+borders stay clean. When the input is a volume, the pipeline also
+tessellates per-region 3D meshes from the voxels, giving you both 2D and
+3D in one call.
+
+The
+[`create_wholebrain_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_wholebrain_from_volume.md)
+pipeline can also route cerebellar labels through this pipeline
+automatically when it detects them in a combined volume.
+
 ## Tracts are a special case
 
 White matter tracts don’t fit neatly into the cortical or subcortical
@@ -153,7 +200,7 @@ flowchart TB
     style H fill:#e1f5ff
 ```
 
-Figure 4: White matter tract atlas pipeline
+Figure 5: White matter tract atlas pipeline
 
 ## Where your atlas can go
 
@@ -161,12 +208,13 @@ Every `ggseg_atlas` object, regardless of how it was created, works with
 the ggseg plotting ecosystem. But what you can do with it depends on
 whether it contains 2D polygon data.
 
-If your atlas has 2D geometries (which only cortical atlases can have,
-and only if you ran the full pipeline), you can plot it with both ggseg
-for flat 2D ggplot2-based visualizations and ggseg3d for interactive 3D
-rotation and exploration. If it’s 3D-only — because it’s subcortical, a
-tract atlas, or a cortical atlas you stopped at step 1 — then ggseg3d is
-your only option, but that’s often all you need.
+If your atlas has 2D geometries (cortical atlases from the full
+pipeline, or cerebellar atlases with SUIT flatmap polygons), you can
+plot it with both ggseg for flat 2D ggplot2-based visualizations and
+ggseg3d for interactive 3D rotation and exploration. If it’s 3D-only —
+because it’s subcortical, a tract atlas, or a cortical atlas you stopped
+at step 1 — then ggseg3d is your only option, but that’s often all you
+need.
 
 ``` mermaid
 flowchart LR
@@ -183,15 +231,16 @@ flowchart LR
     style D fill:#c8e6c9
 ```
 
-Figure 5: Atlas compatibility with ggseg plotting packages
+Figure 6: Atlas compatibility with ggseg plotting packages
 
 ## Performance
 
 Cortical atlas creation is fast — the full pipeline (read + project)
 completes in seconds because the mesh projection is pure geometry with
-no external rendering. The `tolerance` parameter is the main tuning
-knob: 0 gives maximum fidelity, 0.5 (the default) is a good balance, and
-higher values trade detail for smaller file sizes.
+no external rendering. The pipeline now returns raw, unsmoothed polygons
+— `atlas_smooth(keep = ...)` is the tuning knob for the
+detail-versus-file-size trade-off and can be re-applied cheaply on the
+cached atlas.
 
 For subcortical and tract pipelines, the `steps` parameter lets you
 control how much of the pipeline runs. Use a low step count for fast

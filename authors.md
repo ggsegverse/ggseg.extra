@@ -2,15 +2,18 @@
 
 ## Authors
 
-- **Athanasia Mo Mowinckel**. Author, maintainer, copyright holder.
+- **Athanasia Mo Mowinckel**. Author, maintainer.
   [](https://orcid.org/0000-0002-5756-0223)  
   drmowinckels
 
-- **Didac Vidal-Piñeiro**. Contributor, copyright holder.
+- **Didac Vidal-Piñeiro**. Contributor.
   [](https://orcid.org/0000-0001-9997-9156)
 
 - **John Muschelli**. Contributor.
   [](https://orcid.org/0000-0001-6469-1750)
+
+- **Center for Lifespan Changes in Brain and Cognition (LCBC),
+  University of Oslo**. Copyright holder.
 
 ## Citation
 

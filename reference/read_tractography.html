@@ -11,7 +11,7 @@ MRtrix (.tck) formats. The file format is detected from the extension."><meta pr
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9001</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9005</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -35,6 +35,7 @@ MRtrix (.tck) formats. The file format is detected from the extension."><meta pr
     <li><a class="dropdown-item" href="../articles/tutorial-neuromaps-atlas.html">Neuromaps Atlas</a></li>
     <li><a class="dropdown-item" href="../articles/tutorial-subcortical-atlas.html">Subcortical Atlas</a></li>
     <li><a class="dropdown-item" href="../articles/tutorial-wholebrain-atlas.html">Whole-Brain Atlas</a></li>
+    <li><a class="dropdown-item" href="../articles/tutorial-cerebellar-atlas.html">Cerebellar Atlas</a></li>
     <li><a class="dropdown-item" href="../articles/tutorial-tract-atlas.html">Tract Atlas</a></li>
     <li><a class="dropdown-item" href="../articles/tutorial-label-atlas.html">Label Atlas</a></li>
     <li><hr class="dropdown-divider"></li>
@@ -61,7 +62,7 @@ MRtrix (.tck) formats. The file format is detected from the extension."><meta pr
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.svg" class="logo" alt=""><h1>Read tractography file</h1>
-      <small class="dont-index">Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/R/tract-io.R" class="external-link"><code>R/tract-io.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/R/tract_io.R" class="external-link"><code>R/tract_io.R</code></a></small>
       <div class="d-none name"><code>read_tractography.Rd</code></div>
     </div>
 
@@ -89,8 +90,9 @@ MRtrix (<code>.tck</code>) formats. The file format is detected from the extensi
 (points along the streamline) and 3 columns (x, y, z coordinates).</p>
     </div>
     <div class="section level2">
-    <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p><code><a href="read_trk.html">read_trk()</a></code>, <code><a href="read_tck.html">read_tck()</a></code> for format-specific readers</p></div>
+    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
+    <p>Format-specific readers are used internally depending on the
+file extension: <code>.trk</code> (TrackVis) and <code>.tck</code> (MRtrix).</p>
     </div>
 
     <div class="section level2">

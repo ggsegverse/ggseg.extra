@@ -29,7 +29,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9001</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9005</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -55,6 +55,7 @@
     <li><a class="dropdown-item" href="../articles/tutorial-neuromaps-atlas.html">Neuromaps Atlas</a></li>
     <li><a class="dropdown-item" href="../articles/tutorial-subcortical-atlas.html">Subcortical Atlas</a></li>
     <li><a class="dropdown-item" href="../articles/tutorial-wholebrain-atlas.html">Whole-Brain Atlas</a></li>
+    <li><a class="dropdown-item" href="../articles/tutorial-cerebellar-atlas.html">Cerebellar Atlas</a></li>
     <li><a class="dropdown-item" href="../articles/tutorial-tract-atlas.html">Tract Atlas</a></li>
     <li><a class="dropdown-item" href="../articles/tutorial-label-atlas.html">Label Atlas</a></li>
     <li><hr class="dropdown-divider"></li>
@@ -119,6 +120,7 @@
     A --&gt; F[Neuromaps .func.gii/.nii]
     A --&gt; G[Volume .mgz/.nii]
     A --&gt; H[Tractography .trk/.tck]
+    A --&gt; J[SUIT .label.gii/.annot]
 
     B --&gt; B1[create_cortical_from_annotation]
     C --&gt; C1[create_cortical_from_labels]
@@ -127,6 +129,7 @@
     F --&gt; F1[create_cortical_from_neuromaps]
     G --&gt; G1[create_subcortical_from_volume&lt;br/&gt;create_wholebrain_from_volume]
     H --&gt; H1[create_tract_from_tractography]
+    J --&gt; J1[create_cerebellar_from_gifti&lt;br/&gt;create_cerebellar_from_annotation&lt;br/&gt;create_cerebellar_from_volume]
 
     B1 --&gt; I[ggseg_atlas]
     C1 --&gt; I
@@ -135,6 +138,7 @@
     F1 --&gt; I
     G1 --&gt; I
     H1 --&gt; I
+    J1 --&gt; I
 
     style I fill:#e1f5ff
 </pre>
@@ -172,7 +176,7 @@ Figure 2: Cortical atlas creation pipeline
 </div>
 </div>
 </div>
-<p>The projection uses orthographic cameras placed at standard viewpoints (lateral, medial, superior, inferior), culls back-facing triangles, and unions the front-facing triangles per region into sf polygons. Boundary faces are assigned to the smallest neighbouring region so small parcels stay visible. The <code>tolerance</code> parameter controls polygon simplification — use 0 for maximum fidelity, higher values for smaller file sizes.</p>
+<p>The projection uses orthographic cameras placed at standard viewpoints (lateral, medial, superior, inferior), culls back-facing triangles, and unions the front-facing triangles per region into sf polygons. Boundary faces are assigned to the smallest neighbouring region so small parcels stay visible. The pipeline returns the raw polygons; call <code>atlas_smooth(keep = ...)</code> afterwards to balance fidelity against file size.</p>
 </section><section class="level2"><h2 id="subcortical-and-volumetric-atlases-work-differently">Subcortical and volumetric atlases work differently<a class="anchor" aria-label="anchor" href="#subcortical-and-volumetric-atlases-work-differently"></a>
 </h2>
 <p>Cortical atlases are all about surface vertices — mapping regions to points on the brain’s outer layer. Subcortical structures live inside the brain, so the approach changes. Instead of vertex indices, you’re extracting 3D meshes directly from volumetric segmentations.</p>
@@ -205,6 +209,34 @@ Figure 3: Subcortical and whole-brain volumetric atlas pipeline
 </div>
 </div>
 </div>
+</section><section class="level2"><h2 id="cerebellar-atlases-use-the-suit-flatmap">Cerebellar atlases use the SUIT flatmap<a class="anchor" aria-label="anchor" href="#cerebellar-atlases-use-the-suit-flatmap"></a>
+</h2>
+<p>The cerebellum needs its own pipeline because standard cortical surfaces don’t cover it. Instead of projecting onto an inflated cortical mesh, cerebellar atlases use the <a href="https://www.diedrichsenlab.org/imaging/suit.htm" class="external-link">SUIT template</a> — a dedicated cerebellar surface with a 2D flatmap that unfolds the tightly folded cerebellar cortex into a readable layout.</p>
+<p>ggseg.extra ships both SUIT surfaces (flatmap and 3D pial) and provides three entry points: <code><a href="../reference/create_cerebellar_from_gifti.html">create_cerebellar_from_gifti()</a></code> for GIFTI label files, <code><a href="../reference/create_cerebellar_from_annotation.html">create_cerebellar_from_annotation()</a></code> for FreeSurfer annotations on the SUIT surface, and <code><a href="../reference/create_cerebellar_from_volume.html">create_cerebellar_from_volume()</a></code> for NIfTI segmentation volumes.</p>
+<div class="cell" data-fig-width="10" data-layout-align="default">
+<div class="cell-output-display">
+<div id="fig-cerebellar" class="quarto-float quarto-figure quarto-figure-center">
+<figure class="quarto-float quarto-float-fig"><div aria-describedby="fig-cerebellar-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div>
+<pre class="mermaid mermaid-js" data-label="fig-cerebellar">flowchart LR
+    A[Input File] --&gt; S1["Read parcellation&lt;br/&gt;Map to SUIT surface"]
+    S1 --&gt; S2["Project onto&lt;br/&gt;SUIT flatmap"]
+    S2 --&gt; F[Complete atlas&lt;br/&gt;2D flatmap + optional 3D]
+
+    style S1 fill:#fff9c4
+    style S2 fill:#c8e6c9
+    style F fill:#e1f5ff
+</pre>
+</div>
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-cerebellar-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure 4: Cerebellar atlas creation pipeline
+</figcaption></figure>
+</div>
+</div>
+</div>
+<p>The flatmap projection converts mesh triangles directly into sf polygons — no rendering or screenshots needed. Boundary triangles (where vertices belong to different regions) are split at edge midpoints so region borders stay clean. When the input is a volume, the pipeline also tessellates per-region 3D meshes from the voxels, giving you both 2D and 3D in one call.</p>
+<p>The <code><a href="../reference/create_wholebrain_from_volume.html">create_wholebrain_from_volume()</a></code> pipeline can also route cerebellar labels through this pipeline automatically when it detects them in a combined volume.</p>
 </section><section class="level2"><h2 id="tracts-are-a-special-case">Tracts are a special case<a class="anchor" aria-label="anchor" href="#tracts-are-a-special-case"></a>
 </h2>
 <p>White matter tracts don’t fit neatly into the cortical or subcortical categories. They’re defined by tractography — streamlines that trace the paths of white matter fibers through the brain. Your input is a tractography file (<code>.trk</code> or <code>.tck</code>), which contains a collection of 3D curves representing fiber bundles.</p>
@@ -231,7 +263,7 @@ Figure 3: Subcortical and whole-brain volumetric atlas pipeline
 </div>
 </div>
 <figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-tracts-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-Figure 4: White matter tract atlas pipeline
+Figure 5: White matter tract atlas pipeline
 </figcaption></figure>
 </div>
 </div>
@@ -239,7 +271,7 @@ Figure 4: White matter tract atlas pipeline
 </section><section class="level2"><h2 id="where-your-atlas-can-go">Where your atlas can go<a class="anchor" aria-label="anchor" href="#where-your-atlas-can-go"></a>
 </h2>
 <p>Every <code>ggseg_atlas</code> object, regardless of how it was created, works with the ggseg plotting ecosystem. But what you can do with it depends on whether it contains 2D polygon data.</p>
-<p>If your atlas has 2D geometries (which only cortical atlases can have, and only if you ran the full pipeline), you can plot it with both ggseg for flat 2D ggplot2-based visualizations and ggseg3d for interactive 3D rotation and exploration. If it’s 3D-only — because it’s subcortical, a tract atlas, or a cortical atlas you stopped at step 1 — then ggseg3d is your only option, but that’s often all you need.</p>
+<p>If your atlas has 2D geometries (cortical atlases from the full pipeline, or cerebellar atlases with SUIT flatmap polygons), you can plot it with both ggseg for flat 2D ggplot2-based visualizations and ggseg3d for interactive 3D rotation and exploration. If it’s 3D-only — because it’s subcortical, a tract atlas, or a cortical atlas you stopped at step 1 — then ggseg3d is your only option, but that’s often all you need.</p>
 <div class="cell" data-fig-width="8" data-layout-align="default">
 <div class="cell-output-display">
 <div id="fig-output-compatibility" class="quarto-float quarto-figure quarto-figure-center">
@@ -261,14 +293,14 @@ Figure 4: White matter tract atlas pipeline
 </div>
 </div>
 <figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-output-compatibility-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-Figure 5: Atlas compatibility with ggseg plotting packages
+Figure 6: Atlas compatibility with ggseg plotting packages
 </figcaption></figure>
 </div>
 </div>
 </div>
 </section><section class="level2"><h2 id="performance">Performance<a class="anchor" aria-label="anchor" href="#performance"></a>
 </h2>
-<p>Cortical atlas creation is fast — the full pipeline (read + project) completes in seconds because the mesh projection is pure geometry with no external rendering. The <code>tolerance</code> parameter is the main tuning knob: 0 gives maximum fidelity, 0.5 (the default) is a good balance, and higher values trade detail for smaller file sizes.</p>
+<p>Cortical atlas creation is fast — the full pipeline (read + project) completes in seconds because the mesh projection is pure geometry with no external rendering. The pipeline now returns raw, unsmoothed polygons — <code>atlas_smooth(keep = ...)</code> is the tuning knob for the detail-versus-file-size trade-off and can be re-applied cheaply on the cached atlas.</p>
 <p>For subcortical and tract pipelines, the <code>steps</code> parameter lets you control how much of the pipeline runs. Use a low step count for fast 3D-only iteration, then run the full pipeline when you need 2D geometry.</p>
 </section><section class="level2"><h2 id="where-to-go-from-here">Where to go from here<a class="anchor" aria-label="anchor" href="#where-to-go-from-here"></a>
 </h2>

@@ -4,6 +4,14 @@
 
 Functions to create brain atlases for ggseg and ggseg3d
 
+- [`create_cerebellar_from_annotation()`](https://ggsegverse.github.io/ggseg.extra/reference/create_cerebellar_from_annotation.md)
+  **\[experimental\]** : Create cerebellar atlas from FreeSurfer
+  annotation
+- [`create_cerebellar_from_gifti()`](https://ggsegverse.github.io/ggseg.extra/reference/create_cerebellar_from_gifti.md)
+  **\[experimental\]** : Create cerebellar atlas from SUIT flatmap
+- [`create_cerebellar_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_cerebellar_from_volume.md)
+  **\[experimental\]** : Create cerebellar atlas from volume
+  segmentation
 - [`create_cortical_from_annotation()`](https://ggsegverse.github.io/ggseg.extra/reference/create_cortical_from_annotation.md)
   **\[maturing\]** : Create cortical atlas from FreeSurfer annotation
 - [`create_cortical_from_cifti()`](https://ggsegverse.github.io/ggseg.extra/reference/create_cortical_from_cifti.md)
@@ -29,10 +37,9 @@ Functions to create brain atlases for ggseg and ggseg3d
 
 Functions to manipulate and manage brain atlases
 
-- [`atlas_simplify()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_simplify.md)
-  : Simplify atlas 2D contours
 - [`atlas_smooth()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_smooth.md)
-  : Smooth atlas 2D contours
+  [`atlas_simplify()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_smooth.md)
+  : Smooth and simplify atlas 2D contours
 
 ## Atlas Repository
 
@@ -47,14 +54,64 @@ Create and manage ggseg atlas packages
 
 Read, write, and manipulate FreeSurfer color tables
 
-- [`read_ctab()`](https://ggsegverse.github.io/ggseg.extra/reference/read_ctab.md)
-  : Read FreeSurfer color table
-- [`write_ctab()`](https://ggsegverse.github.io/ggseg.extra/reference/write_ctab.md)
-  : Write FreeSurfer color table
-- [`is_ctab()`](https://ggsegverse.github.io/ggseg.extra/reference/is_ctab.md)
-  : Check if object is a color table
-- [`get_ctab()`](https://ggsegverse.github.io/ggseg.extra/reference/get_ctab.md)
-  : Read color table and add hex colours
+- [`read_lut()`](https://ggsegverse.github.io/ggseg.extra/reference/read_lut.md)
+  [`read_ctab()`](https://ggsegverse.github.io/ggseg.extra/reference/read_lut.md)
+  **\[deprecated\]** : Read FreeSurfer LUT
+- [`write_lut()`](https://ggsegverse.github.io/ggseg.extra/reference/write_lut.md)
+  [`write_ctab()`](https://ggsegverse.github.io/ggseg.extra/reference/write_lut.md)
+  **\[deprecated\]** : Write FreeSurfer LUT
+- [`is_lut()`](https://ggsegverse.github.io/ggseg.extra/reference/is_lut.md)
+  [`is_ctab()`](https://ggsegverse.github.io/ggseg.extra/reference/is_lut.md)
+  **\[deprecated\]** : Check if object is a LUT
+- [`get_lut()`](https://ggsegverse.github.io/ggseg.extra/reference/get_lut.md)
+  [`get_ctab()`](https://ggsegverse.github.io/ggseg.extra/reference/get_lut.md)
+  **\[deprecated\]** : Read LUT and add hex colours
+- [`lut_add()`](https://ggsegverse.github.io/ggseg.extra/reference/lut_add.md)
+  : Add rows to a FreeSurfer LUT
+- [`lut_combine()`](https://ggsegverse.github.io/ggseg.extra/reference/lut_combine.md)
+  : Combine FreeSurfer LUTs
+
+## Subcortical Helpers
+
+Compose slice views and anatomical context for subcortical atlases
+
+- [`subcortical_slabs()`](https://ggsegverse.github.io/ggseg.extra/reference/subcortical_slabs.md)
+  [`subcortical_views()`](https://ggsegverse.github.io/ggseg.extra/reference/subcortical_slabs.md)
+  **\[deprecated\]** : Build subcortical slabs from a label bounding box
+- [`aseg_context()`](https://ggsegverse.github.io/ggseg.extra/reference/aseg_context.md)
+  : Reduce a subcortical atlas to focus regions on grey anatomical
+  context
+- [`aseg_hidden_labels()`](https://ggsegverse.github.io/ggseg.extra/reference/aseg_hidden_labels.md)
+  : Standard FreeSurfer aseg labels stripped from a subcortical atlas
+
+## Anatomical Coregistration
+
+Align an atlas volume to a FreeSurfer subject for anatomical context
+
+- [`coregister_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/coregister_volume.md)
+  : Coregister an atlas volume to a FreeSurfer subject
+- [`project_volume_anatomical()`](https://ggsegverse.github.io/ggseg.extra/reference/project_volume_anatomical.md)
+  : Project atlas labels onto FreeSurfer anatomical context
+- [`prepare_subcortical_anatomical()`](https://ggsegverse.github.io/ggseg.extra/reference/prepare_subcortical_anatomical.md)
+  : Prepare an atlas for the subcortical pipeline with anatomical
+  context
+
+## Cerebellar Helpers
+
+SUIT surfaces and MNI-to-SUIT transforms for cerebellar atlases
+
+- [`suit_flatmap_path()`](https://ggsegverse.github.io/ggseg.extra/reference/suit_flatmap_path.md)
+  : Path to bundled SUIT flatmap surface
+- [`suit_3d_path()`](https://ggsegverse.github.io/ggseg.extra/reference/suit_3d_path.md)
+  : Path to bundled SUIT 3D cerebellar surface
+- [`suit_deformation_field()`](https://ggsegverse.github.io/ggseg.extra/reference/suit_deformation_field.md)
+  **\[experimental\]** : Download SUIT deformation field for MNI-to-SUIT
+  transforms
+- [`transform_mni_to_suit()`](https://ggsegverse.github.io/ggseg.extra/reference/transform_mni_to_suit.md)
+  **\[experimental\]** : Transform a volume from MNI space to SUIT
+  cerebellar space
+- [`read_suit_parcellation()`](https://ggsegverse.github.io/ggseg.extra/reference/read_suit_parcellation.md)
+  **\[experimental\]** : Read SUIT cerebellar parcellation from GIFTI
 
 ## Utilities
 

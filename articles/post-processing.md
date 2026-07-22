@@ -9,7 +9,7 @@ Most of the functions in this vignette come from ggseg.formats and are
 re-exported by ggseg.extra for convenience. The geometry adjustment
 functions
 ([`atlas_smooth()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_smooth.md),
-[`atlas_simplify()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_simplify.md))
+[`atlas_simplify()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_smooth.md))
 are native to ggseg.extra.
 
 ## Inspecting an atlas
@@ -144,6 +144,7 @@ system, color by network, or filter to structures they care about:
 ``` r
 
 metadata <- data.frame(
+  stringsAsFactors = FALSE,
   region = c("thalamus", "caudate", "putamen", "hippocampus", "amygdala"),
   structure = c("diencephalon", "basal ganglia", "basal ganglia",
                 "limbic", "limbic")
@@ -231,67 +232,51 @@ This is typically the last step before saving.
 
 ## Adjusting geometry after the fact
 
-The atlas creation pipeline bakes in two geometry parameters early:
-smoothing bandwidth and vertex count. Getting these right on the first
-pass is rare — you usually need to see the result before you know
-whether the contours are too jagged, too blobby, or carrying more
-vertices than the plot actually needs.
+The atlas creation pipeline now returns raw, unsmoothed sf geometry.
+Simplifying contours is a separate post-processing step you control
+after the atlas exists, so you can iterate on the result without
+re-running the (slow) creation pipeline.
 
 [`atlas_smooth()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_smooth.md)
-and
-[`atlas_simplify()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_simplify.md)
-let you adjust both without re-running the pipeline.
+is the single entry point for sf simplification.
 
 ### Smoothing rough contours
 
 Region boundaries from volumetric or surface-based extraction tend to
 have staircase artefacts.
 [`atlas_smooth()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_smooth.md)
-applies kernel smoothing to the sf geometry:
+applies topology-preserving simplification via
+[`rmapshaper::ms_simplify()`](http://andyteucher.ca/rmapshaper/reference/ms_simplify.md):
 
 ``` r
 
 atlas <- atlas |>
-  atlas_smooth(smoothness = 5)
+  atlas_smooth(keep = 0.2)
 ```
 
-The `smoothness` parameter controls the bandwidth — higher values
-produce rounder boundaries. Start around 5 and increase if the edges
-still look noisy.
+The `keep` parameter is the proportion of vertices to retain (0–1).
+Lower values produce simpler, smoother polygons. Start around 0.2 and
+reduce further if the polygons still look noisy.
 
-### Reducing vertex count
+### Keeping the brain outline crisp
 
-Dense contours slow down rendering and inflate file size without visible
-benefit at typical plot resolutions.
-[`atlas_simplify()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_simplify.md)
-reduces vertices using Douglas-Peucker simplification:
+The cortex outline geometry doesn’t usually want the same level of
+simplification as the labelled regions. `exclude` matches labels that
+should be left untouched:
 
 ``` r
 
 atlas <- atlas |>
-  atlas_simplify(tolerance = 0.5)
+  atlas_smooth(keep = 0.2, exclude = "cortex_")
 ```
 
-Higher `tolerance` values remove more vertices. Topology is preserved,
-so regions won’t collapse or overlap — but push the value too high and
-small structures lose their shape.
+Or use `labels` to simplify only matching labels and leave the rest
+alone. Only one of `labels` or `exclude` may be supplied.
 
-### Combining both
-
-These compose naturally in a pipe. Smooth first to remove noise, then
-simplify to drop redundant points:
-
-``` r
-
-atlas <- atlas |>
-  atlas_smooth(smoothness = 8) |>
-  atlas_simplify(tolerance = 1)
-```
-
-Both functions return a modified `ggseg_atlas`, so you can inspect the
-result with `plot(atlas)` at any step and adjust parameters before
-moving on. The goal is an atlas that plots fast, looks neat, and shows
-regions correctly.
+[`atlas_smooth()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_smooth.md)
+returns a modified `ggseg_atlas`, so you can inspect the result with
+`plot(atlas)` and adjust `keep` before committing. The goal is an atlas
+that plots fast, looks neat, and shows regions correctly.
 
 ## Rebuilding the atlas
 
@@ -325,8 +310,7 @@ atlas <- atlas_raw |>
   atlas_region_contextual("Cortex", match_on = "label") |>
   atlas_view_keep("axial_3|axial_5|coronal_3|sagittal") |>
   atlas_view_remove_region_small(min_area = 100) |>
-  atlas_smooth(smoothness = 5) |>
-  atlas_simplify(tolerance = 0.5) |>
+  atlas_smooth(keep = 0.2, exclude = "cortex_") |>
   atlas_view_gather()
 ```
 

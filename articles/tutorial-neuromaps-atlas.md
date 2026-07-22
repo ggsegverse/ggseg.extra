@@ -14,8 +14,8 @@ annotation to fine-tuning the binning.
 
 ## What you need
 
-- The [neuromapr](https://github.com/ggsegverse/neuromapr) R package
-  (for fetching neuromaps annotations)
+- The [neuromapr](https://github.com/LCBC-UiO/neuromapr) R package (for
+  fetching neuromaps annotations)
 - For **surface** annotations (GIFTI): no system tools needed
 - For **volume** annotations (NIfTI): FreeSurfer installed with
   `fsaverage5` (uses `mri_vol2surf` to project the volume onto the
@@ -296,11 +296,12 @@ gradients.](figures/tutorial-neuromaps-atlas-compare-3d-20-1.png)
 
 3D brain rendering with 20 quantile bins.
 
-## Tuning tolerance
+## Tuning simplification
 
-The `tolerance` parameter controls polygon simplification. We use 7 bins
-here with a tolerance of 0.5 for a balance between clarity and file
-size:
+The pipeline returns raw polygons; call
+[`atlas_smooth()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_smooth.md)
+afterwards to balance clarity and file size. We start with 7 bins and
+then simplify to roughly 20% of vertices:
 
 ``` r
 atlas_full <- create_cortical_from_neuromaps(
@@ -308,9 +309,10 @@ atlas_full <- create_cortical_from_neuromaps(
   desc = "genepc1",
   n_bins = 7,
   atlas_name = "abagen_genepc1",
-  tolerance = 0.5,
   verbose = TRUE
 )
+
+atlas_full <- atlas_full |> atlas_smooth(keep = 0.2, exclude = "cortex_")
 #>
 #> ── Creating brain atlas "abagen_genepc1" ──
 #> ℹ Reading neuromaps annotation

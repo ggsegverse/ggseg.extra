@@ -11,10 +11,11 @@ detailed rendering and speed.
 mri_surf2surf_rereg(
   subject,
   annot,
-  hemi = c("lh", "rh"),
+  hemisphere = c("lh", "rh"),
   target_subject = "fsaverage5",
-  output_dir = file.path(freesurfer::fs_subj_dir(), subject, "label"),
-  verbose = get_verbose()
+  output_dir = as.character(fs::path(freesurfer::fs_subj_dir(), subject, "label")),
+  verbose = get_verbose(),
+  hemi = lifecycle::deprecated()
 )
 ```
 
@@ -28,7 +29,7 @@ mri_surf2surf_rereg(
 
   annotation file name (as found in subjects_dir)
 
-- hemi:
+- hemisphere:
 
   hemisphere (one of "lh" or "rh")
 
@@ -48,6 +49,10 @@ mri_surf2surf_rereg(
   (`TRUE` = 1, `FALSE` = 0). If not specified, uses the value from
   `options("ggseg.extra.verbose")` or the `GGSEG_EXTRA_VERBOSE`
   environment variable.
+
+- hemi:
+
+  **\[deprecated\]** Use `hemisphere` instead.
 
 ## Value
 

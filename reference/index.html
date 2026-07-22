@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9001</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9005</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -33,6 +33,7 @@
     <li><a class="dropdown-item" href="../articles/tutorial-neuromaps-atlas.html">Neuromaps Atlas</a></li>
     <li><a class="dropdown-item" href="../articles/tutorial-subcortical-atlas.html">Subcortical Atlas</a></li>
     <li><a class="dropdown-item" href="../articles/tutorial-wholebrain-atlas.html">Whole-Brain Atlas</a></li>
+    <li><a class="dropdown-item" href="../articles/tutorial-cerebellar-atlas.html">Cerebellar Atlas</a></li>
     <li><a class="dropdown-item" href="../articles/tutorial-tract-atlas.html">Tract Atlas</a></li>
     <li><a class="dropdown-item" href="../articles/tutorial-label-atlas.html">Label Atlas</a></li>
     <li><hr class="dropdown-divider"></li>
@@ -72,6 +73,27 @@
 
 
       <dl><dt>
+
+          <code><a href="create_cerebellar_from_annotation.html">create_cerebellar_from_annotation()</a></code>
+          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+        </dt>
+        <dd>Create cerebellar atlas from FreeSurfer annotation</dd>
+
+        <dt>
+
+          <code><a href="create_cerebellar_from_gifti.html">create_cerebellar_from_gifti()</a></code>
+          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+        </dt>
+        <dd>Create cerebellar atlas from SUIT flatmap</dd>
+
+        <dt>
+
+          <code><a href="create_cerebellar_from_volume.html">create_cerebellar_from_volume()</a></code>
+          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+        </dt>
+        <dd>Create cerebellar atlas from volume segmentation</dd>
+
+        <dt>
 
           <code><a href="create_cortical_from_annotation.html">create_cortical_from_annotation()</a></code>
           <span class="badge lifecycle lifecycle-maturing">maturing</span>
@@ -138,17 +160,10 @@
 
       <dl><dt>
 
-          <code><a href="atlas_simplify.html">atlas_simplify()</a></code>
+          <code><a href="atlas_smooth.html">atlas_smooth()</a></code> <code><a href="atlas_smooth.html">atlas_simplify()</a></code>
 
         </dt>
-        <dd>Simplify atlas 2D contours</dd>
-
-        <dt>
-
-          <code><a href="atlas_smooth.html">atlas_smooth()</a></code>
-
-        </dt>
-        <dd>Smooth atlas 2D contours</dd>
+        <dd>Smooth and simplify atlas 2D contours</dd>
       </dl></div><div class="section level2">
       <h2 id="atlas-repository">Atlas Repository<a class="anchor" aria-label="anchor" href="#atlas-repository"></a></h2>
 
@@ -184,31 +199,149 @@
 
       <dl><dt>
 
-          <code><a href="read_ctab.html">read_ctab()</a></code>
-
+          <code><a href="read_lut.html">read_lut()</a></code> <code><a href="read_lut.html">read_ctab()</a></code>
+          <span class="badge lifecycle lifecycle-deprecated">deprecated</span>
         </dt>
-        <dd>Read FreeSurfer color table</dd>
+        <dd>Read FreeSurfer LUT</dd>
 
         <dt>
 
-          <code><a href="write_ctab.html">write_ctab()</a></code>
-
+          <code><a href="write_lut.html">write_lut()</a></code> <code><a href="write_lut.html">write_ctab()</a></code>
+          <span class="badge lifecycle lifecycle-deprecated">deprecated</span>
         </dt>
-        <dd>Write FreeSurfer color table</dd>
+        <dd>Write FreeSurfer LUT</dd>
 
         <dt>
 
-          <code><a href="is_ctab.html">is_ctab()</a></code>
-
+          <code><a href="is_lut.html">is_lut()</a></code> <code><a href="is_lut.html">is_ctab()</a></code>
+          <span class="badge lifecycle lifecycle-deprecated">deprecated</span>
         </dt>
-        <dd>Check if object is a color table</dd>
+        <dd>Check if object is a LUT</dd>
 
         <dt>
 
-          <code><a href="get_ctab.html">get_ctab()</a></code>
+          <code><a href="get_lut.html">get_lut()</a></code> <code><a href="get_lut.html">get_ctab()</a></code>
+          <span class="badge lifecycle lifecycle-deprecated">deprecated</span>
+        </dt>
+        <dd>Read LUT and add hex colours</dd>
+
+        <dt>
+
+          <code><a href="lut_add.html">lut_add()</a></code>
 
         </dt>
-        <dd>Read color table and add hex colours</dd>
+        <dd>Add rows to a FreeSurfer LUT</dd>
+
+        <dt>
+
+          <code><a href="lut_combine.html">lut_combine()</a></code>
+
+        </dt>
+        <dd>Combine FreeSurfer LUTs</dd>
+      </dl></div><div class="section level2">
+      <h2 id="subcortical-helpers">Subcortical Helpers<a class="anchor" aria-label="anchor" href="#subcortical-helpers"></a></h2>
+
+      <div class="section-desc"><p>Compose slice views and anatomical context for subcortical atlases</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="subcortical_slabs.html">subcortical_slabs()</a></code> <code><a href="subcortical_slabs.html">subcortical_views()</a></code>
+          <span class="badge lifecycle lifecycle-deprecated">deprecated</span>
+        </dt>
+        <dd>Build subcortical slabs from a label bounding box</dd>
+
+        <dt>
+
+          <code><a href="aseg_context.html">aseg_context()</a></code>
+
+        </dt>
+        <dd>Reduce a subcortical atlas to focus regions on grey anatomical context</dd>
+
+        <dt>
+
+          <code><a href="aseg_hidden_labels.html">aseg_hidden_labels()</a></code>
+
+        </dt>
+        <dd>Standard FreeSurfer aseg labels stripped from a subcortical atlas</dd>
+      </dl></div><div class="section level2">
+      <h2 id="anatomical-coregistration">Anatomical Coregistration<a class="anchor" aria-label="anchor" href="#anatomical-coregistration"></a></h2>
+
+      <div class="section-desc"><p>Align an atlas volume to a FreeSurfer subject for anatomical context</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="coregister_volume.html">coregister_volume()</a></code>
+
+        </dt>
+        <dd>Coregister an atlas volume to a FreeSurfer subject</dd>
+
+        <dt>
+
+          <code><a href="project_volume_anatomical.html">project_volume_anatomical()</a></code>
+
+        </dt>
+        <dd>Project atlas labels onto FreeSurfer anatomical context</dd>
+
+        <dt>
+
+          <code><a href="prepare_subcortical_anatomical.html">prepare_subcortical_anatomical()</a></code>
+
+        </dt>
+        <dd>Prepare an atlas for the subcortical pipeline with anatomical context</dd>
+      </dl></div><div class="section level2">
+      <h2 id="cerebellar-helpers">Cerebellar Helpers<a class="anchor" aria-label="anchor" href="#cerebellar-helpers"></a></h2>
+
+      <div class="section-desc"><p>SUIT surfaces and MNI-to-SUIT transforms for cerebellar atlases</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="suit_flatmap_path.html">suit_flatmap_path()</a></code>
+
+        </dt>
+        <dd>Path to bundled SUIT flatmap surface</dd>
+
+        <dt>
+
+          <code><a href="suit_3d_path.html">suit_3d_path()</a></code>
+
+        </dt>
+        <dd>Path to bundled SUIT 3D cerebellar surface</dd>
+
+        <dt>
+
+          <code><a href="suit_deformation_field.html">suit_deformation_field()</a></code>
+          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+        </dt>
+        <dd>Download SUIT deformation field for MNI-to-SUIT transforms</dd>
+
+        <dt>
+
+          <code><a href="transform_mni_to_suit.html">transform_mni_to_suit()</a></code>
+          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+        </dt>
+        <dd>Transform a volume from MNI space to SUIT cerebellar space</dd>
+
+        <dt>
+
+          <code><a href="read_suit_parcellation.html">read_suit_parcellation()</a></code>
+          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+        </dt>
+        <dd>Read SUIT cerebellar parcellation from GIFTI</dd>
       </dl></div><div class="section level2">
       <h2 id="utilities">Utilities<a class="anchor" aria-label="anchor" href="#utilities"></a></h2>
 

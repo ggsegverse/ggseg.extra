@@ -21,7 +21,7 @@ Requires FreeSurfer for mesh generation."><meta property="og:image" content="htt
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9001</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9005</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -45,6 +45,7 @@ Requires FreeSurfer for mesh generation."><meta property="og:image" content="htt
     <li><a class="dropdown-item" href="../articles/tutorial-neuromaps-atlas.html">Neuromaps Atlas</a></li>
     <li><a class="dropdown-item" href="../articles/tutorial-subcortical-atlas.html">Subcortical Atlas</a></li>
     <li><a class="dropdown-item" href="../articles/tutorial-wholebrain-atlas.html">Whole-Brain Atlas</a></li>
+    <li><a class="dropdown-item" href="../articles/tutorial-cerebellar-atlas.html">Cerebellar Atlas</a></li>
     <li><a class="dropdown-item" href="../articles/tutorial-tract-atlas.html">Tract Atlas</a></li>
     <li><a class="dropdown-item" href="../articles/tutorial-label-atlas.html">Label Atlas</a></li>
     <li><hr class="dropdown-divider"></li>
@@ -71,7 +72,7 @@ Requires FreeSurfer for mesh generation."><meta property="og:image" content="htt
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.svg" class="logo" alt=""><h1>Create brain atlas from subcortical segmentation</h1>
-      <small class="dont-index">Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/R/atlas-subcortical.R" class="external-link"><code>R/atlas-subcortical.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/R/atlas_subcortical.R" class="external-link"><code>R/atlas_subcortical.R</code></a></small>
       <div class="d-none name"><code>create_subcortical_from_volume.Rd</code></div>
     </div>
 
@@ -91,17 +92,19 @@ snapshots at specified coordinates and extracting contours.</p>
 <span>  <span class="va">input_volume</span>,</span>
 <span>  input_lut <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  atlas_name <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  views <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  output_dir <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  slabs <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  vertex_size_limits <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  dilate <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  decimate <span class="op">=</span> <span class="fl">0.5</span>,</span>
 <span>  tolerance <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  smoothness <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  verbose <span class="op">=</span> <span class="fu"><a href="get_verbose.html">get_verbose</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  cleanup <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  verbose <span class="op">=</span> <span class="fu"><a href="get_verbose.html">get_verbose</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  skip_existing <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  decimate <span class="op">=</span> <span class="fl">0.5</span>,</span>
-<span>  steps <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  steps <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  context <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  views <span class="op">=</span> <span class="fu">lifecycle</span><span class="fu">::</span><span class="fu"><a href="https://lifecycle.r-lib.org/reference/deprecated.html" class="external-link">deprecated</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -112,7 +115,11 @@ snapshots at specified coordinates and extracting contours.</p>
 <dl><dt id="arg-input-volume">input_volume<a class="anchor" aria-label="anchor" href="#arg-input-volume"></a></dt>
 <dd><p>Path to the segmentation volume. Supports <code>.mgz</code>, <code>.nii</code>,
 and <code>.nii.gz</code> formats. Typically this is <code>aseg.mgz</code> or a custom
-segmentation in the same space.</p></dd>
+segmentation in the same space. May also be the
+<code>list(volume, lut, id_offset)</code> returned by
+<code><a href="prepare_subcortical_anatomical.html">prepare_subcortical_anatomical()</a></code> /
+<code><a href="project_volume_anatomical.html">project_volume_anatomical()</a></code>, in which case its <code>volume</code> and <code>lut</code>
+are used (an explicit <code>input_lut</code> takes precedence over the bundled one).</p></dd>
 
 
 <dt id="arg-input-lut">input_lut<a class="anchor" aria-label="anchor" href="#arg-input-lut"></a></dt>
@@ -120,7 +127,7 @@ segmentation in the same space.</p></dd>
 label IDs to region names and colours (e.g., <code>FreeSurferColorLUT.txt</code>
 or <code>ASegStatsLUT.txt</code>), or a data.frame with columns <code>region</code> and colour
 columns (R, G, B or hex). If NULL, region names will be generic
-(e.g., "region_0010") and the atlas will have no palette.</p></dd>
+(e.g., "region_0010") and colours will be auto-generated.</p></dd>
 
 
 <dt id="arg-atlas-name">atlas_name<a class="anchor" aria-label="anchor" href="#arg-atlas-name"></a></dt>
@@ -128,17 +135,21 @@ columns (R, G, B or hex). If NULL, region names will be generic
 filename.</p></dd>
 
 
-<dt id="arg-views">views<a class="anchor" aria-label="anchor" href="#arg-views"></a></dt>
-<dd><p>A data.frame specifying projection views with columns <code>name</code>,
-<code>type</code> ("axial", "coronal", "sagittal"), <code>start</code> (first slice), <code>end</code>
-(last slice). Default projects entire volume from each direction.
-Unlike slices, projections show ALL structures in their spatial
-relationships - like an X-ray view.</p></dd>
-
-
 <dt id="arg-output-dir">output_dir<a class="anchor" aria-label="anchor" href="#arg-output-dir"></a></dt>
 <dd><p>Directory to store intermediate files (screenshots, masks,
 contours). Defaults to <code><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir()</a></code>.</p></dd>
+
+
+<dt id="arg-slabs">slabs<a class="anchor" aria-label="anchor" href="#arg-slabs"></a></dt>
+<dd><p>A data.frame specifying projection slabs with columns <code>name</code>,
+<code>type</code> ("axial", "coronal", "sagittal"), <code>start</code> (first slice), <code>end</code>
+(last slice). Default projects entire volume from each direction.
+Unlike slices, projections show ALL structures in their spatial
+relationships - like an X-ray view. May also be a named list of
+<code><a href="subcortical_slabs.html">subcortical_slabs()</a></code> arguments (e.g.
+<code>slabs = list(labels = 801:810, coronal = 3, axial = 2)</code>); it is expanded
+into a slab table with <code>volume</code> defaulting to <code>input_volume</code>, so the slab
+indices are computed in the builder's own frame.</p></dd>
 
 
 <dt id="arg-vertex-size-limits">vertex_size_limits<a class="anchor" aria-label="anchor" href="#arg-vertex-size-limits"></a></dt>
@@ -152,20 +163,31 @@ filtered out. Default NULL applies no limits.</p></dd>
 gaps between structures.</p></dd>
 
 
+<dt id="arg-decimate">decimate<a class="anchor" aria-label="anchor" href="#arg-decimate"></a></dt>
+<dd><p>Mesh decimation factor between 0 and 1. Reduces the number
+of faces in 3D meshes using quadric edge decimation (via
+<code><a href="https://rdrr.io/pkg/Rvcg/man/vcgQEdecim.html" class="external-link">Rvcg::vcgQEdecim()</a></code>). A value of 0.5 reduces faces by 50%. Set to NULL
+to skip decimation. Requires the Rvcg package. Default is 0.5.</p></dd>
+
+
 <dt id="arg-tolerance">tolerance<a class="anchor" aria-label="anchor" href="#arg-tolerance"></a></dt>
-<dd><p>Simplification tolerance for 2D polygons. Higher values
-produce simpler shapes with fewer vertices (typical range: 0.1–2).
-Passed to <code><a href="https://r-spatial.github.io/sf/reference/geos_unary.html" class="external-link">sf::st_simplify()</a></code>.
-If not specified, uses <code>options("ggseg.extra.tolerance")</code> or the
-<code>GGSEG_EXTRA_TOLERANCE</code> environment variable. Default is 1.</p></dd>
+<dd><p><a href="https://lifecycle.r-lib.org/articles/stages.html#deprecated" class="external-link"><img src="figures/lifecycle-deprecated.svg" alt="[Deprecated]"></a> sf simplification is
+no longer applied during atlas creation. Use <code><a href="atlas_smooth.html">atlas_smooth()</a></code> on the
+returned atlas instead. Supplying a value emits a lifecycle warning
+and is otherwise ignored.</p></dd>
 
 
 <dt id="arg-smoothness">smoothness<a class="anchor" aria-label="anchor" href="#arg-smoothness"></a></dt>
-<dd><p>Smoothing factor for 2D contours. Higher values produce
-smoother region boundaries (typical range: 3–15). Passed to
-<code><a href="https://strimas.com/smoothr/reference/smooth.html" class="external-link">smoothr::smooth()</a></code>. If not specified, uses
-<code>options("ggseg.extra.smoothness")</code> or the <code>GGSEG_EXTRA_SMOOTHNESS</code>
-environment variable. Default is 5.</p></dd>
+<dd><p><a href="https://lifecycle.r-lib.org/articles/stages.html#deprecated" class="external-link"><img src="figures/lifecycle-deprecated.svg" alt="[Deprecated]"></a> sf contour smoothing
+is no longer applied during atlas creation. Use <code><a href="atlas_smooth.html">atlas_smooth()</a></code> on the
+returned atlas instead. Supplying a value emits a lifecycle warning
+and is otherwise ignored.</p></dd>
+
+
+<dt id="arg-cleanup">cleanup<a class="anchor" aria-label="anchor" href="#arg-cleanup"></a></dt>
+<dd><p>Remove intermediate files after atlas creation. If not
+specified, uses <code>options("ggseg.extra.cleanup")</code> or the <code>GGSEG_EXTRA_CLEANUP</code>
+environment variable. Default is TRUE.</p></dd>
 
 
 <dt id="arg-verbose">verbose<a class="anchor" aria-label="anchor" href="#arg-verbose"></a></dt>
@@ -176,24 +198,11 @@ value from <code>options("ggseg.extra.verbose")</code> or the <code>GGSEG_EXTRA_
 environment variable.</p></dd>
 
 
-<dt id="arg-cleanup">cleanup<a class="anchor" aria-label="anchor" href="#arg-cleanup"></a></dt>
-<dd><p>Remove intermediate files after atlas creation. If not
-specified, uses <code>options("ggseg.extra.cleanup")</code> or the <code>GGSEG_EXTRA_CLEANUP</code>
-environment variable. Default is TRUE.</p></dd>
-
-
 <dt id="arg-skip-existing">skip_existing<a class="anchor" aria-label="anchor" href="#arg-skip-existing"></a></dt>
 <dd><p>Skip generating output files that already exist,
 allowing interrupted atlas creation to resume. If not specified, uses
 <code>options("ggseg.extra.skip_existing")</code> or the <code>GGSEG_EXTRA_SKIP_EXISTING</code>
 environment variable. Default is TRUE.</p></dd>
-
-
-<dt id="arg-decimate">decimate<a class="anchor" aria-label="anchor" href="#arg-decimate"></a></dt>
-<dd><p>Mesh decimation factor between 0 and 1. Reduces the number
-of faces in 3D meshes using quadric edge decimation (via
-<code><a href="https://rdrr.io/pkg/Rvcg/man/vcgQEdecim.html" class="external-link">Rvcg::vcgQEdecim()</a></code>). A value of 0.5 reduces faces by 50%. Set to NULL
-to skip decimation. Requires the Rvcg package. Default is 0.5.</p></dd>
 
 
 <dt id="arg-steps">steps<a class="anchor" aria-label="anchor" href="#arg-steps"></a></dt>
@@ -209,6 +218,18 @@ Steps are:</p><ul><li><p>1: Extract labels from volume and get colour table</p><
 <li><p>9: Build final atlas with 2D geometry</p></li>
 </ul><p>Use <code>steps = 1:3</code> for 3D-only atlas. Use <code>steps = 7:8</code> to iterate on
 smoothing and reduction parameters.</p></dd>
+
+
+<dt id="arg-context">context<a class="anchor" aria-label="anchor" href="#arg-context"></a></dt>
+<dd><p>Optional named list of <code><a href="aseg_context.html">aseg_context()</a></code> arguments (e.g.
+<code>context = list(focus = "Hippocampus")</code>) applied to the finished 2D atlas
+to keep the focus regions coloured on grey anatomical context. <code>NULL</code>
+(default) leaves the atlas unchanged. Only applied when the 2D build
+(step 9) runs.</p></dd>
+
+
+<dt id="arg-views">views<a class="anchor" aria-label="anchor" href="#arg-views"></a></dt>
+<dd><p><a href="https://lifecycle.r-lib.org/articles/stages.html#deprecated" class="external-link"><img src="figures/lifecycle-deprecated.svg" alt="[Deprecated]"></a> Use <code>slabs</code> instead.</p></dd>
 
 </dl></div>
     <div class="section level2">

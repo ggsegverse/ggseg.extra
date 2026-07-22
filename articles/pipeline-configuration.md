@@ -25,12 +25,12 @@ specific calls.
 | `verbose` | `ggseg.extra.verbose` | `GGSEG_EXTRA_VERBOSE` | `TRUE` |
 | `cleanup` | `ggseg.extra.cleanup` | `GGSEG_EXTRA_CLEANUP` | `TRUE` |
 | `skip_existing` | `ggseg.extra.skip_existing` | `GGSEG_EXTRA_SKIP_EXISTING` | `TRUE` |
-| `tolerance` | `ggseg.extra.tolerance` | `GGSEG_EXTRA_TOLERANCE` | `0.5` |
-| `smoothness` | `ggseg.extra.smoothness` | `GGSEG_EXTRA_SMOOTHNESS` | `5` |
 
-Note: `smoothness` applies only to subcortical and tract pipelines.
-Cortical atlases use direct mesh projection and do not require
-smoothing.
+The `tolerance`, `smoothness` and `smooth_refinements` parameters are
+deprecated. sf simplification has moved out of atlas creation entirely —
+call
+[`atlas_smooth()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_smooth.md)
+on the returned atlas instead.
 
 ## Setting options in R
 
@@ -40,7 +40,6 @@ for your R session:
 ``` r
 
 options(
-  ggseg.extra.tolerance = 0.5,
   ggseg.extra.cleanup = FALSE
 )
 
@@ -91,20 +90,13 @@ options(ggseg.extra.skip_existing = TRUE)
 
 ### Geometry parameters
 
-The `tolerance` parameter controls the quality of 2D polygon geometry.
-Higher tolerance means fewer vertices — smaller file size, less detail.
-
-For subcortical and tract pipelines, `smoothness` controls kernel
-smoothing of contour boundaries. Higher smoothness means rounder region
-boundaries.
-
-``` r
-
-options(ggseg.extra.tolerance = 0.5)
-
-# smoothness only applies to subcortical/tract pipelines
-options(ggseg.extra.smoothness = 15)
-```
+sf geometry simplification is no longer applied during atlas creation.
+Use
+[`atlas_smooth()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_smooth.md)
+on the returned atlas to control the trade-off between detail and file
+size. See
+[`vignette("post-processing")`](https://ggsegverse.github.io/ggseg.extra/articles/post-processing.md)
+for the full workflow.
 
 ## Environment variables
 
@@ -116,13 +108,11 @@ In `.Renviron`:
     GGSEG_EXTRA_VERBOSE=false
     GGSEG_EXTRA_CLEANUP=true
     GGSEG_EXTRA_SKIP_EXISTING=true
-    GGSEG_EXTRA_TOLERANCE=0.5
 
 In a shell:
 
 ``` bash
 export GGSEG_EXTRA_VERBOSE=false
-export GGSEG_EXTRA_TOLERANCE=0.5
 R -e "ggseg.extra::create_cortical_from_annotation(...)"
 ```
 
@@ -171,26 +161,24 @@ options(
 )
 ```
 
-### Iterating on tolerance
+### Iterating on simplification level
 
-For cortical atlases, adjusting `tolerance` is the main tuning knob. Use
-0 for maximum mesh fidelity, or higher values for smaller file sizes:
+`atlas_smooth(keep = ...)` is the single tuning knob for sf
+simplification. Higher `keep` retains more vertices (more detail, larger
+file). Try a few values without re-running the slow creation pipeline:
 
 ``` r
 
 annot_files <- c("lh.myatlas.annot", "rh.myatlas.annot")
 
-# High fidelity (no simplification)
-atlas <- create_cortical_from_annotation(
+atlas_raw <- create_cortical_from_annotation(
   input_annot = annot_files,
-  output_dir = "atlas_workdir",
-  tolerance = 0
+  output_dir = "atlas_workdir"
 )
 
-# Compact (more simplification)
-atlas <- create_cortical_from_annotation(
-  input_annot = annot_files,
-  output_dir = "atlas_workdir",
-  tolerance = 1
-)
+# High fidelity
+atlas <- atlas_raw |> atlas_smooth(keep = 0.5)
+
+# Compact
+atlas <- atlas_raw |> atlas_smooth(keep = 0.05, exclude = "cortex_")
 ```

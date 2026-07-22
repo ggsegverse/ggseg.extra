@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9001</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9005</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -33,6 +33,7 @@
     <li><a class="dropdown-item" href="../articles/tutorial-neuromaps-atlas.html">Neuromaps Atlas</a></li>
     <li><a class="dropdown-item" href="../articles/tutorial-subcortical-atlas.html">Subcortical Atlas</a></li>
     <li><a class="dropdown-item" href="../articles/tutorial-wholebrain-atlas.html">Whole-Brain Atlas</a></li>
+    <li><a class="dropdown-item" href="../articles/tutorial-cerebellar-atlas.html">Cerebellar Atlas</a></li>
     <li><a class="dropdown-item" href="../articles/tutorial-tract-atlas.html">Tract Atlas</a></li>
     <li><a class="dropdown-item" href="../articles/tutorial-label-atlas.html">Label Atlas</a></li>
     <li><hr class="dropdown-divider"></li>
@@ -63,9 +64,120 @@
     </div>
 
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="development version" id="ggsegextra-development-version">ggseg.extra (development version)<a class="anchor" aria-label="anchor" href="#ggsegextra-development-version"></a></h2>
+<h2 class="pkg-version" data-toc-text="1.9.9.9005" id="ggsegextra-1999005">ggseg.extra 1.9.9.9005<a class="anchor" aria-label="anchor" href="#ggsegextra-1999005"></a></h2>
 <div class="section level3">
-<h3 id="boundary-triangle-splitting-development-version">Boundary triangle splitting<a class="anchor" aria-label="anchor" href="#boundary-triangle-splitting-development-version"></a></h3>
+<h3 id="bug-fixes-1-9-9-9005">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-1-9-9-9005"></a></h3>
+<ul><li>
+<code>read_volume()</code> now reorients FreeSurfer <code>.mgz</code> volumes to RAS+, matching its long-standing behaviour for NIfTI inputs. Previously only <code>niftiImage</code> objects were reoriented, so <code>.mgz</code> volumes (e.g. FreeSurfer’s LIA-oriented <code>aseg.mgz</code>) reached the RAS+-assuming projection code still in LIA order. Subcortical atlases built directly from a <code>.mgz</code> therefore came out left-right flipped in axial views, top-bottom flipped in coronal, and 90-degrees rotated in sagittal; atlases built from reoriented <code>.nii.gz</code> volumes (and tract atlases, whose geometry is already in scanner RAS) were unaffected. Volumes whose header carries no valid RAS information fall back to native voxel order.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="subcortical-atlas-builder-helpers-1-9-9-9005">Subcortical atlas builder helpers<a class="anchor" aria-label="anchor" href="#subcortical-atlas-builder-helpers-1-9-9-9005"></a></h3>
+<p>New thin compositions of the existing <code>ggseg.formats</code> atlas ops and the volume reader, distilled from the repeated boilerplate in the <code>ggsegFreeSurfer</code> subcortical build scripts:</p>
+<ul><li>
+<code><a href="../reference/subcortical_slabs.html">subcortical_slabs()</a></code> builds a slab table from the bounding box of a set of labels, reading the volume in the <strong>same</strong> frame the builder uses so coronal/axial/sagittal slabs can’t be pointed at the wrong slices.</li>
+<li>
+<code><a href="../reference/aseg_context.html">aseg_context()</a></code> collapses the standard post-processing chain (punch cortical white matter, strip the structures <code>aseg</code> doesn’t draw, demote everything outside <code>focus</code> to grey context, drop empty views) into one call. The focus set is subtracted from the context set with exact, case-sensitive matching, so a region is never swallowed by a context entry that is a substring of its name (e.g. <code>Thalamus</code> vs <code>hypothalamus</code>). <code><a href="../reference/aseg_hidden_labels.html">aseg_hidden_labels()</a></code> returns the default stripped set.</li>
+<li>
+<code><a href="../reference/lut_add.html">lut_add()</a></code> / <code><a href="../reference/lut_combine.html">lut_combine()</a></code> append and merge FreeSurfer-style colour tables (validating with <code><a href="../reference/is_lut.html">is_lut()</a></code> and warning on index clashes) for atlases that add custom prefixed labels.</li>
+<li>
+<code><a href="../reference/create_subcortical_from_volume.html">create_subcortical_from_volume()</a></code> gained two opt-in arguments: <code>slabs</code> now also accepts a <code><a href="../reference/subcortical_slabs.html">subcortical_slabs()</a></code> list spec (e.g. <code>slabs = list(labels = 801:810, coronal = 3)</code>), and a new <code>context</code> argument runs <code><a href="../reference/aseg_context.html">aseg_context()</a></code> on the finished 2D atlas (e.g. <code>context = list(focus = "Hippocampus")</code>). Both thread through <code><a href="../reference/create_wholebrain_from_volume.html">create_wholebrain_from_volume()</a></code>’s <code>subcortical_opts</code>.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="sf-smoothing-moves-out-of-atlas-creation-1-9-9-9005">sf smoothing moves out of atlas creation<a class="anchor" aria-label="anchor" href="#sf-smoothing-moves-out-of-atlas-creation-1-9-9-9005"></a></h3>
+<p>Pipeline-time simplification of 2D sf geometry was the most common reason to re-run an otherwise expensive <code>create_*()</code> pipeline (10+ minutes for volumetric atlases). All <code>create_*()</code> functions now return raw, unsmoothed sf polygons. The (cheap) <code><a href="../reference/atlas_smooth.html">atlas_smooth()</a></code> post-processing step is the single place where simplification level is decided, so you can iterate freely on a cached atlas:</p>
+<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">atlas</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/create_cortical_from_annotation.html">create_cortical_from_annotation</a></span><span class="op">(</span><span class="va">...</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/atlas_smooth.html">atlas_smooth</a></span><span class="op">(</span>keep <span class="op">=</span> <span class="fl">0.2</span>, exclude <span class="op">=</span> <span class="st">"cortex_"</span><span class="op">)</span></span></code></pre></div>
+<ul><li>3D mesh smoothing (tessellation, FreeSurfer <code>mris_smooth</code>, decimation) is unchanged.</li>
+<li>
+<code>tolerance</code>, <code>smoothness</code> and <code>smooth_refinements</code> on every <code>create_*()</code> function are now soft-deprecated. Supplying any of them emits a <code><a href="https://lifecycle.r-lib.org/reference/deprecate_soft.html" class="external-link">lifecycle::deprecate_warn()</a></code> and the value is otherwise ignored.</li>
+<li>
+<code><a href="../reference/atlas_smooth.html">atlas_smooth()</a></code> gained <code>labels</code> / <code>exclude</code> regex arguments so the brain-outline geometry can stay crisp while everything else is simplified.</li>
+<li>
+<code><a href="../reference/atlas_smooth.html">atlas_smooth()</a></code> also gained a <code>smoothness</code> argument that applies a positive-then-negative <code><a href="https://r-spatial.github.io/sf/reference/geos_unary.html" class="external-link">sf::st_buffer()</a></code> (morphological closing) after vertex simplification. This restores the rounded sulcal curves the old pipeline <code>smoothness</code> argument produced, but as a per-region, post-atlas operation. Pass <code>keep = NULL</code> to skip vertex reduction and only round off voxel-edge stair-steps.</li>
+<li>The “large atlas” warning text now points at <code><a href="../reference/atlas_smooth.html">atlas_smooth()</a></code> instead of the deprecated <code>tolerance</code> argument.</li>
+<li>
+<code><a href="../reference/create_wholebrain_from_volume.html">create_wholebrain_from_volume()</a></code> no longer injects a default <code>smooth_refinements = 2L</code> into the cerebellar sub-pipeline.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="api-naming-and-argument-consistency-pass-1-9-9-9005">API naming and argument consistency pass<a class="anchor" aria-label="anchor" href="#api-naming-and-argument-consistency-pass-1-9-9-9005"></a></h3>
+<p>A pass over the atlas-builder family (<code>create_cortical_from_*()</code>, <code><a href="../reference/create_subcortical_from_volume.html">create_subcortical_from_volume()</a></code>, <code>create_cerebellar_from_*()</code>, <code><a href="../reference/create_wholebrain_from_volume.html">create_wholebrain_from_volume()</a></code>, <code><a href="../reference/create_tract_from_tractography.html">create_tract_from_tractography()</a></code>) and the LUT helpers to make the API “as similar as possible” across atlas types. Old names/arguments keep working with a <code><a href="https://lifecycle.r-lib.org/reference/deprecate_soft.html" class="external-link">lifecycle::deprecate_warn()</a></code>.</p>
+<ul><li>
+<strong>Fixed:</strong> <code><a href="../reference/create_cortical_from_labels.html">create_cortical_from_labels()</a></code> and <code><a href="../reference/create_tract_from_tractography.html">create_tract_from_tractography()</a></code> silently dropped region names when <code>input_lut</code> was a FreeSurfer-style LUT <strong>file path</strong>, because the parser only looked for a <code>region</code> column and files parse into an <code>idx</code>/<code>label</code> schema instead. It now falls back to <code>label</code> when <code>region</code> is absent.</li>
+<li>
+<strong>Renamed</strong> the colour-table reader/writer family for consistency with the already-dominant <code>input_lut</code> vocabulary used by every atlas builder: <code><a href="../reference/read_lut.html">read_ctab()</a></code> -&gt; <code><a href="../reference/read_lut.html">read_lut()</a></code>, <code><a href="../reference/write_lut.html">write_ctab()</a></code> -&gt; <code><a href="../reference/write_lut.html">write_lut()</a></code>, <code><a href="../reference/is_lut.html">is_ctab()</a></code> -&gt; <code><a href="../reference/is_lut.html">is_lut()</a></code>, <code><a href="../reference/get_lut.html">get_ctab()</a></code> -&gt; <code><a href="../reference/get_lut.html">get_lut()</a></code>. <code><a href="../reference/lut_add.html">lut_add()</a></code> and <code><a href="../reference/lut_combine.html">lut_combine()</a></code> are unchanged.</li>
+<li>
+<strong>Renamed</strong> <code><a href="../reference/create_cerebellar_from_volume.html">create_cerebellar_from_volume()</a></code>’s <code>volume</code> argument to <code>input_volume</code>, matching its <code><a href="../reference/create_subcortical_from_volume.html">create_subcortical_from_volume()</a></code> and <code><a href="../reference/create_wholebrain_from_volume.html">create_wholebrain_from_volume()</a></code> siblings.</li>
+<li>
+<strong>Renamed</strong> <code><a href="../reference/mri_surf2surf_rereg.html">mri_surf2surf_rereg()</a></code>’s <code>hemi</code> argument to <code>hemisphere</code>, matching the cortical builders. The default order (<code>"lh"</code> first) is unchanged.</li>
+<li>
+<strong>Renamed</strong> the volumetric <code>views</code> argument to <code>slabs</code> on <code><a href="../reference/create_subcortical_from_volume.html">create_subcortical_from_volume()</a></code> and <code><a href="../reference/create_tract_from_tractography.html">create_tract_from_tractography()</a></code>, and <code><a href="../reference/subcortical_slabs.html">subcortical_views()</a></code> to <code><a href="../reference/subcortical_slabs.html">subcortical_slabs()</a></code> to match. This distinguishes it from the cortical builders’ <code>views</code> (a character vector selecting standard panels), which is unchanged and unrelated.</li>
+<li>
+<strong>Reordered</strong> arguments across all five builder families onto one shared layout: primary input(s), <code>input_lut</code>, <code>atlas_name</code>, <code>output_dir</code>, type-specific structural arguments, refinement arguments (<code>vertex_size_limits</code>, <code>dilate</code>, <code>decimate</code>), the deprecated <code>tolerance</code>/<code>smoothness</code>/<code>smooth_refinements</code> trio, <code>cleanup</code>, <code>verbose</code>, <code>skip_existing</code>, <code>steps</code>, then any function-specific trailing arguments. Every call site in this package’s own tests, vignettes, and examples already used named arguments for everything but the first one or two positional inputs, so this should be a no-op for callers doing the same; it is a silent behaviour change for any positional call beyond that.</li>
+<li>Internal: <code><a href="../reference/create_wholebrain_from_volume.html">create_wholebrain_from_volume()</a></code>’s <code>cortical_opts</code> allow-list is now derived reflectively from <code><a href="../reference/create_cortical_from_annotation.html">create_cortical_from_annotation()</a></code>’s formals (matching how <code>subcortical_opts</code>/<code>cerebellar_opts</code> already worked) instead of a hand-maintained constant that could drift.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="anatomical-context-coregistration-helpers-1-9-9-9005">Anatomical-context coregistration helpers<a class="anchor" aria-label="anchor" href="#anatomical-context-coregistration-helpers-1-9-9-9005"></a></h3>
+<ul><li>New <code><a href="../reference/coregister_volume.html">coregister_volume()</a></code> wraps <code>mri_coreg</code> to align an atlas volume to a FreeSurfer subject’s T1 grid (default <code>cvs_avg35_inMNI152</code>), returning a reusable LTA file.</li>
+<li>New <code><a href="../reference/project_volume_anatomical.html">project_volume_anatomical()</a></code> resamples each atlas label with trilinear interpolation onto the target <code>aparc+aseg</code> grid, takes the argmax across labels, and produces a merged volume that combines the source <code>aparc+aseg</code> (anatomical brain-outline context) with the user’s atlas labels. It returns a <code>list(volume, lut, id_offset)</code>: the merged volume <em>and</em> a colour table aligned to it (FreeSurfer names for the surviving <code>aparc+aseg</code> context labels plus the user’s labels at their shifted ids), so the context regions render with names <code><a href="../reference/aseg_context.html">aseg_context()</a></code> recognises.</li>
+<li>New <code><a href="../reference/prepare_subcortical_anatomical.html">prepare_subcortical_anatomical()</a></code> chains both in a single call, returning the same <code>list(volume, lut, id_offset)</code>. <code><a href="../reference/create_subcortical_from_volume.html">create_subcortical_from_volume()</a></code> now accepts that list directly as <code>input_volume</code>, unpacking the matching colour table for you (an explicit <code>input_lut</code> still wins).</li>
+<li>Removes the ~50 lines of per-atlas boilerplate previously hand-rolled in <code>ggsegShen</code> and <code>ggsegHO</code> build scripts.</li>
+<li>
+<code>id_offset</code> parameter (default <code>200L</code>) shifts every input label ID in the merged volume so they don’t collide with FreeSurfer <code>aparc+aseg</code> IDs (e.g. an atlas where <code>11</code> means “Putamen” while FS uses <code>11</code> for “Caudate”). The returned colour table is shifted in lock-step.</li>
+<li>
+<code>protect_cortex</code> parameter (default <code>TRUE</code>) keeps <code>aparc+aseg</code> cortex voxels (labels 1000-2999) and cortical white matter (<code>2</code>, <code>41</code>) intact even when the user’s argmax wins above <code>threshold</code> — this preserves the brain-outline geometry that the subcortical pipeline draws as anatomical context.</li>
+<li>The per-voxel argmax streams the running winner across labels instead of materialising an <code>n_voxels x n_labels</code> probability matrix, so projecting a many-region atlas (e.g. Shen-268 onto a 256^3 grid) no longer needs tens of gigabytes of memory.</li>
+</ul></div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.9.9.9004" id="ggsegextra-1999004">ggseg.extra 1.9.9.9004<a class="anchor" aria-label="anchor" href="#ggsegextra-1999004"></a></h2>
+<div class="section level3">
+<h3 id="template-based-atlas-repo-scaffolding-1-9-9-9004">Template-based atlas repo scaffolding<a class="anchor" aria-label="anchor" href="#template-based-atlas-repo-scaffolding-1-9-9-9004"></a></h3>
+<ul><li>
+<code><a href="../reference/setup_atlas_repo.html">setup_atlas_repo()</a></code> now downloads the atlas template from <a href="https://github.com/ggsegverse/ggseg-atlas-template" class="external-link">ggsegverse/ggseg-atlas-template</a> instead of bundling template files inside the package. This makes the template a single source of truth that can be updated independently.</li>
+<li>The generated scaffold includes all modern atlas repo conventions: Quarto README, Bootstrap 5 pkgdown config, code-quality workflow, render-readme workflow, update-codemeta workflow, and AI agent instructions.</li>
+<li>
+<code>data-raw/create-atlas.R</code> now scaffolds all pipeline methods (cortical, subcortical, cerebellar, tract, wholebrain) with commented sections.</li>
+<li>Falls back to a bundled minimal template when offline.</li>
+<li>Rich CLI messaging throughout the scaffolding process.</li>
+</ul></div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.9.9.9003" id="ggsegextra-1999003">ggseg.extra 1.9.9.9003<a class="anchor" aria-label="anchor" href="#ggsegextra-1999003"></a></h2>
+<div class="section level3">
+<h3 id="large-atlas-warning-1-9-9-9003">Large-atlas warning<a class="anchor" aria-label="anchor" href="#large-atlas-warning-1-9-9-9003"></a></h3>
+<ul><li>
+<code>warn_if_large_atlas()</code> now scales its threshold with region count via <code>per_region = 50</code> (threshold = <code>max(max_vertices, per_region * n_regions)</code>). Prevents spurious warnings for high-resolution parcellations (e.g. Kong 1000-parcel) where <code>keep_shapes = TRUE</code> sets a ~40 vertices/region floor.</li>
+<li>Fixed the follow-up hint which previously suggested raising <code>tolerance</code> to reduce vertices; lower values simplify more aggressively.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="deep-cerebellar-nuclei-support-1-9-9-9003">Deep cerebellar nuclei support<a class="anchor" aria-label="anchor" href="#deep-cerebellar-nuclei-support-1-9-9-9003"></a></h3>
+<ul><li>
+<code><a href="../reference/create_cerebellar_from_volume.html">create_cerebellar_from_volume()</a></code> now detects deep cerebellar nuclei (Dentate, Interposed, Fastigial) that have volume voxels but no SUIT surface vertices. These are tessellated as individual 3D meshes with proper tkRAS-to-MNI coordinate transform, and rendered as smoothed coronal projection sf geometries in a separate “nuclei” view.</li>
+<li>Orphaned surface parcels (e.g. buckner17 17Networks_14) that are too small for any SUIT vertex to land on are now rescued by assigning the nearest surface vertex, keeping them on the flatmap.</li>
+<li>Voxel neighbor fill radius expanded from 1 to 3 (configurable) to better capture small regions during volume-to-surface sampling.</li>
+<li>Restored colour auto-fill in <code><a href="../reference/read_suit_parcellation.html">read_suit_parcellation()</a></code> and <code><a href="../reference/read_neuromaps_volume.html">read_neuromaps_volume()</a></code>.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="cerebellar-atlas-type-and-suit-flatmap-pipeline-1-9-9-9003">Cerebellar atlas type and SUIT flatmap pipeline<a class="anchor" aria-label="anchor" href="#cerebellar-atlas-type-and-suit-flatmap-pipeline-1-9-9-9003"></a></h3>
+<p>New “cerebellar” atlas type added across the ggseg ecosystem (ggseg.formats, ggseg, ggseg3d). Cerebellar atlases use SUIT flatmap sf polygons for 2D rendering and per-region meshes for 3D (like subcortical).</p>
+<p>Three creation pipelines:</p>
+<ul><li>
+<code><a href="../reference/create_cerebellar_from_gifti.html">create_cerebellar_from_gifti()</a></code> creates from GIFTI label files + SUIT flatmap surface.</li>
+<li>
+<code><a href="../reference/create_cerebellar_from_annotation.html">create_cerebellar_from_annotation()</a></code> creates from FreeSurfer <code>.annot</code> files on the SUIT cerebellar surface + SUIT flatmap.</li>
+<li>
+<code><a href="../reference/create_cerebellar_from_volume.html">create_cerebellar_from_volume()</a></code> creates from a NIfTI cerebellar segmentation volume + SUIT 3D surface (for vol-to-surf sampling) + SUIT flatmap. Includes per-region 3D mesh tessellation.</li>
+</ul><p>Supporting functions:</p>
+<ul><li>
+<code><a href="../reference/read_suit_parcellation.html">read_suit_parcellation()</a></code> reads SUIT-format GIFTI labels with automatic hemisphere detection (Left/Right/Vermis).</li>
+<li>
+<code><a href="https://ggsegverse.github.io/ggseg.formats/reference/ggseg_data_cerebellar.html" class="external-link">ggseg_data_cerebellar()</a></code> (ggseg.formats) creates the data container.</li>
+<li>
+<code><a href="https://ggsegverse.github.io/ggseg.formats/reference/is_ggseg_atlas.html" class="external-link">is_cerebellar_atlas()</a></code> (ggseg.formats) type predicate.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="boundary-triangle-splitting-1-9-9-9003">Boundary triangle splitting<a class="anchor" aria-label="anchor" href="#boundary-triangle-splitting-1-9-9-9003"></a></h3>
 <p>Boundary triangles (where vertices belong to different atlas regions) are now split into sub-polygons along edge midpoints instead of being assigned wholesale to a single region. This eliminates the sawtooth artifacts at region borders that resulted from the triangular mesh geometry.</p>
 <ul><li>
 <strong>2-region boundaries</strong>: triangle is split at the midpoints of the two cross-boundary edges — the majority region gets a quadrilateral, the minority region gets a triangle.</li>
@@ -74,7 +186,7 @@
 <li>Default <code>tolerance</code> increased from 0.5 to 1 — the smoother borders tolerate higher simplification without visible degradation.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="bug-fixes-development-version">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-development-version"></a></h3>
+<h3 id="bug-fixes-1-9-9-9003">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-1-9-9-9003"></a></h3>
 <ul><li>
 <code>ensure_fs_compatible_nifti()</code> no longer errors when the NIfTI header cannot be read (e.g. <code>.mgz</code> files or nonexistent paths). It now falls through gracefully and lets downstream FreeSurfer commands handle the file.</li>
 </ul></div>

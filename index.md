@@ -6,14 +6,7 @@ compatible with the [ggseg](https://ggsegverse.github.io/ggseg/) and
 
 ## Installing
 
-Install from CRAN:
-
-``` r
-
-install.packages("ggseg.extra")
-```
-
-Or install the development version from
+Install the development version from
 [r-universe](https://ggsegverse.r-universe.dev/#builds):
 
 ``` r

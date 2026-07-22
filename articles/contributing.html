@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9001</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9005</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -51,6 +51,7 @@
     <li><a class="dropdown-item" href="../articles/tutorial-neuromaps-atlas.html">Neuromaps Atlas</a></li>
     <li><a class="dropdown-item" href="../articles/tutorial-subcortical-atlas.html">Subcortical Atlas</a></li>
     <li><a class="dropdown-item" href="../articles/tutorial-wholebrain-atlas.html">Whole-Brain Atlas</a></li>
+    <li><a class="dropdown-item" href="../articles/tutorial-cerebellar-atlas.html">Cerebellar Atlas</a></li>
     <li><a class="dropdown-item" href="../articles/tutorial-tract-atlas.html">Tract Atlas</a></li>
     <li><a class="dropdown-item" href="../articles/tutorial-label-atlas.html">Label Atlas</a></li>
     <li><hr class="dropdown-divider"></li>
@@ -117,9 +118,12 @@ follow these steps.</p>
 <h2 id="setting-up-the-package-repository">Setting up the package repository<a class="anchor" aria-label="anchor" href="#setting-up-the-package-repository"></a>
 </h2>
 <p>Since setting up a data package can be tricky, we provide a function
-to get you started. It includes tests and the general structure we
-expect from a ggseg-atlas package. If you already make R packages
-comfortably, skip this step.</p>
+to get you started. It downloads the <a href="https://github.com/ggsegverse/ggseg-atlas-template" class="external-link">ggseg-atlas-template</a>
+from GitHub and customises it for your atlas. The result includes tests,
+GitHub Actions workflows, pkgdown configuration, and the general
+structure we expect from a ggseg-atlas package. If you already make R
+packages comfortably, you can also use the template repository directly
+on GitHub.</p>
 <p>To create a ggseg repo, use the RStudio New Project creation GUI and
 look for the ggseg icon. Or call <code><a href="../reference/setup_atlas_repo.html">setup_atlas_repo()</a></code>
 directly:</p>

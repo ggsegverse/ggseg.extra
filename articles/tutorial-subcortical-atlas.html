@@ -28,7 +28,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9001</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9005</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -54,6 +54,7 @@
     <li><a class="dropdown-item" href="../articles/tutorial-neuromaps-atlas.html">Neuromaps Atlas</a></li>
     <li><a class="dropdown-item" href="../articles/tutorial-subcortical-atlas.html">Subcortical Atlas</a></li>
     <li><a class="dropdown-item" href="../articles/tutorial-wholebrain-atlas.html">Whole-Brain Atlas</a></li>
+    <li><a class="dropdown-item" href="../articles/tutorial-cerebellar-atlas.html">Cerebellar Atlas</a></li>
     <li><a class="dropdown-item" href="../articles/tutorial-tract-atlas.html">Tract Atlas</a></li>
     <li><a class="dropdown-item" href="../articles/tutorial-label-atlas.html">Label Atlas</a></li>
     <li><hr class="dropdown-divider"></li>
@@ -137,8 +138,8 @@
 <span><span class="co">#&gt; 10000)</span></span>
 <span><span class="co">#&gt; ℹ Large atlases may be slow to plot and</span></span>
 <span><span class="co">#&gt;   increase package size</span></span>
-<span><span class="co">#&gt; ℹ Re-run with higher `tolerance` to</span></span>
-<span><span class="co">#&gt;   reduce vertices</span></span>
+<span><span class="co">#&gt; ℹ Call `atlas_smooth(atlas, keep = 0.2,</span></span>
+<span><span class="co">#&gt;   exclude = "cortex_")` to reduce vertices</span></span>
 <span></span>
 <span><span class="va">aseg_raw</span></span>
 <span><span class="co">#&gt; </span></span>
@@ -231,10 +232,34 @@
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">aseg_raw</span> <span class="op">&lt;-</span> <span class="va">aseg_raw</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_view_gather</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+</section><section class="level2"><h2 id="the-shortcut-aseg_context">The shortcut: <code>aseg_context()</code>
+<a class="anchor" aria-label="anchor" href="#the-shortcut-aseg_context"></a>
+</h2>
+<p>The remove → contextualise → view-keep → gather recipe above is the same for every subcortical atlas, so <code><a href="../reference/aseg_context.html">aseg_context()</a></code> collapses it into one call. It punches the cortical white matter out of the brain silhouette, strips the structures <code>aseg</code> does not draw (<code><a href="../reference/aseg_hidden_labels.html">aseg_hidden_labels()</a></code>), demotes everything outside <code>focus</code> to grey context, and drops views with no focus region:</p>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">aseg_raw</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/create_subcortical_from_volume.html">create_subcortical_from_volume</a></span><span class="op">(</span></span>
+<span>  input_volume <span class="op">=</span> <span class="va">aseg_volume</span>,</span>
+<span>  input_lut <span class="op">=</span> <span class="va">color_lut</span>,</span>
+<span>  atlas_name <span class="op">=</span> <span class="st">"aseg"</span></span>
+<span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/aseg_context.html">aseg_context</a></span><span class="op">(</span></span>
+<span>    focus <span class="op">=</span> <span class="st">"Thalamus|Caudate|Putamen|Pallidum|Hippocampus|Amygdala|Accumbens|VentralDC|Brain-Stem"</span></span>
+<span>  <span class="op">)</span></span></code></pre></div>
+<p><code>focus</code> is matched with a loose, case-insensitive <code><a href="https://rdrr.io/r/base/grep.html" class="external-link">grepl()</a></code>, so you don’t have to spell out FreeSurfer’s exact <code>Left-</code>/<code>Right-</code> label casing. The labels that don’t match become <em>context</em>, and demoting them uses a separate, exact, case-sensitive <code>^(...)$</code> match against their own resolved label strings — not <code>focus</code> re-applied — so a context label that happens to contain a focus label as a substring (the classic <code>Thalamus</code> inside <code>hypothalamus</code>) can never swallow it. That substring collision used to demote the whole focus set to context, silently producing 0-region atlases, before this exact-match step was added.</p>
+<p><code><a href="../reference/subcortical_slabs.html">subcortical_slabs()</a></code> derives the projection slabs from the bounding box of a set of labels, reading the volume in the <strong>same</strong> frame the builder uses, so the slabs always land on the right slices. You can pass its arguments as a list to <code>slabs</code>, and run <code><a href="../reference/aseg_context.html">aseg_context()</a></code> in the same call via <code>context</code>:</p>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">aseg</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/create_subcortical_from_volume.html">create_subcortical_from_volume</a></span><span class="op">(</span></span>
+<span>  input_volume <span class="op">=</span> <span class="va">aseg_volume</span>,</span>
+<span>  input_lut <span class="op">=</span> <span class="va">color_lut</span>,</span>
+<span>  atlas_name <span class="op">=</span> <span class="st">"aseg"</span>,</span>
+<span>  slabs <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>labels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">10</span><span class="op">:</span><span class="fl">13</span>, <span class="fl">17</span><span class="op">:</span><span class="fl">18</span>, <span class="fl">26</span>, <span class="fl">49</span><span class="op">:</span><span class="fl">54</span>, <span class="fl">58</span><span class="op">)</span>, coronal <span class="op">=</span> <span class="fl">3</span>, axial <span class="op">=</span> <span class="fl">2</span><span class="op">)</span>,</span>
+<span>  context <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>focus <span class="op">=</span> <span class="st">"Thalamus|Caudate|Putamen|Pallidum|Hippocampus|Amygdala"</span><span class="op">)</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p><code><a href="../reference/create_wholebrain_from_volume.html">create_wholebrain_from_volume()</a></code> forwards both <code>slabs</code> and <code>context</code> through its <code>subcortical_opts</code>, so a whole-brain build gets the same treatment for free.</p>
 </section><section class="level2"><h2 id="adding-metadata">Adding metadata<a class="anchor" aria-label="anchor" href="#adding-metadata"></a>
 </h2>
 <p>The raw labels are technical identifiers like “Left-Thalamus-Proper.” Join human-readable names and structural groupings:</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">normalize_region</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/ifelse.html" class="external-link">ifelse</a></span><span class="op">(</span></span>
 <span>    <span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span>,</span>
@@ -279,7 +304,7 @@
 </section><section class="level2"><h2 id="rebuilding-and-saving">Rebuilding and saving<a class="anchor" aria-label="anchor" href="#rebuilding-and-saving"></a>
 </h2>
 <p>Construct the final atlas from modified components:</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">aseg</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/ggseg_atlas.html" class="external-link">ggseg_atlas</a></span><span class="op">(</span></span>
 <span>  atlas <span class="op">=</span> <span class="va">aseg_raw</span><span class="op">$</span><span class="va">atlas</span>,</span>
 <span>  type <span class="op">=</span> <span class="va">aseg_raw</span><span class="op">$</span><span class="va">type</span>,</span>
@@ -330,7 +355,7 @@
 <span><span class="co">#&gt; 25 &lt;NA&gt;  cc central        CC_C… &lt;NA&gt;     </span></span>
 <span><span class="co">#&gt; 26 &lt;NA&gt;  cc mid anterior   CC_M… &lt;NA&gt;     </span></span>
 <span><span class="co">#&gt; 27 &lt;NA&gt;  cc anterior       CC_A… &lt;NA&gt;</span></span></code></pre></div>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_labels.html" class="external-link">atlas_labels</a></span><span class="op">(</span><span class="va">aseg</span><span class="op">)</span></span>
 <span><span class="co">#&gt;  [1] "Brain-Stem"          </span></span>
 <span><span class="co">#&gt;  [2] "CC_Anterior"         </span></span>
@@ -366,14 +391,39 @@
 <span><span class="co">#&gt;             8             1             2 </span></span>
 <span><span class="co">#&gt;        limbic </span></span>
 <span><span class="co">#&gt;             4</span></span></code></pre></div>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">aseg</span><span class="op">)</span></span></code></pre></div>
 <div class="figure">
 <img src="figures/tutorial-subcortical-atlas-plot-1.png" alt="2D brain atlas plot showing subcortical structures including thalamus, caudate, putamen, hippocampus, and amygdala across axial, coronal, and sagittal projection views." width="960"><p class="caption">
 Subcortical aseg atlas plotted with ggseg.
 </p>
 </div>
-</section><script id="quarto-html-after-body" type="application/javascript">
+</section><section class="level2"><h2 id="atlases-not-in-freesurfer-space">Atlases not in FreeSurfer space<a class="anchor" aria-label="anchor" href="#atlases-not-in-freesurfer-space"></a>
+</h2>
+<p><code>aseg</code> is already on the FreeSurfer grid, so its structures sit in anatomical context for free. An atlas that ships as a standalone parcellation volume (in MNI space, say) has no surrounding brain to draw. <code><a href="../reference/prepare_subcortical_anatomical.html">prepare_subcortical_anatomical()</a></code> coregisters such a parcellation to a FreeSurfer subject and merges it with that subject’s <code>aparc+aseg</code>, so the pipeline can draw the cortical ribbon and white-matter interior as context:</p>
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">merged</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/prepare_subcortical_anatomical.html">prepare_subcortical_anatomical</a></span><span class="op">(</span></span>
+<span>  input_volume <span class="op">=</span> <span class="st">"my_parcellation_2mm.nii.gz"</span>,</span>
+<span>  lut <span class="op">=</span> <span class="va">my_lut</span>, <span class="co"># its idx selects + names the labels to keep</span></span>
+<span>  target_subject <span class="op">=</span> <span class="st">"cvs_avg35_inMNI152"</span> <span class="co"># subject to borrow context from</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">atlas</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/create_subcortical_from_volume.html">create_subcortical_from_volume</a></span><span class="op">(</span></span>
+<span>  input_volume <span class="op">=</span> <span class="va">merged</span>, <span class="co"># carries both volume and matching colour table</span></span>
+<span>  context <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>focus <span class="op">=</span> <span class="st">"my-structures"</span><span class="op">)</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p>It chains <code><a href="../reference/coregister_volume.html">coregister_volume()</a></code> (wrapping <code>mri_coreg</code> to produce a reusable LTA transform) and <code><a href="../reference/project_volume_anatomical.html">project_volume_anatomical()</a></code> (which resamples each label, takes the per-voxel argmax, shifts the atlas ids clear of the FreeSurfer ones, and protects the cortex). The result is a <code>list(volume, lut, id_offset)</code>: the merged volume <em>and</em> a colour table aligned to it — FreeSurfer names for the <code>aparc+aseg</code> context labels plus your atlas labels at their shifted ids. <code><a href="../reference/create_subcortical_from_volume.html">create_subcortical_from_volume()</a></code> unpacks both, so the context regions render with names <code><a href="../reference/aseg_context.html">aseg_context()</a></code> recognises. Call the two steps separately to reuse one transform across several parcellations.</p>
+<section class="level3"><h3 id="custom-colour-tables">Custom colour tables<a class="anchor" aria-label="anchor" href="#custom-colour-tables"></a>
+</h3>
+<p>When an atlas adds labels FreeSurfer doesn’t know about, <code><a href="../reference/lut_add.html">lut_add()</a></code> appends them to a colour table; <code><a href="../reference/lut_combine.html">lut_combine()</a></code> merges several tables and warns on clashing indices. Build <code>my_lut</code> from your parcellation’s own labels before passing it as <code>lut</code> above — <code><a href="../reference/prepare_subcortical_anatomical.html">prepare_subcortical_anatomical()</a></code> shifts it and folds in the FreeSurfer context names for you:</p>
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">my_lut</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/read_lut.html">read_lut</a></span><span class="op">(</span><span class="va">color_lut</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/lut_add.html">lut_add</a></span><span class="op">(</span></span>
+<span>    idx <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">20001</span>, <span class="fl">20002</span><span class="op">)</span>,</span>
+<span>    label <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Left-Hippocampus-ant"</span>, <span class="st">"Left-Hippocampus-post"</span><span class="op">)</span>,</span>
+<span>    R <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">220</span>, <span class="fl">60</span><span class="op">)</span>, G <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">190</span>, <span class="fl">140</span><span class="op">)</span>, B <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">30</span>, <span class="fl">200</span><span class="op">)</span></span>
+<span>  <span class="op">)</span></span></code></pre></div>
+</section></section><script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);

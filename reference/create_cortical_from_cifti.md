@@ -47,19 +47,19 @@ create_cortical_from_cifti(
 
 - tolerance:
 
-  Simplification tolerance for 2D polygons. Higher values produce
-  simpler shapes with fewer vertices (typical range: 0.1–2). Passed to
-  [`sf::st_simplify()`](https://r-spatial.github.io/sf/reference/geos_unary.html).
-  If not specified, uses `options("ggseg.extra.tolerance")` or the
-  `GGSEG_EXTRA_TOLERANCE` environment variable. Default is 1.
+  **\[deprecated\]** sf simplification is no longer applied during atlas
+  creation. Use
+  [`atlas_smooth()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_smooth.md)
+  on the returned atlas instead. Supplying a value emits a lifecycle
+  warning and is otherwise ignored.
 
 - smooth_refinements:
 
-  Number of Chaikin corner-cutting refinements to apply to 2D polygons.
-  Higher values produce smoother region boundaries (typical range: 0–3).
-  0 disables smoothing. If not specified, uses
-  `options("ggseg.extra.smooth_refinements")` or the
-  `GGSEG_EXTRA_SMOOTH_REFINEMENTS` environment variable. Default is 2.
+  **\[deprecated\]** sf-side smoothing is no longer applied during atlas
+  creation. Use
+  [`atlas_smooth()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_smooth.md)
+  on the returned atlas instead. Supplying a value emits a lifecycle
+  warning and is otherwise ignored.
 
 - cleanup:
 

@@ -19,9 +19,13 @@ follow these steps.
 ## Setting up the package repository
 
 Since setting up a data package can be tricky, we provide a function to
-get you started. It includes tests and the general structure we expect
-from a ggseg-atlas package. If you already make R packages comfortably,
-skip this step.
+get you started. It downloads the
+[ggseg-atlas-template](https://github.com/ggsegverse/ggseg-atlas-template)
+from GitHub and customises it for your atlas. The result includes tests,
+GitHub Actions workflows, pkgdown configuration, and the general
+structure we expect from a ggseg-atlas package. If you already make R
+packages comfortably, you can also use the template repository directly
+on GitHub.
 
 To create a ggseg repo, use the RStudio New Project creation GUI and
 look for the ggseg icon. Or call

@@ -30,6 +30,8 @@ Step-by-step atlas creation with full pipelines
   atlas](https://ggsegverse.github.io/ggseg.extra/articles/tutorial-subcortical-atlas.md):
 - [Tutorial: Creating a whole-brain
   atlas](https://ggsegverse.github.io/ggseg.extra/articles/tutorial-wholebrain-atlas.md):
+- [Tutorial: Creating a cerebellar
+  atlas](https://ggsegverse.github.io/ggseg.extra/articles/tutorial-cerebellar-atlas.md):
 - [Tutorial: Creating a tract
   atlas](https://ggsegverse.github.io/ggseg.extra/articles/tutorial-tract-atlas.md):
 - [Tutorial: Creating an atlas from label

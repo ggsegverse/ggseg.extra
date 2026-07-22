@@ -21,11 +21,10 @@ read_tractography(file)
 A list of matrices, one per streamline. Each matrix has N rows (points
 along the streamline) and 3 columns (x, y, z coordinates).
 
-## See also
+## Details
 
-[`read_trk()`](https://ggsegverse.github.io/ggseg.extra/reference/read_trk.md),
-[`read_tck()`](https://ggsegverse.github.io/ggseg.extra/reference/read_tck.md)
-for format-specific readers
+Format-specific readers are used internally depending on the file
+extension: `.trk` (TrackVis) and `.tck` (MRtrix).
 
 ## Examples
 

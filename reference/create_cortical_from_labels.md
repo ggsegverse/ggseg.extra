@@ -14,8 +14,8 @@ and derives region names from the rest of the filename.
 ``` r
 create_cortical_from_labels(
   label_files,
-  atlas_name = NULL,
   input_lut = NULL,
+  atlas_name = NULL,
   output_dir = NULL,
   views = c("lateral", "medial"),
   tolerance = NULL,
@@ -33,14 +33,16 @@ create_cortical_from_labels(
   Paths to `.label` files. Each file should follow FreeSurfer naming:
   `{hemi}.{regionname}.label` (e.g., `lh.motor.label`).
 
+- input_lut:
+
+  Path to a color lookup table (LUT) file, or a data.frame with a
+  `region` column (or a FreeSurfer-style `label` column) plus colour
+  columns (R, G, B or hex). Rows must be in the same order as the input
+  files.
+
 - atlas_name:
 
   Name for the atlas. If NULL, derived from the input filename.
-
-- input_lut:
-
-  Path to a color lookup table (LUT) file, or a data.frame with columns
-  `region` and colour columns (R, G, B or hex).
 
 - output_dir:
 
@@ -53,19 +55,19 @@ create_cortical_from_labels(
 
 - tolerance:
 
-  Simplification tolerance for 2D polygons. Higher values produce
-  simpler shapes with fewer vertices (typical range: 0.1–2). Passed to
-  [`sf::st_simplify()`](https://r-spatial.github.io/sf/reference/geos_unary.html).
-  If not specified, uses `options("ggseg.extra.tolerance")` or the
-  `GGSEG_EXTRA_TOLERANCE` environment variable. Default is 1.
+  **\[deprecated\]** sf simplification is no longer applied during atlas
+  creation. Use
+  [`atlas_smooth()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_smooth.md)
+  on the returned atlas instead. Supplying a value emits a lifecycle
+  warning and is otherwise ignored.
 
 - smooth_refinements:
 
-  Number of Chaikin corner-cutting refinements to apply to 2D polygons.
-  Higher values produce smoother region boundaries (typical range: 0–3).
-  0 disables smoothing. If not specified, uses
-  `options("ggseg.extra.smooth_refinements")` or the
-  `GGSEG_EXTRA_SMOOTH_REFINEMENTS` environment variable. Default is 2.
+  **\[deprecated\]** sf-side smoothing is no longer applied during atlas
+  creation. Use
+  [`atlas_smooth()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_smooth.md)
+  on the returned atlas instead. Supplying a value emits a lifecycle
+  warning and is otherwise ignored.
 
 - cleanup:
 

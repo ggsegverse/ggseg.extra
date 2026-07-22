@@ -63,8 +63,8 @@ tracula_raw <- create_tract_from_tractography(
 #> 10000)
 #> ℹ Large atlases may be slow to plot and
 #>   increase package size
-#> ℹ Re-run with higher `tolerance` to
-#>   reduce vertices
+#> ℹ Call `atlas_smooth(atlas, keep = 0.2,
+#>   exclude = "cortex_")` to reduce vertices
 
 tracula_raw
 #> 
