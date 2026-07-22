@@ -38,6 +38,8 @@ navbar:
           href: articles/tutorial-subcortical-atlas.html
         - text: Whole-Brain Atlas
           href: articles/tutorial-wholebrain-atlas.html
+        - text: Cerebellar Atlas
+          href: articles/tutorial-cerebellar-atlas.html
         - text: Tract Atlas
           href: articles/tutorial-tract-atlas.html
         - text: Label Atlas
@@ -70,6 +72,7 @@ articles:
       - tutorial-neuromaps-atlas
       - tutorial-subcortical-atlas
       - tutorial-wholebrain-atlas
+      - tutorial-cerebellar-atlas
       - tutorial-tract-atlas
       - tutorial-label-atlas
 
@@ -102,6 +105,31 @@ reference:
       - write_ctab
       - is_ctab
       - get_ctab
+      - lut_add
+      - lut_combine
+
+  - title: Subcortical Helpers
+    desc: Compose slice views and anatomical context for subcortical atlases
+    contents:
+      - subcortical_views
+      - aseg_context
+      - aseg_hidden_labels
+
+  - title: Anatomical Coregistration
+    desc: Align an atlas volume to a FreeSurfer subject for anatomical context
+    contents:
+      - coregister_volume
+      - project_volume_anatomical
+      - prepare_subcortical_anatomical
+
+  - title: Cerebellar Helpers
+    desc: SUIT surfaces and MNI-to-SUIT transforms for cerebellar atlases
+    contents:
+      - suit_flatmap_path
+      - suit_3d_path
+      - suit_deformation_field
+      - transform_mni_to_suit
+      - read_suit_parcellation
 
   - title: Utilities
     desc: General package utilities

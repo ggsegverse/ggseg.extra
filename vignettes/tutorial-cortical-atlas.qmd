@@ -1,6 +1,10 @@
 ---
 title: "Tutorial: Creating a cortical atlas"
 format: html
+vignette: >
+  %\VignetteIndexEntry{Tutorial: Creating a cortical atlas}
+  %\VignetteEngine{quarto::html}
+  %\VignetteEncoding{UTF-8}
 ---
 
 
@@ -60,7 +64,6 @@ yeo7_raw <- create_cortical_from_annotation(
   input_annot = annot_files,
   atlas_name = "yeo7",
   output_dir = output_dir,
-  tolerance = 0.5,
   skip_existing = TRUE,
   cleanup = FALSE,
   verbose = TRUE
@@ -110,9 +113,18 @@ yeo7_raw
 
 A few things to note about the parameters:
 
-- **`tolerance`** controls vertex simplification in the output polygons. Higher values mean simpler polygons with fewer vertices. Default is 0.5; use 0 for maximum fidelity.
 - **`cleanup = FALSE`** keeps intermediate files (cached step 1 data) so you can re-run without re-reading annotations.
 - **`skip_existing = TRUE`** reuses existing intermediate files when resuming an interrupted run.
+
+The pipeline returns raw, unsmoothed polygons — smoothing is now a separate post-processing step via `atlas_smooth()`. Apply it once and tune `keep` freely; you no longer have to re-run the full pipeline to try a different simplification level:
+
+
+``` r
+yeo7_smooth <- yeo7_raw |>
+  atlas_smooth(keep = 0.2, exclude = "cortex_")
+```
+
+`exclude = "cortex_"` leaves the brain-outline geometry crisp while simplifying the labelled regions.
 
 ## Step 3: Post-processing
 

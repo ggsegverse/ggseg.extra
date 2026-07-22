@@ -65,7 +65,7 @@
 ### Integration points & gotchas
 
 - Heavy dependencies (`freesurfer`, `magick`, `chromote`, `terra`,
-  `smoothr`, `RNifti`, `htmlwidgets`) are in Suggests, not Imports.
+  `RNifti`, `htmlwidgets`) are in Suggests, not Imports.
   They are loaded at runtime via `rlang::check_installed()`. The
   cortical pipeline needs only base Imports (`sf`, `dplyr`, `cli`,
   `ggseg.formats`, `furrr`). Subcortical/tract pipelines need the

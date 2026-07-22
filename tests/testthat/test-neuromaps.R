@@ -1,6 +1,8 @@
+.cap <- new.env()
+
 describe("detect_hemi_from_neuromaps_filename", {
   it("detects left from hemi-L BIDS pattern", {
-    expect_equal(
+    expect_identical(
       detect_hemi_from_neuromaps_filename(
         paste0(
           "source-abagen_desc-genepc1_space-",
@@ -12,7 +14,7 @@ describe("detect_hemi_from_neuromaps_filename", {
   })
 
   it("detects right from hemi-R BIDS pattern", {
-    expect_equal(
+    expect_identical(
       detect_hemi_from_neuromaps_filename(
         paste0(
           "source-abagen_desc-genepc1_space-",
@@ -24,7 +26,7 @@ describe("detect_hemi_from_neuromaps_filename", {
   })
 
   it("falls back to gifti detection for non-BIDS names", {
-    expect_equal(
+    expect_identical(
       detect_hemi_from_neuromaps_filename("lh.aparc.func.gii"),
       "lh"
     )
@@ -77,9 +79,11 @@ describe("read_neuromaps_annotation", {
     skip_if_not_installed("gifti")
 
     n <- 10242L
-    mock_gii <- list(data = list(
-      c(rep(0, 2000), rep(1, 4000), rep(2, 4242))
-    ))
+    mock_gii <- list(
+      data = list(
+        c(rep(0, 2000), rep(1, 4000), rep(2, 4242))
+      )
+    )
 
     local_mocked_bindings(
       read_gifti = function(...) mock_gii,
@@ -106,9 +110,11 @@ describe("read_neuromaps_annotation", {
     skip_if_not_installed("gifti")
 
     n <- 10242L
-    mock_gii <- list(data = list(
-      c(rep(0, 2000), rep(1, 4000), rep(2, 4242))
-    ))
+    mock_gii <- list(
+      data = list(
+        c(rep(0, 2000), rep(1, 4000), rep(2, 4242))
+      )
+    )
 
     local_mocked_bindings(
       read_gifti = function(...) mock_gii,
@@ -132,7 +138,7 @@ describe("read_neuromaps_annotation", {
 
     expect_true("lh_motor_cortex" %in% result$label)
     expect_true("lh_visual_cortex" %in% result$label)
-    expect_equal(
+    expect_identical(
       result$colour[result$region == "motor_cortex"],
       "#FF0000"
     )
@@ -160,7 +166,7 @@ describe("read_neuromaps_annotation", {
     result <- read_neuromaps_annotation(tmp)
     parcel_1 <- result[result$region == "parcel_1", ]
 
-    expect_equal(parcel_1$vertices[[1]], c(0L, 1L, 2L))
+    expect_identical(parcel_1$vertices[[1]], c(0L, 1L, 2L))
   })
 
   it("errors when vertex count does not match fsaverage5", {
@@ -195,10 +201,12 @@ describe("read_neuromaps_annotation", {
     writeLines("mock", tmp)
 
     expect_warning(
-      result <- read_neuromaps_annotation(tmp),
+      {
+        result <- read_neuromaps_annotation(tmp)
+      },
       "Cannot detect hemisphere"
     )
-    expect_equal(nrow(result), 0)
+    expect_identical(nrow(result), 0L)
   })
 })
 
@@ -213,9 +221,11 @@ describe("create_cortical_from_neuromaps", {
     skip_if_not_installed("gifti")
 
     n <- 10242L
-    mock_gii <- list(data = list(
-      c(rep(0, 2000), rep(1, 4000), rep(2, 4242))
-    ))
+    mock_gii <- list(
+      data = list(
+        c(rep(0, 2000), rep(1, 4000), rep(2, 4242))
+      )
+    )
 
     lh <- withr::local_tempfile(
       pattern = "source-test_hemi-L_feature",
@@ -241,16 +251,21 @@ describe("create_cortical_from_neuromaps", {
       preview_atlas = function(atlas) invisible(atlas)
     )
 
-    result <- create_cortical_from_neuromaps(
-      source = "test",
-      desc = "testdesc",
-      atlas_name = "test_neuromaps",
-      verbose = FALSE,
-      cleanup = FALSE
+    expect_warning(
+      {
+        result <- create_cortical_from_neuromaps(
+          source = "test",
+          desc = "testdesc",
+          atlas_name = "test_neuromaps",
+          verbose = FALSE,
+          cleanup = FALSE
+        )
+      },
+      "Large atlases"
     )
 
     expect_s3_class(result, "ggseg_atlas")
-    expect_true(nrow(result$core) > 0)
+    expect_gt(nrow(result$core), 0)
     expect_true("left" %in% result$core$hemi)
     expect_true("right" %in% result$core$hemi)
   })
@@ -264,9 +279,11 @@ describe("create_cortical_from_neuromaps", {
     skip_if_not_installed("gifti")
 
     n <- 10242L
-    mock_gii <- list(data = list(
-      c(rep(1, 5000), rep(2, 5242))
-    ))
+    mock_gii <- list(
+      data = list(
+        c(rep(1, 5000), rep(2, 5242))
+      )
+    )
 
     tmp <- withr::local_tempfile(
       pattern = "source-abagen_hemi-L_feature",
@@ -287,14 +304,17 @@ describe("create_cortical_from_neuromaps", {
       preview_atlas = function(atlas) invisible(atlas)
     )
 
-    result <- create_cortical_from_neuromaps(
-      source = "abagen",
-      desc = "genepc1",
-      verbose = FALSE,
-      cleanup = FALSE
+    result <- expect_warnings(
+      create_cortical_from_neuromaps(
+        source = "abagen",
+        desc = "genepc1",
+        verbose = FALSE,
+        cleanup = FALSE
+      ),
+      "vertices"
     )
 
-    expect_equal(result$atlas, "abagen_genepc1")
+    expect_identical(result$atlas, "abagen_genepc1")
   })
 
   it("routes volume annotations through read_neuromaps_volume", {
@@ -328,7 +348,13 @@ describe("create_cortical_from_neuromaps", {
       check_fs = function(...) invisible(TRUE),
       cortical_project_and_build = function(...) {
         structure(
-          list(core = data.frame(hemi = "left", region = "a")),
+          list(
+            core = data.frame(
+              stringsAsFactors = FALSE,
+              hemi = "left",
+              region = "a"
+            )
+          ),
           class = "ggseg_atlas"
         )
       }
@@ -354,9 +380,11 @@ describe("create_cortical_from_neuromaps", {
     skip_if_not_installed("gifti")
 
     n <- 10242L
-    mock_gii <- list(data = list(
-      c(rep(1, 5000), rep(2, 5242))
-    ))
+    mock_gii <- list(
+      data = list(
+        c(rep(1, 5000), rep(2, 5242))
+      )
+    )
 
     tmp <- withr::local_tempfile(
       pattern = "source-test_hemi-L_feature",
@@ -377,7 +405,7 @@ describe("create_cortical_from_neuromaps", {
       preview_atlas = function(atlas) invisible(atlas)
     )
 
-    expect_warning(
+    expect_warnings(
       create_cortical_from_neuromaps(
         source = "test",
         desc = "test",
@@ -386,7 +414,7 @@ describe("create_cortical_from_neuromaps", {
         verbose = FALSE,
         cleanup = FALSE
       ),
-      "Non-default space/density"
+      "Non-default space/density|Large atlases"
     )
   })
 
@@ -398,7 +426,7 @@ describe("create_cortical_from_neuromaps", {
     )
     skip_if_not_installed("gifti")
 
-    pipeline_called <- FALSE
+    .cap$pipeline_called <- FALSE
     n <- 10242L
     mock_gii <- list(data = list(c(rep(1, 5000), rep(2, 5242))))
 
@@ -418,9 +446,8 @@ describe("create_cortical_from_neuromaps", {
     )
     local_mocked_bindings(
       check_fs = function(...) invisible(TRUE),
-      check_magick = function() invisible(TRUE),
       cortical_project_and_build = function(...) {
-        pipeline_called <<- TRUE
+        .cap$pipeline_called <- TRUE
         structure(list(), class = "ggseg_atlas")
       }
     )
@@ -433,6 +460,6 @@ describe("create_cortical_from_neuromaps", {
       atlas_name = "test_neuromaps",
       verbose = FALSE
     )
-    expect_true(pipeline_called)
+    expect_true(.cap$pipeline_called)
   })
 })

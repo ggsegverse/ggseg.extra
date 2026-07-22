@@ -23,8 +23,8 @@ pipeline.
 |----------|-----------|--------------|
 | **Cortical** (annotation, labels) | `freesurferformats` | None |
 | **Cortical** (neuromaps volume) | `freesurfer`, `neuromapr` | FreeSurfer |
-| **Subcortical** | `freesurfer`, `magick`, `chromote`, `htmlwidgets`, `terra`, `smoothr` | FreeSurfer, ImageMagick |
-| **Whole-brain** | `freesurfer`, `RNifti`, `magick`, `chromote`, `htmlwidgets`, `terra`, `smoothr` | FreeSurfer, ImageMagick |
+| **Subcortical** | `freesurfer`, `magick`, `chromote`, `htmlwidgets`, `terra` | FreeSurfer, ImageMagick |
+| **Whole-brain** | `freesurfer`, `RNifti`, `magick`, `chromote`, `htmlwidgets`, `terra` | FreeSurfer, ImageMagick |
 | **Tract** | `RNifti`, `Rvcg` | None |
 | **GIFTI / CIFTI** | `gifti` or `ciftiTools` | Connectome Workbench (CIFTI only) |
 

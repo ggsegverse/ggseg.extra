@@ -1,6 +1,10 @@
 ---
 title: "Tutorial: Creating a whole-brain atlas"
 format: html
+vignette: >
+  %\VignetteIndexEntry{Tutorial: Creating a whole-brain atlas}
+  %\VignetteEngine{quarto::html}
+  %\VignetteEncoding{UTF-8}
 ---
 
 Most volumetric brain parcellations don't care about the cortical/subcortical boundary.
@@ -188,14 +192,64 @@ ho <- create_wholebrain_from_volume(
 plan(sequential)
 ```
 
-The pipeline does four things in sequence:
+The pipeline does up to five things in sequence:
 
 1. **Project volume onto surface** — `mri_vol2surf` samples the volume at multiple cortical depths (default 0–1 in 0.1 steps) and takes the maximum label at each vertex. Unlabeled vertices are filled by mesh-neighbor dilation, constrained to the cortex mask so labels don't bleed into the medial wall.
-2. **Classify labels** — Splits labels into cortical and subcortical using the priority system described above.
+2. **Classify labels** — Splits labels into cortical, subcortical, and cerebellar using the priority system described above.
 3. **Run the cortical pipeline** — Takes the projected cortical labels through the same 8-step pipeline used by `create_cortical_from_annotation()`: screenshots, contour extraction, smoothing, and polygon conversion.
 4. **Run the subcortical pipeline** — Tessellates subcortical voxels into 3D meshes and creates projection views. Cortical labels are remapped to FreeSurfer's reference IDs (3 for left cortex, 42 for right) so the subcortical pipeline can generate brain outline context geometry.
+5. **Run the cerebellar pipeline** — Filters the volume to keep only cerebellar labels, samples them onto the SUIT 3D surface, projects onto the SUIT flatmap, and tessellates 3D meshes. This step only runs if cerebellar labels were detected in step 2.
 
-The result is a list with `$cortical` and `$subcortical` — two separate `ggseg_atlas` objects.
+The result is a named list with `$cortical`, `$subcortical`, and `$cerebellar` — up to three separate `ggseg_atlas` objects.
+Any element is `NULL` if no labels of that type were found (or if the corresponding step was skipped).
+
+## Cerebellar labels in the mix
+
+Some whole-brain parcellations include cerebellar regions alongside cortical and subcortical structures — the Buckner atlas and Schaefer+Melbourne combined parcellations are common examples.
+
+The pipeline handles this as a fifth step.
+Classification works the same way as the cortical/subcortical split: you can mark labels as cerebellar via the `type` column in your LUT (set to `"cerebellar"`), pass them explicitly with `cerebellar_labels`, or let the heuristic sort them out.
+
+``` r
+lut <- data.frame(
+  idx = c(subcort_remapped_ids, 101:148, 301:310),
+  label = c(subcortical_labels, cortical_labels, cerebellar_labels),
+  R = sample(50:220, n, replace = TRUE),
+  G = sample(50:220, n, replace = TRUE),
+  B = sample(50:220, n, replace = TRUE),
+  A = rep(255L, n),
+  type = c(
+    rep("subcortical", length(subcortical_labels)),
+    rep("cortical", length(cortical_labels)),
+    rep("cerebellar", length(cerebellar_labels))
+  ),
+  stringsAsFactors = FALSE
+)
+```
+
+When cerebellar labels are detected, step 5 filters the volume to keep only those labels, transforms them into SUIT cerebellar space, and runs them through the cerebellar pipeline.
+The result lands in `$cerebellar` — a `ggseg_atlas` with SUIT flatmap polygons and 3D meshes, ready for `ggseg()` and `ggseg3d()`.
+
+The verification workflow at `steps = 1:2` now reports three lists:
+
+``` r
+result <- create_wholebrain_from_volume(
+  input_volume = remapped_path,
+  input_lut = lut,
+  atlas_name = "ho",
+  output_dir = "data-raw",
+  steps = 1:2
+)
+
+result$cortical_labels
+result$subcortical_labels
+result$cerebellar_labels
+```
+
+Check all three before running the full pipeline.
+If the automatic classification puts a cerebellar lobule into the subcortical bucket (or vice versa), override with the `cerebellar_labels` argument.
+
+For the full details on the cerebellar pipeline itself — SUIT surfaces, flatmap projection, MNI-to-SUIT transforms — see the [cerebellar tutorial](tutorial-cerebellar-atlas.html).
 
 ## What makes this tricky
 
@@ -221,21 +275,18 @@ This works reliably for standard MNI152 volumes, but can break with unusual orie
 ## Post-processing
 
 The raw atlas usually needs cleanup.
-Smooth the contours and reduce vertex count for faster plotting:
+Simplify the contours for faster plotting using topology-preserving simplification:
 
 ``` r
 ho_cort <- ho$cortical |>
-  atlas_smooth(smoothness = 5) |>
-  atlas_simplify(tolerance = 0.5)
+  atlas_smooth(keep = 0.05)
 
 ho_sub <- ho$subcortical |>
-  atlas_smooth(smoothness = 5) |>
-  atlas_simplify(tolerance = 0.5)
+  atlas_smooth(keep = 0.05)
 ```
 
-Higher smoothness values produce rounder contours.
-Higher tolerance values produce simpler polygons with fewer vertices — important for keeping atlas file sizes manageable.
-The right values depend on your atlas: parcellations with many small regions need gentler settings than those with a few large ones.
+Lower `keep` values produce simpler polygons with fewer vertices — important for keeping atlas file sizes manageable.
+The right value depends on your atlas: parcellations with many small regions need higher `keep` values than those with a few large ones.
 
 You can also remove unwanted regions from the subcortical atlas (ventricles, white matter) and set context regions, just like in the [subcortical tutorial](tutorial-subcortical-atlas.html):
 
@@ -291,10 +342,10 @@ See `setup_atlas_repo()` for scaffolding an atlas package with the right structu
 
 ## When to use wholebrain versus separate pipelines
 
-`create_wholebrain_from_volume()` is the right choice when you have a single volume containing both cortical and subcortical labels and you want the pipeline to handle the split.
-If you already have cortical annotations as surface files (`.annot`, `.label.gii`, `.dlabel.nii`) and subcortical segmentations as separate volumes, you're better off running `create_cortical_from_annotation()` and `create_subcortical_from_volume()` independently.
+`create_wholebrain_from_volume()` is the right choice when you have a single volume containing cortical, subcortical, and/or cerebellar labels and you want the pipeline to handle the split.
+If you already have cortical annotations as surface files (`.annot`, `.label.gii`, `.dlabel.nii`), subcortical segmentations as separate volumes, and cerebellar parcellations as SUIT-space GIFTI labels, you're better off running `create_cortical_from_annotation()`, `create_subcortical_from_volume()`, and `create_cerebellar_from_gifti()` independently.
 The separate pipelines skip the volume-to-surface projection step entirely, which means fewer failure modes and faster execution.
 
-The wholebrain pipeline exists because many standard atlases — Harvard-Oxford, Brainnetome, Schaefer+Melbourne — ship as single volumetric files.
-Converting them manually would mean splitting the volume, projecting cortical labels by hand, and managing the subcortical reference geometry yourself.
+The wholebrain pipeline exists because many standard atlases — Harvard-Oxford, Brainnetome, Schaefer+Melbourne, Buckner — ship as single volumetric files.
+Converting them manually would mean splitting the volume, projecting cortical labels by hand, transforming cerebellar labels into SUIT space, and managing the subcortical reference geometry yourself.
 The pipeline automates all of that, but it's still the most opinionated part of ggseg.extra and the one most likely to need human intervention.

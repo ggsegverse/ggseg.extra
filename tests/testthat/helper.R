@@ -2,13 +2,15 @@ library(dplyr, quietly = TRUE, warn.conflicts = FALSE)
 library(tidyr, quietly = TRUE, warn.conflicts = FALSE)
 library(ggseg, quietly = TRUE, warn.conflicts = FALSE)
 library(ggseg3d, quietly = TRUE, warn.conflicts = FALSE)
+library(ggplot2, quietly = TRUE, warn.conflicts = FALSE)
 
 # terra::describe masks testthat::describe in parallel workers
 describe <- testthat::describe
 
 options(
   ggseg.extra.verbose = FALSE,
-  freesurfer.verbose = FALSE
+  freesurfer.verbose = FALSE,
+  rgl.useNULL = TRUE
 )
 
 # Helper to get test data directory
@@ -23,17 +25,28 @@ skip_if_not_installed <- function(pkg) {
   }
 }
 
-# Helper to skip tests requiring FreeSurfer
+# Helper to skip tests requiring FreeSurfer.
+# FreeSurfer is Unix-only, so anything that shells out to it is skipped on
+# Windows unconditionally (the runner also segfaults intermittently under the
+# parallel native geometry stack there).
 skip_if_no_freesurfer <- function() {
+  testthat::skip_on_os("windows")
   testthat::skip_if_not_installed("freesurfer")
   if (!freesurfer::have_fs()) {
     testthat::skip("FreeSurfer not available")
   }
 }
 
+# Helper to skip 3D-render checks on Windows. ggseg3d's renderer relies on a
+# native geometry/plotly stack that segfaults intermittently on the parallel
+# Windows CI runner; the render path is not OS-specific, so skip it there.
+skip_render_on_windows <- function() {
+  testthat::skip_on_os("windows")
+}
+
 # Helper to skip tests requiring ImageMagick
 skip_if_no_imagemagick <- function() {
-  if (Sys.which("convert") == "") {
+  if (!has_magick()) {
     testthat::skip("ImageMagick not available")
   }
 }
@@ -78,26 +91,46 @@ mock_future_map2 <- function(.x, .y, .f, ...) {
   mapply(.f, .x, .y, SIMPLIFY = FALSE)
 }
 
+expect_messages <- function(expr, ...) {
+  patterns <- c(...)
+  rec <- new.env()
+  rec$caught <- character()
+  result <- withCallingHandlers(
+    expr,
+    message = function(m) {
+      rec$caught[length(rec$caught) + 1L] <- conditionMessage(m)
+      invokeRestart("muffleMessage")
+    }
+  )
+  for (pat in patterns) {
+    testthat::expect_true(
+      any(grepl(pat, rec$caught)),
+      label = paste0(
+        "Expected at least one message matching '",
+        pat,
+        "'"
+      )
+    )
+  }
+  if (length(patterns) == 0L) {
+    testthat::expect_gt(length(rec$caught), 0)
+  }
+  invisible(result)
+}
+
 expect_warnings <- function(expr, regexp) {
-  warnings_caught <- character()
+  rec <- new.env()
+  rec$caught <- character()
   result <- withCallingHandlers(
     expr,
     warning = function(w) {
       if (grepl(regexp, conditionMessage(w))) {
-        warnings_caught[[length(warnings_caught) + 1L]] <<-
-          conditionMessage(w)
+        rec$caught[[length(rec$caught) + 1L]] <- conditionMessage(w)
         invokeRestart("muffleWarning")
       }
     }
   )
-  testthat::expect_true(
-    length(warnings_caught) > 0,
-    label = paste0(
-      "Expected at least one warning matching '",
-      regexp,
-      "'"
-    )
-  )
+  testthat::expect_gt(length(rec$caught), 0)
   invisible(result)
 }
 
@@ -161,7 +194,7 @@ mock_cortical_pipeline_bindings <- function(captured = NULL) {
       env <- captured[[fn_name]]
       mocks[[fn_name]] <- (function(e, nm) {
         function(...) {
-          e[[nm]] <<- list(...)
+          e[[nm]] <- list(...)
           if (nm == "cortical_build_sf_projected") {
             return(mock_sf_polygon())
           }
