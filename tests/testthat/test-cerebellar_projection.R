@@ -136,3 +136,42 @@ describe("drop_small_rings", {
     expect_length(result, 1L)
   })
 })
+
+
+describe("read_suit_flatmap invalid surface", {
+  it("errors when the GIFTI lacks pointset or triangle arrays", {
+    skip_if_not_installed("gifti") # nolint: object_usage_linter.
+    local_mocked_bindings(
+      readgii = function(file) {
+        list(data = list(pointset = NULL, triangle = NULL))
+      },
+      .package = "gifti"
+    )
+    tmp <- withr::local_tempfile(fileext = ".surf.gii")
+    writeLines("x", tmp)
+    expect_error(read_suit_flatmap(tmp), "valid GIFTI surface")
+  })
+})
+
+
+describe("fill_inter_region_gaps", {
+  it("leaves gaps larger than the threshold unfilled", {
+    a <- sf::st_polygon(list(matrix(
+      c(0, 0, 4, 0, 4, 4, 0, 4, 0, 0),
+      ncol = 2,
+      byrow = TRUE
+    )))
+    b <- sf::st_polygon(list(matrix(
+      c(5, 0, 9, 0, 9, 4, 5, 4, 5, 0),
+      ncol = 2,
+      byrow = TRUE
+    )))
+    sf_data <- sf::st_sf(
+      label = c("a", "b"),
+      view = c("flatmap", "flatmap"),
+      geometry = sf::st_sfc(a, b)
+    )
+    result <- fill_inter_region_gaps(sf_data, threshold = 1, verbose = FALSE)
+    expect_identical(nrow(result), 2L)
+  })
+})

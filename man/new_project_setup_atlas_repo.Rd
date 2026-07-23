@@ -21,4 +21,13 @@ resolves the \verb{Binding:} field against the package's exports, so this must b
 exported even though it is not meant to be called directly — use
 \code{\link[=setup_atlas_repo]{setup_atlas_repo()}} instead.
 }
+\examples{
+\dontrun{
+# Invoked by the RStudio New Project wizard, not called directly.
+new_project_setup_atlas_repo(
+  file.path(tempdir(), "myatlas"),
+  atlas_name = "myatlas"
+)
+}
+}
 \keyword{internal}

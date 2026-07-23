@@ -931,4 +931,154 @@ describe("subcort_resolve_snapshots early-return NULL", {
     expect_null(result$slabs)
     expect_null(result$cortex_slices)
   })
+
+  it("returns cached slabs when the step is skipped but later steps run", {
+    cached_slabs <- data.frame(
+      name = "ax_1",
+      type = "axial",
+      start = 1,
+      end = 10,
+      stringsAsFactors = FALSE
+    )
+    cached_cortex <- data.frame(
+      x = NA,
+      y = NA,
+      z = 5,
+      view = "axial",
+      name = "ax_1",
+      stringsAsFactors = FALSE
+    )
+    local_mocked_bindings(
+      load_or_run_step = function(step, steps, ...) {
+        list(
+          run = FALSE,
+          data = list(
+            "slabs.rds" = cached_slabs,
+            "cortex_slices.rds" = cached_cortex
+          )
+        )
+      }
+    )
+
+    config <- list(steps = 4L:9L, verbose = TRUE)
+    dirs <- list(base = withr::local_tempdir())
+    colortable <- data.frame(stringsAsFactors = FALSE, idx = 10, label = "r")
+
+    result <- expect_messages(
+      subcort_resolve_snapshots(config, dirs, colortable, NULL),
+      "Loaded existing slabs"
+    )
+    expect_identical(result$slabs, cached_slabs)
+    expect_identical(result$cortex_slices, cached_cortex)
+  })
+
+  it("runs snapshots and logs progress when the step executes with verbose", {
+    local_mocked_bindings(
+      load_or_run_step = function(step, steps, ...) {
+        list(run = TRUE, data = list())
+      },
+      subcort_create_snapshots = function(...) {
+        list(
+          slabs = data.frame(
+            name = "ax_1",
+            type = "axial",
+            start = 1,
+            end = 10,
+            stringsAsFactors = FALSE
+          ),
+          cortex_slices = NULL
+        )
+      }
+    )
+
+    config <- list(
+      steps = 4L:9L,
+      verbose = TRUE,
+      input_volume = "fake.mgz",
+      skip_existing = FALSE
+    )
+    dirs <- list(base = withr::local_tempdir())
+    colortable <- data.frame(stringsAsFactors = FALSE, idx = 10, label = "r")
+
+    result <- expect_messages(
+      subcort_resolve_snapshots(config, dirs, colortable, NULL),
+      "Creating projection snapshots"
+    )
+    expect_identical(result$slabs$name, "ax_1")
+  })
+})
+
+
+describe("validate_subcort_inputs", {
+  it("errors when the volume file does not exist", {
+    expect_error(
+      validate_subcort_inputs("/no/such/volume.mgz", NULL),
+      "Volume file not found"
+    )
+  })
+
+  it("errors when a character LUT path does not exist", {
+    vol_file <- withr::local_tempfile(fileext = ".mgz")
+    file.create(vol_file)
+    expect_error(
+      validate_subcort_inputs(vol_file, "/no/such/lut.txt"),
+      "Color lookup table not found"
+    )
+  })
+
+  it("is silent for an existing volume and a NULL or data.frame LUT", {
+    vol_file <- withr::local_tempfile(fileext = ".mgz")
+    file.create(vol_file)
+    expect_null(validate_subcort_inputs(vol_file, NULL))
+    expect_null(validate_subcort_inputs(vol_file, data.frame(idx = 1)))
+  })
+})
+
+
+describe("subcort_drop_missing_labels", {
+  make_components <- function() {
+    list(
+      core = data.frame(
+        hemi = c("left", "right"),
+        region = c("a", "b"),
+        label = c("region_a", "region_b"),
+        stringsAsFactors = FALSE
+      ),
+      palette = c(region_a = "#FF0000", region_b = "#00FF00"),
+      meshes_df = dplyr::tibble(
+        label = c("region_a", "region_b"),
+        mesh = list(NULL, NULL)
+      )
+    )
+  }
+
+  it("drops labels absent from the contour geometry and warns", {
+    result <- expect_warnings(
+      subcort_drop_missing_labels(
+        make_components(),
+        data.frame(stringsAsFactors = FALSE, label = c("region_a", NA))
+      ),
+      "no valid contour data"
+    )
+    expect_identical(result$core$label, "region_a")
+    expect_named(result$palette, "region_a")
+    expect_identical(result$meshes_df$label, "region_a")
+  })
+
+  it("keeps every label and does not warn when all have geometry", {
+    expect_no_warning(
+      result <- subcort_drop_missing_labels(
+        make_components(),
+        data.frame(stringsAsFactors = FALSE, label = c("region_a", "region_b"))
+      )
+    )
+    expect_setequal(result$core$label, c("region_a", "region_b"))
+  })
+
+  it("treats non-data.frame sf_data as having no labels and aborts", {
+    expect_error(
+      suppressWarnings(subcort_drop_missing_labels(make_components(), NULL)),
+      "No labels with valid contour data"
+    )
+  })
 })

@@ -2397,3 +2397,189 @@ describe("create_wholebrain_from_volume step 5 cerebellar", {
     expect_false(is.null(result$cerebellar))
   })
 })
+
+
+describe("wholebrain_log_summary", {
+  it("counts present atlases and reports absent ones as zero", {
+    withr::local_options(width = 200)
+    subcortical <- structure(
+      list(
+        core = data.frame(
+          region = c("thalamus", "putamen"),
+          stringsAsFactors = FALSE
+        )
+      ),
+      class = "ggseg_atlas"
+    )
+    cerebellar <- structure(
+      list(core = data.frame(region = "lobule_I", stringsAsFactors = FALSE)),
+      class = "ggseg_atlas"
+    )
+
+    expect_messages(
+      {
+        result <- wholebrain_log_summary(
+          cortical_atlas = NULL,
+          subcortical_atlas = subcortical,
+          cerebellar_atlas = cerebellar,
+          start_time = Sys.time()
+        )
+      },
+      "0 cortical, 2 subcortical, 1 cerebellar"
+    )
+    expect_null(result)
+  })
+})
+
+
+describe("wholebrain_refine_cortical_projection verbose", {
+  it("logs progress steps when verbose is enabled", {
+    skip_if_not_installed("RNifti")
+    tmp <- withr::local_tempdir()
+    surf_dir <- file.path(tmp, "surface_overlays")
+    dir.create(surf_dir)
+    for (h in c("lh", "rh")) {
+      vals <- c(rep(1L, 3), rep(2L, 2), rep(0L, 5))
+      RNifti::writeNifti(
+        array(vals, dim = c(10, 1, 1)),
+        file.path(surf_dir, paste0(h, "_overlay.nii.gz"))
+      )
+    }
+    config <- list(verbose = TRUE, subject = "fsaverage5")
+    dirs <- list(base = tmp)
+    projection <- list(
+      atlas_data = tibble(),
+      colortable = data.frame(
+        idx = c(1L, 2L),
+        label = c("cortex", "thalamus"),
+        stringsAsFactors = FALSE
+      )
+    )
+    split <- list(
+      subcortical_labels = "thalamus",
+      cerebellar_labels = character(),
+      cortical_labels = "cortex"
+    )
+    local_mocked_bindings(
+      fill_surface_labels = function(overlay, ...) overlay,
+      overlay_to_atlas_data = function(overlay, hemi_short, ct, ...) {
+        tibble(
+          hemi = "left",
+          region = "cortex",
+          label = "lh_cortex",
+          colour = "#FF0000",
+          vertices = list(which(overlay == 1L) - 1L),
+          source_label = "cortex",
+          source_idx = 1L
+        )
+      }
+    )
+    expect_messages(
+      {
+        result <- wholebrain_refine_cortical_projection(
+          config,
+          dirs,
+          projection,
+          split
+        )
+      },
+      "Refining cortical projection"
+    )
+    expect_true(all(result$atlas_data$source_label == "cortex"))
+  })
+})
+
+
+describe("wholebrain_prepare_cerebellar_volume orientation", {
+  it("reorients non-RAS output to RAS", {
+    skip_if_not_installed("RNifti")
+    vol <- array(0L, dim = c(5, 5, 5))
+    vol[1, 1, 1] <- 1L
+    nii <- RNifti::asNifti(vol)
+    m <- diag(c(-1, 1, 1, 1))
+    m[1, 4] <- 4
+    RNifti::sform(nii) <- structure(m, code = 2L)
+    vol_file <- withr::local_tempfile(fileext = ".nii.gz")
+    RNifti::writeNifti(nii, vol_file)
+    out_file <- withr::local_tempfile(fileext = ".nii.gz")
+
+    wholebrain_prepare_cerebellar_volume(
+      input_volume = vol_file,
+      cerebellar_idx = 1L,
+      output_file = out_file
+    )
+
+    out <- RNifti::readNifti(out_file)
+    expect_identical(RNifti::orientation(out), "RAS")
+    expect_true(1L %in% as.array(out))
+  })
+})
+
+
+describe("wholebrain_prepare_subcortical_volume left-high orientation", {
+  it("handles a negative x-axis xform and reorients output to RAS", {
+    skip_if_not_installed("RNifti")
+    vol <- array(0L, dim = c(6, 3, 3))
+    vol[1, 1, 1] <- 10L
+    vol[6, 1, 1] <- 20L
+    nii <- RNifti::asNifti(vol)
+    m <- diag(c(-1, 1, 1, 1))
+    m[1, 4] <- 5
+    RNifti::sform(nii) <- structure(m, code = 2L)
+    vol_file <- withr::local_tempfile(fileext = ".nii.gz")
+    RNifti::writeNifti(nii, vol_file)
+    out_file <- withr::local_tempfile(fileext = ".nii.gz")
+
+    wholebrain_prepare_subcortical_volume(
+      input_volume = vol_file,
+      subcortical_idx = 10L,
+      cortical_idx = 20L,
+      output_file = out_file
+    )
+
+    out <- RNifti::readNifti(out_file)
+    expect_identical(RNifti::orientation(out), "RAS")
+    arr <- as.array(out)
+    expect_true(10L %in% arr)
+    expect_true(any(arr %in% c(3L, 42L)))
+  })
+})
+
+
+describe("fill_surface_labels stalled dilation", {
+  it("breaks when no unlabeled vertex has a labeled neighbor", {
+    tmp_dir <- withr::local_tempdir()
+    subj_dir <- file.path(tmp_dir, "fsaverage5")
+    surf_dir <- file.path(subj_dir, "surf")
+    label_dir <- file.path(subj_dir, "label")
+    dir.create(surf_dir, recursive = TRUE)
+    dir.create(label_dir, recursive = TRUE)
+    writeLines("placeholder", file.path(surf_dir, "lh.white"))
+    file.create(file.path(label_dir, "lh.cortex.label"))
+
+    local_mocked_bindings(
+      fs_subj_dir = function() tmp_dir,
+      .package = "freesurfer"
+    )
+    local_mocked_bindings(
+      read.fs.surface = function(f) {
+        list(
+          vertices = matrix(0, nrow = 4, ncol = 3),
+          faces = matrix(
+            c(1L, 2L, 3L, 3L, 4L, 1L),
+            nrow = 2,
+            byrow = TRUE
+          )
+        )
+      },
+      .package = "freesurferformats"
+    )
+    local_mocked_bindings(
+      read_label_vertices = function(...) c(0L, 1L, 2L, 3L)
+    )
+
+    overlay <- c(0L, 0L, 0L, 0L)
+    result <- fill_surface_labels(overlay, "lh", "fsaverage5")
+    expect_identical(result, overlay)
+  })
+})

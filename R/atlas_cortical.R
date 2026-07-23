@@ -27,8 +27,8 @@
 #' @return A `ggseg_atlas` object containing region metadata (core), vertex
 #'   indices for 3D rendering, a colour palette, and sf geometry for 2D plots.
 #' @export
-#' @importFrom dplyr filter select mutate left_join group_by ungroup tibble
-#'   bind_rows distinct
+#' @importFrom dplyr filter select mutate left_join group_by ungroup
+#' @importFrom dplyr tibble bind_rows distinct
 #' @importFrom furrr future_pmap furrr_options
 #' @importFrom grDevices rgb
 #' @importFrom progressr progressor

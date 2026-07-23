@@ -1978,7 +1978,7 @@ describe("get_tkras_to_world", {
 
     expect_true(is.matrix(result))
     expect_identical(dim(result), c(4L, 4L))
-    expect_equal(
+    expect_identical(
       result,
       matrix(
         c(1, 0, 0, 0, 0, 0, 1, 0, 0, -1, 0, 0, 5, 5, 5, 1),
@@ -2011,7 +2011,7 @@ describe("mri_info_matrix", {
     )
 
     out <- mri_info_matrix("--vox2ras-tkr", "vol.nii.gz")
-    expect_equal(
+    expect_identical(
       out,
       matrix(c(-1, 0, 0, 0, 0, 0, -1, 0, 0, 1, 0, 0, 2, -2, 2, 1), 4, 4)
     )
@@ -2228,5 +2228,445 @@ describe("create_cerebellar_from_volume integration", {
     sf_data <- ggseg.formats::atlas_sf(atlas)
     expect_s3_class(sf_data, "sf")
     expect_true("flatmap" %in% sf_data$view)
+  })
+})
+
+
+# Coverage: error, verbose, and edge branches ----
+
+describe("suit_deformation_field default cache dir", {
+  it("uses tools::R_user_dir when cache_dir is NULL", {
+    tmp <- withr::local_tempdir()
+    local_mocked_bindings(R_user_dir = function(...) tmp, .package = "tools")
+    local_mocked_bindings(
+      download_suit_xfm = function(filename, cached_path) cached_path
+    )
+    result <- suit_deformation_field(cache_dir = NULL)
+    expect_match(result, "tpl-SUIT_from-MNI152NLin6AsymC")
+    expect_match(result, basename(tmp), fixed = TRUE)
+  })
+})
+
+
+describe("download_suit_xfm download failure", {
+  it("aborts when the download itself errors", {
+    tmp <- withr::local_tempdir()
+    cached <- as.character(fs::path(tmp, "xfm.nii"))
+    local_mocked_bindings(can_reach_github = function() TRUE)
+    local_mocked_bindings(
+      download.file = function(url, destfile, ...) stop("connection reset"),
+      .package = "utils"
+    )
+    expect_error(
+      download_suit_xfm("xfm.nii", cached),
+      "Failed to download"
+    )
+    expect_false(file.exists(cached))
+  })
+})
+
+
+describe("prepare_suit_resample", {
+  it("errors when the input volume is not 3D", {
+    skip_if_not_installed("RNifti")
+    xfm <- array(0, dim = c(2, 2, 2, 1, 3))
+    mni_vol <- RNifti::asNifti(array(0, dim = c(3, 3, 3, 2)))
+    expect_error(prepare_suit_resample(xfm, mni_vol), "must be 3D")
+  })
+})
+
+
+describe("create_cerebellar_from_volume atlas_name derivation", {
+  it("derives atlas_name from the volume filename when not provided", {
+    skip_if_not_installed("RNifti")
+    vol_file <- withr::local_tempfile(fileext = ".nii.gz")
+    RNifti::writeNifti(RNifti::asNifti(array(0L, dim = c(3, 3, 3))), vol_file)
+    local_mocked_bindings(
+      run_cerebellar_creation = function(atlas_name, ...) atlas_name
+    )
+    result <- create_cerebellar_from_volume(
+      input_volume = vol_file,
+      verbose = FALSE
+    )
+    expect_type(result, "character")
+    expect_gt(nchar(result), 0)
+  })
+})
+
+
+describe("cerebellar_read_data verbose and error branches", {
+  it("prints success when verbose and cached data present", {
+    dirs <- list(base = withr::local_tempdir())
+    mock_components <- list(
+      core = data.frame(
+        hemi = "left",
+        region = "I-IV",
+        label = "left_I-IV",
+        stringsAsFactors = FALSE
+      )
+    )
+    local_mocked_bindings(
+      load_or_run_step = function(...) {
+        list(run = FALSE, data = list("components.rds" = mock_components))
+      }
+    )
+    config <- list(steps = 1L, skip_existing = TRUE, verbose = TRUE)
+    expect_messages(
+      cerebellar_read_data(config, dirs, read_fn = function() stop("no")),
+      "Loaded cached"
+    )
+  })
+
+  it("runs the verbose progress step when building fresh", {
+    dirs <- list(base = withr::local_tempdir())
+    atlas_data <- tibble(
+      hemi = "left",
+      region = "I-IV",
+      label = "left_I-IV",
+      colour = "#FF0000",
+      vertices = list(0:3)
+    )
+    local_mocked_bindings(
+      load_or_run_step = function(...) list(run = TRUE, data = list())
+    )
+    config <- list(
+      steps = 1L,
+      skip_existing = FALSE,
+      verbose = TRUE,
+      tolerance = 0,
+      smooth_refinements = 0
+    )
+    result <- suppressMessages(
+      cerebellar_read_data(config, dirs, read_fn = function() atlas_data)
+    )
+    expect_true("left_I-IV" %in% result$components$core$label)
+    expect_null(result$deep_data)
+  })
+
+  it("errors when read_fn returns zero regions", {
+    dirs <- list(base = withr::local_tempdir())
+    local_mocked_bindings(
+      load_or_run_step = function(...) list(run = TRUE, data = list())
+    )
+    config <- list(
+      steps = 1L,
+      skip_existing = FALSE,
+      verbose = FALSE,
+      tolerance = 0,
+      smooth_refinements = 0
+    )
+    empty <- tibble(
+      hemi = character(),
+      region = character(),
+      label = character(),
+      colour = character(),
+      vertices = list()
+    )
+    expect_error(
+      cerebellar_read_data(config, dirs, read_fn = function() empty),
+      "No regions found"
+    )
+  })
+})
+
+
+describe("split_cerebellar_surface_deep", {
+  it("reports the deep nuclei count when verbose", {
+    atlas_data <- tibble(
+      hemi = c("left", "midline"),
+      region = c("I-IV", "Dentate"),
+      label = c("left_I-IV", "midline_Dentate"),
+      deep = c(FALSE, TRUE)
+    )
+    expect_messages(
+      split_cerebellar_surface_deep(atlas_data, list(verbose = TRUE)),
+      "deep cerebellar"
+    )
+  })
+
+  it("treats all data as surface when no deep column is present", {
+    atlas_data <- tibble(
+      hemi = "left",
+      region = "I-IV",
+      label = "left_I-IV"
+    )
+    result <- split_cerebellar_surface_deep(atlas_data, list(verbose = FALSE))
+    expect_null(result$deep_data)
+    expect_identical(nrow(result$surface_data), 1L)
+  })
+})
+
+
+describe("cerebellar_project_and_build with deep nuclei", {
+  it("processes deep nuclei, merges views, and gathers when present", {
+    skip_if_not_installed("gifti") # nolint: object_usage_linter.
+
+    components <- list(
+      core = data.frame(
+        hemi = "left",
+        region = "I-IV",
+        label = "left_I-IV",
+        stringsAsFactors = FALSE
+      ),
+      palette = c("left_I-IV" = "#FF0000"),
+      vertices_df = data.frame(label = "left_I-IV", stringsAsFactors = FALSE)
+    )
+    components$vertices_df$vertices <- list(0:999)
+
+    deep_data <- tibble(
+      hemi = "midline",
+      region = "Dentate",
+      label = "midline_Dentate",
+      colour = "#0000FF",
+      vol_idx = 1L,
+      deep = TRUE
+    )
+    deep_data$vertices <- list(integer(0))
+
+    deep_sf <- sf::st_sf(
+      label = "midline_Dentate",
+      geometry = sf::st_sfc(sf::st_polygon(list(matrix(
+        c(0, 0, 2, 0, 2, 2, 0, 2, 0, 0),
+        ncol = 2,
+        byrow = TRUE
+      ))))
+    )
+    deep_sf$view <- "nuclei"
+
+    deep_meshes <- data.frame(
+      label = "midline_Dentate",
+      stringsAsFactors = FALSE
+    )
+    deep_meshes$mesh <- list(list(
+      vertices = data.frame(
+        x = c(0, 1, 0),
+        y = c(0, 0, 1),
+        z = c(0, 0, 0)
+      ),
+      faces = data.frame(i = 1L, j = 2L, k = 3L)
+    ))
+
+    local_mocked_bindings(
+      cerebellar_process_deep_nuclei = function(...) {
+        list(sf = deep_sf, meshes = deep_meshes)
+      }
+    )
+
+    dirs <- mock_dirs()
+    config <- list(
+      verbose = TRUE,
+      tolerance = 0,
+      smooth_refinements = 0,
+      cleanup = FALSE,
+      skip_existing = FALSE
+    )
+
+    atlas <- suppressMessages(cerebellar_project_and_build(
+      components = components,
+      deep_data = deep_data,
+      volume = "unused.nii.gz",
+      atlas_name = "test_deep",
+      config = config,
+      dirs = dirs,
+      start_time = Sys.time()
+    ))
+
+    expect_s3_class(atlas, "cerebellar_atlas")
+    sf_data <- ggseg.formats::atlas_sf(atlas)
+    expect_true(all(c("flatmap", "nuclei") %in% sf_data$view))
+  })
+})
+
+
+describe("merge_deep_nuclei_sf", {
+  it("appends deep nuclei geometry to the flatmap sf", {
+    flat <- sf::st_sf(
+      label = "a",
+      geometry = sf::st_sfc(sf::st_polygon(list(matrix(
+        c(0, 0, 1, 0, 1, 1, 0, 0),
+        ncol = 2,
+        byrow = TRUE
+      ))))
+    )
+    flat$view <- "flatmap"
+    deep <- sf::st_sf(
+      label = "b",
+      geometry = sf::st_sfc(sf::st_polygon(list(matrix(
+        c(2, 2, 3, 2, 3, 3, 2, 2),
+        ncol = 2,
+        byrow = TRUE
+      ))))
+    )
+    deep$view <- "nuclei"
+    result <- merge_deep_nuclei_sf(flat, deep)
+    expect_identical(nrow(result), 2L)
+    expect_true(all(c("flatmap", "nuclei") %in% result$view))
+  })
+
+  it("returns the flatmap sf unchanged when deep_sf is NULL", {
+    flat <- sf::st_sf(
+      label = "a",
+      geometry = sf::st_sfc(sf::st_polygon(list(matrix(
+        c(0, 0, 1, 0, 1, 1, 0, 0),
+        ncol = 2,
+        byrow = TRUE
+      ))))
+    )
+    flat$view <- "flatmap"
+    expect_identical(merge_deep_nuclei_sf(flat, NULL), flat)
+  })
+})
+
+
+describe("extract_deep_meshes", {
+  it("returns the mesh data frame when it has rows", {
+    df <- data.frame(label = "a", stringsAsFactors = FALSE)
+    df$mesh <- list(list())
+    expect_identical(extract_deep_meshes(df), df)
+  })
+
+  it("returns NULL when meshes is NULL", {
+    expect_null(extract_deep_meshes(NULL))
+  })
+
+  it("returns NULL when meshes has zero rows", {
+    empty <- data.frame(label = character(), stringsAsFactors = FALSE)
+    empty$mesh <- list()
+    expect_null(extract_deep_meshes(empty))
+  })
+})
+
+
+describe("build_deep_nucleus_sf polygonisation failure", {
+  it("returns NULL when terra::as.polygons yields no polygons", {
+    skip_if_not_installed("terra")
+    vol <- array(0L, dim = c(5, 5, 5))
+    vol[2, 2, 2] <- 1L
+    local_mocked_bindings(as.polygons = function(...) NULL, .package = "terra")
+    expect_null(build_deep_nucleus_sf(vol, 1L, "test"))
+  })
+})
+
+
+describe("build_deep_nuclei_meshes without FreeSurfer", {
+  it("warns and returns NULL when FreeSurfer is unavailable and verbose", {
+    deep_data <- tibble(label = "midline_Dentate", vol_idx = 1L)
+    dirs <- mock_dirs()
+    local_mocked_bindings(check_fs = function(...) FALSE)
+    expect_warning(
+      {
+        result <- build_deep_nuclei_meshes(
+          "unused.nii.gz",
+          deep_data,
+          dirs,
+          verbose = TRUE
+        )
+      },
+      "FreeSurfer not found"
+    )
+    expect_null(result)
+  })
+})
+
+
+describe("read_suit_parcellation empty data array", {
+  it("warns and skips a GIFTI whose first data array is empty", {
+    skip_if_not_installed("gifti") # nolint: object_usage_linter.
+    skip_if_not_installed("base64enc") # nolint: object_usage_linter.
+    label_file <- create_mock_suit_labels(n_vertices = 4)
+    local_mocked_bindings(
+      readgii = function(file) list(data = list(integer(0)), label = NULL),
+      .package = "gifti"
+    )
+    expect_warning(
+      {
+        result <- read_suit_parcellation(label_file)
+      },
+      "Empty data array"
+    )
+    expect_identical(nrow(result), 0L)
+  })
+})
+
+
+describe("read_cerebellar_annotation no matching vertices", {
+  it("errors when annotation regions have no matching vertices", {
+    skip_if_not_installed("freesurferformats")
+    mock_annot <- list(
+      label_codes = c(999L, 999L),
+      colortable_df = data.frame(
+        code = 1:2,
+        struct_name = c("Left I-IV", "Vermis VI"),
+        r = c(200, 50),
+        g = c(50, 200),
+        b = c(50, 50),
+        a = c(0, 0),
+        hex_color_string_rgb = c("#C83232", "#329632"),
+        stringsAsFactors = FALSE
+      )
+    )
+    local_mocked_bindings(
+      read.fs.annot = function(...) mock_annot,
+      .package = "freesurferformats"
+    )
+    tmp <- withr::local_tempfile(fileext = ".annot")
+    writeLines("mock", tmp)
+    expect_error(
+      read_cerebellar_annotation(tmp),
+      "No regions found"
+    )
+  })
+})
+
+
+describe("clean_cerebellar_region prefix-only with separator", {
+  it("restores original when only a prefix plus separator remains", {
+    expect_identical(clean_cerebellar_region("Left_"), "Left_")
+  })
+})
+
+
+describe("build_cerebellar_volume_row missing region", {
+  it("returns a NULL row when a LUT id has neither voxels nor vertices", {
+    vol <- array(0L, dim = c(3, 3, 3))
+    colortable <- data.frame(
+      idx = 99L,
+      label = "Left Ghost",
+      stringsAsFactors = FALSE
+    )
+    built <- build_cerebellar_volume_row(
+      1,
+      colortable,
+      vol,
+      c(0L, 0L, 0L),
+      "unused.nii",
+      "unused.surf.gii"
+    )
+    expect_null(built$row)
+    expect_identical(built$vertex_labels, c(0L, 0L, 0L))
+  })
+})
+
+
+describe("sample_volume_at_surface invalid surface", {
+  it("errors when the GIFTI surface has no pointset", {
+    skip_if_not_installed("gifti") # nolint: object_usage_linter.
+    local_mocked_bindings(
+      readgii = function(file) list(data = list(pointset = NULL)),
+      .package = "gifti"
+    )
+    vol <- array(0L, dim = c(3, 3, 3))
+    expect_error(
+      sample_volume_at_surface(vol, "unused.nii", "unused.surf.gii"),
+      "valid GIFTI surface"
+    )
+  })
+})
+
+
+describe("resolve_provided_lut fallback", {
+  it("returns NULL when input_lut is neither a path nor a data.frame", {
+    expect_null(resolve_provided_lut(42, c(1L, 2L)))
+    expect_null(resolve_provided_lut(list(1, 2), c(1L, 2L)))
   })
 })

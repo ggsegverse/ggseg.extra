@@ -426,6 +426,23 @@ describe("project_mesh_to_polygons", {
     expect_identical(unique(result$view), "lateral")
   })
 
+  it("skips view/hemisphere combinations with no camera preset", {
+    local_mocked_bindings(
+      get_brain_mesh = function(hemi, surface) mesh,
+      .package = "ggseg.formats"
+    )
+
+    result <- project_mesh_to_polygons(
+      components,
+      hemisphere = "lh",
+      views = c("lateral", "bogus")
+    )
+
+    expect_s3_class(result, "sf")
+    expect_identical(unique(result$view), "lateral")
+    expect_false("bogus" %in% result$view)
+  })
+
   it("aborts when no view/hemisphere combination yields polygons", {
     empty_mesh <- list(vertices = verts_3d, faces = faces_0idx)
     local_mocked_bindings(

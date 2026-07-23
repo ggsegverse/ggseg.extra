@@ -351,6 +351,51 @@ describe("subcort_create_snapshots", {
 })
 
 
+describe("subcort_snapshot_cortex", {
+  it("routes axial/coronal via partial projection, sagittal via cortex", {
+    .cap$pp <- 0L
+    .cap$cs <- 0L
+
+    local_mocked_bindings(
+      extract_hemi_from_view = function(...) "left",
+      snapshot_partial_projection = function(...) {
+        .cap$pp <- .cap$pp + 1L
+        invisible(NULL)
+      },
+      snapshot_cortex_slice = function(...) {
+        .cap$cs <- .cap$cs + 1L
+        invisible(NULL)
+      }
+    )
+
+    cortex_vol <- array(1L, dim = c(10, 10, 10))
+    cortex_slices <- data.frame(
+      x = c(NA, NA, 5),
+      y = c(NA, 5, NA),
+      z = c(5, NA, NA),
+      view = c("axial", "coronal", "sagittal"),
+      name = c("ax_1", "cor_1", "sag_1"),
+      stringsAsFactors = FALSE
+    )
+    slabs <- data.frame(
+      name = c("ax_1", "cor_1", "sag_1"),
+      type = c("axial", "coronal", "sagittal"),
+      start = c(1, 1, 5),
+      end = c(10, 10, 5),
+      stringsAsFactors = FALSE
+    )
+    dirs <- list(snapshots = withr::local_tempdir())
+
+    subcort_snapshot_cortex(cortex_vol, cortex_slices, slabs, dirs, FALSE)
+
+    # axial + coronal cortex outlines use the slice-range projection; the
+    # sagittal outline (hemisphere-specific, no range) uses a single slice.
+    expect_identical(.cap$pp, 2L)
+    expect_identical(.cap$cs, 1L)
+  })
+})
+
+
 describe("default_subcortical_slabs", {
   it("creates slabs for standard 256 brain", {
     dims <- c(256, 256, 256)

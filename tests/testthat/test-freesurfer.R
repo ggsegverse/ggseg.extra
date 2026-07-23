@@ -225,6 +225,33 @@ describe("mri_vol2surf with opts", {
 })
 
 
+describe("mri_vol2surf with projfrac_range", {
+  it("uses --projfrac-max for multi-depth projection", {
+    .cap$captured_cmd <- NULL
+    local_mocked_bindings(
+      check_fs = function(abort = FALSE) invisible(TRUE),
+      run_cmd = function(cmd, verbose = FALSE) {
+        .cap$captured_cmd <- cmd
+        invisible(NULL)
+      }
+    )
+
+    mri_vol2surf(
+      input_file = "input.mgz",
+      output_file = "output.mgz",
+      hemisphere = "lh",
+      projfrac_range = c(0, 1, 0.1),
+      verbose = FALSE
+    )
+
+    expect_match(.cap$captured_cmd, "--projfrac-max 0 1 0.1")
+    expect_false(
+      grepl("--projfrac 0.5", .cap$captured_cmd, fixed = TRUE)
+    )
+  })
+})
+
+
 describe("mri_surf2surf_rereg", {
   it("constructs correct command", {
     .cap$captured_cmd <- NULL
@@ -372,5 +399,27 @@ describe("surf2asc", {
 
     result <- surf2asc(input, output, verbose = FALSE)
     expect_s3_class(result, "data.frame")
+  })
+
+  it("errors when the converted asc file cannot be renamed", {
+    tmp <- withr::local_tempdir()
+    input <- file.path(tmp, "lh.white")
+    writeLines("fake surface", input)
+    output <- file.path(tmp, "lh.white.dpv")
+
+    local_mocked_bindings(
+      check_fs = function(abort = FALSE) invisible(TRUE)
+    )
+    local_mocked_bindings(
+      mris_convert = function(infile, outfile, verbose = FALSE) {
+        invisible(NULL)
+      },
+      .package = "freesurfer"
+    )
+
+    expect_error(
+      suppressWarnings(surf2asc(input, output, verbose = FALSE)),
+      "Failed to rename"
+    )
   })
 })

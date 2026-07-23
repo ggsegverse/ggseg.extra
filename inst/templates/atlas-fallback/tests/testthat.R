@@ -1,4 +1,6 @@
 library(testthat)
-library({REPO})
+library({
+  REPO
+})
 
 test_check("{REPO}")

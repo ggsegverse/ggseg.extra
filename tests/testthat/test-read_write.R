@@ -78,12 +78,12 @@ describe("reorient_volume_to_ras", {
 
   it("leaves an already-RAS volume unchanged", {
     vol <- array(seq_len(8), dim = c(2, 2, 2))
-    expect_equal(reorient_volume_to_ras(vol, diag(4)), vol)
+    expect_identical(reorient_volume_to_ras(vol, diag(4)), vol)
   })
 
   it("accepts a bare 3x3 direction matrix", {
     vol <- array(seq_len(8), dim = c(2, 2, 2))
-    expect_equal(reorient_volume_to_ras(vol, diag(3)), vol)
+    expect_identical(reorient_volume_to_ras(vol, diag(3)), vol)
   })
 
   it("errors when the affine has no clear axis mapping", {
@@ -442,7 +442,7 @@ describe("read_dpv", {
     expect_identical(nrow(result$faces), 1L)
     expect_named(result$vertices, c("x", "y", "z"))
     expect_named(result$faces, c("i", "j", "k"))
-    expect_equal(as.numeric(result$faces[1, ]), c(0, 1, 2))
+    expect_identical(as.numeric(result$faces[1, ]), c(0, 1, 2))
   })
 })
 
@@ -807,5 +807,98 @@ describe("read_neuromaps_annotation", {
     expect_true("unknown" %in% result$region)
     unknown_row <- result[result$region == "unknown", ]
     expect_identical(unknown_row$colour[1], "#BEBEBE")
+  })
+})
+
+
+describe("read_volume dimensionality and reorientation", {
+  it("reorients a non-RAS NIfTI to RAS when reorient is TRUE", {
+    skip_if_not_installed("RNifti")
+
+    tmp <- withr::local_tempfile(fileext = ".nii.gz")
+    vol <- array(0L, dim = c(3, 3, 3))
+    vol[1, 1, 1] <- 5L
+    nii <- RNifti::asNifti(vol)
+    lpi_xform <- structure(diag(c(-1, -1, -1, 1)), code = 2L)
+    RNifti::sform(nii) <- lpi_xform
+    RNifti::qform(nii) <- lpi_xform
+    RNifti::writeNifti(nii, tmp)
+
+    result <- read_volume(tmp, reorient = TRUE)
+    native <- read_volume(tmp, reorient = FALSE)
+
+    expect_true(is.array(result))
+    expect_identical(dim(result), c(3L, 3L, 3L))
+    expect_identical(sum(result), 5L)
+    expect_identical(which(result == 5L), 27L)
+    expect_false(identical(as.integer(result), as.integer(native)))
+  })
+
+  it("aborts when the volume is not three-dimensional", {
+    skip_if_not_installed("RNifti")
+
+    tmp <- withr::local_tempfile(fileext = ".nii.gz")
+    vol <- array(1L, dim = c(3, 3, 3, 2))
+    RNifti::writeNifti(vol, tmp)
+
+    expect_error(read_volume(tmp), "Expected a 3D volume")
+  })
+})
+
+
+describe("lut_combine", {
+  it("combines multiple LUTs and drops NULL inputs", {
+    a <- data.frame(idx = 0L, label = "Unknown", R = 0L, G = 0L, B = 0L, A = 0L)
+    b <- data.frame(idx = 1L, label = "Region1", R = 5L, G = 6L, B = 7L, A = 0L)
+
+    out <- lut_combine(a, NULL, b)
+
+    expect_true(is_lut(out))
+    expect_identical(nrow(out), 2L)
+    expect_identical(out$idx, c(0L, 1L))
+  })
+
+  it("aligns columns present in only some tables with NA", {
+    a <- data.frame(
+      idx = 0L,
+      label = "Unknown",
+      R = 0L,
+      G = 0L,
+      B = 0L,
+      A = 0L,
+      type = "cortical",
+      stringsAsFactors = FALSE
+    )
+    b <- data.frame(
+      idx = 1L,
+      label = "Region1",
+      R = 5L,
+      G = 6L,
+      B = 7L,
+      A = 0L,
+      stringsAsFactors = FALSE
+    )
+
+    out <- lut_combine(a, b)
+
+    expect_true("type" %in% names(out))
+    expect_identical(out$type, c("cortical", NA_character_))
+  })
+
+  it("aborts when no LUTs are supplied", {
+    expect_error(lut_combine(), "at least one LUT")
+    expect_error(lut_combine(NULL), "at least one LUT")
+  })
+
+  it("aborts when an input is not a LUT", {
+    a <- data.frame(idx = 0L, label = "Unknown", R = 0L, G = 0L, B = 0L, A = 0L)
+    expect_error(lut_combine(a, data.frame(x = 1)), "must be LUTs")
+  })
+
+  it("warns about duplicate label indices", {
+    a <- data.frame(idx = 1L, label = "Region1", R = 0L, G = 0L, B = 0L, A = 0L)
+    b <- data.frame(idx = 1L, label = "Region2", R = 5L, G = 6L, B = 7L, A = 0L)
+
+    expect_warning(lut_combine(a, b), "Duplicate label indices")
   })
 })

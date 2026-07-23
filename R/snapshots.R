@@ -133,7 +133,6 @@ orient_slice_2d <- function(slice, view, hemi = NULL) {
 #'
 #' Creates a PNG with filename format matching tract projections.
 #'
-#' @inheritParams snapshot_volume_slice
 #' @param slice_view "axial", "sagittal", or "coronal"
 #' @param view_name Name for this view (used in filename)
 #' @param hemi Hemisphere ("left" or "right")
@@ -208,7 +207,6 @@ snapshot_cortex_slice <- function(
 #'
 #' Creates a PNG image showing maximum intensity projection of a volume subset.
 #'
-#' @inheritParams snapshot_volume_slice
 #' @param start First slice index
 #' @param end Last slice index
 #' @param view_name Name for this view (used in filename)

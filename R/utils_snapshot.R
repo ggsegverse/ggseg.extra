@@ -146,6 +146,10 @@ magick_version <- function() {
 #' @noRd
 run_cmd <- function(cmd, verbose = get_verbose(), no_ui = FALSE) {
   # nolint: object_usage_linter
+  # nocov start
+  # Rewrites the command to launch the Freeview GUI headlessly via `open -g`
+  # (macOS) or `fsxvfb` (Linux virtual framebuffer); neither can run under a
+  # headless CI without a display, so this branch is excluded from coverage.
   if (no_ui) {
     if (Sys.info()["sysname"] == "Darwin") {
       fv_args <- sub("^freeview[[:space:]]*", "", cmd)
@@ -162,6 +166,7 @@ run_cmd <- function(cmd, verbose = get_verbose(), no_ui = FALSE) {
       cmd <- paste("fsxvfb", cmd)
     }
   }
+  # nocov end
   full_cmd <- paste0(freesurfer::get_fs(), cmd)
   suppress <- verbose < 2
   exit_code <- system(
