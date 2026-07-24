@@ -43,6 +43,19 @@ describe("as_verbosity", {
     expect_identical(as_verbosity(NA), 1L)
     expect_identical(as_verbosity("bad"), 1L)
   })
+
+  it("accepts spelled-out boolean strings", {
+    expect_identical(as_verbosity("false"), 0L)
+    expect_identical(as_verbosity("FALSE"), 0L)
+    expect_identical(as_verbosity("off"), 0L)
+    expect_identical(as_verbosity("true"), 1L)
+    expect_identical(as_verbosity("on"), 1L)
+  })
+
+  it("still reads numeric strings as levels", {
+    expect_identical(as_verbosity("0"), 0L)
+    expect_identical(as_verbosity("2"), 2L)
+  })
 })
 
 describe("get_verbose", {
@@ -64,6 +77,15 @@ describe("get_verbose", {
     withr::local_options(ggseg.extra.verbose = NULL)
     withr::local_envvar(GGSEG_EXTRA_VERBOSE = "0")
     expect_identical(get_verbose(), 0L)
+  })
+
+  it("parses spelled-out boolean env vars as silent/standard", {
+    withr::local_options(ggseg.extra.verbose = NULL)
+    withr::local_envvar(GGSEG_EXTRA_VERBOSE = "false")
+    expect_identical(get_verbose(), 0L)
+
+    withr::local_envvar(GGSEG_EXTRA_VERBOSE = "true")
+    expect_identical(get_verbose(), 1L)
   })
 
   it("option takes precedence over envvar", {
@@ -129,6 +151,17 @@ describe("get_cleanup", {
     withr::local_options(ggseg.extra.cleanup = NULL)
     withr::local_envvar(GGSEG_EXTRA_CLEANUP = NA)
     expect_true(get_cleanup())
+  })
+
+  it("accepts string spellings from explicit and option channels", {
+    expect_true(get_cleanup("yes"))
+    expect_false(get_cleanup("no"))
+
+    withr::local_options(ggseg.extra.cleanup = "1")
+    expect_true(get_cleanup())
+
+    withr::local_options(ggseg.extra.cleanup = "off")
+    expect_false(get_cleanup())
   })
 })
 

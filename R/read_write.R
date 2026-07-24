@@ -1076,6 +1076,13 @@ parse_continuous_values <- function(values, hemi, hemi_short, n_bins) {
   medial_wall <- !is.finite(values)
   valid <- values[!medial_wall]
 
+  if (length(valid) == 0) {
+    cli::cli_abort(c(
+      "No finite values to bin for the {hemi} hemisphere",
+      "i" = "Every projected vertex was medial wall or non-finite"
+    ))
+  }
+
   if (is.null(n_bins)) {
     n_bins <- as.integer(grDevices::nclass.Sturges(valid))
     n_bins <- max(5L, min(n_bins, 20L))
@@ -1083,6 +1090,19 @@ parse_continuous_values <- function(values, hemi, hemi_short, n_bins) {
 
   breaks <- stats::quantile(valid, probs = seq(0, 1, length.out = n_bins + 1))
   breaks[1] <- breaks[1] - 1
+
+  # Tied values (thresholded maps, many zeros, or n_bins larger than the number
+  # of distinct values) collapse adjacent quantiles; cut() aborts on duplicate
+  # breaks, so drop them and shrink the bin count to match.
+  breaks <- unique(breaks)
+  if (length(breaks) - 1L < n_bins) {
+    cli::cli_warn(
+      "Using {length(breaks) - 1L} bin{?s} instead of {n_bins}: the data has \\
+       fewer distinct values than requested bins."
+    )
+    n_bins <- length(breaks) - 1L
+  }
+
   bin_ids <- cut(values, breaks = breaks, labels = FALSE)
   bin_ids[medial_wall] <- NA_integer_
 

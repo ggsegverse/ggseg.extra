@@ -487,6 +487,39 @@ describe("filter_valid_geometries", {
 })
 
 
+describe("combine_region_contours", {
+  it("aborts clearly when no region produced contours", {
+    expect_error(
+      combine_region_contours(list(a = NULL, b = NULL)),
+      "No contours were extracted"
+    )
+  })
+})
+
+
+describe("probe_raster_max", {
+  it("skips all-NA rasters instead of erroring", {
+    skip_if_not_installed("terra")
+    blank <- withr::local_tempfile(fileext = ".tif")
+    terra::writeRaster(
+      terra::rast(nrows = 4, ncols = 4, vals = NA_real_),
+      blank
+    )
+    expect_identical(probe_raster_max(blank), 1)
+  })
+
+  it("returns the maximum across region rasters", {
+    skip_if_not_installed("terra")
+    f <- withr::local_tempfile(fileext = ".tif")
+    terra::writeRaster(
+      terra::rast(nrows = 4, ncols = 4, vals = c(rep(0, 15), 200)),
+      f
+    )
+    expect_identical(probe_raster_max(f), 200)
+  })
+})
+
+
 describe("smooth_contours", {
   it("smooths contour geometry", {
     outdir <- withr::local_tempdir("smooth_test_")

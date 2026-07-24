@@ -60,13 +60,19 @@ read_trk <- function(file) {
 
   seek(con, 1000)
 
-  streamlines <- list()
+  # The header's stored track count is unreliable: the TrackVis spec allows 0
+  # to mean "count not recorded, read to EOF", and some writers leave it so.
+  # Read streamlines until EOF, using a positive n_count only as an upper bound.
+  max_tracks <- if (is.na(n_count) || n_count <= 0L) Inf else n_count
 
-  for (i in seq_len(n_count)) {
+  streamlines <- list()
+  i <- 0L
+  while (i < max_tracks) {
     n_pts <- readBin(con, "integer", 1, size = 4)
-    if (is.na(n_pts) || n_pts <= 0) {
+    if (length(n_pts) == 0L || is.na(n_pts) || n_pts <= 0) {
       break
     }
+    i <- i + 1L
 
     points <- matrix(
       readBin(con, "double", n_pts * (3 + n_scalars), size = 4),

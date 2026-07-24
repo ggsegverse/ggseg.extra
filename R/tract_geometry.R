@@ -410,28 +410,49 @@ load_vox2ras_matrix <- function(template_file, coords_are_voxels) {
     ext <- tools::file_ext(sub("\\.gz$", "", template_file))
   }
 
+  vox2ras <- read_vox2ras(template_file, ext)
+
+  if (is.null(vox2ras)) {
+    cli::cli_warn(c(
+      "Could not read a voxel-to-world affine from {.path {template_file}}.",
+      "!" = "Falling back to an approximate origin-centering heuristic; \\
+             RAS streamlines may be placed at the wrong voxels.",
+      "i" = "Install the matching reader package, or pass a volume whose \\
+             header carries a valid affine."
+    ))
+  }
+
+  vox2ras
+}
+
+#' Read a volume's voxel-to-world affine, or `NULL` if it can't be read
+#'
+#' Returns `NULL` for an unsupported extension, a missing reader package, or a
+#' header read error; the caller decides how to report the fallback.
+#' @noRd
+read_vox2ras <- function(template_file, ext) {
   if (ext == "mgz") {
     if (!requireNamespace("freesurferformats", quietly = TRUE)) {
       return(NULL)
     }
-    tryCatch(
-      freesurferformats::read.fs.mgh(template_file, with_header = TRUE)$vox2ras,
+    return(tryCatch(
+      {
+        mgh <- freesurferformats::read.fs.mgh(template_file, with_header = TRUE)
+        freesurferformats::mghheader.vox2ras(mgh$header)
+      },
       error = function(e) NULL
-    )
-  } else if (ext == "nii") {
+    ))
+  }
+  if (ext == "nii") {
     if (!requireNamespace("RNifti", quietly = TRUE)) {
       return(NULL)
     }
-    tryCatch(
-      {
-        hdr <- RNifti::niftiHeader(template_file)
-        RNifti::xform(hdr)
-      },
+    return(tryCatch(
+      RNifti::xform(RNifti::niftiHeader(template_file)),
       error = function(e) NULL
-    )
-  } else {
-    NULL
+    ))
   }
+  NULL
 }
 
 
@@ -644,7 +665,13 @@ snapshot_cortex_views <- function(
 #' Auto-detect tract coordinate space and report it when verbose
 #' @noRd
 detect_tract_coord_space <- function(streamlines, verbose) {
-  all_streamlines <- unlist(streamlines, recursive = FALSE)
+  # Flatten to a flat list of matrices. Direct in-memory input is a list of
+  # matrices (one per tract); unlisting those with recursive = FALSE would
+  # collapse each matrix into a numeric vector and lose the coordinate columns.
+  all_streamlines <- unlist(
+    lapply(streamlines, function(x) if (is.matrix(x)) list(x) else x),
+    recursive = FALSE
+  )
   coords_are_voxels <- detect_coords_are_voxels(all_streamlines)
   if (verbose) {
     space <- if (coords_are_voxels) "voxel" else "RAS" # nolint: object_usage_linter

@@ -476,6 +476,31 @@ describe("detect_coords_are_voxels", {
 })
 
 
+describe("detect_tract_coord_space", {
+  it("detects voxel space from a list of bare matrices (in-memory input)", {
+    voxel_tracts <- list(
+      cst = matrix(c(10, 20, 30, 11, 21, 31), ncol = 3, byrow = TRUE),
+      af = matrix(c(5, 6, 7, 8, 9, 10), ncol = 3, byrow = TRUE)
+    )
+    expect_true(detect_tract_coord_space(voxel_tracts, verbose = FALSE))
+  })
+
+  it("detects RAS space from a list of bare matrices", {
+    ras_tracts <- list(
+      cst = matrix(c(-40, 10, 5, -38, 12, 6), ncol = 3, byrow = TRUE)
+    )
+    expect_false(detect_tract_coord_space(ras_tracts, verbose = FALSE))
+  })
+
+  it("handles file-style nested lists of matrices", {
+    nested <- list(
+      cst = list(matrix(c(10, 20, 30, 11, 21, 31), ncol = 3, byrow = TRUE))
+    )
+    expect_true(detect_tract_coord_space(nested, verbose = FALSE))
+  })
+})
+
+
 describe("extract_centerline medoid", {
   it("selects the most representative streamline", {
     streamlines <- list(
@@ -501,8 +526,11 @@ describe("load_vox2ras_matrix", {
     expect_null(result)
   })
 
-  it("returns NULL for unsupported file extension", {
-    result <- load_vox2ras_matrix("file.txt", FALSE)
+  it("warns and returns NULL for unsupported file extension", {
+    expect_warning(
+      result <- load_vox2ras_matrix("file.txt", FALSE),
+      "approximate origin-centering"
+    )
     expect_null(result)
   })
 })
@@ -609,12 +637,16 @@ describe("compute_streamline_density", {
 
 
 describe("load_vox2ras_matrix", {
-  it("loads vox2ras from mgz file", {
-    result <- load_vox2ras_matrix(
-      test_mgz_file(),
-      coords_are_voxels = FALSE
+  it("warns and falls back when the mgz header lacks RAS info", {
+    skip_if_not_installed("freesurferformats")
+    expect_warning(
+      result <- load_vox2ras_matrix(
+        test_mgz_file(),
+        coords_are_voxels = FALSE
+      ),
+      "approximate origin-centering"
     )
-    expect_true(is.matrix(result) || is.null(result))
+    expect_null(result)
   })
 
   it("handles .nii.gz extension by parsing gz correctly", {
@@ -653,7 +685,10 @@ describe("load_vox2ras_matrix", {
       .package = "base"
     )
 
-    result <- load_vox2ras_matrix("file.mgz", FALSE)
+    expect_warning(
+      result <- load_vox2ras_matrix("file.mgz", FALSE),
+      "approximate origin-centering"
+    )
     expect_null(result)
   })
 
@@ -669,7 +704,10 @@ describe("load_vox2ras_matrix", {
       .package = "base"
     )
 
-    result <- load_vox2ras_matrix("file.nii", FALSE)
+    expect_warning(
+      result <- load_vox2ras_matrix("file.nii", FALSE),
+      "approximate origin-centering"
+    )
     expect_null(result)
   })
 })

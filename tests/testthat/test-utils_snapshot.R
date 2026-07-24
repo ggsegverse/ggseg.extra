@@ -425,6 +425,15 @@ describe("get_contours", {
     expect_null(result)
   })
 
+  it("returns NULL without erroring when the raster max is NA", {
+    local_mocked_bindings(
+      global = function(x, ...) data.frame(max = NA_real_),
+      .package = "terra"
+    )
+
+    expect_null(get_contours("fake_raster", max_val = 255))
+  })
+
   it("processes raster when max >= max_val", {
     .cap$as_polygons_called <- FALSE
 
@@ -540,6 +549,58 @@ describe("get_contours full processing path", {
     result <- get_contours(rast_obj, max_val = 255)
 
     expect_s3_class(result, "sf")
+  })
+
+  it("keeps valid contours when only some geometries are empty", {
+    mixed_sf <- sf::st_sf(
+      id = c(1, 2),
+      geometry = sf::st_sfc(
+        sf::st_polygon(list(matrix(
+          c(0, 0, 1, 0, 1, 1, 0, 1, 0, 0),
+          ncol = 2,
+          byrow = TRUE
+        ))),
+        sf::st_polygon()
+      )
+    )
+    mock_result_sf <- sf::st_sf(
+      geometry = sf::st_sfc(sf::st_multipolygon(list(list(matrix(
+        c(0, 0, 1, 0, 1, 1, 0, 1, 0, 0),
+        ncol = 2,
+        byrow = TRUE
+      )))))
+    )
+
+    rast_obj <- structure(list(), class = "mock_rast4")
+    assign("[<-.mock_rast4", function(x, i, value) x, envir = globalenv())
+    assign("[.mock_rast4", function(x, i) x, envir = globalenv())
+    withr::defer({
+      rm("[<-.mock_rast4", envir = globalenv())
+      rm("[.mock_rast4", envir = globalenv())
+    })
+
+    .cap$to_coords_nrow <- NULL
+    local_mocked_bindings(
+      global = function(x, ...) data.frame(max = 255),
+      as.polygons = function(...) mixed_sf,
+      .package = "terra"
+    )
+    local_mocked_bindings(
+      st_as_sf = function(...) mixed_sf,
+      .package = "sf"
+    )
+    local_mocked_bindings(
+      to_coords = function(coords, n) {
+        .cap$to_coords_nrow <- nrow(coords)
+        coords
+      },
+      coords2sf = function(coords, limits) mock_result_sf
+    )
+
+    result <- get_contours(rast_obj, max_val = 255)
+
+    expect_s3_class(result, "sf")
+    expect_identical(.cap$to_coords_nrow, 1L)
   })
 
   it("returns NULL when all contours are empty geometries", {

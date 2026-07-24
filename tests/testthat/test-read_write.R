@@ -732,6 +732,26 @@ describe("parse_continuous_values", {
     expect_lte(length(bin_regions), 10)
     expect_gte(length(bin_regions), 1)
   })
+
+  it("handles tied values without a 'breaks are not unique' error", {
+    values <- c(rep(NaN, 10000), rep(0, 200), rep(1, 42))
+    expect_warning(
+      result <- parse_continuous_values(values, "left", "lh", n_bins = 10),
+      "fewer distinct values"
+    )
+    bin_regions <- Filter(
+      function(x) grepl("^bin_", x$region[1]),
+      result
+    )
+    expect_gte(length(bin_regions), 1)
+  })
+
+  it("aborts clearly when no finite values remain", {
+    expect_error(
+      parse_continuous_values(rep(NaN, 100), "left", "lh", n_bins = 10),
+      "No finite values"
+    )
+  })
 })
 
 

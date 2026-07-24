@@ -412,7 +412,7 @@ validate_subcort_config <- function(
   config$output_dir <- normalizePath(config$output_dir, mustWork = FALSE)
 
   if (is.null(atlas_name)) {
-    atlas_name <- file_path_sans_ext(basename(input_volume))
+    atlas_name <- default_atlas_name_from_volume(input_volume)
   }
 
   config$input_volume <- input_volume
@@ -439,6 +439,17 @@ validate_decimate <- function(decimate) {
     ))
   }
   invisible(NULL)
+}
+
+
+#' Derive a default atlas name from a volume file path
+#'
+#' Strips the directory and the full extension, including the `.gz`/`.bz2`
+#' compression suffix, so `aseg.nii.gz` and `aseg.mgz` both become `aseg`
+#' rather than leaving a stray `.nii` on gzipped inputs.
+#' @noRd
+default_atlas_name_from_volume <- function(input_volume) {
+  file_path_sans_ext(basename(input_volume), compression = TRUE)
 }
 
 

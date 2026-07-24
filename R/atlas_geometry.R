@@ -164,7 +164,7 @@ probe_raster_max <- function(regions) {
   for (f in regions[seq_len(min(10, length(regions)))]) {
     r <- suppressWarnings(terra::rast(f))
     m <- terra::global(r, fun = "max", na.rm = TRUE)[1, 1]
-    if (m > max_val) {
+    if (is.finite(m) && m > max_val) {
       max_val <- m
     }
     if (max_val > 0) break
@@ -213,6 +213,13 @@ map_region_contours <- function(regions, max_val, vertex_size_limits, step) {
 combine_region_contours <- function(contourobjs) {
   kp <- !vapply(contourobjs, is.null, logical(1))
   contourobjs2 <- contourobjs[kp]
+
+  if (length(contourobjs2) == 0) {
+    cli::cli_abort(c(
+      "No contours were extracted from any region",
+      "i" = "Every region raster was empty or below the contour threshold"
+    ))
+  }
 
   contours <- bind_rows(contourobjs2, .id = "filenm")
   contours <- group_by(contours, filenm)
