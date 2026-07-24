@@ -27,3 +27,15 @@ new_project_setup_atlas_repo(path, ...)
 ## Value
 
 Invisible `NULL`, called for its side effects.
+
+## Examples
+
+``` r
+if (FALSE) { # \dontrun{
+# Invoked by the RStudio New Project wizard, not called directly.
+new_project_setup_atlas_repo(
+  file.path(tempdir(), "myatlas"),
+  atlas_name = "myatlas"
+)
+} # }
+```
