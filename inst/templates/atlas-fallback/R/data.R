@@ -16,4 +16,7 @@
 #' @examples
 #' {GGSEG}()
 # fmt: skip
-{GGSEG} <- function() .{GGSEG}
+{GGSEG} <- function() .
+{
+  GGSEG
+}

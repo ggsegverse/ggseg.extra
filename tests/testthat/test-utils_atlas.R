@@ -297,4 +297,92 @@ describe("parse_lut_colours", {
     expect_identical(result$region_names, c("Unknown", "region1"))
     expect_identical(result$colours, c("#000000", "#CD82B0"))
   })
+
+  it("returns NULL region names when no region or label column exists", {
+    lut <- data.frame(
+      idx = 0:1,
+      R = c(0L, 205L),
+      G = c(0L, 130L),
+      B = c(0L, 176L)
+    )
+
+    result <- parse_lut_colours(lut)
+
+    expect_null(result$region_names)
+    expect_identical(result$colours, c("#000000", "#CD82B0"))
+  })
+})
+
+
+describe("derive_atlas_name", {
+  it("strips hemisphere prefixes and single extensions", {
+    expect_identical(derive_atlas_name("lh.aparc.annot"), "aparc")
+  })
+
+  it("strips the double extension for gifti and nifti files", {
+    expect_identical(derive_atlas_name("schaefer.nii"), "schaefer")
+    expect_identical(derive_atlas_name("lh.myatlas.label.gii"), "myatlas")
+  })
+
+  it("aborts when no input file is provided", {
+    expect_error(derive_atlas_name(character(0)), "No input file")
+    expect_error(derive_atlas_name(NA), "No input file")
+  })
+})
+
+
+describe("finalize_atlas", {
+  it("converts an sf-backed atlas to a polygon atlas", {
+    sf_obj <- sf::st_sf(
+      label = "test",
+      view = "v1",
+      geometry = sf::st_sfc(sf::st_polygon(list(matrix(
+        c(0, 0, 1, 0, 1, 1, 0, 0),
+        ncol = 2,
+        byrow = TRUE
+      ))))
+    )
+    atlas <- ggseg.formats::ggseg_atlas(
+      atlas = "t",
+      type = "subcortical",
+      palette = c(test = "#000000"),
+      core = data.frame(
+        label = "test",
+        region = "test",
+        stringsAsFactors = FALSE
+      ),
+      data = ggseg.formats::ggseg_data_subcortical(geom = sf_obj)
+    )
+    expect_true(ggseg.formats::is_atlas_sf(atlas))
+
+    result <- finalize_atlas(
+      atlas,
+      config = list(cleanup = FALSE, verbose = FALSE, steps = 1L),
+      dirs = list(base = withr::local_tempdir()),
+      start_time = Sys.time()
+    )
+
+    expect_true(ggseg.formats::is_atlas_polygon(result))
+  })
+})
+
+
+describe("generate_region_colours", {
+  it("uses a Set2 palette for up to 8 regions", {
+    cols <- generate_region_colours(5)
+    expect_length(cols, 5)
+    expect_true(all(grepl("^#", cols)))
+  })
+
+  it("uses Polychrome 36 for 9 to 36 regions", {
+    cols <- generate_region_colours(20)
+    expect_length(cols, 20)
+    expect_true(all(grepl("^#", cols)))
+  })
+
+  it("uses a dynamic palette for more than 36 regions", {
+    cols <- generate_region_colours(50)
+    expect_length(cols, 50)
+    expect_true(all(grepl("^#", cols)))
+  })
 })

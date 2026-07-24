@@ -746,6 +746,64 @@ describe("simplify_sf_topology", {
     expect_s3_class(result, "sf")
     expect_identical(nrow(result), 1L)
   })
+
+  it("groups by filenm prefix when no view column exists", {
+    poly_a <- sf::st_polygon(list(matrix(
+      c(0, 0, 1, 0, 1, 1, 0, 1, 0, 0),
+      ncol = 2,
+      byrow = TRUE
+    )))
+    poly_b <- sf::st_polygon(list(matrix(
+      c(10, 10, 11, 10, 11, 11, 10, 11, 10, 10),
+      ncol = 2,
+      byrow = TRUE
+    )))
+    poly_c <- sf::st_polygon(list(matrix(
+      c(20, 20, 21, 20, 21, 21, 20, 21, 20, 20),
+      ncol = 2,
+      byrow = TRUE
+    )))
+    sf_data <- sf::st_sf(
+      label = c("a", "b", "c"),
+      filenm = c("lateral_1.png", "lateral_2.png", "medial_1.png"),
+      geometry = sf::st_sfc(poly_a, poly_b, poly_c)
+    )
+
+    result <- simplify_sf_topology(sf_data, keep = 0.5)
+
+    expect_s3_class(result, "sf")
+    expect_identical(nrow(result), 3L)
+    expect_false(".view_group" %in% names(result))
+  })
+})
+
+
+describe("smooth_sf_light", {
+  it("returns the input unchanged when smoothness is zero or negative", {
+    poly <- sf::st_polygon(list(matrix(
+      c(0, 0, 1, 0, 1, 1, 0, 0),
+      ncol = 2,
+      byrow = TRUE
+    )))
+    sf_data <- sf::st_sf(label = "a", geometry = sf::st_sfc(poly))
+
+    expect_identical(smooth_sf_light(sf_data, smoothness = 0), sf_data)
+    expect_identical(smooth_sf_light(sf_data, smoothness = -1), sf_data)
+  })
+
+  it("rounds polygon edges when smoothness is positive", {
+    poly <- sf::st_polygon(list(matrix(
+      c(0, 0, 4, 0, 4, 4, 0, 4, 0, 0),
+      ncol = 2,
+      byrow = TRUE
+    )))
+    sf_data <- sf::st_sf(label = "a", geometry = sf::st_sfc(poly))
+
+    result <- smooth_sf_light(sf_data, smoothness = 0.5)
+
+    expect_s3_class(result, "sf")
+    expect_true(all(sf::st_is_valid(result)))
+  })
 })
 
 

@@ -10,7 +10,6 @@ future::plan(future::sequential)
 progressr::handlers("cli")
 progressr::handlers(global = TRUE)
 
-
 # =============================================================================
 # CORTICAL ATLAS (from FreeSurfer annotation files)
 # =============================================================================
@@ -35,7 +34,6 @@ progressr::handlers(global = TRUE)
 #   verbose = TRUE
 # )
 
-
 # =============================================================================
 # CORTICAL ATLAS (from label files)
 # =============================================================================
@@ -52,7 +50,6 @@ progressr::handlers(global = TRUE)
 #   tolerance = 0.5,
 #   verbose = TRUE
 # )
-
 
 # =============================================================================
 # CORTICAL ATLAS (from GIFTI surfaces)
@@ -72,7 +69,6 @@ progressr::handlers(global = TRUE)
 #   verbose = TRUE
 # )
 
-
 # =============================================================================
 # CORTICAL ATLAS (from CIFTI)
 # =============================================================================
@@ -86,7 +82,6 @@ progressr::handlers(global = TRUE)
 #   verbose = TRUE
 # )
 
-
 # =============================================================================
 # CORTICAL ATLAS (from neuromaps)
 # =============================================================================
@@ -99,7 +94,6 @@ progressr::handlers(global = TRUE)
 #   tolerance = 0.5,
 #   verbose = TRUE
 # )
-
 
 # =============================================================================
 # SUBCORTICAL ATLAS (from NIfTI volume + lookup table)
@@ -118,7 +112,6 @@ progressr::handlers(global = TRUE)
 #   verbose = TRUE
 # )
 
-
 # =============================================================================
 # CEREBELLAR ATLAS (from NIfTI volume in SUIT space)
 # =============================================================================
@@ -135,7 +128,6 @@ progressr::handlers(global = TRUE)
 #   verbose = TRUE
 # )
 
-
 # =============================================================================
 # TRACT ATLAS (from tractography volume)
 # =============================================================================
@@ -147,7 +139,6 @@ progressr::handlers(global = TRUE)
 #   output_dir = here::here("data-raw"),
 #   verbose = TRUE
 # )
-
 
 # =============================================================================
 # WHOLEBRAIN ATLAS (cortical + subcortical from a single volume)
@@ -165,7 +156,6 @@ progressr::handlers(global = TRUE)
 #   verbose = TRUE
 # )
 
-
 # =============================================================================
 # CLEAN UP REGION NAMES (optional)
 # =============================================================================
@@ -180,7 +170,6 @@ progressr::handlers(global = TRUE)
 #     )
 #   )
 
-
 # =============================================================================
 # VERIFY
 # =============================================================================
@@ -191,7 +180,6 @@ progressr::handlers(global = TRUE)
 # if (interactive()) {
 #   ggseg3d::ggseg3d(atlas = {GGSEG}, hemisphere = "left")
 # }
-
 
 # =============================================================================
 # SAVE AS INTERNAL DATA

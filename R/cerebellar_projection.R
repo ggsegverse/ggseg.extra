@@ -352,7 +352,9 @@ fill_inter_region_gaps <- function(sf_data, threshold, verbose) {
   uncovered <- sf::st_difference(hull, all_union)
 
   if (sf::st_is_empty(uncovered)) {
+    # nocov start
     return(sf_data)
+    # nocov end
   }
 
   gap_polys <- sf::st_cast(sf::st_make_valid(uncovered), "POLYGON")

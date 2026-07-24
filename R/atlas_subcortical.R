@@ -65,7 +65,7 @@
 #'   to keep the focus regions coloured on grey anatomical context. `NULL`
 #'   (default) leaves the atlas unchanged. Only applied when the 2D build
 #'   (step 9) runs.
-#' @param views `r lifecycle::badge("deprecated")` Use `slabs` instead.
+#' @template views_deprecated
 #'
 #' @return A `ggseg_atlas` object with region metadata (core), 3D meshes,
 #'   a colour palette, and optionally sf geometry for 2D slice plots.

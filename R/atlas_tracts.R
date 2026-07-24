@@ -63,7 +63,7 @@
 #'   }
 #'   Use `steps = 1` for 3D-only atlas. Use `steps = 5:7` to iterate on
 #'   smoothing and vertex reduction.
-#' @param views `r lifecycle::badge("deprecated")` Use `slabs` instead.
+#' @template views_deprecated
 #'
 #' @return A `ggseg_atlas` object with type `"tract"`, containing region
 #'   metadata, tube meshes for 3D rendering, colours, and optionally sf
@@ -473,6 +473,15 @@ tract_resolve_snapshots <- function(config, dirs, step1, input_aseg, slabs) {
     return(tract_cached_snapshots(cached, config))
   }
 
+  tract_run_snapshots(config, dirs, step1, input_aseg, slabs, files)
+}
+
+
+# nocov start
+# Reads a real aseg volume and renders projection snapshots (magick/native
+# geometry): unavailable on CI, so this run path is excluded from coverage.
+#' @noRd
+tract_run_snapshots <- function(config, dirs, step1, input_aseg, slabs, files) {
   if (config$verbose) {
     cli::cli_progress_step("2/7 Creating projection snapshots")
   }
@@ -497,17 +506,14 @@ tract_resolve_snapshots <- function(config, dirs, step1, input_aseg, slabs) {
     config$verbose
   )
 
-  saveRDS(result$slabs, as.character(fs::path(dirs$base, "slabs.rds")))
-  saveRDS(
-    result$cortex_slices,
-    as.character(fs::path(dirs$base, "cortex_slices.rds"))
-  )
+  saveRDS(result$slabs, files[1])
+  saveRDS(result$cortex_slices, files[2])
   if (config$verbose) {
     cli::cli_progress_done()
   }
   result
 }
-
+# nocov end
 
 #' @noRd
 tract_cached_snapshots <- function(cached, config) {

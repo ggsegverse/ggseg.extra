@@ -628,15 +628,16 @@ describe("warn_deprecated_sf_smoothing", {
 
   it("warns once per supplied argument when several are passed together", {
     withr::local_options(lifecycle_verbosity = "warning")
-    n_warnings <- 0L
+    counter <- new.env(parent = emptyenv())
+    counter$n <- 0L
     withCallingHandlers(
       warn_deprecated_sf_smoothing(tolerance = 0.1, smoothness = 2),
       warning = function(w) {
-        n_warnings <<- n_warnings + 1L
+        counter$n <- counter$n + 1L
         invokeRestart("muffleWarning")
       }
     )
-    expect_identical(n_warnings, 2L)
+    expect_identical(counter$n, 2L)
   })
 
   it("includes the calling function name in the message when supplied", {
@@ -648,5 +649,62 @@ describe("warn_deprecated_sf_smoothing", {
       ),
       "create_cortical_from_gifti"
     )
+  })
+})
+
+
+describe("with_safe_plan", {
+  it("evaluates the expression under a non-multicore plan", {
+    expect_identical(with_safe_plan(1 + 1), 2)
+  })
+
+  it("switches a multicore plan to multisession with a message", {
+    local_mocked_bindings(
+      plan = function(...) {
+        if (length(list(...)) == 0) {
+          structure(list(), class = c("multicore", "future", "function"))
+        } else {
+          structure(list(), class = c("sequential", "future", "function"))
+        }
+      }
+    )
+
+    expect_messages(
+      {
+        result <- with_safe_plan(42)
+      },
+      "Switching from multicore to multisession"
+    )
+    expect_identical(result, 42)
+  })
+
+  it("muffles the known furrr globals warning", {
+    expect_no_warning(
+      with_safe_plan(warning("globals may not be available when loading"))
+    )
+  })
+
+  it("lets unrelated warnings propagate", {
+    expect_warning(
+      with_safe_plan(warning("some unrelated warning")),
+      "unrelated"
+    )
+  })
+})
+
+
+describe("load_rda", {
+  it("loads objects from an rda into the target environment", {
+    tmp <- withr::local_tempfile(fileext = ".rda")
+    demo_obj <- list(a = 1, b = 2)
+    save(demo_obj, file = tmp)
+
+    env <- new.env()
+    load_rda(tmp, envir = env)
+    expect_identical(get("demo_obj", envir = env), list(a = 1, b = 2))
+  })
+
+  it("errors when the file does not exist", {
+    expect_error(load_rda("/no/such/file.rda"), "not found")
   })
 })

@@ -324,3 +324,128 @@ describe("generate_colortable_from_volume", {
     expect_true(all(result$R >= 0L & result$R <= 255L))
   })
 })
+
+
+describe("generate_region_palette", {
+  it("returns no colours for non-positive n", {
+    expect_identical(generate_region_palette(0), character(0))
+    expect_identical(generate_region_palette(-3), character(0))
+  })
+
+  it("returns n distinct hex colours spread around the hue wheel", {
+    pal <- generate_region_palette(5)
+    expect_length(pal, 5)
+    expect_true(all(grepl("^#[0-9A-Fa-f]{6}$", pal)))
+    expect_length(unique(pal), 5)
+  })
+})
+
+
+describe("ensure_fs_compatible_nifti", {
+  it("returns the input unchanged when the header cannot be read", {
+    expect_identical(
+      ensure_fs_compatible_nifti("/no/such/volume.nii.gz", tempdir()),
+      "/no/such/volume.nii.gz"
+    )
+  })
+
+  it("returns the input unchanged for a FreeSurfer-compatible datatype", {
+    skip_if_not_installed("RNifti")
+    arr <- array(0L, dim = c(6, 6, 6))
+    arr[2:4, 2:4, 2:4] <- 5L
+    f <- withr::local_tempfile(fileext = ".nii.gz")
+    suppressWarnings(
+      RNifti::writeNifti(RNifti::asNifti(arr), f, datatype = "int16")
+    )
+
+    expect_identical(
+      ensure_fs_compatible_nifti(f, withr::local_tempdir()),
+      f
+    )
+  })
+
+  it("converts an incompatible datatype to INT32 in output_dir", {
+    skip_if_not_installed("RNifti")
+    arr <- array(0L, dim = c(6, 6, 6))
+    arr[2:4, 2:4, 2:4] <- 1000L
+    f <- withr::local_tempfile(fileext = ".nii.gz")
+    suppressWarnings(
+      RNifti::writeNifti(RNifti::asNifti(arr), f, datatype = "uint16")
+    )
+
+    out_dir <- withr::local_tempdir()
+    converted <- ensure_fs_compatible_nifti(f, out_dir)
+
+    expect_false(identical(converted, f))
+    expect_true(file.exists(converted))
+    expect_match(basename(converted), "^_fs_compat_")
+    # datatype 8 == NIfTI INT32, the FreeSurfer-compatible target
+    expect_identical(
+      suppressWarnings(as.integer(RNifti::niftiHeader(converted)$datatype)),
+      8L
+    )
+  })
+
+  it("reuses a previously converted file without rewriting it", {
+    skip_if_not_installed("RNifti")
+    arr <- array(0L, dim = c(6, 6, 6))
+    arr[2:4, 2:4, 2:4] <- 1000L
+    f <- withr::local_tempfile(fileext = ".nii.gz")
+    suppressWarnings(
+      RNifti::writeNifti(RNifti::asNifti(arr), f, datatype = "uint16")
+    )
+
+    out_dir <- withr::local_tempdir()
+    first <- ensure_fs_compatible_nifti(f, out_dir)
+    writeLines("sentinel", first)
+
+    second <- ensure_fs_compatible_nifti(f, out_dir)
+    expect_identical(second, first)
+    expect_identical(readLines(second, warn = FALSE)[1], "sentinel")
+  })
+})
+
+
+describe("tessellate_remap_label", {
+  it("passes the volume through unchanged for labels <= 255", {
+    res <- tessellate_remap_label("vol.nii.gz", 17L, "base", TRUE)
+    expect_identical(res$pretess_input, "vol.nii.gz")
+    expect_identical(res$tess_label, 17L)
+  })
+
+  it("remaps a label > 255 to a 0/1 mask with tessellation label 1", {
+    skip_if_not_installed("RNifti")
+    arr <- array(0L, dim = c(6, 6, 6))
+    arr[2:4, 2:4, 2:4] <- 1000L
+    arr[1, 1, 1] <- 5L
+    f <- withr::local_tempfile(fileext = ".nii.gz")
+    suppressWarnings(RNifti::writeNifti(RNifti::asNifti(arr), f))
+
+    res <- tessellate_remap_label(f, 1000L, withr::local_tempfile(), FALSE)
+
+    expect_identical(res$tess_label, 1L)
+    expect_true(file.exists(res$pretess_input))
+    mask <- as.array(RNifti::readNifti(res$pretess_input))
+    expect_setequal(unique(c(mask)), c(0, 1))
+    # only the 3x3x3 block of label 1000
+    expect_identical(as.integer(sum(mask)), 27L)
+  })
+
+  it("reuses an existing remapped file when skip_existing", {
+    skip_if_not_installed("RNifti")
+    arr <- array(0L, dim = c(6, 6, 6))
+    arr[2:4, 2:4, 2:4] <- 1000L
+    f <- withr::local_tempfile(fileext = ".nii.gz")
+    suppressWarnings(RNifti::writeNifti(RNifti::asNifti(arr), f))
+
+    base <- withr::local_tempfile()
+    remap_file <- paste0(base, "_remap.nii.gz")
+    writeLines("sentinel", remap_file)
+
+    res <- tessellate_remap_label(f, 1000L, base, TRUE)
+
+    expect_identical(res$pretess_input, remap_file)
+    expect_identical(res$tess_label, 1L)
+    expect_identical(readLines(remap_file, warn = FALSE)[1], "sentinel")
+  })
+})

@@ -533,3 +533,340 @@ describe("unpack_anatomical_input", {
     expect_null(out$input_lut)
   })
 })
+
+describe("coregister_volume execution", {
+  make_subject <- function(dir, volume = "brain") {
+    mri <- fs::path(dir, "cvs_avg35_inMNI152", "mri")
+    fs::dir_create(mri)
+    file.create(fs::path(mri, paste0(volume, ".mgz")))
+    invisible(dir)
+  }
+
+  it("reuses an existing LTA when skip_existing and the file exists", {
+    fake_dir <- withr::local_tempdir()
+    make_subject(fake_dir)
+    vol_file <- withr::local_tempfile(fileext = ".nii.gz")
+    file.create(vol_file)
+    lta <- withr::local_tempfile(fileext = ".lta")
+    file.create(lta)
+
+    local_mocked_bindings(check_fs = function(...) TRUE)
+
+    out <- coregister_volume(
+      vol_file,
+      output_lta = lta,
+      subjects_dir = fake_dir,
+      skip_existing = TRUE,
+      verbose = FALSE
+    )
+    expect_identical(out, lta)
+  })
+
+  it("binarises both volumes, defaults the LTA path, then runs mri_coreg", {
+    fake_dir <- withr::local_tempdir()
+    make_subject(fake_dir)
+    vol_file <- withr::local_tempfile(fileext = ".nii.gz")
+    file.create(vol_file)
+    .cap$coreg <- NULL
+
+    local_mocked_bindings(
+      check_fs = function(...) TRUE,
+      write_brain_mask = function(volume_path, ...) {
+        p <- tempfile(fileext = ".nii.gz")
+        file.create(p)
+        p
+      },
+      write_brain_mask_from_mgz = function(mgz_path, ...) {
+        p <- tempfile(fileext = ".nii.gz")
+        file.create(p)
+        p
+      },
+      run_mri_coreg = function(mov, ref, output_lta, ...) {
+        .cap$coreg <- list(mov = mov, ref = ref, lta = output_lta)
+        invisible(output_lta)
+      }
+    )
+
+    out <- coregister_volume(
+      vol_file,
+      subjects_dir = fake_dir,
+      binarise = TRUE,
+      verbose = FALSE
+    )
+    expect_match(out, "\\.lta$")
+    expect_identical(.cap$coreg$lta, out)
+  })
+
+  it("passes raw volumes to mri_coreg when binarise is FALSE", {
+    fake_dir <- withr::local_tempdir()
+    make_subject(fake_dir)
+    vol_file <- withr::local_tempfile(fileext = ".nii.gz")
+    file.create(vol_file)
+    .cap$coreg <- NULL
+
+    local_mocked_bindings(
+      check_fs = function(...) TRUE,
+      run_mri_coreg = function(mov, ref, output_lta, ...) {
+        .cap$coreg <- list(mov = mov, ref = ref)
+        invisible(output_lta)
+      }
+    )
+
+    coregister_volume(
+      vol_file,
+      subjects_dir = fake_dir,
+      binarise = FALSE,
+      verbose = FALSE
+    )
+    expect_identical(.cap$coreg$mov, vol_file)
+    expect_match(.cap$coreg$ref, "brain\\.mgz$")
+  })
+})
+
+describe("coreg_reuse_lta", {
+  it("reports and returns the path invisibly when verbose", {
+    expect_messages(
+      out <- coreg_reuse_lta("cached.lta", verbose = TRUE),
+      "Reusing existing registration"
+    )
+    expect_identical(out, "cached.lta")
+  })
+})
+
+describe("project_start_message", {
+  it("announces the projection and returns NULL invisibly when verbose", {
+    expect_messages(
+      out <- project_start_message(c(11L, 12L), "subjX", verbose = TRUE),
+      "Projecting 2 labels"
+    )
+    expect_null(out)
+  })
+})
+
+describe("project_merged_labels", {
+  it("thresholds, protects cortex, and writes shifted ids", {
+    prep <- list(
+      label_ids = c(11L, 12L),
+      arr = NULL,
+      vol = NULL,
+      aparc_mgz = NULL,
+      arr_aparc = array(c(2L, 17L, 1011L, 50L), dim = c(2, 2, 1))
+    )
+    local_mocked_bindings(
+      project_label_argmax = function(...) {
+        list(
+          argmax_idx = c(1L, 2L, 1L, 2L),
+          max_prob = c(0.9, 0.9, 0.9, 0.1)
+        )
+      }
+    )
+    merged <- project_merged_labels(
+      prep,
+      registration = NULL,
+      threshold = 0.3,
+      protect_cortex = TRUE,
+      id_offset = 200L,
+      verbose = FALSE
+    )
+    # voxel 1 aparc = 2 (cerebral WM) -> protected, stays 2
+    # voxel 2 aparc = 17, prob .9 > .3, not protected -> 12 + 200 = 212
+    # voxel 3 aparc = 1011 (cortex) -> protected, stays 1011
+    # voxel 4 prob .1 < .3 -> not kept, stays 50
+    expect_identical(as.vector(merged), c(2L, 212L, 1011L, 50L))
+  })
+})
+
+describe("project_volume_anatomical execution", {
+  it("projects labels end-to-end with FreeSurfer steps mocked", {
+    skip_if_not_installed("RNifti")
+    fake_dir <- withr::local_tempdir()
+    subj_dir <- fs::path(fake_dir, "cvs_avg35_inMNI152", "mri")
+    fs::dir_create(subj_dir)
+    file.create(fs::path(subj_dir, "aparc+aseg.mgz"))
+
+    aparc_arr <- array(
+      c(2L, 17L, 1011L, 50L, 0L, 0L, 0L, 0L),
+      dim = c(2, 2, 2)
+    )
+    aparc_nii <- RNifti::asNifti(aparc_arr)
+
+    merged_arr <- aparc_arr
+    merged_arr[1] <- 211L
+    storage.mode(merged_arr) <- "integer"
+
+    local_mocked_bindings(
+      check_fs = function(...) TRUE,
+      resolve_volume_path = function(x) x,
+      project_load_volumes = function(...) {
+        list(
+          vol = aparc_nii,
+          arr = aparc_arr,
+          lut_df = NULL,
+          label_ids = c(11L, 12L),
+          aparc_mgz = "aparc.mgz",
+          aparc = aparc_nii,
+          arr_aparc = aparc_arr
+        )
+      },
+      project_merged_labels = function(...) merged_arr,
+      read_fs_color_lut = function() {
+        data.frame(
+          stringsAsFactors = FALSE,
+          idx = c(2L, 17L, 50L, 1011L),
+          label = c("wm", "hipp", "put", "ctx"),
+          R = 1L,
+          G = 1L,
+          B = 1L,
+          A = 0L
+        )
+      }
+    )
+
+    result <- expect_messages(
+      project_volume_anatomical(
+        "atlas.nii.gz",
+        registration = NULL,
+        subjects_dir = fake_dir,
+        id_offset = 200L,
+        verbose = TRUE
+      ),
+      "Projecting",
+      "anatomical-context volume"
+    )
+
+    expect_true(file.exists(result$volume))
+    expect_true(is_lut(result$lut))
+    expect_identical(result$id_offset, 200L)
+    expect_true(211L %in% result$lut$idx)
+  })
+})
+
+describe("resolve_label_ids all-zero volume", {
+  it("errors when the volume is all zero and no lut is given", {
+    zero <- array(0L, dim = c(2, 2, 2))
+    expect_error(
+      resolve_label_ids(zero, "atlas.nii.gz"),
+      "No labels found"
+    )
+  })
+})
+
+describe("lta_block_dims", {
+  it("returns NULL when the block has no volume line", {
+    lines <- c("dst volume info", "valid = 1", "voxelsize = 1 1 1")
+    expect_null(lta_block_dims(lines, "dst volume info"))
+  })
+
+  it("returns NULL when the parsed dims are not length three", {
+    lines <- c("dst volume info", "volume = 256 256")
+    expect_null(lta_block_dims(lines, "dst volume info"))
+  })
+
+  it("returns NULL when the parsed dims contain NA", {
+    lines <- c("dst volume info", "volume = 256 abc 256")
+    expect_null(lta_block_dims(lines, "dst volume info"))
+  })
+})
+
+describe("apply_cortex_protection verbose", {
+  it("reports the protected voxel counts when verbose", {
+    arr_aparc <- c(2L, 17L, 1011L, 41L, 50L, 253L)
+    expect_messages(
+      apply_cortex_protection(
+        rep(TRUE, 6),
+        arr_aparc,
+        protect_cortex = TRUE,
+        verbose = TRUE
+      ),
+      "Protected"
+    )
+  })
+})
+
+describe("write_merged_volume", {
+  it("writes a readable RAS nifti, flipping a non-RAS reference", {
+    skip_if_not_installed("RNifti")
+    merged <- array(
+      c(2L, 17L, 211L, 0L, 41L, 0L, 1011L, 5L),
+      dim = c(2, 2, 2)
+    )
+    storage.mode(merged) <- "integer"
+    ref <- RNifti::asNifti(array(0L, dim = dim(merged)))
+    las_affine <- rbind(
+      c(-1, 0, 0, 0),
+      c(0, 1, 0, 0),
+      c(0, 0, 1, 0),
+      c(0, 0, 0, 1)
+    )
+    RNifti::sform(ref) <- structure(las_affine, code = 2L)
+    expect_identical(RNifti::orientation(ref), "LAS")
+
+    out <- write_merged_volume(merged, ref, output_file = NULL)
+    withr::defer(unlink(out))
+
+    expect_true(file.exists(out))
+    back <- RNifti::readNifti(out)
+    expect_identical(RNifti::orientation(back), "RAS")
+    expect_setequal(
+      sort(unique(as.integer(as.array(back)))),
+      sort(unique(as.integer(merged)))
+    )
+  })
+})
+
+describe("write_brain_mask", {
+  it("produces a 0/1 mask nifti from a volume on disk", {
+    skip_if_not_installed("RNifti")
+    src <- withr::local_tempfile(fileext = ".nii.gz")
+    arr <- array(c(0L, 5L, 0L, 9L, 0L, 0L, 3L, 0L), dim = c(2, 2, 2))
+    RNifti::writeNifti(RNifti::asNifti(arr), src)
+
+    out <- write_brain_mask(src)
+    withr::defer(unlink(out))
+
+    m <- as.array(RNifti::readNifti(out))
+    expect_setequal(sort(unique(as.vector(m))), c(0, 1))
+    expect_identical(as.integer(m > 0), as.integer(arr > 0))
+  })
+})
+
+describe("resolve_volume_path RNifti object", {
+  it("writes an RNifti object to a temp nifti path", {
+    skip_if_not_installed("RNifti")
+    img <- RNifti::asNifti(array(1L, dim = c(2, 2, 2)))
+    p <- resolve_volume_path(img)
+    withr::defer(unlink(p))
+    expect_true(file.exists(p))
+    expect_match(p, "\\.nii\\.gz$")
+  })
+})
+
+describe("read_fs_color_lut", {
+  it("reads the FreeSurfer colour table and drops the type column", {
+    dir <- withr::local_tempdir()
+    writeLines(
+      c(
+        "2  Left-Cerebral-White-Matter  245 245 245 0",
+        "41 Right-Cerebral-White-Matter 20 30 40 0"
+      ),
+      fs::path(dir, "FreeSurferColorLUT.txt")
+    )
+    local_mocked_bindings(
+      fs_dir = function(...) as.character(dir),
+      .package = "freesurfer"
+    )
+    out <- read_fs_color_lut()
+    expect_true(all(c("idx", "label", "R", "G", "B", "A") %in% names(out)))
+    expect_null(out$type)
+    expect_true(all(c(2L, 41L) %in% out$idx))
+  })
+
+  it("aborts when the colour table file is missing", {
+    dir <- withr::local_tempdir()
+    local_mocked_bindings(
+      fs_dir = function(...) as.character(dir),
+      .package = "freesurfer"
+    )
+    expect_error(read_fs_color_lut(), "colour table not found")
+  })
+})

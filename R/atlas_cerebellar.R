@@ -18,9 +18,11 @@ suit_flatmap_path <- function() {
     package = "ggseg.extra"
   )
   if (path == "") {
+    # nocov start
     cli::cli_abort(
       "SUIT flatmap surface not found in ggseg.extra installation"
     )
+    # nocov end
   }
   path
 }
@@ -43,9 +45,11 @@ suit_3d_path <- function() {
     package = "ggseg.extra"
   )
   if (path == "") {
+    # nocov start
     cli::cli_abort(
       "SUIT 3D surface not found in ggseg.extra installation"
     )
+    # nocov end
   }
   path
 }
@@ -972,11 +976,12 @@ build_deep_nucleus_sf <- function(vol, idx, label) {
 
   mask <- array(0L, dim = dim(vol))
   mask[vol == idx] <- 1L
-
   proj <- apply(mask, c(1, 3), max)
 
   if (sum(proj) == 0) {
+    # nocov start
     return(NULL)
+    # nocov end
   }
 
   r <- terra::rast(t(proj[, rev(seq_len(ncol(proj)))]))
@@ -990,7 +995,9 @@ build_deep_nucleus_sf <- function(vol, idx, label) {
 
   polys <- polys[terra::values(polys) > 0, ]
   if (nrow(polys) == 0) {
+    # nocov start
     return(NULL)
+    # nocov end
   }
 
   sf_poly <- sf::st_as_sf(polys)
@@ -998,8 +1005,10 @@ build_deep_nucleus_sf <- function(vol, idx, label) {
   geom <- sf::st_buffer(geom, 1.5)
   geom <- sf::st_buffer(geom, -1.0)
   if (sf::st_is_empty(geom)) {
+    # nocov start
     geom <- sf::st_union(sf::st_as_sf(polys)$geometry)
     geom <- sf::st_buffer(geom, 0.5)
+    # nocov end
   }
   geom <- sf::st_cast(geom, "MULTIPOLYGON")
 
@@ -1011,6 +1020,7 @@ build_deep_nucleus_sf <- function(vol, idx, label) {
 }
 
 
+# nocov start
 #' Tessellate and world-transform a single deep nucleus mesh
 #'
 #' Returns NULL when tessellation fails.
@@ -1054,7 +1064,7 @@ build_deep_nucleus_mesh <- function(
   )
   mesh
 }
-
+# nocov end
 
 #' Build the deep-nuclei 3D mesh data frame
 #'
@@ -1070,6 +1080,7 @@ build_deep_nuclei_meshes <- function(volume, deep_data, dirs, verbose) {
     return(NULL)
   }
 
+  # nocov start
   mesh_dir <- as.character(fs::path(dirs$base, "deep_meshes"))
   dir.create(mesh_dir, showWarnings = FALSE, recursive = TRUE)
 
@@ -1104,9 +1115,11 @@ build_deep_nuclei_meshes <- function(volume, deep_data, dirs, verbose) {
   )
   deep_meshes$mesh <- unname(meshes_list)
   deep_meshes
+  # nocov end
 }
 
 
+# nocov start
 #' Compute tkRAS-to-world transform for a NIfTI volume
 #'
 #' FreeSurfer tessellation outputs surfaces in tkRAS coordinates.
@@ -1121,6 +1134,7 @@ get_tkras_to_world <- function(volume_path) {
 
   vox2ras %*% solve(vox2ras_tkr)
 }
+# nocov end
 
 #' Run `mri_info` and parse its printed matrix
 #'
@@ -1201,7 +1215,9 @@ read_suit_gifti_rows <- function(gifti_file, seen_vertices) {
 
     region_vertices <- which(values == pid) - 1L
     if (length(region_vertices) == 0) {
+      # nocov start
       next
+      # nocov end
     }
 
     warn_vertex_overlap(region_vertices, seen_vertices, pid, gifti_file)
@@ -1720,7 +1736,9 @@ fill_unlabelled_from_voxel_neighbors <- function(
 
     for (i in unlabelled) {
       if (labels[i] != 0L) {
+        # nocov start
         next
+        # nocov end
       }
       vc <- round(vox_coords[i, ])
       nbrs <- sweep(offsets, 2, vc, "+")

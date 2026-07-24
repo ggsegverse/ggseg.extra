@@ -285,17 +285,6 @@ lut_add <- function(lut, idx, label, R, G, B, A = 0L) {
   lut_combine(lut, new)
 }
 
-#' @noRd
-validate_lut_add_length <- function(x, n, arg_name) {
-  if (!length(x) %in% c(1L, n)) {
-    cli::cli_abort(
-      "{.arg {arg_name}} must have length 1 or {n} (the length of \\
-       {.arg idx}); got {length(x)}."
-    )
-  }
-  invisible(TRUE)
-}
-
 #' Combine FreeSurfer LUTs
 #'
 #' Row-binds several LUTs (as read by [read_lut()] or built with
@@ -594,6 +583,17 @@ read_neuromaps_volume <- function(
   fill_missing_colours(result)
 }
 
+#' @noRd
+validate_lut_add_length <- function(x, n, arg_name) {
+  if (!length(x) %in% c(1L, n)) {
+    cli::cli_abort(
+      "{.arg {arg_name}} must have length 1 or {n} (the length of \\
+       {.arg idx}); got {length(x)}."
+    )
+  }
+  invisible(TRUE)
+}
+
 #' Build the per-hemisphere CIFTI data descriptors
 #' @noRd
 cifti_hemi_info <- function(cii) {
@@ -709,10 +709,10 @@ read_surface_overlay <- function(output_nii, hemi) {
   values[values == 0] <- NaN
 
   if (length(values) != fsaverage5_nverts) {
-    cli::cli_abort(c(
+    cli::cli_abort(
       "{hemi} hemisphere has {length(values)} vertices,
       expected {fsaverage5_nverts} (fsaverage5)"
-    ))
+    )
   }
 
   values
@@ -828,8 +828,7 @@ read_volume <- function(file, reorient = TRUE) {
     }
   }
 
-  vol <- as.array(vol)
-  vol <- drop(vol)
+  vol <- drop(as.array(vol))
   if (length(dim(vol)) != 3L) {
     cli::cli_abort(c(
       "Expected a 3D volume, got {length(dim(vol))}D.",
@@ -1033,7 +1032,10 @@ parse_parcellation_values <- function(values, hemi, hemi_short, label_table) {
 
     region_vertices <- which(parcel_ids == pid) - 1L
     if (length(region_vertices) == 0) {
+      # nocov start
+      # pid comes from unique(parcel_ids), so a match always exists here
       next
+      # nocov end
     }
 
     if (!is.null(label_table) && pid %in% label_table$id) {

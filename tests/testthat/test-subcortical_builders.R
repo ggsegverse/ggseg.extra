@@ -203,6 +203,56 @@ describe("aseg_context", {
   })
 })
 
+describe("aseg_context input validation and white-matter punch", {
+  it("errors when atlas is not a ggseg_atlas", {
+    expect_error(
+      aseg_context(list(x = 1), focus = "hypothalamus"),
+      "ggseg_atlas"
+    )
+  })
+
+  it("punches the cerebral white matter out of the cortex silhouette", {
+    a <- aseg_context(
+      make_test_atlas(),
+      focus = "hypothalamus",
+      punch_white_matter = TRUE
+    )
+    # focus survives the punch and context demotion
+    expect_identical(a$core$label, "L_hypothalamus_anterior_inferior")
+    # white matter is stripped from the geometry (hidden label + punched)
+    expect_false(
+      "Left-Cerebral-White-Matter" %in% ggseg.formats::atlas_geom(a)$label
+    )
+  })
+})
+
+describe("aseg_punch_white_matter", {
+  it("skips with an info message when cortex/white matter not both present", {
+    atlas <- make_test_atlas()
+    out <- expect_messages(
+      aseg_punch_white_matter(
+        atlas,
+        cortex = "^cortex",
+        white_matter = "White-Matter$",
+        sf_labels = "cortex" # white matter absent
+      ),
+      "Skipping white-matter punch"
+    )
+    expect_identical(out, atlas)
+  })
+
+  it("subtracts white matter from cortex when both are present", {
+    atlas <- make_test_atlas()
+    out <- aseg_punch_white_matter(
+      atlas,
+      cortex = "^cortex",
+      white_matter = "White-Matter$",
+      sf_labels = ggseg.formats::atlas_geom(atlas)$label
+    )
+    expect_true(ggseg.formats::is_ggseg_atlas(out))
+  })
+})
+
 describe("lut_add / lut_combine", {
   base <- data.frame(
     stringsAsFactors = FALSE,
@@ -384,5 +434,21 @@ describe("create_subcortical_from_volume slab/context specs", {
   it("leaves the atlas unchanged when context is NULL", {
     atlas <- make_test_atlas()
     expect_identical(apply_subcort_context_spec(atlas, NULL), atlas)
+  })
+})
+
+
+describe("aseg_context with a mesh-only atlas", {
+  it("falls back to empty sf labels when there is no 2D geometry", {
+    local_mocked_bindings(
+      atlas_geom = function(...) NULL,
+      .package = "ggseg.formats"
+    )
+    a <- aseg_context(
+      make_test_atlas(),
+      focus = "hypothalamus",
+      punch_white_matter = FALSE
+    )
+    expect_s3_class(a, "ggseg_atlas")
   })
 })

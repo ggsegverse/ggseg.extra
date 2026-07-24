@@ -257,3 +257,21 @@ describe("read_trk early break", {
     expect_identical(nrow(result[[1]]), 3L)
   })
 })
+
+
+describe("tck_datatype_byte_size", {
+  it("returns 4 bytes for Float32 datatypes", {
+    expect_identical(tck_datatype_byte_size("Float32LE"), 4)
+    expect_identical(tck_datatype_byte_size("Float32BE"), 4)
+  })
+
+  it("returns 8 bytes for Float64 datatypes", {
+    expect_identical(tck_datatype_byte_size("Float64LE"), 8)
+    expect_identical(tck_datatype_byte_size("Float64BE"), 8)
+  })
+
+  it("falls back to 4 bytes for unknown datatypes", {
+    expect_identical(tck_datatype_byte_size("Int16LE"), 4)
+    expect_identical(tck_datatype_byte_size("bogus"), 4)
+  })
+})

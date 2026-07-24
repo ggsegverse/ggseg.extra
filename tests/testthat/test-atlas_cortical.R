@@ -1077,3 +1077,71 @@ describe("create_cortical_from_neuromaps verbose", {
     )
   })
 })
+
+
+describe("create_cortical_from_annotation input validation", {
+  it("aborts when input_annot is empty", {
+    expect_error(
+      create_cortical_from_annotation(input_annot = character(0)),
+      "must not be empty"
+    )
+  })
+})
+
+
+describe("create_cortical_from_gifti input validation", {
+  it("aborts when gifti_files is empty", {
+    expect_error(
+      create_cortical_from_gifti(gifti_files = character(0)),
+      "must not be empty"
+    )
+  })
+
+  it("derives atlas name from filename when atlas_name is NULL", {
+    .cap$gifti_name <- NULL
+    local_mocked_bindings(
+      run_cortical_creation = function(atlas_name, ...) {
+        .cap$gifti_name <- atlas_name
+        structure(list(), class = "ggseg_atlas")
+      }
+    )
+
+    tmp_dir <- withr::local_tempdir()
+    gii <- file.path(tmp_dir, "lh.myatlas.label.gii")
+    writeLines("mock", gii)
+
+    result <- create_cortical_from_gifti(gii, verbose = FALSE)
+
+    expect_s3_class(result, "ggseg_atlas")
+    expect_identical(.cap$gifti_name, "myatlas")
+  })
+})
+
+
+describe("create_cortical_from_cifti input validation", {
+  it("aborts when the CIFTI file does not exist", {
+    expect_error(
+      create_cortical_from_cifti(cifti_file = "/nonexistent/file.dlabel.nii"),
+      "not found"
+    )
+  })
+
+  it("derives atlas name from filename when atlas_name is NULL", {
+    .cap$cifti_name <- NULL
+    local_mocked_bindings(
+      run_cortical_creation = function(atlas_name, ...) {
+        .cap$cifti_name <- atlas_name
+        structure(list(), class = "ggseg_atlas")
+      }
+    )
+
+    tmp_dir <- withr::local_tempdir()
+    cii <- file.path(tmp_dir, "myatlas.dlabel.nii")
+    writeLines("mock", cii)
+
+    result <- create_cortical_from_cifti(cii, verbose = FALSE)
+
+    expect_s3_class(result, "ggseg_atlas")
+    expect_identical(.cap$cifti_name, "myatlas")
+  })
+})

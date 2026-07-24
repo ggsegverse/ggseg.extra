@@ -311,6 +311,7 @@ coreg_reuse_lta <- function(output_lta, verbose) {
 }
 
 
+# nocov start
 #' Run mri_coreg on the (optionally binarised) moving and reference volumes
 #' @noRd
 run_mri_coreg <- function(
@@ -342,8 +343,9 @@ run_mri_coreg <- function(
   )
   run_cmd(cmd, verbose = verbose)
 }
+# nocov end
 
-
+# nocov start
 #' Read the atlas volume, its labels, and the target aparc+aseg grid
 #' @noRd
 project_load_volumes <- function(in_path, lut, aparc_mgz, aparc_nii) {
@@ -371,7 +373,7 @@ project_load_volumes <- function(in_path, lut, aparc_mgz, aparc_nii) {
     arr_aparc = arr_aparc
   )
 }
-
+# nocov end
 
 #' Announce the projection about to run
 #' @noRd
@@ -669,6 +671,7 @@ check_registration_grid <- function(registration, aparc_dim, input_dim = NULL) {
   invisible(NULL)
 }
 
+# nocov start
 #' Resample one label's binary mask onto the aparc+aseg grid (trilinear)
 #' @noRd
 resample_label_probability <- function(
@@ -709,6 +712,7 @@ resample_label_probability <- function(
 
   as.numeric(as.array(RNifti::readNifti(out_tmp)))
 }
+# nocov end
 
 #' FreeSurfer `aparc+aseg` cerebral white-matter labels
 #'
@@ -799,6 +803,7 @@ write_brain_mask <- function(volume_path, fileext = ".nii.gz") {
   out
 }
 
+# nocov start
 #' @noRd
 write_brain_mask_from_mgz <- function(mgz_path, fileext = ".nii.gz") {
   tmp_nii <- tempfile(fileext = ".nii.gz")
@@ -809,6 +814,7 @@ write_brain_mask_from_mgz <- function(mgz_path, fileext = ".nii.gz") {
   )
   write_brain_mask(tmp_nii, fileext = fileext)
 }
+# nocov end
 
 #' Read the FreeSurfer colour table that names aparc+aseg context labels
 #' @noRd

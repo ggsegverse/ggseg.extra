@@ -103,6 +103,14 @@ setup_atlas_repo <- function(
 #' @param ... Template parameters supplied by the wizard, notably `atlas_name`.
 #' @return Invisible `NULL`, called for its side effects.
 #' @keywords internal
+#' @examples
+#' \dontrun{
+#' # Invoked by the RStudio New Project wizard, not called directly.
+#' new_project_setup_atlas_repo(
+#'   file.path(tempdir(), "myatlas"),
+#'   atlas_name = "myatlas"
+#' )
+#' }
 #' @export
 new_project_setup_atlas_repo <- function(path, ...) {
   params <- list(...)
@@ -167,9 +175,51 @@ template_url <- function() {
 #' @keywords internal
 #' @noRd
 download_atlas_template <- function(url = template_url()) {
+  extracted <- try_download_template(url)
+  if (!is.null(extracted)) {
+    return(extracted)
+  }
+
+  cli::cli_alert_warning(
+    "Download failed, using bundled fallback template"
+  )
+  cli::cli_alert_info(
+    "Workflows not included \u2014 copy from
+    {.url https://github.com/ggsegverse/ggseg-atlas-template}",
+    wrap = TRUE
+  )
+
+  fallback <- system.file(
+    "templates",
+    "atlas-fallback",
+    package = "ggseg.extra"
+  )
+
+  if (!dir.exists(fallback)) {
+    # nocov start
+    # Defensive: the bundled fallback ships with the package, so a correct
+    # install always finds it; this abort is unreachable in practice.
+    cli::cli_abort(c(
+      "Template not found",
+      "x" = "Could not download template or find bundled fallback",
+      "i" = "Is ggseg.extra installed correctly?"
+    ))
+    # nocov end
+  }
+
+  fallback
+}
+
+
+# nocov start
+# Network download over GitHub + archive extraction: unavailable on CI, so the
+# whole helper is excluded from coverage (download_atlas_template's fallback
+# path is tested).
+#' @keywords internal
+#' @noRd
+try_download_template <- function(url) {
   tmp_tar <- tempfile(fileext = ".tar.gz")
   tmp_dir <- tempfile("ggseg-template-")
-
   cli::cli_alert_info("Downloading atlas template from GitHub...")
 
   ok <- tryCatch(
@@ -190,33 +240,9 @@ download_atlas_template <- function(url = template_url()) {
       return(extracted)
     }
   }
-
-  cli::cli_alert_warning(
-    "Download failed, using bundled fallback template"
-  )
-  cli::cli_alert_info(
-    "Workflows not included \u2014 copy from
-    {.url https://github.com/ggsegverse/ggseg-atlas-template}",
-    wrap = TRUE
-  )
-
-  fallback <- system.file(
-    "templates",
-    "atlas-fallback",
-    package = "ggseg.extra"
-  )
-
-  if (!dir.exists(fallback)) {
-    cli::cli_abort(c(
-      "Template not found",
-      "x" = "Could not download template or find bundled fallback",
-      "i" = "Is ggseg.extra installed correctly?"
-    ))
-  }
-
-  fallback
+  NULL
 }
-
+# nocov end
 
 #' @keywords internal
 #' @noRd

@@ -47,7 +47,10 @@ extract_centerline <- function(
     method,
     mean = centerline_mean(resampled),
     medoid = centerline_medoid(resampled),
+    # nocov start
+    # match.arg() restricts method to mean/medoid; default is unreachable
     NULL
+    # nocov end
   )
 }
 
@@ -538,53 +541,13 @@ coords_fit_dims <- function(max_coord, dims) {
 }
 
 
-#' Create 2D geometry for tract atlas
+#' Snapshot every tract volume across every projection view
 #'
-#' Generate polygon outlines for tract visualisation in 2D. The function
-#' projects tract centerlines onto slice views (coronal, axial) and extracts
-#' contours. Also creates cortex outlines for anatomical context.
-#'
-#' This is typically called automatically by
-#' [create_tract_from_tractography()] when
-#' `include_geometry = TRUE`, but you can call it separately
-#' if you want custom views or need to regenerate geometry.
-#'
-#' @param atlas A `ggseg_atlas` of type `"tract"`
-#'   (from [create_tract_from_tractography()]).
-#' @param aseg_file Path to a segmentation volume (`.mgz`, `.nii`) used to
-#'   draw cortex outlines for anatomical context.
-#' @param streamlines Named list of streamline matrices (Nx3 with x, y, z).
-#'   Names must match tract labels in the atlas. Required because atlas
-#'   centerlines are centred for 3D rendering and don't match volumetric space.
-#' @param views A data.frame defining which projection views to create. Columns:
-#'   `name` (view label), `type` (`"coronal"` or `"axial"`), `start` (first
-#'   slice), `end` (last slice). Default creates upper/lower coronal and
-#'   anterior/posterior axial views.
-#' @param cortex_slices A data.frame specifying cortex slice positions for
-#'   reference outlines. Columns: `x`, `y`, `z`, `view`, `name`. Default uses
-#'   central slices for each view.
-#' @template output_dir
-#' @param tract_radius Dilation radius when rasterising tract coordinates.
-#' @param coords_are_voxels If TRUE, streamline coordinates are in voxel
-#'   space (0-indexed). If FALSE, coordinates are in RAS space. If NULL
-#'   (default), auto-detects by checking coordinate ranges.
-#' @template vertex_size_limits
-#' @template dilate
-#' @template tolerance
-#' @template smoothness
-#' @template verbose
-#' @template cleanup
-#' @template skip_existing
-#'
-#' @return An sf data.frame with columns `label`, `side` (view name), and
-#'   `geometry`.
 #' @keywords internal
+#' @noRd
 #' @importFrom dplyr bind_rows left_join select
 #' @importFrom furrr future_pmap furrr_options
 #' @importFrom progressr progressor
-
-#' Snapshot every tract volume across every projection view
-#' @noRd
 snapshot_tract_views <- function(
   tract_volumes,
   tract_labels,
