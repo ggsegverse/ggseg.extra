@@ -1,3 +1,35 @@
+# ggseg.extra 1.9.9.9008
+
+## Minor improvements and fixes
+
+- Tract 2D projections now reuse the same centerline as the 3D tube (built with
+  the configured `n_points` / `centerline_method`) instead of recomputing a
+  different 50-point mean centerline, so the two representations agree.
+- `read_tractography()` reads `.tck` files without the previous quadratic
+  slow-down on large bundles.
+- `create_tract_from_tractography()` validates `tube_segments` (integer >= 3),
+  and degenerate leading tract segments no longer yield `NaN` tube vertices.
+- Cerebellar trilinear resampling skips non-finite deformation coordinates
+  rather than raising an error, and a deep nucleus that cannot be converted to
+  polygons is now reported instead of silently dropped.
+- `create_wholebrain_from_volume()` splits cortex at the correct (1-based)
+  midline voxel; the left/right boundary was previously off by one voxel.
+- Reading a FreeSurfer LUT warns about malformed lines; `write_lut()`
+  validates its input; `read_lut()`/`read_dpv()` fail with clear messages on
+  malformed headers, and `read_dpv()` handles zero-face surfaces.
+- CIFTI files with more than one label map warn that only the first is used.
+- Annotation files whose colour table already defines an "unknown" region no
+  longer produce a duplicate `unknown` label.
+- Contour extraction reports a clear error when no region yields a contour
+  instead of a cryptic downstream failure.
+- Subcortical mesh tessellation honors the requested verbosity inside parallel
+  workers.
+- Reading a subcortical surface surfaces the underlying conversion error when
+  the fallback reader is unavailable, and the interactive atlas preview warns
+  on 3D render failures instead of failing silently.
+- `setup_atlas_repo()` no longer rewrites files under a template's `.git`
+  directory and reports failed file copies/renames.
+
 # ggseg.extra 1.9.9.9007
 
 ## Bug fixes
@@ -37,36 +69,6 @@
   `GGSEG_EXTRA_VERBOSE=false` now silences output, and string values such as
   `"yes"` or `"1"` are honored across the explicit, option, and
   environment-variable channels.
-
-## Minor improvements and fixes
-
-- Tract 2D projections now reuse the same centerline as the 3D tube (built with
-  the configured `n_points` / `centerline_method`) instead of recomputing a
-  different 50-point mean centerline, so the two representations agree.
-- `read_tractography()` reads `.tck` files without the previous quadratic
-  slow-down on large bundles.
-- `create_tract_from_tractography()` validates `tube_segments` (integer >= 3),
-  and degenerate leading tract segments no longer yield `NaN` tube vertices.
-- Cerebellar trilinear resampling skips non-finite deformation coordinates
-  rather than raising an error, and a deep nucleus that cannot be converted to
-  polygons is now reported instead of silently dropped.
-- `create_wholebrain_from_volume()` splits cortex at the correct (1-based)
-  midline voxel; the left/right boundary was previously off by one voxel.
-- Reading a FreeSurfer LUT warns about malformed lines; `write_lut()`
-  validates its input; `read_lut()`/`read_dpv()` fail with clear messages on
-  malformed headers, and `read_dpv()` handles zero-face surfaces.
-- CIFTI files with more than one label map warn that only the first is used.
-- Annotation files whose colour table already defines an "unknown" region no
-  longer produce a duplicate `unknown` label.
-- Contour extraction reports a clear error when no region yields a contour
-  instead of a cryptic downstream failure.
-- Subcortical mesh tessellation honors the requested verbosity inside parallel
-  workers.
-- Reading a subcortical surface surfaces the underlying conversion error when
-  the fallback reader is unavailable, and the interactive atlas preview warns
-  on 3D render failures instead of failing silently.
-- `setup_atlas_repo()` no longer rewrites files under a template's `.git`
-  directory and reports failed file copies/renames.
 
 # ggseg.extra 1.9.9.9005
 
