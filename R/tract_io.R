@@ -120,7 +120,7 @@ read_tck <- function(file) {
   endian <- if (grepl("BE$", datatype)) "big" else "little"
 
   streamlines <- list()
-  current_streamline <- new_tck_streamline()
+  points <- list()
 
   while (TRUE) {
     coords <- readBin(con, "double", 3, size = byte_size, endian = endian)
@@ -133,18 +133,18 @@ read_tck <- function(file) {
     }
 
     if (all(is.nan(coords))) {
-      if (nrow(current_streamline) > 0) {
-        streamlines[[length(streamlines) + 1]] <- current_streamline
-        current_streamline <- new_tck_streamline()
+      if (length(points) > 0) {
+        streamlines[[length(streamlines) + 1L]] <- tck_points_to_matrix(points)
+        points <- list()
       }
       next
     }
 
-    current_streamline <- rbind(current_streamline, coords)
+    points[[length(points) + 1L]] <- coords
   }
 
-  if (nrow(current_streamline) > 0) {
-    streamlines[[length(streamlines) + 1]] <- current_streamline
+  if (length(points) > 0) {
+    streamlines[[length(streamlines) + 1L]] <- tck_points_to_matrix(points)
   }
 
   streamlines
@@ -193,10 +193,10 @@ tck_datatype_byte_size <- function(datatype) {
 }
 
 
-#' Create an empty TCK streamline matrix with xyz columns
+#' Bind collected TCK points into an x/y/z coordinate matrix
 #' @noRd
-new_tck_streamline <- function() {
-  current_streamline <- matrix(ncol = 3, nrow = 0)
-  colnames(current_streamline) <- c("x", "y", "z")
-  current_streamline
+tck_points_to_matrix <- function(points) {
+  sl <- do.call(rbind, points)
+  colnames(sl) <- c("x", "y", "z")
+  sl
 }

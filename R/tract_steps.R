@@ -167,7 +167,6 @@ tract_build_core <- function(meshes_list, colours, tract_names) {
 
 #' @noRd
 tract_create_snapshots <- function(
-  streamlines_data,
   centerlines_df,
   input_aseg,
   slabs,
@@ -186,9 +185,10 @@ tract_create_snapshots <- function(
   cortex_slices <- create_cortex_slices(slabs, dims)
 
   tract_labels <- centerlines_df$label
+  centerlines <- stats::setNames(centerlines_df$points, tract_labels)
 
   tract_volumes <- tract_volume_map(
-    streamlines_data,
+    centerlines,
     tract_labels,
     input_aseg,
     tract_radius,
@@ -223,7 +223,7 @@ tract_create_snapshots <- function(
 #' Rasterise every tract centerline into its own label volume
 #' @noRd
 tract_volume_map <- function(
-  streamlines_data,
+  centerlines,
   tract_labels,
   input_aseg,
   tract_radius,
@@ -234,14 +234,11 @@ tract_volume_map <- function(
   tract_volumes <- safe_future_pmap(
     list(label = tract_labels, i = seq_along(tract_labels)),
     function(label, i) {
-      centerline <- streamlines_data[[label]]
-
-      if (is.list(centerline) && !is.matrix(centerline)) {
-        centerline <- extract_centerline(centerline, n_points = 50)
-      }
-
+      # Reuse the centerline computed for the 3D tube (with the configured
+      # n_points / centerline_method) so the 2D projection matches it exactly
+      # instead of recomputing a different one here.
       vol <- streamlines_to_volume(
-        centerline = centerline,
+        centerline = centerlines[[label]],
         template_file = input_aseg,
         label_value = i,
         radius = tract_radius,
@@ -254,7 +251,7 @@ tract_volume_map <- function(
     .options = furrr_options(
       packages = "ggseg.extra",
       globals = c(
-        "streamlines_data",
+        "centerlines",
         "input_aseg",
         "tract_radius",
         "coords_are_voxels",

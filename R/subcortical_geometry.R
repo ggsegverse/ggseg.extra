@@ -268,6 +268,8 @@ decimate_mesh <- function(mesh, percent = 0.5) {
 read_fs_surface <- function(file, verbose = get_verbose()) {
   dpv_file <- paste0(file, ".dpv")
 
+  # nolint next: object_usage_linter.
+  surf2asc_error <- NULL
   result <- tryCatch(
     {
       surf2asc(file, dpv_file, verbose = verbose)
@@ -282,7 +284,10 @@ read_fs_surface <- function(file, verbose = get_verbose()) {
 
       list(vertices = vertices, faces = faces)
     },
-    error = function(e) NULL
+    error = function(e) {
+      surf2asc_error <<- conditionMessage(e)
+      NULL
+    }
   )
 
   if (!is.null(result)) {
@@ -292,7 +297,9 @@ read_fs_surface <- function(file, verbose = get_verbose()) {
   if (!requireNamespace("freesurferformats", quietly = TRUE)) {
     cli::cli_abort(c(
       "Failed to read surface file: {.path {file}}",
-      "i" = "FreeSurfer conversion failed and freesurferformats not available"
+      "i" = "FreeSurfer conversion failed and {.pkg freesurferformats} \\
+             not available",
+      "x" = "Conversion error: {surf2asc_error}"
     ))
   }
 

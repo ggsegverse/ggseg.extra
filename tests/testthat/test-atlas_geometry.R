@@ -808,6 +808,28 @@ describe("simplify_sf_topology", {
     expect_identical(nrow(result), 3L)
     expect_false(".view_group" %in% names(result))
   })
+
+  it("does not leak .view_group when filenm data forms a single group", {
+    poly_a <- sf::st_polygon(list(matrix(
+      c(0, 0, 1, 0, 1, 1, 0, 1, 0, 0),
+      ncol = 2,
+      byrow = TRUE
+    )))
+    poly_b <- sf::st_polygon(list(matrix(
+      c(10, 10, 11, 10, 11, 11, 10, 11, 10, 10),
+      ncol = 2,
+      byrow = TRUE
+    )))
+    sf_data <- sf::st_sf(
+      label = c("a", "b"),
+      filenm = c("lateral_1.png", "lateral_2.png"),
+      geometry = sf::st_sfc(poly_a, poly_b)
+    )
+
+    result <- simplify_sf_topology(sf_data, keep = 0.5)
+
+    expect_false(".view_group" %in% names(result))
+  })
 })
 
 

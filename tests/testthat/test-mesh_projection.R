@@ -123,6 +123,18 @@ describe("build_vertex_label_vector", {
     expect_identical(labels, c("lh_a", NA_character_, NA_character_))
   })
 
+  it("skips NA labels without erroring", {
+    vertices_df <- data.frame(
+      label = c("lh_a", NA_character_),
+      vertices = I(list(0L, 1L)),
+      stringsAsFactors = FALSE
+    )
+
+    labels <- build_vertex_label_vector(vertices_df, 3L, "lh")
+
+    expect_identical(labels, c("lh_a", NA_character_, NA_character_))
+  })
+
   it("drops out-of-range vertex indices", {
     vertices_df <- data.frame(
       label = "lh_a",

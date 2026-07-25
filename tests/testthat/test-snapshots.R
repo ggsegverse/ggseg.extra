@@ -223,6 +223,15 @@ describe("volume_projection with start/end", {
 
     expect_identical(max(proj), 0)
   })
+
+  it("errors when end is before start instead of reversing the slab", {
+    vol <- array(0, dim = c(10, 10, 10))
+
+    expect_error(
+      volume_projection(vol, "axial", start = 7, end = 3),
+      "before start"
+    )
+  })
 })
 
 

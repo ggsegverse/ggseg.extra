@@ -669,40 +669,45 @@ resample_trilinear <- function(result, vox_coords, mni_arr, mni_dims) {
     "Trilinear interpolation (may be slow for large volumes)"
   )
   for (i in seq_len(nrow(vox_coords))) {
-    vi <- vox_coords[i, ]
-    if (
-      any(vi < 1) ||
-        vi[1] > mni_dims[1] ||
-        vi[2] > mni_dims[2] ||
-        vi[3] > mni_dims[3]
-    ) {
-      next
+    val <- trilinear_sample(vox_coords[i, ], mni_arr, mni_dims)
+    if (!is.null(val)) {
+      result[i] <- val
     }
-
-    x0 <- floor(vi[1])
-    x1 <- min(x0 + 1L, mni_dims[1])
-    y0 <- floor(vi[2])
-    y1 <- min(y0 + 1L, mni_dims[2])
-    z0 <- floor(vi[3])
-    z1 <- min(z0 + 1L, mni_dims[3])
-    xd <- vi[1] - x0
-    yd <- vi[2] - y0
-    zd <- vi[3] - z0
-
-    result[i] <-
-      mni_arr[x0, y0, z0] *
-      (1 - xd) *
-      (1 - yd) *
-      (1 - zd) +
-      mni_arr[x1, y0, z0] * xd * (1 - yd) * (1 - zd) +
-      mni_arr[x0, y1, z0] * (1 - xd) * yd * (1 - zd) +
-      mni_arr[x0, y0, z1] * (1 - xd) * (1 - yd) * zd +
-      mni_arr[x1, y1, z0] * xd * yd * (1 - zd) +
-      mni_arr[x0, y1, z1] * (1 - xd) * yd * zd +
-      mni_arr[x1, y0, z1] * xd * (1 - yd) * zd +
-      mni_arr[x1, y1, z1] * xd * yd * zd
   }
   result
+}
+
+#' Trilinearly sample one voxel coordinate, or `NULL` when out of bounds or NA
+#'
+#' The `anyNA()` check comes first so the bounds comparisons never run on a
+#' non-finite coordinate (which would make `if ()` error).
+#' @noRd
+trilinear_sample <- function(vi, mni_arr, mni_dims) {
+  if (anyNA(vi) || any(vi < 1 | vi > mni_dims)) {
+    return(NULL)
+  }
+
+  x0 <- floor(vi[1])
+  x1 <- min(x0 + 1L, mni_dims[1])
+  y0 <- floor(vi[2])
+  y1 <- min(y0 + 1L, mni_dims[2])
+  z0 <- floor(vi[3])
+  z1 <- min(z0 + 1L, mni_dims[3])
+  xd <- vi[1] - x0
+  yd <- vi[2] - y0
+  zd <- vi[3] - z0
+
+  mni_arr[x0, y0, z0] *
+    (1 - xd) *
+    (1 - yd) *
+    (1 - zd) +
+    mni_arr[x1, y0, z0] * xd * (1 - yd) * (1 - zd) +
+    mni_arr[x0, y1, z0] * (1 - xd) * yd * (1 - zd) +
+    mni_arr[x0, y0, z1] * (1 - xd) * (1 - yd) * zd +
+    mni_arr[x1, y1, z0] * xd * yd * (1 - zd) +
+    mni_arr[x0, y1, z1] * (1 - xd) * yd * zd +
+    mni_arr[x1, y0, z1] * xd * (1 - yd) * zd +
+    mni_arr[x1, y1, z1] * xd * yd * zd
 }
 
 
@@ -990,6 +995,10 @@ build_deep_nucleus_sf <- function(vol, idx, label) {
     error = function(e) NULL
   )
   if (is.null(polys)) {
+    cli::cli_warn(c(
+      "Could not polygonise deep nucleus {.val {label}}; dropping it.",
+      "i" = "{.pkg terra} failed to extract polygons from its voxel mask."
+    ))
     return(NULL)
   }
 

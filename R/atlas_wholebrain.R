@@ -1602,7 +1602,9 @@ wholebrain_prepare_subcortical_volume <- function(
   }
   cortical_mask <- arr %in% cortical_idx
   xform <- RNifti::xform(vol)
-  x0_voxel <- round(solve(xform, c(0, 0, 0, 1))[1])
+  # xform maps 0-based voxel indices to world; slice.index() is 1-based, so
+  # shift the midline voxel to 1-based before comparing.
+  x0_voxel <- round(solve(xform, c(0, 0, 0, 1))[1]) + 1L
   x_idx <- slice.index(arr, 1)
   left_is_high <- xform[1, 1] < 0
   if (left_is_high) {

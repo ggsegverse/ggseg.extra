@@ -410,6 +410,24 @@ describe("rstudioapi_available", {
 })
 
 
+describe("replace_template_placeholders", {
+  it("skips files under .git", {
+    tmp <- withr::local_tempdir()
+    dir.create(file.path(tmp, ".git"))
+    writeLines("{GGSEG}", file.path(tmp, ".git", "config"))
+    writeLines("{GGSEG}", file.path(tmp, "DESCRIPTION"))
+
+    expect_message(
+      replace_template_placeholders(tmp, "myatlas"),
+      "Replaced template placeholders"
+    )
+
+    expect_identical(readLines(file.path(tmp, ".git", "config")), "{GGSEG}")
+    expect_identical(readLines(file.path(tmp, "DESCRIPTION")), "myatlas")
+  })
+})
+
+
 describe("template_replace error handling", {
   it("returns NULL and warns for unreadable files", {
     result <- expect_warnings(

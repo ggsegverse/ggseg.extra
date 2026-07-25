@@ -19,6 +19,20 @@ describe("create_tract_from_tractography", {
     expect_identical(nrow(atlas$data$centerlines), 2L)
   })
 
+  it("errors when tube_segments is less than 3", {
+    tracts <- list(cst_left = matrix(c(1:20, rep(0, 40)), ncol = 3))
+
+    expect_error(
+      create_tract_from_tractography(
+        input_tracts = tracts,
+        tube_segments = 2,
+        steps = 1,
+        verbose = FALSE
+      ),
+      "must be a single integer"
+    )
+  })
+
   it("warns about deprecated views argument and delegates to slabs", {
     tracts <- list(
       cst_left = matrix(c(1:20, rep(0, 40)), ncol = 3),

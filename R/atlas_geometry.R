@@ -192,8 +192,7 @@ map_region_contours <- function(regions, max_val, vertex_size_limits, step) {
       result <- get_contours(
         r,
         max_val = max_val,
-        vertex_size_limits = vertex_size_limits,
-        verbose = get_verbose() # nolint: object_usage_linter
+        vertex_size_limits = vertex_size_limits
       )
       p()
       result
@@ -414,22 +413,24 @@ simplify_sf_topology <- function(sf_data, keep = 0.05) {
     NULL
   }
 
-  if (!is.null(group_col)) {
-    groups <- unique(sf_data[[group_col]])
-    if (length(groups) > 1) {
-      parts <- lapply(groups, function(g) {
-        group_sf <- sf_data[sf_data[[group_col]] == g, , drop = FALSE]
-        rmapshaper::ms_simplify(group_sf, keep = keep, keep_shapes = TRUE)
-      })
-      sf_data <- do.call(rbind, parts)
-      if (".view_group" %in% names(sf_data)) {
-        sf_data$.view_group <- NULL
-      }
-      return(sf::st_make_valid(sf_data))
-    }
+  multi_group <- !is.null(group_col) &&
+    length(unique(sf_data[[group_col]])) > 1
+
+  if (multi_group) {
+    parts <- lapply(unique(sf_data[[group_col]]), function(g) {
+      group_sf <- sf_data[sf_data[[group_col]] == g, , drop = FALSE]
+      rmapshaper::ms_simplify(group_sf, keep = keep, keep_shapes = TRUE)
+    })
+    sf_data <- do.call(rbind, parts)
+  } else {
+    sf_data <- rmapshaper::ms_simplify(sf_data, keep = keep, keep_shapes = TRUE)
   }
 
-  sf_data <- rmapshaper::ms_simplify(sf_data, keep = keep, keep_shapes = TRUE)
+  # Drop the temporary grouping column in both paths so it never leaks into
+  # the returned atlas (a stray column breaks rbind() in smooth_sf_subset()).
+  if (".view_group" %in% names(sf_data)) {
+    sf_data$.view_group <- NULL
+  }
   sf::st_make_valid(sf_data)
 }
 

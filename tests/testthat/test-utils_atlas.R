@@ -1,4 +1,12 @@
 describe("detect_hemi", {
+  it("returns the default for non-scalar input instead of erroring", {
+    expect_identical(
+      detect_hemi(c("Left-x", "Right-y")),
+      NA_character_
+    )
+    expect_identical(detect_hemi(character(0)), NA_character_)
+  })
+
   it("detects left from prefix", {
     expect_identical(detect_hemi("Left-Thalamus"), "left")
     expect_identical(detect_hemi("left_amygdala"), "left")
@@ -324,9 +332,13 @@ describe("derive_atlas_name", {
     expect_identical(derive_atlas_name("lh.myatlas.label.gii"), "myatlas")
   })
 
-  it("aborts when no input file is provided", {
-    expect_error(derive_atlas_name(character(0)), "No input file")
-    expect_error(derive_atlas_name(NA), "No input file")
+  it("aborts for missing or non-scalar input", {
+    expect_error(derive_atlas_name(character(0)), "single input file")
+    expect_error(derive_atlas_name(NA), "single input file")
+    expect_error(
+      derive_atlas_name(c("a.nii", "b.nii")),
+      "single input file"
+    )
   })
 })
 

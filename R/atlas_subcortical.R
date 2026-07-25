@@ -509,7 +509,7 @@ subcort_resolve_labels <- function(config, dirs) {
 
   vol <- read_volume(config$input_volume)
   vol_labels <- unique(c(vol))
-  vol_labels <- vol_labels[vol_labels != 0]
+  vol_labels <- vol_labels[!is.na(vol_labels) & vol_labels != 0]
   colortable <- colortable[colortable$idx %in% vol_labels, ]
 
   colortable$label <- sanitize_label(colortable$label)

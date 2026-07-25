@@ -82,7 +82,7 @@ build_vertex_label_vector <- function(vertices_df, n_vertices, hemi_short) {
 
   for (i in seq_len(nrow(vertices_df))) {
     lbl <- vertices_df$label[i]
-    if (!startsWith(lbl, prefix)) {
+    if (is.na(lbl) || !startsWith(lbl, prefix)) {
       next
     }
     idx <- vertices_df$vertices[[i]] + 1L

@@ -205,7 +205,7 @@ generate_tube_mesh <- function(centerline, radius = 0.5, segments = 8) {
 #' @noRd
 tube_ring_vertices <- function(centerline, radius, frames, segments) {
   n_points <- nrow(centerline)
-  angles <- seq(0, 2 * pi, length.out = segments + 1)[1:segments]
+  angles <- seq(0, 2 * pi, length.out = segments + 1)[seq_len(segments)]
 
   grid <- expand.grid(j = seq_len(segments), i = seq_len(n_points))
   cos_a <- cos(angles[grid$j])
@@ -260,7 +260,15 @@ compute_parallel_transport_frames <- function(curve) {
   t0 <- tangents[1, ]
   arbitrary <- if (abs(t0[1]) < 0.9) c(1, 0, 0) else c(0, 1, 0)
   n0 <- cross_product(t0, arbitrary)
-  n0 <- n0 / sqrt(sum(n0^2))
+  n0_norm <- sqrt(sum(n0^2))
+  if (n0_norm < 1e-10) {
+    # Degenerate leading tangent (e.g. a duplicated first point): any unit
+    # vector works as the initial normal. Use a fixed one rather than dividing
+    # by ~0 and propagating NaN through every tube vertex.
+    n0 <- c(1, 0, 0)
+    n0_norm <- 1
+  }
+  n0 <- n0 / n0_norm
 
   normals <- matrix(0, nrow = n, ncol = 3)
   binormals <- matrix(0, nrow = n, ncol = 3)

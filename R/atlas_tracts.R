@@ -305,7 +305,18 @@ validate_tract_config <- function(
     c("mean", "medoid")
   )
   config$tube_radius <- tube_radius
-  config$tube_segments <- tube_segments
+  if (
+    !is.numeric(tube_segments) ||
+      length(tube_segments) != 1L ||
+      is.na(tube_segments) ||
+      tube_segments < 3
+  ) {
+    cli::cli_abort(c(
+      "{.arg tube_segments} must be a single integer >= 3.",
+      "x" = "Got: {.val {tube_segments}}"
+    ))
+  }
+  config$tube_segments <- as.integer(tube_segments)
   config$n_points <- n_points
   config$density_radius_range <- c(0.2, 1.0)
   config$tract_radius <- 3
@@ -495,7 +506,6 @@ tract_run_snapshots <- function(config, dirs, step1, input_aseg, slabs, files) {
   }
 
   result <- tract_create_snapshots(
-    step1$streamlines_data,
     step1$centerlines_df,
     input_aseg,
     slabs,

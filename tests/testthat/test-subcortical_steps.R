@@ -157,6 +157,58 @@ describe("subcort_create_meshes", {
     expect_length(result, 1)
     expect_named(result, "Right-Putamen")
   })
+
+  it("passes the requested verbose level through to tessellate_label", {
+    .cap$tess_verbose <- NULL
+    mock_mesh <- list(
+      vertices = list(x = 1:3, y = 1:3, z = 1:3),
+      faces = list(i = 1, j = 2, k = 3)
+    )
+    local_mocked_bindings(
+      tessellate_label = function(..., verbose) {
+        .cap$tess_verbose <- verbose
+        mock_mesh
+      },
+      progressor = function(...) function(...) NULL,
+      future_map2 = mock_future_map2,
+      furrr_options = function(...) list(),
+      center_meshes = function(x) x
+    )
+
+    colortable <- data.frame(
+      idx = 10,
+      label = "Left-Putamen",
+      stringsAsFactors = FALSE
+    )
+    dirs <- list(meshes = withr::local_tempdir())
+
+    expect_message(
+      subcort_create_meshes("fake.mgz", colortable, dirs, FALSE, 2L, NULL),
+      "Created 1 mesh"
+    )
+    expect_identical(.cap$tess_verbose, 2L)
+  })
+})
+
+
+describe("subcort_decimate_meshes", {
+  it("reports NA%, not NaN%, when all meshes have zero faces", {
+    empty_meshes <- list(
+      a = list(
+        faces = data.frame(
+          i = integer(0),
+          j = integer(0),
+          k = integer(0)
+        )
+      )
+    )
+    local_mocked_bindings(decimate_mesh = function(m, percent) m)
+
+    expect_messages(
+      subcort_decimate_meshes(empty_meshes, decimate = 0.5, verbose = TRUE),
+      "\\(NA%\\)"
+    )
+  })
 })
 
 

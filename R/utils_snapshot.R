@@ -188,8 +188,7 @@ run_cmd <- function(cmd, verbose = get_verbose(), no_ui = FALSE) {
 get_contours <- function(
   raster_object,
   max_val = 255,
-  vertex_size_limits = c(3 * 10^6, 3 * 10^7),
-  verbose = get_verbose() # nolint: object_usage_linter
+  vertex_size_limits = c(3 * 10^6, 3 * 10^7)
 ) {
   rlang::check_installed("terra", reason = "for contour extraction")
   mx <- terra::global(raster_object, fun = "max", na.rm = TRUE)[1, 1]
