@@ -32,23 +32,6 @@ as_verbosity <- function(x) {
   min(x, 2L)
 }
 
-#' Match a spelled-out boolean string, returning `NA` for anything else
-#'
-#' Numeric strings like `"0"`/`"1"` deliberately return `NA` so callers that
-#' also accept numbers (e.g. [as_verbosity()]) route them through their own
-#' numeric handling instead.
-#' @noRd
-match_bool_word <- function(x) {
-  word <- tolower(trimws(as.character(x)))
-  if (word %in% c("true", "yes", "on")) {
-    return(TRUE)
-  }
-  if (word %in% c("false", "no", "off")) {
-    return(FALSE)
-  }
-  NA
-}
-
 #' Get verbose setting
 #'
 #' Returns the verbosity level from option, environment variable, or default.
@@ -451,6 +434,23 @@ get_bool_option <- function(explicit, option_name, env_name, default) {
   }
 
   default
+}
+
+#' Match a spelled-out boolean string, returning `NA` for anything else
+#'
+#' Numeric strings like `"0"`/`"1"` deliberately return `NA` so callers that
+#' also accept numbers (e.g. [as_verbosity()]) route them through their own
+#' numeric handling instead.
+#' @noRd
+match_bool_word <- function(x) {
+  word <- tolower(trimws(as.character(x)))
+  if (word %in% c("true", "yes", "on")) {
+    return(TRUE)
+  }
+  if (word %in% c("false", "no", "off")) {
+    return(FALSE)
+  }
+  NA
 }
 
 #' Coerce a value to a single logical, accepting common string spellings

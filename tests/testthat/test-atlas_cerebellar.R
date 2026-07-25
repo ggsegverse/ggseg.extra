@@ -871,7 +871,7 @@ describe("sample_volume_at_surface", {
     vol <- array(0, dim = c(5, 5, 5))
     vol[2, 2, 2] <- 1
     vol[4, 4, 4] <- 2
-    expect_identical(typeof(vol), "double")
+    expect_type(vol, "double")
 
     vol_file <- withr::local_tempfile(fileext = ".nii.gz")
     RNifti::writeNifti(RNifti::asNifti(vol), vol_file)

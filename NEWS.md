@@ -10,8 +10,8 @@
 - `read_tractography()` reads `.trk` files whose header track count is `0`. The
   TrackVis format uses `0` to mean "count not recorded, read to end of file";
   the reader previously trusted the count and returned no streamlines, yielding
-  an empty atlas. It now reads to EOF and treats a positive count as an upper
-  bound.
+  an empty atlas. It now reads to the end of the file and treats a positive
+  count as an upper bound.
 - `create_cortical_from_neuromaps()` / `read_neuromaps_volume()` no longer abort
   with `'breaks' are not unique` when a continuous map has tied values (common
   for thresholded maps or maps with many zeros). Duplicate quantile breaks are
@@ -20,7 +20,7 @@
 - Tract atlases built from in-memory streamline matrices (e.g.
   `create_tract_from_tractography(input_tracts = list(cst = matrix(...)))`) now
   detect voxel- versus RAS-space correctly. Detection previously flattened the
-  matrices and always assumed RAS, mislocating voxel-space tracts.
+  matrices and always assumed RAS, misplacing voxel-space tracts.
 - `create_tract_from_tractography()` now reads the voxel-to-world affine from
   FreeSurfer `.mgz` headers correctly, and warns instead of silently falling
   back to an approximate origin-centering heuristic when a template's affine
@@ -35,7 +35,7 @@
   any contour instead of a cryptic `dplyr` failure.
 - Verbosity and boolean options parse spelled-out strings consistently:
   `GGSEG_EXTRA_VERBOSE=false` now silences output, and string values such as
-  `"yes"` or `"1"` are honoured across the explicit, option, and
+  `"yes"` or `"1"` are honored across the explicit, option, and
   environment-variable channels.
 
 # ggseg.extra 1.9.9.9005
