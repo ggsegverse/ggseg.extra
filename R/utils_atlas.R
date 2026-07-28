@@ -3,8 +3,8 @@
 #' @noRd
 #' @importFrom tools file_ext file_path_sans_ext
 derive_atlas_name <- function(filepath) {
-  if (length(filepath) == 0 || is.na(filepath)) {
-    cli::cli_abort("No input file provided to derive atlas name from")
+  if (length(filepath) != 1L || is.na(filepath)) {
+    cli::cli_abort("A single input file is required to derive an atlas name")
   }
   name <- basename(filepath)
   ext <- tools::file_ext(name)
@@ -35,7 +35,7 @@ derive_atlas_name <- function(filepath) {
 #' @return "left", "right", or the default value
 #' @noRd
 detect_hemi <- function(label_name, strict = FALSE, default = NA_character_) {
-  if (is.na(label_name) || label_name == "") {
+  if (length(label_name) != 1L || is.na(label_name) || !nzchar(label_name)) {
     return(default)
   }
 

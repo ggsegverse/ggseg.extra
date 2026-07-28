@@ -179,6 +179,25 @@ describe("read_lut", {
 
     expect_named(result, c("idx", "label", "R", "G", "B", "A"))
   })
+
+  it("warns about unparseable data lines but keeps comments silent", {
+    tmp <- withr::local_tempfile(fileext = ".txt")
+    writeLines(
+      c(
+        "# a comment line",
+        "  0  Unknown          0   0   0   0",
+        "this is not a valid lut row",
+        "  1  Region1        205 130 176   0"
+      ),
+      tmp
+    )
+
+    expect_warning(
+      result <- read_lut(tmp),
+      "Skipped 1 unparseable line"
+    )
+    expect_identical(nrow(result), 2L)
+  })
 })
 
 
@@ -232,6 +251,13 @@ describe("write_lut", {
 
     content <- readLines(tmp)
     expect_true(all(nchar(content) < 60))
+  })
+
+  it("errors when input is not a valid LUT", {
+    expect_error(
+      write_lut(data.frame(a = 1, b = 2), withr::local_tempfile()),
+      "must be a valid LUT"
+    )
   })
 })
 
@@ -443,6 +469,72 @@ describe("read_dpv", {
     expect_named(result$vertices, c("x", "y", "z"))
     expect_named(result$faces, c("i", "j", "k"))
     expect_identical(as.numeric(result$faces[1, ]), c(0, 1, 2))
+  })
+
+  it("returns zero faces (not reversed rows) when n_faces is 0", {
+    tmp <- withr::local_tempfile(fileext = ".dpv")
+    writeLines(
+      c(
+        "#!ascii",
+        "2 0",
+        "0 0 0 0",
+        "1 1 1 0"
+      ),
+      tmp
+    )
+
+    result <- read_dpv(tmp)
+
+    expect_identical(nrow(result$vertices), 2L)
+    expect_identical(nrow(result$faces), 0L)
+  })
+
+  it("errors when the header counts cannot be parsed", {
+    tmp <- withr::local_tempfile(fileext = ".dpv")
+    writeLines(c("#!ascii", "not numbers", "0 0 0 0"), tmp)
+
+    expect_error(read_dpv(tmp), "Could not read vertex/face counts")
+  })
+})
+
+
+describe("extract_vertex_regions", {
+  it("merges unlabeled vertices into an existing 'unknown' region", {
+    vertex_codes <- c(0L, 0L, 5L, 99L)
+    regions <- data.frame(
+      code = c(0L, 5L),
+      name = c("unknown", "regionA"),
+      colour = c("#000000", "#FF0000"),
+      stringsAsFactors = FALSE
+    )
+
+    result <- extract_vertex_regions(vertex_codes, regions, "left", "lh")
+
+    labels <- vapply(result, function(d) d$label, character(1))
+    expect_identical(sum(labels == "lh_unknown"), 1L)
+
+    unknown_row <- result[[which(labels == "lh_unknown")]]
+    expect_setequal(unknown_row$vertices[[1]], c(0L, 1L, 3L))
+  })
+})
+
+
+describe("cifti_label_regions", {
+  it("warns and uses the first map when several are present", {
+    map <- data.frame(
+      Key = 0:1,
+      Label = c("a", "b"),
+      Red = c(0, 1),
+      Green = c(0, 1),
+      Blue = c(0, 1)
+    )
+    cii <- list(meta = list(cifti = list(labels = list(map, map))))
+
+    expect_warning(
+      res <- cifti_label_regions(cii),
+      "2 label maps"
+    )
+    expect_identical(res$name, c("a", "b"))
   })
 })
 

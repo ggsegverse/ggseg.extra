@@ -525,7 +525,7 @@ describe("preview_atlas", {
     expect_match(.cap$prompts[1], "3D preview")
   })
 
-  it("handles 3D errors gracefully", {
+  it("warns on 3D errors instead of failing silently", {
     atlas <- list(
       type = "cortical",
       data = list(sf = NULL, vertices = TRUE, meshes = NULL)
@@ -540,9 +540,10 @@ describe("preview_atlas", {
       .package = "ggseg3d"
     )
 
-    invisible(capture.output({
-      result <- preview_atlas(atlas)
-    }))
+    expect_message(
+      result <- preview_atlas(atlas),
+      "3D preview failed"
+    )
     expect_identical(result, atlas)
   })
 

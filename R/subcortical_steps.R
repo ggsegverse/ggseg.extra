@@ -65,7 +65,7 @@ subcort_mesh_one <- function(
       volume_file = input_volume,
       label_id = label_id,
       output_dir = dirs$meshes,
-      verbose = get_verbose(), # nolint: object_usage_linter
+      verbose = verbose,
       skip_existing = skip_existing
     ),
     error = function(e) {
@@ -101,8 +101,12 @@ subcort_decimate_meshes <- function(meshes_list, decimate, verbose) {
         function(m) nrow(m$faces),
         integer(1)
       ))
-      # fmt: skip
-      pct <- round(new_faces / orig_faces * 100) # nolint
+      # nolint next: object_usage_linter.
+      pct <- if (orig_faces > 0) {
+        round(new_faces / orig_faces * 100)
+      } else {
+        NA_integer_
+      }
       cli::cli_alert_success(
         "Reduced from {orig_faces} to {new_faces} faces ({pct}%)"
       )

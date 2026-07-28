@@ -85,6 +85,13 @@ volume_projection <- function(
     )
   }
 
+  if (end < start) {
+    cli::cli_abort(c(
+      "Projection range end ({end}) is before start ({start}).",
+      "i" = "Provide a range where {.arg end} is at least {.arg start}."
+    ))
+  }
+
   # nolint start: commas_linter.
   sub_vol <- switch(
     view,

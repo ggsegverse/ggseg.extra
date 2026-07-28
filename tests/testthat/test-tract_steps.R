@@ -284,13 +284,12 @@ describe("tract_create_snapshots", {
     )
 
     centerlines_df <- data.frame(label = "t1", stringsAsFactors = FALSE)
-    streamlines_data <- list(t1 = list(matrix(1:9, ncol = 3)))
+    centerlines_df$points <- list(matrix(1:9, ncol = 3))
     dirs <- list(snapshots = withr::local_tempdir())
 
     expect_messages(
       {
         result <- tract_create_snapshots(
-          streamlines_data,
           centerlines_df,
           "fake_aseg.mgz",
           NULL,
@@ -348,11 +347,10 @@ describe("tract_create_snapshots", {
     )
 
     centerlines_df <- data.frame(label = "t1", stringsAsFactors = FALSE)
-    streamlines_data <- list(t1 = list(matrix(1:9, ncol = 3)))
+    centerlines_df$points <- list(matrix(1:9, ncol = 3))
     dirs <- list(snapshots = withr::local_tempdir())
 
     result <- tract_create_snapshots(
-      streamlines_data,
       centerlines_df,
       "fake_aseg.mgz",
       custom_slabs,
@@ -405,13 +403,10 @@ describe("tract_create_snapshots", {
     )
 
     centerlines_df <- data.frame(label = "t1", stringsAsFactors = FALSE)
-    streamlines_data <- list(
-      t1 = list(matrix(1:9, ncol = 3), matrix(10:18, ncol = 3))
-    )
+    centerlines_df$points <- list(matrix(1:9, ncol = 3))
     dirs <- list(snapshots = withr::local_tempdir())
 
     result <- tract_create_snapshots(
-      streamlines_data,
       centerlines_df,
       "fake_aseg.mgz",
       NULL,

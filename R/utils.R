@@ -212,7 +212,9 @@ preview_atlas <- function(atlas) {
         prompt_user("3D preview. Press Enter to continue")
       }
     },
-    error = function(e) NULL
+    error = function(e) {
+      cli::cli_alert_warning("3D preview failed: {conditionMessage(e)}")
+    }
   )
 
   invisible(atlas)

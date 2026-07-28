@@ -2305,6 +2305,23 @@ describe("download_suit_xfm download failure", {
 })
 
 
+describe("resample_trilinear", {
+  it("skips NaN voxel coordinates instead of erroring", {
+    result <- numeric(2)
+    vox_coords <- rbind(c(NaN, NaN, NaN), c(2, 2, 2))
+    mni_arr <- array(1, dim = c(3, 3, 3))
+
+    expect_message(
+      out <- resample_trilinear(result, vox_coords, mni_arr, c(3, 3, 3)),
+      "Trilinear interpolation"
+    )
+
+    expect_identical(out[1], 0)
+    expect_identical(out[2], 1, tolerance = 1e-8)
+  })
+})
+
+
 describe("prepare_suit_resample", {
   it("errors when the input volume is not 3D", {
     skip_if_not_installed("RNifti")
@@ -2577,12 +2594,16 @@ describe("extract_deep_meshes", {
 
 
 describe("build_deep_nucleus_sf polygonisation failure", {
-  it("returns NULL when terra::as.polygons yields no polygons", {
+  it("warns and returns NULL when terra::as.polygons yields no polygons", {
     skip_if_not_installed("terra")
     vol <- array(0L, dim = c(5, 5, 5))
     vol[2, 2, 2] <- 1L
     local_mocked_bindings(as.polygons = function(...) NULL, .package = "terra")
-    expect_null(build_deep_nucleus_sf(vol, 1L, "test"))
+    expect_warning(
+      result <- build_deep_nucleus_sf(vol, 1L, "test"),
+      "Could not polygonise"
+    )
+    expect_null(result)
   })
 })
 

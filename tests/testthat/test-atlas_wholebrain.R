@@ -2543,6 +2543,35 @@ describe("wholebrain_prepare_subcortical_volume left-high orientation", {
     expect_true(10L %in% arr)
     expect_true(any(arr %in% c(3L, 42L)))
   })
+
+  it("splits cortex at the 1-based midline voxel", {
+    skip_if_not_installed("RNifti")
+    # 5 cortical voxels along x (3x3 in y/z so read_volume keeps it 3D);
+    # world_x = voxel_x - 2, so the world origin sits at 0-based voxel 2
+    # (1-based voxel 3).
+    arr <- array(1000L, dim = c(5, 3, 3))
+    nii <- RNifti::asNifti(arr)
+    m <- diag(4)
+    m[1, 4] <- -2
+    RNifti::sform(nii) <- structure(m, code = 2L)
+    vol_file <- withr::local_tempfile(fileext = ".nii.gz")
+    RNifti::writeNifti(nii, vol_file)
+    out_file <- withr::local_tempfile(fileext = ".nii.gz")
+
+    wholebrain_prepare_subcortical_volume(
+      input_volume = vol_file,
+      subcortical_idx = integer(0),
+      cortical_idx = 1000L,
+      output_file = out_file
+    )
+
+    arr_out <- as.array(RNifti::readNifti(out_file))
+    # Midline is 1-based voxel 3: x-slices 1-3 left (3L), 4-5 right (42L),
+    # each slice holding 3x3 = 9 voxels. The pre-fix 0-based midline (2)
+    # would have given 18 left / 27 right.
+    expect_identical(sum(arr_out == 3L), 27L)
+    expect_identical(sum(arr_out == 42L), 18L)
+  })
 })
 
 

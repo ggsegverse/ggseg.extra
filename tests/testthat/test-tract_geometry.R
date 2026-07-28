@@ -218,6 +218,15 @@ describe("compute_parallel_transport_frames", {
       expect_identical(sum(n * b), 0, tolerance = 1e-6)
     }
   })
+
+  it("does not produce NaN frames when the first segment is degenerate", {
+    curve <- rbind(c(0, 0, 0), c(0, 0, 0), c(1, 0, 0), c(2, 0, 0))
+
+    frames <- compute_parallel_transport_frames(curve)
+
+    expect_false(any(is.nan(frames$normals)))
+    expect_false(any(is.nan(frames$binormals)))
+  })
 })
 
 

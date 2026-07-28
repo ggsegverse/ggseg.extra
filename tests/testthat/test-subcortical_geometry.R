@@ -303,6 +303,30 @@ describe("read_fs_surface", {
       "Failed to read surface file"
     )
   })
+
+  it("surfaces the underlying conversion error in the abort", {
+    local_mocked_bindings(
+      surf2asc = function(...) stop("bad QUAD header"),
+      read_dpv = function(...) stop("no file"),
+      get_verbose = function() FALSE
+    )
+
+    orig_require <- base::requireNamespace
+    local_mocked_bindings(
+      requireNamespace = function(pkg, ...) {
+        if (pkg == "freesurferformats") {
+          return(FALSE)
+        }
+        orig_require(pkg, ...)
+      },
+      .package = "base"
+    )
+
+    expect_error(
+      read_fs_surface("test_surface"),
+      "bad QUAD header"
+    )
+  })
 })
 
 

@@ -80,10 +80,17 @@ read_lut <- function(path) {
     "\\s+(\\d+)\\s+(\\d+)(?:\\s+(\\w+))?\\s*$"
   )
   parsed <- regmatches(lines, regexec(lut_pattern, lines))
-  rows <- lapply(parsed, function(m) {
-    if (length(m) == 0) {
-      return(NULL)
-    }
+  matched <- lengths(parsed) > 0
+
+  dropped <- lines[!matched & !startsWith(lines, "#")]
+  if (length(dropped) > 0) {
+    cli::cli_warn(c(
+      "Skipped {length(dropped)} unparseable line{?s} in {.path {path}}",
+      "i" = "First skipped: {.val {dropped[1]}}"
+    ))
+  }
+
+  rows <- lapply(parsed[matched], function(m) {
     data.frame(
       idx = as.integer(m[2]),
       label = trimws(m[3]),
@@ -95,7 +102,11 @@ read_lut <- function(path) {
       stringsAsFactors = FALSE
     )
   })
-  result <- do.call(rbind, Filter(Negate(is.null), rows))
+  if (length(rows) == 0) {
+    cli::cli_abort("No valid LUT entries found in {.path {path}}")
+  }
+
+  result <- do.call(rbind, rows)
   if (all(is.na(result$type))) {
     result$type <- NULL
   }
@@ -131,10 +142,19 @@ read_ctab <- function(path) {
 #' out <- tempfile()
 #' write_lut(ct, out)
 write_lut <- function(x, path) {
-  lls <- apply(x, 1, function(row) {
-    lut_line(row[1], row[2], row[3], row[4], row[5], row[6])
-  })
-  lls[length(lls) + 1] <- ""
+  if (!is_lut(x)) {
+    cli::cli_abort(c(
+      "{.arg x} must be a valid LUT",
+      "i" = "Expected columns: {.field idx}, {.field label}, {.field R}, \\
+             {.field G}, {.field B}, {.field A}"
+    ))
+  }
+  lls <- vapply(
+    seq_len(nrow(x)),
+    function(i) lut_line(x$idx[i], x$label[i], x$R[i], x$G[i], x$B[i], x$A[i]),
+    character(1)
+  )
+  lls <- c(lls, "")
   writeLines(lls, path)
   invisible(lls)
 }
@@ -616,7 +636,13 @@ cifti_hemi_info <- function(cii) {
 #' Build the region lookup table from CIFTI label metadata
 #' @noRd
 cifti_label_regions <- function(cii) {
-  label_table <- cii$meta$cifti$labels[[1]]
+  label_maps <- cii$meta$cifti$labels
+  if (length(label_maps) > 1) {
+    cli::cli_warn(
+      "CIFTI file has {length(label_maps)} label maps; using only the first."
+    )
+  }
+  label_table <- label_maps[[1]]
 
   data.frame(
     code = label_table$Key,
@@ -888,13 +914,26 @@ extract_vertex_regions <- function(
   unlabeled_vertices <- setdiff(all_vertex_indices, labeled_vertices)
 
   if (length(unlabeled_vertices) > 0) {
-    all_data[[n_regions + 1L]] <- tibble(
-      hemi = hemi,
-      region = "unknown",
-      label = paste(hemi_short, "unknown", sep = "_"),
-      colour = "#BEBEBE",
-      vertices = list(unlabeled_vertices)
+    existing_unknown <- Position(
+      function(d) identical(d$region, "unknown"),
+      all_data,
+      nomatch = 0L
     )
+    if (existing_unknown > 0L) {
+      merged <- sort(unique(c(
+        all_data[[existing_unknown]]$vertices[[1]],
+        unlabeled_vertices
+      )))
+      all_data[[existing_unknown]]$vertices <- list(merged)
+    } else {
+      all_data[[n_regions + 1L]] <- tibble(
+        hemi = hemi,
+        region = "unknown",
+        label = paste(hemi_short, "unknown", sep = "_"),
+        colour = "#BEBEBE",
+        vertices = list(unlabeled_vertices)
+      )
+    }
   }
 
   all_data
@@ -951,7 +990,15 @@ read_label_vertices <- function(label_file) {
 #' @importFrom utils read.table
 read_dpv <- function(path) {
   header <- readLines(path, n = 2)
-  counts <- as.integer(strsplit(trimws(header[2]), "\\s+")[[1]])
+  counts <- suppressWarnings(as.integer(strsplit(trimws(header[2]), "\\s+")[[
+    1
+  ]]))
+  if (length(counts) < 2 || anyNA(counts[1:2])) {
+    cli::cli_abort(c(
+      "Could not read vertex/face counts from {.path {path}}",
+      "i" = "Expected two integers on the second line."
+    ))
+  }
   n_vertices <- counts[1]
   n_faces <- counts[2]
 
@@ -961,7 +1008,7 @@ read_dpv <- function(path) {
   names(vertices) <- c("x", "y", "z")
   row.names(vertices) <- NULL
 
-  faces <- data[(n_vertices + 1):(n_vertices + n_faces), 1:3, drop = FALSE]
+  faces <- data[seq_len(n_faces) + n_vertices, 1:3, drop = FALSE]
   names(faces) <- c("i", "j", "k")
   row.names(faces) <- NULL
 

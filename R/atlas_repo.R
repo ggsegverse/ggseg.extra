@@ -253,10 +253,13 @@ populate_from_template <- function(path, template_dir, atlas_name, repo_name) {
 
   pkg_file <- as.character(fs::path(path, "R", "REPO-package.R"))
   if (file.exists(pkg_file)) {
-    file.rename(
+    renamed <- file.rename(
       pkg_file,
       as.character(fs::path(path, "R", paste0(repo_name, "-package.R")))
     )
+    if (!renamed) {
+      cli::cli_warn("Could not rename {.file REPO-package.R} to {repo_name}")
+    }
   }
 
   replace_template_placeholders(path, atlas_name)
@@ -307,7 +310,9 @@ copy_template_files <- function(path, template_dir) {
     dst_name <- gsub("(^|/)dot-", "\\1.", f)
     dst <- as.character(fs::path(path, dst_name))
     mkdir(dirname(dst))
-    file.copy(src, dst, overwrite = TRUE)
+    if (!file.copy(src, dst, overwrite = TRUE)) {
+      cli::cli_warn("Could not copy template file {.file {f}}")
+    }
   }
 
   invisible(path)
@@ -324,7 +329,7 @@ replace_template_placeholders <- function(path, atlas_name) {
     all.files = TRUE
   )
   all_files <- all_files[
-    !grepl("^\\.git/", basename(all_files)) &
+    !grepl("(^|/)\\.git(/|$)", all_files) &
       !grepl(
         "\\.(png|jpg|jpeg|gif|ico|rda|RData|rds)$",
         all_files,
