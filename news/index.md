@@ -1,5 +1,47 @@
 # Changelog
 
+## ggseg.extra 1.9.9.9008
+
+### Minor improvements and fixes
+
+- Tract 2D projections now reuse the same centerline as the 3D tube
+  (built with the configured `n_points` / `centerline_method`) instead
+  of recomputing a different 50-point mean centerline, so the two
+  representations agree.
+- [`read_tractography()`](https://ggsegverse.github.io/ggseg.extra/reference/read_tractography.md)
+  reads `.tck` files without the previous quadratic slow-down on large
+  bundles.
+- [`create_tract_from_tractography()`](https://ggsegverse.github.io/ggseg.extra/reference/create_tract_from_tractography.md)
+  validates `tube_segments` (integer \>= 3), and degenerate leading
+  tract segments no longer yield `NaN` tube vertices.
+- Cerebellar trilinear resampling skips non-finite deformation
+  coordinates rather than raising an error, and a deep nucleus that
+  cannot be converted to polygons is now reported instead of silently
+  dropped.
+- [`create_wholebrain_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_wholebrain_from_volume.md)
+  splits cortex at the correct (1-based) midline voxel; the left/right
+  boundary was previously off by one voxel.
+- Reading a FreeSurfer LUT warns about malformed lines;
+  [`write_lut()`](https://ggsegverse.github.io/ggseg.extra/reference/write_lut.md)
+  validates its input;
+  [`read_lut()`](https://ggsegverse.github.io/ggseg.extra/reference/read_lut.md)/`read_dpv()`
+  fail with clear messages on malformed headers, and `read_dpv()`
+  handles zero-face surfaces.
+- CIFTI files with more than one label map warn that only the first is
+  used.
+- Annotation files whose colour table already defines an “unknown”
+  region no longer produce a duplicate `unknown` label.
+- Contour extraction reports a clear error when no region yields a
+  contour instead of a cryptic downstream failure.
+- Subcortical mesh tessellation honors the requested verbosity inside
+  parallel workers.
+- Reading a subcortical surface surfaces the underlying conversion error
+  when the fallback reader is unavailable, and the interactive atlas
+  preview warns on 3D render failures instead of failing silently.
+- [`setup_atlas_repo()`](https://ggsegverse.github.io/ggseg.extra/reference/setup_atlas_repo.md)
+  no longer rewrites files under a template’s `.git` directory and
+  reports failed file copies/renames.
+
 ## ggseg.extra 1.9.9.9007
 
 ### Bug fixes

@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9007</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9008</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -63,6 +63,28 @@
       <small>Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.9.9.9008" id="ggsegextra-1999008">ggseg.extra 1.9.9.9008<a class="anchor" aria-label="anchor" href="#ggsegextra-1999008"></a></h2>
+<div class="section level3">
+<h3 id="minor-improvements-and-fixes-1-9-9-9008">Minor improvements and fixes<a class="anchor" aria-label="anchor" href="#minor-improvements-and-fixes-1-9-9-9008"></a></h3>
+<ul><li>Tract 2D projections now reuse the same centerline as the 3D tube (built with the configured <code>n_points</code> / <code>centerline_method</code>) instead of recomputing a different 50-point mean centerline, so the two representations agree.</li>
+<li>
+<code><a href="../reference/read_tractography.html">read_tractography()</a></code> reads <code>.tck</code> files without the previous quadratic slow-down on large bundles.</li>
+<li>
+<code><a href="../reference/create_tract_from_tractography.html">create_tract_from_tractography()</a></code> validates <code>tube_segments</code> (integer &gt;= 3), and degenerate leading tract segments no longer yield <code>NaN</code> tube vertices.</li>
+<li>Cerebellar trilinear resampling skips non-finite deformation coordinates rather than raising an error, and a deep nucleus that cannot be converted to polygons is now reported instead of silently dropped.</li>
+<li>
+<code><a href="../reference/create_wholebrain_from_volume.html">create_wholebrain_from_volume()</a></code> splits cortex at the correct (1-based) midline voxel; the left/right boundary was previously off by one voxel.</li>
+<li>Reading a FreeSurfer LUT warns about malformed lines; <code><a href="../reference/write_lut.html">write_lut()</a></code> validates its input; <code><a href="../reference/read_lut.html">read_lut()</a></code>/<code>read_dpv()</code> fail with clear messages on malformed headers, and <code>read_dpv()</code> handles zero-face surfaces.</li>
+<li>CIFTI files with more than one label map warn that only the first is used.</li>
+<li>Annotation files whose colour table already defines an “unknown” region no longer produce a duplicate <code>unknown</code> label.</li>
+<li>Contour extraction reports a clear error when no region yields a contour instead of a cryptic downstream failure.</li>
+<li>Subcortical mesh tessellation honors the requested verbosity inside parallel workers.</li>
+<li>Reading a subcortical surface surfaces the underlying conversion error when the fallback reader is unavailable, and the interactive atlas preview warns on 3D render failures instead of failing silently.</li>
+<li>
+<code><a href="../reference/setup_atlas_repo.html">setup_atlas_repo()</a></code> no longer rewrites files under a template’s <code>.git</code> directory and reports failed file copies/renames.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9007" id="ggsegextra-1999007">ggseg.extra 1.9.9.9007<a class="anchor" aria-label="anchor" href="#ggsegextra-1999007"></a></h2>
 <div class="section level3">
