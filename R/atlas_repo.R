@@ -251,20 +251,38 @@ populate_from_template <- function(path, template_dir, atlas_name, repo_name) {
   create_template_dirs(path, template_dir)
   copy_template_files(path, template_dir)
 
-  pkg_file <- as.character(fs::path(path, "R", "REPO-package.R"))
-  if (file.exists(pkg_file)) {
-    renamed <- file.rename(
-      pkg_file,
-      as.character(fs::path(path, "R", paste0(repo_name, "-package.R")))
-    )
-    if (!renamed) {
-      cli::cli_warn("Could not rename {.file REPO-package.R} to {repo_name}")
-    }
-  }
-
+  rename_package_doc(path, repo_name)
   replace_template_placeholders(path, atlas_name)
 
   invisible(path)
+}
+
+
+#' Rename the placeholder package-level doc file to match the package
+#'
+#' Accepts both the current `PKGNAME-package.R` name and the earlier
+#' `REPO-package.R` so older templates still scaffold correctly.
+#' @keywords internal
+#' @noRd
+rename_package_doc <- function(path, repo_name) {
+  candidates <- c("PKGNAME-package.R", "REPO-package.R")
+  found <- candidates[
+    file.exists(as.character(fs::path(path, "R", candidates)))
+  ]
+
+  if (length(found) == 0) {
+    return(invisible(FALSE))
+  }
+
+  renamed <- file.rename(
+    as.character(fs::path(path, "R", found[1])),
+    as.character(fs::path(path, "R", paste0(repo_name, "-package.R")))
+  )
+  if (!renamed) {
+    cli::cli_warn("Could not rename {.file {found[1]}} to {repo_name}")
+  }
+
+  invisible(renamed)
 }
 
 
@@ -412,17 +430,40 @@ rstudioapi_available <- function() {
 }
 
 
+#' Placeholder tokens recognised in atlas template sources
+#'
+#' Current templates spell placeholders as bare R identifiers so that template
+#' sources parse as valid R. The earlier `{GGSEG}` spelling parses as a brace
+#' block, which let `air format` rewrite `.{GGSEG}` into a separate expression
+#' and silently break the generated package. Both spellings are substituted so
+#' that a current ggseg.extra can still build a package from a template
+#' published before the change.
+#' @noRd
+template_tokens <- function(atlas_name, repo_name) {
+  year <- format(Sys.Date(), "%Y")
+  c(
+    ATLASNAME = atlas_name,
+    PKGNAME = repo_name,
+    YEARNUM = year,
+    "{GGSEG}" = atlas_name,
+    "{REPO}" = repo_name,
+    "{YEAR}" = year
+  )
+}
+
+
 #' @keywords internal
 #' @noRd
 template_replace <- function(file, atlas_name) {
   repo_name <- paste0("ggseg", tools::toTitleCase(atlas_name))
+  tokens <- template_tokens(atlas_name, repo_name)
 
   tryCatch(
     {
-      input <- readLines(file, warn = FALSE)
-      output <- gsub("{GGSEG}", atlas_name, input, fixed = TRUE)
-      output <- gsub("{REPO}", repo_name, output, fixed = TRUE)
-      output <- gsub("{YEAR}", format(Sys.Date(), "%Y"), output, fixed = TRUE)
+      output <- readLines(file, warn = FALSE)
+      for (token in names(tokens)) {
+        output <- gsub(token, tokens[[token]], output, fixed = TRUE)
+      }
       writeLines(output, file)
     },
     error = function(e) {

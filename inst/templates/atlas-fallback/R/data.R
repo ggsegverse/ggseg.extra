@@ -1,6 +1,6 @@
-#' {GGSEG} Brain Atlas
+#' ATLASNAME Brain Atlas
 #'
-#' A brain atlas for the {GGSEG} parcellation scheme.
+#' A brain atlas for the ATLASNAME parcellation scheme.
 #' Contains 2D polygon geometry for [ggseg::geom_brain()] and 3D vertex
 #' indices for [ggseg3d::ggseg3d()].
 #'
@@ -14,9 +14,5 @@
 #' @import ggseg.formats
 #' @export
 #' @examples
-#' {GGSEG}()
-# fmt: skip
-{GGSEG} <- function() .
-{
-  GGSEG
-}
+#' ATLASNAME()
+ATLASNAME <- function() .ATLASNAME
