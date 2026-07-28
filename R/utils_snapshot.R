@@ -194,7 +194,7 @@ get_contours <- function(
   rlang::check_installed("terra", reason = "for contour extraction")
   mx <- terra::global(raster_object, fun = "max", na.rm = TRUE)[1, 1]
 
-  if (mx < max_val) {
+  if (is.na(mx) || mx < max_val) {
     return(NULL)
   }
 
@@ -205,7 +205,9 @@ get_contours <- function(
 
   coords <- st_as_sf(contours_raw)
 
-  if (all(nrow(coords) > 0 & !st_is_empty(coords))) {
+  keep <- !st_is_empty(coords)
+  if (nrow(coords) > 0 && any(keep)) {
+    coords <- coords[keep, ]
     coords <- to_coords(coords, 1)
     coords <- coords2sf(coords, vertex_size_limits)
 

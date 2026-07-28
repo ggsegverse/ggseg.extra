@@ -1,3 +1,43 @@
+# ggseg.extra 1.9.9.9007
+
+## Bug fixes
+
+- `create_cerebellar_from_volume()` no longer errors on float-typed
+  parcellation volumes. Sampling labels at the SUIT surface forced an integer
+  `vapply()` template, so a double array — e.g. the SUIT volume written by
+  `transform_mni_to_suit()` — aborted the build. The volume is now coerced to
+  integer before sampling.
+- `read_tractography()` reads `.trk` files whose header track count is `0`. The
+  TrackVis format uses `0` to mean "count not recorded, read to end of file";
+  the reader previously trusted the count and returned no streamlines, yielding
+  an empty atlas. It now reads to the end of the file and treats a positive
+  count as an upper bound.
+- `create_cortical_from_neuromaps()` / `read_neuromaps_volume()` no longer abort
+  with `'breaks' are not unique` when a continuous map has tied values (common
+  for thresholded maps or maps with many zeros). Duplicate quantile breaks are
+  collapsed and the bin count is reduced with a warning; an all-medial-wall
+  hemisphere now errors with a clear message.
+- Tract atlases built from in-memory streamline matrices (e.g.
+  `create_tract_from_tractography(input_tracts = list(cst = matrix(...)))`) now
+  detect voxel- versus RAS-space correctly. Detection previously flattened the
+  matrices and always assumed RAS, misplacing voxel-space tracts.
+- `create_tract_from_tractography()` now reads the voxel-to-world affine from
+  FreeSurfer `.mgz` headers correctly, and warns instead of silently falling
+  back to an approximate origin-centering heuristic when a template's affine
+  cannot be read.
+- `create_subcortical_from_volume()` derives a default `atlas_name` of `aseg`
+  (not `aseg.nii`) from a `.nii.gz` input.
+- `mri_info` is now called with a shell-quoted volume path, so cerebellar
+  deep-nuclei meshing works for volume paths that contain spaces.
+- Contour extraction (subcortical and tract 2D geometry) no longer crashes on
+  empty or all-`NA` region rasters, keeps the valid contours when only some
+  region geometries are empty, and reports a clear error when no region yields
+  any contour instead of a cryptic `dplyr` failure.
+- Verbosity and boolean options parse spelled-out strings consistently:
+  `GGSEG_EXTRA_VERBOSE=false` now silences output, and string values such as
+  `"yes"` or `"1"` are honored across the explicit, option, and
+  environment-variable channels.
+
 # ggseg.extra 1.9.9.9005
 
 ## Bug fixes

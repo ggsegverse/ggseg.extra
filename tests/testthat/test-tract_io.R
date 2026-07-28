@@ -91,6 +91,28 @@ describe("read_trk", {
     expect_identical(nrow(result[[2]]), 2L)
   })
 
+  it("reads to EOF when the header track count is 0 (spec-valid)", {
+    tmp <- withr::local_tempfile(fileext = ".trk")
+    con <- file(tmp, "wb")
+    header <- raw(1000)
+    header[1:6] <- c(charToRaw("TRACK"), as.raw(0))
+    header[37:38] <- writeBin(0L, raw(), size = 2)
+    header[239:240] <- writeBin(0L, raw(), size = 2)
+    header[989:992] <- writeBin(0L, raw(), size = 4)
+    writeBin(header, con)
+    writeBin(2L, con, size = 4)
+    writeBin(as.numeric(c(1, 2, 3, 4, 5, 6)), con, size = 4)
+    writeBin(2L, con, size = 4)
+    writeBin(as.numeric(c(7, 8, 9, 10, 11, 12)), con, size = 4)
+    close(con)
+
+    result <- read_trk(tmp)
+
+    expect_length(result, 2)
+    expect_identical(nrow(result[[1]]), 2L)
+    expect_identical(nrow(result[[2]]), 2L)
+  })
+
   it("handles TRK with scalars", {
     tmp <- withr::local_tempfile(fileext = ".trk")
     con <- file(tmp, "wb")

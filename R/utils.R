@@ -19,6 +19,12 @@ as_verbosity <- function(x) {
   if (is.logical(x) && !is.na(x)) {
     return(as.integer(x))
   }
+  if (is.character(x)) {
+    word_bool <- match_bool_word(x)
+    if (!is.na(word_bool)) {
+      return(as.integer(word_bool))
+    }
+  }
   x <- suppressWarnings(as.integer(x))
   if (is.na(x) || x < 0L) {
     return(1L)
@@ -414,20 +420,51 @@ warn_deprecated_sf_smoothing <- function(
 #' @noRd
 get_bool_option <- function(explicit, option_name, env_name, default) {
   if (!is.null(explicit)) {
-    return(as.logical(explicit))
+    return(coerce_bool(explicit))
   }
 
   opt <- getOption(option_name)
   if (!is.null(opt)) {
-    return(as.logical(opt))
+    return(coerce_bool(opt))
   }
 
   env <- Sys.getenv(env_name, unset = NA)
   if (!is.na(env)) {
-    return(tolower(env) %in% c("true", "1", "yes"))
+    return(coerce_bool(env))
   }
 
   default
+}
+
+#' Match a spelled-out boolean string, returning `NA` for anything else
+#'
+#' Numeric strings like `"0"`/`"1"` deliberately return `NA` so callers that
+#' also accept numbers (e.g. [as_verbosity()]) route them through their own
+#' numeric handling instead.
+#' @noRd
+match_bool_word <- function(x) {
+  word <- tolower(trimws(as.character(x)))
+  if (word %in% c("true", "yes", "on")) {
+    return(TRUE)
+  }
+  if (word %in% c("false", "no", "off")) {
+    return(FALSE)
+  }
+  NA
+}
+
+#' Coerce a value to a single logical, accepting common string spellings
+#'
+#' Applied uniformly to the explicit, option, and environment-variable
+#' channels so `"yes"`, `"1"`, and `TRUE` mean the same thing however they
+#' are supplied. Unrecognised strings are `FALSE` rather than `NA`, so a
+#' downstream `if ()` never errors on a stray option value.
+#' @noRd
+coerce_bool <- function(x) {
+  if (is.logical(x)) {
+    return(isTRUE(x))
+  }
+  tolower(trimws(as.character(x))) %in% c("true", "1", "yes", "on")
 }
 
 #' Helper to get numeric option with fallback

@@ -1148,7 +1148,7 @@ get_tkras_to_world <- function(volume_path) {
 mri_info_matrix <- function(flag, volume_path) {
   lines <- system2(
     "mri_info",
-    c(flag, volume_path),
+    c(flag, shQuote(volume_path)),
     stdout = TRUE,
     stderr = TRUE
   )
@@ -1676,6 +1676,12 @@ sample_volume_at_surface <- function(vol, volume_path, suit_3d_surface) {
 
   nii <- RNifti::readNifti(volume_path)
   vox_coords <- RNifti::worldToVoxel(verts_3d, nii)
+
+  # Label volumes are integer parcellations, but read_volume() returns a double
+  # array for float-typed files (e.g. a SUIT volume from transform_mni_to_suit).
+  # Force integer storage so the neighbour lookup's vapply(integer(1)) template
+  # holds instead of erroring on a double element.
+  storage.mode(vol) <- "integer"
 
   dims <- dim(vol)
   n_verts <- nrow(vox_coords)

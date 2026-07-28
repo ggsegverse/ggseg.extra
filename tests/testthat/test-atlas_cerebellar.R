@@ -863,6 +863,24 @@ describe("sample_volume_at_surface", {
     expect_length(result, 28935)
     expect_type(result, "integer")
   })
+
+  it("handles a double-typed (float) label volume without erroring", {
+    skip_if_not_installed("RNifti")
+    skip_if_not_installed("gifti") # nolint: object_usage_linter.
+
+    vol <- array(0, dim = c(5, 5, 5))
+    vol[2, 2, 2] <- 1
+    vol[4, 4, 4] <- 2
+    expect_type(vol, "double")
+
+    vol_file <- withr::local_tempfile(fileext = ".nii.gz")
+    RNifti::writeNifti(RNifti::asNifti(vol), vol_file)
+
+    result <- sample_volume_at_surface(vol, vol_file, suit_3d_path())
+
+    expect_type(result, "integer")
+    expect_gt(length(result), 0)
+  })
 })
 
 
@@ -1990,6 +2008,27 @@ describe("get_tkras_to_world", {
 })
 
 describe("mri_info_matrix", {
+  it("shell-quotes the volume path so spaces don't split arguments", {
+    .cap$captured_args <- NULL
+    local_mocked_bindings(
+      system2 = function(command, args, ...) {
+        .cap$captured_args <- args
+        structure(
+          c(" 1 0 0 0", " 0 1 0 0", " 0 0 1 0", " 0 0 0 1"),
+          status = 0L
+        )
+      },
+      .package = "base"
+    )
+
+    mri_info_matrix("--vox2ras", "/data/my atlas/vol.nii.gz")
+
+    expect_identical(
+      .cap$captured_args,
+      c("--vox2ras", shQuote("/data/my atlas/vol.nii.gz"))
+    )
+  })
+
   it("ignores informational lines mri_info prints ahead of the matrix", {
     local_mocked_bindings(
       system2 = function(...) {

@@ -1,5 +1,22 @@
 .cap <- new.env()
 
+describe("default_atlas_name_from_volume", {
+  it("strips the full .nii.gz compression suffix", {
+    expect_identical(
+      default_atlas_name_from_volume("path/to/aseg.nii.gz"),
+      "aseg"
+    )
+  })
+
+  it("strips single extensions too", {
+    expect_identical(default_atlas_name_from_volume("aseg.mgz"), "aseg")
+    expect_identical(
+      default_atlas_name_from_volume("dir/thalamus.nii"),
+      "thalamus"
+    )
+  })
+})
+
 describe("create_subcortical_from_volume decimate validation", {
   it("errors for values outside (0, 1)", {
     local_mocked_bindings(check_fs = function(...) TRUE)

@@ -60,29 +60,43 @@ read_trk <- function(file) {
 
   seek(con, 1000)
 
-  streamlines <- list()
+  # The header's stored track count is unreliable: the TrackVis spec allows 0
+  # to mean "count not recorded, read to EOF", and some writers leave it so.
+  # Read streamlines until EOF, using a positive n_count only as an upper bound.
+  max_tracks <- if (isTRUE(n_count > 0L)) n_count else Inf
 
-  for (i in seq_len(n_count)) {
-    n_pts <- readBin(con, "integer", 1, size = 4)
-    if (is.na(n_pts) || n_pts <= 0) {
+  streamlines <- list()
+  while (length(streamlines) < max_tracks) {
+    points <- read_trk_streamline(con, n_scalars, n_properties)
+    if (is.null(points)) {
       break
     }
-
-    points <- matrix(
-      readBin(con, "double", n_pts * (3 + n_scalars), size = 4),
-      ncol = 3 + n_scalars,
-      byrow = TRUE
-    )
-
-    streamlines[[i]] <- points[, 1:3, drop = FALSE]
-    colnames(streamlines[[i]]) <- c("x", "y", "z")
-
-    if (n_properties > 0) {
-      readBin(con, "double", n_properties, size = 4)
-    }
+    streamlines[[length(streamlines) + 1L]] <- points
   }
 
   streamlines
+}
+
+#' Read one TRK streamline's x/y/z coordinates, or `NULL` at end of file
+#' @noRd
+read_trk_streamline <- function(con, n_scalars, n_properties) {
+  n_pts <- readBin(con, "integer", 1, size = 4)
+  if (length(n_pts) == 0L || is.na(n_pts) || n_pts <= 0) {
+    return(NULL)
+  }
+
+  points <- matrix(
+    readBin(con, "double", n_pts * (3 + n_scalars), size = 4),
+    ncol = 3 + n_scalars,
+    byrow = TRUE
+  )[, 1:3, drop = FALSE]
+  colnames(points) <- c("x", "y", "z")
+
+  if (n_properties > 0) {
+    readBin(con, "double", n_properties, size = 4)
+  }
+
+  points
 }
 
 
