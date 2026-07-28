@@ -17,14 +17,14 @@ knitr::opts_chunk$set(
 )
 ```
 
-# {REPO}
+# PKGNAME
 
 <!-- badges: start -->
-[![R-CMD-check](https://github.com/ggsegverse/{REPO}/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/ggsegverse/{REPO}/actions/workflows/R-CMD-check.yaml)
+[![R-CMD-check](https://github.com/ggsegverse/PKGNAME/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/ggsegverse/PKGNAME/actions/workflows/R-CMD-check.yaml)
 [![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
 <!-- badges: end -->
 
-{GGSEG} brain atlas for the ggseg ecosystem.
+ATLASNAME brain atlas for the ggseg ecosystem.
 
 ## Atlas Citation
 
@@ -51,14 +51,14 @@ options(repos = c(
   CRAN = "https://cloud.r-project.org"
 ))
 
-install.packages("{REPO}")
+install.packages("PKGNAME")
 ```
 
 You can install this package from [GitHub](https://github.com/) with:
 
 ```r
 # install.packages("pak")
-pak::pak("ggsegverse/{REPO}")
+pak::pak("ggsegverse/PKGNAME")
 ```
 
 ## Usage
@@ -67,9 +67,9 @@ pak::pak("ggsegverse/{REPO}")
 #| label: plot-2d
 #| eval: false
 library(ggseg)
-library({REPO})
+library(PKGNAME)
 
-plot({GGSEG}()) +
+plot(ATLASNAME()) +
   theme(
     legend.position = "bottom",
     legend.text = element_text(size = 7)
@@ -79,6 +79,6 @@ plot({GGSEG}()) +
 
 ## Code of Conduct
 
-Please note that the {REPO} project is released with a
+Please note that the PKGNAME project is released with a
 [Contributor Code of Conduct](https://contributor-covenant.org/version/2/1/CODE_OF_CONDUCT.html).
 By contributing to this project, you agree to abide by its terms.

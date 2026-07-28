@@ -164,6 +164,7 @@ describe("setup_atlas_repo template files", {
       "_pkgdown.yml",
       ".gitignore",
       ".Rbuildignore",
+      ".lintr",
       "R/data.R",
       "data-raw/create-atlas.R",
       "tests/testthat.R",
@@ -183,30 +184,80 @@ describe("setup_atlas_repo template files", {
       file.exists(file.path(tmp, "R", "ggsegTestatlas-package.R"))
     )
     expect_false(
+      file.exists(file.path(tmp, "R", "PKGNAME-package.R"))
+    )
+    expect_false(
       file.exists(file.path(tmp, "R", "REPO-package.R"))
     )
   })
 
-  it("replaces {GGSEG} placeholder with atlas name", {
+  it("replaces ATLASNAME placeholder with atlas name", {
     data_r <- readLines(file.path(tmp, "R/data.R"))
 
-    expect_false(any(grepl("{GGSEG}", data_r, fixed = TRUE)))
+    expect_false(any(grepl("ATLASNAME", data_r, fixed = TRUE)))
     expect_true(any(grepl("testatlas", data_r, fixed = TRUE)))
   })
 
-  it("replaces {REPO} placeholder with package name", {
+  it("replaces PKGNAME placeholder with package name", {
     desc <- readLines(file.path(tmp, "DESCRIPTION"))
 
-    expect_false(any(grepl("{REPO}", desc, fixed = TRUE)))
+    expect_false(any(grepl("PKGNAME", desc, fixed = TRUE)))
     expect_true(any(grepl("ggsegTestatlas", desc, fixed = TRUE)))
+  })
+
+  it("leaves no unsubstituted placeholders anywhere", {
+    files <- list.files(tmp, recursive = TRUE, full.names = TRUE)
+    files <- files[!grepl("\\.(png|rda|rds)$", files, ignore.case = TRUE)]
+
+    leftovers <- Filter(
+      function(f) {
+        any(grepl(
+          "ATLASNAME|PKGNAME|YEARNUM|\\{GGSEG\\}|\\{REPO\\}|\\{YEAR\\}",
+          readLines(f, warn = FALSE)
+        ))
+      },
+      files
+    )
+
+    expect_identical(leftovers, character(0))
+  })
+
+  it("generates syntactically valid R sources", {
+    r_files <- list.files(
+      tmp,
+      pattern = "\\.R$",
+      recursive = TRUE,
+      full.names = TRUE
+    )
+
+    expect_gt(length(r_files), 0)
+    for (f in r_files) {
+      expect_no_error(parse(f))
+    }
+  })
+
+  it("generates an atlas accessor returning the internal object", {
+    data_r <- paste(readLines(file.path(tmp, "R/data.R")), collapse = "\n")
+
+    expect_match(data_r, "testatlas <- function() .testatlas", fixed = TRUE)
   })
 
   it("creates valid DESCRIPTION file", {
     desc <- readLines(file.path(tmp, "DESCRIPTION"))
 
     expect_true(any(grepl("^Package: ggsegTestatlas", desc)))
-    expect_true(any(grepl("^License: CC0", desc)))
+    expect_true(any(grepl("^License: MIT \\+ file LICENSE", desc)))
     expect_true(any(grepl("ggseg.formats", desc)))
+  })
+
+  it("declares a LICENSE file that the template ships", {
+    desc <- readLines(file.path(tmp, "DESCRIPTION"))
+    license <- grep("^License:", desc, value = TRUE)
+
+    expect_identical(
+      grepl("file LICENSE", license),
+      file.exists(file.path(tmp, "LICENSE"))
+    )
   })
 
   it("creates valid test file", {
@@ -220,7 +271,7 @@ describe("setup_atlas_repo template files", {
     create_script <- readLines(file.path(tmp, "data-raw/create-atlas.R"))
 
     expect_true(any(grepl("testatlas", create_script, fixed = TRUE)))
-    expect_false(any(grepl("{GGSEG}", create_script, fixed = TRUE)))
+    expect_false(any(grepl("ATLASNAME", create_script, fixed = TRUE)))
   })
 
   it("creates README with correct package references", {
@@ -229,7 +280,7 @@ describe("setup_atlas_repo template files", {
     expect_true(any(grepl("ggsegTestatlas", readme, fixed = TRUE)))
     expect_true(any(grepl("testatlas", readme, fixed = TRUE)))
     expect_true(any(grepl("Citation", readme, fixed = TRUE)))
-    expect_false(any(grepl("{REPO}", readme, fixed = TRUE)))
+    expect_false(any(grepl("PKGNAME", readme, fixed = TRUE)))
   })
 
   it("scaffold contains all pipeline methods", {
@@ -241,6 +292,75 @@ describe("setup_atlas_repo template files", {
     expect_match(script_text, "CEREBELLAR ATLAS")
     expect_match(script_text, "TRACT ATLAS")
     expect_match(script_text, "WHOLEBRAIN ATLAS")
+  })
+
+  it("scaffold only calls functions ggseg.extra exports", {
+    script_text <- paste(
+      readLines(file.path(tmp, "data-raw/create-atlas.R")),
+      collapse = "\n"
+    )
+
+    # Unqualified calls in the ggseg.extra naming families; namespaced calls
+    # (here::here, freesurfer::fs_subj_dir) are somebody else's to validate.
+    pattern <- paste0(
+      "(?<!:)\\b(create|read|write|atlas|lut|transform|coregister|",
+      "project|prepare)_[a-z_0-9]+(?=\\()"
+    )
+    called <- unique(unlist(regmatches(
+      script_text,
+      gregexpr(pattern, script_text, perl = TRUE)
+    )))
+
+    expect_gt(length(called), 0)
+    expect_setequal(
+      setdiff(called, getNamespaceExports("ggseg.extra")),
+      character(0)
+    )
+  })
+
+  it("scaffold passes argument names the pipelines accept", {
+    calls <- scaffold_pipeline_calls(file.path(tmp, "data-raw/create-atlas.R"))
+
+    expect_gte(length(calls), 9)
+    for (call in calls) {
+      fn_name <- as.character(call[[1]])
+      supplied <- names(as.list(call))[-1]
+      accepted <- names(formals(getExportedValue("ggseg.extra", fn_name)))
+
+      expect_true(
+        all(nzchar(supplied)),
+        info = paste(fn_name, "passes an argument positionally")
+      )
+      expect_setequal(setdiff(supplied, accepted), character(0))
+    }
+  })
+
+  it("scaffold supplies every required argument", {
+    calls <- scaffold_pipeline_calls(file.path(tmp, "data-raw/create-atlas.R"))
+
+    for (call in calls) {
+      fn_name <- as.character(call[[1]])
+      args <- formals(getExportedValue("ggseg.extra", fn_name))
+      required <- names(args)[vapply(
+        args,
+        function(a) is.symbol(a) && !nzchar(as.character(a)),
+        logical(1)
+      )]
+
+      expect_setequal(
+        setdiff(required, names(as.list(call))[-1]),
+        character(0)
+      )
+    }
+  })
+
+  it("scaffold does not use deprecated creation arguments", {
+    create_script <- readLines(file.path(tmp, "data-raw/create-atlas.R"))
+    script_text <- paste(create_script, collapse = "\n")
+
+    expect_no_match(script_text, "tolerance\\s*=")
+    expect_no_match(script_text, "smooth_refinements\\s*=")
+    expect_no_match(script_text, "color_lut\\s*=")
   })
 })
 
@@ -414,16 +534,44 @@ describe("replace_template_placeholders", {
   it("skips files under .git", {
     tmp <- withr::local_tempdir()
     dir.create(file.path(tmp, ".git"))
-    writeLines("{GGSEG}", file.path(tmp, ".git", "config"))
-    writeLines("{GGSEG}", file.path(tmp, "DESCRIPTION"))
+    writeLines("ATLASNAME", file.path(tmp, ".git", "config"))
+    writeLines("ATLASNAME", file.path(tmp, "DESCRIPTION"))
 
     expect_message(
       replace_template_placeholders(tmp, "myatlas"),
       "Replaced template placeholders"
     )
 
-    expect_identical(readLines(file.path(tmp, ".git", "config")), "{GGSEG}")
+    expect_identical(readLines(file.path(tmp, ".git", "config")), "ATLASNAME")
     expect_identical(readLines(file.path(tmp, "DESCRIPTION")), "myatlas")
+  })
+})
+
+
+describe("rename_package_doc", {
+  it("renames the current PKGNAME-package.R name", {
+    tmp <- withr::local_tempdir()
+    dir.create(file.path(tmp, "R"))
+    file.create(file.path(tmp, "R", "PKGNAME-package.R"))
+
+    expect_true(rename_package_doc(tmp, "ggsegMyatlas"))
+    expect_true(file.exists(file.path(tmp, "R", "ggsegMyatlas-package.R")))
+  })
+
+  it("renames the legacy REPO-package.R name", {
+    tmp <- withr::local_tempdir()
+    dir.create(file.path(tmp, "R"))
+    file.create(file.path(tmp, "R", "REPO-package.R"))
+
+    expect_true(rename_package_doc(tmp, "ggsegMyatlas"))
+    expect_true(file.exists(file.path(tmp, "R", "ggsegMyatlas-package.R")))
+  })
+
+  it("is a no-op when neither name is present", {
+    tmp <- withr::local_tempdir()
+    dir.create(file.path(tmp, "R"))
+
+    expect_false(rename_package_doc(tmp, "ggsegMyatlas"))
   })
 })
 
@@ -484,13 +632,13 @@ describe("new_project_setup_atlas_repo", {
 
 
 describe("template_replace", {
-  it("replaces both GGSEG and REPO placeholders", {
+  it("replaces both atlas and package placeholders", {
     tmp <- withr::local_tempfile(fileext = ".txt")
     writeLines(
       c(
-        "Package: {REPO}",
-        "Atlas: {GGSEG}",
-        "URL: https://github.com/ggsegverse/{REPO}"
+        "Package: PKGNAME",
+        "Atlas: ATLASNAME",
+        "URL: https://github.com/ggsegverse/PKGNAME"
       ),
       tmp
     )
@@ -503,6 +651,33 @@ describe("template_replace", {
     expect_identical(
       result[3],
       "URL: https://github.com/ggsegverse/ggsegMyatlas"
+    )
+  })
+
+  it("still replaces the legacy brace-wrapped placeholders", {
+    tmp <- withr::local_tempfile(fileext = ".txt")
+    writeLines(
+      c("Package: {REPO}", "Atlas: {GGSEG}", "Year: {YEAR}"),
+      tmp
+    )
+
+    template_replace(tmp, "myatlas")
+
+    result <- readLines(tmp)
+    expect_identical(result[1], "Package: ggsegMyatlas")
+    expect_identical(result[2], "Atlas: myatlas")
+    expect_identical(result[3], paste("Year:", format(Sys.Date(), "%Y")))
+  })
+
+  it("substitutes the year placeholder", {
+    tmp <- withr::local_tempfile(fileext = ".txt")
+    writeLines("YEAR: YEARNUM", tmp)
+
+    template_replace(tmp, "myatlas")
+
+    expect_identical(
+      readLines(tmp),
+      paste("YEAR:", format(Sys.Date(), "%Y"))
     )
   })
 
