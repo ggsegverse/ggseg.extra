@@ -225,6 +225,35 @@ mock_subcort_dirs <- function() {
   )
 }
 
+# Extract the atlas-creation calls from a generated data-raw/create-atlas.R.
+# The scaffold ships every pipeline commented out, so the comment prefix is
+# stripped and lines are accumulated until they parse as a complete call.
+scaffold_pipeline_calls <- function(path) {
+  lines <- readLines(path, warn = FALSE)
+  code <- sub("^#[[:blank:]]?", "", lines[startsWith(lines, "#")])
+  starts <- grep("create_[a-z_]+\\(", code)
+
+  calls <- lapply(starts, function(start) {
+    for (end in seq(start, length(code))) {
+      expr <- tryCatch(
+        parse(text = paste(code[start:end], collapse = "\n")),
+        error = function(e) NULL
+      )
+      if (!is.null(expr) && length(expr) == 1) {
+        expr <- expr[[1]]
+        if (identical(as.character(expr[[1]]), "<-")) {
+          expr <- expr[[3]]
+        }
+        return(expr)
+      }
+    }
+    NULL
+  })
+
+  Filter(Negate(is.null), calls)
+}
+
+
 # Helper to skip tests requiring internet
 skip_if_offline <- function() {
   tryCatch(

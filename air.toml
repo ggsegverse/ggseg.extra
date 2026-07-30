@@ -1,0 +1,5 @@
+[format]
+# Template sources carry unsubstituted placeholders and are not the package's
+# own R code. Formatting them rewrites the scaffold that setup_atlas_repo()
+# ships to users.
+exclude = ["inst/templates/**", "inst/rstudio/templates/**"]

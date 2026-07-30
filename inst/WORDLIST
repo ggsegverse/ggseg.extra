@@ -90,6 +90,7 @@ binarise
 binarised
 binormals
 brainstem
+bslib
 buckner
 callosum
 caudate
@@ -115,6 +116,7 @@ dev
 discretizing
 entorhinal
 env
+errored
 favour
 fibres
 flatmap
@@ -135,6 +137,7 @@ gyrus
 gz
 hemi
 idx
+inlined
 json
 kaleido
 labelled
@@ -199,6 +202,7 @@ tidyr
 tkRAS
 tractography
 trilinear
+uncommented
 unlabelled
 unsmoothed
 vermis

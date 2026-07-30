@@ -1,6 +1,4 @@
 library(testthat)
-library({
-  REPO
-})
+library(PKGNAME)
 
-test_check("{REPO}")
+test_check("PKGNAME")
