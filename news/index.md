@@ -1,5 +1,50 @@
 # Changelog
 
+## ggseg.extra 1.9.9.9009
+
+### Bug fixes
+
+- The bundled atlas template no longer generates a broken package.
+  Template placeholders were spelled `{GGSEG}` / `{REPO}`, which R
+  parses as brace blocks, so `air format` rewrote `.{GGSEG}` into a
+  separate expression and split
+  [`library({REPO})`](https://rdrr.io/r/base/library.html) across lines.
+  Generated packages had an accessor that returned nothing and a test
+  suite that referenced an undefined object.
+- `data-raw/create-atlas.R` in the scaffold now calls the current API.
+  It previously used `read_freesurfer_lut()` (never exported),
+  `color_lut`, `input_gifti`, `input_cifti`, and a tract `input_volume`
+  argument, none of which exist, and omitted the required `source` /
+  `desc` arguments to
+  [`create_cortical_from_neuromaps()`](https://ggsegverse.github.io/ggseg.extra/reference/create_cortical_from_neuromaps.md).
+  Every uncommented section would have errored.
+
+### Minor improvements and fixes
+
+- Template placeholders are now bare identifiers (`ATLASNAME`,
+  `PKGNAME`, `YEARNUM`) so template sources parse as valid R and cannot
+  be rewritten by R tooling.
+  [`setup_atlas_repo()`](https://ggsegverse.github.io/ggseg.extra/reference/setup_atlas_repo.md)
+  still substitutes the legacy brace-wrapped spelling, so templates
+  published before this change continue to work.
+- Added `air.toml` excluding `inst/templates/` and
+  `inst/rstudio/templates/` from formatting.
+- The scaffold now includes an
+  [`atlas_smooth()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_smooth.md)
+  post-processing step and no longer passes the deprecated `tolerance`
+  argument.
+- Generated packages set `Config/Needs/website: ggsegverse/ggseg.docs`
+  and use the `ggseg.docs` pkgdown template instead of an inlined bslib
+  theme, and no longer set `LazyData` without a `data/` directory.
+- Generated packages now pass `R CMD check` cleanly. The template
+  declared `License: CC0` while shipping an MIT-style `LICENSE` file,
+  which produced a NOTE in every new package; it now declares
+  `MIT + file LICENSE`, matching both the bundled file and the other
+  ggseg atlas packages.
+- Generated packages ship a `.lintr` excluding `data-raw/`, so the
+  deliberately commented-out scaffold no longer trips
+  `commented_code_linter`.
+
 ## ggseg.extra 1.9.9.9008
 
 ### Minor improvements and fixes
