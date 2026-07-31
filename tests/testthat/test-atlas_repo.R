@@ -179,6 +179,12 @@ describe("setup_atlas_repo template files", {
     }
   })
 
+  it("adds the shared GitHub Actions workflows", {
+    written <- list.files(file.path(tmp, ".github", "workflows"))
+
+    expect_setequal(written, paste0(atlas_github_actions(), ".yaml"))
+  })
+
   it("renames package-level documentation file", {
     expect_true(
       file.exists(file.path(tmp, "R", "ggsegTestatlas-package.R"))
@@ -361,6 +367,82 @@ describe("setup_atlas_repo template files", {
     expect_no_match(script_text, "tolerance\\s*=")
     expect_no_match(script_text, "smooth_refinements\\s*=")
     expect_no_match(script_text, "color_lut\\s*=")
+  })
+})
+
+
+describe("setup_atlas_repo github actions", {
+  fake_template <- function(env = parent.frame()) {
+    src <- withr::local_tempdir(.local_envir = env)
+    dir.create(file.path(src, "R"), recursive = TRUE)
+    writeLines("Package: PKGNAME", file.path(src, "DESCRIPTION"))
+    writeLines("ATLASNAME <- function() .ATLASNAME", file.path(src, "R/data.R"))
+
+    dir.create(file.path(src, ".github", "workflows"), recursive = TRUE)
+    dir.create(file.path(src, ".github", "scripts"), recursive = TRUE)
+    writeLines(
+      "name: template-check",
+      file.path(
+        src,
+        ".github",
+        "workflows",
+        "template-check.yaml"
+      )
+    )
+    writeLines("stop()", file.path(src, ".github", "scripts", "render.R"))
+    src
+  }
+
+  it("does not copy the template's own .github infrastructure", {
+    src <- fake_template()
+    tmp <- withr::local_tempdir()
+    local_mocked_bindings(download_atlas_template = function(url = NULL) src)
+
+    suppressMessages(setup_atlas_repo(
+      tmp,
+      "gha",
+      open = FALSE,
+      rstudio = FALSE
+    ))
+
+    expect_false(dir.exists(file.path(tmp, ".github", "scripts")))
+    expect_false(
+      file.exists(file.path(tmp, ".github", "workflows", "template-check.yaml"))
+    )
+  })
+
+  it("still writes the shared workflows from bundled templates", {
+    src <- fake_template()
+    tmp <- withr::local_tempdir()
+    local_mocked_bindings(download_atlas_template = function(url = NULL) src)
+
+    suppressMessages(setup_atlas_repo(
+      tmp,
+      "gha",
+      open = FALSE,
+      rstudio = FALSE
+    ))
+
+    expect_setequal(
+      list.files(file.path(tmp, ".github", "workflows")),
+      paste0(atlas_github_actions(), ".yaml")
+    )
+  })
+
+  it("skips workflows when github_actions is FALSE", {
+    src <- fake_template()
+    tmp <- withr::local_tempdir()
+    local_mocked_bindings(download_atlas_template = function(url = NULL) src)
+
+    suppressMessages(setup_atlas_repo(
+      tmp,
+      "gha",
+      open = FALSE,
+      rstudio = FALSE,
+      github_actions = FALSE
+    ))
+
+    expect_false(dir.exists(file.path(tmp, ".github")))
   })
 })
 

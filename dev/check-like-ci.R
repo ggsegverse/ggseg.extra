@@ -26,6 +26,45 @@ if (!requireNamespace("goodpractice", quietly = TRUE)) {
 
 full <- "--full" %in% commandArgs(trailingOnly = TRUE)
 
+# object_usage_linter resolves symbols against the *installed* namespace, so a
+# stale install reports functions you just added as undefined. CI never hits
+# this because setup-r-dependencies installs local::. first.
+warn_if_stale_install <- function() {
+  pkg <- read.dcf("DESCRIPTION", "Package")[[1]]
+  declared <- grep(
+    "^export\\(",
+    readLines("NAMESPACE", warn = FALSE),
+    value = TRUE
+  )
+  declared <- gsub("^export\\(|\\)$", "", declared)
+
+  installed <- tryCatch(
+    getNamespaceExports(pkg),
+    error = function(e) NULL
+  )
+  if (is.null(installed)) {
+    return(invisible(NULL))
+  }
+
+  missing <- setdiff(declared, installed)
+  if (length(missing) > 0) {
+    cat(
+      "NOTE: the installed",
+      pkg,
+      "is missing",
+      length(missing),
+      "exported object(s):\n  ",
+      paste(utils::head(missing, 5), collapse = ", "),
+      "\n  object_usage_linter will report these as undefined.",
+      "\n  Run `R CMD INSTALL .` first for an accurate result.\n\n"
+    )
+  }
+
+  invisible(NULL)
+}
+
+warn_if_stale_install()
+
 # Mirrors the `checks <- setdiff(...)` block in
 # ggsegverse/.github/.github/workflows/code-quality.yaml. Keep in step with it.
 excluded <- c(

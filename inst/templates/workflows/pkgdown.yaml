@@ -1,0 +1,22 @@
+on:
+  push:
+    branches: [main, master]
+  release:
+    types: [published]
+  workflow_dispatch:
+
+name: pkgdown
+
+permissions:
+  contents: write
+
+jobs:
+  pkgdown:
+    uses: ggsegverse/.github/.github/workflows/pkgdown.yaml@main
+    with:
+      # ggseg.docs supplies the shared pkgdown template, declared in
+      # DESCRIPTION as Config/Needs/website.
+      extra-packages: |
+        any::pkgdown
+        any::quarto
+        local::.
