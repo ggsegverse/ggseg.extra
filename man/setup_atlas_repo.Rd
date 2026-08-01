@@ -8,7 +8,8 @@ setup_atlas_repo(
   path,
   atlas_name = NULL,
   open = rlang::is_interactive(),
-  rstudio = TRUE
+  rstudio = TRUE,
+  github_actions = TRUE
 )
 }
 \arguments{
@@ -23,6 +24,9 @@ name (e.g., path \code{ggsegDkt} becomes atlas name \code{dkt}).}
 when running interactively.}
 
 \item{rstudio}{If TRUE, creates an \code{.Rproj} file for RStudio users.}
+
+\item{github_actions}{If TRUE (default), adds the shared ggsegverse
+workflows via \code{\link[=use_atlas_github_actions]{use_atlas_github_actions()}}.}
 }
 \value{
 Invisibly returns the path to the created package.
@@ -42,8 +46,9 @@ a Schaefer parcellation). After creation, edit the files in \verb{data-raw/}
 to build your atlas, then run \code{devtools::document()} and \code{devtools::check()}.
 
 If the template cannot be downloaded (e.g. no internet), a minimal bundled
-fallback is used instead. The fallback omits GitHub Actions workflows; you
-can copy them from the template repository later.
+fallback is used instead. Both paths produce the same GitHub Actions
+workflows, which are written by \code{\link[=use_atlas_github_actions]{use_atlas_github_actions()}} from templates
+bundled in this package rather than copied from the atlas template.
 }
 \examples{
 \dontrun{

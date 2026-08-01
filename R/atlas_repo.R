@@ -13,8 +13,9 @@
 #' to build your atlas, then run `devtools::document()` and `devtools::check()`.
 #'
 #' If the template cannot be downloaded (e.g. no internet), a minimal bundled
-#' fallback is used instead. The fallback omits GitHub Actions workflows; you
-#' can copy them from the template repository later.
+#' fallback is used instead. Both paths produce the same GitHub Actions
+#' workflows, which are written by [use_atlas_github_actions()] from templates
+#' bundled in this package rather than copied from the atlas template.
 #'
 #' @param path Where to create the package. If the directory exists, it must
 #'   be empty.
@@ -24,6 +25,8 @@
 #' @param open If TRUE, opens the new project in RStudio. Default is TRUE
 #'   when running interactively.
 #' @param rstudio If TRUE, creates an `.Rproj` file for RStudio users.
+#' @param github_actions If TRUE (default), adds the shared ggsegverse
+#'   workflows via [use_atlas_github_actions()].
 #'
 #' @return Invisibly returns the path to the created package.
 #' @export
@@ -46,7 +49,8 @@ setup_atlas_repo <- function(
   path,
   atlas_name = NULL,
   open = rlang::is_interactive(),
-  rstudio = TRUE
+  rstudio = TRUE,
+  github_actions = TRUE
 ) {
   path <- normalizePath(path, mustWork = FALSE)
 
@@ -76,6 +80,10 @@ setup_atlas_repo <- function(
 
   template_dir <- download_atlas_template()
   populate_from_template(path, template_dir, atlas_name, repo_name)
+
+  if (github_actions) {
+    use_atlas_github_actions(path = path)
+  }
 
   if (rstudio) {
     create_rproj_file(path, repo_name)
@@ -182,11 +190,6 @@ download_atlas_template <- function(url = template_url()) {
 
   cli::cli_alert_warning(
     "Download failed, using bundled fallback template"
-  )
-  cli::cli_alert_info(
-    "Workflows not included \u2014 copy from
-    {.url https://github.com/ggsegverse/ggseg-atlas-template}",
-    wrap = TRUE
   )
 
   fallback <- system.file(
@@ -298,16 +301,6 @@ create_template_dirs <- function(path, template_dir) {
     "Created {.path R/}, {.path tests/}, {.path data-raw/}"
   )
 
-  has_workflows <- dir.exists(as.character(fs::path(template_dir, ".github")))
-  if (has_workflows) {
-    dirs_hidden <- list.dirs(template_dir, full.names = FALSE, recursive = TRUE)
-    dirs_hidden <- dirs_hidden[grepl("^\\.github", dirs_hidden)]
-    for (d in dirs_hidden) {
-      mkdir(as.character(fs::path(path, d)))
-    }
-    cli::cli_alert_success("Created {.path .github/workflows/}")
-  }
-
   invisible(path)
 }
 
@@ -321,7 +314,11 @@ copy_template_files <- function(path, template_dir) {
     all.files = TRUE,
     no.. = TRUE
   )
-  files <- files[!grepl("^\\.git/", files) & files != ".git"]
+  # .github/ in the template is the template's own infrastructure (its
+  # smoke-test workflow and the scripts that drive it), not something a
+  # generated package should carry. Workflows come from
+  # use_atlas_github_actions() instead.
+  files <- files[!grepl("^\\.git(/|$)|^\\.github(/|$)", files)]
 
   for (f in files) {
     src <- as.character(fs::path(template_dir, f))

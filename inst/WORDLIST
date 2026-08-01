@@ -131,6 +131,7 @@ ggsegExtra
 ggsegHO
 ggsegverse
 github
+goodpractice
 grey
 gyri
 gyrus
@@ -143,6 +144,7 @@ kaleido
 labelled
 lh
 lifecycle
+lintr
 lobule
 materialising
 medoid
@@ -189,6 +191,7 @@ roi
 roxygen
 sagittal
 sawtooth
+scaffolded
 segmentations
 subcortical
 subregion
@@ -205,6 +208,7 @@ trilinear
 uncommented
 unlabelled
 unsmoothed
+usethis
 vermis
 visualising
 vox

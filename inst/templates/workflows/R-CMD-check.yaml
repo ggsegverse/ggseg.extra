@@ -1,0 +1,14 @@
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  schedule:
+    - cron: "19 3 * * 0"
+
+name: R-CMD-check
+
+permissions: read-all
+
+jobs:
+  R-CMD-check:
+    uses: ggsegverse/.github/.github/workflows/R-CMD-check.yaml@main
