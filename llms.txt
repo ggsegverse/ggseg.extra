@@ -126,8 +126,19 @@ Create and manage ggseg atlas packages
 
 - [`setup_atlas_repo()`](https://ggsegverse.github.io/ggseg.extra/reference/setup_atlas_repo.md)
   : Create a new ggseg atlas package
+
 - [`setup_sitrep()`](https://ggsegverse.github.io/ggseg.extra/reference/setup_sitrep.md)
   : Check ggseg.extra setup status
+
+- [`use_atlas_github_actions()`](https://ggsegverse.github.io/ggseg.extra/reference/use_atlas_github_actions.md)
+  : Add ggsegverse GitHub Actions workflows to a package
+
+- [`atlas_github_actions()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_github_actions.md)
+  :
+
+  Workflows
+  [`use_atlas_github_actions()`](https://ggsegverse.github.io/ggseg.extra/reference/use_atlas_github_actions.md)
+  can write
 
 ## Color Tables
 

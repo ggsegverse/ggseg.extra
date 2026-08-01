@@ -1,5 +1,35 @@
 # Changelog
 
+## ggseg.extra 1.9.9.9010
+
+### New features
+
+- [`use_atlas_github_actions()`](https://ggsegverse.github.io/ggseg.extra/reference/use_atlas_github_actions.md)
+  adds the shared ggsegverse GitHub Actions workflows to a package, in
+  the style of `usethis::use_github_action()`.
+  [`atlas_github_actions()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_github_actions.md)
+  lists what is available. Run it on a freshly scaffolded atlas package,
+  or on an existing one to replace hand-maintained workflows with the
+  shared set.
+- [`setup_atlas_repo()`](https://ggsegverse.github.io/ggseg.extra/reference/setup_atlas_repo.md)
+  gains `github_actions`, TRUE by default.
+
+### Minor improvements and fixes
+
+- Atlas packages now receive workflows as short caller stubs for the
+  reusable workflows in `ggsegverse/.github`, rather than inline copies.
+  The scaffold previously shipped 229 lines of inline workflow, none of
+  which called the shared workflows, so every new package started out
+  with CI that had already drifted.
+- [`setup_atlas_repo()`](https://ggsegverse.github.io/ggseg.extra/reference/setup_atlas_repo.md)
+  no longer copies the atlas template’s `.github/` directory. That
+  directory is the template’s own infrastructure — its smoke-test
+  workflow and the scripts driving it — and had been leaking into every
+  generated package.
+- The offline fallback now produces the same workflows as the downloaded
+  template, since they no longer come from the template at all.
+  Previously the fallback silently omitted CI.
+
 ## ggseg.extra 1.9.9.9009
 
 ### Bug fixes

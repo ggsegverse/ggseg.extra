@@ -21,7 +21,7 @@ building your atlas."><meta property="og:image" content="https://ggsegverse.gith
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9009</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9010</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -92,7 +92,8 @@ building your atlas.</p>
 <span>  <span class="va">path</span>,</span>
 <span>  atlas_name <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  open <span class="op">=</span> <span class="fu">rlang</span><span class="fu">::</span><span class="fu"><a href="https://rlang.r-lib.org/reference/is_interactive.html" class="external-link">is_interactive</a></span><span class="op">(</span><span class="op">)</span>,</span>
-<span>  rstudio <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span>  rstudio <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  github_actions <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -119,6 +120,11 @@ when running interactively.</p></dd>
 <dt id="arg-rstudio">rstudio<a class="anchor" aria-label="anchor" href="#arg-rstudio"></a></dt>
 <dd><p>If TRUE, creates an <code>.Rproj</code> file for RStudio users.</p></dd>
 
+
+<dt id="arg-github-actions">github_actions<a class="anchor" aria-label="anchor" href="#arg-github-actions"></a></dt>
+<dd><p>If TRUE (default), adds the shared ggsegverse
+workflows via <code><a href="use_atlas_github_actions.html">use_atlas_github_actions()</a></code>.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
@@ -130,8 +136,9 @@ when running interactively.</p></dd>
 a Schaefer parcellation). After creation, edit the files in <code>data-raw/</code>
 to build your atlas, then run <code>devtools::document()</code> and <code>devtools::check()</code>.</p>
 <p>If the template cannot be downloaded (e.g. no internet), a minimal bundled
-fallback is used instead. The fallback omits GitHub Actions workflows; you
-can copy them from the template repository later.</p>
+fallback is used instead. Both paths produce the same GitHub Actions
+workflows, which are written by <code><a href="use_atlas_github_actions.html">use_atlas_github_actions()</a></code> from templates
+bundled in this package rather than copied from the atlas template.</p>
     </div>
 
     <div class="section level2">

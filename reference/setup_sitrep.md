@@ -112,7 +112,7 @@ setup_sitrep("full")
 #>   skip_existing: TRUE
 #>   tolerance: 0.05
 #>   smoothness: 5
-#>   output_dir: /tmp/RtmpctDrxa
+#>   output_dir: /tmp/RtmpvwDC1v
 #> 
 #> ℹ Set via `options(ggseg.extra.<name> = value)` or environment variables
 #>   `GGSEG_EXTRA_<NAME>`

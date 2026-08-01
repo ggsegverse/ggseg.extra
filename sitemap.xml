@@ -24,6 +24,7 @@
 <url><loc>https://ggsegverse.github.io/ggseg.extra/reference/as_verbosity.html</loc></url>
 <url><loc>https://ggsegverse.github.io/ggseg.extra/reference/aseg_context.html</loc></url>
 <url><loc>https://ggsegverse.github.io/ggseg.extra/reference/aseg_hidden_labels.html</loc></url>
+<url><loc>https://ggsegverse.github.io/ggseg.extra/reference/atlas_github_actions.html</loc></url>
 <url><loc>https://ggsegverse.github.io/ggseg.extra/reference/atlas_smooth.html</loc></url>
 <url><loc>https://ggsegverse.github.io/ggseg.extra/reference/coregister_volume.html</loc></url>
 <url><loc>https://ggsegverse.github.io/ggseg.extra/reference/create_cerebellar_from_annotation.html</loc></url>
@@ -65,6 +66,7 @@
 <url><loc>https://ggsegverse.github.io/ggseg.extra/reference/suit_deformation_field.html</loc></url>
 <url><loc>https://ggsegverse.github.io/ggseg.extra/reference/suit_flatmap_path.html</loc></url>
 <url><loc>https://ggsegverse.github.io/ggseg.extra/reference/transform_mni_to_suit.html</loc></url>
+<url><loc>https://ggsegverse.github.io/ggseg.extra/reference/use_atlas_github_actions.html</loc></url>
 <url><loc>https://ggsegverse.github.io/ggseg.extra/reference/write_lut.html</loc></url>
 </urlset>
 
