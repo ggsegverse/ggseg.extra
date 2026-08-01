@@ -131,6 +131,7 @@ ggsegExtra
 ggsegHO
 ggsegverse
 github
+goodpractice
 grey
 gyri
 gyrus
@@ -143,6 +144,7 @@ kaleido
 labelled
 lh
 lifecycle
+lintr
 lobule
 materialising
 medoid
@@ -206,6 +208,7 @@ trilinear
 uncommented
 unlabelled
 unsmoothed
+usethis
 vermis
 visualising
 vox

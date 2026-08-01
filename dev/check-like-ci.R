@@ -19,6 +19,12 @@
 # its lintr prep and skips the slow rcmdcheck prep. Both lintr failures that
 # have bitten this package would have been caught in that mode. Use --full
 # before a release, when the rcmdcheck- and roxygen-based checks matter too.
+#
+# Known blind spot: the `spelling` check cannot be reproduced locally with any
+# confidence, because hunspell's en_US dictionary differs between macOS and
+# the Ubuntu runners. `lintr` and `goodpractice` passed here and failed on CI.
+# When adding package or tool names to documentation, add them to
+# inst/WORDLIST whether or not a local check complains.
 
 if (!requireNamespace("goodpractice", quietly = TRUE)) {
   stop("install.packages('goodpractice')")
