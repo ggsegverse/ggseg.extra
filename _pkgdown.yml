@@ -91,12 +91,15 @@ reference:
     desc: Functions to manipulate and manage brain atlases
     contents:
       - starts_with("atlas_")
+      - -atlas_github_actions
 
   - title: Atlas Repository
     desc: Create and manage ggseg atlas packages
     contents:
       - setup_atlas_repo
       - setup_sitrep
+      - use_atlas_github_actions
+      - atlas_github_actions
 
   - title: Color Tables
     desc: Read, write, and manipulate FreeSurfer color tables
