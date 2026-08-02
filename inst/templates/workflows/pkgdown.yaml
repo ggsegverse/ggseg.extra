@@ -1,6 +1,10 @@
 on:
   push:
     branches: [main, master]
+  # Builds on every PR so a broken reference index or vignette fails review
+  # rather than main. The reusable guards its deploy step with
+  # `github.event_name != 'pull_request'`, so PRs build without publishing.
+  pull_request:
   release:
     types: [published]
   workflow_dispatch:
