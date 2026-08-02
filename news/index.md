@@ -1,5 +1,19 @@
 # Changelog
 
+## ggseg.extra 1.9.9.9011
+
+### Minor improvements and fixes
+
+- Workflows written by
+  [`use_atlas_github_actions()`](https://ggsegverse.github.io/ggseg.extra/reference/use_atlas_github_actions.md)
+  now run on pull requests. `pkgdown` previously had no pull request
+  trigger at all, so a broken reference index or vignette could only
+  fail after merging; `code-quality` filtered pull requests to those
+  targeting `main`, so a stacked pull request skipped linting entirely.
+  Neither publishes from a pull request: the shared workflows guard the
+  pkgdown deploy on `github.event_name`, and the coverage badge and
+  README commits on `github.ref`.
+
 ## ggseg.extra 1.9.9.9010
 
 ### New features

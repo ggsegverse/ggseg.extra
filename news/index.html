@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9010</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9011</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -63,6 +63,13 @@
       <small>Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.9.9.9011" id="ggsegextra-1999011">ggseg.extra 1.9.9.9011<a class="anchor" aria-label="anchor" href="#ggsegextra-1999011"></a></h2>
+<div class="section level3">
+<h3 id="minor-improvements-and-fixes-1-9-9-9011">Minor improvements and fixes<a class="anchor" aria-label="anchor" href="#minor-improvements-and-fixes-1-9-9-9011"></a></h3>
+<ul><li>Workflows written by <code><a href="../reference/use_atlas_github_actions.html">use_atlas_github_actions()</a></code> now run on pull requests. <code>pkgdown</code> previously had no pull request trigger at all, so a broken reference index or vignette could only fail after merging; <code>code-quality</code> filtered pull requests to those targeting <code>main</code>, so a stacked pull request skipped linting entirely. Neither publishes from a pull request: the shared workflows guard the pkgdown deploy on <code>github.event_name</code>, and the coverage badge and README commits on <code>github.ref</code>.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9010" id="ggsegextra-1999010">ggseg.extra 1.9.9.9010<a class="anchor" aria-label="anchor" href="#ggsegextra-1999010"></a></h2>
 <div class="section level3">
