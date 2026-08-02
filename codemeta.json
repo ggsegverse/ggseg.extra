@@ -7,7 +7,7 @@
   "codeRepository": "https://github.com/ggsegverse/ggseg.extra",
   "issueTracker": "https://github.com/ggsegverse/ggseg.extra/issues",
   "license": "https://spdx.org/licenses/MIT",
-  "version": "1.9.9.9010",
+  "version": "1.9.9.9011",
   "programmingLanguage": {
     "@type": "ComputerLanguage",
     "name": "R",
@@ -520,7 +520,7 @@
     },
     "SystemRequirements": "FreeSurfer (subcortical/tract/wholebrain pipelines), \n    ImageMagick (subcortical/tract pipelines only), \n    Connectome Workbench (optional, for CIFTI resampling),\n    GDAL (>= 2.0.1), \n    GEOS (>= 3.4.0), \n    PROJ (>= 4.8.0), \n    sqlite3"
   },
-  "fileSize": "6799.754KB",
+  "fileSize": "6800.665KB",
   "citation": [
     {
       "@type": "CreativeWork",
