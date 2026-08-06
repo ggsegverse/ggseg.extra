@@ -6,21 +6,11 @@ describe("ATLASNAME", {
 
   it("renders with ggseg", {
     skip_if_not_installed("ggseg")
-    skip_if_not_installed("ggplot2")
     skip_if_not_installed("vdiffr")
-    p <- ggplot2::ggplot() +
-      ggseg::geom_brain(
-        atlas = ATLASNAME(),
-        mapping = ggplot2::aes(fill = label),
-        position = ggseg::position_brain(hemi ~ view),
-        show.legend = FALSE
-      ) +
-      ggplot2::scale_fill_manual(
-        values = ATLASNAME()$palette,
-        na.value = "grey"
-      ) +
-      ggplot2::theme_void()
-    vdiffr::expect_doppelganger("ATLASNAME-2d", p)
+    vdiffr::expect_doppelganger(
+      "ATLASNAME-2d",
+      ggseg::brain_test_plot(ATLASNAME())
+    )
   })
 
   it("renders with ggseg3d", {
