@@ -17,28 +17,6 @@ aseg_subcortical_labels <- function() {
   c(10L, 49L, 11L, 50L, 12L, 51L, 13L, 52L, 17L, 53L, 18L, 54L, 26L, 58L)
 }
 
-#' Zero the replaced aseg structures and stamp non-zero parcels on top
-#'
-#' Pure array step of [prepare_subcortical_mni152()]: blanks the lumped aseg
-#' structures the parcels subdivide, then writes the parcels wherever they are
-#' non-zero, leaving the remaining aseg (cortex, white matter, cerebellum,
-#' brain-stem, ventricles) as grey context.
-#'
-#' @param aseg Integer array of aseg labels.
-#' @param parcels Integer array of parcel labels on the same grid.
-#' @param replace_labels Integer aseg ids to blank before stamping.
-#' @return An integer array of the merged volume.
-#' @noRd
-embed_labels_in_aseg <- function(aseg, parcels, replace_labels) {
-  out <- as.integer(round(aseg))
-  dim(out) <- dim(aseg)
-  out[out %in% as.integer(replace_labels)] <- 0L
-  p <- as.integer(round(parcels))
-  hit <- p > 0L
-  out[hit] <- p[hit]
-  out
-}
-
 #' Embed MNI152 subcortical parcels in a FreeSurfer aseg for grey-brain context
 #'
 #' @description
@@ -193,4 +171,26 @@ prepare_subcortical_mni152 <- function(
     )
   }
   invisible(list(volume = output_file, lut = combined))
+}
+
+#' Zero the replaced aseg structures and stamp non-zero parcels on top
+#'
+#' Pure array step of [prepare_subcortical_mni152()]: blanks the lumped aseg
+#' structures the parcels subdivide, then writes the parcels wherever they are
+#' non-zero, leaving the remaining aseg (cortex, white matter, cerebellum,
+#' brain-stem, ventricles) as grey context.
+#'
+#' @param aseg Integer array of aseg labels.
+#' @param parcels Integer array of parcel labels on the same grid.
+#' @param replace_labels Integer aseg ids to blank before stamping.
+#' @return An integer array of the merged volume.
+#' @noRd
+embed_labels_in_aseg <- function(aseg, parcels, replace_labels) {
+  out <- as.integer(round(aseg))
+  dim(out) <- dim(aseg)
+  out[out %in% as.integer(replace_labels)] <- 0L
+  p <- as.integer(round(parcels))
+  hit <- p > 0L
+  out[hit] <- p[hit]
+  out
 }
