@@ -76,6 +76,7 @@ XQuartz
 Xcode
 Yeo
 abagen
+accumbens
 affine
 annot
 aparc
@@ -163,6 +164,7 @@ neuromapr
 neuromaps
 niftiImage
 nii
+pallidum
 parcellation
 parcellation's
 parcellations
@@ -198,6 +200,7 @@ subregion
 sulcal
 summarises
 sysdata
+tempfile
 terra
 th
 tibble
