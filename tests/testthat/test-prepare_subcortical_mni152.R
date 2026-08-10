@@ -18,10 +18,10 @@ describe("embed_labels_in_aseg", {
 
     out <- embed_labels_in_aseg(aseg, parcels, c(10L, 49L))
 
-    expect_equal(out[1, 1, 1], 211L) # parcel stamped where thalamus was
-    expect_equal(out[2, 1, 1], 42L) # cortex context preserved
-    expect_equal(out[1, 2, 1], 0L) # replaced structure blanked, no parcel
-    expect_equal(out[2, 2, 1], 2L) # white-matter context preserved
+    expect_identical(out[1, 1, 1], 211L) # parcel stamped where thalamus was
+    expect_identical(out[2, 1, 1], 42L) # cortex context preserved
+    expect_identical(out[1, 2, 1], 0L) # replaced structure blanked, no parcel
+    expect_identical(out[2, 2, 1], 2L) # white-matter context preserved
   })
 
   it("lets parcels win over surviving context where they overlap", {
@@ -30,15 +30,15 @@ describe("embed_labels_in_aseg", {
 
     out <- embed_labels_in_aseg(aseg, parcels, integer(0))
 
-    expect_equal(out[1, 1, 1], 300L) # parcel overrides cortex
-    expect_equal(out[2, 1, 1], 42L) # untouched context kept
+    expect_identical(out[1, 1, 1], 300L) # parcel overrides cortex
+    expect_identical(out[2, 1, 1], 42L) # untouched context kept
   })
 
   it("preserves the input dimensions", {
     aseg <- array(sample(0:60, 24, replace = TRUE), dim = c(2, 3, 4))
     parcels <- array(0L, dim = c(2, 3, 4))
     out <- embed_labels_in_aseg(aseg, parcels, aseg_subcortical_labels())
-    expect_equal(dim(out), c(2, 3, 4))
+    expect_identical(dim(out), c(2L, 3L, 4L))
   })
 })
 
