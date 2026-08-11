@@ -330,7 +330,12 @@ tract_log_header <- function(config, input_tracts, input_aseg) {
     return(invisible(NULL))
   }
   cli::cli_h1("Creating tractography atlas")
-  cli::cli_alert_info("Tract files: {.path {input_tracts}}")
+  if (is.character(input_tracts)) {
+    cli::cli_alert_info("Tract files: {.path {input_tracts}}")
+  } else {
+    n_tracts <- length(input_tracts)
+    cli::cli_alert_info("Tracts: {n_tracts} in-memory coordinate matri{?x/ces}")
+  }
   if (!is.null(input_aseg)) {
     cli::cli_alert_info("Anatomical reference: {.path {input_aseg}}")
   }

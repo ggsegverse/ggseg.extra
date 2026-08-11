@@ -13,6 +13,19 @@
   context. `aseg_subcortical_labels()` returns the lumped subcortical structure
   ids a finer parcellation typically subdivides.
 
+- `create_tract_from_volume()` builds a white-matter tract atlas from a
+  volumetric tract _label map_ (one integer label per tract) rather than from
+  streamlines: each tract's voxel cloud is reduced to a principal-curve
+  centerline and handed to `create_tract_from_tractography()`, which builds the
+  3D tubes and 2D projection. This suits probabilistic tract atlases distributed
+  as NIfTI label volumes (e.g. AtlasTrack). Adds `princurve` to Suggests.
+
+## Bug fixes
+
+- `create_tract_from_tractography()` no longer errors when `input_tracts` is an
+  in-memory list of coordinate matrices: the setup log interpolated the matrices
+  into a `{.path}` inline style, which `cli` cannot format as file paths.
+
 # ggseg.extra 1.9.9.9011
 
 ## Minor improvements and fixes

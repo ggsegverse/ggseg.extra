@@ -75,7 +75,8 @@ Suggests:
     tibble,
     tidyr,
     quarto,
-    withr
+    withr,
+    princurve
 VignetteBuilder:
     knitr,
     quarto

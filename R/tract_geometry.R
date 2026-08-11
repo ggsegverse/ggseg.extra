@@ -13,7 +13,7 @@
 #'   single matrix if you have just one streamline.
 #' @param method How to compute the centerline: `"mean"` averages point-wise,
 #'   `"medoid"` selects the most representative streamline.
-#' @param n_points Number of points to resample the centerline to.
+#' @template n_points
 #'
 #' @return A matrix with `n_points` rows and 3 columns (x, y, z).
 #' @keywords internal
