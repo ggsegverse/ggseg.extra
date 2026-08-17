@@ -20,7 +20,70 @@
   3D tubes and 2D projection. This suits probabilistic tract atlases distributed
   as NIfTI label volumes (e.g. AtlasTrack). Adds `princurve` to Suggests.
 
+## New features
+
+- `atlas_smooth()` gains `method`. The default `"close"` is the existing
+  morphological closing, which rounds outlines but fills any hole narrower than
+  the smoothing distance -- on a thin cortical ribbon that erases the sulci.
+  `"chaikin"`, `"ksmooth"` and `"spline"` come from `smoothr::smooth()` and move
+  vertices rather than dilating the shape, so enclosed holes stay open. Use
+  `"close"` for solid shapes such as tract tubes and one of the others where the
+  geometry has holes worth keeping.
+- `atlas_smooth(smoothness =)` is now a 0--1 strength shared by every `method`,
+  mapped internally onto each method's native parameter, so the same value means
+  a comparable amount of smoothing whichever one is chosen. Values outside
+  0--1 are an error carrying the conversion rule, rather than being silently
+  reinterpreted: divide an old `method = "close"` distance by 5.
+
 ## Bug fixes
+
+- 2D atlas geometry no longer loses its holes. `coords2sf()` grouped
+  coordinates by `(.subid, .id)`, but `.subid` is the ring index within a
+  polygon (1 = exterior, >1 = holes) and `.id` the polygon index, so every ring
+  became its own solid polygon and every enclosed hole was filled. A thin
+  cortical ribbon came out as a blob: the sagittal fsaverage slice measured
+  20,117 against a true area of 17,481, with 44 of its 137 rings surviving.
+  Rings are now assembled as exterior-plus-holes, and the area matches exactly.
+  This affects every atlas built through `get_contours()` -- cortical,
+  subcortical, wholebrain and tract -- so rebuilt atlases will differ from ones
+  built before this fix.
+
+- Tract 2D projections are no longer drawn in the wrong plane. `streamlines_to_volume()`
+  built each tube in the template's native voxel layout and relied on
+  `RNifti::orientation(nii) <- "RAS"` to convert it. For `.mgz` templates that
+  assignment was a silent no-op — `read_volume()` returns a bare array carrying
+  no affine, so `orientation()` reports `"RAS"` whatever the layout — while the
+  anatomical reference _was_ converted, being read through
+  `read_volume(reorient = TRUE)`. With an LIA template such as FreeSurfer's
+  `aseg.mgz`, voxel axes 2 and 3 ended up swapped between the two, so axial
+  projections were drawn over coronal anatomy and sagittal ones appeared
+  rotated 90°. The volume is now reoriented explicitly.
+
+- Tract 2D projections are no longer offset from the anatomical reference.
+  `center_meshes()` translates centerlines to the origin for 3D display, and the
+  snapshot step rasterised those translated coordinates as though they were
+  world RAS, shifting every tract relative to the anatomy. The translation is
+  now recorded and undone before rasterising; 3D output is unchanged.
+
+- Sagittal cortex reference slices now come from their own slab's midpoint
+  rather than a fixed plane, matching what axial and coronal already did. A
+  sagittal slab at an explicit position previously had its silhouette drawn
+  somewhere else. Hemisphere-named views keep their lateral positions, and an
+  explicit `cortex_x` still wins.
+
+- The anatomical reference for tract atlases now includes the brainstem,
+  cerebellar cortex and deep grey structures alongside the cortical ribbon, so
+  tracts descending out of the cerebrum are drawn against anatomy instead of
+  empty space. White matter is excluded, cerebral and cerebellar alike: tracts
+  run through it, and filling it would bury them. Excluding cerebellar white
+  matter also keeps the cerebellum a foliated shell like the cerebral ribbon
+  instead of a solid mass that merges with the occipital lobe in sagittal
+  views.
+
+- `create_tract_from_volume()` and `create_tract_from_tractography()` now honour
+  `atlas_name` for the atlas object itself, not only for the output directory.
+  The finished atlas previously took the name derived from its tract labels
+  (e.g. `"tracts"`), ignoring what the caller asked for.
 
 - `create_tract_from_tractography()` no longer errors when `input_tracts` is an
   in-memory list of coordinate matrices: the setup log interpolated the matrices

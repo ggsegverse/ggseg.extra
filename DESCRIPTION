@@ -69,6 +69,7 @@ Suggests:
     RNifti,
     rstudioapi,
     Rvcg,
+    smoothr,
     spelling,
     terra,
     testthat (>= 3.0.0),

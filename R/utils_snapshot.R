@@ -257,11 +257,6 @@ make_view_chunks <- function(lo, hi, chunk_size, type) {
 #' @return data.frame with columns: x, y, z, view, name
 #' @noRd
 create_cortex_slices <- function(slabs, dims, cortex_x = NULL) {
-  if (is.null(cortex_x)) {
-    scale <- dims[1] / 256
-    cortex_x <- round(119 * scale)
-  }
-
   slices <- lapply(seq_len(nrow(slabs)), function(i) {
     v <- slabs[i, ]
 
@@ -270,8 +265,13 @@ create_cortex_slices <- function(slabs, dims, cortex_x = NULL) {
         x_pos <- round(dims[1] * 0.55)
       } else if (grepl("right", v$name, ignore.case = TRUE)) {
         x_pos <- round(dims[1] * 0.45)
-      } else {
+      } else if (!is.null(cortex_x)) {
         x_pos <- cortex_x
+      } else {
+        # Fall back to the slab's own midpoint rather than a fixed plane, so a
+        # sagittal slab at an explicit position gets its cortex reference from
+        # the same place -- axial and coronal already do this.
+        x_pos <- round((v$start + v$end) / 2)
       }
       data.frame(
         x = x_pos,
@@ -318,6 +318,48 @@ detect_cortex_labels <- function(vol) {
   } else {
     list(left = 3, right = 42)
   }
+}
+
+
+#' Subcortical structures used as anatomical context
+#'
+#' The cortical ribbon alone leaves tracts that descend through the brainstem
+#' or reach into deep grey hanging outside the silhouette, which reads as a
+#' misalignment. These structures are added to the reference so those tracts
+#' have context.
+#'
+#' White matter is deliberately excluded, both cerebral and cerebellar: tracts
+#' live there, and filling it would bury them in grey. Excluding it also keeps
+#' the cerebellum a foliated shell like the cerebral ribbon rather than a solid
+#' mass, which otherwise merges with the occipital lobe in sagittal views.
+#'
+#' @param vol 3D array of segmentation labels
+#'
+#' @return Integer vector of label values present in `vol`
+#' @noRd
+detect_context_labels <- function(vol) {
+  context <- c(
+    16, # brainstem
+    8,
+    47, # cerebellar cortex (white matter excluded, as for the cerebrum)
+    28,
+    60, # ventral DC
+    10,
+    49, # thalamus
+    11,
+    50, # caudate
+    12,
+    51, # putamen
+    13,
+    52, # pallidum
+    17,
+    53, # hippocampus
+    18,
+    54, # amygdala
+    26,
+    58 # accumbens
+  )
+  intersect(context, unique(as.vector(vol)))
 }
 
 

@@ -389,3 +389,65 @@ describe("coords2sf polygon closing", {
     expect_gt(nrow(result), 0)
   })
 })
+
+
+describe("coords2sf() ring hierarchy", {
+  # A square with a square hole. `.subid` is the ring index within a polygon
+  # (1 = exterior, 2+ = holes); treating each ring as its own polygon fills the
+  # hole, which turns thin ribbons (a cortical slice) into solid blobs.
+  ring_coords <- function() {
+    outer <- data.frame(
+      .long = c(0, 10, 10, 0),
+      .lat = c(0, 0, 10, 10),
+      .subid = 1L
+    )
+    hole <- data.frame(
+      .long = c(3, 7, 7, 3),
+      .lat = c(3, 3, 7, 7),
+      .subid = 2L
+    )
+    out <- rbind(outer, hole)
+    out$.id <- 1L
+    out$.poly <- 1L
+    out$.order <- seq_len(nrow(out))
+    out
+  }
+
+  it("keeps holes as holes rather than filling them", {
+    result <- coords2sf(ring_coords())
+    # 10x10 exterior minus 4x4 hole
+    expect_equal(
+      as.numeric(sf::st_area(result)),
+      100 - 16,
+      tolerance = testthat_tolerance()
+    )
+  })
+
+  it("returns one feature per polygon, not one per ring", {
+    expect_identical(nrow(coords2sf(ring_coords())), 1L)
+  })
+
+  it("still handles a polygon with no holes", {
+    coords <- ring_coords()
+    coords <- coords[coords$.subid == 1L, ]
+    expect_equal(
+      as.numeric(sf::st_area(coords2sf(coords))),
+      100,
+      tolerance = testthat_tolerance()
+    )
+  })
+
+  it("keeps separate polygons separate", {
+    a <- ring_coords()[1:4, ]
+    b <- a
+    b$.long <- b$.long + 100
+    b$.id <- 2L
+    result <- coords2sf(rbind(a, b))
+    expect_identical(nrow(result), 2L)
+    expect_equal(
+      sum(as.numeric(sf::st_area(result))),
+      200,
+      tolerance = testthat_tolerance()
+    )
+  })
+})

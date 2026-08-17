@@ -4,10 +4,12 @@
 #' Smooth and simplify atlas 2D contours
 #'
 #' Topology-preserving simplification of atlas sf geometry via
-#' [rmapshaper::ms_simplify()], with optional morphological closing
-#' (positive then negative [sf::st_buffer()]) layered on top to round
-#' off voxel-edge stair-steps into smooth curves. Shared boundaries
+#' [rmapshaper::ms_simplify()], with optional smoothing layered on top to
+#' round off voxel-edge stair-steps into smooth curves. Shared boundaries
 #' between adjacent regions are simplified together, preventing gaps.
+#'
+#' Note that the default `method = "close"` fills holes narrower than
+#' `smoothness`; see `method` for alternatives that preserve them.
 #'
 #' By default all labels are smoothed equally. Use `labels` to smooth only
 #' matching labels, or `exclude` to smooth everything except matching labels.
@@ -17,11 +19,23 @@
 #' @param keep Proportion of vertices to retain (0--1), or `NULL` to skip
 #'   vertex simplification. Lower values produce simpler shapes; values
 #'   near 1 are an effective no-op. Default 0.05.
-#' @param smoothness Buffer distance in geometry units for morphological
-#'   closing after simplification. 0 (the default) skips closing. Values
-#'   of 2--3 round off voxel-edge stair-steps on millimetre voxel grids
-#'   without merging adjacent regions; larger values produce rounder
-#'   shapes but can bleed nearby region boundaries together.
+#' @param smoothness Smoothing strength between 0 and 1, applied after
+#'   simplification. 0 (the default) skips smoothing. The scale is shared by
+#'   every `method`, so the same value means a comparable amount of smoothing
+#'   whichever one you pick; each method's native parameter is derived from it.
+#'   Around 0.4--0.6 rounds off voxel-edge stair-steps on millimetre voxel
+#'   grids without distorting shapes; 1 is the most smoothing a method applies
+#'   before shapes stop resembling their input.
+#' @param method Smoothing method. `"close"` (the default) is a
+#'   morphological closing: a positive then negative [sf::st_buffer()].
+#'   It rounds outlines but **fills holes narrower than the smoothing
+#'   distance**,
+#'   which erases the sulci of a thin cortical ribbon. The remaining
+#'   methods come from [smoothr::smooth()] and move vertices rather than
+#'   dilating the shape, so enclosed holes stay open: `"chaikin"` (corner
+#'   cutting), `"ksmooth"` (kernel smoothing) and `"spline"`. Choose
+#'   `"close"` to round solid shapes such as tract tubes, and one of the
+#'   others when the geometry has holes worth keeping.
 #' @param labels Optional regex pattern. Only labels matching this pattern
 #'   are smoothed; others are left unchanged.
 #' @param exclude Optional regex pattern. Labels matching this pattern are
@@ -40,20 +54,37 @@
 #' atlas <- atlas_smooth(my_atlas, keep = 0.2, exclude = "cortex_|Cortex")
 #'
 #' # Round off jagged voxel edges without dropping vertices.
-#' atlas <- atlas_smooth(my_atlas, keep = NULL, smoothness = 3)
+#' atlas <- atlas_smooth(my_atlas, keep = NULL, smoothness = 0.6)
 #'
 #' # Per-region tuning: hard simplification for tiny nuclei, gentle
 #' # closing for the brain outline.
 #' atlas <- atlas_smooth(my_atlas, keep = 0.05, exclude = "cortex_")
-#' atlas <- atlas_smooth(atlas, keep = NULL, smoothness = 3, labels = "cortex_")
+#' atlas <- atlas_smooth(
+#'   atlas,
+#'   keep = NULL,
+#'   smoothness = 0.6,
+#'   labels = "cortex_"
+#' )
+#'
+#' # Round a cortical ribbon without closing its sulci.
+#' atlas <- atlas_smooth(
+#'   my_atlas,
+#'   keep = NULL,
+#'   smoothness = 0.4,
+#'   method = "chaikin",
+#'   labels = "cortex_"
+#' )
 #' }
 atlas_smooth <- function(
   atlas,
   keep = 0.05,
   smoothness = 0,
   labels = NULL,
-  exclude = NULL
+  exclude = NULL,
+  method = c("close", "chaikin", "ksmooth", "spline")
 ) {
+  method <- match.arg(method)
+  check_smoothness(smoothness)
   geom <- ggseg.formats::atlas_geom(atlas)
   if (is.null(geom)) {
     cli::cli_warn("Atlas has no 2D geometry, nothing to smooth")
@@ -85,7 +116,8 @@ atlas_smooth <- function(
       do_simplify,
       do_close,
       keep,
-      smoothness
+      smoothness,
+      method
     )
   } else {
     sf_data <- apply_smooth_ops(
@@ -93,7 +125,8 @@ atlas_smooth <- function(
       do_simplify,
       do_close,
       keep,
-      smoothness
+      smoothness,
+      method
     )
   }
 
@@ -334,12 +367,19 @@ filter_valid_geometries <- function(sf_obj) {
 
 #' Apply the configured simplify/close operations to an sf data.frame
 #' @noRd
-apply_smooth_ops <- function(d, do_simplify, do_close, keep, smoothness) {
+apply_smooth_ops <- function(
+  d,
+  do_simplify,
+  do_close,
+  keep,
+  smoothness,
+  method = "close"
+) {
   if (do_simplify) {
     d <- simplify_sf_topology(d, keep = keep)
   }
   if (do_close) {
-    d <- smooth_sf_light(d, smoothness = smoothness)
+    d <- smooth_sf_light(d, smoothness = smoothness, method = method)
   }
   d
 }
@@ -355,7 +395,8 @@ smooth_sf_subset <- function(
   do_simplify,
   do_close,
   keep,
-  smoothness
+  smoothness,
+  method = "close"
 ) {
   sf_labels <- sf_data$label
   if (!is.null(labels)) {
@@ -373,7 +414,14 @@ smooth_sf_subset <- function(
   target <- sf_data[mask, , drop = FALSE]
   rest <- sf_data[!mask, , drop = FALSE]
 
-  target <- apply_smooth_ops(target, do_simplify, do_close, keep, smoothness)
+  target <- apply_smooth_ops(
+    target,
+    do_simplify,
+    do_close,
+    keep,
+    smoothness,
+    method
+  )
   sf_data <- rbind(target, rest)
   sf_data <- sf_data[order(sf_data$.smooth_order), , drop = FALSE]
   sf_data$.smooth_order <- NULL
@@ -446,13 +494,80 @@ simplify_sf_topology <- function(sf_data, keep = 0.05) {
 #' @return Smoothed sf data.frame.
 #' @noRd
 #' @importFrom sf st_buffer st_make_valid
-smooth_sf_light <- function(sf_data, smoothness = 0) {
+smooth_sf_light <- function(sf_data, smoothness = 0, method = "close") {
   if (smoothness <= 0) {
     return(sf_data)
   }
-  sf_data <- sf::st_buffer(sf_data, dist = smoothness, nQuadSegs = 8L)
-  sf_data <- sf::st_buffer(sf_data, dist = -smoothness, nQuadSegs = 8L)
+  if (identical(method, "close")) {
+    dist <- native_smoothness(smoothness, "close")
+    sf_data <- sf::st_buffer(sf_data, dist = dist, nQuadSegs = 8L)
+    sf_data <- sf::st_buffer(sf_data, dist = -dist, nQuadSegs = 8L)
+    return(sf::st_make_valid(sf_data))
+  }
+
+  rlang::check_installed(
+    "smoothr",
+    reason = paste0("for the \"", method, "\" smoothing method")
+  )
+  # Corner-rounding methods move vertices rather than dilating the shape, so
+  # every ring survives and enclosed holes stay open.
+  native <- native_smoothness(smoothness, method)
+  args <- switch(
+    method,
+    chaikin = list(refinements = native),
+    ksmooth = list(smoothness = native),
+    spline = list(vertex_factor = native)
+  )
+  sf::st_geometry(sf_data) <- do.call(
+    smoothr::smooth,
+    c(list(sf::st_geometry(sf_data), method = method), args)
+  )
   sf::st_make_valid(sf_data)
+}
+
+
+#' Validate the normalised smoothness strength
+#' @noRd
+check_smoothness <- function(smoothness) {
+  if (is.null(smoothness) || is.na(smoothness)) {
+    return(invisible(NULL))
+  }
+  if (smoothness < 0 || smoothness > 1) {
+    cli::cli_abort(c(
+      "{.arg smoothness} must be between 0 and 1, not {smoothness}.",
+      "i" = "It is a relative strength shared by every {.arg method}, so the
+             same value means the same amount of smoothing whichever one you
+             pick.",
+      "i" = "It previously took each method's native units (a buffer distance,
+             a refinement count). Divide an old {.code method = \"close\"}
+             distance by {smoothness_scale$close} to convert."
+    ))
+  }
+  invisible(NULL)
+}
+
+
+# Native parameter reached at smoothness = 1, per method. `spline` takes a
+# vertex multiplier that is only meaningful from 2 upwards, so it is scaled
+# between that floor and its maximum rather than from zero.
+smoothness_scale <- list(
+  close = 5,
+  chaikin = 5,
+  ksmooth = 5,
+  spline = 10
+)
+
+
+#' Map the normalised 0-1 strength onto a method's native parameter
+#' @noRd
+native_smoothness <- function(smoothness, method) {
+  switch(
+    method,
+    close = smoothness * smoothness_scale$close,
+    chaikin = max(1L, as.integer(round(smoothness * smoothness_scale$chaikin))),
+    ksmooth = smoothness * smoothness_scale$ksmooth,
+    spline = 2 + smoothness * (smoothness_scale$spline - 2)
+  )
 }
 
 

@@ -121,6 +121,53 @@ describe("create_cortex_slices", {
     expect_true(all(c("x", "y", "z", "view", "name") %in% names(result)))
   })
 
+  it("takes an unnamed sagittal slice from its own slab midpoint", {
+    # A sagittal slab at an explicit position must get its cortex reference
+    # from the same plane; a fixed fallback would draw the silhouette
+    # somewhere other than where the tracts were projected.
+    views <- data.frame(
+      name = "sagittal",
+      type = "sagittal",
+      start = 116,
+      end = 126,
+      stringsAsFactors = FALSE
+    )
+
+    result <- create_cortex_slices(views, c(256, 256, 256))
+
+    expect_identical(result$x, 121)
+    expect_true(is.na(result$y))
+    expect_true(is.na(result$z))
+  })
+
+  it("still honours an explicit cortex_x over the slab midpoint", {
+    views <- data.frame(
+      name = "sagittal",
+      type = "sagittal",
+      start = 116,
+      end = 126,
+      stringsAsFactors = FALSE
+    )
+
+    result <- create_cortex_slices(views, c(256, 256, 256), cortex_x = 119)
+
+    expect_identical(result$x, 119)
+  })
+
+  it("keeps hemisphere-named sagittal views at their lateral positions", {
+    views <- data.frame(
+      name = c("sagittal_left", "sagittal_right"),
+      type = "sagittal",
+      start = c(150, 100),
+      end = c(160, 110),
+      stringsAsFactors = FALSE
+    )
+
+    result <- create_cortex_slices(views, c(256, 256, 256))
+
+    expect_identical(result$x, c(141, 115))
+  })
+
   it("sets z for axial views", {
     views <- data.frame(
       name = "axial_1",
@@ -631,5 +678,35 @@ describe("get_contours full processing path", {
     result <- get_contours(rast_obj, max_val = 255)
 
     expect_null(result)
+  })
+})
+
+
+describe("detect_context_labels", {
+  it("returns the subcortical structures present in the volume", {
+    vol <- array(c(16L, 10L, 49L, 0L), dim = c(2, 2, 1))
+    expect_setequal(detect_context_labels(vol), c(16, 10, 49))
+  })
+
+  it("excludes cerebral white matter so tracts stay visible", {
+    vol <- array(c(2L, 41L, 16L, 0L), dim = c(2, 2, 1))
+    result <- detect_context_labels(vol)
+    expect_false(any(c(2, 41) %in% result))
+    expect_true(16 %in% result)
+  })
+
+  it("excludes cerebellar white matter but keeps cerebellar cortex", {
+    # Including cerebellar WM would draw the cerebellum as a solid mass while
+    # the cerebrum is a ribbon, and it merges with the occipital lobe in
+    # sagittal views.
+    vol <- array(c(7L, 8L, 46L, 47L), dim = c(2, 2, 1))
+    result <- detect_context_labels(vol)
+    expect_false(any(c(7, 46) %in% result))
+    expect_setequal(result, c(8, 47))
+  })
+
+  it("returns nothing when no context structures are present", {
+    vol <- array(c(0L, 3L, 42L, 1001L), dim = c(2, 2, 1))
+    expect_length(detect_context_labels(vol), 0)
   })
 })

@@ -385,24 +385,31 @@ streamlines_to_volume <- function(
 
   template_nii <- read_volume(template_file, reorient = FALSE)
   dims <- dim(template_nii)
-  vox2ras <- load_vox2ras_matrix(template_file, coords_are_voxels)
+  # Always resolve the affine: it is needed to reorient the finished volume
+  # even when the coordinates are already voxel indices.
+  vox2ras <- load_vox2ras_matrix(template_file, coords_are_voxels = FALSE)
   vol <- array(0L, dim = dims)
 
   for (i in seq_len(nrow(centerline))) {
     vox_idx <- coord_to_voxel(
       centerline[i, ],
       dims,
-      vox2ras,
+      if (coords_are_voxels) NULL else vox2ras,
       coords_are_voxels
     )
     vol <- set_sphere_voxels(vol, vox_idx, radius, label_value, dims)
   }
 
-  nii <- RNifti::asNifti(vol, reference = template_nii)
-  if (RNifti::orientation(nii) != "RAS") {
-    RNifti::orientation(nii) <- "RAS"
+  if (is.null(vox2ras)) {
+    return(vol)
   }
-  as.array(nii)
+  # vol was filled in the template's *native* voxel layout, but downstream
+  # slicing assumes RAS+ -- and the cortex reference is read through
+  # read_volume(reorient = TRUE), which does convert. Reorient with the same
+  # helper so both agree. Note read_volume() returns a bare array whose
+  # reference carries no affine, so RNifti::orientation() reports "RAS" for a
+  # native-layout array and an orientation<- assignment here is a silent no-op.
+  reorient_volume_to_ras(vol, vox2ras)
 }
 
 
@@ -731,5 +738,25 @@ center_meshes <- function(meshes_list) {
     }
   }
 
+  # Record the translation so consumers that need world coordinates (the 2D
+  # projection rasterises centerlines against the anatomical reference volume)
+  # can undo it. Without this the whole tract set is offset from the cortex.
+  attr(meshes_list, "center_offset") <- centroid
   meshes_list
+}
+
+
+#' Undo the translation applied by [center_meshes()]
+#'
+#' Centered coordinates are for 3D display; anything rasterised against the
+#' anatomical reference volume must be back in world space first.
+#' @noRd
+uncenter_coords <- function(coords, offset) {
+  if (is.null(coords) || is.null(offset)) {
+    return(coords)
+  }
+  for (axis in 1:3) {
+    coords[, axis] <- coords[, axis] + offset[axis]
+  }
+  coords
 }

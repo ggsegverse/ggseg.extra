@@ -1010,7 +1010,7 @@ describe("atlas_smooth", {
       before$geometry[before$label == "region_a"]
     ))
 
-    result <- atlas_smooth(atlas, keep = NULL, smoothness = 3)
+    result <- atlas_smooth(atlas, keep = NULL, smoothness = 0.6)
     geom <- ggseg.formats::atlas_geom(result)
 
     expect_true(all(sf::st_is_valid(geom)))
@@ -1102,5 +1102,129 @@ describe("atlas_simplify (deprecated)", {
     lifecycle::expect_deprecated(
       expect_warning(atlas_simplify(atlas), "no 2D geometry")
     )
+  })
+})
+
+
+testthat::describe("atlas_smooth(method =)", {
+  # A square ring: a solid square with a square hole. Morphological closing
+  # fills holes narrower than `smoothness`; corner-rounding methods do not.
+  ring_atlas <- function() {
+    outer <- list(cbind(
+      c(0, 40, 40, 0, 0),
+      c(0, 0, 40, 40, 0)
+    ))
+    hole <- list(cbind(
+      c(18, 22, 22, 18, 18),
+      c(18, 18, 22, 22, 18)
+    ))
+    geom <- sf::st_sf(
+      label = "ring",
+      view = "axial",
+      geometry = sf::st_sfc(sf::st_polygon(c(outer, hole)))
+    )
+    ggseg.formats::ggseg_atlas(
+      atlas = "test",
+      type = "subcortical",
+      core = data.frame(
+        hemi = "mid",
+        region = "ring",
+        label = "ring",
+        stringsAsFactors = FALSE
+      ),
+      data = ggseg.formats::ggseg_data_subcortical(geom = geom)
+    )
+  }
+
+  hole_open <- function(atlas) {
+    area <- sum(as.numeric(sf::st_area(
+      ggseg.formats::atlas_geom(ggseg.formats::as_sf_atlas(atlas))
+    )))
+    # 40x40 outer minus 4x4 hole = 1584; a filled hole gives ~1600
+    area < 1595
+  }
+
+  it("closes narrow holes with the default method", {
+    result <- atlas_smooth(ring_atlas(), keep = NULL, smoothness = 0.6)
+    expect_false(hole_open(result))
+  })
+
+  it("keeps holes open with chaikin", {
+    result <- atlas_smooth(
+      ring_atlas(),
+      keep = NULL,
+      smoothness = 0.6,
+      method = "chaikin"
+    )
+    expect_true(hole_open(result))
+  })
+
+  it("keeps holes open with ksmooth", {
+    skip_if_not_installed("smoothr")
+    result <- atlas_smooth(
+      ring_atlas(),
+      keep = NULL,
+      smoothness = 0.4,
+      method = "ksmooth"
+    )
+    expect_true(hole_open(result))
+  })
+
+  it("defaults to close for backwards compatibility", {
+    expect_identical(
+      atlas_smooth(ring_atlas(), keep = NULL, smoothness = 0.6),
+      atlas_smooth(
+        ring_atlas(),
+        keep = NULL,
+        smoothness = 0.6,
+        method = "close"
+      )
+    )
+  })
+
+  it("rejects an unknown method", {
+    expect_error(
+      atlas_smooth(ring_atlas(), smoothness = 0.6, method = "wibble"),
+      "should be one of"
+    )
+  })
+
+  it("is a no-op when smoothness is 0 regardless of method", {
+    a <- ring_atlas()
+    expect_identical(
+      atlas_smooth(a, keep = NULL, smoothness = 0, method = "chaikin"),
+      a
+    )
+  })
+})
+
+
+testthat::describe("smoothness scale", {
+  it("rejects values outside 0-1 with conversion guidance", {
+    a <- ggseg.formats::as_sf_atlas(ggseg.formats::aseg())
+    expect_error(atlas_smooth(a, smoothness = 3), "between 0 and 1")
+    expect_error(atlas_smooth(a, smoothness = -1), "between 0 and 1")
+  })
+
+  it("maps the same strength to each method's native units", {
+    expect_identical(native_smoothness(0.4, "chaikin"), 2L)
+    expect_equal(
+      native_smoothness(0.4, "close"),
+      2,
+      tolerance = testthat_tolerance()
+    )
+    expect_equal(
+      native_smoothness(0.4, "ksmooth"),
+      2,
+      tolerance = testthat_tolerance()
+    )
+  })
+
+  it("never gives chaikin fewer than one refinement", {
+    expect_identical(native_smoothness(0.01, "chaikin"), 1L)
+  })
+
+  it("keeps spline at or above its meaningful floor", {
+    expect_gte(native_smoothness(0.01, "spline"), 2)
   })
 })

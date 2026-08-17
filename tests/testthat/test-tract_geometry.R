@@ -820,3 +820,125 @@ describe("detect_coords_are_voxels", {
     expect_false(detect_coords_are_voxels(streamlines, dims = c(50, 50, 50)))
   })
 })
+
+
+describe("streamlines_to_volume orientation", {
+  # An LIA template, the layout FreeSurfer's aseg.mgz uses: voxel axes 2 and 3
+  # are swapped relative to RAS. It must be .mgz, not .nii: read_volume()
+  # returns a bare array for .mgz (no affine attached), so RNifti::orientation()
+  # reports "RAS" for a native-layout array and an orientation<- assignment is a
+  # silent no-op. The tract volume and the cortex reference are sliced by the
+  # same code, so both must end up in RAS, or the 2D projection shows axial
+  # tracts over coronal cortex and sagittal tracts rotated 90 degrees.
+  lia_mgz <- function(path, d = 12L) {
+    xform <- rbind(
+      c(-1, 0, 0, d / 2),
+      c(0, 0, 1, -d / 2),
+      c(0, -1, 0, d / 2),
+      c(0, 0, 0, 1)
+    )
+    freesurferformats::write.fs.mgh(
+      path,
+      array(0, dim = rep(d, 3)),
+      vox2ras_matrix = xform
+    )
+    xform
+  }
+
+  it("places a RAS point where the reoriented reference volume puts it", {
+    skip_if_not_installed("freesurferformats")
+    tmp <- tempfile(fileext = ".mgz")
+    on.exit(unlink(tmp))
+    d <- 12L
+    xform <- lia_mgz(tmp, d)
+    world <- c(2, -3, 1)
+
+    tube <- streamlines_to_volume(
+      centerline = matrix(world, ncol = 3),
+      template_file = tmp,
+      label_value = 1L,
+      radius = 0,
+      coords_are_voxels = FALSE
+    )
+
+    # Same point, marked in the template's native layout and then reoriented
+    # the way read_volume(reorient = TRUE) reorients the cortex reference.
+    ijk <- round(solve(xform) %*% c(world, 1))[1:3] + 1L
+    reference <- array(0L, dim = rep(d, 3))
+    reference[ijk[1], ijk[2], ijk[3]] <- 1L
+    reference <- reorient_volume_to_ras(reference, xform)
+
+    expect_identical(which(tube > 0), which(reference > 0))
+  })
+
+  it("returns a volume in RAS, not the template's native layout", {
+    skip_if_not_installed("freesurferformats")
+    tmp <- tempfile(fileext = ".mgz")
+    on.exit(unlink(tmp))
+    d <- 12L
+    xform <- lia_mgz(tmp, d)
+    world <- c(2, -3, 1)
+
+    tube <- streamlines_to_volume(
+      centerline = matrix(world, ncol = 3),
+      template_file = tmp,
+      label_value = 1L,
+      radius = 0,
+      coords_are_voxels = FALSE
+    )
+
+    native <- array(0L, dim = rep(d, 3))
+    ijk <- round(solve(xform) %*% c(world, 1))[1:3] + 1L
+    native[ijk[1], ijk[2], ijk[3]] <- 1L
+
+    # The native and RAS layouts differ for an LIA template, so a volume that
+    # matched the native one would mean the reorientation never happened.
+    expect_false(identical(which(tube > 0), which(native > 0)))
+  })
+})
+
+
+describe("center_meshes offset bookkeeping", {
+  two_meshes <- function() {
+    mk <- function(shift) {
+      list(
+        vertices = data.frame(
+          x = c(0, 1) + shift,
+          y = c(0, 2) + shift,
+          z = c(0, 3) + shift
+        ),
+        metadata = list(
+          centerline = matrix(
+            c(0, 0, 0, 1, 2, 3) + shift,
+            ncol = 3,
+            byrow = TRUE
+          )
+        )
+      )
+    }
+    list(a = mk(0), b = mk(10))
+  }
+
+  it("records the translation it applied", {
+    result <- center_meshes(two_meshes())
+    offset <- attr(result, "center_offset")
+    expect_length(offset, 3)
+    expect_false(any(offset == 0))
+  })
+
+  it("uncenter_coords restores the original world coordinates", {
+    meshes <- two_meshes()
+    original <- meshes$a$metadata$centerline
+    result <- center_meshes(meshes)
+    restored <- uncenter_coords(
+      result$a$metadata$centerline,
+      attr(result, "center_offset")
+    )
+    expect_equal(restored, original, tolerance = testthat_tolerance())
+  })
+
+  it("uncenter_coords is a no-op without an offset", {
+    coords <- matrix(c(1, 2, 3, 4, 5, 6), ncol = 3, byrow = TRUE)
+    expect_identical(uncenter_coords(coords, NULL), coords)
+  })
+})

@@ -131,7 +131,12 @@ to_coords <- function(x, n) {
 #' @importFrom dplyr group_by group_split
 #' @importFrom sf st_polygon st_sfc st_sf st_zm st_cast st_crs
 coords2sf <- function(x, vertex_size_limits = NULL) {
-  dt <- group_by(x, .subid, .id)
+  # Group by polygon, not by ring. `.subid` is the ring index within a polygon
+  # (1 = exterior, >1 = holes) and `.id` the polygon index, so grouping by both
+  # would make every ring its own solid polygon and silently fill every hole --
+  # turning a thin cortical ribbon into a filled blob wherever its sulci are
+  # enclosed.
+  dt <- group_by(x, .id)
   dt_split <- group_split(dt)
 
   if (!is.null(vertex_size_limits)) {
@@ -152,12 +157,19 @@ coords2sf <- function(x, vertex_size_limits = NULL) {
     }
   }
 
-  polygon_list <- lapply(dt_split, function(d) {
-    coords_matrix <- as.matrix(d[, c(".long", ".lat")])
-    if (!identical(coords_matrix[1, ], utils::tail(coords_matrix, 1)[1, ])) {
-      coords_matrix <- rbind(coords_matrix, coords_matrix[1, ])
+  close_ring <- function(m) {
+    if (!identical(m[1, ], utils::tail(m, 1)[1, ])) {
+      m <- rbind(m, m[1, ])
     }
-    st_polygon(list(coords_matrix))
+    m
+  }
+
+  polygon_list <- lapply(dt_split, function(d) {
+    rings <- split(d, d$.subid)
+    rings <- rings[order(as.numeric(names(rings)))]
+    st_polygon(lapply(rings, function(r) {
+      close_ring(as.matrix(r[, c(".long", ".lat")]))
+    }))
   })
 
   if (length(polygon_list) > 0) {

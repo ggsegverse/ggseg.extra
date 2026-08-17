@@ -160,7 +160,8 @@ tract_build_core <- function(meshes_list, colours, tract_names) {
     core = core,
     palette = palette,
     centerlines_df = centerlines_df,
-    atlas_name = atlas_name
+    atlas_name = atlas_name,
+    center_offset = attr(meshes_list, "center_offset")
   )
 }
 
@@ -174,7 +175,8 @@ tract_create_snapshots <- function(
   coords_are_voxels,
   skip_existing,
   tract_radius,
-  verbose
+  verbose,
+  center_offset = NULL
 ) {
   aseg_vol <- read_volume(input_aseg)
   dims <- dim(aseg_vol)
@@ -185,7 +187,12 @@ tract_create_snapshots <- function(
   cortex_slices <- create_cortex_slices(slabs, dims)
 
   tract_labels <- centerlines_df$label
-  centerlines <- stats::setNames(centerlines_df$points, tract_labels)
+  # center_meshes() translated these for 3D display; rasterising them against
+  # the anatomical reference needs them back in world coordinates.
+  centerlines <- stats::setNames(
+    lapply(centerlines_df$points, uncenter_coords, offset = center_offset),
+    tract_labels
+  )
 
   tract_volumes <- tract_volume_map(
     centerlines,
@@ -196,9 +203,14 @@ tract_create_snapshots <- function(
   )
 
   cortex_labels <- detect_cortex_labels(aseg_vol)
+  reference_labels <- c(
+    cortex_labels$left,
+    cortex_labels$right,
+    detect_context_labels(aseg_vol)
+  )
 
   cortex_vol <- array(0L, dim = dims)
-  for (lbl in c(cortex_labels$left, cortex_labels$right)) {
+  for (lbl in reference_labels) {
     cortex_vol[aseg_vol == lbl] <- 1L
   }
 
