@@ -1,24 +1,4 @@
-# ggseg.extra 1.9.9.9012
-
-## New features
-
-- `prepare_subcortical_mni152()` embeds a subcortical parcellation supplied in
-  fixed FSL-MNI152 space into a FreeSurfer subject's `aseg` (via the known
-  `mni152.register.dat` transform), replacing the lumped aseg structures the
-  parcels subdivide and returning a merged volume plus a matching colour table
-  ready for `create_subcortical_from_volume()`. It is the fixed-registration
-  counterpart to `prepare_subcortical_anatomical()`, which instead computes an
-  `mri_coreg` registration to `cvs_avg35_inMNI152`; use this one when the atlas
-  already lives in a standard MNI152 template and should keep `fsaverage5`
-  context. `aseg_subcortical_labels()` returns the lumped subcortical structure
-  ids a finer parcellation typically subdivides.
-
-- `create_tract_from_volume()` builds a white-matter tract atlas from a
-  volumetric tract _label map_ (one integer label per tract) rather than from
-  streamlines: each tract's voxel cloud is reduced to a principal-curve
-  centerline and handed to `create_tract_from_tractography()`, which builds the
-  3D tubes and 2D projection. This suits probabilistic tract atlases distributed
-  as NIfTI label volumes (e.g. AtlasTrack). Adds `princurve` to Suggests.
+# ggseg.extra 1.9.9.9013
 
 ## New features
 
@@ -84,6 +64,30 @@
   `atlas_name` for the atlas object itself, not only for the output directory.
   The finished atlas previously took the name derived from its tract labels
   (e.g. `"tracts"`), ignoring what the caller asked for.
+
+# ggseg.extra 1.9.9.9012
+
+## New features
+
+- `prepare_subcortical_mni152()` embeds a subcortical parcellation supplied in
+  fixed FSL-MNI152 space into a FreeSurfer subject's `aseg` (via the known
+  `mni152.register.dat` transform), replacing the lumped aseg structures the
+  parcels subdivide and returning a merged volume plus a matching colour table
+  ready for `create_subcortical_from_volume()`. It is the fixed-registration
+  counterpart to `prepare_subcortical_anatomical()`, which instead computes an
+  `mri_coreg` registration to `cvs_avg35_inMNI152`; use this one when the atlas
+  already lives in a standard MNI152 template and should keep `fsaverage5`
+  context. `aseg_subcortical_labels()` returns the lumped subcortical structure
+  ids a finer parcellation typically subdivides.
+
+- `create_tract_from_volume()` builds a white-matter tract atlas from a
+  volumetric tract _label map_ (one integer label per tract) rather than from
+  streamlines: each tract's voxel cloud is reduced to a principal-curve
+  centerline and handed to `create_tract_from_tractography()`, which builds the
+  3D tubes and 2D projection. This suits probabilistic tract atlases distributed
+  as NIfTI label volumes (e.g. AtlasTrack). Adds `princurve` to Suggests.
+
+## Bug fixes
 
 - `create_tract_from_tractography()` no longer errors when `input_tracts` is an
   in-memory list of coordinate matrices: the setup log interpolated the matrices
