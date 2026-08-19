@@ -1,3 +1,34 @@
+# ggseg.extra 1.9.9.9014
+
+## New features
+
+- `project_volume_anatomical()` now warns when `protect_cortex` removes a
+  label entirely. The guard blocks the atlas from overwriting the cortical
+  ribbon and cerebral white matter, which is right for deep grey structures
+  but erases a white-matter atlas from the only tissue it describes — and it
+  did so silently. ggsegJHU's ICBM-DTI-81 atlas shipped for a release with its
+  right superior longitudinal fasciculus missing outright, with nothing in the
+  build output to show it. The warning names the lost labels and points at
+  `protect_cortex = FALSE`.
+
+## Bug fixes
+
+- `write_lut()` no longer truncates label names to 29 characters. FreeSurfer
+  parses its colour tables on whitespace and its own `FreeSurferColorLUT.txt`
+  carries names up to 47 characters, so the cap corrupted every long label --
+  and silently merged any two that were identical up to the cut. Julich-Brain's
+  `Ch_123_(Basal_Forebrain)_right` came back as `Ch_123_Basal_Forebrain_righ`,
+  losing the hemisphere suffix and with it the hemisphere.
+
+- `clean_region_name()` now strips the same hemisphere affixes that
+  `detect_hemi()` recognises, including the `L_`/`R_` prefix convention and
+  `_left`/`_right` suffixes. Where the two disagreed the hemisphere ended up in
+  `region` as well as `hemi`: `R_Fx` gave hemi `"right"` but region `"r fx"`,
+  so the two halves of one structure looked like two unrelated structures to
+  anything grouping on `region` -- including the new
+  `ggseg.formats::atlas_view_select()`. A name that is *only* a hemisphere word
+  is left alone rather than stripped to nothing.
+
 # ggseg.extra 1.9.9.9013
 
 ## New features

@@ -1,5 +1,6 @@
 Anders
 Athanasia
+AtlasTrack
 Beate
 Brainnetome
 Brodmann
@@ -33,6 +34,7 @@ HCL
 HCP
 ImageMagick
 Infratentorial
+Julich
 LCBC
 LIA
 LTA
@@ -119,10 +121,12 @@ entorhinal
 env
 errored
 favour
+fibre
 fibres
 flatmap
 flatmaps
 folia
+foliated
 freesurfer
 fsaverage
 furrr
@@ -138,6 +142,7 @@ gyri
 gyrus
 gz
 hemi
+honour
 idx
 inlined
 json
@@ -164,6 +169,7 @@ neuromapr
 neuromaps
 niftiImage
 nii
+occipital
 pallidum
 parcellation
 parcellation's
@@ -181,6 +187,8 @@ putamen
 quadric
 ras
 rasterisation
+rasterised
+rasterising
 rda
 readme
 recognises
@@ -198,6 +206,7 @@ segmentations
 subcortical
 subregion
 sulcal
+sulci
 summarises
 sysdata
 tempfile
