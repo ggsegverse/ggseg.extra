@@ -1,6 +1,6 @@
 Package: ggseg.extra
 Title: Create Brain Atlases for the 'ggsegverse' Plotting Ecosystem
-Version: 1.9.9.9014
+Version: 1.9.9.9015
 Authors@R: c(
     person(
         given = "Athanasia Mo",

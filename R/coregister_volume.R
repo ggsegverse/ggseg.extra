@@ -786,6 +786,8 @@ warn_labels_lost_to_protection <- function(
   }
 
   lost_ids <- label_ids[lost]
+  # Used in the cli glue string below, which lintr does not parse.
+  # nolint next: object_usage_linter.
   names_lost <- if (is.null(lut_df)) {
     as.character(lost_ids)
   } else {

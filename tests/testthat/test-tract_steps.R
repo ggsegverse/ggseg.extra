@@ -254,7 +254,12 @@ describe("tract_create_snapshots", {
           stringsAsFactors = FALSE
         )
       },
-      create_cortex_slices = function(slabs, dims) {
+      create_cortex_slices = function(
+        slabs,
+        dims,
+        cortex_x = NULL,
+        vol = NULL
+      ) {
         data.frame(
           x = NA,
           y = NA,
@@ -321,7 +326,12 @@ describe("tract_create_snapshots", {
 
     local_mocked_bindings(
       read_volume = function(f) array(0L, dim = c(10, 10, 10)),
-      create_cortex_slices = function(slabs, dims) {
+      create_cortex_slices = function(
+        slabs,
+        dims,
+        cortex_x = NULL,
+        vol = NULL
+      ) {
         data.frame(
           x = NA,
           y = 5,
@@ -377,7 +387,12 @@ describe("tract_create_snapshots", {
           stringsAsFactors = FALSE
         )
       },
-      create_cortex_slices = function(slabs, dims) {
+      create_cortex_slices = function(
+        slabs,
+        dims,
+        cortex_x = NULL,
+        vol = NULL
+      ) {
         data.frame(
           x = NA,
           y = NA,

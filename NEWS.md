@@ -1,3 +1,19 @@
+# ggseg.extra 1.9.9.9015
+
+## New features
+
+- The grey anatomical silhouette behind a 2D view is now taken from the slice
+  in the slab holding the most cortex, rather than from the slab midpoint. The
+  silhouette is context, so it should be chosen for legibility — and a
+  midpoint can land somewhere with almost nothing to draw. A mid-sagittal slab
+  centred on the midline cuts the interhemispheric fissure:
+  `cvs_avg35_inMNI152` has 797 cortical voxels at x=128 against 6703 four
+  voxels away, so the outline came out in fragments while the structures in
+  front of it were fine. Widening the slab could not fix it, since only the
+  structures project through the slab. Ties are broken toward the midpoint, so
+  a slab whose slices are equally informative keeps the position it had
+  before.
+
 # ggseg.extra 1.9.9.9014
 
 ## New features
@@ -26,7 +42,7 @@
   `region` as well as `hemi`: `R_Fx` gave hemi `"right"` but region `"r fx"`,
   so the two halves of one structure looked like two unrelated structures to
   anything grouping on `region` -- including the new
-  `ggseg.formats::atlas_view_select()`. A name that is *only* a hemisphere word
+  `ggseg.formats::atlas_view_select()`. A name that is _only_ a hemisphere word
   is left alone rather than stripped to nothing.
 
 # ggseg.extra 1.9.9.9013

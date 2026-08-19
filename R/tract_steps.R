@@ -184,7 +184,7 @@ tract_create_snapshots <- function(
   if (is.null(slabs)) {
     slabs <- default_tract_slabs(dims)
   }
-  cortex_slices <- create_cortex_slices(slabs, dims)
+  cortex_slices <- create_cortex_slices(slabs, dims, vol = aseg_vol)
 
   tract_labels <- centerlines_df$label
   # center_meshes() translated these for 3D display; rasterising them against

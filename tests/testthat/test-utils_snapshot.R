@@ -103,6 +103,81 @@ describe("make_view_chunks", {
 })
 
 
+describe("create_cortex_slices picking by content", {
+  # 8x8x8 volume: cortex (label 1001) only on sagittal slice 3, coronal slice
+  # 6 and axial slice 2, none of which is its slab's midpoint.
+  make_vol <- function() {
+    vol <- array(0L, dim = c(8, 8, 8))
+    vol[3, , ] <- 1001L
+    vol[, 6, ] <- 1001L
+    # nolint next: commas_linter. air formats empty subscripts without spaces.
+    vol[,, 2] <- 1001L
+    vol
+  }
+
+  it("takes the slice holding the most cortex, not the slab midpoint", {
+    slabs <- rbind(
+      data.frame(name = "sag", type = "sagittal", start = 1, end = 8),
+      data.frame(name = "cor", type = "coronal", start = 1, end = 8),
+      data.frame(name = "ax", type = "axial", start = 1, end = 8)
+    )
+    result <- create_cortex_slices(slabs, c(8, 8, 8), vol = make_vol())
+
+    expect_identical(result$x[result$view == "sagittal"], 3L)
+    expect_identical(result$y[result$view == "coronal"], 6L)
+    expect_identical(result$z[result$view == "axial"], 2L)
+  })
+
+  it("stays inside the slab", {
+    slabs <- data.frame(
+      name = "sag",
+      type = "sagittal",
+      start = 5,
+      end = 8
+    )
+    result <- create_cortex_slices(slabs, c(8, 8, 8), vol = make_vol())
+
+    expect_gte(result$x, 5L)
+    expect_lte(result$x, 8L)
+  })
+
+  it("falls back to the midpoint when the slab holds no cortex", {
+    slabs <- data.frame(name = "sag", type = "sagittal", start = 5, end = 7)
+    empty <- array(0L, dim = c(8, 8, 8))
+    empty[3, , ] <- 1001L
+    result <- create_cortex_slices(slabs, c(8, 8, 8), vol = empty)
+
+    expect_identical(result$x, 6)
+  })
+
+  it("breaks ties toward the slab midpoint", {
+    # Every axial slice here holds the same amount of cortex.
+    uniform <- array(0L, dim = c(8, 8, 8))
+    uniform[, 6, ] <- 1001L
+    slabs <- data.frame(name = "ax", type = "axial", start = 3, end = 7)
+    result <- create_cortex_slices(slabs, c(8, 8, 8), vol = uniform)
+
+    expect_identical(result$z, 5L)
+  })
+
+  it("falls back to the midpoint when given no volume", {
+    slabs <- data.frame(name = "ax", type = "axial", start = 1, end = 8)
+    expect_identical(create_cortex_slices(slabs, c(8, 8, 8))$z, 4)
+  })
+
+  it("lets an explicit cortex_x win over the content search", {
+    slabs <- data.frame(name = "sag", type = "sagittal", start = 1, end = 8)
+    result <- create_cortex_slices(
+      slabs,
+      c(8, 8, 8),
+      cortex_x = 7,
+      vol = make_vol()
+    )
+    expect_identical(result$x, 7)
+  })
+})
+
+
 describe("create_cortex_slices", {
   it("creates slices matching views", {
     views <- data.frame(
