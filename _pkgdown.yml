@@ -124,6 +124,8 @@ reference:
       - coregister_volume
       - project_volume_anatomical
       - prepare_subcortical_anatomical
+      - prepare_subcortical_mni152
+      - aseg_subcortical_labels
 
   - title: Cerebellar Helpers
     desc: SUIT surfaces and MNI-to-SUIT transforms for cerebellar atlases
