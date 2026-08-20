@@ -24,6 +24,7 @@
 <url><loc>https://ggsegverse.github.io/ggseg.extra/reference/as_verbosity.html</loc></url>
 <url><loc>https://ggsegverse.github.io/ggseg.extra/reference/aseg_context.html</loc></url>
 <url><loc>https://ggsegverse.github.io/ggseg.extra/reference/aseg_hidden_labels.html</loc></url>
+<url><loc>https://ggsegverse.github.io/ggseg.extra/reference/aseg_subcortical_labels.html</loc></url>
 <url><loc>https://ggsegverse.github.io/ggseg.extra/reference/atlas_github_actions.html</loc></url>
 <url><loc>https://ggsegverse.github.io/ggseg.extra/reference/atlas_smooth.html</loc></url>
 <url><loc>https://ggsegverse.github.io/ggseg.extra/reference/coregister_volume.html</loc></url>
@@ -49,6 +50,7 @@
 <url><loc>https://ggsegverse.github.io/ggseg.extra/reference/mri_surf2surf_rereg.html</loc></url>
 <url><loc>https://ggsegverse.github.io/ggseg.extra/reference/new_project_setup_atlas_repo.html</loc></url>
 <url><loc>https://ggsegverse.github.io/ggseg.extra/reference/prepare_subcortical_anatomical.html</loc></url>
+<url><loc>https://ggsegverse.github.io/ggseg.extra/reference/prepare_subcortical_mni152.html</loc></url>
 <url><loc>https://ggsegverse.github.io/ggseg.extra/reference/project_volume_anatomical.html</loc></url>
 <url><loc>https://ggsegverse.github.io/ggseg.extra/reference/read_annotation_data.html</loc></url>
 <url><loc>https://ggsegverse.github.io/ggseg.extra/reference/read_cifti_annotation.html</loc></url>

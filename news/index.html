@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9011</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9012</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -63,6 +63,14 @@
       <small>Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.9.9.9012" id="ggsegextra-1999012">ggseg.extra 1.9.9.9012<a class="anchor" aria-label="anchor" href="#ggsegextra-1999012"></a></h2>
+<div class="section level3">
+<h3 id="new-features-1-9-9-9012">New features<a class="anchor" aria-label="anchor" href="#new-features-1-9-9-9012"></a></h3>
+<ul><li>
+<code><a href="../reference/prepare_subcortical_mni152.html">prepare_subcortical_mni152()</a></code> embeds a subcortical parcellation supplied in fixed FSL-MNI152 space into a FreeSurfer subject’s <code>aseg</code> (via the known <code>mni152.register.dat</code> transform), replacing the lumped aseg structures the parcels subdivide and returning a merged volume plus a matching colour table ready for <code><a href="../reference/create_subcortical_from_volume.html">create_subcortical_from_volume()</a></code>. It is the fixed-registration counterpart to <code><a href="../reference/prepare_subcortical_anatomical.html">prepare_subcortical_anatomical()</a></code>, which instead computes an <code>mri_coreg</code> registration to <code>cvs_avg35_inMNI152</code>; use this one when the atlas already lives in a standard MNI152 template and should keep <code>fsaverage5</code> context. <code><a href="../reference/aseg_subcortical_labels.html">aseg_subcortical_labels()</a></code> returns the lumped subcortical structure ids a finer parcellation typically subdivides.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9011" id="ggsegextra-1999011">ggseg.extra 1.9.9.9011<a class="anchor" aria-label="anchor" href="#ggsegextra-1999011"></a></h2>
 <div class="section level3">

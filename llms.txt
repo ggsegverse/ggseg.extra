@@ -185,6 +185,12 @@ Align an atlas volume to a FreeSurfer subject for anatomical context
 - [`prepare_subcortical_anatomical()`](https://ggsegverse.github.io/ggseg.extra/reference/prepare_subcortical_anatomical.md)
   : Prepare an atlas for the subcortical pipeline with anatomical
   context
+- [`prepare_subcortical_mni152()`](https://ggsegverse.github.io/ggseg.extra/reference/prepare_subcortical_mni152.md)
+  : Embed MNI152 subcortical parcels in a FreeSurfer aseg for grey-brain
+  context
+- [`aseg_subcortical_labels()`](https://ggsegverse.github.io/ggseg.extra/reference/aseg_subcortical_labels.md)
+  : Lumped aseg subcortical structures a parcellation typically
+  subdivides
 
 ## Cerebellar Helpers
 

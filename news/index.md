@@ -1,5 +1,25 @@
 # Changelog
 
+## ggseg.extra 1.9.9.9012
+
+### New features
+
+- [`prepare_subcortical_mni152()`](https://ggsegverse.github.io/ggseg.extra/reference/prepare_subcortical_mni152.md)
+  embeds a subcortical parcellation supplied in fixed FSL-MNI152 space
+  into a FreeSurfer subject’s `aseg` (via the known
+  `mni152.register.dat` transform), replacing the lumped aseg structures
+  the parcels subdivide and returning a merged volume plus a matching
+  colour table ready for
+  [`create_subcortical_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_subcortical_from_volume.md).
+  It is the fixed-registration counterpart to
+  [`prepare_subcortical_anatomical()`](https://ggsegverse.github.io/ggseg.extra/reference/prepare_subcortical_anatomical.md),
+  which instead computes an `mri_coreg` registration to
+  `cvs_avg35_inMNI152`; use this one when the atlas already lives in a
+  standard MNI152 template and should keep `fsaverage5` context.
+  [`aseg_subcortical_labels()`](https://ggsegverse.github.io/ggseg.extra/reference/aseg_subcortical_labels.md)
+  returns the lumped subcortical structure ids a finer parcellation
+  typically subdivides.
+
 ## ggseg.extra 1.9.9.9011
 
 ### Minor improvements and fixes
