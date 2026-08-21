@@ -137,10 +137,9 @@ tract_build_core <- function(meshes_list, colours, tract_names) {
   core <- do.call(rbind, core_rows)
 
   raw_colours <- colours[names(meshes_list)]
-  if (any(is.na(raw_colours))) {
-    raw_colours[is.na(raw_colours)] <- generate_region_palette(
-      sum(is.na(raw_colours))
-    )
+  uncoloured <- is.na(raw_colours)
+  if (any(uncoloured)) {
+    raw_colours[uncoloured] <- generate_region_palette(sum(uncoloured))
   }
   palette <- stats::setNames(raw_colours, names(meshes_list))
 
