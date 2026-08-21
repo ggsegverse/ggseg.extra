@@ -80,27 +80,25 @@ create_tract_from_volume <- function(
   keep <- !(as.integer(lut$idx) %in% as.integer(exclude))
   lut <- lut[keep, , drop = FALSE]
 
+  # One pass over the volume for every label at once. Scanning per label
+  # instead costs a full sweep of the array each time, which dominates the
+  # build well before the curve fitting does.
+  label_ids <- as.integer(lut$idx)
+  hits <- which(arr %in% label_ids)
+  voxels_by_label <- split(hits, arr[hits])
+
   centerlines <- list()
   colours <- list()
   dropped <- character(0)
-  for (i in seq_len(nrow(lut))) {
-    lab <- as.integer(lut$idx[i])
+  for (i in seq_along(lut[, 1])) {
     nm <- as.character(lut$label[i])
-    ijk <- which(arr == lab, arr.ind = TRUE) - 1L
-    if (nrow(ijk) < min_voxels) {
+    linear <- voxels_by_label[[as.character(label_ids[i])]]
+    if (length(linear) < min_voxels) {
       dropped <- c(dropped, nm)
       next
     }
-    homogeneous <- rbind(t(ijk), 1)
-    world <- t(xf %*% homogeneous)
-    world <- world[, 1:3, drop = FALSE]
 
-    n_vox <- nrow(world)
-    if (n_vox > 4000L) {
-      # deterministic even thinning (keeps the build reproducible)
-      keep_rows <- round(seq.int(1L, n_vox, length.out = 4000L))
-      world <- world[keep_rows, , drop = FALSE]
-    }
+    world <- voxels_to_world(thin_evenly(linear, 4000L), dim(arr), xf)
 
     cl <- tract_centerline_from_points(world, n_points, smoother)
     if (is.null(cl)) {
@@ -132,6 +130,40 @@ create_tract_from_volume <- function(
     verbose = verbose,
     ...
   )
+}
+
+
+#' Thin a vector of indices evenly down to at most `n`
+#'
+#' Deterministic so the build stays reproducible: an even sweep across the
+#' cloud rather than a random sample.
+#'
+#' @param x Vector of indices.
+#' @param n Maximum number to keep.
+#' @return `x`, or an evenly spaced subset of length `n`.
+#' @noRd
+thin_evenly <- function(x, n) {
+  if (length(x) <= n) {
+    return(x)
+  }
+  x[round(seq.int(1L, length(x), length.out = n))]
+}
+
+
+#' Convert linear voxel indices to world coordinates
+#'
+#' Thin before calling this: the affine is applied row-wise, so transforming
+#' voxels that are about to be discarded is wasted work.
+#'
+#' @param linear Linear indices into an array of dimension `dims`.
+#' @param dims Dimensions of the volume.
+#' @param xf 4x4 voxel-to-world affine.
+#' @return An N x 3 matrix of world coordinates.
+#' @noRd
+voxels_to_world <- function(linear, dims, xf) {
+  ijk <- arrayInd(linear, dims) - 1L
+  world <- t(xf %*% rbind(t(ijk), 1))
+  world[, 1:3, drop = FALSE]
 }
 
 

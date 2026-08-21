@@ -1,5 +1,14 @@
 # ggseg.extra 1.9.9.9015
 
+## Minor improvements and fixes
+
+- `create_tract_from_volume()` no longer sweeps the whole label volume once
+  per tract. It collected each tract's voxels with `which(arr == label)`, so a
+  35-tract atlas made 35 full passes over the array; the voxels are now
+  gathered in a single pass and grouped by label, and the voxel-to-world
+  affine is applied after thinning rather than before, so it transforms at
+  most `4000` points per tract instead of every voxel. Output is unchanged.
+
 ## New features
 
 - The grey anatomical silhouette behind a 2D view is now taken from the slice

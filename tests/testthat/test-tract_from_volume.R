@@ -80,3 +80,60 @@ describe("create_tract_from_volume", {
     expect_identical(nrow(atlas$core), 2L)
   })
 })
+
+
+describe("thin_evenly", {
+  it("leaves a vector at or under the cap untouched", {
+    expect_identical(thin_evenly(1:10, 10L), 1:10)
+    expect_identical(thin_evenly(1:3, 10L), 1:3)
+  })
+
+  it("thins to exactly the cap, keeping both ends", {
+    out <- thin_evenly(1:1000, 50L)
+    expect_length(out, 50L)
+    expect_identical(out[1], 1L)
+    expect_identical(out[50], 1000L)
+  })
+
+  it("is deterministic, so the build stays reproducible", {
+    expect_identical(thin_evenly(1:1000, 50L), thin_evenly(1:1000, 50L))
+  })
+})
+
+
+describe("voxels_to_world", {
+  it("applies the affine to linear voxel indices", {
+    dims <- c(4L, 5L, 6L)
+    xf <- matrix(
+      c(2, 0, 0, 10, 0, 3, 0, 20, 0, 0, 4, 30, 0, 0, 0, 1),
+      nrow = 4,
+      byrow = TRUE
+    )
+    # linear index 1 is voxel (1,1,1), i.e. zero-based (0,0,0)
+    expect_equal(
+      voxels_to_world(1L, dims, xf),
+      matrix(c(10, 20, 30), nrow = 1),
+      ignore_attr = TRUE
+    )
+  })
+
+  it("matches a per-label which(arr.ind) scan", {
+    dims <- c(7L, 8L, 9L)
+    arr <- array(0L, dim = dims)
+    arr[c(3L, 40L, 111L, 300L)] <- 5L
+    xf <- matrix(
+      c(-1, 0, 0, 4, 0, 2, 0, -6, 0, 0, 3, 1, 0, 0, 0, 1),
+      nrow = 4,
+      byrow = TRUE
+    )
+
+    ijk <- which(arr == 5L, arr.ind = TRUE) - 1L
+    expected <- t(xf %*% rbind(t(ijk), 1))[, 1:3, drop = FALSE]
+
+    expect_equal(
+      voxels_to_world(which(arr == 5L), dims, xf),
+      expected,
+      ignore_attr = TRUE
+    )
+  })
+})
