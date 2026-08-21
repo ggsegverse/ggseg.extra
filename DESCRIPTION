@@ -1,6 +1,6 @@
 Package: ggseg.extra
 Title: Create Brain Atlases for the 'ggsegverse' Plotting Ecosystem
-Version: 1.9.9.9012
+Version: 1.9.9.9015
 Authors@R: c(
     person(
         given = "Athanasia Mo",
@@ -69,13 +69,15 @@ Suggests:
     RNifti,
     rstudioapi,
     Rvcg,
+    smoothr,
     spelling,
     terra,
     testthat (>= 3.0.0),
     tibble,
     tidyr,
     quarto,
-    withr
+    withr,
+    princurve
 VignetteBuilder:
     knitr,
     quarto

@@ -96,6 +96,32 @@ describe("tract_build_core", {
 
     expect_identical(result$atlas_name, "cst")
   })
+
+  it("generates a palette when no colours are supplied", {
+    meshes_list <- tract_mesh_list(c("cst_left", "cst_right"))
+
+    result <- tract_build_core(
+      meshes_list,
+      stats::setNames(rep(NA_character_, 2), names(meshes_list)),
+      names(meshes_list)
+    )
+
+    expect_named(result$palette, names(meshes_list))
+    expect_false(anyNA(result$palette))
+  })
+
+  it("keeps supplied colours and fills only the gaps", {
+    meshes_list <- tract_mesh_list(c("cst_left", "cst_right"))
+
+    result <- tract_build_core(
+      meshes_list,
+      c(cst_left = "#FF0000", cst_right = NA_character_),
+      names(meshes_list)
+    )
+
+    expect_identical(unname(result$palette[["cst_left"]]), "#FF0000")
+    expect_false(is.na(result$palette[["cst_right"]]))
+  })
 })
 
 
@@ -254,7 +280,12 @@ describe("tract_create_snapshots", {
           stringsAsFactors = FALSE
         )
       },
-      create_cortex_slices = function(slabs, dims) {
+      create_cortex_slices = function(
+        slabs,
+        dims,
+        cortex_x = NULL,
+        vol = NULL
+      ) {
         data.frame(
           x = NA,
           y = NA,
@@ -321,7 +352,12 @@ describe("tract_create_snapshots", {
 
     local_mocked_bindings(
       read_volume = function(f) array(0L, dim = c(10, 10, 10)),
-      create_cortex_slices = function(slabs, dims) {
+      create_cortex_slices = function(
+        slabs,
+        dims,
+        cortex_x = NULL,
+        vol = NULL
+      ) {
         data.frame(
           x = NA,
           y = 5,
@@ -377,7 +413,12 @@ describe("tract_create_snapshots", {
           stringsAsFactors = FALSE
         )
       },
-      create_cortex_slices = function(slabs, dims) {
+      create_cortex_slices = function(
+        slabs,
+        dims,
+        cortex_x = NULL,
+        vol = NULL
+      ) {
         data.frame(
           x = NA,
           y = NA,

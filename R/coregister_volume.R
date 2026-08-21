@@ -411,7 +411,15 @@ project_merged_labels <- function(
   argmax_idx <- am$argmax_idx
   keep <- am$max_prob > threshold
 
+  kept_before <- keep
   keep <- apply_cortex_protection(keep, prep$arr_aparc, protect_cortex, verbose)
+  warn_labels_lost_to_protection(
+    kept_before,
+    keep,
+    argmax_idx,
+    prep$label_ids,
+    prep$lut_df
+  )
 
   build_merged_volume(
     prep$arr_aparc,
@@ -746,6 +754,56 @@ apply_cortex_protection <- function(keep, arr_aparc, protect_cortex, verbose) {
   }
   keep
 }
+
+#' Warn about labels that cortex protection removed entirely
+#'
+#' `protect_cortex` blocks the atlas from overwriting the cortical ribbon and
+#' cerebral white matter. That is right for deep grey structures, but a
+#' white-matter atlas lives in exactly the tissue being protected, and a label
+#' can be erased down to nothing without any sign that it happened -- JHU's
+#' ICBM-DTI-81 shipped for a release with its right superior longitudinal
+#' fasciculus silently missing. Losing a whole structure is worth a warning
+#' even when the guard is doing what it was asked to.
+#' @noRd
+warn_labels_lost_to_protection <- function(
+  kept_before,
+  kept_after,
+  argmax_idx,
+  label_ids,
+  lut_df
+) {
+  if (identical(kept_before, kept_after)) {
+    return(invisible(NULL))
+  }
+
+  # argmax_idx indexes into label_ids, and is NA wherever no label won the
+  # voxel, so those have to go before they index label_ids as NA.
+  had <- unique(argmax_idx[kept_before])
+  left <- unique(argmax_idx[kept_after])
+  lost <- setdiff(had[!is.na(had)], left[!is.na(left)])
+  if (!length(lost)) {
+    return(invisible(NULL))
+  }
+
+  lost_ids <- label_ids[lost]
+  # Used in the cli glue string below, which lintr does not parse.
+  # nolint next: object_usage_linter.
+  names_lost <- if (is.null(lut_df)) {
+    as.character(lost_ids)
+  } else {
+    matched <- lut_df$label[match(lost_ids, lut_df$idx)]
+    ifelse(is.na(matched), as.character(lost_ids), matched)
+  }
+
+  cli::cli_warn(c(
+    "{length(lost_ids)} label{?s} removed entirely by cortex protection: \\
+     {.val {names_lost}}",
+    "i" = "Set {.code protect_cortex = FALSE} if the atlas describes cortex \\
+           or cerebral white matter."
+  ))
+  invisible(NULL)
+}
+
 
 #' @noRd
 build_merged_volume <- function(

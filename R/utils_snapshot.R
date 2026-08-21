@@ -256,44 +256,140 @@ make_view_chunks <- function(lo, hi, chunk_size, type) {
 #'
 #' @return data.frame with columns: x, y, z, view, name
 #' @noRd
-create_cortex_slices <- function(slabs, dims, cortex_x = NULL) {
-  if (is.null(cortex_x)) {
-    scale <- dims[1] / 256
-    cortex_x <- round(119 * scale)
+create_cortex_slices <- function(
+  slabs,
+  dims,
+  cortex_x = NULL,
+  vol = NULL
+) {
+  cortex_ids <- if (is.null(vol)) {
+    NULL
+  } else {
+    unlist(detect_cortex_labels(vol), use.names = FALSE)
   }
 
   slices <- lapply(seq_len(nrow(slabs)), function(i) {
-    v <- slabs[i, ]
-
-    if (v$type == "sagittal") {
-      if (grepl("left", v$name, ignore.case = TRUE)) {
-        x_pos <- round(dims[1] * 0.55)
-      } else if (grepl("right", v$name, ignore.case = TRUE)) {
-        x_pos <- round(dims[1] * 0.45)
-      } else {
-        x_pos <- cortex_x
-      }
-      data.frame(
-        x = x_pos,
-        y = NA,
-        z = NA,
-        view = v$type,
-        name = v$name,
-        stringsAsFactors = FALSE
-      )
-    } else {
-      mid_pos <- round((v$start + v$end) / 2)
-      data.frame(
-        x = NA,
-        y = if (v$type == "coronal") mid_pos else NA,
-        z = if (v$type == "axial") mid_pos else NA,
-        view = v$type,
-        name = v$name,
-        stringsAsFactors = FALSE
-      )
-    }
+    cortex_slice_for_slab(slabs[i, ], dims, cortex_x, vol, cortex_ids)
   })
   do.call(rbind, slices)
+}
+
+
+#' Cortex reference slice for a single slab
+#'
+#' @param v One row of the slab data.frame.
+#' @inheritParams create_cortex_slices
+#' @param cortex_ids Cortical label values, or `NULL` to skip slice selection.
+#' @return One-row data.frame with columns x, y, z, view, name.
+#' @noRd
+cortex_slice_for_slab <- function(v, dims, cortex_x, vol, cortex_ids) {
+  mid_pos <- round((v$start + v$end) / 2)
+
+  if (v$type == "sagittal") {
+    return(data.frame(
+      x = sagittal_cortex_x(v, dims, cortex_x, vol, cortex_ids, mid_pos),
+      y = NA,
+      z = NA,
+      view = v$type,
+      name = v$name,
+      stringsAsFactors = FALSE
+    ))
+  }
+
+  axis <- if (v$type == "coronal") 2L else 3L
+  pos <- densest_cortex_slice(vol, cortex_ids, dims, axis, v$start, v$end) %||%
+    mid_pos
+  data.frame(
+    x = NA,
+    y = if (v$type == "coronal") pos else NA,
+    z = if (v$type == "axial") pos else NA,
+    view = v$type,
+    name = v$name,
+    stringsAsFactors = FALSE
+  )
+}
+
+
+#' Resolve the x position of a sagittal cortex reference slice
+#'
+#' An explicit `cortex_x` wins; otherwise prefer the densest cortical slice,
+#' then a hemisphere-appropriate plane for hemisphere-named views, and finally
+#' the slab's own midpoint rather than a fixed plane, so a sagittal slab at an
+#' explicit position gets its cortex reference from the same place -- axial and
+#' coronal already do this.
+#'
+#' @inheritParams cortex_slice_for_slab
+#' @param mid_pos Midpoint of the slab's range.
+#' @return A single x index.
+#' @noRd
+sagittal_cortex_x <- function(v, dims, cortex_x, vol, cortex_ids, mid_pos) {
+  if (!is.null(cortex_x)) {
+    return(cortex_x)
+  }
+  densest <- densest_cortex_slice(vol, cortex_ids, dims, 1L, v$start, v$end)
+  if (!is.null(densest)) {
+    return(densest)
+  }
+  if (grepl("left", v$name, ignore.case = TRUE)) {
+    return(round(dims[1] * 0.55))
+  }
+  if (grepl("right", v$name, ignore.case = TRUE)) {
+    return(round(dims[1] * 0.45))
+  }
+  mid_pos
+}
+
+
+#' Index of the slice holding the most cortex within a slab
+#'
+#' Within a slab, take the slice holding the most cortex rather than the slab
+#' midpoint. The silhouette is context, not a measurement, so it should be
+#' chosen for legibility -- and a midpoint can land somewhere with almost
+#' nothing to draw. A mid-sagittal slab centred exactly on the midline cuts
+#' the interhemispheric fissure: cvs_avg35_inMNI152 has 797 cortical voxels
+#' at x=128 against 6703 four voxels away, so the outline came out in
+#' fragments while the structures in front of it were fine.
+#'
+#' @inheritParams cortex_slice_for_slab
+#' @param axis Which array margin to slice along (1, 2 or 3).
+#' @param from,to Slab bounds along `axis`.
+#' @return The chosen index, or `NULL` when no cortex is present.
+#' @noRd
+densest_cortex_slice <- function(vol, cortex_ids, dims, axis, from, to) {
+  if (is.null(cortex_ids) || !length(cortex_ids)) {
+    return(NULL)
+  }
+  idx <- seq.int(max(1L, from), min(dims[axis], to))
+  if (!length(idx)) {
+    return(NULL)
+  }
+  counts <- vapply(
+    idx,
+    function(i) sum(slice_along_axis(vol, axis, i) %in% cortex_ids),
+    numeric(1)
+  )
+  if (all(counts == 0)) {
+    return(NULL)
+  }
+  # Break ties toward the slab midpoint, so a slab whose slices are equally
+  # informative keeps the position it would have had anyway.
+  best <- idx[counts == max(counts)]
+  mid <- (from + to) / 2
+  best[which.min(abs(best - mid))]
+}
+
+
+#' Extract one slice from a 3D array along a given axis
+#' @noRd
+slice_along_axis <- function(vol, axis, i) {
+  if (axis == 1L) {
+    return(vol[i, , ])
+  }
+  if (axis == 2L) {
+    return(vol[, i, ])
+  }
+  # nolint next: commas_linter. air formats empty subscripts unspaced.
+  vol[,, i]
 }
 
 
@@ -318,6 +414,48 @@ detect_cortex_labels <- function(vol) {
   } else {
     list(left = 3, right = 42)
   }
+}
+
+
+#' Subcortical structures used as anatomical context
+#'
+#' The cortical ribbon alone leaves tracts that descend through the brainstem
+#' or reach into deep grey hanging outside the silhouette, which reads as a
+#' misalignment. These structures are added to the reference so those tracts
+#' have context.
+#'
+#' White matter is deliberately excluded, both cerebral and cerebellar: tracts
+#' live there, and filling it would bury them in grey. Excluding it also keeps
+#' the cerebellum a foliated shell like the cerebral ribbon rather than a solid
+#' mass, which otherwise merges with the occipital lobe in sagittal views.
+#'
+#' @param vol 3D array of segmentation labels
+#'
+#' @return Integer vector of label values present in `vol`
+#' @noRd
+detect_context_labels <- function(vol) {
+  context <- c(
+    16, # brainstem
+    8,
+    47, # cerebellar cortex (white matter excluded, as for the cerebrum)
+    28,
+    60, # ventral DC
+    10,
+    49, # thalamus
+    11,
+    50, # caudate
+    12,
+    51, # putamen
+    13,
+    52, # pallidum
+    17,
+    53, # hippocampus
+    18,
+    54, # amygdala
+    26,
+    58 # accumbens
+  )
+  intersect(context, unique(as.vector(vol)))
 }
 
 

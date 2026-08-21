@@ -150,7 +150,7 @@ subcort_create_snapshots <- function(
     slabs <- default_subcortical_slabs(dims)
   }
 
-  cortex_slices <- create_cortex_slices(slabs, dims)
+  cortex_slices <- create_cortex_slices(slabs, dims, vol = vol)
   cortex_labels <- detect_cortex_labels(vol)
 
   subcort_snapshot_structures(vol, dims, colortable, slabs, dirs, skip_existing)

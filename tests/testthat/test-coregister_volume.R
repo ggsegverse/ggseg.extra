@@ -660,13 +660,18 @@ describe("project_merged_labels", {
         )
       }
     )
-    merged <- project_merged_labels(
-      prep,
-      registration = NULL,
-      threshold = 0.3,
-      protect_cortex = TRUE,
-      id_offset = 200L,
-      verbose = FALSE
+    # Label 11 wins voxels 1 and 3, and protection takes both, so it is
+    # removed entirely -- exactly the case the warning exists to surface.
+    expect_warning(
+      merged <- project_merged_labels(
+        prep,
+        registration = NULL,
+        threshold = 0.3,
+        protect_cortex = TRUE,
+        id_offset = 200L,
+        verbose = FALSE
+      ),
+      "removed entirely by cortex protection"
     )
     # voxel 1 aparc = 2 (cerebral WM) -> protected, stays 2
     # voxel 2 aparc = 17, prob .9 > .3, not protected -> 12 + 200 = 212
@@ -868,5 +873,76 @@ describe("read_fs_color_lut", {
       .package = "freesurfer"
     )
     expect_error(read_fs_color_lut(), "colour table not found")
+  })
+})
+
+
+describe("warn_labels_lost_to_protection", {
+  lut <- data.frame(
+    idx = c(1L, 2L),
+    label = c("lh_slf", "rh_slf"),
+    R = 0L,
+    G = 0L,
+    B = 0L,
+    A = 0L
+  )
+
+  it("warns naming a label protection removed entirely", {
+    # Voxels 1-2 belong to label 1, voxel 3 to label 2. Protection keeps only
+    # voxel 3, so label 1 is erased.
+    expect_warning(
+      warn_labels_lost_to_protection(
+        kept_before = c(TRUE, TRUE, TRUE),
+        kept_after = c(FALSE, FALSE, TRUE),
+        argmax_idx = c(1L, 1L, 2L),
+        label_ids = c(1L, 2L),
+        lut_df = lut
+      ),
+      "lh_slf"
+    )
+  })
+
+  it("stays quiet when every label keeps some voxels", {
+    expect_silent(
+      warn_labels_lost_to_protection(
+        kept_before = c(TRUE, TRUE, TRUE),
+        kept_after = c(TRUE, FALSE, TRUE),
+        argmax_idx = c(1L, 1L, 2L),
+        label_ids = c(1L, 2L),
+        lut_df = lut
+      )
+    )
+  })
+
+  it("ignores voxels no label won", {
+    expect_silent(
+      warn_labels_lost_to_protection(
+        kept_before = c(TRUE, TRUE),
+        kept_after = c(NA_integer_ > 0, TRUE),
+        argmax_idx = c(NA_integer_, 2L),
+        label_ids = c(1L, 2L),
+        lut_df = lut
+      )
+    )
+  })
+
+  it("stays quiet when protection removed nothing", {
+    keep <- c(TRUE, FALSE, TRUE)
+    expect_silent(
+      warn_labels_lost_to_protection(keep, keep, c(1L, 1L, 2L), c(1L, 2L), lut)
+    )
+  })
+
+  it("falls back to the label id when no LUT is available", {
+    expect_warning(
+      warn_labels_lost_to_protection(
+        kept_before = c(TRUE, TRUE),
+        kept_after = c(FALSE, TRUE),
+        argmax_idx = c(1L, 2L),
+        label_ids = c(70L, 80L),
+        lut_df = NULL
+      ),
+      "70"
+    )
   })
 })

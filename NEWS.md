@@ -1,3 +1,126 @@
+# ggseg.extra 1.9.9.9015
+
+## Minor improvements and fixes
+
+- `create_tract_from_volume()` no longer sweeps the whole label volume once
+  per tract. It collected each tract's voxels with `which(arr == label)`, so a
+  35-tract atlas made 35 full passes over the array; the voxels are now
+  gathered in a single pass and grouped by label, and the voxel-to-world
+  affine is applied after thinning rather than before, so it transforms at
+  most `4000` points per tract instead of every voxel. Output is unchanged.
+
+## New features
+
+- The grey anatomical silhouette behind a 2D view is now taken from the slice
+  in the slab holding the most cortex, rather than from the slab midpoint. The
+  silhouette is context, so it should be chosen for legibility — and a
+  midpoint can land somewhere with almost nothing to draw. A mid-sagittal slab
+  centred on the midline cuts the interhemispheric fissure:
+  `cvs_avg35_inMNI152` has 797 cortical voxels at x=128 against 6703 four
+  voxels away, so the outline came out in fragments while the structures in
+  front of it were fine. Widening the slab could not fix it, since only the
+  structures project through the slab. Ties are broken toward the midpoint, so
+  a slab whose slices are equally informative keeps the position it had
+  before.
+
+# ggseg.extra 1.9.9.9014
+
+## New features
+
+- `project_volume_anatomical()` now warns when `protect_cortex` removes a
+  label entirely. The guard blocks the atlas from overwriting the cortical
+  ribbon and cerebral white matter, which is right for deep grey structures
+  but erases a white-matter atlas from the only tissue it describes — and it
+  did so silently. ggsegJHU's ICBM-DTI-81 atlas shipped for a release with its
+  right superior longitudinal fasciculus missing outright, with nothing in the
+  build output to show it. The warning names the lost labels and points at
+  `protect_cortex = FALSE`.
+
+## Bug fixes
+
+- `write_lut()` no longer truncates label names to 29 characters. FreeSurfer
+  parses its colour tables on whitespace and its own `FreeSurferColorLUT.txt`
+  carries names up to 47 characters, so the cap corrupted every long label --
+  and silently merged any two that were identical up to the cut. Julich-Brain's
+  `Ch_123_(Basal_Forebrain)_right` came back as `Ch_123_Basal_Forebrain_righ`,
+  losing the hemisphere suffix and with it the hemisphere.
+
+- `clean_region_name()` now strips the same hemisphere affixes that
+  `detect_hemi()` recognises, including the `L_`/`R_` prefix convention and
+  `_left`/`_right` suffixes. Where the two disagreed the hemisphere ended up in
+  `region` as well as `hemi`: `R_Fx` gave hemi `"right"` but region `"r fx"`,
+  so the two halves of one structure looked like two unrelated structures to
+  anything grouping on `region` -- including the new
+  `ggseg.formats::atlas_view_select()`. A name that is _only_ a hemisphere word
+  is left alone rather than stripped to nothing.
+
+# ggseg.extra 1.9.9.9013
+
+## New features
+
+- `atlas_smooth()` gains `method`. The default `"close"` is the existing
+  morphological closing, which rounds outlines but fills any hole narrower than
+  the smoothing distance -- on a thin cortical ribbon that erases the sulci.
+  `"chaikin"`, `"ksmooth"` and `"spline"` come from `smoothr::smooth()` and move
+  vertices rather than dilating the shape, so enclosed holes stay open. Use
+  `"close"` for solid shapes such as tract tubes and one of the others where the
+  geometry has holes worth keeping.
+- `atlas_smooth(smoothness =)` is now a 0--1 strength shared by every `method`,
+  mapped internally onto each method's native parameter, so the same value means
+  a comparable amount of smoothing whichever one is chosen. Values outside
+  0--1 are an error carrying the conversion rule, rather than being silently
+  reinterpreted: divide an old `method = "close"` distance by 5.
+
+## Bug fixes
+
+- 2D atlas geometry no longer loses its holes. `coords2sf()` grouped
+  coordinates by `(.subid, .id)`, but `.subid` is the ring index within a
+  polygon (1 = exterior, >1 = holes) and `.id` the polygon index, so every ring
+  became its own solid polygon and every enclosed hole was filled. A thin
+  cortical ribbon came out as a blob: the sagittal fsaverage slice measured
+  20,117 against a true area of 17,481, with 44 of its 137 rings surviving.
+  Rings are now assembled as exterior-plus-holes, and the area matches exactly.
+  This affects every atlas built through `get_contours()` -- cortical,
+  subcortical, wholebrain and tract -- so rebuilt atlases will differ from ones
+  built before this fix.
+
+- Tract 2D projections are no longer drawn in the wrong plane. `streamlines_to_volume()`
+  built each tube in the template's native voxel layout and relied on
+  `RNifti::orientation(nii) <- "RAS"` to convert it. For `.mgz` templates that
+  assignment was a silent no-op — `read_volume()` returns a bare array carrying
+  no affine, so `orientation()` reports `"RAS"` whatever the layout — while the
+  anatomical reference _was_ converted, being read through
+  `read_volume(reorient = TRUE)`. With an LIA template such as FreeSurfer's
+  `aseg.mgz`, voxel axes 2 and 3 ended up swapped between the two, so axial
+  projections were drawn over coronal anatomy and sagittal ones appeared
+  rotated 90°. The volume is now reoriented explicitly.
+
+- Tract 2D projections are no longer offset from the anatomical reference.
+  `center_meshes()` translates centerlines to the origin for 3D display, and the
+  snapshot step rasterised those translated coordinates as though they were
+  world RAS, shifting every tract relative to the anatomy. The translation is
+  now recorded and undone before rasterising; 3D output is unchanged.
+
+- Sagittal cortex reference slices now come from their own slab rather than a
+  fixed plane, matching what axial and coronal already did. A sagittal slab at
+  an explicit position previously had its silhouette drawn somewhere else. An
+  explicit `cortex_x` still wins, and hemisphere-named views fall back to their
+  lateral positions when the slab holds no cortex to choose from.
+
+- The anatomical reference for tract atlases now includes the brainstem,
+  cerebellar cortex and deep grey structures alongside the cortical ribbon, so
+  tracts descending out of the cerebrum are drawn against anatomy instead of
+  empty space. White matter is excluded, cerebral and cerebellar alike: tracts
+  run through it, and filling it would bury them. Excluding cerebellar white
+  matter also keeps the cerebellum a foliated shell like the cerebral ribbon
+  instead of a solid mass that merges with the occipital lobe in sagittal
+  views.
+
+- `create_tract_from_volume()` and `create_tract_from_tractography()` now honour
+  `atlas_name` for the atlas object itself, not only for the output directory.
+  The finished atlas previously took the name derived from its tract labels
+  (e.g. `"tracts"`), ignoring what the caller asked for.
+
 # ggseg.extra 1.9.9.9012
 
 ## New features
@@ -12,6 +135,19 @@
   already lives in a standard MNI152 template and should keep `fsaverage5`
   context. `aseg_subcortical_labels()` returns the lumped subcortical structure
   ids a finer parcellation typically subdivides.
+
+- `create_tract_from_volume()` builds a white-matter tract atlas from a
+  volumetric tract _label map_ (one integer label per tract) rather than from
+  streamlines: each tract's voxel cloud is reduced to a principal-curve
+  centerline and handed to `create_tract_from_tractography()`, which builds the
+  3D tubes and 2D projection. This suits probabilistic tract atlases distributed
+  as NIfTI label volumes (e.g. AtlasTrack). Adds `princurve` to Suggests.
+
+## Bug fixes
+
+- `create_tract_from_tractography()` no longer errors when `input_tracts` is an
+  in-memory list of coordinate matrices: the setup log interpolated the matrices
+  into a `{.path}` inline style, which `cli` cannot format as file paths.
 
 # ggseg.extra 1.9.9.9011
 

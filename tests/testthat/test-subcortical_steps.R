@@ -233,7 +233,12 @@ describe("subcort_create_snapshots", {
           stringsAsFactors = FALSE
         )
       },
-      create_cortex_slices = function(slabs, dims) {
+      create_cortex_slices = function(
+        slabs,
+        dims,
+        cortex_x = NULL,
+        vol = NULL
+      ) {
         data.frame(
           x = NA,
           y = NA,
@@ -302,7 +307,12 @@ describe("subcort_create_snapshots", {
         vol[2, 2, 2] <- 10L
         vol
       },
-      create_cortex_slices = function(slabs, dims) {
+      create_cortex_slices = function(
+        slabs,
+        dims,
+        cortex_x = NULL,
+        vol = NULL
+      ) {
         data.frame(
           x = NA,
           y = 5,
@@ -359,7 +369,12 @@ describe("subcort_create_snapshots", {
           stringsAsFactors = FALSE
         )
       },
-      create_cortex_slices = function(slabs, dims) {
+      create_cortex_slices = function(
+        slabs,
+        dims,
+        cortex_x = NULL,
+        vol = NULL
+      ) {
         data.frame(
           x = NA,
           y = NA,

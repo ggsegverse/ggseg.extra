@@ -5,7 +5,14 @@
 \alias{atlas_simplify}
 \title{Smooth and simplify atlas 2D contours}
 \usage{
-atlas_smooth(atlas, keep = 0.05, smoothness = 0, labels = NULL, exclude = NULL)
+atlas_smooth(
+  atlas,
+  keep = 0.05,
+  smoothness = 0,
+  labels = NULL,
+  exclude = NULL,
+  method = c("close", "chaikin", "ksmooth", "spline")
+)
 
 atlas_simplify(atlas, keep = 0.05)
 }
@@ -16,29 +23,44 @@ atlas_simplify(atlas, keep = 0.05)
 vertex simplification. Lower values produce simpler shapes; values
 near 1 are an effective no-op. Default 0.05.}
 
-\item{smoothness}{Buffer distance in geometry units for morphological
-closing after simplification. 0 (the default) skips closing. Values
-of 2--3 round off voxel-edge stair-steps on millimetre voxel grids
-without merging adjacent regions; larger values produce rounder
-shapes but can bleed nearby region boundaries together.}
+\item{smoothness}{Smoothing strength between 0 and 1, applied after
+simplification. 0 (the default) skips smoothing. The scale is shared by
+every \code{method}, so the same value means a comparable amount of smoothing
+whichever one you pick; each method's native parameter is derived from it.
+Around 0.4--0.6 rounds off voxel-edge stair-steps on millimetre voxel
+grids without distorting shapes; 1 is the most smoothing a method applies
+before shapes stop resembling their input.}
 
 \item{labels}{Optional regex pattern. Only labels matching this pattern
 are smoothed; others are left unchanged.}
 
 \item{exclude}{Optional regex pattern. Labels matching this pattern are
 left unchanged; all others are smoothed.}
+
+\item{method}{Smoothing method. \code{"close"} (the default) is a
+morphological closing: a positive then negative \code{\link[sf:geos_unary]{sf::st_buffer()}}.
+It rounds outlines but \strong{fills holes narrower than the smoothing
+distance},
+which erases the sulci of a thin cortical ribbon. The remaining
+methods come from \code{\link[smoothr:smooth]{smoothr::smooth()}} and move vertices rather than
+dilating the shape, so enclosed holes stay open: \code{"chaikin"} (corner
+cutting), \code{"ksmooth"} (kernel smoothing) and \code{"spline"}. Choose
+\code{"close"} to round solid shapes such as tract tubes, and one of the
+others when the geometry has holes worth keeping.}
 }
 \value{
 A modified \code{ggseg_atlas} with simplified sf geometry.
 }
 \description{
 Topology-preserving simplification of atlas sf geometry via
-\code{\link[rmapshaper:ms_simplify]{rmapshaper::ms_simplify()}}, with optional morphological closing
-(positive then negative \code{\link[sf:geos_unary]{sf::st_buffer()}}) layered on top to round
-off voxel-edge stair-steps into smooth curves. Shared boundaries
+\code{\link[rmapshaper:ms_simplify]{rmapshaper::ms_simplify()}}, with optional smoothing layered on top to
+round off voxel-edge stair-steps into smooth curves. Shared boundaries
 between adjacent regions are simplified together, preventing gaps.
 }
 \details{
+Note that the default \code{method = "close"} fills holes narrower than
+\code{smoothness}; see \code{method} for alternatives that preserve them.
+
 By default all labels are smoothed equally. Use \code{labels} to smooth only
 matching labels, or \code{exclude} to smooth everything except matching labels.
 Only one of \code{labels} or \code{exclude} may be specified.
@@ -52,11 +74,25 @@ atlas <- atlas_smooth(my_atlas, keep = 0.05)
 atlas <- atlas_smooth(my_atlas, keep = 0.2, exclude = "cortex_|Cortex")
 
 # Round off jagged voxel edges without dropping vertices.
-atlas <- atlas_smooth(my_atlas, keep = NULL, smoothness = 3)
+atlas <- atlas_smooth(my_atlas, keep = NULL, smoothness = 0.6)
 
 # Per-region tuning: hard simplification for tiny nuclei, gentle
 # closing for the brain outline.
 atlas <- atlas_smooth(my_atlas, keep = 0.05, exclude = "cortex_")
-atlas <- atlas_smooth(atlas, keep = NULL, smoothness = 3, labels = "cortex_")
+atlas <- atlas_smooth(
+  atlas,
+  keep = NULL,
+  smoothness = 0.6,
+  labels = "cortex_"
+)
+
+# Round a cortical ribbon without closing its sulci.
+atlas <- atlas_smooth(
+  my_atlas,
+  keep = NULL,
+  smoothness = 0.4,
+  method = "chaikin",
+  labels = "cortex_"
+)
 }
 }

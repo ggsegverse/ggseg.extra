@@ -1,5 +1,6 @@
 Anders
 Athanasia
+AtlasTrack
 Beate
 Brainnetome
 Brodmann
@@ -15,6 +16,7 @@ Coregister
 Crus
 DK
 DKT
+DTI
 Dentate
 Diedrichsen
 FS
@@ -33,10 +35,12 @@ HCL
 HCP
 ImageMagick
 Infratentorial
+Julich
 LCBC
 LIA
 LTA
 LUT
+LUTs
 Lifebrain
 Lifecycle
 MGZ
@@ -59,6 +63,7 @@ ROIs
 RStudio
 Rodrigues
 Rvcg
+Sagittal
 Schaefer
 Serret
 Shen
@@ -96,7 +101,9 @@ buckner
 callosum
 caudate
 centerline
+centerlines
 centre
+centred
 chromote
 chromote's
 cli
@@ -118,11 +125,14 @@ discretizing
 entorhinal
 env
 errored
+fasciculus
 favour
+fibre
 fibres
 flatmap
 flatmaps
 folia
+foliated
 freesurfer
 fsaverage
 furrr
@@ -130,6 +140,7 @@ ggplot
 ggseg
 ggsegExtra
 ggsegHO
+ggsegJHU's
 ggsegverse
 github
 goodpractice
@@ -138,8 +149,10 @@ gyri
 gyrus
 gz
 hemi
+honour
 idx
 inlined
+interhemispheric
 json
 kaleido
 labelled
@@ -164,6 +177,7 @@ neuromapr
 neuromaps
 niftiImage
 nii
+occipital
 pallidum
 parcellation
 parcellation's
@@ -181,6 +195,8 @@ putamen
 quadric
 ras
 rasterisation
+rasterised
+rasterising
 rda
 readme
 recognises
@@ -198,6 +214,7 @@ segmentations
 subcortical
 subregion
 sulcal
+sulci
 summarises
 sysdata
 tempfile

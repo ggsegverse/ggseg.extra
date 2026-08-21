@@ -114,11 +114,18 @@ hemi_to_short <- function(hemi_long) {
 
 #' Clean region name from label
 #'
-#' Removes hemisphere prefix and normalizes the region name by converting
+#' Removes hemisphere affixes and normalizes the region name by converting
 #' dashes and underscores to spaces and lowercasing.
 #'
+#' The affixes stripped here must match the ones [detect_hemi()] recognises.
+#' Where they disagree the hemisphere ends up in `region` as well as `hemi`:
+#' `detect_hemi()` reads the `L_`/`R_` convention, so `R_Fx` correctly gave
+#' hemi "right", while this function left the prefix in place and produced
+#' region "r fx". Two hemispheres of one structure then look like two
+#' different structures, since `region` is what pairs them.
+#'
 #' @param label_name Label name to clean
-#' @param remove_hemi Remove hemisphere prefix (default TRUE)
+#' @param remove_hemi Remove hemisphere affixes (default TRUE)
 #' @param normalize Convert to lowercase with spaces (default TRUE)
 #' @return Cleaned region name
 #' @noRd
@@ -130,7 +137,20 @@ clean_region_name <- function(
   region <- label_name
 
   if (remove_hemi) {
-    region <- gsub("^(Left|Right|left|right|lh|rh)[- _.]?", "", region)
+    stripped <- gsub(
+      "^(Left|Right|left|right|lh|rh|L|R)[- _.]+",
+      "",
+      region
+    )
+    stripped <- gsub(
+      "[- _.]+(left|right|lh|rh|l|r)$",
+      "",
+      stripped,
+      ignore.case = TRUE
+    )
+    # Never strip a label down to nothing: a structure genuinely named "left"
+    # would otherwise lose its whole name.
+    region <- ifelse(nzchar(stripped), stripped, region)
   }
 
   if (normalize) {

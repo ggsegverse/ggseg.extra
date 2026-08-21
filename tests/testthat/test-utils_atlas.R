@@ -75,6 +75,62 @@ describe("clean_region_name", {
       "Thalamus"
     )
   })
+
+  it("strips every hemisphere affix detect_hemi() recognises", {
+    # If the two disagree, the hemisphere lands in `region` as well as `hemi`
+    # and the two sides of one structure stop pairing.
+    labels <- c(
+      "R_Fx",
+      "L_Fx",
+      "Left-Thalamus",
+      "rh_atr",
+      "Ch_123_Basal_Forebrain_right",
+      "Area_5L_SPL_left",
+      "Fx_L",
+      "Fx_R",
+      "Fx-r",
+      "Cing_l",
+      "tract_lh",
+      "cst_right"
+    )
+    for (label in labels) {
+      expect_false(
+        is.na(detect_hemi(label)),
+        info = paste("detect_hemi failed on", label)
+      )
+      expect_false(
+        grepl("(^|\\s)(left|right|lh|rh|l|r)(\\s|$)", clean_region_name(label)),
+        info = paste("hemisphere left in region for", label)
+      )
+    }
+  })
+
+  it("pairs the hemispheres of a structure on region", {
+    expect_identical(
+      clean_region_name("L_Fx"),
+      clean_region_name("R_Fx")
+    )
+    expect_identical(
+      clean_region_name("Fx_L"),
+      clean_region_name("Fx_R")
+    )
+    expect_identical(
+      clean_region_name("Area_5L_SPL_left"),
+      clean_region_name("Area_5L_SPL_right")
+    )
+  })
+
+  it("keeps a name that is only a hemisphere word", {
+    expect_identical(clean_region_name("left"), "left")
+  })
+
+  it("does not strip a leading letter that is not an affix", {
+    expect_identical(
+      clean_region_name("Rolandic_operculum"),
+      "rolandic operculum"
+    )
+    expect_identical(clean_region_name("Lingual"), "lingual")
+  })
 })
 
 

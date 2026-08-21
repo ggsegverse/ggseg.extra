@@ -1189,9 +1189,11 @@ parse_continuous_values <- function(values, hemi, hemi_short, n_bins) {
 
 #' @noRd
 lut_line <- function(idx, name, red, green, blue, alpha) {
-  if (nchar(name) > 29) {
-    name <- substr(name, 1, 29)
-  }
+  # Names are padded to 30 characters for readability but never truncated.
+  # FreeSurfer parses the LUT on whitespace, and its own
+  # FreeSurferColorLUT.txt carries names up to 47 characters, so a cap here
+  # only corrupted long labels -- and silently merged any two that shared a
+  # prefix once cut.
   sprintf(
     "% 3s  % -30s  % 3s % 3s % 3s % 3s",
     idx,

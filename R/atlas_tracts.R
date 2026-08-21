@@ -195,6 +195,9 @@ tract_setup_pipeline <- function(
 
   config$input_tracts <- input_tracts
   config$input_aseg <- input_aseg
+  # Carried through so the finished atlas is named what the caller asked for,
+  # not the name derived from the tract labels.
+  config$atlas_name <- atlas_name
   list(config = config, dirs = dirs, lut = lut_result)
 }
 
@@ -330,7 +333,13 @@ tract_log_header <- function(config, input_tracts, input_aseg) {
     return(invisible(NULL))
   }
   cli::cli_h1("Creating tractography atlas")
-  cli::cli_alert_info("Tract files: {.path {input_tracts}}")
+  if (is.character(input_tracts)) {
+    cli::cli_alert_info("Tract files: {.path {input_tracts}}")
+  } else {
+    cli::cli_alert_info(
+      "Tracts: {length(input_tracts)} in-memory coordinate matri{?x/ces}"
+    )
+  }
   if (!is.null(input_aseg)) {
     cli::cli_alert_info("Anatomical reference: {.path {input_aseg}}")
   }
@@ -447,10 +456,11 @@ tract_step1_data <- function(config, prepared, built) {
     centerlines_df = built$centerlines_df,
     core = built$core,
     palette = built$palette,
-    atlas_name = built$atlas_name,
+    atlas_name = config$atlas_name %||% built$atlas_name,
     tube_radius = config$tube_radius,
     tube_segments = config$tube_segments,
-    coords_are_voxels = prepared$coords_are_voxels
+    coords_are_voxels = prepared$coords_are_voxels,
+    center_offset = built$center_offset
   )
 }
 
@@ -513,7 +523,8 @@ tract_run_snapshots <- function(config, dirs, step1, input_aseg, slabs, files) {
     coords_are_voxels,
     config$skip_existing,
     config$tract_radius,
-    config$verbose
+    config$verbose,
+    step1$center_offset
   )
 
   saveRDS(result$slabs, files[1])

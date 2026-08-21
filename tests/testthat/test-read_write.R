@@ -235,7 +235,7 @@ describe("write_lut", {
     expect_identical(read_back$idx, ctab$idx)
   })
 
-  it("truncates long label names to 29 characters", {
+  it("writes long label names without truncating them", {
     long_label <- strrep("a", 40)
     ctab <- data.frame(
       idx = 1,
@@ -249,8 +249,30 @@ describe("write_lut", {
     tmp <- withr::local_tempfile(fileext = ".txt")
     write_lut(ctab, tmp)
 
-    content <- readLines(tmp)
-    expect_true(all(nchar(content) < 60))
+    expect_identical(read_lut(tmp)$label, long_label)
+  })
+
+  it("keeps long labels distinct when they share a 29-character prefix", {
+    # A cap at 29 characters cut `Ch_123_(Basal_Forebrain)_right` to
+    # `..._righ`, losing the hemisphere suffix, and collapsed any two labels
+    # differing only past that point into one region.
+    labels <- c(
+      "Ch_123_(Basal_Forebrain)_left",
+      "Ch_123_(Basal_Forebrain)_right"
+    )
+    ctab <- data.frame(
+      idx = 1:2,
+      label = labels,
+      R = c(255, 0),
+      G = 0,
+      B = c(0, 255),
+      A = 0
+    )
+
+    tmp <- withr::local_tempfile(fileext = ".txt")
+    write_lut(ctab, tmp)
+
+    expect_identical(read_lut(tmp)$label, labels)
   })
 
   it("errors when input is not a valid LUT", {
