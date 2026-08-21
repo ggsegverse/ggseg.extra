@@ -108,6 +108,9 @@ Functions to create brain atlases for ggseg and ggseg3d
   segmentation
 - [`create_tract_from_tractography()`](https://ggsegverse.github.io/ggseg.extra/reference/create_tract_from_tractography.md)
   **\[experimental\]** : Create brain atlas from white matter tracts
+- [`create_tract_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_tract_from_volume.md)
+  **\[experimental\]** : Create a white matter tract atlas from a label
+  volume
 - [`create_wholebrain_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_wholebrain_from_volume.md)
   **\[experimental\]** : Create atlas from whole-brain volumetric
   parcellation

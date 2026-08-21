@@ -38,6 +38,7 @@
 <url><loc>https://ggsegverse.github.io/ggseg.extra/reference/create_cortical_from_neuromaps.html</loc></url>
 <url><loc>https://ggsegverse.github.io/ggseg.extra/reference/create_subcortical_from_volume.html</loc></url>
 <url><loc>https://ggsegverse.github.io/ggseg.extra/reference/create_tract_from_tractography.html</loc></url>
+<url><loc>https://ggsegverse.github.io/ggseg.extra/reference/create_tract_from_volume.html</loc></url>
 <url><loc>https://ggsegverse.github.io/ggseg.extra/reference/create_wholebrain_from_volume.html</loc></url>
 <url><loc>https://ggsegverse.github.io/ggseg.extra/reference/get_lut.html</loc></url>
 <url><loc>https://ggsegverse.github.io/ggseg.extra/reference/get_verbose.html</loc></url>
