@@ -179,6 +179,29 @@ describe("setup_atlas_repo template files", {
     }
   })
 
+  it("excludes only commented_code_linter, and only from create-atlas.R", {
+    # A blanket data-raw exclusion would also silence object_usage_linter,
+    # which is the one worth keeping there. create-atlas.R is a menu of
+    # commented-out example invocations, so only that linter misfires.
+    config <- readLines(file.path(tmp, ".lintr"), warn = FALSE)
+
+    expect_match(config, "create-atlas\\.R", all = FALSE)
+    expect_match(config, "commented_code_linter", all = FALSE)
+    expect_false(any(grepl("object_usage_linter", config)))
+  })
+
+  it("declares the data-raw dependencies for the lint job", {
+    # Without these, object_usage_linter cannot resolve what create-atlas.R
+    # loads and reports every call through them as an undefined global.
+    needs <- read.dcf(file.path(tmp, "DESCRIPTION"))[1, "Config/Needs/lint"]
+    declared <- trimws(strsplit(needs, ",")[[1]])
+
+    expect_setequal(
+      declared,
+      c("dplyr", "future", "progressr", "ggsegverse/ggseg.extra")
+    )
+  })
+
   it("adds the shared GitHub Actions workflows", {
     written <- list.files(file.path(tmp, ".github", "workflows"))
 
