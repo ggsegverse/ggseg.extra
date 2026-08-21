@@ -266,3 +266,19 @@ skip_if_offline <- function() {
     }
   )
 }
+
+
+# Minimal mesh list in the shape tract_build_core() consumes
+tract_mesh_list <- function(names) {
+  stats::setNames(
+    lapply(seq_along(names), function(i) {
+      pts <- matrix(
+        seq_len(9) + (i - 1) * 9,
+        ncol = 3,
+        dimnames = list(NULL, c("x", "y", "z"))
+      )
+      list(metadata = list(centerline = pts, tangents = pts))
+    }),
+    names
+  )
+}

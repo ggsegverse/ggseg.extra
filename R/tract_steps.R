@@ -137,11 +137,12 @@ tract_build_core <- function(meshes_list, colours, tract_names) {
   core <- do.call(rbind, core_rows)
 
   raw_colours <- colours[names(meshes_list)]
-  palette <- if (all(is.na(raw_colours))) {
-    NULL
-  } else {
-    stats::setNames(raw_colours, names(meshes_list))
+  if (any(is.na(raw_colours))) {
+    raw_colours[is.na(raw_colours)] <- generate_region_palette(
+      sum(is.na(raw_colours))
+    )
   }
+  palette <- stats::setNames(raw_colours, names(meshes_list))
 
   centerlines_df <- data.frame(
     label = names(meshes_list),
