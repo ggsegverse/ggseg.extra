@@ -92,11 +92,11 @@
   world RAS, shifting every tract relative to the anatomy. The translation is
   now recorded and undone before rasterising; 3D output is unchanged.
 
-- Sagittal cortex reference slices now come from their own slab's midpoint
-  rather than a fixed plane, matching what axial and coronal already did. A
-  sagittal slab at an explicit position previously had its silhouette drawn
-  somewhere else. Hemisphere-named views keep their lateral positions, and an
-  explicit `cortex_x` still wins.
+- Sagittal cortex reference slices now come from their own slab rather than a
+  fixed plane, matching what axial and coronal already did. A sagittal slab at
+  an explicit position previously had its silhouette drawn somewhere else. An
+  explicit `cortex_x` still wins, and hemisphere-named views fall back to their
+  lateral positions when the slab holds no cortex to choose from.
 
 - The anatomical reference for tract atlases now includes the brainstem,
   cerebellar cortex and deep grey structures alongside the cortical ribbon, so

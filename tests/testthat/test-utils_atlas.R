@@ -85,7 +85,13 @@ describe("clean_region_name", {
       "Left-Thalamus",
       "rh_atr",
       "Ch_123_Basal_Forebrain_right",
-      "Area_5L_SPL_left"
+      "Area_5L_SPL_left",
+      "Fx_L",
+      "Fx_R",
+      "Fx-r",
+      "Cing_l",
+      "tract_lh",
+      "cst_right"
     )
     for (label in labels) {
       expect_false(
@@ -103,6 +109,10 @@ describe("clean_region_name", {
     expect_identical(
       clean_region_name("L_Fx"),
       clean_region_name("R_Fx")
+    )
+    expect_identical(
+      clean_region_name("Fx_L"),
+      clean_region_name("Fx_R")
     )
     expect_identical(
       clean_region_name("Area_5L_SPL_left"),

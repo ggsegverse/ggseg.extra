@@ -143,7 +143,7 @@ clean_region_name <- function(
       region
     )
     stripped <- gsub(
-      "[- _.]+(left|right|lh|rh)$",
+      "[- _.]+(left|right|lh|rh|l|r)$",
       "",
       stripped,
       ignore.case = TRUE
