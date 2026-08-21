@@ -169,8 +169,17 @@ render_slice_png <- function(
   on.exit(dev.off(), add = TRUE)
   par(mar = c(0, 0, 0, 0))
 
+  # x and y are given in voxel indices rather than left to image()'s default.
+  # image(z) with a bare matrix maps it onto the unit square, so `asp = 1`
+  # then forces a square plot whatever the slice's real shape -- an axial cut
+  # of a 182x218x182 template came out ~20% too wide and a sagittal one ~20%
+  # too narrow. Indexing by voxel makes `asp = 1` mean isotropic voxels, which
+  # is what it is here for. Every image of a given view is rendered from the
+  # same volume, so they all get the same extent and stay in register.
   image(
-    slice_data,
+    x = seq_len(nrow(slice_data)),
+    y = seq_len(ncol(slice_data)),
+    z = slice_data,
     col = colour,
     useRaster = TRUE,
     axes = FALSE,
