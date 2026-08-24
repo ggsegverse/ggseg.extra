@@ -1762,7 +1762,7 @@ describe("cerebellar_read_data", {
     expect_true(file.exists(file.path(dirs$base, "deep_data.rds")))
   })
 
-  it("fills missing colours for deep nuclei", {
+  it("leaves deep nuclei without a colour uncoloured", {
     dirs <- list(base = withr::local_tempdir())
 
     atlas_data <- tibble(
@@ -1793,9 +1793,11 @@ describe("cerebellar_read_data", {
       atlas_data
     })
 
-    deep_colour <- result$components$palette["midline_Dentate"]
-    expect_false(is.na(deep_colour))
-    expect_true(grepl("^#", deep_colour))
+    palette <- result$components$palette
+    # The nucleus that had a colour keeps it; the one that did not stays NA
+    # rather than being handed an invented one.
+    expect_true(is.na(palette[["midline_Dentate"]]))
+    expect_true(any(grepl("^#", palette)))
   })
 })
 

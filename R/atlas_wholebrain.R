@@ -63,7 +63,7 @@
 #'   controls label classification (see **Label classification**). Voxel IDs
 #'   not listed in the LUT are automatically zeroed out before surface
 #'   projection (see **Volume pre-processing**).
-#'   If NULL, generic names and auto-generated colours.
+#'   If NULL, generic names and no palette.
 #' @template atlas_name
 #' @template output_dir
 #' @param projfrac Cortical depth fraction for projection (0 = white surface,
@@ -678,7 +678,7 @@ wholebrain_compute_projection <- function(config, dirs) {
     cli::cli_warn(c(
       "No color lookup table provided",
       "i" = "Region names will be generic (e.g., 'region_0010')",
-      "i" = "Colours will be auto-generated" # nolint
+      "i" = "The atlas will have no palette; plotting picks its own colours"
     ))
     generate_colortable_from_volume(config$input_volume)
   } else {

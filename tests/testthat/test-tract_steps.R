@@ -97,7 +97,7 @@ describe("tract_build_core", {
     expect_identical(result$atlas_name, "cst")
   })
 
-  it("generates a palette when no colours are supplied", {
+  it("returns no palette when no colours are supplied", {
     meshes_list <- tract_mesh_list(c("cst_left", "cst_right"))
 
     result <- tract_build_core(
@@ -106,11 +106,10 @@ describe("tract_build_core", {
       names(meshes_list)
     )
 
-    expect_named(result$palette, names(meshes_list))
-    expect_false(anyNA(result$palette))
+    expect_null(result$palette)
   })
 
-  it("keeps supplied colours and fills only the gaps", {
+  it("keeps supplied colours, leaving unsupplied ones NA", {
     meshes_list <- tract_mesh_list(c("cst_left", "cst_right"))
 
     result <- tract_build_core(
@@ -120,34 +119,7 @@ describe("tract_build_core", {
     )
 
     expect_identical(unname(result$palette[["cst_left"]]), "#FF0000")
-    expect_false(is.na(result$palette[["cst_right"]]))
-  })
-
-  it("gives the two sides of one bundle the same colour", {
-    meshes_list <- tract_mesh_list(c("lh.cst", "rh.cst", "lh.slf", "rh.slf"))
-
-    result <- tract_build_core(
-      meshes_list,
-      stats::setNames(rep(NA_character_, 4), names(meshes_list)),
-      names(meshes_list)
-    )
-
-    expect_identical(result$palette[["lh.cst"]], result$palette[["rh.cst"]])
-    expect_identical(result$palette[["lh.slf"]], result$palette[["rh.slf"]])
-    # ...but distinct bundles stay distinct.
-    expect_false(result$palette[["lh.cst"]] == result$palette[["lh.slf"]])
-  })
-})
-
-
-describe("fallback_tract_colours", {
-  it("spends one colour per family, in input order", {
-    cols <- fallback_tract_colours(c("af", "af", "slf", "af", "cst"))
-
-    expect_length(cols, 5)
-    expect_length(unique(cols), 3)
-    expect_identical(cols[[1]], cols[[2]])
-    expect_identical(cols[[1]], cols[[4]])
+    expect_true(is.na(result$palette[["cst_right"]]))
   })
 })
 

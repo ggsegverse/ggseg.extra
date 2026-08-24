@@ -122,29 +122,6 @@ tract_tube_mesh <- function(
 }
 
 
-#' Colours for tracts whose LUT supplied none
-#'
-#' One colour per tract *family* rather than per tract, so the left and right
-#' members of a bundle share a hue. They are the same anatomy, and colouring
-#' them separately implies a distinction that does not exist. Colouring by
-#' family also spends the palette on far fewer values -- 26 rather than 42 for
-#' TRACULA -- which is what makes neighbouring bundles tell apart at all.
-#'
-#' @param regions Region (family) name per uncoloured tract.
-#' @return Character vector of hex colours, parallel to `regions`.
-#' @keywords internal
-#' @noRd
-fallback_tract_colours <- function(regions) {
-  families <- unique(regions)
-  unname(
-    stats::setNames(
-      generate_region_palette(length(families)),
-      families
-    )[regions]
-  )
-}
-
-
 #' @noRd
 tract_build_core <- function(meshes_list, colours, tract_names) {
   core_rows <- lapply(seq_along(meshes_list), function(i) {
@@ -159,12 +136,13 @@ tract_build_core <- function(meshes_list, colours, tract_names) {
 
   core <- do.call(rbind, core_rows)
 
+  # No lookup table means no palette. See build_atlas_components().
   raw_colours <- colours[names(meshes_list)]
-  uncoloured <- is.na(raw_colours)
-  if (any(uncoloured)) {
-    raw_colours[uncoloured] <- fallback_tract_colours(core$region[uncoloured])
+  palette <- if (all(is.na(raw_colours))) {
+    NULL
+  } else {
+    stats::setNames(raw_colours, names(meshes_list))
   }
-  palette <- stats::setNames(raw_colours, names(meshes_list))
 
   centerlines_df <- data.frame(
     label = names(meshes_list),

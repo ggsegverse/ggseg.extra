@@ -828,10 +828,8 @@ merge_deep_into_components <- function(components, deep_data, deep_file) {
 
     deep_colours <- stats::setNames(deep_data$colour, deep_data$label)
     deep_colours <- deep_colours[!duplicated(names(deep_colours))]
-    needs_colour <- is.na(deep_colours)
-    if (any(needs_colour)) {
-      deep_colours[needs_colour] <- generate_region_colours(sum(needs_colour))
-    }
+    # Uncoloured nuclei stay NA rather than being given invented colours, so
+    # they behave like every other region: see build_atlas_components().
     if (!is.null(components$palette)) {
       components$palette <- c(components$palette, deep_colours)
     }

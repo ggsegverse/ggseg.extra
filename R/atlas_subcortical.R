@@ -25,7 +25,7 @@
 #'   label IDs to region names and colours (e.g., `FreeSurferColorLUT.txt`
 #'   or `ASegStatsLUT.txt`), or a data.frame with columns `region` and colour
 #'   columns (R, G, B or hex). If NULL, region names will be generic
-#'   (e.g., "region_0010") and colours will be auto-generated.
+#'   (e.g., "region_0010") and the atlas will have no palette.
 #' @template atlas_name
 #' @template output_dir
 #' @param slabs A data.frame specifying projection slabs with columns `name`,
@@ -550,7 +550,7 @@ subcort_load_colortable <- function(input_lut, input_volume) {
     cli::cli_warn(c(
       "No color lookup table provided",
       "i" = "Region names will be generic (e.g., 'region_0010')",
-      "i" = "Colours will be auto-generated" # nolint
+      "i" = "The atlas will have no palette; plotting picks its own colours"
     ))
     return(generate_colortable_from_volume(input_volume))
   }

@@ -812,7 +812,7 @@ describe("create_cortical_from_labels verbose and LUT paths", {
       verbose = FALSE
     )
 
-    expect_false(is.null(atlas$palette))
+    expect_null(atlas$palette)
   })
 
   it("passes correct atlas_name and components to cortical_project_and_build", {
