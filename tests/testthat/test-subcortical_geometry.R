@@ -123,7 +123,7 @@ describe("generate_colortable_from_volume", {
     expect_identical(nrow(result), 2L)
     expect_identical(result$idx, c(10L, 20L))
     expect_identical(result$label, c("region_0010", "region_0020"))
-    expect_true(all(grepl("^#", result$color)))
+    expect_true(all(is.na(result$color)))
   })
 })
 
@@ -345,7 +345,7 @@ describe("generate_colortable_from_volume", {
     expect_s3_class(result, "data.frame")
     expect_identical(result$idx, c(10L, 20L))
     expect_identical(result$label, c("region_0010", "region_0020"))
-    expect_true(all(result$R >= 0L & result$R <= 255L))
+    expect_true(all(is.na(result$R)))
   })
 })
 

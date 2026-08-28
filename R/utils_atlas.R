@@ -256,10 +256,12 @@ build_atlas_components <- function(atlas_data) {
   raw_colours <- stats::setNames(atlas_data$colour, atlas_data$label)
   raw_colours <- raw_colours[!duplicated(names(raw_colours))]
 
-  needs_colour <- is.na(raw_colours) & names(raw_colours) != "unknown"
-  if (any(needs_colour)) {
-    raw_colours[needs_colour] <- generate_region_colours(sum(needs_colour))
-  }
+  # Colours are never invented. An atlas built without a lookup table has no
+  # palette, and says so by returning NULL, rather than carrying made-up
+  # colours that read as though they came from the source. Plotting generates
+  # its own colours for an atlas with no palette, and does it knowing which
+  # labels are regions and which are anatomical backdrop -- which is more than
+  # this function knows.
   palette <- if (all(is.na(raw_colours))) NULL else raw_colours
 
   result <- list(core = core, palette = palette)
@@ -470,16 +472,4 @@ parse_lut_colours <- function(input_lut) {
   }
 
   list(region_names = region_names, colours = colours)
-}
-
-
-#' @noRd
-generate_region_colours <- function(n) {
-  if (n <= 8) {
-    grDevices::hcl.colors(n, palette = "Set2")
-  } else if (n <= 36) {
-    grDevices::palette.colors(n, palette = "Polychrome 36")
-  } else {
-    grDevices::hcl.colors(n, palette = "Dynamic")
-  }
 }

@@ -74,7 +74,7 @@ Invisibly, a list with three elements ready to feed
 FreeSurfer names for the surviving \code{aparc+aseg} context labels,
 plus the user's atlas labels with \code{idx} shifted by \code{id_offset}.
 When \code{lut} is \code{NULL}, the user labels get generic \code{region_XXXX}
-names and an auto-generated palette.}
+names and no colours.}
 \item{\code{id_offset}}{The offset applied to the user's label IDs.}
 }
 }

@@ -335,18 +335,18 @@ generate_colortable_from_volume <- function(volume_file) {
   vol_labels <- sort(unique(c(vol)))
   vol_labels <- vol_labels[vol_labels != 0]
 
-  hex <- generate_region_palette(length(vol_labels))
-  rgb_mat <- col2rgb(hex)
-
+  # Names are synthesized because the pipeline needs something to key on;
+  # colours are not, because nothing downstream renders with them and an
+  # invented palette would claim an authority the volume never gave us.
   data.frame(
     idx = vol_labels,
     label = sprintf("region_%04d", vol_labels),
-    R = as.integer(rgb_mat["red", ]),
-    G = as.integer(rgb_mat["green", ]),
-    B = as.integer(rgb_mat["blue", ]),
+    R = NA_integer_,
+    G = NA_integer_,
+    B = NA_integer_,
     A = 0L,
     roi = sprintf("%04d", vol_labels),
-    color = hex,
+    color = NA_character_,
     stringsAsFactors = FALSE
   )
 }

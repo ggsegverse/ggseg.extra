@@ -36,7 +36,7 @@ An optional \code{type} column with values \code{"cortical"} or \code{"subcortic
 controls label classification (see \strong{Label classification}). Voxel IDs
 not listed in the LUT are automatically zeroed out before surface
 projection (see \strong{Volume pre-processing}).
-If NULL, generic names and auto-generated colours.}
+If NULL, generic names and no palette.}
 
 \item{atlas_name}{Name for the atlas. If NULL, derived from the input
 filename.}

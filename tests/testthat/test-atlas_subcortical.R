@@ -191,8 +191,7 @@ describe("create_subcortical_from_volume", {
     expect_s3_class(atlas, "ggseg_atlas")
     expect_gt(nrow(atlas$core), 0)
     expect_true(all(grepl("^region_", atlas$core$label)))
-    expect_false(is.null(atlas$palette))
-    expect_true(all(grepl("^#", atlas$palette)))
+    expect_null(atlas$palette)
   })
 })
 

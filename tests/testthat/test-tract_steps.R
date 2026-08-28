@@ -97,7 +97,7 @@ describe("tract_build_core", {
     expect_identical(result$atlas_name, "cst")
   })
 
-  it("generates a palette when no colours are supplied", {
+  it("returns no palette when no colours are supplied", {
     meshes_list <- tract_mesh_list(c("cst_left", "cst_right"))
 
     result <- tract_build_core(
@@ -106,11 +106,10 @@ describe("tract_build_core", {
       names(meshes_list)
     )
 
-    expect_named(result$palette, names(meshes_list))
-    expect_false(anyNA(result$palette))
+    expect_null(result$palette)
   })
 
-  it("keeps supplied colours and fills only the gaps", {
+  it("keeps supplied colours, leaving unsupplied ones NA", {
     meshes_list <- tract_mesh_list(c("cst_left", "cst_right"))
 
     result <- tract_build_core(
@@ -120,7 +119,7 @@ describe("tract_build_core", {
     )
 
     expect_identical(unname(result$palette[["cst_left"]]), "#FF0000")
-    expect_false(is.na(result$palette[["cst_right"]]))
+    expect_true(is.na(result$palette[["cst_right"]]))
   })
 })
 

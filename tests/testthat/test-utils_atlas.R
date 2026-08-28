@@ -244,7 +244,7 @@ describe("build_atlas_components", {
     expect_identical(nrow(result$meshes_df), 2L)
   })
 
-  it("auto-generates colours when all are NA", {
+  it("returns no palette when all colours are NA", {
     atlas_data <- data.frame(
       hemi = c("left", "right"),
       region = c("motor", "visual"),
@@ -256,12 +256,10 @@ describe("build_atlas_components", {
 
     result <- build_atlas_components(atlas_data)
 
-    expect_false(is.null(result$palette))
-    expect_length(result$palette, 2)
-    expect_true(all(grepl("^#", result$palette)))
+    expect_null(result$palette)
   })
 
-  it("auto-generates colours for NA entries while keeping existing ones", {
+  it("keeps supplied colours and leaves NA entries NA", {
     atlas_data <- data.frame(
       hemi = c("left", "left", "right"),
       region = c("motor", "visual", "motor"),
@@ -275,11 +273,10 @@ describe("build_atlas_components", {
 
     expect_identical(result$palette[["lh_motor"]], "#FF0000")
     expect_identical(result$palette[["rh_motor"]], "#0000FF")
-    expect_true(grepl("^#", result$palette[["lh_visual"]]))
-    expect_false(is.na(result$palette[["lh_visual"]]))
+    expect_true(is.na(result$palette[["lh_visual"]]))
   })
 
-  it("does not generate colour for unknown label", {
+  it("returns no palette when only the unknown label is present", {
     atlas_data <- data.frame(
       hemi = c("left", "left"),
       region = c("unknown", "motor"),
@@ -291,8 +288,7 @@ describe("build_atlas_components", {
 
     result <- build_atlas_components(atlas_data)
 
-    expect_true(is.na(result$palette[["unknown"]]))
-    expect_true(grepl("^#", result$palette[["lh_motor"]]))
+    expect_null(result$palette)
   })
 
   it("handles duplicate labels in palette", {
@@ -431,26 +427,5 @@ describe("finalize_atlas", {
     )
 
     expect_true(ggseg.formats::is_atlas_polygon(result))
-  })
-})
-
-
-describe("generate_region_colours", {
-  it("uses a Set2 palette for up to 8 regions", {
-    cols <- generate_region_colours(5)
-    expect_length(cols, 5)
-    expect_true(all(grepl("^#", cols)))
-  })
-
-  it("uses Polychrome 36 for 9 to 36 regions", {
-    cols <- generate_region_colours(20)
-    expect_length(cols, 20)
-    expect_true(all(grepl("^#", cols)))
-  })
-
-  it("uses a dynamic palette for more than 36 regions", {
-    cols <- generate_region_colours(50)
-    expect_length(cols, 50)
-    expect_true(all(grepl("^#", cols)))
   })
 })

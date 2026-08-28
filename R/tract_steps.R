@@ -136,12 +136,13 @@ tract_build_core <- function(meshes_list, colours, tract_names) {
 
   core <- do.call(rbind, core_rows)
 
+  # No lookup table means no palette. See build_atlas_components().
   raw_colours <- colours[names(meshes_list)]
-  uncoloured <- is.na(raw_colours)
-  if (any(uncoloured)) {
-    raw_colours[uncoloured] <- generate_region_palette(sum(uncoloured))
+  palette <- if (all(is.na(raw_colours))) {
+    NULL
+  } else {
+    stats::setNames(raw_colours, names(meshes_list))
   }
-  palette <- stats::setNames(raw_colours, names(meshes_list))
 
   centerlines_df <- data.frame(
     label = names(meshes_list),

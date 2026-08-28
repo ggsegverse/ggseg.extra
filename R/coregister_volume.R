@@ -163,7 +163,7 @@ coregister_volume <- function(
 #'       FreeSurfer names for the surviving `aparc+aseg` context labels,
 #'       plus the user's atlas labels with `idx` shifted by `id_offset`.
 #'       When `lut` is `NULL`, the user labels get generic `region_XXXX`
-#'       names and an auto-generated palette.}
+#'       names and no colours.}
 #'     \item{`id_offset`}{The offset applied to the user's label IDs.}
 #'   }
 #' @export
@@ -894,21 +894,19 @@ read_fs_color_lut <- function() {
 #'
 #' Returns colour-table rows for the projected labels with `idx` shifted by
 #' `id_offset` so they line up with the merged volume. When no `lut` is
-#' given, generic `region_XXXX` names and an HCL palette are generated.
+#' given, generic `region_XXXX` names are generated with no colours.
 #' @noRd
 resolve_user_lut <- function(lut, label_ids, id_offset) {
   label_ids <- as.integer(label_ids)
   shifted_ids <- label_ids + id_offset
 
   if (is.null(lut)) {
-    hex <- generate_region_palette(length(shifted_ids))
-    rgb_mat <- grDevices::col2rgb(hex)
     return(data.frame(
       idx = shifted_ids,
       label = sprintf("region_%04d", label_ids),
-      R = as.integer(rgb_mat["red", ]),
-      G = as.integer(rgb_mat["green", ]),
-      B = as.integer(rgb_mat["blue", ]),
+      R = NA_integer_,
+      G = NA_integer_,
+      B = NA_integer_,
       A = 0L,
       stringsAsFactors = FALSE
     ))
