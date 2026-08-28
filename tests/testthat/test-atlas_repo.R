@@ -187,14 +187,14 @@ describe("setup_atlas_repo template files", {
 
     expect_match(config, "create-atlas\\.R", all = FALSE)
     expect_match(config, "commented_code_linter", all = FALSE)
-    expect_false(any(grepl("object_usage_linter", config)))
+    expect_false(any(grepl("object_usage_linter", config, fixed = TRUE)))
   })
 
   it("declares the data-raw dependencies for the lint job", {
     # Without these, object_usage_linter cannot resolve what create-atlas.R
     # loads and reports every call through them as an undefined global.
     needs <- read.dcf(file.path(tmp, "DESCRIPTION"))[1, "Config/Needs/lint"]
-    declared <- trimws(strsplit(needs, ",")[[1]])
+    declared <- trimws(strsplit(needs, ",", fixed = TRUE)[[1]])
 
     expect_setequal(
       declared,
