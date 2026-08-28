@@ -49,8 +49,7 @@ create_wholebrain_from_volume(
   with values `"cortical"` or `"subcortical"` controls label
   classification (see **Label classification**). Voxel IDs not listed in
   the LUT are automatically zeroed out before surface projection (see
-  **Volume pre-processing**). If NULL, generic names and auto-generated
-  colours.
+  **Volume pre-processing**). If NULL, generic names and no palette.
 
 - atlas_name:
 

@@ -54,7 +54,7 @@ create_subcortical_from_volume(
   region names and colours (e.g., `FreeSurferColorLUT.txt` or
   `ASegStatsLUT.txt`), or a data.frame with columns `region` and colour
   columns (R, G, B or hex). If NULL, region names will be generic (e.g.,
-  "region_0010") and colours will be auto-generated.
+  "region_0010") and the atlas will have no palette.
 
 - atlas_name:
 

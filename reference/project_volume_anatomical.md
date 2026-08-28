@@ -110,8 +110,7 @@ Invisibly, a list with three elements ready to feed
   A colour table matching the merged volume one-to-one: FreeSurfer names
   for the surviving `aparc+aseg` context labels, plus the user's atlas
   labels with `idx` shifted by `id_offset`. When `lut` is `NULL`, the
-  user labels get generic `region_XXXX` names and an auto-generated
-  palette.
+  user labels get generic `region_XXXX` names and no colours.
 
 - `id_offset`:
 
