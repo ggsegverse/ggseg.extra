@@ -1,1 +1,1 @@
-exclusions: list("data-raw")
+exclusions: list("data-raw/create-atlas.R" = list(commented_code_linter = Inf))

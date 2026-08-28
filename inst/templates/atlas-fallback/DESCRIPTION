@@ -30,3 +30,8 @@ Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3
 Config/testthat/edition: 3
 Config/Needs/website: ggsegverse/ggseg.docs
+Config/Needs/lint:
+    dplyr,
+    future,
+    progressr,
+    ggsegverse/ggseg.extra
