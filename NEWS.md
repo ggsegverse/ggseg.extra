@@ -2,6 +2,16 @@
 
 ## Minor improvements and fixes
 
+- The anatomical context silhouette is now taken from a single slice for
+  every view, never projected through the slab. Projecting it unions every
+  sulcus the slab passes through and fills them in, so the grey brain came
+  out as a smooth blob rather than a gyrified mantle; the deeper the slab,
+  the worse it got. `cortex_slice_for_slab()` already chose a representative
+  slice - the densest cortex slice within the slab - for axial and coronal
+  views as well as sagittal, but only the sagittal branch used it. Structures
+  are still projected through the slab, so small deep ones continue to show
+  up in every view that passes through them.
+
 - `create_tract_from_volume()` no longer sweeps the whole label volume once
   per tract. It collected each tract's voxels with `which(arr == label)`, so a
   35-tract atlas made 35 full passes over the array; the voxels are now

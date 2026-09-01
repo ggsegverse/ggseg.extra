@@ -283,13 +283,11 @@ describe("subcort_create_snapshots", {
     expect_type(result, "list")
     expect_true("slabs" %in% names(result))
     expect_true("cortex_slices" %in% names(result))
-    # Both structures and the cortex outline now route through
-    # snapshot_partial_projection for axial/coronal views (the cortex
-    # outline must match the structures' slice-range projection so they
-    # share the same brain extent). snapshot_cortex_slice is reserved for
-    # sagittal cortex slices (hemisphere-specific, no slice range).
+    # Structures are projected through their slab so small deep ones survive;
+    # the context silhouette takes a single slice per view, whatever the view
+    # type, so its sulci are not unioned shut.
     expect_gt(.cap$snapshot_calls, 0)
-    expect_identical(.cap$cortex_calls, 0L)
+    expect_gt(.cap$cortex_calls, 0L)
   })
 
   it("uses provided slabs instead of defaults", {
@@ -419,7 +417,7 @@ describe("subcort_create_snapshots", {
 
 
 describe("subcort_snapshot_cortex", {
-  it("routes axial/coronal via partial projection, sagittal via cortex", {
+  it("takes one slice per view, never a projection", {
     .cap$pp <- 0L
     .cap$cs <- 0L
 
@@ -444,21 +442,14 @@ describe("subcort_snapshot_cortex", {
       name = c("ax_1", "cor_1", "sag_1"),
       stringsAsFactors = FALSE
     )
-    slabs <- data.frame(
-      name = c("ax_1", "cor_1", "sag_1"),
-      type = c("axial", "coronal", "sagittal"),
-      start = c(1, 1, 5),
-      end = c(10, 10, 5),
-      stringsAsFactors = FALSE
-    )
     dirs <- list(snapshots = withr::local_tempdir())
 
-    subcort_snapshot_cortex(cortex_vol, cortex_slices, slabs, dirs, FALSE)
+    subcort_snapshot_cortex(cortex_vol, cortex_slices, dirs, FALSE)
 
-    # axial + coronal cortex outlines use the slice-range projection; the
-    # sagittal outline (hemisphere-specific, no range) uses a single slice.
-    expect_identical(.cap$pp, 2L)
-    expect_identical(.cap$cs, 1L)
+    # Projecting the silhouette through a slab unions every sulcus the slab
+    # passes through and fills them in, so every view takes a single slice.
+    expect_identical(.cap$pp, 0L)
+    expect_identical(.cap$cs, 3L)
   })
 })
 
