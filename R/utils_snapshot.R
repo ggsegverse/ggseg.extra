@@ -83,6 +83,10 @@ extract_alpha_mask <- function(
 #' @param processed_dir Directory for processed (transparency) images
 #' @param mask_dir Directory for alpha mask output
 #' @param dilate Dilation iterations passed to `process_snapshot_image`
+#' @param dilate_exclude Regular expression matching snapshots that must not
+#'   be dilated. Defaults to the anatomical context silhouettes: dilation
+#'   exists to keep small deep structures visible, and applied to the grey
+#'   brain it closes the sulci and flattens the mantle.
 #' @param skip_existing Skip files that already exist
 #' @noRd
 process_and_mask_images <- function(
@@ -90,16 +94,19 @@ process_and_mask_images <- function(
   processed_dir,
   mask_dir,
   dilate = NULL,
+  dilate_exclude = context_snapshot_pattern(),
   skip_existing = get_skip_existing()
 ) {
   files <- list.files(snap_dir, full.names = TRUE, pattern = "\\.png$")
 
   p <- progressor(steps = length(files))
   invisible(lapply(files, function(f) {
+    is_context <- !is.null(dilate_exclude) &&
+      grepl(dilate_exclude, basename(f))
     process_snapshot_image(
       input_file = f,
       output_file = as.character(fs::path(processed_dir, basename(f))),
-      dilate = dilate,
+      dilate = if (is_context) NULL else dilate,
       skip_existing = skip_existing
     )
     p()
@@ -480,4 +487,16 @@ extract_hemi_from_view <- function(view_type, view_name) {
   } else {
     NULL
   }
+}
+
+
+#' Snapshots that carry anatomical context rather than a structure
+#'
+#' The grey silhouettes: the `cortex_<hemi>` outline this pipeline renders,
+#' and FreeSurfer's own cerebral cortex labels. Deliberately case-sensitive so
+#' it does not catch a `Cerebellar_Cortex_*` parcel, which is a structure in
+#' its own right in some atlases.
+#' @noRd
+context_snapshot_pattern <- function() {
+  "(^|_)cortex_[a-z]*\\.png$|Cerebral-Cortex\\.png$"
 }

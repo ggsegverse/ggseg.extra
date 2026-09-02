@@ -2,6 +2,14 @@
 
 ## Minor improvements and fixes
 
+- The anatomical context silhouette is no longer dilated. `dilate` exists to
+  keep small deep structures from vanishing, but it was applied to every
+  snapshot in the directory, including the grey brain, where a two-pixel
+  dilation closes the sulci and flattens the mantle. Structures are dilated
+  as before. The exclusion is deliberately case-sensitive so a
+  `Cerebellar_Cortex_*` parcel, which is a structure in its own right in some
+  atlases, still gets dilated.
+
 - The anatomical context silhouette is now taken from a single slice for
   every view, never projected through the slab. Projecting it unions every
   sulcus the slab passes through and fills them in, so the grey brain came
