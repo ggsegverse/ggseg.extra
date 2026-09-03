@@ -2,6 +2,16 @@
 
 ## Minor improvements and fixes
 
+- The sagittal context slice is now the *thinnest* section of cortex in the
+  slab, not the densest. Sagittal is the one view where picking the slice
+  with the most cortex is actively wrong: area peaks at both tangential
+  extremes - the medial wall by the midline, and the lateral surface - where
+  the slice skims along the sheet and returns a solid blob. A true
+  cross-section, the one that reads as a gyrified ribbon, is where the area
+  is lowest. The ends of the slab are trimmed before the search so it cannot
+  fall into the midline gap. Axial and coronal still take the densest slice,
+  where the reasoning does not apply.
+
 - The anatomical context silhouette is no longer dilated. `dilate` exists to
   keep small deep structures from vanishing, but it was applied to every
   snapshot in the directory, including the grey brain, where a two-pixel

@@ -116,14 +116,15 @@ describe("create_cortex_slices picking by content", {
   }
 
   it("takes the slice holding the most cortex, not the slab midpoint", {
+    # Axial and coronal only: sagittal picks the thinnest section instead,
+    # since cortex area there peaks where the slice skims the sheet. See
+    # thinnest_cortex_slice().
     slabs <- rbind(
-      data.frame(name = "sag", type = "sagittal", start = 1, end = 8),
       data.frame(name = "cor", type = "coronal", start = 1, end = 8),
       data.frame(name = "ax", type = "axial", start = 1, end = 8)
     )
     result <- create_cortex_slices(slabs, c(8, 8, 8), vol = make_vol())
 
-    expect_identical(result$x[result$view == "sagittal"], 3L)
     expect_identical(result$y[result$view == "coronal"], 6L)
     expect_identical(result$z[result$view == "axial"], 2L)
   })
@@ -824,5 +825,43 @@ describe("context snapshots are never dilated", {
     expect_null(seen[["axial_1_Left-Cerebral-Cortex.png"]])
     expect_identical(seen[["axial_1_Cerebellar_Cortex_Left.png"]], 2L)
     expect_identical(seen[["axial_1_Putamen_Left.png"]], 2L)
+  })
+})
+
+
+describe("thinnest_cortex_slice", {
+  # A sagittal slab across a hemisphere: cortex area peaks at both tangential
+  # extremes and dips where the slice cuts the sheet properly.
+  vol <- array(0L, dim = c(11, 6, 6))
+  areas <- c(30, 26, 20, 14, 9, 6, 9, 14, 20, 26, 30)
+  for (i in seq_along(areas)) {
+    vol[i, , ][seq_len(areas[i])] <- 3L
+  }
+
+  it("takes the thinnest section, not the largest", {
+    expect_identical(
+      thinnest_cortex_slice(vol, 3L, dim(vol), 1L, 1L, 11L),
+      6L
+    )
+  })
+
+  it("ignores the tangential ends of the slab", {
+    # Drop the true minimum to the edge: trimming must keep the search off it.
+    vol[1, , ] <- 0L
+    vol[1, 1, 1] <- 3L
+    expect_gt(thinnest_cortex_slice(vol, 3L, dim(vol), 1L, 1L, 11L), 1L)
+  })
+
+  it("returns NULL when the slab holds no cortex", {
+    expect_null(
+      thinnest_cortex_slice(
+        array(0L, dim = c(11, 6, 6)),
+        3L,
+        c(11, 6, 6),
+        1L,
+        1L,
+        11L
+      )
+    )
   })
 })
