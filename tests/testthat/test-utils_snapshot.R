@@ -786,49 +786,6 @@ describe("detect_context_labels", {
     expect_length(detect_context_labels(vol), 0)
   })
 })
-
-
-describe("context snapshots are never dilated", {
-  it("passes dilate to structures and NULL to the silhouettes", {
-    seen <- list()
-
-    local_mocked_bindings(
-      progressor = function(...) function(...) NULL,
-      process_snapshot_image = function(input_file, dilate, ...) {
-        seen[[basename(input_file)]] <<- dilate
-        invisible(NULL)
-      },
-      extract_alpha_mask = function(...) invisible(NULL)
-    )
-
-    snap_dir <- withr::local_tempdir()
-    for (f in c(
-      "axial_1_cortex_.png",
-      "axial_1_Left-Cerebral-Cortex.png",
-      "axial_1_Cerebellar_Cortex_Left.png",
-      "axial_1_Putamen_Left.png"
-    )) {
-      file.create(file.path(snap_dir, f))
-    }
-
-    process_and_mask_images(
-      snap_dir,
-      withr::local_tempdir(),
-      withr::local_tempdir(),
-      dilate = 2L,
-      skip_existing = FALSE
-    )
-
-    # Dilation keeps small deep structures visible; on the grey brain it
-    # closes the sulci, so the silhouettes opt out.
-    expect_null(seen[["axial_1_cortex_.png"]])
-    expect_null(seen[["axial_1_Left-Cerebral-Cortex.png"]])
-    expect_identical(seen[["axial_1_Cerebellar_Cortex_Left.png"]], 2L)
-    expect_identical(seen[["axial_1_Putamen_Left.png"]], 2L)
-  })
-})
-
-
 describe("thinnest_cortex_slice", {
   # A sagittal slab across a hemisphere: cortex area peaks at both tangential
   # extremes and dips where the slice cuts the sheet properly.

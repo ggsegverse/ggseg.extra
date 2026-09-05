@@ -133,6 +133,92 @@ atlas_smooth <- function(
   rehydrate_smoothed_atlas(atlas, sf_data, was_polygon)
 }
 
+#' Grow or shrink an atlas's regions
+#'
+#' @description
+#' Buffers region geometry outward, so structures too thin to read at
+#' plotting size survive. This is the post-creation counterpart of the
+#' snapshot-stage dilation the atlas pipelines used to apply: it works on the
+#' finished atlas, so a build does not have to be repeated to retune it.
+#'
+#' @details
+#' `amount` is a distance in the atlas's own geometry units, not voxels or
+#' pixels. Start small and look: a value that reads well on one atlas will
+#' not transfer to another built on a different grid.
+#'
+#' Dilate the structures, not the anatomical context. Grown by even a little,
+#' a grey brain silhouette closes its sulci and flattens into a blob, so pass
+#' `exclude` (or `labels`) to keep it out.
+#'
+#' @param atlas A `ggseg_atlas` object with 2D geometry.
+#' @param amount Buffer distance in geometry units. Positive grows a region,
+#'   negative shrinks it, `0` returns the atlas unchanged.
+#' @param labels,exclude Regex selecting which labels to dilate, or which to
+#'   leave alone. Give at most one.
+#'
+#' @return The `ggseg_atlas`, in the representation it arrived in.
+#' @family atlas geometry
+#' @seealso [atlas_smooth()] and [atlas_simplify()], the other post-creation
+#'   geometry steps.
+#' @export
+#' @examples
+#' \dontrun{
+#' # Grow the structures and leave the grey brain alone
+#' atlas <- atlas_dilate(atlas, 0.5, exclude = "^cortex")
+#' }
+atlas_dilate <- function(atlas, amount, labels = NULL, exclude = NULL) {
+  if (!is.numeric(amount) || length(amount) != 1L || is.na(amount)) {
+    cli::cli_abort("{.arg amount} must be a single number.")
+  }
+  if (!is.null(labels) && !is.null(exclude)) {
+    cli::cli_abort(
+      "Specify only one of {.arg labels} or {.arg exclude}, not both."
+    )
+  }
+
+  geom <- ggseg.formats::atlas_geom(atlas)
+  if (is.null(geom)) {
+    cli::cli_warn("Atlas has no 2D geometry, nothing to dilate")
+    return(atlas)
+  }
+  if (amount == 0) {
+    return(atlas)
+  }
+
+  was_polygon <- ggseg.formats::is_atlas_polygon(atlas)
+  sf_data <- ggseg.formats::atlas_geom(ggseg.formats::as_sf_atlas(atlas))
+
+  mask <- dilate_mask(sf_data$label, labels, exclude)
+  if (!any(mask)) {
+    cli::cli_warn("No labels matched, nothing to dilate")
+    return(atlas)
+  }
+
+  sf_data$geometry[mask] <- sf::st_buffer(sf_data$geometry[mask], amount)
+  sf_data <- sf_data[!sf::st_is_empty(sf_data$geometry), , drop = FALSE]
+
+  rehydrate_smoothed_atlas(atlas, sf_data, was_polygon)
+}
+
+
+#' Which rows a dilation applies to
+#'
+#' Mirrors [atlas_smooth()]'s selection: `labels` opts in, `exclude` opts out,
+#' neither means everything. Unlabelled rows are never selected.
+#' @noRd
+dilate_mask <- function(sf_labels, labels, exclude) {
+  mask <- if (!is.null(labels)) {
+    grepl(labels, sf_labels, ignore.case = TRUE)
+  } else if (!is.null(exclude)) {
+    !grepl(exclude, sf_labels, ignore.case = TRUE)
+  } else {
+    rep(TRUE, length(sf_labels))
+  }
+  mask[is.na(sf_labels)] <- FALSE
+  mask
+}
+
+
 #' @rdname atlas_smooth
 #' @export
 atlas_simplify <- function(atlas, keep = 0.05) {

@@ -245,6 +245,10 @@ create_cerebellar_from_gifti <- function(
   verbose = get_verbose(),
   skip_existing = NULL
 ) {
+  warn_post_creation_args(
+    "create_cerebellar_from_gifti",
+    tolerance = tolerance
+  )
   if (length(gifti_files) == 0) {
     cli::cli_abort("{.arg gifti_files} must not be empty")
   }
@@ -320,6 +324,10 @@ create_cerebellar_from_annotation <- function(
   verbose = get_verbose(),
   skip_existing = NULL
 ) {
+  warn_post_creation_args(
+    "create_cerebellar_from_annotation",
+    tolerance = tolerance
+  )
   if (length(input_annot) == 0) {
     cli::cli_abort("{.arg input_annot} must not be empty")
   }
@@ -401,6 +409,10 @@ create_cerebellar_from_volume <- function(
   skip_existing = NULL,
   volume = lifecycle::deprecated()
 ) {
+  warn_post_creation_args(
+    "create_cerebellar_from_volume",
+    tolerance = tolerance
+  )
   if (lifecycle::is_present(volume)) {
     lifecycle::deprecate_warn(
       "1.9.9.9005",

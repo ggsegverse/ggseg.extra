@@ -1,4 +1,21 @@
-# ggseg.extra 1.9.9.9015
+# ggseg.extra 1.9.9.9016
+
+## Post-creation geometry
+
+Smoothing, dilation and vertex reduction are steps you apply to a finished
+atlas, not settings baked into a build - retuning one should not cost a
+rebuild.
+
+- New `atlas_dilate()` grows or shrinks region geometry, the post-creation
+  counterpart of the snapshot-stage dilation the pipelines applied. Dilate
+  the structures and leave the context alone: a grey brain grown by even a
+  little closes its sulci and flattens into a blob.
+
+- `dilate`, `smoothness` and `tolerance` on the `create_*()` functions are
+  deprecated in favour of `atlas_dilate()`, `atlas_smooth()` and
+  `atlas_simplify()`. `smoothness` and `tolerance` had already been inert:
+  the pipeline steps that once consumed them now only filter invalid
+  geometries, so a build passing them was quietly getting nothing.
 
 ## Minor improvements and fixes
 

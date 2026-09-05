@@ -116,6 +116,12 @@ create_subcortical_from_volume <- function(
   context = NULL,
   views = lifecycle::deprecated()
 ) {
+  warn_post_creation_args(
+    "create_subcortical_from_volume",
+    dilate = dilate,
+    smoothness = smoothness,
+    tolerance = tolerance
+  )
   if (lifecycle::is_present(views)) {
     lifecycle::deprecate_warn(
       "1.9.9.9005",

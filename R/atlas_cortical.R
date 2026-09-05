@@ -55,6 +55,10 @@ create_cortical_from_annotation <- function(
   verbose = get_verbose(),
   skip_existing = NULL
 ) {
+  warn_post_creation_args(
+    "create_cortical_from_annotation",
+    tolerance = tolerance
+  )
   if (length(input_annot) == 0) {
     cli::cli_abort("{.arg input_annot} must not be empty")
   }
@@ -141,6 +145,10 @@ create_cortical_from_labels <- function(
   verbose = get_verbose(), # nolint: object_usage_linter
   skip_existing = NULL
 ) {
+  warn_post_creation_args(
+    "create_cortical_from_labels",
+    tolerance = tolerance
+  )
   warn_deprecated_sf_smoothing(
     # nolint: object_usage_linter.
     tolerance = tolerance,
@@ -214,6 +222,10 @@ create_cortical_from_gifti <- function(
   verbose = get_verbose(),
   skip_existing = NULL
 ) {
+  warn_post_creation_args(
+    "create_cortical_from_gifti",
+    tolerance = tolerance
+  )
   if (length(gifti_files) == 0) {
     cli::cli_abort("{.arg gifti_files} must not be empty")
   }
@@ -292,6 +304,10 @@ create_cortical_from_cifti <- function(
   verbose = get_verbose(),
   skip_existing = NULL
 ) {
+  warn_post_creation_args(
+    "create_cortical_from_cifti",
+    tolerance = tolerance
+  )
   if (!file.exists(cifti_file)) {
     cli::cli_abort("CIFTI file not found: {.path {cifti_file}}")
   }
@@ -387,6 +403,10 @@ create_cortical_from_neuromaps <- function(
   verbose = get_verbose(),
   skip_existing = NULL
 ) {
+  warn_post_creation_args(
+    "create_cortical_from_neuromaps",
+    tolerance = tolerance
+  )
   rlang::check_installed(
     "neuromapr",
     reason = "to download neuromaps annotations"
