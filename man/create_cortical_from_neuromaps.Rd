@@ -15,11 +15,11 @@ create_cortical_from_neuromaps(
   output_dir = NULL,
   hemisphere = c("rh", "lh"),
   views = c("lateral", "medial", "superior", "inferior"),
-  tolerance = NULL,
   smooth_refinements = NULL,
   cleanup = NULL,
   verbose = get_verbose(),
-  skip_existing = NULL
+  skip_existing = NULL,
+  ...
 )
 }
 \arguments{
@@ -46,11 +46,6 @@ contours). Defaults to \code{\link[=tempdir]{tempdir()}}.}
 \item{views}{Which views to include: "lateral", "medial",
 "superior", "inferior".}
 
-\item{tolerance}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} sf simplification is
-no longer applied during atlas creation. Use \code{\link[=atlas_smooth]{atlas_smooth()}} on the
-returned atlas instead. Supplying a value emits a lifecycle warning
-and is otherwise ignored.}
-
 \item{smooth_refinements}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} sf-side
 smoothing is no longer applied during atlas creation. Use
 \code{\link[=atlas_smooth]{atlas_smooth()}} on the returned atlas instead. Supplying a value
@@ -70,6 +65,12 @@ environment variable.}
 allowing interrupted atlas creation to resume. If not specified, uses
 \code{options("ggseg.extra.skip_existing")} or the \code{GGSEG_EXTRA_SKIP_EXISTING}
 environment variable. Default is TRUE.}
+
+\item{...}{Catches the retired \code{dilate}, \code{smoothness} and \code{tolerance}
+arguments, so a call that still passes one keeps working and says so.
+These are post-creation steps now: see \code{\link[=atlas_dilate]{atlas_dilate()}},
+\code{\link[=atlas_smooth]{atlas_smooth()}} and \code{\link[=atlas_simplify]{atlas_simplify()}}. Anything else in \code{...} is an
+error, as an unused argument always was.}
 }
 \value{
 A \code{ggseg_atlas} object.

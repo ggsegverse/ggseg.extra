@@ -11,11 +11,16 @@ rebuild.
   the structures and leave the context alone: a grey brain grown by even a
   little closes its sulci and flattens into a blob.
 
-- `dilate`, `smoothness` and `tolerance` on the `create_*()` functions are
-  deprecated in favour of `atlas_dilate()`, `atlas_smooth()` and
-  `atlas_simplify()`. `smoothness` and `tolerance` had already been inert:
-  the pipeline steps that once consumed them now only filter invalid
-  geometries, so a build passing them was quietly getting nothing.
+- `dilate` on the `create_*()` functions is deprecated in favour of
+  `atlas_dilate()`. It is still honoured for now, so no atlas changes
+  underfoot.
+
+- `dilate`, `smoothness`, `tolerance` and `smooth_refinements` are no longer
+  formals of the `create_*()` functions: they are caught in `...` instead, so
+  they no longer appear in a signature or a help page while a call that still
+  passes one keeps working and says so. Anything else in `...` is an error,
+  as an unused argument always was. The notice for the smoothing arguments is
+  the one they already had; only `dilate`'s is new.
 
 ## Minor improvements and fixes
 

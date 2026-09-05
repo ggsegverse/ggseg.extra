@@ -18,7 +18,6 @@
 #' @param hemisphere Which hemispheres to include: "lh", "rh", or both.
 #' @param views Which views to include: "lateral", "medial",
 #'   "superior", "inferior".
-#' @template tolerance
 #' @template smooth_refinements
 #' @template cleanup
 #' @template verbose
@@ -26,6 +25,7 @@
 #'
 #' @return A `ggseg_atlas` object containing region metadata (core), vertex
 #'   indices for 3D rendering, a colour palette, and sf geometry for 2D plots.
+#' @template dots_post_creation
 #' @export
 #' @importFrom dplyr filter select mutate left_join group_by ungroup
 #' @importFrom dplyr tibble bind_rows distinct
@@ -49,26 +49,17 @@ create_cortical_from_annotation <- function(
   output_dir = NULL,
   hemisphere = c("rh", "lh"),
   views = c("lateral", "medial", "superior", "inferior"),
-  tolerance = NULL,
   smooth_refinements = NULL,
   cleanup = NULL,
   verbose = get_verbose(),
-  skip_existing = NULL
+  skip_existing = NULL,
+  ...
 ) {
-  warn_post_creation_args(
-    "create_cortical_from_annotation",
-    tolerance = tolerance
-  )
+  dots <- check_post_creation_dots("create_cortical_from_annotation", ...)
+  tolerance <- dots$tolerance
   if (length(input_annot) == 0) {
     cli::cli_abort("{.arg input_annot} must not be empty")
   }
-
-  warn_deprecated_sf_smoothing(
-    # nolint: object_usage_linter.
-    tolerance = tolerance,
-    smooth_refinements = smooth_refinements,
-    fn = "create_cortical_from_annotation"
-  )
 
   config <- validate_surface_config(
     output_dir,
@@ -115,13 +106,13 @@ create_cortical_from_annotation <- function(
 #' @template output_dir
 #' @param views Which views to include: "lateral", "medial",
 #'   "superior", "inferior".
-#' @template tolerance
 #' @template smooth_refinements
 #' @template cleanup
 #' @template verbose
 #' @template skip_existing
 #'
 #' @return A `ggseg_atlas` object.
+#' @template dots_post_creation
 #' @export
 #' @importFrom dplyr tibble bind_rows distinct
 #' @importFrom grDevices rgb
@@ -139,22 +130,14 @@ create_cortical_from_labels <- function(
   atlas_name = NULL,
   output_dir = NULL,
   views = c("lateral", "medial"),
-  tolerance = NULL,
   smooth_refinements = NULL,
   cleanup = NULL,
   verbose = get_verbose(), # nolint: object_usage_linter
-  skip_existing = NULL
+  skip_existing = NULL,
+  ...
 ) {
-  warn_post_creation_args(
-    "create_cortical_from_labels",
-    tolerance = tolerance
-  )
-  warn_deprecated_sf_smoothing(
-    # nolint: object_usage_linter.
-    tolerance = tolerance,
-    smooth_refinements = smooth_refinements,
-    fn = "create_cortical_from_labels"
-  )
+  dots <- check_post_creation_dots("create_cortical_from_labels", ...)
+  tolerance <- dots$tolerance
 
   config <- validate_surface_config(
     output_dir,
@@ -195,13 +178,13 @@ create_cortical_from_labels <- function(
 #' @param hemisphere Which hemispheres to include: "lh", "rh", or both.
 #' @param views Which views to include: "lateral", "medial",
 #'   "superior", "inferior".
-#' @template tolerance
 #' @template smooth_refinements
 #' @template cleanup
 #' @template verbose
 #' @template skip_existing
 #'
 #' @return A `ggseg_atlas` object.
+#' @template dots_post_creation
 #' @export
 #'
 #' @examples
@@ -216,26 +199,17 @@ create_cortical_from_gifti <- function(
   output_dir = NULL,
   hemisphere = c("rh", "lh"),
   views = c("lateral", "medial", "superior", "inferior"),
-  tolerance = NULL,
   smooth_refinements = NULL,
   cleanup = NULL,
   verbose = get_verbose(),
-  skip_existing = NULL
+  skip_existing = NULL,
+  ...
 ) {
-  warn_post_creation_args(
-    "create_cortical_from_gifti",
-    tolerance = tolerance
-  )
+  dots <- check_post_creation_dots("create_cortical_from_gifti", ...)
+  tolerance <- dots$tolerance
   if (length(gifti_files) == 0) {
     cli::cli_abort("{.arg gifti_files} must not be empty")
   }
-
-  warn_deprecated_sf_smoothing(
-    # nolint: object_usage_linter.
-    tolerance = tolerance,
-    smooth_refinements = smooth_refinements,
-    fn = "create_cortical_from_gifti"
-  )
 
   config <- validate_surface_config(
     output_dir,
@@ -277,13 +251,13 @@ create_cortical_from_gifti <- function(
 #' @param hemisphere Which hemispheres to include: "lh", "rh", or both.
 #' @param views Which views to include: "lateral", "medial",
 #'   "superior", "inferior".
-#' @template tolerance
 #' @template smooth_refinements
 #' @template cleanup
 #' @template verbose
 #' @template skip_existing
 #'
 #' @return A `ggseg_atlas` object.
+#' @template dots_post_creation
 #' @export
 #'
 #' @examples
@@ -298,26 +272,17 @@ create_cortical_from_cifti <- function(
   output_dir = NULL,
   hemisphere = c("rh", "lh"),
   views = c("lateral", "medial", "superior", "inferior"),
-  tolerance = NULL,
   smooth_refinements = NULL,
   cleanup = NULL,
   verbose = get_verbose(),
-  skip_existing = NULL
+  skip_existing = NULL,
+  ...
 ) {
-  warn_post_creation_args(
-    "create_cortical_from_cifti",
-    tolerance = tolerance
-  )
+  dots <- check_post_creation_dots("create_cortical_from_cifti", ...)
+  tolerance <- dots$tolerance
   if (!file.exists(cifti_file)) {
     cli::cli_abort("CIFTI file not found: {.path {cifti_file}}")
   }
-
-  warn_deprecated_sf_smoothing(
-    # nolint: object_usage_linter.
-    tolerance = tolerance,
-    smooth_refinements = smooth_refinements,
-    fn = "create_cortical_from_cifti"
-  )
 
   config <- validate_surface_config(
     output_dir,
@@ -369,13 +334,13 @@ create_cortical_from_cifti <- function(
 #' @param hemisphere Which hemispheres to include: "lh", "rh", or both.
 #' @param views Which views to include: "lateral", "medial",
 #'   "superior", "inferior".
-#' @template tolerance
 #' @template smooth_refinements
 #' @template cleanup
 #' @template verbose
 #' @template skip_existing
 #'
 #' @return A `ggseg_atlas` object.
+#' @template dots_post_creation
 #' @export
 #'
 #' @examples
@@ -397,16 +362,14 @@ create_cortical_from_neuromaps <- function(
   output_dir = NULL,
   hemisphere = c("rh", "lh"),
   views = c("lateral", "medial", "superior", "inferior"),
-  tolerance = NULL,
   smooth_refinements = NULL,
   cleanup = NULL,
   verbose = get_verbose(),
-  skip_existing = NULL
+  skip_existing = NULL,
+  ...
 ) {
-  warn_post_creation_args(
-    "create_cortical_from_neuromaps",
-    tolerance = tolerance
-  )
+  dots <- check_post_creation_dots("create_cortical_from_neuromaps", ...)
+  tolerance <- dots$tolerance
   rlang::check_installed(
     "neuromapr",
     reason = "to download neuromaps annotations"
@@ -500,12 +463,6 @@ setup_neuromaps_config <- function(
   tolerance,
   smooth_refinements
 ) {
-  warn_deprecated_sf_smoothing(
-    tolerance = tolerance,
-    smooth_refinements = smooth_refinements,
-    fn = "create_cortical_from_neuromaps"
-  )
-
   validate_surface_config(
     output_dir,
     verbose,
