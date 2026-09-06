@@ -167,17 +167,9 @@ atlas_smooth <- function(
 #' atlas <- atlas_dilate(atlas, 0.5, exclude = "^cortex")
 #' }
 atlas_dilate <- function(atlas, amount, labels = NULL, exclude = NULL) {
-  if (!is.numeric(amount) || length(amount) != 1L || is.na(amount)) {
-    cli::cli_abort("{.arg amount} must be a single number.")
-  }
-  if (!is.null(labels) && !is.null(exclude)) {
-    cli::cli_abort(
-      "Specify only one of {.arg labels} or {.arg exclude}, not both."
-    )
-  }
+  check_dilate_args(amount, labels, exclude)
 
-  geom <- ggseg.formats::atlas_geom(atlas)
-  if (is.null(geom)) {
+  if (is.null(ggseg.formats::atlas_geom(atlas))) {
     cli::cli_warn("Atlas has no 2D geometry, nothing to dilate")
     return(atlas)
   }
@@ -201,6 +193,18 @@ atlas_dilate <- function(atlas, amount, labels = NULL, exclude = NULL) {
 }
 
 
+#' @rdname atlas_smooth
+#' @export
+atlas_simplify <- function(atlas, keep = 0.05) {
+  lifecycle::deprecate_warn(
+    "1.9.9.9003",
+    "atlas_simplify()",
+    "atlas_smooth()"
+  )
+  atlas_smooth(atlas, keep = keep)
+}
+
+
 #' Which rows a dilation applies to
 #'
 #' Mirrors [atlas_smooth()]'s selection: `labels` opts in, `exclude` opts out,
@@ -216,18 +220,6 @@ dilate_mask <- function(sf_labels, labels, exclude) {
   }
   mask[is.na(sf_labels)] <- FALSE
   mask
-}
-
-
-#' @rdname atlas_smooth
-#' @export
-atlas_simplify <- function(atlas, keep = 0.05) {
-  lifecycle::deprecate_warn(
-    "1.9.9.9003",
-    "atlas_simplify()",
-    "atlas_smooth()"
-  )
-  atlas_smooth(atlas, keep = keep)
 }
 
 #' @noRd
@@ -792,4 +784,19 @@ make_multipolygon <- function(contourfile) {
   attr(sf::st_geometry(contours), "bbox") <- new_bb
 
   contours
+}
+
+
+#' Validate what atlas_dilate() was handed
+#' @noRd
+check_dilate_args <- function(amount, labels, exclude) {
+  if (!is.numeric(amount) || length(amount) != 1L || is.na(amount)) {
+    cli::cli_abort("{.arg amount} must be a single number.")
+  }
+  if (!is.null(labels) && !is.null(exclude)) {
+    cli::cli_abort(
+      "Specify only one of {.arg labels} or {.arg exclude}, not both."
+    )
+  }
+  invisible(NULL)
 }
