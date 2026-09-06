@@ -326,9 +326,9 @@ sagittal_cortex_x <- function(v, dims, cortex_x, vol, cortex_ids, mid_pos) {
   if (!is.null(cortex_x)) {
     return(cortex_x)
   }
-  densest <- densest_cortex_slice(vol, cortex_ids, dims, 1L, v$start, v$end)
-  if (!is.null(densest)) {
-    return(densest)
+  thinnest <- thinnest_cortex_slice(vol, cortex_ids, dims, 1L, v$start, v$end)
+  if (!is.null(thinnest)) {
+    return(thinnest)
   }
   if (grepl("left", v$name, ignore.case = TRUE)) {
     return(round(dims[1] * 0.55))
@@ -480,4 +480,52 @@ extract_hemi_from_view <- function(view_type, view_name) {
   } else {
     NULL
   }
+}
+#' The sagittal slice that cuts the cortex rather than skimming it
+#'
+#' Sagittal is the one view where picking the slice with the most cortex is
+#' actively wrong. Cortex area peaks at both tangential extremes - the medial
+#' wall near the midline, and the lateral surface - where the slice skims
+#' along the sheet and returns a solid blob. A true cross-section, the one
+#' that reads as a gyrified ribbon, is where the area is *lowest*.
+#'
+#' The ends of the slab are trimmed before taking the minimum, so the search
+#' cannot fall off into the midline gap or past the lateral surface, where
+#' the cortex thins out for the opposite reason.
+#'
+#' @param trim Fraction of the slab to drop from each end before searching.
+#' @noRd
+thinnest_cortex_slice <- function(
+  vol,
+  cortex_ids,
+  dims,
+  axis,
+  from,
+  to,
+  trim = 0.2
+) {
+  if (is.null(cortex_ids) || !length(cortex_ids)) {
+    return(NULL)
+  }
+  idx <- seq.int(max(1L, from), min(dims[axis], to))
+  if (length(idx) < 3L) {
+    return(NULL)
+  }
+
+  drop <- floor(trim * length(idx))
+  inner <- idx[seq.int(drop + 1L, length(idx) - drop)]
+  if (!length(inner)) {
+    inner <- idx
+  }
+
+  counts <- vapply(
+    inner,
+    function(i) sum(slice_along_axis(vol, axis, i) %in% cortex_ids),
+    numeric(1)
+  )
+  if (all(counts == 0)) {
+    return(NULL)
+  }
+
+  inner[which.min(replace(counts, counts == 0, Inf))]
 }

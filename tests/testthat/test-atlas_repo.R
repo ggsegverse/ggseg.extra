@@ -375,6 +375,8 @@ describe("setup_atlas_repo template files", {
         function(a) is.symbol(a) && !nzchar(as.character(a)),
         logical(1)
       )]
+      # `...` has no default either, but a template is not obliged to pass it.
+      required <- setdiff(required, "...")
 
       expect_setequal(
         setdiff(required, names(as.list(call))[-1]),

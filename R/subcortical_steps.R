@@ -157,17 +157,17 @@ subcort_create_snapshots <- function(
 
   cortex_vol <- subcort_cortex_volume(vol, dims, cortex_labels)
 
-  # Cortex outline must use the same slice-range projection as structures,
-  # otherwise structures (max-projected over start..end) appear larger than
-  # the single-slice cortex silhouette and overflow the brain shape. For
-  # sagittal cortex slices (hemisphere-specific, no start/end), keep the
-  # single-slice rendering. Skip entirely if cortex_vol has no voxels
-  # (consistent with how empty structures are skipped above).
+  # The context silhouette is one slice, never a projection. Projecting it
+  # through the slab unions every sulcus the slab passes through, which fills
+  # them in and leaves a smooth blob instead of a brain; a single slice keeps
+  # the gyri. cortex_slice_for_slab() already picks the slice - the densest
+  # cortex slice within the slab - for every view type. Skip entirely if
+  # cortex_vol has no voxels (consistent with how empty structures are
+  # skipped above).
   if (sum(cortex_vol) > 0) {
     subcort_snapshot_cortex(
       cortex_vol,
       cortex_slices,
-      slabs,
       dirs,
       skip_existing
     )
@@ -303,41 +303,24 @@ subcort_cortex_volume <- function(vol, dims, cortex_labels) {
 subcort_snapshot_cortex <- function(
   cortex_vol,
   cortex_slices,
-  slabs,
   dirs,
   skip_existing
 ) {
   invisible(lapply(seq_len(nrow(cortex_slices)), function(i) {
     cs <- cortex_slices[i, ]
     hemi <- extract_hemi_from_view(cs$view, cs$name)
-    matched_view <- slabs[slabs$name == cs$name, ]
 
-    if (cs$view %in% c("axial", "coronal") && nrow(matched_view) == 1) {
-      snapshot_partial_projection(
-        vol = cortex_vol,
-        view = cs$view,
-        start = matched_view$start,
-        end = matched_view$end,
-        view_name = cs$name,
-        label = paste0("cortex_", hemi),
-        output_dir = dirs$snapshots,
-        colour = "red",
-        hemi = hemi,
-        skip_existing = skip_existing
-      )
-    } else {
-      snapshot_cortex_slice(
-        vol = cortex_vol,
-        x = cs$x,
-        y = cs$y,
-        z = cs$z,
-        slice_view = cs$view,
-        view_name = cs$name,
-        hemi = hemi,
-        output_dir = dirs$snapshots,
-        skip_existing = skip_existing
-      )
-    }
+    snapshot_cortex_slice(
+      vol = cortex_vol,
+      x = cs$x,
+      y = cs$y,
+      z = cs$z,
+      slice_view = cs$view,
+      view_name = cs$name,
+      hemi = hemi,
+      output_dir = dirs$snapshots,
+      skip_existing = skip_existing
+    )
   }))
 }
 

@@ -1,6 +1,56 @@
-# ggseg.extra 1.9.9.9015
+# ggseg.extra 1.9.9.9016
+
+## Post-creation geometry
+
+Smoothing, dilation and vertex reduction are steps you apply to a finished
+atlas, not settings baked into a build - retuning one should not cost a
+rebuild.
+
+- New `atlas_dilate()` grows or shrinks region geometry, the post-creation
+  counterpart of the snapshot-stage dilation the pipelines applied. Dilate
+  the structures and leave the context alone: a grey brain grown by even a
+  little closes its sulci and flattens into a blob.
+
+- `dilate` on the `create_*()` functions is deprecated in favour of
+  `atlas_dilate()`. It is still honoured for now, so no atlas changes
+  underfoot.
+
+- `dilate`, `smoothness`, `tolerance` and `smooth_refinements` are no longer
+  formals of the `create_*()` functions: they are caught in `...` instead, so
+  they no longer appear in a signature or a help page while a call that still
+  passes one keeps working and says so. Anything else in `...` is an error,
+  as an unused argument always was. The notice for the smoothing arguments is
+  the one they already had; only `dilate`'s is new.
 
 ## Minor improvements and fixes
+
+- The sagittal context slice is now the *thinnest* section of cortex in the
+  slab, not the densest. Sagittal is the one view where picking the slice
+  with the most cortex is actively wrong: area peaks at both tangential
+  extremes - the medial wall by the midline, and the lateral surface - where
+  the slice skims along the sheet and returns a solid blob. A true
+  cross-section, the one that reads as a gyrified ribbon, is where the area
+  is lowest. The ends of the slab are trimmed before the search so it cannot
+  fall into the midline gap. Axial and coronal still take the densest slice,
+  where the reasoning does not apply.
+
+- The anatomical context silhouette is no longer dilated. `dilate` exists to
+  keep small deep structures from vanishing, but it was applied to every
+  snapshot in the directory, including the grey brain, where a two-pixel
+  dilation closes the sulci and flattens the mantle. Structures are dilated
+  as before. The exclusion is deliberately case-sensitive so a
+  `Cerebellar_Cortex_*` parcel, which is a structure in its own right in some
+  atlases, still gets dilated.
+
+- The anatomical context silhouette is now taken from a single slice for
+  every view, never projected through the slab. Projecting it unions every
+  sulcus the slab passes through and fills them in, so the grey brain came
+  out as a smooth blob rather than a gyrified mantle; the deeper the slab,
+  the worse it got. `cortex_slice_for_slab()` already chose a representative
+  slice - the densest cortex slice within the slab - for axial and coronal
+  views as well as sagittal, but only the sagittal branch used it. Structures
+  are still projected through the slab, so small deep ones continue to show
+  up in every view that passes through them.
 
 - `create_tract_from_volume()` no longer sweeps the whole label volume once
   per tract. It collected each tract's voxels with `which(arr == label)`, so a

@@ -44,9 +44,6 @@
 #' @param slabs A data.frame specifying projection slabs. If NULL, a default
 #'   set of tract slabs is derived from the volume dimensions.
 #' @template vertex_size_limits
-#' @template dilate
-#' @template tolerance
-#' @template smoothness
 #' @template cleanup
 #' @template verbose
 #' @template skip_existing
@@ -68,6 +65,7 @@
 #' @return A `ggseg_atlas` object with type `"tract"`, containing region
 #'   metadata, tube meshes for 3D rendering, colours, and optionally sf
 #'   geometry for 2D projection plots.
+#' @template dots_post_creation
 #' @export
 #' @importFrom dplyr tibble bind_rows distinct
 #' @importFrom furrr future_map2 furrr_options
@@ -103,15 +101,18 @@ create_tract_from_tractography <- function(
   centerline_method = c("mean", "medoid"),
   slabs = NULL,
   vertex_size_limits = NULL,
-  dilate = NULL,
-  tolerance = NULL,
-  smoothness = NULL,
   cleanup = NULL,
   verbose = get_verbose(), # nolint: object_usage_linter
   skip_existing = NULL,
   steps = NULL,
-  views = lifecycle::deprecated()
+  views = lifecycle::deprecated(),
+  ...
 ) {
+  dots <- check_post_creation_dots("create_tract_from_tractography", ...)
+  dilate <- dots$dilate
+  smoothness <- dots$smoothness
+  tolerance <- dots$tolerance
+  dilate <- dots$dilate
   if (lifecycle::is_present(views)) {
     lifecycle::deprecate_warn(
       "1.9.9.9005",
@@ -120,13 +121,6 @@ create_tract_from_tractography <- function(
     )
     slabs <- views
   }
-
-  warn_deprecated_sf_smoothing(
-    # nolint: object_usage_linter.
-    tolerance = tolerance,
-    smoothness = smoothness,
-    fn = "create_tract_from_tractography"
-  )
 
   start_time <- Sys.time()
 

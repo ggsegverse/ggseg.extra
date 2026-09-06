@@ -407,30 +407,31 @@ validate_wholebrain_opts <- function(
   subcortical_opts,
   cerebellar_opts
 ) {
+  # The creators take the retired post-creation tweaks through `...` now, so
+  # the formals no longer name them. Keep accepting them here, and let the
+  # creator issue the deprecation notice.
+  allowed <- function(fn, managed) {
+    c(
+      setdiff(names(formals(fn)), c(managed, "...")),
+      DEPRECATED_POST_CREATION_ARGS
+    )
+  }
+
   list(
     cortical = validate_pipeline_opts(
       cortical_opts,
       "cortical",
-      setdiff(
-        names(formals(create_cortical_from_annotation)),
-        CORTICAL_MANAGED_ARGS
-      )
+      allowed(create_cortical_from_annotation, CORTICAL_MANAGED_ARGS)
     ),
     subcortical = validate_pipeline_opts(
       subcortical_opts,
       "subcortical",
-      setdiff(
-        names(formals(create_subcortical_from_volume)),
-        SUBCORT_MANAGED_ARGS
-      )
+      allowed(create_subcortical_from_volume, SUBCORT_MANAGED_ARGS)
     ),
     cerebellar = validate_pipeline_opts(
       cerebellar_opts,
       "cerebellar",
-      setdiff(
-        names(formals(create_cerebellar_from_volume)),
-        CEREBELLAR_MANAGED_ARGS
-      )
+      allowed(create_cerebellar_from_volume, CEREBELLAR_MANAGED_ARGS)
     )
   )
 }
@@ -498,6 +499,14 @@ wholebrain_log_summary <- function(
 # Arg names managed by the wholebrain pipeline for each sub-pipeline.
 # Users cannot set these via *_opts; the wholebrain call owns them.
 # nolint start: object_name_linter.
+DEPRECATED_POST_CREATION_ARGS <- c(
+  "dilate",
+  "smoothness",
+  "tolerance",
+  "smooth_refinements"
+)
+
+
 SUBCORT_MANAGED_ARGS <- c(
   "input_volume",
   "input_lut",
@@ -1372,14 +1381,6 @@ wholebrain_cortical_inputs <- function(config, dirs, projection, split, opts) {
   if (is.null(views)) {
     views <- c("lateral", "medial", "superior", "inferior")
   }
-
-  # nolint start: object_usage_linter.
-  warn_deprecated_sf_smoothing(
-    tolerance = opts$tolerance,
-    smooth_refinements = opts$smooth_refinements,
-    fn = "create_wholebrain_from_volume(cortical_opts)"
-  )
-  # nolint end
 
   cortical_data <- projection$atlas_data[
     projection$atlas_data$source_label %in% split$cortical_labels,

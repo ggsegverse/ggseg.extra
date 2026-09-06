@@ -215,7 +215,6 @@ transform_mni_to_suit <- function(
 #' @template atlas_name
 #' @template output_dir
 #' @template decimate
-#' @template tolerance
 #' @template smooth_refinements
 #' @template cleanup
 #' @template verbose
@@ -224,6 +223,7 @@ transform_mni_to_suit <- function(
 #' @return A `ggseg_atlas` object of type "cerebellar" containing region
 #'   metadata (core), a colour palette, sf geometry for 2D plots, and
 #'   optionally 3D meshes.
+#' @template dots_post_creation
 #' @export
 #'
 #' @examples
@@ -239,22 +239,17 @@ create_cerebellar_from_gifti <- function(
   atlas_name = NULL,
   output_dir = NULL,
   decimate = 0.5,
-  tolerance = NULL,
   smooth_refinements = NULL,
   cleanup = NULL,
   verbose = get_verbose(),
-  skip_existing = NULL
+  skip_existing = NULL,
+  ...
 ) {
+  dots <- check_post_creation_dots("create_cerebellar_from_gifti", ...)
+  tolerance <- dots$tolerance
   if (length(gifti_files) == 0) {
     cli::cli_abort("{.arg gifti_files} must not be empty")
   }
-
-  warn_deprecated_sf_smoothing(
-    # nolint: object_usage_linter.
-    tolerance = tolerance,
-    smooth_refinements = smooth_refinements,
-    fn = "create_cerebellar_from_gifti"
-  )
 
   config <- validate_surface_config(
     output_dir,
@@ -292,13 +287,13 @@ create_cerebellar_from_gifti <- function(
 #' @template atlas_name
 #' @template output_dir
 #' @template decimate
-#' @template tolerance
 #' @template smooth_refinements
 #' @template cleanup
 #' @template verbose
 #' @template skip_existing
 #'
 #' @return A `ggseg_atlas` object of type "cerebellar".
+#' @template dots_post_creation
 #' @export
 #'
 #' @examples
@@ -314,22 +309,17 @@ create_cerebellar_from_annotation <- function(
   atlas_name = NULL,
   output_dir = NULL,
   decimate = 0.5,
-  tolerance = NULL,
   smooth_refinements = NULL,
   cleanup = NULL,
   verbose = get_verbose(),
-  skip_existing = NULL
+  skip_existing = NULL,
+  ...
 ) {
+  dots <- check_post_creation_dots("create_cerebellar_from_annotation", ...)
+  tolerance <- dots$tolerance
   if (length(input_annot) == 0) {
     cli::cli_abort("{.arg input_annot} must not be empty")
   }
-
-  warn_deprecated_sf_smoothing(
-    # nolint: object_usage_linter.
-    tolerance = tolerance,
-    smooth_refinements = smooth_refinements,
-    fn = "create_cerebellar_from_annotation"
-  )
 
   config <- validate_surface_config(
     output_dir,
@@ -369,7 +359,6 @@ create_cerebellar_from_annotation <- function(
 #' @template atlas_name
 #' @template output_dir
 #' @template decimate
-#' @template tolerance
 #' @template smooth_refinements
 #' @template cleanup
 #' @template verbose
@@ -379,6 +368,7 @@ create_cerebellar_from_annotation <- function(
 #'
 #' @return A `ggseg_atlas` object of type "cerebellar" with both sf geometry
 #'   and 3D meshes.
+#' @template dots_post_creation
 #' @export
 #'
 #' @examples
@@ -394,13 +384,15 @@ create_cerebellar_from_volume <- function(
   atlas_name = NULL,
   output_dir = NULL,
   decimate = 0.5,
-  tolerance = NULL,
   smooth_refinements = NULL,
   cleanup = NULL,
   verbose = get_verbose(),
   skip_existing = NULL,
-  volume = lifecycle::deprecated()
+  volume = lifecycle::deprecated(),
+  ...
 ) {
+  dots <- check_post_creation_dots("create_cerebellar_from_volume", ...)
+  tolerance <- dots$tolerance
   if (lifecycle::is_present(volume)) {
     lifecycle::deprecate_warn(
       "1.9.9.9005",
@@ -417,13 +409,6 @@ create_cerebellar_from_volume <- function(
   if (!file.exists(volume)) {
     cli::cli_abort("Volume file not found: {.path {volume}}")
   }
-
-  warn_deprecated_sf_smoothing(
-    # nolint: object_usage_linter.
-    tolerance = tolerance,
-    smooth_refinements = smooth_refinements,
-    fn = "create_cerebellar_from_volume"
-  )
 
   config <- validate_surface_config(
     output_dir,

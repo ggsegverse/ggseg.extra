@@ -38,10 +38,7 @@
 #'   into a slab table with `volume` defaulting to `input_volume`, so the slab
 #'   indices are computed in the builder's own frame.
 #' @template vertex_size_limits
-#' @template dilate
 #' @template decimate
-#' @template tolerance
-#' @template smoothness
 #' @template cleanup
 #' @template verbose
 #' @template skip_existing
@@ -69,6 +66,7 @@
 #'
 #' @return A `ggseg_atlas` object with region metadata (core), 3D meshes,
 #'   a colour palette, and optionally sf geometry for 2D slice plots.
+#' @template dots_post_creation
 #' @export
 #' @importFrom dplyr tibble bind_rows left_join filter distinct
 #' @importFrom furrr future_pmap furrr_options
@@ -105,17 +103,20 @@ create_subcortical_from_volume <- function(
   output_dir = NULL,
   slabs = NULL,
   vertex_size_limits = NULL,
-  dilate = NULL,
   decimate = 0.5,
-  tolerance = NULL,
-  smoothness = NULL,
   cleanup = NULL,
   verbose = get_verbose(), # nolint: object_usage_linter
   skip_existing = NULL,
   steps = NULL,
   context = NULL,
-  views = lifecycle::deprecated()
+  views = lifecycle::deprecated(),
+  ...
 ) {
+  dots <- check_post_creation_dots("create_subcortical_from_volume", ...)
+  dilate <- dots$dilate
+  smoothness <- dots$smoothness
+  tolerance <- dots$tolerance
+  dilate <- dots$dilate
   if (lifecycle::is_present(views)) {
     lifecycle::deprecate_warn(
       "1.9.9.9005",
@@ -167,14 +168,6 @@ subcort_unpack_input <- function(
   tolerance,
   smoothness
 ) {
-  # nolint start: object_usage_linter.
-  warn_deprecated_sf_smoothing(
-    tolerance = tolerance,
-    smoothness = smoothness,
-    fn = "create_subcortical_from_volume"
-  )
-  # nolint end
-
   unpack_anatomical_input(input_volume, input_lut)
 }
 

@@ -16,14 +16,12 @@ create_tract_from_tractography(
   centerline_method = c("mean", "medoid"),
   slabs = NULL,
   vertex_size_limits = NULL,
-  dilate = NULL,
-  tolerance = NULL,
-  smoothness = NULL,
   cleanup = NULL,
   verbose = get_verbose(),
   skip_existing = NULL,
   steps = NULL,
-  views = lifecycle::deprecated()
+  views = lifecycle::deprecated(),
+  ...
 )
 }
 \arguments{
@@ -69,19 +67,6 @@ set of tract slabs is derived from the volume dimensions.}
 maximum vertex count for polygons. Polygons outside this range are
 filtered out. Default NULL applies no limits.}
 
-\item{dilate}{Dilation iterations for 2D polygons. Useful for filling small
-gaps between structures.}
-
-\item{tolerance}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} sf simplification is
-no longer applied during atlas creation. Use \code{\link[=atlas_smooth]{atlas_smooth()}} on the
-returned atlas instead. Supplying a value emits a lifecycle warning
-and is otherwise ignored.}
-
-\item{smoothness}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} sf contour smoothing
-is no longer applied during atlas creation. Use \code{\link[=atlas_smooth]{atlas_smooth()}} on the
-returned atlas instead. Supplying a value emits a lifecycle warning
-and is otherwise ignored.}
-
 \item{cleanup}{Remove intermediate files after atlas creation. If not
 specified, uses \code{options("ggseg.extra.cleanup")} or the \code{GGSEG_EXTRA_CLEANUP}
 environment variable. Default is TRUE.}
@@ -112,6 +97,12 @@ Use \code{steps = 1} for 3D-only atlas. Use \code{steps = 5:7} to iterate on
 smoothing and vertex reduction.}
 
 \item{views}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} Use \code{slabs} instead.}
+
+\item{...}{Catches the retired \code{dilate}, \code{smoothness} and \code{tolerance}
+arguments, so a call that still passes one keeps working and says so.
+These are post-creation steps now: see \code{\link[=atlas_dilate]{atlas_dilate()}},
+\code{\link[=atlas_smooth]{atlas_smooth()}} and \code{\link[=atlas_simplify]{atlas_simplify()}}. Anything else in \code{...} is an
+error, as an unused argument always was.}
 }
 \value{
 A \code{ggseg_atlas} object with type \code{"tract"}, containing region
