@@ -65,16 +65,9 @@ pak::pak("ggsegverse/PKGNAME")
 
 ```{r}
 #| label: plot-2d
-#| eval: false
-library(ggseg)
 library(PKGNAME)
 
-plot(ATLASNAME()) +
-  theme(
-    legend.position = "bottom",
-    legend.text = element_text(size = 7)
-  ) +
-  guides(fill = guide_legend(ncol = 4))
+plot(ATLASNAME())
 ```
 
 ## Code of Conduct
