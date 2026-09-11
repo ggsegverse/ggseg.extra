@@ -2,7 +2,7 @@
 
 - The bundled atlas-package template imports only `is_ggseg_atlas()` from
   ggseg.formats instead of the whole package, so generated atlas packages
-  pass goodpractice's `no_import_package_as_a_whole` check. Mirrors
+  pass the `goodpractice` check `no_import_package_as_a_whole`. Mirrors
   ggsegverse/ggseg-atlas-template#7.
 
 # ggseg.extra 1.9.9.9018
