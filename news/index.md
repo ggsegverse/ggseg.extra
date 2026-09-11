@@ -1,5 +1,13 @@
 # Changelog
 
+## ggseg.extra 1.9.9.9019
+
+- The bundled atlas-package template imports only
+  [`is_ggseg_atlas()`](https://ggsegverse.github.io/ggseg.formats/reference/is_ggseg_atlas.html)
+  from ggseg.formats instead of the whole package, so generated atlas
+  packages pass the `goodpractice` check `no_import_package_as_a_whole`.
+  Mirrors ggsegverse/ggseg-atlas-template#7.
+
 ## ggseg.extra 1.9.9.9018
 
 - New

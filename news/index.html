@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9018</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9019</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -63,6 +63,10 @@
       <small>Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.9.9.9019" id="ggsegextra-1999019">ggseg.extra 1.9.9.9019<a class="anchor" aria-label="anchor" href="#ggsegextra-1999019"></a></h2>
+<ul><li>The bundled atlas-package template imports only <code><a href="https://ggsegverse.github.io/ggseg.formats/reference/is_ggseg_atlas.html" class="external-link">is_ggseg_atlas()</a></code> from ggseg.formats instead of the whole package, so generated atlas packages pass the <code>goodpractice</code> check <code>no_import_package_as_a_whole</code>. Mirrors ggsegverse/ggseg-atlas-template#7.</li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9018" id="ggsegextra-1999018">ggseg.extra 1.9.9.9018<a class="anchor" aria-label="anchor" href="#ggsegextra-1999018"></a></h2>
 <ul><li><p>New <code><a href="../reference/read_cifti_subcortical.html">read_cifti_subcortical()</a></code> extracts the subcortical voxels of a CIFTI dense label file (such as fsLR 91k grayordinates) into a NIfTI label volume and colour table, ready for <code><a href="../reference/prepare_subcortical_mni152.html">prepare_subcortical_mni152()</a></code> or <code><a href="../reference/create_subcortical_from_volume.html">create_subcortical_from_volume()</a></code> (<a href="https://github.com/ggsegverse/ggseg.extra/issues/85" class="external-link">#85</a>). The volume carries the CIFTI voxel size in both qform and sform, so FreeSurfer places it correctly.</p></li>
