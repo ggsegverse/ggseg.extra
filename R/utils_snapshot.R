@@ -60,6 +60,7 @@ extract_alpha_mask <- function(
       shQuote(input_file),
       "-alpha",
       "extract",
+      "-strip",
       shQuote(output_file)
     ),
     stdout = FALSE,

@@ -1,5 +1,39 @@
 .cap <- new.env()
 
+write_mask_png <- function(path, rows, cols, size = 20L) {
+  pixels <- matrix("black", size, size)
+  pixels[rows, cols] <- "white"
+  magick::image_write(
+    magick::image_read(as.raster(pixels)),
+    path,
+    format = "png"
+  )
+  path
+}
+
+contour_centres <- function(masks) {
+  output_dir <- withr::local_tempdir("contours_")
+  extract_contours(masks, output_dir, verbose = FALSE)
+  views <- data.frame(name = "coronal_1", stringsAsFactors = FALSE)
+  contour_sf <- build_contour_sf(file.path(output_dir, "contours.rda"), views)
+  lapply(split(contour_sf, contour_sf$label), function(region) {
+    colMeans(sf::st_coordinates(region)[, c("X", "Y")])
+  })
+}
+
+png_signature <- as.raw(c(0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a))
+
+png_chunk <- function(type, data = raw(0)) {
+  n <- length(data)
+  length_bytes <- as.raw(c(
+    n %/% 16777216,
+    n %/% 65536 %% 256,
+    n %/% 256 %% 256,
+    n %% 256
+  ))
+  c(length_bytes, charToRaw(type), data, as.raw(c(0, 0, 0, 0)))
+}
+
 testthat::describe("build_contour_sf", {
   it("produces sf with label and view columns", {
     contours_file <- withr::local_tempfile(fileext = ".rda")
@@ -213,6 +247,30 @@ testthat::describe("build_contour_sf", {
     expect_identical(result$label, "unmatched_region")
     expect_true(is.na(result$view))
   })
+
+  it("puts shapes from the top of a mask above those from the bottom", {
+    skip_if_not_installed("magick")
+    skip_if_not_installed("terra")
+    masks <- withr::local_tempdir("masks_")
+    write_mask_png(file.path(masks, "coronal_1_top.png"), 2:5, 8:12)
+    write_mask_png(file.path(masks, "coronal_1_bottom.png"), 15:18, 8:12)
+
+    centres <- contour_centres(masks)
+
+    expect_gt(centres$top[["Y"]], centres$bottom[["Y"]])
+  })
+
+  it("keeps shapes from the left of a mask on the left", {
+    skip_if_not_installed("magick")
+    skip_if_not_installed("terra")
+    masks <- withr::local_tempdir("masks_")
+    write_mask_png(file.path(masks, "coronal_1_left.png"), 8:12, 2:5)
+    write_mask_png(file.path(masks, "coronal_1_right.png"), 8:12, 15:18)
+
+    centres <- contour_centres(masks)
+
+    expect_lt(centres$left[["X"]], centres$right[["X"]])
+  })
 })
 
 
@@ -224,7 +282,6 @@ testthat::describe("extract_contours", {
     file.create(file.path(input_dir, "region2.png"))
 
     local_mocked_bindings(
-      rast = function(f) list(file = f),
       global = function(r, ...) data.frame(max = 255),
       .package = "terra"
     )
@@ -238,6 +295,7 @@ testthat::describe("extract_contours", {
           ))))
         )
       },
+      read_mask_raster = function(f) list(file = f),
       progressor = function(...) function(...) NULL
     )
     local_mocked_bindings(
@@ -258,7 +316,6 @@ testthat::describe("extract_contours", {
 
     .cap$captured_max_val <- NULL
     local_mocked_bindings(
-      rast = function(f) list(file = f),
       global = function(r, ...) data.frame(max = 0),
       .package = "terra"
     )
@@ -273,6 +330,7 @@ testthat::describe("extract_contours", {
           ))))
         )
       },
+      read_mask_raster = function(f) list(file = f),
       progressor = function(...) function(...) NULL
     )
     local_mocked_bindings(
@@ -291,7 +349,6 @@ testthat::describe("extract_contours", {
     file.create(file.path(input_dir, "region1.png"))
 
     local_mocked_bindings(
-      rast = function(f) list(file = f),
       global = function(r, ...) data.frame(max = 255),
       .package = "terra"
     )
@@ -305,6 +362,7 @@ testthat::describe("extract_contours", {
           ))))
         )
       },
+      read_mask_raster = function(f) list(file = f),
       progressor = function(...) function(...) NULL
     )
     local_mocked_bindings(
@@ -498,24 +556,85 @@ testthat::describe("combine_region_contours", {
 
 
 testthat::describe("probe_raster_max", {
-  it("skips all-NA rasters instead of erroring", {
+  it("falls back to 1 when every mask is empty", {
+    skip_if_not_installed("magick")
     skip_if_not_installed("terra")
-    blank <- withr::local_tempfile(fileext = ".tif")
-    terra::writeRaster(
-      terra::rast(nrows = 4, ncols = 4, vals = NA_real_),
-      blank
-    )
+    blank <- withr::local_tempfile(fileext = ".png")
+    write_mask_png(blank, integer(0), integer(0))
+
     expect_identical(probe_raster_max(blank), 1)
   })
 
-  it("returns the maximum across region rasters", {
+  it("returns the maximum across masks", {
+    skip_if_not_installed("magick")
     skip_if_not_installed("terra")
-    f <- withr::local_tempfile(fileext = ".tif")
-    terra::writeRaster(
-      terra::rast(nrows = 4, ncols = 4, vals = c(rep(0, 15), 200)),
-      f
+    mask <- withr::local_tempfile(fileext = ".png")
+    write_mask_png(mask, 1:2, 1:2)
+
+    expect_identical(probe_raster_max(mask), 255)
+  })
+})
+
+
+testthat::describe("read_mask_raster", {
+  it("places the top image rows at the largest y", {
+    skip_if_not_installed("magick")
+    skip_if_not_installed("terra")
+    mask <- withr::local_tempfile(fileext = ".png")
+    write_mask_png(mask, 1:3, 1:20)
+
+    r <- read_mask_raster(mask)
+    white_y <- terra::xyFromCell(r, which(terra::values(r) > 0))[, "y"]
+
+    expect_identical(
+      as.vector(terra::ext(r)),
+      c(xmin = 0, xmax = 20, ymin = 0, ymax = 20)
     )
-    expect_identical(probe_raster_max(f), 200)
+    expect_identical(range(white_y), c(17.5, 19.5))
+  })
+
+  it("reads masks that carry an RGB colour profile on greyscale pixels", {
+    skip_if_not_installed("magick")
+    skip_if_not_installed("terra")
+    legacy <- test_path("testdata", "mask_with_rgb_icc_profile.png")
+    legacy_bytes <- readBin(legacy, "raw", file.size(legacy))
+    expect_gt(length(grepRaw("iCCP", legacy_bytes)), 0)
+
+    r <- read_mask_raster(legacy)
+    white_y <- terra::xyFromCell(r, which(terra::values(r) > 0))[, "y"]
+
+    expect_identical(dim(r), c(400, 400, 1))
+    expect_lt(mean(white_y), 200)
+  })
+})
+
+
+testthat::describe("png_without_icc_profile", {
+  it("drops iCCP chunks and keeps every other chunk", {
+    png_file <- withr::local_tempfile(fileext = ".png")
+    header <- png_chunk("IHDR", as.raw(1:13))
+    image_end <- png_chunk("IEND")
+    profile <- png_chunk("iCCP", as.raw(rep(7, 300)))
+    writeBin(c(png_signature, header, profile, image_end), png_file)
+
+    expect_identical(
+      png_without_icc_profile(png_file),
+      c(png_signature, header, image_end)
+    )
+  })
+
+  it("aborts on files that are not PNG images", {
+    not_png <- withr::local_tempfile(fileext = ".png")
+    writeLines("not a png", not_png)
+
+    expect_error(png_without_icc_profile(not_png), "not a PNG image")
+  })
+
+  it("aborts on truncated PNG files", {
+    truncated <- withr::local_tempfile(fileext = ".png")
+    writeBin(c(png_signature, png_chunk("IHDR", as.raw(1:13))[1:10]), truncated)
+
+    expect_error(png_without_icc_profile(truncated), "truncated PNG")
   })
 })
 
