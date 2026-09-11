@@ -183,7 +183,11 @@ LUT or use \code{cortical_labels} / \code{subcortical_labels} to override.
 
 The cortical surface projection uses FreeSurfer's cortex label
 (\verb{\{hemi\}.cortex.label}) to prevent label dilation into the medial wall.
-This file ships with fsaverage5 and is always required.
+This file ships with fsaverage5 and is always required. Cortex vertices
+left without a listed label take the most common label of their
+neighbours. Everything outside the cortex label becomes the \code{unknown}
+medial wall, which the cortical atlas keeps as grey context geometry
+rather than as a region.
 }
 
 \examples{

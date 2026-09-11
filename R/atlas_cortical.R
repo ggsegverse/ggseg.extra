@@ -731,8 +731,29 @@ cortical_project_and_build <- function(
   )
 
   atlas <- ggseg.formats::atlas_view_gather(atlas)
+  atlas <- mark_unknown_as_context(atlas)
 
   cortical_finalize(atlas, config, dirs, start_time)
+}
+
+
+#' Keep the unknown (medial wall) region as grey context geometry
+#'
+#' Matches the bundled cortical atlases such as `dk()`: the `unknown` outline
+#' stays in the 2D geometry and is drawn behind the parcels, but it is not a
+#' region, so it leaves core, palette, and the 3D vertices.
+#' @noRd
+mark_unknown_as_context <- function(atlas) {
+  unknown_pattern <- "^unknown$"
+  is_unknown <- grepl(unknown_pattern, atlas$core$region, ignore.case = TRUE)
+  if (!any(is_unknown)) {
+    return(atlas)
+  }
+  ggseg.formats::atlas_region_contextual(
+    atlas,
+    unknown_pattern,
+    match_on = "region"
+  )
 }
 
 

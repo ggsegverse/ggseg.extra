@@ -1144,3 +1144,36 @@ testthat::describe("create_cortical_from_cifti input validation", {
     expect_identical(.cap$cifti_name, "myatlas")
   })
 })
+
+
+testthat::describe("create_cortical_from_annotation unknown context", {
+  it("keeps the unknown medial wall as geometry outside core and palette", {
+    local_mocked_bindings(
+      check_fs = function(abort = FALSE) invisible(TRUE),
+      read_annotation_data = function(annot_files) {
+        dplyr::tibble(
+          hemi = c("left", "left", "right", "right"),
+          region = c("frontal", "unknown", "frontal", "unknown"),
+          label = c("lh_frontal", "lh_unknown", "rh_frontal", "rh_unknown"),
+          colour = c("#FF0000", "#BEBEBE", "#FF0000", "#BEBEBE"),
+          vertices = list(1:10, 11:20, 1:10, 11:20)
+        )
+      },
+      cortical_build_sf_projected = function(components, ...) {
+        mock_context_sf(components$vertices_df$label)
+      },
+      warn_if_large_atlas = function(...) NULL,
+      preview_atlas = function(...) NULL
+    )
+    withr::local_options(ggseg.extra.output_dir = withr::local_tempdir())
+
+    atlas <- create_cortical_from_annotation(
+      input_annot = c("lh.test.annot", "rh.test.annot"),
+      verbose = FALSE
+    )
+
+    expect_unknown_is_context(atlas, c("lh_unknown", "rh_unknown"))
+    expect_setequal(atlas$core$label, c("lh_frontal", "rh_frontal"))
+    expect_setequal(names(atlas$palette), c("lh_frontal", "rh_frontal"))
+  })
+})

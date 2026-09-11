@@ -53,7 +53,11 @@
 #'
 #' The cortical surface projection uses FreeSurfer's cortex label
 #' (`{hemi}.cortex.label`) to prevent label dilation into the medial wall.
-#' This file ships with fsaverage5 and is always required.
+#' This file ships with fsaverage5 and is always required. Cortex vertices
+#' left without a listed label take the most common label of their
+#' neighbours. Everything outside the cortex label becomes the `unknown`
+#' medial wall, which the cortical atlas keeps as grey context geometry
+#' rather than as a region.
 #'
 #' @param input_volume Path to volumetric parcellation in MNI152 space
 #'   (.mgz, .nii, .nii.gz).
@@ -730,6 +734,15 @@ overlay_to_atlas_data <- function(
   hemi <- hemi_to_long(hemi_short)
   unique_labels <- sort(unique(overlay[overlay != 0L]))
 
+  unlisted <- setdiff(unique_labels, colortable$idx)
+  if (length(unlisted) > 0) {
+    cli::cli_warn(c(
+      "Dropping {sum(overlay %in% unlisted)} {hemi_short} vertices whose
+      label ids are not in the lookup table: {.val {unlisted}}",
+      "i" = "These vertices get no region and render as holes."
+    ))
+  }
+
   rows <- lapply(
     unique_labels,
     overlay_label_row,
@@ -813,12 +826,18 @@ wholebrain_project_to_surface <- function(
   surf_dir <- as.character(fs::path(output_dir, "surface_overlays"))
   mkdir(surf_dir)
 
+  projection_volume <- write_projection_volume(
+    input_volume,
+    colortable$idx,
+    surf_dir
+  )
+
   all_data <- list()
 
   for (hemi_short in c("lh", "rh")) {
     hemi <- hemi_to_long(hemi_short) # nolint: object_usage_linter
     overlay <- wholebrain_vol2surf_overlay(
-      input_volume = input_volume,
+      input_volume = projection_volume,
       hemi_short = hemi_short,
       subject = subject,
       projfrac = projfrac,
@@ -827,6 +846,7 @@ wholebrain_project_to_surface <- function(
       surf_dir = surf_dir,
       verbose = verbose
     )
+    overlay <- zero_unlisted_labels(overlay, colortable$idx)
 
     n_before <- sum(overlay != 0L)
     overlay <- fill_surface_labels(overlay, hemi_short, subject)
@@ -843,6 +863,49 @@ wholebrain_project_to_surface <- function(
   }
 
   bind_rows(all_data)
+}
+
+
+#' Set label ids that are missing from the lookup table to zero
+#'
+#' Works on overlay vectors and volume arrays alike; dimensions are kept.
+#' @noRd
+zero_unlisted_labels <- function(labels, keep_idx) {
+  labels[!labels %in% keep_idx] <- 0L
+  labels
+}
+
+
+#' Write the copy of the volume that is projected onto the surface
+#'
+#' Every voxel id missing from the lookup table is zeroed first. Unlisted
+#' structures such as cerebral white matter would otherwise win surface
+#' vertices during projection, and those vertices would get no region. The
+#' copy keeps the input's format and its voxel-to-world transform; an MGZ
+#' without valid RAS information stays without it, so FreeSurfer applies the
+#' same default geometry to both.
+#' @return Path to the written copy inside `output_dir`.
+#' @noRd
+write_projection_volume <- function(input_volume, keep_idx, output_dir) {
+  if (grepl("\\.mgz$", input_volume, ignore.case = TRUE)) {
+    mgh <- freesurferformats::read.fs.mgh(input_volume, with_header = TRUE)
+    vox2ras <- if (freesurferformats::mghheader.is.ras.valid(mgh$header)) {
+      freesurferformats::mghheader.vox2ras(mgh$header)
+    }
+    output_file <- file.path(output_dir, "projection_volume.mgz")
+    freesurferformats::write.fs.mgh(
+      output_file,
+      zero_unlisted_labels(mgh$data, keep_idx),
+      vox2ras_matrix = vox2ras
+    )
+    return(output_file)
+  }
+
+  vol <- read_volume(input_volume, reorient = FALSE)
+  output_file <- file.path(output_dir, "projection_volume.nii.gz")
+  labels <- zero_unlisted_labels(as.array(vol), keep_idx)
+  RNifti::writeNifti(RNifti::asNifti(labels, reference = vol), output_file)
+  output_file
 }
 
 
@@ -1042,9 +1105,10 @@ wholebrain_classify_labels <- function(
 #' Vertex counts and the full label universe used for classification
 #' @noRd
 classify_labels_inputs <- function(atlas_data, colortable) {
+  parcels <- atlas_data[atlas_data$source_label != "unknown", ]
   vertex_counts <- tapply(
-    vapply(atlas_data$vertices, length, integer(1)),
-    atlas_data$source_label,
+    vapply(parcels$vertices, length, integer(1)),
+    parcels$source_label,
     sum
   )
 
@@ -1281,7 +1345,10 @@ wholebrain_refine_cortical_projection <- function(
 }
 
 
-#' Re-fill both hemisphere overlays with the subcortical labels removed
+#' Re-fill both hemisphere overlays keeping only the cortical labels
+#'
+#' `colortable` holds the cortical labels only, so subcortical, cerebellar,
+#' and unlisted ids are all zeroed before the fill.
 #' @noRd
 refine_cortical_overlays <- function(
   config,
@@ -1306,8 +1373,10 @@ refine_cortical_overlays <- function(
         "Overlay file missing: {.path {overlay_file}}. Re-run step 1."
       )
     }
-    overlay <- as.integer(c(RNifti::readNifti(overlay_file)))
-    overlay[overlay %in% subcort_idx] <- 0L
+    overlay <- zero_unlisted_labels(
+      as.integer(c(RNifti::readNifti(overlay_file))),
+      colortable$idx
+    )
     overlay <- fill_surface_labels(overlay, hemi_short, config$subject)
     overlay_to_atlas_data(
       overlay,
@@ -1383,7 +1452,7 @@ wholebrain_cortical_inputs <- function(config, dirs, projection, split, opts) {
   }
 
   cortical_data <- projection$atlas_data[
-    projection$atlas_data$source_label %in% split$cortical_labels,
+    projection$atlas_data$source_label %in% c(split$cortical_labels, "unknown"),
   ]
   cortical_data <- cortical_data[,
     c("hemi", "region", "label", "colour", "vertices")
@@ -1673,13 +1742,16 @@ load_cortex_mask <- function(hemi, subject = "fsaverage5", n_vertices) {
 #' vertices are filled.
 #'
 #' Dilation is restricted to cortex vertices (from `{hemi}.cortex.label`)
-#' so labels do not bleed into the medial wall.
+#' so labels do not bleed into the medial wall. Vertices outside the cortex
+#' label are cleared to 0 so the medial wall becomes the `unknown` context
+#' region rather than keeping whatever structure the projection hit there.
 #'
 #' @param overlay Integer vector of label values
 #'   (0 = unlabeled), one per vertex.
 #' @param hemi Hemisphere code ("lh" or "rh").
 #' @param subject FreeSurfer subject for surface mesh. Default "fsaverage5".
-#' @return Integer vector of same length with gaps filled.
+#' @return Integer vector of same length with cortex gaps filled and the
+#'   medial wall set to 0.
 #' @noRd
 fill_surface_labels <- function(overlay, hemi, subject = "fsaverage5") {
   surf_file <- as.character(fs::path(
@@ -1701,6 +1773,7 @@ fill_surface_labels <- function(overlay, hemi, subject = "fsaverage5") {
   cortex_mask <- load_cortex_mask(hemi, subject, length(overlay))
 
   result <- overlay
+  result[!cortex_mask] <- 0L
   unlabeled <- intersect(which(result == 0L), which(cortex_mask))
 
   while (length(unlabeled) > 0L) {
