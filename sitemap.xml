@@ -57,6 +57,7 @@
 <url><loc>https://ggsegverse.github.io/ggseg.extra/reference/project_volume_anatomical.html</loc></url>
 <url><loc>https://ggsegverse.github.io/ggseg.extra/reference/read_annotation_data.html</loc></url>
 <url><loc>https://ggsegverse.github.io/ggseg.extra/reference/read_cifti_annotation.html</loc></url>
+<url><loc>https://ggsegverse.github.io/ggseg.extra/reference/read_cifti_subcortical.html</loc></url>
 <url><loc>https://ggsegverse.github.io/ggseg.extra/reference/read_gifti_annotation.html</loc></url>
 <url><loc>https://ggsegverse.github.io/ggseg.extra/reference/read_lut.html</loc></url>
 <url><loc>https://ggsegverse.github.io/ggseg.extra/reference/read_neuromaps_annotation.html</loc></url>

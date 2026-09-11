@@ -29,6 +29,12 @@ with Connectome Workbench:
 
     wb_command -cifti-resample input.dlabel.nii ...
 
+Subcortical parcels in grayordinate files are stored as voxels, which
+the cortical pipeline cannot use; a warning names how many were skipped.
+Use
+[`read_cifti_subcortical()`](https://ggsegverse.github.io/ggseg.extra/reference/read_cifti_subcortical.md)
+to extract them.
+
 ## Examples
 
 ``` r

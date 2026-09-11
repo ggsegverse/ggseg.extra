@@ -144,6 +144,8 @@ General package utilities
   : Read annotation data from files
 - [`read_cifti_annotation()`](https://ggsegverse.github.io/ggseg.extra/reference/read_cifti_annotation.md)
   : Read CIFTI annotation file
+- [`read_cifti_subcortical()`](https://ggsegverse.github.io/ggseg.extra/reference/read_cifti_subcortical.md)
+  **\[experimental\]** : Extract subcortical labels from a CIFTI file
 - [`read_gifti_annotation()`](https://ggsegverse.github.io/ggseg.extra/reference/read_gifti_annotation.md)
   : Read GIFTI annotation files
 - [`read_neuromaps_annotation()`](https://ggsegverse.github.io/ggseg.extra/reference/read_neuromaps_annotation.md)

@@ -33,7 +33,7 @@ mri_coreg)."><meta property="og:image" content="https://ggsegverse.github.io/ggs
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9017</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9018</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -131,7 +131,8 @@ space. Only voxels whose value is in <code>labels</code> are embedded.</p></dd>
 <dt id="arg-labels">labels<a class="anchor" aria-label="anchor" href="#arg-labels"></a></dt>
 <dd><p>Integer ids of the parcels to embed. Defaults to every non-zero
 id in <code>input_volume</code>. Ids must not collide with the surviving <code>aseg</code>
-context ids; remap them upstream (e.g. add a fixed offset) if they do.</p></dd>
+context ids; remap them upstream (e.g. add a fixed offset) if they do.
+A collision is an error.</p></dd>
 
 
 <dt id="arg-lut">lut<a class="anchor" aria-label="anchor" href="#arg-lut"></a></dt>

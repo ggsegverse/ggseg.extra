@@ -13,7 +13,7 @@ read_annotation_data() for use with the cortical atlas pipeline."><meta property
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9017</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9018</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -97,6 +97,9 @@ information for both hemispheres. Returns data in the same format as
 hemisphere). If your file uses a different resolution, resample it first
 with Connectome Workbench:</p>
 <p></p><div class="sourceCode"><pre><code><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a>wb_command <span class="sc">-</span>cifti<span class="sc">-</span>resample input.dlabel.nii ...</span></code></pre><p></p></div>
+<p>Subcortical parcels in grayordinate files are stored as voxels, which the
+cortical pipeline cannot use; a warning names how many were skipped. Use
+<code><a href="read_cifti_subcortical.html">read_cifti_subcortical()</a></code> to extract them.</p>
     </div>
 
     <div class="section level2">

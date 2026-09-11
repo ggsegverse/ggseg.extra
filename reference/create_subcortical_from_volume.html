@@ -21,7 +21,7 @@ Requires FreeSurfer for mesh generation."><meta property="og:image" content="htt
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9017</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9018</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -123,9 +123,9 @@ are used (an explicit <code>input_lut</code> takes precedence over the bundled o
 <dt id="arg-input-lut">input_lut<a class="anchor" aria-label="anchor" href="#arg-input-lut"></a></dt>
 <dd><p>Path to a FreeSurfer-style colour lookup table that maps
 label IDs to region names and colours (e.g., <code>FreeSurferColorLUT.txt</code>
-or <code>ASegStatsLUT.txt</code>), or a data.frame with columns <code>region</code> and colour
-columns (R, G, B or hex). If NULL, region names will be generic
-(e.g., "region_0010") and the atlas will have no palette.</p></dd>
+or <code>ASegStatsLUT.txt</code>), or a data.frame with columns <code>idx</code>, <code>label</code>,
+<code>R</code>, <code>G</code>, <code>B</code> and <code>A</code> (see <code><a href="is_lut.html">is_lut()</a></code>). If NULL, region names will be
+generic (e.g., "region_0010") and the atlas will have no palette.</p></dd>
 
 
 <dt id="arg-atlas-name">atlas_name<a class="anchor" aria-label="anchor" href="#arg-atlas-name"></a></dt>

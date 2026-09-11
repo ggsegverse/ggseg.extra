@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9017</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9018</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -63,6 +63,15 @@
       <small>Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.9.9.9018" id="ggsegextra-1999018">ggseg.extra 1.9.9.9018<a class="anchor" aria-label="anchor" href="#ggsegextra-1999018"></a></h2>
+<ul><li><p>New <code><a href="../reference/read_cifti_subcortical.html">read_cifti_subcortical()</a></code> extracts the subcortical voxels of a CIFTI dense label file (such as fsLR 91k grayordinates) into a NIfTI label volume and colour table, ready for <code><a href="../reference/prepare_subcortical_mni152.html">prepare_subcortical_mni152()</a></code> or <code><a href="../reference/create_subcortical_from_volume.html">create_subcortical_from_volume()</a></code> (<a href="https://github.com/ggsegverse/ggseg.extra/issues/85" class="external-link">#85</a>). The volume carries the CIFTI voxel size in both qform and sform, so FreeSurfer places it correctly.</p></li>
+<li><p><code><a href="../reference/prepare_subcortical_mni152.html">prepare_subcortical_mni152()</a></code> aborts when a parcel id is also an aseg id kept as context. The colour table used to drop that context id silently, so the aseg structure took the parcel’s name and colour.</p></li>
+<li><p>ciftiTools is now required at <code>&gt;= 0.17.4</code>, the first release whose <code>read_cifti()</code> reads every brain structure in the file by default.</p></li>
+<li><p><code><a href="../reference/read_cifti_annotation.html">read_cifti_annotation()</a></code> and <code><a href="../reference/create_cortical_from_cifti.html">create_cortical_from_cifti()</a></code> work on real CIFTI files again. ciftiTools keeps label names as the row names of the label table rather than in a <code>Label</code> column, so every real <code>.dlabel.nii</code> failed with “arguments imply differing number of rows”. The tests passed only because their mock label tables had that column.</p></li>
+<li><p><code><a href="../reference/read_cifti_annotation.html">read_cifti_annotation()</a></code> warns when a CIFTI file has labelled subcortical voxels, which the cortical pipeline ignores, instead of dropping them silently (<a href="https://github.com/ggsegverse/ggseg.extra/issues/85" class="external-link">#85</a>).</p></li>
+<li><p>The <code>input_lut</code> documentation for <code><a href="../reference/create_subcortical_from_volume.html">create_subcortical_from_volume()</a></code> and the atlas template now list the columns a data.frame LUT needs (<code>idx</code>, <code>label</code>, <code>R</code>, <code>G</code>, <code>B</code>, <code>A</code>); they said <code>region</code>.</p></li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9017" id="ggsegextra-1999017">ggseg.extra 1.9.9.9017<a class="anchor" aria-label="anchor" href="#ggsegextra-1999017"></a></h2>
 <ul><li><p>The README and CI now install freesurfer from <code>muschellij2/freesurfer</code>: the refactor it needed has been merged upstream, so the <code>drmowinckels/freesurfer@refactor</code> fork is no longer required (<a href="https://github.com/ggsegverse/ggseg.extra/issues/72" class="external-link">#72</a>, <a href="https://github.com/ggsegverse/ggseg.extra/issues/98" class="external-link">#98</a>). DESCRIPTION declares <code>Remotes: muschellij2/freesurfer</code>, so <code>pak</code> and <code>remotes</code> resolve the required version without extra steps.</p></li>

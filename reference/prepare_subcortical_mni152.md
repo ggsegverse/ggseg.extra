@@ -44,7 +44,8 @@ prepare_subcortical_mni152(
 
   Integer ids of the parcels to embed. Defaults to every non-zero id in
   `input_volume`. Ids must not collide with the surviving `aseg` context
-  ids; remap them upstream (e.g. add a fixed offset) if they do.
+  ids; remap them upstream (e.g. add a fixed offset) if they do. A
+  collision is an error.
 
 - lut:
 

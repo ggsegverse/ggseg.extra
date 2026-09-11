@@ -50,9 +50,11 @@ create_subcortical_from_volume(
 
   Path to a FreeSurfer-style colour lookup table that maps label IDs to
   region names and colours (e.g., `FreeSurferColorLUT.txt` or
-  `ASegStatsLUT.txt`), or a data.frame with columns `region` and colour
-  columns (R, G, B or hex). If NULL, region names will be generic (e.g.,
-  "region_0010") and the atlas will have no palette.
+  `ASegStatsLUT.txt`), or a data.frame with columns `idx`, `label`, `R`,
+  `G`, `B` and `A` (see
+  [`is_lut()`](https://ggsegverse.github.io/ggseg.extra/reference/is_lut.md)).
+  If NULL, region names will be generic (e.g., "region_0010") and the
+  atlas will have no palette.
 
 - atlas_name:
 
