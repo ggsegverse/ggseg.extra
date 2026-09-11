@@ -4,7 +4,7 @@
   in their 2D views: coronal and sagittal slices had the brain stem pointing
   up and the cerebellum above the basal ganglia, and axial slices were
   mirrored front to back. Contour extraction read the snapshot masks with
-  `terra::rast()`, which reads a PNG without georeferencing with y increasing
+  `terra::rast()`, which reads a PNG without map coordinates with y increasing
   upward, while `build_contour_sf()` still flipped the y-axis as if the
   coordinates were image rows. Masks are now decoded with ImageMagick into a
   raster with an explicit extent, so y always increases upward and nothing is
@@ -14,7 +14,7 @@
   earlier versions stop the atlas assembly step with an error instead of
   drawing the atlas upside down; rerun the contour extraction steps to
   rebuild them. Snapshots and masks can be reused, including masks that carry
-  an RGB colour profile on greyscale pixels.
+  an RGB colour profile on grey pixels.
 
 # ggseg.extra 1.9.9.9020
 
