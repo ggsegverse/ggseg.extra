@@ -1147,28 +1147,40 @@ testthat::describe("create_cortical_from_cifti input validation", {
 
 
 testthat::describe("create_cortical_from_annotation unknown context", {
-  it("keeps the unknown medial wall as geometry outside core and palette", {
+  local_annotation_regions <- function(regions, env = parent.frame()) {
+    n_regions <- length(regions)
+    annotation_data <- dplyr::tibble(
+      hemi = rep(c("left", "right"), each = n_regions),
+      region = rep(regions, 2),
+      label = paste(rep(c("lh", "rh"), each = n_regions), regions, sep = "_"),
+      colour = "#BEBEBE",
+      vertices = rep(
+        lapply(seq_len(n_regions), function(i) (i - 1L) * 10L + 1:10),
+        2
+      )
+    )
     local_mocked_bindings(
       check_fs = function(abort = FALSE) invisible(TRUE),
-      read_annotation_data = function(annot_files) {
-        dplyr::tibble(
-          hemi = c("left", "left", "right", "right"),
-          region = c("frontal", "unknown", "frontal", "unknown"),
-          label = c("lh_frontal", "lh_unknown", "rh_frontal", "rh_unknown"),
-          colour = c("#FF0000", "#BEBEBE", "#FF0000", "#BEBEBE"),
-          vertices = list(1:10, 11:20, 1:10, 11:20)
-        )
-      },
+      read_annotation_data = function(annot_files) annotation_data,
       cortical_build_sf_projected = function(components, ...) {
         mock_context_sf(components$vertices_df$label)
       },
       warn_if_large_atlas = function(...) NULL,
-      preview_atlas = function(...) NULL
+      preview_atlas = function(...) NULL,
+      .env = env
     )
-    withr::local_options(ggseg.extra.output_dir = withr::local_tempdir())
+    withr::local_options(
+      ggseg.extra.output_dir = withr::local_tempdir(.local_envir = env),
+      .local_envir = env
+    )
+  }
+  annotation_files <- c("lh.test.annot", "rh.test.annot")
+
+  it("keeps the unknown medial wall as geometry outside core and palette", {
+    local_annotation_regions(c("frontal", "unknown"))
 
     atlas <- create_cortical_from_annotation(
-      input_annot = c("lh.test.annot", "rh.test.annot"),
+      input_annot = annotation_files,
       verbose = FALSE
     )
 
@@ -1178,37 +1190,12 @@ testthat::describe("create_cortical_from_annotation unknown context", {
   })
 
   it("treats a named medial wall as context but keeps medial parcels", {
-    local_mocked_bindings(
-      check_fs = function(abort = FALSE) invisible(TRUE),
-      read_annotation_data = function(annot_files) {
-        dplyr::tibble(
-          hemi = c("left", "left", "right", "right"),
-          region = c(
-            "medialorbitofrontal",
-            "FreeSurfer_Defined_Medial_Wall",
-            "medialorbitofrontal",
-            "FreeSurfer_Defined_Medial_Wall"
-          ),
-          label = c(
-            "lh_medialorbitofrontal",
-            "lh_FreeSurfer_Defined_Medial_Wall",
-            "rh_medialorbitofrontal",
-            "rh_FreeSurfer_Defined_Medial_Wall"
-          ),
-          colour = c("#FF0000", "#BEBEBE", "#FF0000", "#BEBEBE"),
-          vertices = list(1:10, 11:20, 1:10, 11:20)
-        )
-      },
-      cortical_build_sf_projected = function(components, ...) {
-        mock_context_sf(components$vertices_df$label)
-      },
-      warn_if_large_atlas = function(...) NULL,
-      preview_atlas = function(...) NULL
+    local_annotation_regions(
+      c("medialorbitofrontal", "FreeSurfer_Defined_Medial_Wall")
     )
-    withr::local_options(ggseg.extra.output_dir = withr::local_tempdir())
 
     atlas <- create_cortical_from_annotation(
-      input_annot = c("lh.test.annot", "rh.test.annot"),
+      input_annot = annotation_files,
       verbose = FALSE
     )
 
@@ -1226,28 +1213,11 @@ testthat::describe("create_cortical_from_annotation unknown context", {
   })
 
   it("errors instead of building an atlas with no regions", {
-    local_mocked_bindings(
-      check_fs = function(abort = FALSE) invisible(TRUE),
-      read_annotation_data = function(annot_files) {
-        dplyr::tibble(
-          hemi = c("left", "right"),
-          region = c("unknown", "unknown"),
-          label = c("lh_unknown", "rh_unknown"),
-          colour = c("#BEBEBE", "#BEBEBE"),
-          vertices = list(1:10, 1:10)
-        )
-      },
-      cortical_build_sf_projected = function(components, ...) {
-        mock_context_sf(components$vertices_df$label)
-      },
-      warn_if_large_atlas = function(...) NULL,
-      preview_atlas = function(...) NULL
-    )
-    withr::local_options(ggseg.extra.output_dir = withr::local_tempdir())
+    local_annotation_regions("unknown")
 
     expect_error(
       create_cortical_from_annotation(
-        input_annot = c("lh.test.annot", "rh.test.annot"),
+        input_annot = annotation_files,
         verbose = FALSE
       ),
       "unknown or medial-wall"

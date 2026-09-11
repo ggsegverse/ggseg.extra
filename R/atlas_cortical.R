@@ -737,18 +737,10 @@ cortical_project_and_build <- function(
 }
 
 
-#' Keep the unknown / medial wall region as grey context geometry
-#'
-#' Matches the bundled cortical atlases such as `dk()`: the `unknown` outline
-#' stays in the 2D geometry and is drawn behind the parcels, but it is not a
-#' region, so it leaves core, palette, and the 3D vertices. Parcellations that
-#' name their medial wall (e.g. `FreeSurfer_Defined_Medial_Wall`, `medialwall`,
-#' `???`) are treated the same way. An atlas with nothing but such regions is
-#' an error rather than an empty atlas.
+#' Keep unknown and medial-wall regions as grey context geometry
 #' @noRd
 mark_unknown_as_context <- function(atlas) {
-  unknown_pattern <- "^(unknown|\\?\\?\\?)$|medial[ _.-]?wall$"
-  is_unknown <- grepl(unknown_pattern, atlas$core$region, ignore.case = TRUE)
+  is_unknown <- is_context_region(atlas$core$region)
   if (!any(is_unknown)) {
     return(atlas)
   }
@@ -760,7 +752,7 @@ mark_unknown_as_context <- function(atlas) {
   }
   ggseg.formats::atlas_region_contextual(
     atlas,
-    unknown_pattern,
+    context_region_pattern,
     match_on = "region"
   )
 }
