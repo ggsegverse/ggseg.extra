@@ -58,7 +58,11 @@ testthat::describe("freesurfer_repos", {
 
 testthat::describe("freesurfer_min_version", {
   it("matches the Suggests constraint in DESCRIPTION", {
-    suggests <- utils::packageDescription("ggseg.extra", fields = "Suggests")
+    suggests <- gsub(
+      "\\s+",
+      " ",
+      utils::packageDescription("ggseg.extra", fields = "Suggests")
+    )
 
     expect_match(
       suggests,

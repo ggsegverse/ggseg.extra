@@ -78,7 +78,7 @@ testthat::describe("read_cifti_subcortical", {
       mock_cifti_trans_mat(),
       ignore_attr = TRUE
     )
-    expect_equal(header$pixdim[2:4], c(2, 2, 2))
+    expect_identical(header$pixdim[2:4], c(2, 2, 2))
     expect_identical(as.integer(header$qform_code), 4L)
     expect_identical(as.integer(header$sform_code), 4L)
     expect_identical(RNifti::pixunits(image)[[1]], "mm")
@@ -118,7 +118,11 @@ testthat::describe("warn_dropped_cifti_subcortex", {
 
 testthat::describe("ciftitools_min_version", {
   it("matches the Suggests constraint in DESCRIPTION", {
-    suggests <- utils::packageDescription("ggseg.extra", fields = "Suggests")
+    suggests <- gsub(
+      "\\s+",
+      " ",
+      utils::packageDescription("ggseg.extra", fields = "Suggests")
+    )
 
     expect_match(
       suggests,
