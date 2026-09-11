@@ -22,7 +22,8 @@ space. Only voxels whose value is in \code{labels} are embedded.}
 
 \item{labels}{Integer ids of the parcels to embed. Defaults to every non-zero
 id in \code{input_volume}. Ids must not collide with the surviving \code{aseg}
-context ids; remap them upstream (e.g. add a fixed offset) if they do.}
+context ids; remap them upstream (e.g. add a fixed offset) if they do.
+A collision is an error.}
 
 \item{lut}{Optional colour table (\code{data.frame} with \verb{idx, label, R, G, B, A})
 naming the parcels. When \code{NULL}, generic \code{region_XXXX} names and an HCL

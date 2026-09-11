@@ -416,6 +416,10 @@ read_gifti_annotation <- function(gifti_files) {
 #' wb_command -cifti-resample input.dlabel.nii ...
 #' ```
 #'
+#' Subcortical parcels in grayordinate files are stored as voxels, which the
+#' cortical pipeline cannot use; a warning names how many were skipped. Use
+#' [read_cifti_subcortical()] to extract them.
+#'
 #' @param cifti_file Path to a `.dlabel.nii` CIFTI file.
 #'
 #' @return A tibble with columns: hemi, region, label, colour, vertices
@@ -428,13 +432,8 @@ read_gifti_annotation <- function(gifti_files) {
 #' atlas_data <- read_cifti_annotation("parcellation.dlabel.nii")
 #' }
 read_cifti_annotation <- function(cifti_file) {
-  rlang::check_installed("ciftiTools", reason = "to read CIFTI files")
-
-  if (!file.exists(cifti_file)) {
-    cli::cli_abort("CIFTI file not found: {.path {cifti_file}}")
-  }
-
-  cii <- ciftiTools::read_cifti(cifti_file)
+  cii <- read_cifti_file(cifti_file, reason = "to read CIFTI files")
+  warn_dropped_cifti_subcortex(cii, cifti_file)
 
   all_data <- list()
 
@@ -633,7 +632,8 @@ cifti_hemi_info <- function(cii) {
   )
 }
 
-#' Build the region lookup table from CIFTI label metadata
+# ciftiTools keeps label names as the row names of each label table, not in a
+# column of their own.
 #' @noRd
 cifti_label_regions <- function(cii) {
   label_maps <- cii$meta$cifti$labels
@@ -645,8 +645,8 @@ cifti_label_regions <- function(cii) {
   label_table <- label_maps[[1]]
 
   data.frame(
-    code = label_table$Key,
-    name = label_table$Label,
+    code = as.integer(label_table$Key),
+    name = rownames(label_table),
     colour = rgb(
       label_table$Red,
       label_table$Green,
@@ -655,6 +655,21 @@ cifti_label_regions <- function(cii) {
     ),
     stringsAsFactors = FALSE
   )
+}
+
+#' @noRd
+read_cifti_file <- function(cifti_file, reason) {
+  rlang::check_installed(
+    "ciftiTools",
+    version = ciftitools_min_version(),
+    reason = reason
+  )
+
+  if (!file.exists(cifti_file)) {
+    cli::cli_abort("CIFTI file not found: {.path {cifti_file}}")
+  }
+
+  ciftiTools::read_cifti(cifti_file)
 }
 
 #' Validate CIFTI hemisphere vertex count and extract region rows

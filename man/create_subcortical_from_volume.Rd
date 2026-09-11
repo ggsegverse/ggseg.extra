@@ -32,9 +32,9 @@ are used (an explicit \code{input_lut} takes precedence over the bundled one).}
 
 \item{input_lut}{Path to a FreeSurfer-style colour lookup table that maps
 label IDs to region names and colours (e.g., \code{FreeSurferColorLUT.txt}
-or \code{ASegStatsLUT.txt}), or a data.frame with columns \code{region} and colour
-columns (R, G, B or hex). If NULL, region names will be generic
-(e.g., "region_0010") and the atlas will have no palette.}
+or \code{ASegStatsLUT.txt}), or a data.frame with columns \code{idx}, \code{label},
+\code{R}, \code{G}, \code{B} and \code{A} (see \code{\link[=is_lut]{is_lut()}}). If NULL, region names will be
+generic (e.g., "region_0010") and the atlas will have no palette.}
 
 \item{atlas_name}{Name for the atlas. If NULL, derived from the input
 filename.}

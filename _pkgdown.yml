@@ -141,6 +141,7 @@ reference:
     contents:
       - read_annotation_data
       - read_cifti_annotation
+      - read_cifti_subcortical
       - read_gifti_annotation
       - read_neuromaps_annotation
       - read_neuromaps_volume

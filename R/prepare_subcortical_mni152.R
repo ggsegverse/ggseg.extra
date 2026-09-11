@@ -40,6 +40,7 @@ aseg_subcortical_labels <- function() {
 #' @param labels Integer ids of the parcels to embed. Defaults to every non-zero
 #'   id in `input_volume`. Ids must not collide with the surviving `aseg`
 #'   context ids; remap them upstream (e.g. add a fixed offset) if they do.
+#'   A collision is an error.
 #' @param lut Optional colour table (`data.frame` with `idx, label, R, G, B, A`)
 #'   naming the parcels. When `NULL`, generic `region_XXXX` names and an HCL
 #'   palette are generated.
@@ -112,14 +113,32 @@ prepare_subcortical_mni152 <- function(
   }
   labels <- sort(as.integer(labels))
 
+  fs_verbose <- isTRUE(verbose) || (is.numeric(verbose) && verbose >= 2L)
+
+  aseg_nii <- tempfile(fileext = ".nii.gz")
+  on.exit(unlink(aseg_nii), add = TRUE)
+  # Convert the .mgz aseg the registration targets to NIfTI so RNifti can read
+  # it below. `validate_inputs = FALSE` skips neurobase::checkimg(), which
+  # cannot parse FreeSurfer .mgz input.
+  freesurfer::fs_cmd(
+    func = "mri_convert",
+    file = aseg_mgz,
+    outfile = aseg_nii,
+    retimg = FALSE,
+    validate_inputs = FALSE,
+    verbose = fs_verbose,
+    intern = TRUE
+  )
+  aseg_img <- RNifti::readNifti(aseg_nii)
+  aseg <- as.array(aseg_img)
+  validate_labels_clear_of_aseg(labels, aseg, replace_labels)
+
   parcels_mni <- tempfile(fileext = ".nii.gz")
   on.exit(unlink(parcels_mni), add = TRUE)
   keep <- array(0L, dim = dim(arr))
   sel <- arr %in% labels
   keep[sel] <- as.integer(arr[sel])
   RNifti::writeNifti(RNifti::asNifti(keep, reference = vol), parcels_mni)
-
-  fs_verbose <- isTRUE(verbose) || (is.numeric(verbose) && verbose >= 2L)
 
   registered <- tempfile(fileext = ".nii.gz")
   on.exit(unlink(registered), add = TRUE)
@@ -141,23 +160,8 @@ prepare_subcortical_mni152 <- function(
     intern = TRUE
   )
 
-  aseg_nii <- tempfile(fileext = ".nii.gz")
-  on.exit(unlink(aseg_nii), add = TRUE)
-  # Convert the .mgz aseg the registration targets to NIfTI so RNifti can read
-  # it below. `validate_inputs = FALSE` skips neurobase::checkimg(), which
-  # cannot parse FreeSurfer .mgz input.
-  freesurfer::fs_cmd(
-    func = "mri_convert",
-    file = aseg_mgz,
-    outfile = aseg_nii,
-    retimg = FALSE,
-    validate_inputs = FALSE,
-    verbose = fs_verbose,
-    intern = TRUE
-  )
-  aseg_img <- RNifti::readNifti(aseg_nii)
   merged <- embed_labels_in_aseg(
-    as.array(aseg_img),
+    aseg,
     as.array(RNifti::readNifti(registered)),
     replace_labels
   )
@@ -204,4 +208,31 @@ embed_labels_in_aseg <- function(aseg, parcels, replace_labels) {
   hit <- p > 0L
   out[hit] <- p[hit]
   out
+}
+
+#' Abort when parcel ids reuse aseg ids that stay as context
+#'
+#' `build_anatomical_lut()` drops any context id that matches a parcel id, so
+#' a collision silently renames and recolours the surviving aseg structure
+#' after the parcel wherever that id appears.
+#'
+#' @param labels Integer parcel ids to embed.
+#' @param aseg Integer array of aseg labels.
+#' @param replace_labels Integer aseg ids blanked before stamping.
+#' @noRd
+validate_labels_clear_of_aseg <- function(labels, aseg, replace_labels) {
+  context_ids <- setdiff(
+    unique(as.integer(round(aseg))),
+    c(0L, as.integer(replace_labels))
+  )
+  collide <- intersect(as.integer(labels), context_ids)
+  n <- length(collide)
+  if (n > 0L) {
+    cli::cli_abort(c(
+      "{cli::qty(n)}Parcel id{?s} {.val {collide}} {?is/are} \\
+       also kept as aseg context.",
+      "i" = "Shift the parcel ids (in the volume and {.arg lut}) clear of the \\
+             aseg ids, or add them to {.arg replace_labels}."
+    ))
+  }
 }

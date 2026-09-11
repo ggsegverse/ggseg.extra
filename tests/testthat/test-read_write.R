@@ -543,12 +543,12 @@ testthat::describe("extract_vertex_regions", {
 
 testthat::describe("cifti_label_regions", {
   it("warns and uses the first map when several are present", {
-    map <- data.frame(
-      Key = 0:1,
-      Label = c("a", "b"),
-      Red = c(0, 1),
-      Green = c(0, 1),
-      Blue = c(0, 1)
+    map <- mock_cifti_label_table(
+      names = c("a", "b"),
+      keys = c(0, 1),
+      red = c(0, 1),
+      green = c(0, 1),
+      blue = c(0, 1)
     )
     cii <- list(meta = list(cifti = list(labels = list(map, map))))
 
@@ -557,6 +557,17 @@ testthat::describe("cifti_label_regions", {
       "2 label maps"
     )
     expect_identical(res$name, c("a", "b"))
+  })
+
+  it("takes region names from the label table row names", {
+    regions <- cifti_label_regions(mock_subcortical_cii())
+
+    expect_identical(
+      regions$name,
+      c("???", "Thalamus-L", "Caudate-R", "Putamen-L")
+    )
+    expect_identical(regions$code, c(0L, 101L, 102L, 103L))
+    expect_identical(regions$colour[2], "#FF0000")
   })
 })
 
@@ -753,14 +764,12 @@ testthat::describe("read_cifti_annotation", {
           ),
           meta = list(
             cifti = list(
-              labels = list(data.frame(
-                Key = c(1L, 2L, 999L),
-                Label = c("region_a", "region_b", "ghost"),
-                Red = c(1, 0, 0.5),
-                Green = c(0, 1, 0.5),
-                Blue = c(0, 0, 0.5),
-                Alpha = c(1, 1, 1),
-                stringsAsFactors = FALSE
+              labels = list(mock_cifti_label_table(
+                names = c("region_a", "region_b", "ghost"),
+                keys = c(1, 2, 999),
+                red = c(1, 0, 0.5),
+                green = c(0, 1, 0.5),
+                blue = c(0, 0, 0.5)
               ))
             )
           )
@@ -791,14 +800,12 @@ testthat::describe("read_cifti_annotation", {
           ),
           meta = list(
             cifti = list(
-              labels = list(data.frame(
-                Key = 1L,
-                Label = "region_a",
-                Red = 1,
-                Green = 0,
-                Blue = 0,
-                Alpha = 1,
-                stringsAsFactors = FALSE
+              labels = list(mock_cifti_label_table(
+                names = "region_a",
+                keys = 1,
+                red = 1,
+                green = 0,
+                blue = 0
               ))
             )
           )

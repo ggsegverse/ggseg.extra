@@ -100,8 +100,8 @@ progressr::handlers(global = TRUE)
 # =============================================================================
 # Uncomment this section for subcortical parcellations.
 # `input_lut` takes a FreeSurfer-style colour lookup table path, or a
-# data.frame with a `region` column plus colour columns. Use `read_lut()` if
-# you want to inspect or edit the table before passing it in.
+# data.frame with columns `idx`, `label`, `R`, `G`, `B` and `A`. Use
+# `read_lut()` if you want to inspect or edit the table before passing it in.
 
 # ATLASNAME <- create_subcortical_from_volume(
 #   input_volume = here::here("data-raw", "ATLASNAME.nii.gz"),

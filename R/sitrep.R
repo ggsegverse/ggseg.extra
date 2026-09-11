@@ -165,12 +165,16 @@ check_optional_packages <- function(detail = "simple") {
     "neuromapr"
   )
 
+  min_versions <- c(ciftiTools = ciftitools_min_version())
   results <- list()
   installed <- character()
   missing <- character()
 
   for (pkg in pkgs) {
-    results[[pkg]] <- rlang::is_installed(pkg)
+    results[[pkg]] <- rlang::is_installed(
+      pkg,
+      version = unname(min_versions[pkg])
+    )
     if (results[[pkg]]) {
       installed <- c(installed, pkg)
     } else {

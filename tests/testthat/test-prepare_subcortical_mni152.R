@@ -42,6 +42,33 @@ testthat::describe("embed_labels_in_aseg", {
   })
 })
 
+testthat::describe("validate_labels_clear_of_aseg", {
+  it("aborts when a parcel id is also a surviving aseg id", {
+    aseg <- array(c(0L, 16L, 42L, 10L), dim = c(2, 2, 1))
+
+    expect_error(
+      validate_labels_clear_of_aseg(c(16L, 1001L), aseg, c(10L, 49L)),
+      "16"
+    )
+  })
+
+  it("accepts parcel ids clear of the aseg context", {
+    aseg <- array(c(0L, 16L, 42L, 10L), dim = c(2, 2, 1))
+
+    expect_no_error(validate_labels_clear_of_aseg(
+      c(1001L, 1002L),
+      aseg,
+      c(10L, 49L)
+    ))
+  })
+
+  it("accepts parcel ids that reuse a replaced aseg id", {
+    aseg <- array(c(0L, 16L, 42L, 10L), dim = c(2, 2, 1))
+
+    expect_no_error(validate_labels_clear_of_aseg(10L, aseg, c(10L, 49L)))
+  })
+})
+
 testthat::describe("prepare_subcortical_mni152", {
   it("embeds MNI152 parcels into the fsaverage5 aseg context", {
     skip_if(!freesurfer::have_fs(), "FreeSurfer not available")

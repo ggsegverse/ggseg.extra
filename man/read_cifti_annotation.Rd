@@ -24,6 +24,10 @@ with Connectome Workbench:
 
 \if{html}{\out{<div class="sourceCode">}}\preformatted{wb_command -cifti-resample input.dlabel.nii ...
 }\if{html}{\out{</div>}}
+
+Subcortical parcels in grayordinate files are stored as voxels, which the
+cortical pipeline cannot use; a warning names how many were skipped. Use
+\code{\link[=read_cifti_subcortical]{read_cifti_subcortical()}} to extract them.
 }
 \examples{
 \dontrun{

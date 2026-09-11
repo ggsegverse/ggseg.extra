@@ -490,3 +490,20 @@ testthat::describe("find_chrome_path", {
     expect_null(result)
   })
 })
+
+
+testthat::describe("check_optional_packages minimum versions", {
+  it("treats a ciftiTools older than the minimum version as missing", {
+    local_mocked_bindings(
+      is_installed = function(pkg, version = NULL) {
+        !(pkg == "ciftiTools" && identical(version, ciftitools_min_version()))
+      },
+      .package = "rlang"
+    )
+
+    results <- check_optional_packages("minimal")
+
+    expect_false(results$ciftiTools)
+    expect_true(results$gifti)
+  })
+})
