@@ -1,3 +1,3 @@
 #' @keywords internal
-#' @import ggseg.formats
+#' @importFrom ggseg.formats is_ggseg_atlas
 "_PACKAGE"

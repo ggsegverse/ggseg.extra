@@ -11,7 +11,6 @@
 #' Example: Author A et al. (Year). Title. \doi{10.xxxx/xxxxx}
 #'
 #' @return A [ggseg.formats::ggseg_atlas] object.
-#' @import ggseg.formats
 #' @export
 #' @examples
 #' ATLASNAME()
