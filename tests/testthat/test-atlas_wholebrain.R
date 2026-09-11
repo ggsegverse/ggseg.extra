@@ -2697,28 +2697,33 @@ testthat::describe("write_projection_volume", {
     expect_identical(as.integer(result$data), expected)
     expect_false(freesurferformats::mghheader.is.ras.valid(result$header))
   })
-})
 
-
-testthat::describe("overlay_to_atlas_data unlisted labels", {
-  it("warns when vertices carry ids missing from the lookup table", {
-    colortable <- data.frame(
-      idx = 1L,
-      label = "a",
-      color = "#FF0000",
-      stringsAsFactors = FALSE
-    )
-
-    expect_warning(
-      result <- overlay_to_atlas_data(
-        c(1L, 45L, 45L, 0L),
-        "lh",
-        colortable,
-        include_unknown = TRUE
+  it("keeps a non-RAS NIfTI orientation and its header codes", {
+    skip_if_not_installed("RNifti")
+    tmp <- withr::local_tempdir()
+    xform <- structure(
+      matrix(
+        c(-1.5, 0, 0, 0, 0, 1.5, 0, 0, 0, 0, 1.5, 0, 90, -126, -72, 1),
+        nrow = 4
       ),
-      "Dropping 2 lh vertices"
+      code = 4L
     )
-    expect_identical(result$label, c("lh_a", "lh_unknown"))
+    source_image <- RNifti::asNifti(labels)
+    RNifti::qform(source_image) <- xform
+    RNifti::sform(source_image) <- xform
+    source_file <- file.path(tmp, "labels.nii.gz")
+    RNifti::writeNifti(source_image, source_file)
+
+    output <- write_projection_volume(source_file, 1:2, tmp)
+    source_header <- RNifti::niftiHeader(RNifti::readNifti(source_file))
+    result <- RNifti::readNifti(output)
+    result_header <- RNifti::niftiHeader(result)
+
+    expect_identical(RNifti::orientation(result), "LAS")
+    expect_identical(as.integer(result), expected)
+    for (field in c("qform_code", "sform_code", "srow_x", "srow_y", "srow_z")) {
+      expect_identical(result_header[[field]], source_header[[field]])
+    }
   })
 })
 

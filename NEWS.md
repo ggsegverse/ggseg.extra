@@ -4,8 +4,9 @@
   cortical atlas. Voxel ids missing from the lookup table, such as cerebral
   white matter, were projected onto the surface, and the vertices they won
   were then dropped without a region. The volume is now filtered to the
-  lookup table before projection, as documented, and any cortex vertex left
-  without a listed label takes the most common label of its neighbours.
+  lookup table before projection, as documented, and cortex vertices left
+  without a listed label take the most common label of their neighbours
+  wherever a labelled neighbour can be reached.
   Medial-wall vertices outside FreeSurfer's cortex label no longer keep
   whatever structure the projection hit there.
 

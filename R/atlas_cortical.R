@@ -743,13 +743,20 @@ cortical_project_and_build <- function(
 #' stays in the 2D geometry and is drawn behind the parcels, but it is not a
 #' region, so it leaves core, palette, and the 3D vertices. Parcellations that
 #' name their medial wall (e.g. `FreeSurfer_Defined_Medial_Wall`, `medialwall`,
-#' `???`) are treated the same way.
+#' `???`) are treated the same way. An atlas with nothing but such regions is
+#' an error rather than an empty atlas.
 #' @noRd
 mark_unknown_as_context <- function(atlas) {
-  unknown_pattern <- "^(unknown|\\?\\?\\?)$|medial[ _.-]?wall"
+  unknown_pattern <- "^(unknown|\\?\\?\\?)$|medial[ _.-]?wall$"
   is_unknown <- grepl(unknown_pattern, atlas$core$region, ignore.case = TRUE)
   if (!any(is_unknown)) {
     return(atlas)
+  }
+  if (all(is_unknown)) {
+    cli::cli_abort(c(
+      "Every region in the atlas is an unknown or medial-wall region.",
+      "i" = "Check that the parcellation's labels were read correctly."
+    ))
   }
   ggseg.formats::atlas_region_contextual(
     atlas,

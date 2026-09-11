@@ -1224,4 +1224,33 @@ testthat::describe("create_cortical_from_annotation unknown context", {
       c("lh_medialorbitofrontal", "rh_medialorbitofrontal")
     )
   })
+
+  it("errors instead of building an atlas with no regions", {
+    local_mocked_bindings(
+      check_fs = function(abort = FALSE) invisible(TRUE),
+      read_annotation_data = function(annot_files) {
+        dplyr::tibble(
+          hemi = c("left", "right"),
+          region = c("unknown", "unknown"),
+          label = c("lh_unknown", "rh_unknown"),
+          colour = c("#BEBEBE", "#BEBEBE"),
+          vertices = list(1:10, 1:10)
+        )
+      },
+      cortical_build_sf_projected = function(components, ...) {
+        mock_context_sf(components$vertices_df$label)
+      },
+      warn_if_large_atlas = function(...) NULL,
+      preview_atlas = function(...) NULL
+    )
+    withr::local_options(ggseg.extra.output_dir = withr::local_tempdir())
+
+    expect_error(
+      create_cortical_from_annotation(
+        input_annot = c("lh.test.annot", "rh.test.annot"),
+        verbose = FALSE
+      ),
+      "unknown or medial-wall"
+    )
+  })
 })

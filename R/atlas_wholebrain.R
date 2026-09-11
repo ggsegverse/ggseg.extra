@@ -734,15 +734,6 @@ overlay_to_atlas_data <- function(
   hemi <- hemi_to_long(hemi_short)
   unique_labels <- sort(unique(overlay[overlay != 0L]))
 
-  unlisted <- setdiff(unique_labels, colortable$idx)
-  if (length(unlisted) > 0) {
-    cli::cli_warn(c(
-      "Dropping {sum(overlay %in% unlisted)} {hemi_short} vertices whose
-      label ids are not in the lookup table: {.val {unlisted}}",
-      "i" = "These vertices get no region and render as holes."
-    ))
-  }
-
   rows <- lapply(
     unique_labels,
     overlay_label_row,
@@ -903,8 +894,8 @@ write_projection_volume <- function(input_volume, keep_idx, output_dir) {
 
   vol <- read_volume(input_volume, reorient = FALSE)
   output_file <- file.path(output_dir, "projection_volume.nii.gz")
-  labels <- zero_unlisted_labels(as.array(vol), keep_idx)
-  RNifti::writeNifti(RNifti::asNifti(labels, reference = vol), output_file)
+  label_array <- zero_unlisted_labels(as.array(vol), keep_idx)
+  RNifti::writeNifti(RNifti::asNifti(label_array, reference = vol), output_file)
   output_file
 }
 
@@ -1294,11 +1285,12 @@ classify_labels_log_summary <- function(
 
 # Step 2.5: Refine cortical projection ----
 
-#' Remove subcortical labels from surface projection and re-fill
+#' Keep only cortical labels in the surface projection and re-fill
 #'
 #' When projecting a combined volume, subcortical voxels near the cortical
 #' surface can "steal" vertices that should be cortical. This function reloads
-#' the raw vol2surf overlays, zeros out subcortical label values, and re-runs
+#' the raw vol2surf overlays, zeros every label that is not in the cortical
+#' lookup table (subcortical, cerebellar, and unlisted ids), and re-runs
 #' fill_surface_labels so dilation only spreads cortical labels.
 #'
 #' @param config Pipeline config.
