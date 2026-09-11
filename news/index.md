@@ -1,5 +1,13 @@
 # Changelog
 
+## ggseg.extra 1.9.9.9020
+
+- The bundled atlas-package template’s README now renders the atlas with
+  an evaluated [`plot()`](https://rdrr.io/r/graphics/plot.default.html)
+  chunk, which ggseg.formats provides, instead of an unevaluated one
+  that needed ggseg and theme tweaks. Mirrors
+  ggsegverse/ggseg-atlas-template’s README.
+
 ## ggseg.extra 1.9.9.9019
 
 - The bundled atlas-package template imports only
