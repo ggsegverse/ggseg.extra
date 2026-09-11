@@ -1,5 +1,27 @@
 .cap <- new.env()
 
+skip_without_mask_io <- function() {
+  testthat::skip_if_not_installed("magick")
+  testthat::skip_if_not_installed("terra")
+}
+
+save_contours_fixture <- function(path, y_axis = "up") {
+  square <- function(x0) {
+    sf::st_polygon(list(matrix(
+      c(x0, 0, x0 + 1, 0, x0 + 1, 1, x0, 1, x0, 0),
+      ncol = 2,
+      byrow = TRUE
+    )))
+  }
+  contours <- sf::st_sf(
+    filenm = c("region1", "region1", "region2"),
+    geometry = sf::st_sfc(square(0), square(2), square(4))
+  )
+  contours$y_axis <- y_axis
+  save(contours, file = path)
+  path
+}
+
 write_mask_png <- function(path, rows, cols, size = 20L) {
   pixels <- matrix("black", size, size)
   pixels[rows, cols] <- "white"
@@ -19,19 +41,6 @@ contour_centres <- function(masks) {
   lapply(split(contour_sf, contour_sf$label), function(region) {
     colMeans(sf::st_coordinates(region)[, c("X", "Y")])
   })
-}
-
-png_signature <- as.raw(c(0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a))
-
-png_chunk <- function(type, data = raw(0)) {
-  n <- length(data)
-  length_bytes <- as.raw(c(
-    n %/% 16777216,
-    n %/% 65536 %% 256,
-    n %/% 256 %% 256,
-    n %% 256
-  ))
-  c(length_bytes, charToRaw(type), data, as.raw(c(0, 0, 0, 0)))
 }
 
 testthat::describe("build_contour_sf", {
@@ -248,27 +257,17 @@ testthat::describe("build_contour_sf", {
     expect_true(is.na(result$view))
   })
 
-  it("puts shapes from the top of a mask above those from the bottom", {
-    skip_if_not_installed("magick")
-    skip_if_not_installed("terra")
+  it("keeps the top of a mask up and its left side left", {
+    skip_without_mask_io()
     masks <- withr::local_tempdir("masks_")
     write_mask_png(file.path(masks, "coronal_1_top.png"), 2:5, 8:12)
     write_mask_png(file.path(masks, "coronal_1_bottom.png"), 15:18, 8:12)
-
-    centres <- contour_centres(masks)
-
-    expect_gt(centres$top[["Y"]], centres$bottom[["Y"]])
-  })
-
-  it("keeps shapes from the left of a mask on the left", {
-    skip_if_not_installed("magick")
-    skip_if_not_installed("terra")
-    masks <- withr::local_tempdir("masks_")
     write_mask_png(file.path(masks, "coronal_1_left.png"), 8:12, 2:5)
     write_mask_png(file.path(masks, "coronal_1_right.png"), 8:12, 15:18)
 
     centres <- contour_centres(masks)
 
+    expect_gt(centres$top[["Y"]], centres$bottom[["Y"]])
     expect_lt(centres$left[["X"]], centres$right[["X"]])
   })
 })
@@ -306,7 +305,9 @@ testthat::describe("extract_contours", {
     result <- extract_contours(input_dir, output_dir, verbose = FALSE)
 
     expect_s3_class(result, "sf")
-    expect_true(file.exists(file.path(output_dir, "contours.rda")))
+    saved <- new.env()
+    load(file.path(output_dir, "contours.rda"), envir = saved)
+    expect_identical(saved$contours$y_axis, rep("up", nrow(saved$contours)))
   })
 
   it("defaults max_val to 1 when all rasters have max 0", {
@@ -557,8 +558,7 @@ testthat::describe("combine_region_contours", {
 
 testthat::describe("probe_raster_max", {
   it("falls back to 1 when every mask is empty", {
-    skip_if_not_installed("magick")
-    skip_if_not_installed("terra")
+    skip_without_mask_io()
     blank <- withr::local_tempfile(fileext = ".png")
     write_mask_png(blank, integer(0), integer(0))
 
@@ -566,8 +566,7 @@ testthat::describe("probe_raster_max", {
   })
 
   it("returns the maximum across masks", {
-    skip_if_not_installed("magick")
-    skip_if_not_installed("terra")
+    skip_without_mask_io()
     mask <- withr::local_tempfile(fileext = ".png")
     write_mask_png(mask, 1:2, 1:2)
 
@@ -578,8 +577,7 @@ testthat::describe("probe_raster_max", {
 
 testthat::describe("read_mask_raster", {
   it("places the top image rows at the largest y", {
-    skip_if_not_installed("magick")
-    skip_if_not_installed("terra")
+    skip_without_mask_io()
     mask <- withr::local_tempfile(fileext = ".png")
     write_mask_png(mask, 1:3, 1:20)
 
@@ -594,8 +592,7 @@ testthat::describe("read_mask_raster", {
   })
 
   it("reads masks that carry an RGB colour profile on greyscale pixels", {
-    skip_if_not_installed("magick")
-    skip_if_not_installed("terra")
+    skip_without_mask_io()
     legacy <- test_path("testdata", "mask_with_rgb_icc_profile.png")
     legacy_bytes <- readBin(legacy, "raw", file.size(legacy))
     expect_gt(length(grepRaw("iCCP", legacy_bytes)), 0)
@@ -605,36 +602,6 @@ testthat::describe("read_mask_raster", {
 
     expect_identical(dim(r), c(400, 400, 1))
     expect_lt(mean(white_y), 200)
-  })
-})
-
-
-testthat::describe("png_without_icc_profile", {
-  it("drops iCCP chunks and keeps every other chunk", {
-    png_file <- withr::local_tempfile(fileext = ".png")
-    header <- png_chunk("IHDR", as.raw(1:13))
-    image_end <- png_chunk("IEND")
-    profile <- png_chunk("iCCP", as.raw(rep(7, 300)))
-    writeBin(c(png_signature, header, profile, image_end), png_file)
-
-    expect_identical(
-      png_without_icc_profile(png_file),
-      c(png_signature, header, image_end)
-    )
-  })
-
-  it("aborts on files that are not PNG images", {
-    not_png <- withr::local_tempfile(fileext = ".png")
-    writeLines("not a png", not_png)
-
-    expect_error(png_without_icc_profile(not_png), "not a PNG image")
-  })
-
-  it("aborts on truncated PNG files", {
-    truncated <- withr::local_tempfile(fileext = ".png")
-    writeBin(c(png_signature, png_chunk("IHDR", as.raw(1:13))[1:10]), truncated)
-
-    expect_error(png_without_icc_profile(truncated), "truncated PNG")
   })
 })
 
@@ -750,36 +717,24 @@ testthat::describe("reduce_vertex", {
 
 testthat::describe("make_multipolygon", {
   it("combines contours into multipolygons", {
-    outdir <- withr::local_tempdir("multipoly_test_")
-
-    contours <- sf::st_sf(
-      filenm = c("region1", "region1", "region2"),
-      geometry = sf::st_sfc(
-        sf::st_polygon(list(matrix(
-          c(0, 0, 1, 0, 1, 1, 0, 1, 0, 0),
-          ncol = 2,
-          byrow = TRUE
-        ))),
-        sf::st_polygon(list(matrix(
-          c(2, 0, 3, 0, 3, 1, 2, 1, 2, 0),
-          ncol = 2,
-          byrow = TRUE
-        ))),
-        sf::st_polygon(list(matrix(
-          c(4, 0, 5, 0, 5, 1, 4, 1, 4, 0),
-          ncol = 2,
-          byrow = TRUE
-        )))
-      )
+    contourfile <- save_contours_fixture(
+      withr::local_tempfile(fileext = ".rda")
     )
-    contourfile <- file.path(outdir, "contours_reduced.rda")
-    save(contours, file = contourfile)
 
     result <- make_multipolygon(contourfile)
 
     expect_s3_class(result, "sf")
     expect_identical(nrow(result), 2L)
     expect_identical(result$filenm, c("region1", "region2"))
+  })
+
+  it("aborts on contours cached before the y-up convention", {
+    contourfile <- save_contours_fixture(
+      withr::local_tempfile(fileext = ".rda"),
+      y_axis = NULL
+    )
+
+    expect_error(make_multipolygon(contourfile), "older ggseg.extra")
   })
 })
 

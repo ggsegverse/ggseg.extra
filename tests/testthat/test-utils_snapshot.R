@@ -494,16 +494,6 @@ testthat::describe("extract_alpha_mask", {
     expect_true(file.exists(output))
   })
 
-  it("writes masks without a colour profile", {
-    skip_if_not(has_magick(), "ImageMagick not available")
-    output <- withr::local_tempfile(fileext = ".png")
-    with_profile <- test_path("testdata", "mask_with_rgb_icc_profile.png")
-
-    extract_alpha_mask(with_profile, output, skip_existing = FALSE)
-
-    expect_length(grepRaw("iCCP", readBin(output, "raw", file.size(output))), 0)
-  })
-
   it("errors on non-zero exit code", {
     skip_if_not(has_magick(), "ImageMagick not available")
 

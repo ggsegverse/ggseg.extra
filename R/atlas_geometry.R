@@ -258,8 +258,8 @@ extract_contours <- function(
   vertex_size_limits = NULL
 ) {
   rlang::check_installed(
-    "terra",
-    reason = "for contour extraction from raster images"
+    c("magick", "terra"),
+    reason = "for contour extraction from snapshot masks"
   )
   if (verbose) {
     cli::cli_progress_step("{step} Extracting contours")
@@ -279,6 +279,7 @@ extract_contours <- function(
   names(contourobjs) <- region_names
 
   contours <- combine_region_contours(contourobjs)
+  contours$y_axis <- "up"
 
   save(contours, file = as.character(fs::path(output_dir, "contours.rda")))
 
@@ -292,12 +293,11 @@ extract_contours <- function(
 
 #' Read a snapshot mask PNG as a raster with y increasing upward
 #'
-#' The pixels are decoded by ImageMagick and the raster is built from the
-#' pixel matrix with an explicit extent, so the top image row always spans
-#' the largest y. `terra::rast()` on the PNG itself is not used: the file is
-#' not georeferenced, GDAL gives it a top-down extent, and whether terra
-#' flips such a raster changed between terra releases, which turned 2D
-#' subcortical and tract atlases upside down.
+#' The raster is built from the decoded pixels with an explicit extent, so
+#' the top image row always spans the largest y. `terra::rast()` on the PNG
+#' itself is avoided because terra's orientation of non-georeferenced files
+#' is not stable across versions. Masks are single-channel greyscale, as
+#' written by `extract_alpha_mask()`; any alpha channel is ignored.
 #'
 #' @param file Path to a PNG mask.
 #' @return Single-layer SpatRaster spanning `0..ncol` by `0..nrow`, with
@@ -305,66 +305,30 @@ extract_contours <- function(
 #' @keywords internal
 #' @noRd
 read_mask_raster <- function(file) {
-  rlang::check_installed("magick", reason = "to read snapshot masks")
-  rlang::check_installed(
-    "terra",
-    reason = "for contour extraction from raster images"
-  )
-  pixels <- magick::image_read(png_without_icc_profile(file)) |>
+  # Workaround: masks can carry the RGB colour profile of their snapshot on
+  # greyscale pixels; libpng only warns about it, but the magick R package
+  # turns that warning into an error unless the profile is skipped.
+  pixels <- magick::image_read(file, defines = c("profile:skip" = "ICC")) |>
     magick::image_data(channels = "gray") |>
     as.integer()
-  values <- matrix(pixels, nrow = dim(pixels)[1], ncol = dim(pixels)[2])
+  values <- matrix(pixels, nrow = nrow(pixels))
   terra::rast(values, extent = terra::ext(0, ncol(values), 0, nrow(values)))
 }
 
 
-#' Read PNG bytes with any iCCP chunk removed
-#'
-#' Workaround: masks written before `extract_alpha_mask()` used `-strip` keep
-#' the RGB iCCP profile of the snapshot they were extracted from, on a
-#' greyscale PNG, which the libpng inside the magick R package rejects as an
-#' error rather than a warning. The profile carries no pixel data, so
-#' dropping the chunk keeps cached masks readable.
-#'
-#' @param file Path to a PNG file.
-#' @return Raw vector of the PNG without iCCP chunks.
-#' @keywords internal
+#' Stop when cached contours predate the y-up coordinate convention
 #' @noRd
-png_without_icc_profile <- function(file) {
-  bytes <- readBin(file, "raw", file.size(file))
-  signature <- as.raw(c(0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a))
-  if (length(bytes) < 8L || !identical(bytes[1:8], signature)) {
-    cli::cli_abort("Snapshot mask {.path {file}} is not a PNG image.")
+check_contour_y_axis <- function(contours, contourfile) {
+  if (identical(unique(contours$y_axis), "up")) {
+    return(invisible(contours))
   }
-
-  keep <- rep(TRUE, length(bytes))
-  pos <- 9L
-  while (pos <= length(bytes)) {
-    chunk_end <- png_chunk_end(bytes, pos)
-    if (chunk_end > length(bytes)) {
-      cli::cli_abort("Snapshot mask {.path {file}} is a truncated PNG.")
-    }
-    if (identical(bytes[(pos + 4L):(pos + 7L)], charToRaw("iCCP"))) {
-      keep[pos:chunk_end] <- FALSE
-    }
-    pos <- chunk_end + 1L
-  }
-  bytes[keep]
-}
-
-
-#' Index of the last byte of the PNG chunk starting at `pos`
-#'
-#' A chunk is a 4-byte big-endian data length, a 4-byte type, the data and a
-#' 4-byte CRC. Returns a position past the end of `bytes` when the chunk
-#' header itself is cut off.
-#' @noRd
-png_chunk_end <- function(bytes, pos) {
-  if (pos + 11L > length(bytes)) {
-    return(length(bytes) + 1L)
-  }
-  data_length <- sum(as.integer(bytes[pos:(pos + 3L)]) * 256^(3:0))
-  pos + 11L + data_length
+  cli::cli_abort(c(
+    "{.path {contourfile}} was extracted by an older ggseg.extra.",
+    "i" = "Its y coordinates may run downward, which draws the atlas upside
+      down.",
+    "i" = "Rerun the contour extraction steps; cached snapshots and masks
+      are reused."
+  ))
 }
 
 
@@ -375,7 +339,7 @@ probe_raster_max <- function(regions) {
   for (f in regions[seq_len(min(10, length(regions)))]) {
     r <- read_mask_raster(f)
     m <- terra::global(r, fun = "max", na.rm = TRUE)[1, 1]
-    if (is.finite(m) && m > max_val) {
+    if (m > max_val) {
       max_val <- m
     }
     if (max_val > 0) break
@@ -721,8 +685,7 @@ native_smoothness <- function(smoothness, method) {
 #'
 #' Shared by subcortical and tract pipelines. Loads reduced contours,
 #' assigns view names, adjusts coordinates, and extracts labels from
-#' filenames. Contours arrive with y increasing upward (see
-#' `read_mask_raster()`), so no axis is flipped here.
+#' filenames.
 #'
 #' @param contours_file Path to `contours_reduced.rda`
 #' @param slabs data.frame with `name` column of slab names
@@ -820,6 +783,7 @@ arrange_contour_sf <- function(conts) {
 #' @importFrom sf st_combine st_coordinates st_geometry
 make_multipolygon <- function(contourfile) {
   load_rda(contourfile)
+  check_contour_y_axis(contours, contourfile)
 
   contours <- contours |>
     group_by(filenm) |>
