@@ -15,6 +15,9 @@
   the parcels, but it is no longer a region in `core`, the palette, or the
   3D vertices. Whole-brain atlases whose lookup table has a `type` column
   now get this medial wall too; it used to be dropped, leaving it white.
+  Parcellations that name their medial wall (`FreeSurfer_Defined_Medial_Wall`,
+  `medialwall`, `???`) are treated the same way, while parcels such as
+  `medialorbitofrontal` stay regions.
 
 # ggseg.extra 1.9.9.9020
 
