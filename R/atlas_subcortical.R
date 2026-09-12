@@ -515,8 +515,14 @@ subcort_resolve_labels <- function(config, dirs) {
     cli::cli_alert_success("Found {nrow(colortable)} subcortical structures")
   }
 
-  saveRDS(colortable, as.character(fs::path(dirs$base, "colortable.rds")))
-  saveRDS(vol_labels, as.character(fs::path(dirs$base, "vol_labels.rds")))
+  save_cache_rds(
+    colortable,
+    as.character(fs::path(dirs$base, "colortable.rds"))
+  )
+  save_cache_rds(
+    vol_labels,
+    as.character(fs::path(dirs$base, "vol_labels.rds"))
+  )
   if (config$verbose) {
     cli::cli_progress_done()
   }
@@ -588,7 +594,10 @@ subcort_resolve_meshes <- function(config, dirs, colortable) {
   if (config$verbose) {
     cli::cli_progress_done()
   }
-  saveRDS(meshes_list, as.character(fs::path(dirs$base, "meshes_list.rds")))
+  save_cache_rds(
+    meshes_list,
+    as.character(fs::path(dirs$base, "meshes_list.rds"))
+  )
   meshes_list
 }
 
@@ -619,7 +628,10 @@ subcort_resolve_components <- function(config, dirs, colortable, meshes_list) {
   }
 
   components <- subcort_build_components(colortable, meshes_list)
-  saveRDS(components, as.character(fs::path(dirs$base, "components.rds")))
+  save_cache_rds(
+    components,
+    as.character(fs::path(dirs$base, "components.rds"))
+  )
   if (config$verbose) {
     cli::cli_progress_done()
   }
@@ -666,8 +678,8 @@ subcort_resolve_snapshots <- function(config, dirs, colortable, slabs) {
     config$skip_existing
   )
 
-  saveRDS(result$slabs, as.character(fs::path(dirs$base, "slabs.rds")))
-  saveRDS(
+  save_cache_rds(result$slabs, as.character(fs::path(dirs$base, "slabs.rds")))
+  save_cache_rds(
     result$cortex_slices,
     as.character(fs::path(dirs$base, "cortex_slices.rds"))
   )

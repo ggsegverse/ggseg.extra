@@ -257,7 +257,7 @@ testthat::describe("load_or_run_step", {
 
   it("loads data when files exist and skip_existing=TRUE", {
     tmp <- withr::local_tempfile(fileext = ".rds")
-    saveRDS(list(a = 1), tmp)
+    save_cache_rds(list(a = 1), tmp)
 
     result <- load_or_run_step(
       1L,
@@ -286,7 +286,7 @@ testthat::describe("load_or_run_step", {
 
   it("loads data when step not requested but files exist", {
     tmp <- withr::local_tempfile(fileext = ".rds")
-    saveRDS(list(b = 2), tmp)
+    save_cache_rds(list(b = 2), tmp)
 
     result <- load_or_run_step(
       1L,
@@ -298,6 +298,41 @@ testthat::describe("load_or_run_step", {
 
     expect_false(result$run)
     expect_identical(result$data[[1]], list(b = 2))
+  })
+
+  it("aborts when a cache predates the format version and step is not run", {
+    tmp <- withr::local_tempfile(fileext = ".rds")
+    saveRDS(list(a = 1), tmp)
+
+    expect_error(
+      load_or_run_step(
+        1L,
+        2L:3L,
+        files = tmp,
+        skip_existing = TRUE,
+        step_name = "Step 1 (Project to surface)"
+      ),
+      "older ggseg.extra"
+    )
+  })
+
+  it("recomputes a stale cache when its step was requested", {
+    tmp <- withr::local_tempfile(fileext = ".rds")
+    saveRDS(list(a = 1), tmp)
+
+    result <- expect_messages(
+      load_or_run_step(
+        1L,
+        1L:3L,
+        files = tmp,
+        skip_existing = TRUE,
+        step_name = "Step 1"
+      ),
+      "recomputing"
+    )
+
+    expect_true(result$run)
+    expect_null(result$data)
   })
 })
 

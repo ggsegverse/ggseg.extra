@@ -281,7 +281,9 @@ extract_contours <- function(
   contours <- combine_region_contours(contourobjs)
   contours$y_axis <- "up"
 
-  save(contours, file = as.character(fs::path(output_dir, "contours.rda")))
+  contour_file <- as.character(fs::path(output_dir, "contours.rda"))
+  save(contours, file = contour_file)
+  stamp_cache_files(contour_file)
 
   if (verbose) {
     cli::cli_progress_done()
@@ -315,6 +317,11 @@ read_mask_raster <- function(file) {
   terra::rast(values, extent = terra::ext(0, ncol(values), 0, nrow(values)))
 }
 
+
+contour_rerun_remedy <- paste(
+  "Rerun the contour extraction, smoothing and reduction steps;",
+  "cached snapshots and masks are reused."
+)
 
 #' Stop when cached contours predate the y-up coordinate convention
 #' @noRd
@@ -418,14 +425,18 @@ smooth_contours <- function(
   step = "",
   verbose = get_verbose() # nolint: object_usage_linter
 ) {
-  load_rda(as.character(fs::path(dir, "contours.rda")))
+  contour_file <- as.character(fs::path(dir, "contours.rda"))
+  load_rda(contour_file)
+  check_cache_current(contour_file, contour_rerun_remedy)
 
   contours <- filter_valid_geometries(contours)
   if (nrow(contours) == 0) {
     cli::cli_warn("No valid contours found after extraction")
   }
 
-  save(contours, file = as.character(fs::path(dir, "contours_smoothed.rda")))
+  smoothed_file <- as.character(fs::path(dir, "contours_smoothed.rda"))
+  save(contours, file = smoothed_file)
+  stamp_cache_files(smoothed_file)
   invisible(contours)
 }
 
@@ -444,13 +455,17 @@ reduce_vertex <- function(
   step = "",
   verbose = get_verbose() # nolint: object_usage_linter
 ) {
-  load_rda(as.character(fs::path(dir, "contours_smoothed.rda")))
+  smoothed_file <- as.character(fs::path(dir, "contours_smoothed.rda"))
+  load_rda(smoothed_file)
+  check_cache_current(smoothed_file, contour_rerun_remedy)
 
   contours <- filter_valid_geometries(contours)
   if (nrow(contours) == 0) {
     cli::cli_warn("No valid contours to simplify")
   }
-  save(contours, file = as.character(fs::path(dir, "contours_reduced.rda")))
+  reduced_file <- as.character(fs::path(dir, "contours_reduced.rda"))
+  save(contours, file = reduced_file)
+  stamp_cache_files(reduced_file)
   invisible(contours)
 }
 
@@ -783,6 +798,7 @@ arrange_contour_sf <- function(conts) {
 #' @importFrom sf st_combine st_coordinates st_geometry
 make_multipolygon <- function(contourfile) {
   load_rda(contourfile)
+  check_cache_current(contourfile, contour_rerun_remedy)
   check_contour_y_axis(contours, contourfile)
 
   contours <- contours |>

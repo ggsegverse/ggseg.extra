@@ -243,6 +243,8 @@ log_elapsed <- function(start_time) {
 #' Load or run a pipeline step
 #'
 #' Handles the logic for loading cached data or running a step:
+#' - If the cached files were written by an older ggseg.extra, recompute when
+#'   the step was requested and abort with the step to rerun when it was not
 #' - If skip_existing and files exist, load and return data
 #' - If step is in steps list, return NULL to signal step should run
 #' - If step not in steps and files don't exist, throw error
@@ -265,6 +267,19 @@ load_or_run_step <- function(
 ) {
   files_exist <- all(file.exists(files))
   step_requested <- step_num %in% steps
+
+  if (files_exist && (skip_existing || !step_requested)) {
+    stale <- stale_cache_files(files)
+    if (length(stale) > 0L) {
+      if (!step_requested) {
+        abort_stale_step_cache(stale, step_num, step_name)
+      }
+      cli::cli_alert_info(
+        "{step_name}: cached output predates this ggseg.extra; recomputing."
+      )
+      return(list(run = TRUE, data = NULL))
+    }
+  }
 
   if (files_exist && skip_existing) {
     data <- lapply(files, readRDS)

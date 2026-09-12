@@ -684,8 +684,11 @@ cortical_read_data <- function(
     data = ggseg_data_cortical(vertices = components$vertices_df)
   )
 
-  saveRDS(atlas_3d, as.character(fs::path(dirs$base, "atlas_3d.rds")))
-  saveRDS(components, as.character(fs::path(dirs$base, "components.rds")))
+  save_cache_rds(atlas_3d, as.character(fs::path(dirs$base, "atlas_3d.rds")))
+  save_cache_rds(
+    components,
+    as.character(fs::path(dirs$base, "components.rds"))
+  )
   cli::cli_progress_done()
 
   list(atlas_3d = atlas_3d, components = components)

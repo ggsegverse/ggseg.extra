@@ -774,7 +774,10 @@ cerebellar_read_data <- function(config, dirs, read_fn) {
     deep_file
   )
 
-  saveRDS(components, as.character(fs::path(dirs$base, "components.rds")))
+  save_cache_rds(
+    components,
+    as.character(fs::path(dirs$base, "components.rds"))
+  )
   cli::cli_progress_done()
 
   list(components = components, deep_data = split$deep_data)
@@ -819,7 +822,7 @@ merge_deep_into_components <- function(components, deep_data, deep_file) {
       components$palette <- c(components$palette, deep_colours)
     }
 
-    saveRDS(deep_data, deep_file)
+    save_cache_rds(deep_data, deep_file)
   }
 
   components

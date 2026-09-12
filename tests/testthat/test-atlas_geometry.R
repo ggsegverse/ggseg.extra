@@ -19,6 +19,7 @@ save_contours_fixture <- function(path, y_axis = "up") {
   )
   contours$y_axis <- y_axis
   save(contours, file = path)
+  stamp_cache_files(path)
   path
 }
 
@@ -63,6 +64,7 @@ testthat::describe("build_contour_sf", {
       )
     )
     save(contours, file = contours_file)
+    stamp_cache_files(contours_file)
 
     slabs <- data.frame(
       name = c("axial_1", "coronal_1"),
@@ -112,6 +114,7 @@ testthat::describe("build_contour_sf", {
       )
     )
     save(contours, file = contours_file)
+    stamp_cache_files(contours_file)
 
     slabs <- data.frame(
       name = c("axial_1", "coronal_1"),
@@ -149,6 +152,7 @@ testthat::describe("build_contour_sf", {
       )
     )
     save(contours, file = contours_file)
+    stamp_cache_files(contours_file)
 
     slabs <- data.frame(
       name = "axial_1",
@@ -191,6 +195,7 @@ testthat::describe("build_contour_sf", {
       )
     )
     save(contours, file = contours_file)
+    stamp_cache_files(contours_file)
 
     slabs <- data.frame(
       name = "axial_1",
@@ -233,6 +238,7 @@ testthat::describe("build_contour_sf", {
       )
     )
     save(contours, file = contours_file)
+    stamp_cache_files(contours_file)
 
     slabs <- data.frame(
       name = "axial_1",
@@ -626,6 +632,7 @@ testthat::describe("smooth_contours", {
       )
     )
     save(contours, file = file.path(outdir, "contours.rda"))
+    stamp_cache_files(file.path(outdir, "contours.rda"))
 
     result <- smooth_contours(outdir, smoothness = 5, step = "")
 
@@ -641,6 +648,7 @@ testthat::describe("smooth_contours", {
       geometry = sf::st_sfc(sf::st_polygon())
     )
     save(contours, file = file.path(outdir, "contours.rda"))
+    stamp_cache_files(file.path(outdir, "contours.rda"))
 
     expect_warning(
       {
@@ -683,6 +691,7 @@ testthat::describe("reduce_vertex", {
       geometry = sf::st_sfc(sf::st_polygon(list(coords)))
     )
     save(contours, file = file.path(outdir, "contours_smoothed.rda"))
+    stamp_cache_files(file.path(outdir, "contours_smoothed.rda"))
 
     result <- reduce_vertex(outdir, tolerance = 0.5, step = "")
 
@@ -702,6 +711,7 @@ testthat::describe("reduce_vertex", {
       geometry = sf::st_sfc(sf::st_polygon())
     )
     save(contours, file = file.path(outdir, "contours_smoothed.rda"))
+    stamp_cache_files(file.path(outdir, "contours_smoothed.rda"))
 
     expect_warning(
       {
@@ -736,6 +746,15 @@ testthat::describe("make_multipolygon", {
 
     expect_error(make_multipolygon(contourfile), "older ggseg.extra")
   })
+
+  it("aborts on contours cached by an older cache format version", {
+    contourfile <- save_contours_fixture(
+      withr::local_tempfile(fileext = ".rda")
+    )
+    local_mocked_bindings(cache_format_version = function() 9999L)
+
+    expect_error(make_multipolygon(contourfile), "written by an older")
+  })
 })
 
 
@@ -754,6 +773,7 @@ testthat::describe("smooth_contours verbose output", {
       )
     )
     save(contours, file = file.path(outdir, "contours.rda"))
+    stamp_cache_files(file.path(outdir, "contours.rda"))
 
     expect_no_message(
       smooth_contours(outdir, smoothness = 5, step = "1/3", verbose = TRUE)
@@ -777,6 +797,7 @@ testthat::describe("reduce_vertex verbose output", {
       )
     )
     save(contours, file = file.path(outdir, "contours_smoothed.rda"))
+    stamp_cache_files(file.path(outdir, "contours_smoothed.rda"))
 
     expect_no_message(
       reduce_vertex(outdir, tolerance = 0.5, step = "2/3", verbose = TRUE)

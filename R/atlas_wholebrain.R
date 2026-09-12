@@ -709,8 +709,14 @@ wholebrain_compute_projection <- function(config, dirs) {
     verbose = config$verbose
   )
 
-  saveRDS(atlas_data, as.character(fs::path(dirs$base, "atlas_data.rds")))
-  saveRDS(colortable, as.character(fs::path(dirs$base, "colortable.rds")))
+  save_cache_rds(
+    atlas_data,
+    as.character(fs::path(dirs$base, "atlas_data.rds"))
+  )
+  save_cache_rds(
+    colortable,
+    as.character(fs::path(dirs$base, "colortable.rds"))
+  )
   if (config$verbose) {
     cli::cli_progress_done()
   }
@@ -1017,7 +1023,7 @@ wholebrain_resolve_split <- function(
     verbose = config$verbose
   )
 
-  saveRDS(split, as.character(fs::path(dirs$base, "label_split.rds")))
+  save_cache_rds(split, as.character(fs::path(dirs$base, "label_split.rds")))
   if (config$verbose) {
     cli::cli_progress_done()
   }

@@ -1660,7 +1660,7 @@ testthat::describe("cerebellar_read_data", {
     )
     mock_components$vertices_df$vertices <- list(0:3)
 
-    saveRDS(mock_components, file.path(dirs$base, "components.rds"))
+    save_cache_rds(mock_components, file.path(dirs$base, "components.rds"))
 
     local_mocked_bindings(
       load_or_run_step = function(step, steps, files, skip_existing, ...) {
@@ -1705,8 +1705,8 @@ testthat::describe("cerebellar_read_data", {
     )
     mock_deep$vertices <- list(integer(0))
 
-    saveRDS(mock_components, file.path(dirs$base, "components.rds"))
-    saveRDS(mock_deep, file.path(dirs$base, "deep_data.rds"))
+    save_cache_rds(mock_components, file.path(dirs$base, "components.rds"))
+    save_cache_rds(mock_deep, file.path(dirs$base, "deep_data.rds"))
 
     local_mocked_bindings(
       load_or_run_step = function(...) {
