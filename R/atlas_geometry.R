@@ -258,8 +258,8 @@ extract_contours <- function(
   vertex_size_limits = NULL
 ) {
   rlang::check_installed(
-    "terra",
-    reason = "for contour extraction from raster images"
+    c("magick", "terra"),
+    reason = "for contour extraction from snapshot masks"
   )
   if (verbose) {
     cli::cli_progress_step("{step} Extracting contours")
@@ -279,6 +279,7 @@ extract_contours <- function(
   names(contourobjs) <- region_names
 
   contours <- combine_region_contours(contourobjs)
+  contours$y_axis <- "up"
 
   save(contours, file = as.character(fs::path(output_dir, "contours.rda")))
 
@@ -290,14 +291,55 @@ extract_contours <- function(
 }
 
 
+#' Read a snapshot mask PNG as a raster with y increasing upward
+#'
+#' The raster is built from the decoded pixels with an explicit extent, so
+#' the top image row always spans the largest y. `terra::rast()` on the PNG
+#' itself is avoided because terra's orientation of non-georeferenced files
+#' is not stable across versions. Masks are single-channel greyscale, as
+#' written by `extract_alpha_mask()`; any alpha channel is ignored.
+#'
+#' @param file Path to a PNG mask.
+#' @return Single-layer SpatRaster spanning `0..ncol` by `0..nrow`, with
+#'   grey values 0-255.
+#' @keywords internal
+#' @noRd
+read_mask_raster <- function(file) {
+  # Workaround: masks can carry the RGB colour profile of their snapshot on
+  # greyscale pixels; libpng only warns about it, but the magick R package
+  # turns that warning into an error unless the profile is skipped.
+  pixels <- magick::image_read(file, defines = c("profile:skip" = "ICC")) |>
+    magick::image_data(channels = "gray") |>
+    as.integer()
+  values <- matrix(pixels, nrow = nrow(pixels))
+  terra::rast(values, extent = terra::ext(0, ncol(values), 0, nrow(values)))
+}
+
+
+#' Stop when cached contours predate the y-up coordinate convention
+#' @noRd
+check_contour_y_axis <- function(contours, contourfile) {
+  if (identical(unique(contours$y_axis), "up")) {
+    return(invisible(contours))
+  }
+  cli::cli_abort(c(
+    "{.path {contourfile}} was extracted by an older ggseg.extra.",
+    "i" = "Its y coordinates may run downward, which draws the atlas upside
+      down.",
+    "i" = "Rerun the contour extraction steps; cached snapshots and masks
+      are reused."
+  ))
+}
+
+
 #' Find the maximum raster value across the first regions with data
 #' @noRd
 probe_raster_max <- function(regions) {
   max_val <- 0
   for (f in regions[seq_len(min(10, length(regions)))]) {
-    r <- suppressWarnings(terra::rast(f))
+    r <- read_mask_raster(f)
     m <- terra::global(r, fun = "max", na.rm = TRUE)[1, 1]
-    if (is.finite(m) && m > max_val) {
+    if (m > max_val) {
       max_val <- m
     }
     if (max_val > 0) break
@@ -321,7 +363,7 @@ map_region_contours <- function(regions, max_val, vertex_size_limits, step) {
   safe_future_map(
     regions,
     function(region_file) {
-      r <- suppressWarnings(terra::rast(region_file))
+      r <- read_mask_raster(region_file)
       result <- get_contours(
         r,
         max_val = max_val,
@@ -331,7 +373,7 @@ map_region_contours <- function(regions, max_val, vertex_size_limits, step) {
       result
     },
     .options = furrr::furrr_options(
-      packages = c("terra", "ggseg.extra"),
+      packages = c("magick", "terra", "ggseg.extra"),
       globals = c("max_val", "vertex_size_limits", "p")
     )
   )
@@ -642,8 +684,8 @@ native_smoothness <- function(smoothness, method) {
 #' Build sf geometry from volumetric contours
 #'
 #' Shared by subcortical and tract pipelines. Loads reduced contours,
-#' assigns view names, flips y-axis, adjusts coordinates, and extracts
-#' labels from filenames.
+#' assigns view names, adjusts coordinates, and extracts labels from
+#' filenames.
 #'
 #' @param contours_file Path to `contours_reduced.rda`
 #' @param slabs data.frame with `name` column of slab names
@@ -666,9 +708,6 @@ build_contour_sf <- function(contours_file, slabs, cortex_slices = NULL) {
   }
 
   conts$view <- match_contour_views(filenm_base, all_view_names)
-
-  # Flip y-axis: snapshot PNGs have origin top-left, sf expects bottom-left
-  conts$geometry <- conts$geometry * matrix(c(1, 0, 0, -1), 2, 2)
 
   conts <- layout_volumetric_views(conts) # nolint: object_usage_linter.
 
@@ -744,6 +783,7 @@ arrange_contour_sf <- function(conts) {
 #' @importFrom sf st_combine st_coordinates st_geometry
 make_multipolygon <- function(contourfile) {
   load_rda(contourfile)
+  check_contour_y_axis(contours, contourfile)
 
   contours <- contours |>
     group_by(filenm) |>
