@@ -12,7 +12,7 @@ create_wholebrain_from_volume(
   projfrac = 0.5,
   projfrac_range = c(0, 1, 0.1),
   subject = "fsaverage5",
-  regheader = TRUE,
+  registration = "mni152",
   min_vertices = 50L,
   cortical_labels = NULL,
   subcortical_labels = NULL,
@@ -23,7 +23,8 @@ create_wholebrain_from_volume(
   cleanup = NULL,
   verbose = get_verbose(),
   skip_existing = NULL,
-  steps = NULL
+  steps = NULL,
+  regheader = lifecycle::deprecated()
 )
 }
 \arguments{
@@ -55,10 +56,20 @@ Set to NULL to use single-depth \code{projfrac} instead.}
 
 \item{subject}{Target surface subject. Default "fsaverage5".}
 
-\item{regheader}{If TRUE (default), assumes volume RAS coordinates match
-the subject space and uses \code{--regheader}. Works well for standard
-MNI152-space volumes. If FALSE, uses FreeSurfer's \code{--mni152reg}
-registration (may produce noisy results due to surf2surf resampling).}
+\item{registration}{How the volume is registered to the surface subject.
+One of:
+\itemize{
+\item \code{"mni152"} (default): applies FreeSurfer's
+\code{average/mni152.register.dat}, the transform from FSL/SPM MNI152
+scanner RAS to the MNI305 space \code{fsaverage} lives in. Use this for
+volumes in a standard MNI152 template space.
+\item \code{"header"}: trusts the volume header and uses \code{--regheader}.
+Correct only when the volume already sits in the target subject's
+own scanner RAS, such as native or conformed volumes.
+\item A path to a register.dat or LTA file to apply instead.
+}
+MNI152 and MNI305 differ by roughly 2 mm, so \code{"header"} on an MNI152
+volume shifts every region anteriorly and inferiorly.}
 
 \item{min_vertices}{Minimum total vertex count across hemispheres for a
 label to be classified as cortical by the vertex-count heuristic (see
@@ -119,6 +130,10 @@ Steps are:
 \item 5: Run cerebellar pipeline
 }
 Use \code{steps = 1:2} to run projection and split only.}
+
+\item{regheader}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} Use \code{registration}
+instead. \code{TRUE} maps to \code{registration = "header"}, \code{FALSE} to
+\code{registration = "mni152"}.}
 }
 \value{
 A named list with elements \code{cortical}, \code{subcortical}, and

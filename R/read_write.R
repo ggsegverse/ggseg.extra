@@ -577,7 +577,8 @@ read_neuromaps_volume <- function(
       output_file = output_nii,
       hemisphere = hemi_short,
       projfrac_range = c(0, 1, 0.1),
-      mni152reg = TRUE,
+      reg = mni152_register_path(),
+      srcsubject = "fsaverage5",
       opts = paste("--interp trilinear --trgsubject fsaverage5")
     )
 

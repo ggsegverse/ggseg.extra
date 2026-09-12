@@ -89,9 +89,7 @@ prepare_subcortical_mni152 <- function(
 
   in_path <- resolve_volume_path(input_volume)
   if (is.null(registration)) {
-    registration <- as.character(
-      fs::path(freesurfer::fs_dir(), "average", "mni152.register.dat")
-    )
+    registration <- mni152_register_path()
   }
   if (!file.exists(registration)) {
     cli::cli_abort("Registration not found: {.path {registration}}")

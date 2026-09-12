@@ -121,6 +121,62 @@ check_fs <- function(abort = FALSE) {
 }
 
 
+# Registration ----
+
+#' Path to FreeSurfer's MNI152-to-MNI305 registration
+#'
+#' `mni152.register.dat` maps FSL/SPM MNI152 scanner RAS onto the MNI305
+#' space that `fsaverage` and its downsampled subjects live in.
+#' @noRd
+mni152_register_path <- function() {
+  as.character(
+    fs::path(freesurfer::fs_dir(), "average", "mni152.register.dat")
+  )
+}
+
+
+#' Translate a registration specification into `mri_vol2surf` flags
+#'
+#' @param registration One of `"mni152"`, `"header"`, or a path to a
+#'   register.dat or LTA file.
+#' @param subject Subject whose surfaces the volume is sampled onto.
+#' @return List with elements `reg`, `srcsubject` and `regheader`, each
+#'   either a string or NULL.
+#' @noRd
+resolve_vol2surf_registration <- function(registration, subject) {
+  if (
+    !is.character(registration) ||
+      length(registration) != 1L ||
+      is.na(registration)
+  ) {
+    cli::cli_abort(c(
+      "{.arg registration} must be a single string.",
+      "i" = "Use {.val mni152}, {.val header}, or a path to a registration file." # nolint
+    ))
+  }
+
+  if (identical(registration, "header")) {
+    return(list(reg = NULL, srcsubject = NULL, regheader = subject))
+  }
+
+  is_mni152 <- identical(registration, "mni152")
+  reg_file <- if (is_mni152) mni152_register_path() else registration
+
+  if (!file.exists(reg_file)) {
+    cli::cli_abort(c(
+      "Registration file not found: {.path {reg_file}}",
+      "i" = if (is_mni152) {
+        "Is {.envvar FREESURFER_HOME} pointing at a complete installation?"
+      } else {
+        "Give a register.dat or LTA file, {.val mni152}, or {.val header}."
+      }
+    ))
+  }
+
+  list(reg = reg_file, srcsubject = subject, regheader = NULL)
+}
+
+
 # FreeSurfer command wrappers ----
 
 #' Convert volume to surface
@@ -133,6 +189,11 @@ check_fs <- function(abort = FALSE) {
 #' @param projfrac_range numeric vector `c(min, max, delta)` for multi-depth
 #'   projection via `--projfrac-max`. Takes the maximum value across depths,
 #'   giving much better coverage for volumetric parcellations.
+#' @param reg registration file passed to `--reg`. Requires `srcsubject`.
+#' @param srcsubject subject the registration resolves to, passed to
+#'   `--srcsubject`.
+#' @param regheader subject passed to `--regheader`, for volumes already in
+#'   that subject's scanner RAS.
 #' @template verbose
 #' @template opts
 #' @noRd
@@ -142,11 +203,22 @@ mri_vol2surf <- function(
   hemisphere,
   projfrac = 0.5,
   projfrac_range = NULL,
-  mni152reg = TRUE,
+  reg = NULL,
+  srcsubject = NULL,
+  regheader = NULL,
   opts = NULL,
   verbose = get_verbose() # nolint: object_usage_linter
 ) {
   check_fs(abort = TRUE)
+
+  if (!is.null(reg) && is.null(srcsubject)) {
+    cli::cli_abort(c(
+      "{.arg srcsubject} is required when {.arg reg} is given.",
+      "i" = "Without it FreeSurfer samples onto {.val fsaverage} and resamples
+        to the target subject, averaging labels into values the volume
+        never held."
+    ))
+  }
 
   fs_cmd <- "mri_vol2surf"
 
@@ -162,8 +234,12 @@ mri_vol2surf <- function(
     shQuote(output_file)
   )
 
-  if (mni152reg) {
-    cmd <- paste(cmd, "--mni152reg")
+  if (!is.null(reg)) {
+    cmd <- paste(cmd, "--reg", shQuote(reg), "--srcsubject", srcsubject)
+  }
+
+  if (!is.null(regheader)) {
+    cmd <- paste(cmd, "--regheader", regheader)
   }
 
   hemisphere <- match.arg(hemisphere, c("lh", "rh"))

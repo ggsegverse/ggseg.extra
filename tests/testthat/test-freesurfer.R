@@ -97,6 +97,175 @@ testthat::describe("mri_vol2surf", {
     expect_match(.cap$captured_cmd, "--hemi lh")
     expect_match(.cap$captured_cmd, "--projfrac 0.5")
   })
+
+  it("emits no registration flags when none are given", {
+    .cap$captured_cmd <- NULL
+    local_mocked_bindings(
+      check_fs = function(abort = FALSE) invisible(TRUE),
+      run_cmd = function(cmd, verbose = FALSE) {
+        .cap$captured_cmd <- cmd
+        invisible(NULL)
+      }
+    )
+
+    mri_vol2surf(
+      input_file = "input.mgz",
+      output_file = "output.mgz",
+      hemisphere = "lh",
+      verbose = FALSE
+    )
+
+    expect_no_match(.cap$captured_cmd, "--reg ")
+    expect_no_match(.cap$captured_cmd, "--regheader")
+    expect_no_match(.cap$captured_cmd, "--srcsubject")
+  })
+
+  it("passes a registration file together with its source subject", {
+    .cap$captured_cmd <- NULL
+    local_mocked_bindings(
+      check_fs = function(abort = FALSE) invisible(TRUE),
+      run_cmd = function(cmd, verbose = FALSE) {
+        .cap$captured_cmd <- cmd
+        invisible(NULL)
+      }
+    )
+
+    mri_vol2surf(
+      input_file = "input.mgz",
+      output_file = "output.mgz",
+      hemisphere = "lh",
+      reg = "mni152.register.dat",
+      srcsubject = "fsaverage5",
+      verbose = FALSE
+    )
+
+    expect_match(
+      .cap$captured_cmd,
+      paste(
+        "--reg",
+        shQuote("mni152.register.dat"),
+        "--srcsubject fsaverage5"
+      ),
+      fixed = TRUE
+    )
+    expect_no_match(.cap$captured_cmd, "--regheader")
+  })
+
+  it("passes --regheader for volumes in the subject's own space", {
+    .cap$captured_cmd <- NULL
+    local_mocked_bindings(
+      check_fs = function(abort = FALSE) invisible(TRUE),
+      run_cmd = function(cmd, verbose = FALSE) {
+        .cap$captured_cmd <- cmd
+        invisible(NULL)
+      }
+    )
+
+    mri_vol2surf(
+      input_file = "input.mgz",
+      output_file = "output.mgz",
+      hemisphere = "lh",
+      regheader = "fsaverage5",
+      verbose = FALSE
+    )
+
+    expect_match(.cap$captured_cmd, "--regheader fsaverage5")
+    expect_no_match(.cap$captured_cmd, "--reg ")
+    expect_no_match(.cap$captured_cmd, "--srcsubject")
+  })
+
+  it("refuses a registration without a source subject", {
+    local_mocked_bindings(
+      check_fs = function(abort = FALSE) invisible(TRUE),
+      run_cmd = function(cmd, verbose = FALSE) invisible(NULL)
+    )
+
+    expect_error(
+      mri_vol2surf(
+        input_file = "input.mgz",
+        output_file = "output.mgz",
+        hemisphere = "lh",
+        reg = "mni152.register.dat",
+        verbose = FALSE
+      ),
+      "srcsubject"
+    )
+  })
+})
+
+
+testthat::describe("mni152_register_path", {
+  it("points at the transform in the FreeSurfer installation", {
+    local_mocked_bindings(
+      fs_dir = function(...) "/opt/freesurfer",
+      .package = "freesurfer"
+    )
+
+    expect_identical(
+      mni152_register_path(),
+      "/opt/freesurfer/average/mni152.register.dat"
+    )
+  })
+})
+
+
+testthat::describe("resolve_vol2surf_registration", {
+  it("maps 'mni152' to FreeSurfer's transform and a source subject", {
+    reg_file <- withr::local_tempfile(fileext = ".dat")
+    file.create(reg_file)
+    local_mocked_bindings(mni152_register_path = function() reg_file)
+
+    expect_identical(
+      resolve_vol2surf_registration("mni152", "fsaverage5"),
+      list(reg = reg_file, srcsubject = "fsaverage5", regheader = NULL)
+    )
+  })
+
+  it("maps 'header' to --regheader with no source subject", {
+    expect_identical(
+      resolve_vol2surf_registration("header", "fsaverage5"),
+      list(reg = NULL, srcsubject = NULL, regheader = "fsaverage5")
+    )
+  })
+
+  it("accepts a path to a registration file", {
+    reg_file <- withr::local_tempfile(fileext = ".lta")
+    file.create(reg_file)
+
+    expect_identical(
+      resolve_vol2surf_registration(reg_file, "fsaverage6"),
+      list(reg = reg_file, srcsubject = "fsaverage6", regheader = NULL)
+    )
+  })
+
+  it("errors when the given registration file does not exist", {
+    expect_error(
+      resolve_vol2surf_registration("no/such/registration.dat", "fsaverage5"),
+      "Registration file not found"
+    )
+  })
+
+  it("errors when FreeSurfer's own transform is missing", {
+    local_mocked_bindings(
+      mni152_register_path = function() "no/such/mni152.register.dat"
+    )
+
+    expect_error(
+      resolve_vol2surf_registration("mni152", "fsaverage5"),
+      "FREESURFER_HOME"
+    )
+  })
+
+  it("errors on a specification that is not a single string", {
+    expect_error(
+      resolve_vol2surf_registration(TRUE, "fsaverage5"),
+      "single string"
+    )
+    expect_error(
+      resolve_vol2surf_registration(c("mni152", "header"), "fsaverage5"),
+      "single string"
+    )
+  })
 })
 
 
