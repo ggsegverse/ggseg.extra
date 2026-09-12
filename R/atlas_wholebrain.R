@@ -53,7 +53,11 @@
 #'
 #' The cortical surface projection uses FreeSurfer's cortex label
 #' (`{hemi}.cortex.label`) to prevent label dilation into the medial wall.
-#' This file ships with fsaverage5 and is always required.
+#' This file ships with fsaverage5 and is always required. Cortex vertices
+#' left without a listed label take the most common label of their
+#' neighbours. Everything outside the cortex label becomes the `unknown`
+#' medial wall, which the cortical atlas keeps as grey context geometry
+#' rather than as a region.
 #'
 #' @param input_volume Path to volumetric parcellation in MNI152 space
 #'   (.mgz, .nii, .nii.gz).
@@ -813,12 +817,18 @@ wholebrain_project_to_surface <- function(
   surf_dir <- as.character(fs::path(output_dir, "surface_overlays"))
   mkdir(surf_dir)
 
+  projection_volume <- write_projection_volume(
+    input_volume,
+    colortable$idx,
+    surf_dir
+  )
+
   all_data <- list()
 
   for (hemi_short in c("lh", "rh")) {
     hemi <- hemi_to_long(hemi_short) # nolint: object_usage_linter
     overlay <- wholebrain_vol2surf_overlay(
-      input_volume = input_volume,
+      input_volume = projection_volume,
       hemi_short = hemi_short,
       subject = subject,
       projfrac = projfrac,
@@ -827,6 +837,10 @@ wholebrain_project_to_surface <- function(
       surf_dir = surf_dir,
       verbose = verbose
     )
+    # --mni152reg resamples fsaverage onto the target subject, which averages
+    # ids into values that are absent from the volume.
+    overlay <- zero_unlisted_labels(overlay, colortable$idx)
+    overlay <- mask_to_cortex(overlay, hemi_short, subject)
 
     n_before <- sum(overlay != 0L)
     overlay <- fill_surface_labels(overlay, hemi_short, subject)
@@ -843,6 +857,49 @@ wholebrain_project_to_surface <- function(
   }
 
   bind_rows(all_data)
+}
+
+
+#' Set label ids that are missing from the lookup table to zero
+#' @noRd
+zero_unlisted_labels <- function(labels, keep_idx) {
+  labels[!labels %in% keep_idx] <- 0L
+  labels
+}
+
+
+#' Write the lookup-table-only copy of the volume, or return the input as is
+#'
+#' An MGZ without valid RAS information is written without it, so FreeSurfer
+#' applies the same default geometry to the copy.
+#' @noRd
+write_projection_volume <- function(input_volume, keep_idx, output_dir) {
+  if (grepl("\\.mgz$", input_volume, ignore.case = TRUE)) {
+    mgh <- freesurferformats::read.fs.mgh(input_volume, with_header = TRUE)
+    if (all(mgh$data %in% c(0L, keep_idx))) {
+      return(input_volume)
+    }
+    vox2ras <- if (freesurferformats::mghheader.is.ras.valid(mgh$header)) {
+      freesurferformats::mghheader.vox2ras(mgh$header)
+    }
+    output_file <- file.path(output_dir, "projection_volume.mgh")
+    freesurferformats::write.fs.mgh(
+      output_file,
+      zero_unlisted_labels(mgh$data, keep_idx),
+      vox2ras_matrix = vox2ras
+    )
+    return(output_file)
+  }
+
+  vol <- read_volume(input_volume, reorient = FALSE)
+  label_array <- as.array(vol)
+  if (all(label_array %in% c(0L, keep_idx))) {
+    return(input_volume)
+  }
+  output_file <- file.path(output_dir, "projection_volume.nii")
+  label_array <- zero_unlisted_labels(label_array, keep_idx)
+  RNifti::writeNifti(RNifti::asNifti(label_array, reference = vol), output_file)
+  output_file
 }
 
 
@@ -1042,9 +1099,10 @@ wholebrain_classify_labels <- function(
 #' Vertex counts and the full label universe used for classification
 #' @noRd
 classify_labels_inputs <- function(atlas_data, colortable) {
+  parcels <- atlas_data[!is_context_region(atlas_data$source_label), ]
   vertex_counts <- tapply(
-    vapply(atlas_data$vertices, length, integer(1)),
-    atlas_data$source_label,
+    vapply(parcels$vertices, length, integer(1)),
+    parcels$source_label,
     sum
   )
 
@@ -1230,11 +1288,12 @@ classify_labels_log_summary <- function(
 
 # Step 2.5: Refine cortical projection ----
 
-#' Remove subcortical labels from surface projection and re-fill
+#' Keep only cortical labels in the surface projection and re-fill
 #'
 #' When projecting a combined volume, subcortical voxels near the cortical
 #' surface can "steal" vertices that should be cortical. This function reloads
-#' the raw vol2surf overlays, zeros out subcortical label values, and re-runs
+#' the raw vol2surf overlays, zeros every label that is not in the cortical
+#' lookup table (subcortical, cerebellar, and unlisted ids), and re-runs
 #' fill_surface_labels so dilation only spreads cortical labels.
 #'
 #' @param config Pipeline config.
@@ -1250,29 +1309,15 @@ wholebrain_refine_cortical_projection <- function(
   projection,
   split
 ) {
-  non_cortical <- c(split$subcortical_labels, split$cerebellar_labels)
-  if (length(non_cortical) == 0) {
-    return(projection)
-  }
-
-  subcort_idx <- projection$colortable$idx[
-    projection$colortable$label %in% non_cortical
+  colortable <- projection$colortable[
+    projection$colortable$label %in% split$cortical_labels,
   ]
-  if (length(subcort_idx) == 0) {
+  if (nrow(colortable) == nrow(projection$colortable)) {
     return(projection)
   }
 
   surf_dir <- as.character(fs::path(dirs$base, "surface_overlays"))
-  colortable <- projection$colortable[
-    projection$colortable$label %in% split$cortical_labels,
-  ]
-
-  atlas_data <- refine_cortical_overlays(
-    config,
-    surf_dir,
-    subcort_idx,
-    colortable
-  )
+  atlas_data <- refine_cortical_overlays(config, surf_dir, colortable)
 
   list(
     atlas_data = atlas_data,
@@ -1281,18 +1326,13 @@ wholebrain_refine_cortical_projection <- function(
 }
 
 
-#' Re-fill both hemisphere overlays with the subcortical labels removed
+#' Re-fill both hemisphere overlays keeping only the cortical labels
 #' @noRd
-refine_cortical_overlays <- function(
-  config,
-  surf_dir,
-  subcort_idx,
-  colortable
-) {
+refine_cortical_overlays <- function(config, surf_dir, colortable) {
   if (config$verbose) {
     cli::cli_progress_step(
-      "Refining cortical projection (removing {length(subcort_idx)}
-      subcortical labels from surface)"
+      "Refining cortical projection (keeping {nrow(colortable)} cortical
+      labels on the surface)"
     )
   }
 
@@ -1306,8 +1346,11 @@ refine_cortical_overlays <- function(
         "Overlay file missing: {.path {overlay_file}}. Re-run step 1."
       )
     }
-    overlay <- as.integer(c(RNifti::readNifti(overlay_file)))
-    overlay[overlay %in% subcort_idx] <- 0L
+    overlay <- zero_unlisted_labels(
+      as.integer(c(RNifti::readNifti(overlay_file))),
+      colortable$idx
+    )
+    overlay <- mask_to_cortex(overlay, hemi_short, config$subject)
     overlay <- fill_surface_labels(overlay, hemi_short, config$subject)
     overlay_to_atlas_data(
       overlay,
@@ -1382,8 +1425,9 @@ wholebrain_cortical_inputs <- function(config, dirs, projection, split, opts) {
     views <- c("lateral", "medial", "superior", "inferior")
   }
 
+  source_label <- projection$atlas_data$source_label
   cortical_data <- projection$atlas_data[
-    projection$atlas_data$source_label %in% split$cortical_labels,
+    source_label %in% split$cortical_labels | is_context_region(source_label),
   ]
   cortical_data <- cortical_data[,
     c("hemi", "region", "label", "colour", "vertices")
@@ -1661,6 +1705,14 @@ load_cortex_mask <- function(hemi, subject = "fsaverage5", n_vertices) {
   mask <- logical(n_vertices)
   mask[cortex_vertices + 1L] <- TRUE
   mask
+}
+
+
+#' Clear overlay values outside the cortex label
+#' @noRd
+mask_to_cortex <- function(overlay, hemi, subject = "fsaverage5") {
+  overlay[!load_cortex_mask(hemi, subject, length(overlay))] <- 0L
+  overlay
 }
 
 

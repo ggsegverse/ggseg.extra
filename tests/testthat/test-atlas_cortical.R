@@ -1144,3 +1144,83 @@ testthat::describe("create_cortical_from_cifti input validation", {
     expect_identical(.cap$cifti_name, "myatlas")
   })
 })
+
+
+testthat::describe("create_cortical_from_annotation unknown context", {
+  local_annotation_regions <- function(regions, env = parent.frame()) {
+    n_regions <- length(regions)
+    annotation_data <- dplyr::tibble(
+      hemi = rep(c("left", "right"), each = n_regions),
+      region = rep(regions, 2),
+      label = paste(rep(c("lh", "rh"), each = n_regions), regions, sep = "_"),
+      colour = "#BEBEBE",
+      vertices = rep(
+        lapply(seq_len(n_regions), function(i) (i - 1L) * 10L + 1:10),
+        2
+      )
+    )
+    local_mocked_bindings(
+      check_fs = function(abort = FALSE) invisible(TRUE),
+      read_annotation_data = function(annot_files) annotation_data,
+      cortical_build_sf_projected = function(components, ...) {
+        mock_context_sf(components$vertices_df$label)
+      },
+      warn_if_large_atlas = function(...) NULL,
+      preview_atlas = function(...) NULL,
+      .env = env
+    )
+    withr::local_options(
+      ggseg.extra.output_dir = withr::local_tempdir(.local_envir = env),
+      .local_envir = env
+    )
+  }
+  annotation_files <- c("lh.test.annot", "rh.test.annot")
+
+  it("keeps the unknown medial wall as geometry outside core and palette", {
+    local_annotation_regions(c("frontal", "unknown"))
+
+    atlas <- create_cortical_from_annotation(
+      input_annot = annotation_files,
+      verbose = FALSE
+    )
+
+    expect_unknown_is_context(atlas, c("lh_unknown", "rh_unknown"))
+    expect_setequal(atlas$core$label, c("lh_frontal", "rh_frontal"))
+    expect_setequal(names(atlas$palette), c("lh_frontal", "rh_frontal"))
+  })
+
+  it("treats a named medial wall as context but keeps medial parcels", {
+    local_annotation_regions(
+      c("medialorbitofrontal", "FreeSurfer_Defined_Medial_Wall")
+    )
+
+    atlas <- create_cortical_from_annotation(
+      input_annot = annotation_files,
+      verbose = FALSE
+    )
+
+    expect_unknown_is_context(
+      atlas,
+      c(
+        "lh_FreeSurfer_Defined_Medial_Wall",
+        "rh_FreeSurfer_Defined_Medial_Wall"
+      )
+    )
+    expect_setequal(
+      atlas$core$label,
+      c("lh_medialorbitofrontal", "rh_medialorbitofrontal")
+    )
+  })
+
+  it("errors instead of building an atlas with no regions", {
+    local_annotation_regions("unknown")
+
+    expect_error(
+      create_cortical_from_annotation(
+        input_annot = annotation_files,
+        verbose = FALSE
+      ),
+      "unknown or medial-wall"
+    )
+  })
+})

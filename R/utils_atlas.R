@@ -225,6 +225,17 @@ sanitize_label <- function(x) {
 }
 
 
+# Context regions ----
+
+context_region_pattern <- "^(unknown|\\?\\?\\?)$|medial[ _.-]?wall$"
+
+#' Whether names denote unlabelled cortex or the medial wall
+#' @noRd
+is_context_region <- function(x) {
+  grepl(context_region_pattern, x, ignore.case = TRUE)
+}
+
+
 # Atlas data construction ----
 
 #' Build core, palette, and vertices/meshes from atlas data

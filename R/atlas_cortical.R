@@ -731,8 +731,30 @@ cortical_project_and_build <- function(
   )
 
   atlas <- ggseg.formats::atlas_view_gather(atlas)
+  atlas <- mark_unknown_as_context(atlas)
 
   cortical_finalize(atlas, config, dirs, start_time)
+}
+
+
+#' Keep unknown and medial-wall regions as grey context geometry
+#' @noRd
+mark_unknown_as_context <- function(atlas) {
+  is_unknown <- is_context_region(atlas$core$region)
+  if (!any(is_unknown)) {
+    return(atlas)
+  }
+  if (all(is_unknown)) {
+    cli::cli_abort(c(
+      "Every region in the atlas is an unknown or medial-wall region.",
+      "i" = "Check that the parcellation's labels were read correctly."
+    ))
+  }
+  ggseg.formats::atlas_region_contextual(
+    atlas,
+    context_region_pattern,
+    match_on = "region"
+  )
 }
 
 

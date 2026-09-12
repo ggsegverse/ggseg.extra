@@ -1268,32 +1268,10 @@ testthat::describe("fill_surface_labels", {
   })
 
   it("breaks when no newly_labeled vertices remain", {
-    tmp_dir <- withr::local_tempdir()
-    subj_dir <- file.path(tmp_dir, "fsaverage5")
-    surf_dir <- file.path(subj_dir, "surf")
-    label_dir <- file.path(subj_dir, "label")
-    dir.create(surf_dir, recursive = TRUE)
-    dir.create(label_dir, recursive = TRUE)
-    writeLines("placeholder", file.path(surf_dir, "lh.white"))
-    file.create(file.path(label_dir, "lh.cortex.label"))
-
-    local_mocked_bindings(
-      fs_subj_dir = function() tmp_dir,
-      .package = "freesurfer"
-    )
-
-    local_mocked_bindings(
-      read.fs.surface = function(f) {
-        list(
-          vertices = matrix(0, nrow = 5, ncol = 3),
-          faces = matrix(c(1L, 2L, 3L), nrow = 1, byrow = TRUE)
-        )
-      },
-      .package = "freesurferformats"
-    )
-
-    local_mocked_bindings(
-      read_label_vertices = function(...) c(0L, 1L, 2L)
+    local_fake_fsaverage(
+      n_vertices = 5L,
+      faces = matrix(c(1L, 2L, 3L), nrow = 1),
+      cortex = 0:2
     )
 
     overlay <- c(1L, 0L, 2L, 0L, 0L)
@@ -1309,18 +1287,10 @@ testthat::describe("fill_surface_labels", {
 
 testthat::describe("load_cortex_mask", {
   it("returns logical vector from cortex label file", {
-    tmp_dir <- withr::local_tempdir()
-    label_dir <- file.path(tmp_dir, "fsaverage5", "label")
-    dir.create(label_dir, recursive = TRUE)
-    label_file <- file.path(label_dir, "lh.cortex.label")
-    file.create(label_file)
-
-    local_mocked_bindings(
-      fs_subj_dir = function() tmp_dir,
-      .package = "freesurfer"
-    )
-    local_mocked_bindings(
-      read_label_vertices = function(...) c(0L, 2L, 4L)
+    local_fake_fsaverage(
+      n_vertices = 6L,
+      faces = matrix(c(1L, 2L, 3L), nrow = 1),
+      cortex = c(0L, 2L, 4L)
     )
 
     mask <- load_cortex_mask("lh", "fsaverage5", n_vertices = 6L)
@@ -1345,38 +1315,14 @@ testthat::describe("load_cortex_mask", {
 
 testthat::describe("fill_surface_labels with cortex mask", {
   it("does not dilate into medial wall vertices", {
-    tmp_dir <- withr::local_tempdir()
-    subj_dir <- file.path(tmp_dir, "fsaverage5")
-    surf_dir <- file.path(subj_dir, "surf")
-    label_dir <- file.path(subj_dir, "label")
-    dir.create(surf_dir, recursive = TRUE)
-    dir.create(label_dir, recursive = TRUE)
-    surf_file <- file.path(surf_dir, "lh.white")
-    writeLines("placeholder", surf_file)
-    label_file <- file.path(label_dir, "lh.cortex.label")
-    file.create(label_file)
-
-    local_mocked_bindings(
-      fs_subj_dir = function() tmp_dir,
-      .package = "freesurfer"
-    )
-
-    local_mocked_bindings(
-      read.fs.surface = function(f) {
-        list(
-          vertices = matrix(0, nrow = 6, ncol = 3),
-          faces = matrix(
-            c(1L, 2L, 3L, 3L, 4L, 5L, 5L, 6L, 1L),
-            nrow = 3,
-            byrow = TRUE
-          )
-        )
-      },
-      .package = "freesurferformats"
-    )
-
-    local_mocked_bindings(
-      read_label_vertices = function(...) c(0L, 1L, 2L)
+    local_fake_fsaverage(
+      n_vertices = 6L,
+      faces = matrix(
+        c(1L, 2L, 3L, 3L, 4L, 5L, 5L, 6L, 1L),
+        nrow = 3,
+        byrow = TRUE
+      ),
+      cortex = 0:2
     )
 
     overlay <- c(1L, 0L, 0L, 0L, 0L, 0L)
@@ -1538,7 +1484,9 @@ testthat::describe("wholebrain_project_to_surface", {
     )
 
     local_mocked_bindings(
+      write_projection_volume = function(input_volume, ...) input_volume,
       mri_vol2surf = function(...) invisible(NULL),
+      mask_to_cortex = function(overlay, ...) overlay,
       fill_surface_labels = function(overlay, ...) overlay
     )
 
@@ -1577,10 +1525,12 @@ testthat::describe("wholebrain_project_to_surface", {
     )
 
     local_mocked_bindings(
+      write_projection_volume = function(input_volume, ...) input_volume,
       mri_vol2surf = function(input_file, output_file, hemisphere, ...) {
         values <- c(rep(1L, 5), rep(0L, 5))
         RNifti::writeNifti(array(values, dim = c(10, 1, 1)), output_file)
       },
+      mask_to_cortex = function(overlay, ...) overlay,
       fill_surface_labels = function(overlay, ...) {
         overlay[overlay == 0L] <- 1L
         overlay
@@ -1622,10 +1572,12 @@ testthat::describe("wholebrain_project_to_surface", {
     )
 
     local_mocked_bindings(
+      write_projection_volume = function(input_volume, ...) input_volume,
       mri_vol2surf = function(input_file, output_file, hemisphere, ...) {
         values <- c(rep(1L, 3), rep(99L, 2), rep(0L, 5))
         RNifti::writeNifti(array(values, dim = c(10, 1, 1)), output_file)
       },
+      mask_to_cortex = function(overlay, ...) overlay,
       fill_surface_labels = function(overlay, ...) overlay
     )
 
@@ -1664,10 +1616,12 @@ testthat::describe("wholebrain_project_to_surface", {
     )
 
     local_mocked_bindings(
+      write_projection_volume = function(input_volume, ...) input_volume,
       mri_vol2surf = function(input_file, output_file, hemisphere, ...) {
         values <- c(rep(1L, 5), rep(0L, 5))
         RNifti::writeNifti(array(values, dim = c(10, 1, 1)), output_file)
       },
+      mask_to_cortex = function(overlay, ...) overlay,
       fill_surface_labels = function(overlay, ...) overlay
     )
 
@@ -2048,6 +2002,7 @@ testthat::describe("wholebrain_refine_cortical_projection", {
       cortical_labels = "cortex"
     )
     local_mocked_bindings(
+      mask_to_cortex = function(overlay, ...) overlay,
       fill_surface_labels = function(overlay, ...) overlay,
       overlay_to_atlas_data = function(overlay, hemi_short, ct, ...) {
         tibble(
@@ -2461,6 +2416,7 @@ testthat::describe("wholebrain_refine_cortical_projection verbose", {
       cortical_labels = "cortex"
     )
     local_mocked_bindings(
+      mask_to_cortex = function(overlay, ...) overlay,
       fill_surface_labels = function(overlay, ...) overlay,
       overlay_to_atlas_data = function(overlay, hemi_short, ct, ...) {
         tibble(
@@ -2577,38 +2533,367 @@ testthat::describe("wholebrain_prepare_subcortical_volume left-high", {
 
 testthat::describe("fill_surface_labels stalled dilation", {
   it("breaks when no unlabeled vertex has a labeled neighbor", {
-    tmp_dir <- withr::local_tempdir()
-    subj_dir <- file.path(tmp_dir, "fsaverage5")
-    surf_dir <- file.path(subj_dir, "surf")
-    label_dir <- file.path(subj_dir, "label")
-    dir.create(surf_dir, recursive = TRUE)
-    dir.create(label_dir, recursive = TRUE)
-    writeLines("placeholder", file.path(surf_dir, "lh.white"))
-    file.create(file.path(label_dir, "lh.cortex.label"))
-
-    local_mocked_bindings(
-      fs_subj_dir = function() tmp_dir,
-      .package = "freesurfer"
-    )
-    local_mocked_bindings(
-      read.fs.surface = function(f) {
-        list(
-          vertices = matrix(0, nrow = 4, ncol = 3),
-          faces = matrix(
-            c(1L, 2L, 3L, 3L, 4L, 1L),
-            nrow = 2,
-            byrow = TRUE
-          )
-        )
-      },
-      .package = "freesurferformats"
-    )
-    local_mocked_bindings(
-      read_label_vertices = function(...) c(0L, 1L, 2L, 3L)
+    local_fake_fsaverage(
+      n_vertices = 4L,
+      faces = matrix(c(1L, 2L, 3L, 3L, 4L, 1L), nrow = 2, byrow = TRUE),
+      cortex = 0:3
     )
 
     overlay <- c(0L, 0L, 0L, 0L)
     result <- fill_surface_labels(overlay, "lh", "fsaverage5")
     expect_identical(result, overlay)
+  })
+})
+
+
+testthat::describe("zero_unlisted_labels", {
+  it("zeros ids missing from the lookup table and keeps listed ones", {
+    expect_identical(
+      zero_unlisted_labels(c(0L, 1L, 45L, 2L), 1:2),
+      c(0L, 1L, 0L, 2L)
+    )
+  })
+
+  it("keeps array dimensions", {
+    labels <- array(c(1L, 45L, 2L, 45L), dim = c(2, 2, 1))
+    result <- zero_unlisted_labels(labels, 1:2)
+    expect_identical(dim(result), c(2L, 2L, 1L))
+    expect_identical(sum(result == 0L), 2L)
+  })
+})
+
+
+testthat::describe("write_projection_volume", {
+  labels <- array(c(1L, 45L, 2L, 0L, 45L, 1L, 2L, 2L), dim = c(2, 2, 2))
+  expected <- c(1L, 0L, 2L, 0L, 0L, 1L, 2L, 2L)
+
+  it("returns the input and writes nothing when every id is listed", {
+    skip_if_not_installed("RNifti")
+    skip_if_not_installed("freesurferformats")
+    source_dir <- withr::local_tempdir()
+    output_dir <- withr::local_tempdir()
+    listed <- zero_unlisted_labels(labels, 1:2)
+    nifti_file <- file.path(source_dir, "labels.nii.gz")
+    RNifti::writeNifti(RNifti::asNifti(listed), nifti_file)
+    mgz_file <- file.path(source_dir, "labels.mgz")
+    freesurferformats::write.fs.mgh(mgz_file, listed)
+
+    expect_identical(
+      write_projection_volume(nifti_file, 1:2, output_dir),
+      nifti_file
+    )
+    expect_identical(
+      write_projection_volume(mgz_file, 1:2, output_dir),
+      mgz_file
+    )
+    expect_length(list.files(output_dir), 0L)
+  })
+
+  it("writes a NIfTI copy with unlisted ids zeroed and the transform kept", {
+    skip_if_not_installed("RNifti")
+    tmp <- withr::local_tempdir()
+    source_image <- RNifti::asNifti(labels)
+    RNifti::pixdim(source_image) <- c(1.5, 1.5, 1.5)
+    source_file <- file.path(tmp, "labels.nii.gz")
+    RNifti::writeNifti(source_image, source_file)
+
+    output <- write_projection_volume(source_file, 1:2, tmp)
+    result <- RNifti::readNifti(output)
+
+    expect_identical(basename(output), "projection_volume.nii")
+    expect_identical(as.integer(result), expected)
+    expect_equal(
+      RNifti::xform(result),
+      RNifti::xform(RNifti::readNifti(source_file)),
+      ignore_attr = TRUE
+    )
+  })
+
+  it("writes an MGZ copy with the voxel-to-world transform kept", {
+    skip_if_not_installed("freesurferformats")
+    tmp <- withr::local_tempdir()
+    vox2ras <- matrix(
+      c(-1.5, 0, 0, 0, 0, 1.5, 0, 0, 0, 0, 1.5, 0, 90, -126, -72, 1),
+      nrow = 4
+    )
+    source_file <- file.path(tmp, "labels.mgz")
+    freesurferformats::write.fs.mgh(
+      source_file,
+      labels,
+      vox2ras_matrix = vox2ras
+    )
+
+    output <- write_projection_volume(source_file, 1:2, tmp)
+    result <- freesurferformats::read.fs.mgh(output, with_header = TRUE)
+
+    expect_identical(basename(output), "projection_volume.mgh")
+    expect_identical(as.integer(result$data), expected)
+    expect_equal(
+      freesurferformats::mghheader.vox2ras(result$header),
+      vox2ras,
+      ignore_attr = TRUE
+    )
+  })
+
+  it("leaves an MGZ without RAS information without it", {
+    skip_if_not_installed("freesurferformats")
+    tmp <- withr::local_tempdir()
+    source_file <- file.path(tmp, "labels.mgz")
+    freesurferformats::write.fs.mgh(source_file, labels)
+
+    output <- write_projection_volume(source_file, 1:2, tmp)
+    result <- freesurferformats::read.fs.mgh(output, with_header = TRUE)
+
+    expect_identical(as.integer(result$data), expected)
+    expect_false(freesurferformats::mghheader.is.ras.valid(result$header))
+  })
+
+  it("keeps a non-RAS NIfTI orientation and its header codes", {
+    skip_if_not_installed("RNifti")
+    tmp <- withr::local_tempdir()
+    xform <- structure(
+      matrix(
+        c(-1.5, 0, 0, 0, 0, 1.5, 0, 0, 0, 0, 1.5, 0, 90, -126, -72, 1),
+        nrow = 4
+      ),
+      code = 4L
+    )
+    source_image <- RNifti::asNifti(labels)
+    RNifti::qform(source_image) <- xform
+    RNifti::sform(source_image) <- xform
+    source_file <- file.path(tmp, "labels.nii.gz")
+    RNifti::writeNifti(source_image, source_file)
+
+    output <- write_projection_volume(source_file, 1:2, tmp)
+    source_header <- RNifti::niftiHeader(RNifti::readNifti(source_file))
+    result <- RNifti::readNifti(output)
+    result_header <- RNifti::niftiHeader(result)
+
+    expect_identical(RNifti::orientation(result), "LAS")
+    expect_identical(as.integer(result), expected)
+    for (field in c("qform_code", "sform_code", "srow_x", "srow_y", "srow_z")) {
+      expect_identical(result_header[[field]], source_header[[field]])
+    }
+  })
+})
+
+
+testthat::describe("mask_to_cortex", {
+  it("clears labelled vertices outside the cortex label", {
+    local_fake_fsaverage(
+      n_vertices = 6L,
+      faces = matrix(c(1L, 2L, 3L), nrow = 1),
+      cortex = 0:2
+    )
+
+    expect_identical(
+      mask_to_cortex(c(1L, 0L, 2L, 5L, 5L, 5L), "lh", "fsaverage5"),
+      c(1L, 0L, 2L, 0L, 0L, 0L)
+    )
+  })
+})
+
+
+testthat::describe("wholebrain_project_to_surface unlisted labels", {
+  colortable <- data.frame(
+    idx = 1:2,
+    label = c("a", "b"),
+    color = c("#FF0000", "#00FF00"),
+    stringsAsFactors = FALSE
+  )
+
+  it("projects the lookup-table-only copy of the volume", {
+    skip_if_not_installed("RNifti")
+    tmp_dir <- withr::local_tempdir()
+    .cap$kept_idx <- NULL
+    .cap$projected <- NULL
+
+    local_mocked_bindings(
+      write_projection_volume = function(input_volume, keep_idx, output_dir) {
+        .cap$kept_idx <- keep_idx
+        file.path(output_dir, "projection_volume.nii")
+      },
+      mri_vol2surf = function(input_file, output_file, ...) {
+        .cap$projected <- c(.cap$projected, input_file)
+        RNifti::writeNifti(array(c(1L, 2L), dim = c(2, 1, 1)), output_file)
+      },
+      mask_to_cortex = function(overlay, ...) overlay,
+      fill_surface_labels = function(overlay, ...) overlay
+    )
+
+    wholebrain_project_to_surface(
+      input_volume = "labels.nii.gz",
+      colortable = colortable,
+      subject = "fsaverage5",
+      projfrac = 0.5,
+      projfrac_range = NULL,
+      regheader = TRUE,
+      output_dir = tmp_dir,
+      verbose = FALSE
+    )
+
+    expect_identical(.cap$kept_idx, 1:2)
+    expect_identical(
+      unique(basename(.cap$projected)),
+      "projection_volume.nii"
+    )
+  })
+
+  it("fills vertices carrying unlisted ids from their neighbours", {
+    skip_if_not_installed("RNifti")
+    output_dir <- withr::local_tempdir()
+    local_fake_fsaverage(
+      n_vertices = 4L,
+      faces = matrix(c(1L, 2L, 3L, 2L, 3L, 4L), nrow = 2, byrow = TRUE),
+      cortex = 0:3
+    )
+    local_mocked_bindings(
+      write_projection_volume = function(input_volume, ...) input_volume,
+      mri_vol2surf = function(input_file, output_file, ...) {
+        overlay <- c(1L, 45L, 1L, 2L)
+        RNifti::writeNifti(array(overlay, dim = c(4, 1, 1)), output_file)
+      }
+    )
+
+    result <- wholebrain_project_to_surface(
+      input_volume = "labels.nii.gz",
+      colortable = colortable,
+      subject = "fsaverage5",
+      projfrac = 0.5,
+      projfrac_range = NULL,
+      regheader = TRUE,
+      output_dir = output_dir,
+      verbose = FALSE
+    )
+
+    left <- result[result$hemi == "left", ]
+    expect_setequal(unlist(left$vertices), 0:3)
+    expect_identical(left$vertices[[which(left$label == "lh_a")]], 0:2)
+    expect_false("lh_unknown" %in% left$label)
+  })
+})
+
+
+testthat::describe("refine_cortical_overlays unlisted labels", {
+  it("zeros ids outside the cortical lookup table before refilling", {
+    skip_if_not_installed("RNifti")
+    tmp <- withr::local_tempdir()
+    surf_dir <- file.path(tmp, "surface_overlays")
+    dir.create(surf_dir)
+    for (hemi in c("lh", "rh")) {
+      RNifti::writeNifti(
+        array(c(1L, 2L, 45L, 0L), dim = c(4, 1, 1)),
+        file.path(surf_dir, paste0(hemi, "_overlay.nii.gz"))
+      )
+    }
+    .cap$fill_input <- list()
+    local_mocked_bindings(
+      mask_to_cortex = function(overlay, ...) overlay,
+      fill_surface_labels = function(overlay, ...) {
+        .cap$fill_input <- c(.cap$fill_input, list(overlay))
+        overlay
+      }
+    )
+
+    wholebrain_refine_cortical_projection(
+      config = list(verbose = FALSE, subject = "fsaverage5"),
+      dirs = list(base = tmp),
+      projection = list(
+        atlas_data = tibble(),
+        colortable = data.frame(
+          idx = 1:2,
+          label = c("cortex", "thalamus"),
+          stringsAsFactors = FALSE
+        )
+      ),
+      split = list(
+        subcortical_labels = "thalamus",
+        cerebellar_labels = character(),
+        cortical_labels = "cortex"
+      )
+    )
+
+    expect_length(.cap$fill_input, 2L)
+    expect_identical(.cap$fill_input[[1]], c(1L, 0L, 0L, 0L))
+  })
+})
+
+
+testthat::describe("unknown context through the wholebrain split", {
+  atlas_data <- tibble(
+    hemi = "left",
+    region = c("a", "unknown"),
+    label = c("lh_a", "lh_unknown"),
+    colour = c("#FF0000", "#BEBEBE"),
+    vertices = list(0:99, 100:109),
+    source_label = c("a", "unknown"),
+    source_idx = c(1L, 0L)
+  )
+  colortable <- data.frame(
+    idx = 1:2,
+    label = c("a", "thalamus"),
+    type = c("cortical", "subcortical"),
+    color = c("#FF0000", "#0000FF"),
+    stringsAsFactors = FALSE
+  )
+
+  it("is not classified as a region", {
+    split <- wholebrain_classify_labels(atlas_data, min_vertices = 50L)
+
+    expect_false(
+      "unknown" %in%
+        c(
+          split$cortical_labels,
+          split$subcortical_labels,
+          split$cerebellar_labels
+        )
+    )
+    expect_false("unknown" %in% names(split$vertex_counts))
+  })
+
+  it("reaches the cortical inputs when the LUT has a type column", {
+    split <- wholebrain_classify_labels(
+      atlas_data,
+      colortable = colortable,
+      min_vertices = 50L
+    )
+
+    prep <- wholebrain_cortical_inputs(
+      config = list(
+        atlas_name = "test",
+        verbose = FALSE,
+        skip_existing = FALSE
+      ),
+      dirs = list(base = withr::local_tempdir()),
+      projection = list(atlas_data = atlas_data),
+      split = split,
+      opts = list()
+    )
+
+    expect_setequal(prep$data$label, c("lh_a", "lh_unknown"))
+  })
+
+  it("ends up as context geometry in the cortical atlas", {
+    local_mocked_bindings(
+      cortical_build_sf_projected = function(components, ...) {
+        mock_context_sf(components$vertices_df$label)
+      },
+      warn_if_large_atlas = function(...) NULL,
+      preview_atlas = function(...) NULL
+    )
+
+    atlas <- wholebrain_run_cortical(
+      config = list(
+        atlas_name = "test",
+        verbose = FALSE,
+        skip_existing = FALSE
+      ),
+      dirs = list(base = withr::local_tempdir()),
+      projection = list(atlas_data = atlas_data),
+      split = list(cortical_labels = "a")
+    )
+
+    expect_unknown_is_context(atlas, "lh_unknown")
+    expect_identical(atlas$core$label, "lh_a")
   })
 })
