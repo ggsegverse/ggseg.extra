@@ -1660,7 +1660,7 @@ testthat::describe("cerebellar_read_data", {
     )
     mock_components$vertices_df$vertices <- list(0:3)
 
-    saveRDS(mock_components, file.path(dirs$base, "components.rds"))
+    save_cache_rds(dirs$base, components.rds = mock_components)
 
     local_mocked_bindings(
       load_or_run_step = function(step, steps, files, skip_existing, ...) {
@@ -1705,8 +1705,11 @@ testthat::describe("cerebellar_read_data", {
     )
     mock_deep$vertices <- list(integer(0))
 
-    saveRDS(mock_components, file.path(dirs$base, "components.rds"))
-    saveRDS(mock_deep, file.path(dirs$base, "deep_data.rds"))
+    save_cache_rds(
+      dirs$base,
+      components.rds = mock_components,
+      deep_data.rds = mock_deep
+    )
 
     local_mocked_bindings(
       load_or_run_step = function(...) {
@@ -1722,6 +1725,38 @@ testthat::describe("cerebellar_read_data", {
 
     expect_false(is.null(result$deep_data))
     expect_true(all(result$deep_data$deep))
+  })
+
+  it("aborts when cached deep_data was written by another version", {
+    dirs <- list(base = withr::local_tempdir())
+
+    mock_components <- list(
+      core = data.frame(
+        hemi = "left",
+        region = "I-IV",
+        label = "left_I-IV",
+        stringsAsFactors = FALSE
+      )
+    )
+
+    save_cache_rds(dirs$base, components.rds = mock_components)
+    saveRDS(list(deep = TRUE), file.path(dirs$base, "deep_data.rds"))
+
+    local_mocked_bindings(
+      load_or_run_step = function(...) {
+        list(
+          run = FALSE,
+          data = list("components.rds" = mock_components)
+        )
+      }
+    )
+
+    config <- list(steps = 1L, skip_existing = TRUE, verbose = FALSE)
+
+    expect_error(
+      cerebellar_read_data(config, dirs, read_fn = stop),
+      "deep_data.rds"
+    )
   })
 
   it("separates deep nuclei from surface data when deep column present", {

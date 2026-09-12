@@ -426,10 +426,13 @@ run_image_steps <- function(
       dilate = dilate,
       skip_existing = config$skip_existing
     )
+    stamp_cache_dir(dirs$processed)
+    stamp_cache_dir(dirs$masks)
     if (config$verbose) cli::cli_progress_done()
   }
 
   if (step_map$extract %in% config$steps) {
+    check_cache_dir(dirs$masks, image_rerun_remedy)
     extract_contours(
       dirs$masks,
       dirs$base,

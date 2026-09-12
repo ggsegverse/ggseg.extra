@@ -385,7 +385,7 @@ tract_resolve_step1 <- function(
 
   step1_data <- tract_step1_data(config, prepared, built)
 
-  saveRDS(step1_data, as.character(fs::path(dirs$base, "step1_data.rds")))
+  save_cache_rds(dirs$base, step1_data.rds = step1_data)
   step1_data
 }
 
@@ -521,8 +521,11 @@ tract_run_snapshots <- function(config, dirs, step1, input_aseg, slabs, files) {
     step1$center_offset
   )
 
-  saveRDS(result$slabs, files[1])
-  saveRDS(result$cortex_slices, files[2])
+  save_cache_rds(
+    dirs$base,
+    slabs.rds = result$slabs,
+    cortex_slices.rds = result$cortex_slices
+  )
   if (config$verbose) {
     cli::cli_progress_done()
   }

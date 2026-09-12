@@ -104,3 +104,21 @@ only add information that is relevant for the R-package to NEWS.md.
 Any other changes related to workflows, pkgdown etc are not relevant to the R-package releases and thus dont shouldnt be listed in NEWS.
 
 Organise NEWS by user-facing and developer facing changes, and headings for minor vs breaking changes.
+
+
+### Cache format version
+
+- Pipeline intermediates are stamped with `cache_format_version()`
+  (`R/cache_version.R`) in a `cache_manifest.rds` sidecar, and a cache
+  stamped with a different version is recomputed or rejected. That
+  function's documentation is the canonical list of what is and is not
+  stamped.
+- When a change makes existing intermediates **wrong** rather than merely
+  old — a fix to surface projection, label classification, contour
+  extraction or anything else whose cached output would otherwise be reused
+  — bump `cache_format_version()` in the same PR. Nothing detects a
+  forgotten bump: the symptom is a maintainer rebuilding an atlas and
+  silently getting the old one.
+- Do not bump it for changes that leave existing intermediates valid.
+  Atlas rebuilds cost hours of FreeSurfer time, so an unnecessary bump
+  invalidates every atlas maintainer's cache for nothing.

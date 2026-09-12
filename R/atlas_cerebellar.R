@@ -750,7 +750,11 @@ cerebellar_read_data <- function(config, dirs, read_fn) {
     if (config$verbose) {
       cli::cli_alert_success("Loaded cached atlas data")
     }
-    deep_data <- if (file.exists(deep_file)) readRDS(deep_file) else NULL
+    deep_data <- NULL
+    if (file.exists(deep_file)) {
+      check_cache_current(deep_file, step_rerun_remedy(1L))
+      deep_data <- readRDS(deep_file)
+    }
     return(list(
       components = cached$data[["components.rds"]],
       deep_data = deep_data
@@ -771,10 +775,10 @@ cerebellar_read_data <- function(config, dirs, read_fn) {
   components <- merge_deep_into_components(
     components,
     split$deep_data,
-    deep_file
+    dirs$base
   )
 
-  saveRDS(components, as.character(fs::path(dirs$base, "components.rds")))
+  save_cache_rds(dirs$base, components.rds = components)
   cli::cli_progress_done()
 
   list(components = components, deep_data = split$deep_data)
@@ -806,7 +810,7 @@ split_cerebellar_surface_deep <- function(atlas_data, config) {
 
 #' Merge deep-nuclei core/palette into surface components and cache them
 #' @noRd
-merge_deep_into_components <- function(components, deep_data, deep_file) {
+merge_deep_into_components <- function(components, deep_data, dir) {
   if (!is.null(deep_data) && nrow(deep_data) > 0) {
     deep_core <- dplyr::distinct(deep_data, hemi, region, label)
     components$core <- rbind(components$core, deep_core)
@@ -819,7 +823,7 @@ merge_deep_into_components <- function(components, deep_data, deep_file) {
       components$palette <- c(components$palette, deep_colours)
     }
 
-    saveRDS(deep_data, deep_file)
+    save_cache_rds(dir, deep_data.rds = deep_data)
   }
 
   components
