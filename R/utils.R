@@ -269,23 +269,16 @@ load_or_run_step <- function(
   step_requested <- step_num %in% steps
 
   reuses_cache <- files_exist && (skip_existing || !step_requested)
-  stale <- if (reuses_cache) stale_cache_files(files) else character()
 
-  if (length(stale) > 0L && !step_requested) {
-    check_cache_current(stale, step_rerun_remedy(step_num))
-  }
+  recompute <- reuses_cache &&
+    recomputes_stale_cache(files, step_num, step_name, step_requested)
 
-  if (length(stale) > 0L) {
-    cli::cli_alert_info(
-      "{step_name}: cached output predates this ggseg.extra; recomputing."
-    )
+  if (recompute) {
     return(list(run = TRUE, data = NULL))
   }
 
   if (files_exist && skip_existing) {
-    data <- lapply(files, readRDS)
-    names(data) <- basename(files)
-    return(list(run = FALSE, data = data))
+    return(list(run = FALSE, data = read_step_cache(files)))
   }
 
   if (step_requested) {
@@ -293,20 +286,54 @@ load_or_run_step <- function(
   }
 
   if (!files_exist) {
-    missing <- files[!file.exists(files)] # nolint: object_usage_linter
-    # nolint start
-    cli::cli_abort(c(
-      "{step_name} was not run but required files are missing",
-      "i" = "Missing: {.path {missing}}",
-      "i" = "Include step {step_num} in the steps argument to
-      generate these files"
-    ))
-    # nolint end
+    abort_missing_step_files(files, step_num, step_name)
   }
 
+  list(run = FALSE, data = read_step_cache(files))
+}
+
+
+#' Whether a step's cache must be recomputed rather than reused
+#'
+#' Aborts instead when the step was not requested: the alternatives are
+#' reusing output this ggseg.extra cannot vouch for, or silently running
+#' work the caller excluded.
+#' @noRd
+recomputes_stale_cache <- function(files, step_num, step_name, step_requested) {
+  stale <- stale_cache_files(files)
+  if (length(stale) == 0L) {
+    return(FALSE)
+  }
+  if (!step_requested) {
+    check_cache_current(stale, step_rerun_remedy(step_num))
+  }
+  cli::cli_alert_info(
+    "{step_name}: cached output predates this ggseg.extra; recomputing."
+  )
+  TRUE
+}
+
+
+#' Read a step's cached files, named by the file they came from
+#' @noRd
+read_step_cache <- function(files) {
   data <- lapply(files, readRDS)
   names(data) <- basename(files)
-  list(run = FALSE, data = data)
+  data
+}
+
+
+#' @noRd
+abort_missing_step_files <- function(files, step_num, step_name) {
+  missing <- files[!file.exists(files)] # nolint: object_usage_linter
+  # nolint start
+  cli::cli_abort(c(
+    "{step_name} was not run but required files are missing",
+    "i" = "Missing: {.path {missing}}",
+    "i" = "Include step {step_num} in the steps argument to
+      generate these files"
+  ))
+  # nolint end
 }
 
 
