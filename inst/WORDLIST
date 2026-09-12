@@ -56,6 +56,7 @@ NLin
 NeuroVault
 Neuroimaging
 Neuromaps
+Neuromorphometrics
 Neuroscientists
 Nx
 ORCID
@@ -69,6 +70,7 @@ ROIs
 RStudio
 Rodrigues
 Rvcg
+SPM
 Sagittal
 Schaefer
 Serret
@@ -90,6 +92,7 @@ abagen
 accumbens
 affine
 annot
+anteriorly
 aparc
 argmax
 artefacts
@@ -105,6 +108,7 @@ blockier
 brainstem
 bslib
 buckner
+cAsym
 callosum
 caudate
 centerline
@@ -128,6 +132,7 @@ coregistration
 corpuscallosum
 ctab
 customises
+dat
 dev
 discretizing
 entorhinal
@@ -144,6 +149,7 @@ foliated
 freesurfer
 fsLR
 fsaverage
+fsaverage's
 furrr
 ggplot
 ggseg
@@ -234,6 +240,7 @@ sulcal
 sulci
 sulcus
 summarises
+superiorly
 sysdata
 tempfile
 terra

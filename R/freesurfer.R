@@ -162,6 +162,13 @@ resolve_vol2surf_registration <- function(registration, subject) {
   is_mni152 <- identical(registration, "mni152")
   reg_file <- if (is_mni152) mni152_register_path() else registration
 
+  if (dir.exists(reg_file)) {
+    cli::cli_abort(c(
+      "{.arg registration} must be a file, not a directory: {.path {reg_file}}",
+      "i" = "Give a register.dat or LTA file, {.val mni152}, or {.val header}."
+    ))
+  }
+
   if (!file.exists(reg_file)) {
     cli::cli_abort(c(
       "Registration file not found: {.path {reg_file}}",
@@ -174,6 +181,155 @@ resolve_vol2surf_registration <- function(registration, subject) {
   }
 
   list(reg = reg_file, srcsubject = subject, regheader = NULL)
+}
+
+
+#' Voxel-to-RAS matrix of a subject's conformed volume
+#'
+#' @return The 4x4 matrix, or NULL when the volume cannot be read.
+#' @noRd
+subject_vox2ras <- function(subject, subjects_dir = freesurfer::fs_subj_dir()) {
+  orig <- as.character(fs::path(subjects_dir, subject, "mri", "orig.mgz"))
+  if (!file.exists(orig)) {
+    return(NULL)
+  }
+  read_vox2ras(orig, "mgz")
+}
+
+
+#' Direction and scale block of a volume's voxel-to-RAS matrix
+#' @noRd
+volume_direction_block <- function(input_volume) {
+  ext <- tolower(tools::file_ext(input_volume))
+  if (ext == "gz") {
+    ext <- tools::file_ext(sub("\\.gz$", "", input_volume))
+  }
+  # Advisory geometry probe: a header the reader cannot parse must leave the
+  # space unknown rather than surface that reader's own warnings.
+  vox2ras <- tryCatch(
+    suppressWarnings(read_vox2ras(input_volume, ext)),
+    error = function(e) NULL
+  )
+  if (is.null(vox2ras)) {
+    return(NULL)
+  }
+  vox2ras[1:3, 1:3]
+}
+
+
+#' Check that FreeSurfer's MNI152 transform applies to a subject
+#'
+#' `mni152.register.dat` is registered against `fsaverage`. It is meaningful
+#' for subjects sharing fsaverage's conformed geometry, which the
+#' downsampled `fsaverageN` subjects do, and wrong for anyone else.
+#' @noRd
+check_mni152_subject <- function(subject) {
+  if (identical(subject, "fsaverage")) {
+    return(invisible(TRUE))
+  }
+
+  reference <- subject_vox2ras("fsaverage")
+  candidate <- subject_vox2ras(subject)
+
+  if (is.null(reference) || is.null(candidate)) {
+    cli::cli_warn(c(
+      "Could not confirm that {.val {subject}} shares fsaverage's geometry.",
+      "i" = "{.file mni152.register.dat} is registered against
+        {.val fsaverage}."
+    ))
+    return(invisible(NA))
+  }
+
+  if (!isTRUE(all.equal(reference, candidate, tolerance = 1e-4))) {
+    cli::cli_abort(c(
+      "{.val mni152} registration does not apply to subject {.val {subject}}.",
+      "x" = "{.file mni152.register.dat} is registered against
+        {.val fsaverage}, and {.val {subject}} does not share its conformed
+        geometry.",
+      "i" = "Supply your own register.dat or LTA file as {.arg registration}."
+    ))
+  }
+
+  invisible(TRUE)
+}
+
+
+#' Warn when a volume is already in the surface subject's own space
+#'
+#' A volume sharing the subject's conformed voxel grid is native or
+#' fsaverage-space rather than an MNI152 template, and registering it as
+#' MNI152 gives an atlas that looks plausible but is displaced.
+#' @noRd
+warn_if_subject_space_volume <- function(input_volume, subject) {
+  volume <- volume_direction_block(input_volume)
+  conformed <- subject_vox2ras(subject)
+
+  if (is.null(volume) || is.null(conformed)) {
+    return(invisible(FALSE))
+  }
+  if (!isTRUE(all.equal(conformed[1:3, 1:3], volume, tolerance = 1e-4))) {
+    return(invisible(FALSE))
+  }
+
+  cli::cli_warn(c(
+    "{.path {input_volume}} shares {.val {subject}}'s conformed voxel grid.",
+    "!" = "{.code registration = \"mni152\"} treats it as an MNI152 template.
+      If it is a native, conformed or fsaverage-space volume the atlas will
+      be displaced by roughly 2 mm and still look plausible.",
+    "i" = "Use {.code registration = \"header\"} for volumes already in the
+      target subject's own scanner RAS."
+  ))
+  invisible(TRUE)
+}
+
+
+#' Validate a registration specification against its subject and volume
+#'
+#' Checks what the headers can reveal before a long pipeline starts: that
+#' the specification resolves, that FreeSurfer's MNI152 transform applies to
+#' the subject, and that the volume does not look like it is already in the
+#' subject's own space.
+#' @noRd
+validate_registration <- function(registration, subject, input_volume = NULL) {
+  resolved <- resolve_vol2surf_registration(registration, subject)
+
+  if (identical(registration, "mni152")) {
+    check_mni152_subject(subject)
+    if (!is.null(input_volume)) {
+      warn_if_subject_space_volume(input_volume, subject)
+    }
+  }
+
+  invisible(resolved)
+}
+
+
+#' Check that the registration flags form a usable combination
+#' @noRd
+validate_vol2surf_flags <- function(reg, srcsubject, regheader) {
+  if (!is.null(reg) && !is.null(regheader)) {
+    cli::cli_abort(c(
+      "{.arg reg} and {.arg regheader} cannot both be given.",
+      "i" = "{.code mri_vol2surf} takes one registration, not two."
+    ))
+  }
+
+  if (!is.null(reg) && is.null(srcsubject)) {
+    cli::cli_abort(c(
+      "{.arg srcsubject} is required when {.arg reg} is given.",
+      "i" = "Without it FreeSurfer samples onto {.val fsaverage} and
+        resamples to the target subject, averaging labels into values the
+        volume never held."
+    ))
+  }
+
+  if (is.null(reg) && !is.null(srcsubject)) {
+    cli::cli_abort(
+      "{.arg srcsubject} only applies together with {.arg reg}."
+    )
+  }
+
+  invisible(TRUE)
 }
 
 
@@ -211,14 +367,7 @@ mri_vol2surf <- function(
 ) {
   check_fs(abort = TRUE)
 
-  if (!is.null(reg) && is.null(srcsubject)) {
-    cli::cli_abort(c(
-      "{.arg srcsubject} is required when {.arg reg} is given.",
-      "i" = "Without it FreeSurfer samples onto {.val fsaverage} and resamples
-        to the target subject, averaging labels into values the volume
-        never held."
-    ))
-  }
+  validate_vol2surf_flags(reg, srcsubject, regheader)
 
   fs_cmd <- "mri_vol2surf"
 
@@ -235,11 +384,17 @@ mri_vol2surf <- function(
   )
 
   if (!is.null(reg)) {
-    cmd <- paste(cmd, "--reg", shQuote(reg), "--srcsubject", srcsubject)
+    cmd <- paste(
+      cmd,
+      "--reg",
+      shQuote(reg),
+      "--srcsubject",
+      shQuote(srcsubject)
+    )
   }
 
   if (!is.null(regheader)) {
-    cmd <- paste(cmd, "--regheader", regheader)
+    cmd <- paste(cmd, "--regheader", shQuote(regheader))
   }
 
   hemisphere <- match.arg(hemisphere, c("lh", "rh"))

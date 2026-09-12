@@ -2936,7 +2936,11 @@ testthat::describe("wholebrain_vol2surf_overlay registration", {
     expect_identical(cap$args$srcsubject, "fsaverage5")
     expect_null(cap$args$regheader)
     expect_no_match(cap$args$opts, "--regheader")
-    expect_match(cap$args$opts, "--interp nearest --trgsubject fsaverage5")
+    expect_match(
+      cap$args$opts,
+      paste("--interp nearest --trgsubject", shQuote("fsaverage5")),
+      fixed = TRUE
+    )
   })
 
   it("trusts the volume header when asked to", {
@@ -2988,11 +2992,95 @@ testthat::describe("wholebrain_vol2surf_overlay registration", {
     labels <- setdiff(unique(overlay), 0L)
     expect_true(all(labels %in% colortable$idx))
     expect_lte(length(labels), nrow(colortable))
+
+    header_overlay <- wholebrain_vol2surf_overlay(
+      input_volume = vol_file,
+      hemi_short = "lh",
+      subject = "fsaverage5",
+      projfrac = 0.5,
+      projfrac_range = c(0, 1, 0.1),
+      registration = "header",
+      surf_dir = withr::local_tempdir(),
+      verbose = FALSE
+    )
+
+    expect_false(identical(overlay, header_overlay))
+    expect_false(sum(overlay != 0L) == sum(header_overlay != 0L))
+  })
+})
+
+
+testthat::describe("registration_from_regheader", {
+  it("maps TRUE to the header registration", {
+    withr::local_options(lifecycle_verbosity = "warning")
+
+    expect_warning(
+      registration_from_regheader(TRUE, registration_missing = TRUE),
+      class = "lifecycle_warning_deprecated"
+    )
+
+    withr::local_options(lifecycle_verbosity = "quiet")
+    expect_identical(
+      registration_from_regheader(TRUE, registration_missing = TRUE),
+      "header"
+    )
+  })
+
+  it("maps FALSE to the MNI152 registration", {
+    withr::local_options(lifecycle_verbosity = "warning")
+
+    expect_warning(
+      registration_from_regheader(FALSE, registration_missing = TRUE),
+      class = "lifecycle_warning_deprecated"
+    )
+
+    withr::local_options(lifecycle_verbosity = "quiet")
+    expect_identical(
+      registration_from_regheader(FALSE, registration_missing = TRUE),
+      "mni152"
+    )
+  })
+
+  it("refuses to override an explicit registration", {
+    expect_error(
+      registration_from_regheader(TRUE, registration_missing = FALSE),
+      "Cannot use both"
+    )
+  })
+
+  it("refuses anything that is not a single TRUE or FALSE", {
+    expect_error(
+      registration_from_regheader(NA, registration_missing = TRUE),
+      "must be"
+    )
+    expect_error(
+      registration_from_regheader("yes", registration_missing = TRUE),
+      "must be"
+    )
+    expect_error(
+      registration_from_regheader(c(TRUE, FALSE), registration_missing = TRUE),
+      "must be"
+    )
   })
 })
 
 
 testthat::describe("create_wholebrain_from_volume(regheader = )", {
+  it("errors when given alongside registration", {
+    local_mocked_bindings(check_fs = function(abort = FALSE) invisible(TRUE))
+
+    expect_error(
+      create_wholebrain_from_volume(
+        input_volume = "missing-volume.nii.gz",
+        output_dir = withr::local_tempdir(),
+        registration = "header",
+        regheader = FALSE,
+        verbose = FALSE
+      ),
+      "Cannot use both"
+    )
+  })
+
   it("is deprecated in favour of registration", {
     withr::local_options(lifecycle_verbosity = "warning")
     local_mocked_bindings(check_fs = function(abort = FALSE) invisible(TRUE))

@@ -634,6 +634,42 @@ testthat::describe("read_annotation_data", {
 
 
 testthat::describe("read_neuromaps_volume", {
+  it("registers the volume with FreeSurfer's MNI152 transform", {
+    skip_if_not_installed("RNifti")
+
+    output_dir <- withr::local_tempdir()
+    surf_dir <- file.path(output_dir, "surface_overlays")
+    dir.create(surf_dir, recursive = TRUE)
+
+    reg_file <- withr::local_tempfile(fileext = ".dat")
+    file.create(reg_file)
+    cap <- new.env()
+
+    local_mocked_bindings(
+      check_fs = function(...) invisible(TRUE),
+      mni152_register_path = function() reg_file,
+      mri_vol2surf = function(input_file, output_file, hemisphere, ...) {
+        cap$args <- list(...)
+        RNifti::writeNifti(
+          array(rep(1, 10242L), dim = c(10242L, 1, 1)),
+          output_file
+        )
+      }
+    )
+
+    result <- read_neuromaps_volume("fake.nii.gz", output_dir = output_dir)
+
+    expect_s3_class(result, "tbl_df")
+    expect_identical(cap$args$reg, reg_file)
+    expect_identical(cap$args$srcsubject, "fsaverage5")
+    expect_null(cap$args$regheader)
+    expect_match(
+      cap$args$opts,
+      paste("--trgsubject", shQuote("fsaverage5")),
+      fixed = TRUE
+    )
+  })
+
   it("projects volume to surface and returns atlas data", {
     skip_if_not_installed("RNifti")
 

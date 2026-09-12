@@ -57,19 +57,20 @@ Set to NULL to use single-depth \code{projfrac} instead.}
 \item{subject}{Target surface subject. Default "fsaverage5".}
 
 \item{registration}{How the volume is registered to the surface subject.
-One of:
+See the \strong{Registration} section, which you should read before relying
+on the default. One of:
 \itemize{
 \item \code{"mni152"} (default): applies FreeSurfer's
-\code{average/mni152.register.dat}, the transform from FSL/SPM MNI152
-scanner RAS to the MNI305 space \code{fsaverage} lives in. Use this for
-volumes in a standard MNI152 template space.
+\code{average/mni152.register.dat}, the transform from the scanner RAS
+of the FSL/SPM MNI152 (NLin6) 1 mm template to the MNI305 space
+\code{fsaverage} lives in. Use this for volumes in a standard MNI152
+template space.
 \item \code{"header"}: trusts the volume header and uses \code{--regheader}.
 Correct only when the volume already sits in the target subject's
-own scanner RAS, such as native or conformed volumes.
+own scanner RAS, such as native, conformed or fsaverage-space
+volumes.
 \item A path to a register.dat or LTA file to apply instead.
-}
-MNI152 and MNI305 differ by roughly 2 mm, so \code{"header"} on an MNI152
-volume shifts every region anteriorly and inferiorly.}
+}}
 
 \item{min_vertices}{Minimum total vertex count across hemispheres for a
 label to be classified as cortical by the vertex-count heuristic (see
@@ -133,7 +134,7 @@ Use \code{steps = 1:2} to run projection and split only.}
 
 \item{regheader}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} Use \code{registration}
 instead. \code{TRUE} maps to \code{registration = "header"}, \code{FALSE} to
-\code{registration = "mni152"}.}
+\code{registration = "mni152"}. Supplying both is an error.}
 }
 \value{
 A named list with elements \code{cortical}, \code{subcortical}, and
@@ -203,6 +204,39 @@ left without a listed label take the most common label of their
 neighbours. Everything outside the cortex label becomes the \code{unknown}
 medial wall, which the cortical atlas keeps as grey context geometry
 rather than as a region.
+}
+
+\section{Registration}{
+
+\code{registration} decides how volume coordinates map onto the surface, and
+the wrong choice gives an atlas that looks plausible but sits about 2 mm
+from where it belongs.
+
+The default is \code{"mni152"}. It changed in version 1.9.9.9025; before that
+the volume header was trusted, which omitted the MNI152-to-MNI305
+transform entirely. Relative to \code{"header"}, \code{"mni152"} moves the point
+each \code{fsaverage5} vertex samples by a median of 1.96 mm (1.18-2.60 mm),
+anteriorly and superiorly, and changes the label of roughly 18\% (left)
+to 21\% (right) of vertices. Put the other way round, \code{"header"} on an
+MNI152 volume samples too far posterior and inferior.
+
+Nothing inspects the volume to work out which space it is in, so
+\code{"mni152"} is applied to whatever you pass. Use \code{"header"} for native,
+conformed or fsaverage-space volumes. A warning is issued when the
+volume shares the target subject's conformed voxel grid, which is the
+one case a header can reveal.
+
+\code{mni152.register.dat} targets the FSL/SPM MNI152 (NLin6) 1 mm template.
+Volumes in other MNI152 variants, such as the NLin2009cAsym template
+\code{ggsegJulich} uses, keep a sub-millimetre residual; that is still far
+better than the roughly 2 mm the transform corrects, but it is not
+exact. The transform is registered against \code{fsaverage}, so \code{subject}
+must share fsaverage's conformed geometry, which the \code{fsaverageN}
+subjects do. For any other subject, supply your own register.dat or LTA
+file.
+
+FreeSurfer's own \code{INFO} and \code{WARNING} lines about the registration are
+only visible with \code{verbose = TRUE}.
 }
 
 \examples{

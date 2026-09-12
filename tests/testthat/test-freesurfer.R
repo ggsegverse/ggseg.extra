@@ -144,7 +144,8 @@ testthat::describe("mri_vol2surf", {
       paste(
         "--reg",
         shQuote("mni152.register.dat"),
-        "--srcsubject fsaverage5"
+        "--srcsubject",
+        shQuote("fsaverage5")
       ),
       fixed = TRUE
     )
@@ -169,7 +170,11 @@ testthat::describe("mri_vol2surf", {
       verbose = FALSE
     )
 
-    expect_match(.cap$captured_cmd, "--regheader fsaverage5")
+    expect_match(
+      .cap$captured_cmd,
+      paste("--regheader", shQuote("fsaverage5")),
+      fixed = TRUE
+    )
     expect_no_match(.cap$captured_cmd, "--reg ")
     expect_no_match(.cap$captured_cmd, "--srcsubject")
   })
@@ -189,6 +194,44 @@ testthat::describe("mri_vol2surf", {
         verbose = FALSE
       ),
       "srcsubject"
+    )
+  })
+
+  it("refuses a source subject without a registration", {
+    local_mocked_bindings(
+      check_fs = function(abort = FALSE) invisible(TRUE),
+      run_cmd = function(cmd, verbose = FALSE) invisible(NULL)
+    )
+
+    expect_error(
+      mri_vol2surf(
+        input_file = "input.mgz",
+        output_file = "output.mgz",
+        hemisphere = "lh",
+        srcsubject = "fsaverage5",
+        verbose = FALSE
+      ),
+      "only applies together with"
+    )
+  })
+
+  it("refuses a registration and a header subject together", {
+    local_mocked_bindings(
+      check_fs = function(abort = FALSE) invisible(TRUE),
+      run_cmd = function(cmd, verbose = FALSE) invisible(NULL)
+    )
+
+    expect_error(
+      mri_vol2surf(
+        input_file = "input.mgz",
+        output_file = "output.mgz",
+        hemisphere = "lh",
+        reg = "mni152.register.dat",
+        srcsubject = "fsaverage5",
+        regheader = "fsaverage5",
+        verbose = FALSE
+      ),
+      "cannot both be given"
     )
   })
 })
@@ -235,6 +278,15 @@ testthat::describe("resolve_vol2surf_registration", {
     expect_identical(
       resolve_vol2surf_registration(reg_file, "fsaverage6"),
       list(reg = reg_file, srcsubject = "fsaverage6", regheader = NULL)
+    )
+  })
+
+  it("rejects a directory given as a registration", {
+    reg_dir <- withr::local_tempdir()
+
+    expect_error(
+      resolve_vol2surf_registration(reg_dir, "fsaverage5"),
+      "must be a file, not a directory"
     )
   })
 
@@ -626,5 +678,118 @@ testthat::describe("surf2asc", {
       suppressWarnings(surf2asc(input, output, verbose = FALSE)),
       "Failed to rename"
     )
+  })
+})
+
+testthat::describe("check_mni152_subject", {
+  it("accepts fsaverage without reading any geometry", {
+    local_mocked_bindings(
+      subject_vox2ras = function(...) cli::cli_abort("should not be reached")
+    )
+
+    expect_true(check_mni152_subject("fsaverage"))
+  })
+
+  it("accepts a subject sharing fsaverage's conformed geometry", {
+    local_mocked_bindings(subject_vox2ras = function(...) diag(4))
+
+    expect_true(check_mni152_subject("fsaverage5"))
+  })
+
+  it("aborts for a subject on a different geometry", {
+    local_mocked_bindings(
+      subject_vox2ras = function(subject, ...) {
+        if (identical(subject, "fsaverage")) diag(4) else diag(c(1, 1, 1, 2))
+      }
+    )
+
+    expect_error(
+      check_mni152_subject("bert"),
+      "does not apply to subject"
+    )
+  })
+
+  it("warns when the geometry cannot be read", {
+    local_mocked_bindings(subject_vox2ras = function(...) NULL)
+
+    expect_warning(check_mni152_subject("bert"), "Could not confirm")
+  })
+})
+
+
+testthat::describe("warn_if_subject_space_volume", {
+  it("warns when the volume shares the subject's conformed grid", {
+    local_mocked_bindings(
+      volume_direction_block = function(...) diag(3),
+      subject_vox2ras = function(...) diag(4)
+    )
+
+    expect_warning(
+      warn_if_subject_space_volume("volume.mgz", "fsaverage5"),
+      "conformed voxel grid"
+    )
+  })
+
+  it("stays silent for a volume on its own grid", {
+    local_mocked_bindings(
+      volume_direction_block = function(...) diag(c(1.5, 1.5, 1.5)),
+      subject_vox2ras = function(...) diag(4)
+    )
+
+    result <- expect_no_warning(
+      warn_if_subject_space_volume("volume.nii", "fsaverage5")
+    )
+    expect_false(result)
+  })
+
+  it("stays silent when the geometry cannot be read", {
+    local_mocked_bindings(
+      volume_direction_block = function(...) NULL,
+      subject_vox2ras = function(...) diag(4)
+    )
+
+    result <- expect_no_warning(
+      warn_if_subject_space_volume("volume.nii", "fsaverage5")
+    )
+    expect_false(result)
+  })
+})
+
+
+testthat::describe("validate_registration", {
+  it("checks subject and volume space for mni152", {
+    reg_file <- withr::local_tempfile(fileext = ".dat")
+    file.create(reg_file)
+    checked <- new.env()
+    local_mocked_bindings(
+      mni152_register_path = function() reg_file,
+      check_mni152_subject = function(subject) {
+        checked$subject <- subject
+        invisible(TRUE)
+      },
+      warn_if_subject_space_volume = function(input_volume, subject) {
+        checked$volume <- input_volume
+        invisible(FALSE)
+      }
+    )
+
+    resolved <- validate_registration("mni152", "fsaverage5", "volume.nii")
+
+    expect_identical(checked$subject, "fsaverage5")
+    expect_identical(checked$volume, "volume.nii")
+    expect_identical(resolved$reg, reg_file)
+  })
+
+  it("skips the space checks for other registrations", {
+    local_mocked_bindings(
+      check_mni152_subject = function(...) cli::cli_abort("should not run"),
+      warn_if_subject_space_volume = function(...) {
+        cli::cli_abort("should not run")
+      }
+    )
+
+    resolved <- validate_registration("header", "fsaverage5", "volume.nii")
+
+    expect_identical(resolved$regheader, "fsaverage5")
   })
 })

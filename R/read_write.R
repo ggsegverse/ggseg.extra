@@ -564,6 +564,8 @@ read_neuromaps_volume <- function(
   mkdir(surf_dir)
 
   all_data <- list()
+  subject <- "fsaverage5"
+  reg <- resolve_vol2surf_registration("mni152", subject)
 
   for (hemi_short in c("lh", "rh")) {
     hemi <- hemi_to_long(hemi_short)
@@ -577,9 +579,10 @@ read_neuromaps_volume <- function(
       output_file = output_nii,
       hemisphere = hemi_short,
       projfrac_range = c(0, 1, 0.1),
-      reg = mni152_register_path(),
-      srcsubject = "fsaverage5",
-      opts = paste("--interp trilinear --trgsubject fsaverage5")
+      reg = reg$reg,
+      srcsubject = reg$srcsubject,
+      regheader = reg$regheader,
+      opts = paste("--interp trilinear --trgsubject", shQuote(subject))
     )
 
     if (!file.exists(output_nii)) {
