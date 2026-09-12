@@ -750,7 +750,11 @@ cerebellar_read_data <- function(config, dirs, read_fn) {
     if (config$verbose) {
       cli::cli_alert_success("Loaded cached atlas data")
     }
-    deep_data <- if (file.exists(deep_file)) readRDS(deep_file) else NULL
+    deep_data <- NULL
+    if (file.exists(deep_file)) {
+      check_cache_current(deep_file, cerebellar_rerun_remedy)
+      deep_data <- readRDS(deep_file)
+    }
     return(list(
       components = cached$data[["components.rds"]],
       deep_data = deep_data

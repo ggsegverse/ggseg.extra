@@ -738,6 +738,9 @@ testthat::describe("make_multipolygon", {
     expect_identical(result$filenm, c("region1", "region2"))
   })
 
+  # The fixture is stamped, so the manifest check passes and the y-axis
+  # guard is what fires. No pipeline writes an unstamped contour file any
+  # more, so this is the only way left to reach that guard.
   it("aborts on contours cached before the y-up convention", {
     contourfile <- save_contours_fixture(
       withr::local_tempfile(fileext = ".rda"),
@@ -1339,5 +1342,30 @@ testthat::describe("smoothness scale", {
 
   it("keeps spline at or above its meaningful floor", {
     expect_gte(native_smoothness(0.01, "spline"), 2)
+  })
+})
+
+
+testthat::describe("contour stage cache staleness", {
+  it("aborts when smooth_contours reads contours from another version", {
+    outdir <- withr::local_tempdir("smooth_stale_")
+    save_contours_fixture(file.path(outdir, "contours.rda"))
+    local_mocked_bindings(cache_format_version = function() 9999L)
+
+    expect_error(
+      smooth_contours(outdir, smoothness = 5, step = "", verbose = FALSE),
+      "Rerun the contour extraction"
+    )
+  })
+
+  it("aborts when reduce_vertex reads contours from another version", {
+    outdir <- withr::local_tempdir("reduce_stale_")
+    save_contours_fixture(file.path(outdir, "contours_smoothed.rda"))
+    local_mocked_bindings(cache_format_version = function() 9999L)
+
+    expect_error(
+      reduce_vertex(outdir, tolerance = 0.5, step = "", verbose = FALSE),
+      "Rerun the contour extraction"
+    )
   })
 })

@@ -1724,6 +1724,38 @@ testthat::describe("cerebellar_read_data", {
     expect_true(all(result$deep_data$deep))
   })
 
+  it("aborts when cached deep_data was written by another version", {
+    dirs <- list(base = withr::local_tempdir())
+
+    mock_components <- list(
+      core = data.frame(
+        hemi = "left",
+        region = "I-IV",
+        label = "left_I-IV",
+        stringsAsFactors = FALSE
+      )
+    )
+
+    save_cache_rds(mock_components, file.path(dirs$base, "components.rds"))
+    saveRDS(list(deep = TRUE), file.path(dirs$base, "deep_data.rds"))
+
+    local_mocked_bindings(
+      load_or_run_step = function(...) {
+        list(
+          run = FALSE,
+          data = list("components.rds" = mock_components)
+        )
+      }
+    )
+
+    config <- list(steps = 1L, skip_existing = TRUE, verbose = FALSE)
+
+    expect_error(
+      cerebellar_read_data(config, dirs, read_fn = stop),
+      "deep_data.rds"
+    )
+  })
+
   it("separates deep nuclei from surface data when deep column present", {
     dirs <- list(base = withr::local_tempdir())
 

@@ -318,12 +318,13 @@ read_mask_raster <- function(file) {
 }
 
 
-contour_rerun_remedy <- paste(
-  "Rerun the contour extraction, smoothing and reduction steps;",
-  "cached snapshots and masks are reused."
-)
-
 #' Stop when cached contours predate the y-up coordinate convention
+#'
+#' Redundant against real caches now that the manifest rejects any contour
+#' file another ggseg.extra wrote, and kept deliberately: it asserts the
+#' property the downstream code depends on rather than the provenance of the
+#' file carrying it, so it still catches contours assembled by hand or by a
+#' future path that writes them without the convention.
 #' @noRd
 check_contour_y_axis <- function(contours, contourfile) {
   if (identical(unique(contours$y_axis), "up")) {
