@@ -1,6 +1,0 @@
-#No. Label Name:                            R   G   B   A
-   0  Unknown                                  0   0   0   0
-  10  Left-Thalamus                            0 118  14   0
-  18  Left-Amygdala                          103 255 255   0
-  49  Right-Thalamus                           0 118  14   0
-  54  Right-Amygdala                         103 255 255   0
