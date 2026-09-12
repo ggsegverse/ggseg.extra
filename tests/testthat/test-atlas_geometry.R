@@ -5,7 +5,7 @@ skip_without_mask_io <- function() {
   testthat::skip_if_not_installed("terra")
 }
 
-save_contours_fixture <- function(path, y_axis = "up") {
+save_contours_fixture <- function(path, y_axis = "up", contours = NULL) {
   square <- function(x0) {
     sf::st_polygon(list(matrix(
       c(x0, 0, x0 + 1, 0, x0 + 1, 1, x0, 1, x0, 0),
@@ -13,11 +13,13 @@ save_contours_fixture <- function(path, y_axis = "up") {
       byrow = TRUE
     )))
   }
-  contours <- sf::st_sf(
-    filenm = c("region1", "region1", "region2"),
-    geometry = sf::st_sfc(square(0), square(2), square(4))
-  )
-  contours$y_axis <- y_axis
+  if (is.null(contours)) {
+    contours <- sf::st_sf(
+      filenm = c("region1", "region1", "region2"),
+      geometry = sf::st_sfc(square(0), square(2), square(4))
+    )
+    contours$y_axis <- y_axis
+  }
   save(contours, file = path)
   stamp_cache_files(path)
   path
@@ -63,8 +65,7 @@ testthat::describe("build_contour_sf", {
         )))
       )
     )
-    save(contours, file = contours_file)
-    stamp_cache_files(contours_file)
+    save_contours_fixture(contours_file, contours = contours)
 
     slabs <- data.frame(
       name = c("axial_1", "coronal_1"),
@@ -113,8 +114,7 @@ testthat::describe("build_contour_sf", {
         )))
       )
     )
-    save(contours, file = contours_file)
-    stamp_cache_files(contours_file)
+    save_contours_fixture(contours_file, contours = contours)
 
     slabs <- data.frame(
       name = c("axial_1", "coronal_1"),
@@ -151,8 +151,7 @@ testthat::describe("build_contour_sf", {
         )))
       )
     )
-    save(contours, file = contours_file)
-    stamp_cache_files(contours_file)
+    save_contours_fixture(contours_file, contours = contours)
 
     slabs <- data.frame(
       name = "axial_1",
@@ -194,8 +193,7 @@ testthat::describe("build_contour_sf", {
         )))
       )
     )
-    save(contours, file = contours_file)
-    stamp_cache_files(contours_file)
+    save_contours_fixture(contours_file, contours = contours)
 
     slabs <- data.frame(
       name = "axial_1",
@@ -237,8 +235,7 @@ testthat::describe("build_contour_sf", {
         )))
       )
     )
-    save(contours, file = contours_file)
-    stamp_cache_files(contours_file)
+    save_contours_fixture(contours_file, contours = contours)
 
     slabs <- data.frame(
       name = "axial_1",
@@ -631,8 +628,10 @@ testthat::describe("smooth_contours", {
         )))
       )
     )
-    save(contours, file = file.path(outdir, "contours.rda"))
-    stamp_cache_files(file.path(outdir, "contours.rda"))
+    save_contours_fixture(
+      file.path(outdir, "contours.rda"),
+      contours = contours
+    )
 
     result <- smooth_contours(outdir, smoothness = 5, step = "")
 
@@ -647,8 +646,10 @@ testthat::describe("smooth_contours", {
       filenm = "test",
       geometry = sf::st_sfc(sf::st_polygon())
     )
-    save(contours, file = file.path(outdir, "contours.rda"))
-    stamp_cache_files(file.path(outdir, "contours.rda"))
+    save_contours_fixture(
+      file.path(outdir, "contours.rda"),
+      contours = contours
+    )
 
     expect_warning(
       {
@@ -690,8 +691,10 @@ testthat::describe("reduce_vertex", {
       region = "test",
       geometry = sf::st_sfc(sf::st_polygon(list(coords)))
     )
-    save(contours, file = file.path(outdir, "contours_smoothed.rda"))
-    stamp_cache_files(file.path(outdir, "contours_smoothed.rda"))
+    save_contours_fixture(
+      file.path(outdir, "contours_smoothed.rda"),
+      contours = contours
+    )
 
     result <- reduce_vertex(outdir, tolerance = 0.5, step = "")
 
@@ -710,8 +713,10 @@ testthat::describe("reduce_vertex", {
       filenm = "test",
       geometry = sf::st_sfc(sf::st_polygon())
     )
-    save(contours, file = file.path(outdir, "contours_smoothed.rda"))
-    stamp_cache_files(file.path(outdir, "contours_smoothed.rda"))
+    save_contours_fixture(
+      file.path(outdir, "contours_smoothed.rda"),
+      contours = contours
+    )
 
     expect_warning(
       {
@@ -756,7 +761,7 @@ testthat::describe("make_multipolygon", {
     )
     local_mocked_bindings(cache_format_version = function() 9999L)
 
-    expect_error(make_multipolygon(contourfile), "written by an older")
+    expect_error(make_multipolygon(contourfile), "written by cache format")
   })
 })
 
@@ -775,8 +780,10 @@ testthat::describe("smooth_contours verbose output", {
         )))
       )
     )
-    save(contours, file = file.path(outdir, "contours.rda"))
-    stamp_cache_files(file.path(outdir, "contours.rda"))
+    save_contours_fixture(
+      file.path(outdir, "contours.rda"),
+      contours = contours
+    )
 
     expect_no_message(
       smooth_contours(outdir, smoothness = 5, step = "1/3", verbose = TRUE)
@@ -799,8 +806,10 @@ testthat::describe("reduce_vertex verbose output", {
         )))
       )
     )
-    save(contours, file = file.path(outdir, "contours_smoothed.rda"))
-    stamp_cache_files(file.path(outdir, "contours_smoothed.rda"))
+    save_contours_fixture(
+      file.path(outdir, "contours_smoothed.rda"),
+      contours = contours
+    )
 
     expect_no_message(
       reduce_vertex(outdir, tolerance = 0.5, step = "2/3", verbose = TRUE)

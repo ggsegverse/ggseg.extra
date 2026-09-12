@@ -957,12 +957,8 @@ testthat::describe("run_image_steps (subcort step_map)", {
       smoothness = 3,
       tolerance = 0.5
     )
-    dirs <- list(
-      snapshots = withr::local_tempdir(),
-      processed = withr::local_tempdir(),
-      masks = withr::local_tempdir(),
-      base = withr::local_tempdir()
-    )
+    dirs <- mock_dirs()
+    stamp_cache_dir(dirs$masks)
 
     run_image_steps(config, dirs, subcort_step_map, 9L)
 
@@ -1004,12 +1000,8 @@ testthat::describe("run_image_steps (subcort step_map)", {
       smoothness = 3,
       tolerance = 0.5
     )
-    dirs <- list(
-      snapshots = withr::local_tempdir(),
-      processed = withr::local_tempdir(),
-      masks = withr::local_tempdir(),
-      base = withr::local_tempdir()
-    )
+    dirs <- mock_dirs()
+    stamp_cache_dir(dirs$masks)
 
     run_image_steps(config, dirs, subcort_step_map, 9L)
 
@@ -1017,6 +1009,53 @@ testthat::describe("run_image_steps (subcort step_map)", {
     expect_true(.cap$step6_called)
     expect_false(.cap$step7_called)
     expect_true(.cap$step8_called)
+  })
+
+  it("stamps the processed and mask directories after processing", {
+    local_mocked_bindings(
+      process_and_mask_images = function(...) invisible(NULL),
+      extract_contours = function(...) invisible(NULL),
+      smooth_contours = function(...) invisible(NULL),
+      reduce_vertex = function(...) invisible(NULL)
+    )
+
+    config <- list(
+      steps = 5L:8L,
+      verbose = FALSE,
+      skip_existing = FALSE,
+      smoothness = 3,
+      tolerance = 0.5
+    )
+    dirs <- mock_dirs()
+
+    run_image_steps(config, dirs, subcort_step_map, 9L)
+
+    expect_identical(
+      read_cache_manifest(dirs$masks)[["."]],
+      cache_format_version()
+    )
+    expect_identical(
+      read_cache_manifest(dirs$processed)[["."]],
+      cache_format_version()
+    )
+  })
+
+  it("aborts before extracting contours from masks another version made", {
+    local_mocked_bindings(extract_contours = function(...) invisible(NULL))
+
+    config <- list(
+      steps = 6L,
+      verbose = FALSE,
+      skip_existing = FALSE,
+      smoothness = 3,
+      tolerance = 0.5
+    )
+    dirs <- mock_dirs()
+
+    expect_error(
+      run_image_steps(config, dirs, subcort_step_map, 9L),
+      "Rerun the image-processing step"
+    )
   })
 })
 

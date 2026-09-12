@@ -360,8 +360,11 @@ testthat::describe("cortical_read_data", {
         vertices = I(list(1:5))
       )
     )
-    save_cache_rds(mock_atlas, file.path(tmp_dir, "atlas_3d.rds"))
-    save_cache_rds(mock_components, file.path(tmp_dir, "components.rds"))
+    save_cache_rds(
+      tmp_dir,
+      atlas_3d.rds = mock_atlas,
+      components.rds = mock_components
+    )
 
     result <- cortical_read_data(
       config = list(steps = 1:2, skip_existing = TRUE, verbose = FALSE),
@@ -697,8 +700,11 @@ testthat::describe("cortical_read_data verbose paths", {
         vertices = I(list(1:5))
       )
     )
-    save_cache_rds(mock_atlas, file.path(tmp_dir, "atlas_3d.rds"))
-    save_cache_rds(mock_components, file.path(tmp_dir, "components.rds"))
+    save_cache_rds(
+      tmp_dir,
+      atlas_3d.rds = mock_atlas,
+      components.rds = mock_components
+    )
 
     expect_messages(
       cortical_read_data(

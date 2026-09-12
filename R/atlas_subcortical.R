@@ -516,12 +516,9 @@ subcort_resolve_labels <- function(config, dirs) {
   }
 
   save_cache_rds(
-    colortable,
-    as.character(fs::path(dirs$base, "colortable.rds"))
-  )
-  save_cache_rds(
-    vol_labels,
-    as.character(fs::path(dirs$base, "vol_labels.rds"))
+    dirs$base,
+    colortable.rds = colortable,
+    vol_labels.rds = vol_labels
   )
   if (config$verbose) {
     cli::cli_progress_done()
@@ -594,10 +591,7 @@ subcort_resolve_meshes <- function(config, dirs, colortable) {
   if (config$verbose) {
     cli::cli_progress_done()
   }
-  save_cache_rds(
-    meshes_list,
-    as.character(fs::path(dirs$base, "meshes_list.rds"))
-  )
+  save_cache_rds(dirs$base, meshes_list.rds = meshes_list)
   meshes_list
 }
 
@@ -628,10 +622,7 @@ subcort_resolve_components <- function(config, dirs, colortable, meshes_list) {
   }
 
   components <- subcort_build_components(colortable, meshes_list)
-  save_cache_rds(
-    components,
-    as.character(fs::path(dirs$base, "components.rds"))
-  )
+  save_cache_rds(dirs$base, components.rds = components)
   if (config$verbose) {
     cli::cli_progress_done()
   }
@@ -678,10 +669,10 @@ subcort_resolve_snapshots <- function(config, dirs, colortable, slabs) {
     config$skip_existing
   )
 
-  save_cache_rds(result$slabs, as.character(fs::path(dirs$base, "slabs.rds")))
   save_cache_rds(
-    result$cortex_slices,
-    as.character(fs::path(dirs$base, "cortex_slices.rds"))
+    dirs$base,
+    slabs.rds = result$slabs,
+    cortex_slices.rds = result$cortex_slices
   )
   if (config$verbose) {
     cli::cli_progress_done()

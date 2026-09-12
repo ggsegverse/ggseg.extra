@@ -1,54 +1,32 @@
 testthat::describe("stamp_cache_files", {
   it("records the current format version for each stamped file", {
-    dir <- withr::local_tempdir("cache_")
-    file <- file.path(dir, "components.rds")
-    saveRDS(list(a = 1), file)
-
-    stamp_cache_files(file)
-
-    manifest <- read_cache_manifest(dir)
-    expect_identical(manifest$file, "components.rds")
-    expect_identical(as.integer(manifest$version), cache_format_version())
-  })
-
-  it("records the modification time of each stamped file", {
-    dir <- withr::local_tempdir("cache_")
-    file <- file.path(dir, "step.rds")
-    saveRDS(list(a = 1), file)
-
-    stamp_cache_files(file)
+    file <- local_cache_file(name = "components.rds")
 
     expect_identical(
-      read_cache_manifest(dir)$mtime,
-      as.numeric(file.mtime(file))
+      read_cache_manifest(dirname(file))[["components.rds"]],
+      cache_format_version()
     )
   })
 
   it("keeps stamps for other files in the same directory", {
-    dir <- withr::local_tempdir("cache_")
-    first <- file.path(dir, "first.rds")
-    second <- file.path(dir, "second.rds")
-    saveRDS(1, first)
+    first <- local_cache_file(name = "first.rds")
+    second <- file.path(dirname(first), "second.rds")
     saveRDS(2, second)
 
-    stamp_cache_files(first)
     stamp_cache_files(second)
 
     expect_identical(
-      sort(read_cache_manifest(dir)$file),
+      sort(names(read_cache_manifest(dirname(first)))),
       c("first.rds", "second.rds")
     )
   })
 
   it("replaces rather than duplicates an existing stamp", {
-    dir <- withr::local_tempdir("cache_")
-    file <- file.path(dir, "step.rds")
-    saveRDS(1, file)
+    file <- local_cache_file()
 
     stamp_cache_files(file)
-    stamp_cache_files(file)
 
-    expect_identical(nrow(read_cache_manifest(dir)), 1L)
+    expect_length(read_cache_manifest(dirname(file)), 1L)
   })
 
   it("stamps files across several directories at once", {
@@ -64,15 +42,31 @@ testthat::describe("stamp_cache_files", {
   })
 
   it("leaves no staging file behind", {
-    dir <- withr::local_tempdir("cache_")
-    file <- file.path(dir, "step.rds")
-    saveRDS(1, file)
-
-    stamp_cache_files(file)
+    file <- local_cache_file()
 
     expect_identical(
-      sort(list.files(dir)),
+      sort(list.files(dirname(file))),
       c("cache_manifest.rds", "step.rds")
+    )
+  })
+})
+
+
+testthat::describe("stamp_cache_dir", {
+  it("marks a stamped directory current", {
+    dir <- withr::local_tempdir("cache_")
+
+    stamp_cache_dir(dir)
+
+    expect_identical(check_cache_dir(dir, "Rerun the image step"), dir)
+  })
+
+  it("aborts for a directory no ggseg.extra stamped", {
+    dir <- withr::local_tempdir("cache_")
+
+    expect_error(
+      check_cache_dir(dir, "Rerun the image-processing step"),
+      "Rerun the image-processing step"
     )
   })
 })
@@ -82,30 +76,21 @@ testthat::describe("read_cache_manifest", {
   it("returns an empty manifest when none exists", {
     dir <- withr::local_tempdir("cache_")
 
-    expect_identical(nrow(read_cache_manifest(dir)), 0L)
+    expect_identical(read_cache_manifest(dir), integer())
   })
 
-  it("ignores a manifest that is not a manifest table", {
+  it("ignores a manifest that is not a name-to-version vector", {
     dir <- withr::local_tempdir("cache_")
     saveRDS(list("not a manifest"), cache_manifest_file(dir))
 
-    expect_identical(nrow(read_cache_manifest(dir)), 0L)
-  })
-
-  it("ignores a manifest missing the expected columns", {
-    dir <- withr::local_tempdir("cache_")
-    saveRDS(data.frame(file = "step.rds"), cache_manifest_file(dir))
-
-    expect_identical(nrow(read_cache_manifest(dir)), 0L)
+    expect_identical(read_cache_manifest(dir), integer())
   })
 
   it("ignores a truncated manifest, marking everything stale", {
-    dir <- withr::local_tempdir("cache_")
-    file <- file.path(dir, "step.rds")
-    save_cache_rds(1, file)
-    writeLines("truncated", cache_manifest_file(dir))
+    file <- local_cache_file()
+    writeLines("truncated", cache_manifest_file(dirname(file)))
 
-    expect_identical(nrow(read_cache_manifest(dir)), 0L)
+    expect_identical(read_cache_manifest(dirname(file)), integer())
     expect_identical(stale_cache_files(file), file)
   })
 })
@@ -117,7 +102,7 @@ testthat::describe("write_cache_manifest", {
     local_mocked_bindings(file.rename = function(...) FALSE, .package = "base")
 
     expect_warning(
-      write_cache_manifest(dir, empty_cache_manifest()),
+      write_cache_manifest(dir, c(step.rds = cache_format_version())),
       "cache manifest"
     )
   })
@@ -125,51 +110,91 @@ testthat::describe("write_cache_manifest", {
 
 
 testthat::describe("save_cache_rds", {
-  it("saves the object and stamps it in one step", {
+  it("writes each object to its named file and stamps it", {
     dir <- withr::local_tempdir("cache_")
-    file <- file.path(dir, "step.rds")
 
-    save_cache_rds(list(a = 1), file)
+    files <- save_cache_rds(dir, first.rds = list(a = 1), second.rds = 2)
 
-    expect_identical(readRDS(file), list(a = 1))
-    expect_identical(stale_cache_files(file), character())
+    expect_identical(readRDS(files[1]), list(a = 1))
+    expect_identical(stale_cache_files(files), character())
+  })
+
+  it("writes the manifest once for a batch of files", {
+    dir <- withr::local_tempdir("cache_")
+    writes <- new.env()
+    writes$n <- 0L
+    local_mocked_bindings(
+      write_cache_manifest = function(dir, manifest) {
+        writes$n <- writes$n + 1L
+        invisible(NULL)
+      }
+    )
+
+    save_cache_rds(dir, first.rds = 1, second.rds = 2)
+
+    expect_identical(writes$n, 1L)
+  })
+})
+
+
+testthat::describe("save_cache_rda", {
+  it("round-trips contours through a stamped cache", {
+    dir <- withr::local_tempdir("cache_")
+    contours <- mock_sf_polygon()
+    loaded <- new.env()
+
+    file <- save_cache_rda(contours, dir, "contours.rda")
+    load_cached_rda(file, "Rerun the contour steps", envir = loaded)
+
+    expect_s3_class(loaded$contours, "sf")
+  })
+})
+
+
+testthat::describe("load_cached_rda", {
+  it("rejects a stale cache before deserializing it", {
+    dir <- withr::local_tempdir("cache_")
+    file <- save_cache_rda(mock_sf_polygon(), dir, "contours.rda")
+    local_mocked_bindings(cache_format_version = function() 9999L)
+
+    expect_error(
+      load_cached_rda(file, "Rerun the contour steps", envir = new.env()),
+      "Rerun the contour steps"
+    )
+  })
+
+  it("still reports a missing file as missing", {
+    dir <- withr::local_tempdir("cache_")
+
+    expect_error(
+      load_cached_rda(
+        file.path(dir, "absent.rda"),
+        "Rerun the contour steps",
+        envir = new.env()
+      ),
+      "not found"
+    )
   })
 })
 
 
 testthat::describe("stale_cache_files", {
   it("reports unstamped files as stale", {
-    dir <- withr::local_tempdir("cache_")
-    file <- file.path(dir, "step.rds")
-    saveRDS(1, file)
+    file <- local_cache_file(stamped = FALSE)
 
     expect_identical(stale_cache_files(file), file)
   })
 
   it("reports files stamped by another format version as stale", {
-    dir <- withr::local_tempdir("cache_")
-    file <- file.path(dir, "step.rds")
-    save_cache_rds(1, file)
+    file <- local_cache_file()
     local_mocked_bindings(cache_format_version = function() 9999L)
 
     expect_identical(stale_cache_files(file), file)
   })
 
-  it("reports a file rewritten after stamping as stale", {
-    dir <- withr::local_tempdir("cache_")
-    file <- file.path(dir, "step.rds")
-    save_cache_rds(1, file)
-
-    Sys.setFileTime(file, Sys.time() + 5)
-
-    expect_identical(stale_cache_files(file), file)
-  })
-
   it("returns only the stale members of a mixed set", {
-    dir <- withr::local_tempdir("cache_")
-    fresh <- file.path(dir, "fresh.rds")
-    old <- file.path(dir, "old.rds")
-    save_cache_rds(1, fresh)
+    fresh <- local_cache_file(name = "fresh.rds")
+    old <- file.path(dirname(fresh), "old.rds")
     saveRDS(2, old)
 
     expect_identical(stale_cache_files(c(fresh, old)), old)
@@ -177,83 +202,36 @@ testthat::describe("stale_cache_files", {
 })
 
 
-testthat::describe("stale_cache_origin", {
-  it("names an older ggseg.extra for unstamped files", {
-    dir <- withr::local_tempdir("cache_")
-    file <- file.path(dir, "step.rds")
-    saveRDS(1, file)
-
-    expect_identical(stale_cache_origin(file), "an older ggseg.extra")
-  })
-
-  it("names a newer ggseg.extra for stamps ahead of this version", {
-    dir <- withr::local_tempdir("cache_")
-    file <- file.path(dir, "step.rds")
-    save_cache_rds(1, file)
-    local_mocked_bindings(cache_format_version = function() 0L)
-
-    expect_identical(stale_cache_origin(file), "a newer ggseg.extra")
-  })
-
-  it("stays vague when the stale files disagree", {
-    dir <- withr::local_tempdir("cache_")
-    ahead <- file.path(dir, "ahead.rds")
-    unstamped <- file.path(dir, "unstamped.rds")
-    save_cache_rds(1, ahead)
-    saveRDS(2, unstamped)
-    local_mocked_bindings(cache_format_version = function() 0L)
-
-    expect_identical(
-      stale_cache_origin(c(ahead, unstamped)),
-      "a different version of ggseg.extra"
-    )
-  })
-})
-
-
 testthat::describe("check_cache_current", {
   it("passes stamped files through unchanged", {
-    dir <- withr::local_tempdir("cache_")
-    file <- file.path(dir, "step.rds")
-    save_cache_rds(1, file)
+    file <- local_cache_file()
 
     expect_identical(check_cache_current(file, "Rerun step 1"), file)
   })
 
-  it("aborts with the given remedy for a stale file", {
-    dir <- withr::local_tempdir("cache_")
-    file <- file.path(dir, "step.rds")
-    saveRDS(1, file)
-
-    expect_error(
-      check_cache_current(file, "Rerun the contour extraction steps"),
-      "Rerun the contour extraction steps"
-    )
-  })
-
-  it("says the cache is newer when it was written ahead of this version", {
-    dir <- withr::local_tempdir("cache_")
-    file <- file.path(dir, "step.rds")
-    save_cache_rds(1, file)
-    local_mocked_bindings(cache_format_version = function() 0L)
+  it("reports an unstamped cache as having no format version", {
+    file <- local_cache_file(stamped = FALSE)
 
     expect_error(
       check_cache_current(file, "Rerun step 1"),
-      "a newer ggseg.extra"
+      "written by cache format none"
+    )
+  })
+
+  it("names both the found and the expected format version", {
+    file <- local_cache_file()
+    local_mocked_bindings(cache_format_version = function() 9999L)
+
+    expect_error(
+      check_cache_current(file, "Rerun step 1"),
+      "written by cache format 1"
     )
   })
 })
 
 
-testthat::describe("abort_stale_step_cache", {
-  it("names the step to rerun", {
-    expect_error(
-      abort_stale_step_cache(
-        "atlas_data.rds",
-        1L,
-        "Step 1 (Project to surface)"
-      ),
-      "Include step 1"
-    )
+testthat::describe("step_rerun_remedy", {
+  it("names the step to include", {
+    expect_match(step_rerun_remedy(3L), "Include step 3")
   })
 })

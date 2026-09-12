@@ -6,14 +6,13 @@
 #' intermediates wrong rather than merely old, so a rebuilt atlas cannot
 #' silently reuse output from the pipeline the change fixed.
 #'
-#' What this covers: the serialized step caches written by
-#' `save_cache_rds()` and the contour `.rda` files. What it does not cover:
-#' the snapshot PNGs, processed images and masks, and the intermediate LUT
-#' and volume the wholebrain pipeline hands to the subcortical one. Those are
-#' still reused on file existence alone, so a fix to snapshot rendering or
-#' masking still needs its cache purged by hand. The image directories are
-#' scanned with `list.files()`, which would read a manifest sidecar as a
-#' region or image.
+#' Stamped, and so checked before reuse: the `.rds` step caches, the contour
+#' `.rda` files, and the processed-image and mask directories. Not stamped,
+#' and so still reused whenever the file exists: the snapshot PNGs, the
+#' subcortical mesh directory (`dirs$meshes`), and the lookup table and
+#' volume the wholebrain pipeline hands to the subcortical one. This is the
+#' canonical list; `NEWS.md` and `.github/copilot-instructions.md` point
+#' here rather than restating it.
 #'
 #' @return Integer format version.
 #' @noRd
@@ -23,49 +22,45 @@ cache_format_version <- function() {
 
 cache_manifest_name <- "cache_manifest.rds"
 
+cache_dir_entry <- "."
+
 contour_rerun_remedy <- paste(
   "Rerun the contour extraction, smoothing and reduction steps;",
   "cached snapshots and masks are reused."
 )
 
-cerebellar_rerun_remedy <-
-  "Include step 1 in the steps argument to reread the parcellation."
+image_rerun_remedy <- paste(
+  "Rerun the image-processing step to rebuild the masks;",
+  "the snapshots they are made from are reused."
+)
+
+#' @noRd
+step_rerun_remedy <- function(step_num) {
+  cli::format_inline(
+    "Include step {step_num} in the steps argument to rebuild it; ",
+    "steps whose cache is current are still reused."
+  )
+}
 
 #' @noRd
 cache_manifest_file <- function(dir) {
   as.character(fs::path(dir, cache_manifest_name))
 }
 
-#' @noRd
-empty_cache_manifest <- function() {
-  data.frame(
-    file = character(),
-    version = integer(),
-    mtime = numeric(),
-    stringsAsFactors = FALSE
-  )
-}
-
-#' Read the cache manifest of a step directory
+#' Read a directory's manifest of cache name to format version
 #'
-#' A manifest that is missing, unreadable or malformed reads as empty, which
-#' marks every file in the directory stale. That is the safe direction: the
-#' pipeline reruns work rather than trusting output it cannot vouch for.
-#'
-#' @param dir Directory holding cached intermediates.
-#' @return Data frame with `file`, `version` and `mtime` columns.
+#' A missing, unreadable or malformed manifest reads as empty, which marks
+#' that directory's caches stale: the pipeline redoes the work rather than
+#' trusting output it cannot vouch for.
 #' @noRd
 read_cache_manifest <- function(dir) {
   manifest_file <- cache_manifest_file(dir)
   if (!file.exists(manifest_file)) {
-    return(empty_cache_manifest())
+    return(integer())
   }
   manifest <- tryCatch(readRDS(manifest_file), error = function(e) NULL)
-  if (
-    !is.data.frame(manifest) ||
-      !all(c("file", "version", "mtime") %in% names(manifest))
-  ) {
-    return(empty_cache_manifest())
+  if (!is.integer(manifest) || is.null(names(manifest))) {
+    return(integer())
   }
   manifest
 }
@@ -93,132 +88,138 @@ write_cache_manifest <- function(dir, manifest) {
 #' The stamp lives in a sidecar manifest rather than on the objects
 #' themselves: attributes do not survive the dplyr verbs the pipelines apply
 #' to loaded data, and the same manifest covers `.rds` and `.rda` caches.
-#' Each entry records the file's modification time as well as the format
-#' version, so a stamped name cannot vouch for content written after it.
 #'
-#' @param files Character vector of cache file paths just written.
-#' @return The files, invisibly.
+#' Call this from the main thread only. It is a read-modify-write on state
+#' shared by every cache in the directory, and the atomic rename protects
+#' against a torn manifest, not against two workers each dropping the
+#' other's rows.
 #' @noRd
 stamp_cache_files <- function(files) {
   dirs <- dirname(files)
   for (dir in unique(dirs)) {
-    stamped <- files[dirs == dir]
     manifest <- read_cache_manifest(dir)
-    manifest <- manifest[!manifest$file %in% basename(stamped), , drop = FALSE]
-    manifest <- rbind(
-      manifest,
-      data.frame(
-        file = basename(stamped),
-        version = cache_format_version(),
-        mtime = as.numeric(file.mtime(stamped)),
-        stringsAsFactors = FALSE
-      )
-    )
+    manifest[basename(files[dirs == dir])] <- cache_format_version()
     write_cache_manifest(dir, manifest)
   }
   invisible(files)
 }
 
-#' Save a pipeline intermediate and stamp its format version
+#' Stamp a directory whose contents are produced and reused as one unit
 #' @noRd
-save_cache_rds <- function(object, file) {
-  saveRDS(object, file)
+stamp_cache_dir <- function(dir) {
+  manifest <- read_cache_manifest(dir)
+  manifest[cache_dir_entry] <- cache_format_version()
+  write_cache_manifest(dir, manifest)
+  invisible(dir)
+}
+
+#' Save pipeline intermediates into a step directory and stamp them
+#'
+#' @param dir Step directory to write into.
+#' @param ... Objects to save, each named by the file to write it to. Pass
+#'   every file a step writes in one call, so the manifest is written once.
+#' @return The files written, invisibly.
+#' @noRd
+save_cache_rds <- function(dir, ...) {
+  objects <- list(...)
+  files <- as.character(fs::path(dir, names(objects)))
+  for (i in seq_along(objects)) {
+    saveRDS(objects[[i]], files[[i]])
+  }
+  stamp_cache_files(files)
+  invisible(files)
+}
+
+#' Save contours as an `.rda` cache and stamp them
+#'
+#' The object is stored under the name `contours`, which is what
+#' `load_cached_rda()` and the pipeline's loaders expect to find.
+#' @noRd
+save_cache_rda <- function(contours, dir, name) {
+  file <- as.character(fs::path(dir, name))
+  save(contours, file = file)
   stamp_cache_files(file)
   invisible(file)
 }
 
-#' Format version a cache file was stamped with
-#'
-#' @return The recorded version, or `NA_integer_` when the file has no entry
-#'   or has changed since it was stamped.
+#' Load an `.rda` cache, rejecting a stale one before deserializing it
+#' @noRd
+load_cached_rda <- function(file, remedy, envir = parent.frame()) {
+  if (file.exists(file)) {
+    check_cache_current(file, remedy)
+  }
+  load_rda(file, envir = envir)
+}
+
 #' @noRd
 cache_file_version <- function(file, manifest = NULL) {
   if (is.null(manifest)) {
     manifest <- read_cache_manifest(dirname(file))
   }
-  entry <- manifest[manifest$file == basename(file), , drop = FALSE]
-  if (nrow(entry) != 1L) {
-    return(NA_integer_)
-  }
-  if (!identical(entry$mtime, as.numeric(file.mtime(file)))) {
-    return(NA_integer_)
-  }
-  as.integer(entry$version)
+  version <- manifest[basename(file)]
+  if (is.na(version)) NA_integer_ else unname(version)
 }
 
-#' Cache files not written by the current cache format version
-#'
-#' @param files Character vector of cache file paths.
-#' @return The subset of `files` missing a stamp, carrying a different
-#'   format version, or changed since they were stamped.
+#' Format version each file was stamped with, reading each manifest once
 #' @noRd
-stale_cache_files <- function(files) {
+cache_file_versions <- function(files) {
   dirs <- dirname(files)
-  is_stale <- logical(length(files))
+  versions <- rep(NA_integer_, length(files))
   for (dir in unique(dirs)) {
     in_dir <- dirs == dir
     manifest <- read_cache_manifest(dir)
-    is_stale[in_dir] <- vapply(
+    versions[in_dir] <- vapply(
       files[in_dir],
-      function(file) {
-        !identical(cache_file_version(file, manifest), cache_format_version())
-      },
-      logical(1),
+      cache_file_version,
+      integer(1),
+      manifest = manifest,
       USE.NAMES = FALSE
     )
   }
-  files[is_stale]
+  versions
 }
 
-#' Name the ggseg.extra that wrote a set of stale caches
-#'
-#' Stamps from a newer ggseg.extra are rejected just as older ones are, so
-#' the message says which it was rather than assuming a downgrade is an
-#' upgrade.
 #' @noRd
-stale_cache_origin <- function(files) {
-  versions <- vapply(files, cache_file_version, integer(1), USE.NAMES = FALSE)
-  known <- versions[!is.na(versions)]
-  if (
-    length(known) == length(versions) && all(known > cache_format_version())
-  ) {
-    return("a newer ggseg.extra")
-  }
-  if (all(is.na(versions)) || all(known < cache_format_version())) {
-    return("an older ggseg.extra")
-  }
-  "a different version of ggseg.extra"
+is_stale_version <- function(versions) {
+  is.na(versions) | versions != cache_format_version()
 }
 
-#' Stop when cached files were written by another ggseg.extra
+#' @noRd
+stale_cache_files <- function(files) {
+  files[is_stale_version(cache_file_versions(files))]
+}
+
+#' Stop when caches were written by a different cache format version
 #'
 #' @param files Cache files about to be reused.
-#' @param remedy Instruction telling the user which step to rerun.
+#' @param remedy Instruction telling the user how to rebuild them.
 #' @return The files, invisibly, when all are current.
 #' @noRd
 check_cache_current <- function(files, remedy) {
-  stale <- stale_cache_files(files)
-  if (length(stale) == 0L) {
+  versions <- cache_file_versions(files)
+  stale <- is_stale_version(versions)
+  if (!any(stale)) {
     return(invisible(files))
   }
-  origin <- stale_cache_origin(stale) # nolint: object_usage_linter.
-  cli::cli_abort(c(
-    "Cached {.path {stale}} {?was/were} written by {origin}.",
-    "i" = "{cli::qty(length(stale))}Reusing {?it/them} would rebuild the
-      atlas that pipeline made.",
-    "i" = remedy
-  ))
+  abort_stale_cache(files[stale], versions[stale], remedy)
 }
 
 #' @noRd
-abort_stale_step_cache <- function(files, step_num, step_name) {
-  origin <- stale_cache_origin(files) # nolint: object_usage_linter.
-  # fmt: skip
+check_cache_dir <- function(dir, remedy) {
+  version <- cache_file_version(as.character(fs::path(dir, cache_dir_entry)))
+  if (!is_stale_version(version)) {
+    return(invisible(dir))
+  }
+  abort_stale_cache(dir, version, remedy)
+}
+
+#' @noRd
+abort_stale_cache <- function(paths, versions, remedy) {
+  # nolint next: object_usage_linter.
+  found <- unique(ifelse(is.na(versions), "none", as.character(versions)))
   cli::cli_abort(c(
-    "{step_name} has cached output from {origin}.",
-    "i" = "Stale: {.path {files}}",
-    "i" = "{cli::qty(length(files))}Include step {step_num} in the steps
-      argument to rebuild {?it/them}; steps whose cache is current are
-      still reused."
+    "Cached {.path {paths}} {?was/were} written by cache format {found}.",
+    "i" = "This ggseg.extra writes cache format {cache_format_version()}.",
+    "i" = remedy
   ))
 }

@@ -5,13 +5,12 @@
   Rebuilding an atlas after a pipeline fix no longer silently reuses output
   the old pipeline made: a cache written by an older ggseg.extra is
   recomputed when its step is among the requested `steps`, and stops the
-  pipeline with the step to rerun when it is not. This covers the `.rds` step
-  caches of the cortical, subcortical, wholebrain, tract and cerebellar
-  pipelines and the contour `.rda` files. It does not cover the snapshot
-  images, processed images and masks, or the intermediate lookup table and
-  volume the wholebrain pipeline passes to the subcortical one: those are
-  still reused whenever the file exists, so a fix to snapshot rendering or
-  masking still needs its cache cleared by hand.
+  pipeline with the step to rerun when it is not. Stamped: the step caches,
+  the contour files, and the processed-image and mask directories. Still
+  reused whenever the file exists: the snapshot images, the subcortical mesh
+  directory, and the lookup table and volume the wholebrain pipeline passes
+  to the subcortical one, so a fix to any of those still needs its cache
+  cleared by hand.
 
 # ggseg.extra 1.9.9.9023
 

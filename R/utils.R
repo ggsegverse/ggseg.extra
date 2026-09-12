@@ -268,17 +268,18 @@ load_or_run_step <- function(
   files_exist <- all(file.exists(files))
   step_requested <- step_num %in% steps
 
-  if (files_exist && (skip_existing || !step_requested)) {
-    stale <- stale_cache_files(files)
-    if (length(stale) > 0L) {
-      if (!step_requested) {
-        abort_stale_step_cache(stale, step_num, step_name)
-      }
-      cli::cli_alert_info(
-        "{step_name}: cached output predates this ggseg.extra; recomputing."
-      )
-      return(list(run = TRUE, data = NULL))
-    }
+  reuses_cache <- files_exist && (skip_existing || !step_requested)
+  stale <- if (reuses_cache) stale_cache_files(files) else character()
+
+  if (length(stale) > 0L && !step_requested) {
+    check_cache_current(stale, step_rerun_remedy(step_num))
+  }
+
+  if (length(stale) > 0L) {
+    cli::cli_alert_info(
+      "{step_name}: cached output predates this ggseg.extra; recomputing."
+    )
+    return(list(run = TRUE, data = NULL))
   }
 
   if (files_exist && skip_existing) {

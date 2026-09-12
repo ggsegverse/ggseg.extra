@@ -265,7 +265,7 @@ extract_contours <- function(
     cli::cli_progress_step("{step} Extracting contours")
   }
 
-  regions <- list.files(input_dir, full.names = TRUE)
+  regions <- list.files(input_dir, full.names = TRUE, pattern = "\\.png$")
   region_names <- file_path_sans_ext(basename(regions))
 
   max_val <- probe_raster_max(regions)
@@ -281,9 +281,7 @@ extract_contours <- function(
   contours <- combine_region_contours(contourobjs)
   contours$y_axis <- "up"
 
-  contour_file <- as.character(fs::path(output_dir, "contours.rda"))
-  save(contours, file = contour_file)
-  stamp_cache_files(contour_file)
+  save_cache_rda(contours, output_dir, "contours.rda")
 
   if (verbose) {
     cli::cli_progress_done()
@@ -320,11 +318,8 @@ read_mask_raster <- function(file) {
 
 #' Stop when cached contours predate the y-up coordinate convention
 #'
-#' Redundant against real caches now that the manifest rejects any contour
-#' file another ggseg.extra wrote, and kept deliberately: it asserts the
-#' property the downstream code depends on rather than the provenance of the
-#' file carrying it, so it still catches contours assembled by hand or by a
-#' future path that writes them without the convention.
+#' Kept alongside the manifest check: this asserts the property the
+#' downstream code depends on, not the provenance of the file carrying it.
 #' @noRd
 check_contour_y_axis <- function(contours, contourfile) {
   if (identical(unique(contours$y_axis), "up")) {
@@ -426,18 +421,17 @@ smooth_contours <- function(
   step = "",
   verbose = get_verbose() # nolint: object_usage_linter
 ) {
-  contour_file <- as.character(fs::path(dir, "contours.rda"))
-  load_rda(contour_file)
-  check_cache_current(contour_file, contour_rerun_remedy)
+  load_cached_rda(
+    as.character(fs::path(dir, "contours.rda")),
+    contour_rerun_remedy
+  )
 
   contours <- filter_valid_geometries(contours)
   if (nrow(contours) == 0) {
     cli::cli_warn("No valid contours found after extraction")
   }
 
-  smoothed_file <- as.character(fs::path(dir, "contours_smoothed.rda"))
-  save(contours, file = smoothed_file)
-  stamp_cache_files(smoothed_file)
+  save_cache_rda(contours, dir, "contours_smoothed.rda")
   invisible(contours)
 }
 
@@ -456,17 +450,16 @@ reduce_vertex <- function(
   step = "",
   verbose = get_verbose() # nolint: object_usage_linter
 ) {
-  smoothed_file <- as.character(fs::path(dir, "contours_smoothed.rda"))
-  load_rda(smoothed_file)
-  check_cache_current(smoothed_file, contour_rerun_remedy)
+  load_cached_rda(
+    as.character(fs::path(dir, "contours_smoothed.rda")),
+    contour_rerun_remedy
+  )
 
   contours <- filter_valid_geometries(contours)
   if (nrow(contours) == 0) {
     cli::cli_warn("No valid contours to simplify")
   }
-  reduced_file <- as.character(fs::path(dir, "contours_reduced.rda"))
-  save(contours, file = reduced_file)
-  stamp_cache_files(reduced_file)
+  save_cache_rda(contours, dir, "contours_reduced.rda")
   invisible(contours)
 }
 
@@ -798,8 +791,7 @@ arrange_contour_sf <- function(conts) {
 #' @importFrom dplyr group_by summarise ungroup
 #' @importFrom sf st_combine st_coordinates st_geometry
 make_multipolygon <- function(contourfile) {
-  load_rda(contourfile)
-  check_cache_current(contourfile, contour_rerun_remedy)
+  load_cached_rda(contourfile, contour_rerun_remedy)
   check_contour_y_axis(contours, contourfile)
 
   contours <- contours |>

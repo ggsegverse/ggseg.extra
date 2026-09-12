@@ -381,3 +381,19 @@ local_fake_fsaverage <- function(
   )
   tmp_dir
 }
+
+
+local_cache_file <- function(
+  content = 1,
+  name = "step.rds",
+  stamped = TRUE,
+  env = parent.frame()
+) {
+  dir <- withr::local_tempdir("cache_", .local_envir = env)
+  file <- file.path(dir, name)
+  saveRDS(content, file)
+  if (stamped) {
+    stamp_cache_files(file)
+  }
+  file
+}

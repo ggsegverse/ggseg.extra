@@ -110,7 +110,9 @@ Organise NEWS by user-facing and developer facing changes, and headings for mino
 
 - Pipeline intermediates are stamped with `cache_format_version()`
   (`R/cache_version.R`) in a `cache_manifest.rds` sidecar, and a cache
-  stamped with a different version is recomputed or rejected.
+  stamped with a different version is recomputed or rejected. That
+  function's documentation is the canonical list of what is and is not
+  stamped.
 - When a change makes existing intermediates **wrong** rather than merely
   old — a fix to surface projection, label classification, contour
   extraction or anything else whose cached output would otherwise be reused
