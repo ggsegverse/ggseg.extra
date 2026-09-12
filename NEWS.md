@@ -1,4 +1,4 @@
-# ggseg.extra 1.9.9.9021
+# ggseg.extra 1.9.9.9023
 
 - Subcortical and tract atlases built with terra 1.9-46 came out upside down
   in their 2D views: coronal and sagittal slices had the brain stem pointing
@@ -15,6 +15,28 @@
   drawing the atlas upside down; rerun the contour extraction steps to
   rebuild them. Snapshots and masks can be reused, including masks that carry
   an RGB colour profile on grey pixels.
+
+# ggseg.extra 1.9.9.9022
+
+- `create_wholebrain_from_volume()` no longer leaves white holes in the
+  cortical atlas. Voxel ids missing from the lookup table, such as cerebral
+  white matter, were projected onto the surface, and the vertices they won
+  were then dropped without a region. The volume is now filtered to the
+  lookup table before projection, as documented, and cortex vertices left
+  without a listed label take the most common label of their neighbours
+  wherever a labelled neighbour can be reached.
+  Medial-wall vertices outside FreeSurfer's cortex label no longer keep
+  whatever structure the projection hit there.
+
+- Cortical atlases from every `create_cortical_from_*()` function and from
+  `create_wholebrain_from_volume()` keep the `unknown` medial wall as grey
+  context, the way `ggseg.formats::dk()` does: its outline is drawn behind
+  the parcels, but it is no longer a region in `core`, the palette, or the
+  3D vertices. Whole-brain atlases whose lookup table has a `type` column
+  now get this medial wall too; it used to be dropped, leaving it white.
+  Parcellations that name their medial wall (`FreeSurfer_Defined_Medial_Wall`,
+  `medialwall`, `???`) are treated the same way, while parcels such as
+  `medialorbitofrontal` stay regions.
 
 # ggseg.extra 1.9.9.9020
 

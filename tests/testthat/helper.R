@@ -333,3 +333,51 @@ mock_subcortical_cii <- function(subcort = c(0L, 101L, 102L, 101L)) {
     )
   )
 }
+
+
+mock_context_sf <- function(labels, view = "lateral") {
+  do.call(rbind, lapply(labels, mock_sf_polygon, view = view))
+}
+
+expect_unknown_is_context <- function(atlas, unknown_labels) {
+  testthat::expect_true(all(unknown_labels %in% atlas$data$geom$label))
+  testthat::expect_false(any(unknown_labels %in% atlas$core$label))
+  testthat::expect_false(any(unknown_labels %in% names(atlas$palette)))
+  testthat::expect_false(any(unknown_labels %in% atlas$data$vertices$label))
+}
+
+local_fake_fsaverage <- function(
+  n_vertices,
+  faces,
+  cortex,
+  env = parent.frame()
+) {
+  tmp_dir <- withr::local_tempdir(.local_envir = env)
+  subj_dir <- file.path(tmp_dir, "fsaverage5")
+  dir.create(file.path(subj_dir, "surf"), recursive = TRUE)
+  dir.create(file.path(subj_dir, "label"), recursive = TRUE)
+  for (hemi in c("lh", "rh")) {
+    writeLines(
+      "placeholder",
+      file.path(subj_dir, "surf", paste0(hemi, ".white"))
+    )
+    file.create(file.path(subj_dir, "label", paste0(hemi, ".cortex.label")))
+  }
+  testthat::local_mocked_bindings(
+    fs_subj_dir = function() tmp_dir,
+    .package = "freesurfer",
+    .env = env
+  )
+  testthat::local_mocked_bindings(
+    read.fs.surface = function(f) {
+      list(vertices = matrix(0, nrow = n_vertices, ncol = 3), faces = faces)
+    },
+    .package = "freesurferformats",
+    .env = env
+  )
+  testthat::local_mocked_bindings(
+    read_label_vertices = function(...) cortex,
+    .env = env
+  )
+  tmp_dir
+}
