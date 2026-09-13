@@ -433,6 +433,20 @@ local_mock_mri_vol2surf <- function(overlay = c(1L, 2L), env = parent.frame()) {
   cap
 }
 
+# Stand in for FreeSurfer's MNI152 transform. Tests that mock the projection
+# still resolve the registration first, so without this they need a real
+# FreeSurfer installation.
+local_mock_mni152_path <- function(env = parent.frame()) {
+  reg_file <- withr::local_tempfile(fileext = ".dat", .local_envir = env)
+  file.create(reg_file)
+  testthat::local_mocked_bindings(
+    mni152_register_path = function() reg_file,
+    .env = env
+  )
+  reg_file
+}
+
+
 # The mri_vol2surf flags a registration specification resolves to.
 reg_args <- function(registration, subject = "fsaverage5") {
   resolve_vol2surf_registration(registration, subject)

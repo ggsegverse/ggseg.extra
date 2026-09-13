@@ -672,6 +672,7 @@ testthat::describe("read_neuromaps_volume", {
   })
 
   it("projects volume to surface and returns atlas data", {
+    local_mock_mni152_path()
     skip_if_not_installed("RNifti")
 
     output_dir <- withr::local_tempdir()
@@ -701,6 +702,7 @@ testthat::describe("read_neuromaps_volume", {
   })
 
   it("auto-assigns colours to regions without colour", {
+    local_mock_mni152_path()
     skip_if_not_installed("RNifti")
 
     output_dir <- withr::local_tempdir()
@@ -724,6 +726,7 @@ testthat::describe("read_neuromaps_volume", {
   })
 
   it("handles continuous values with binning", {
+    local_mock_mni152_path()
     skip_if_not_installed("RNifti")
 
     output_dir <- withr::local_tempdir()
@@ -753,6 +756,7 @@ testthat::describe("read_neuromaps_volume", {
   })
 
   it("errors when mri_vol2surf fails to produce output", {
+    local_mock_mni152_path()
     skip_if_not_installed("RNifti")
 
     output_dir <- withr::local_tempdir()
@@ -770,6 +774,7 @@ testthat::describe("read_neuromaps_volume", {
   })
 
   it("includes medial wall as unknown region for parcellation data", {
+    local_mock_mni152_path()
     skip_if_not_installed("RNifti")
 
     output_dir <- withr::local_tempdir()
@@ -920,6 +925,7 @@ testthat::describe("parse_continuous_values", {
 
 testthat::describe("read_neuromaps_volume vertex count mismatch", {
   it("aborts when projected surface has wrong vertex count", {
+    local_mock_mni152_path()
     skip_if_not_installed("RNifti")
 
     output_dir <- withr::local_tempdir()
