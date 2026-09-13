@@ -592,30 +592,36 @@ testthat::describe("warn_if_subject_space_volume", {
 })
 
 
-testthat::describe("check_mni152_volume", {
-  las <- diag(c(-1, 1, 1, 1))
-  ras <- diag(c(1, 1, 1, 1))
+testthat::describe("check_mni152_grid", {
+  las_1mm <- diag(c(-1, 1, 1, 1))
+  ras_1mm <- diag(c(1, 1, 1, 1))
+  las_1.5mm <- diag(c(-1.5, 1.5, 1.5, 1))
 
-  it("accepts a left-handed volume", {
-    local_mocked_bindings(volume_vox2ras = function(...) las)
-    expect_true(check_mni152_volume("volume.nii"))
+  it("accepts the 1 mm left-handed grid the transform was built for", {
+    local_mocked_bindings(volume_vox2ras = function(...) las_1mm)
+    expect_true(check_mni152_grid("volume.nii"))
   })
 
-  it("aborts on a right-handed volume that would come out mirrored", {
-    local_mocked_bindings(volume_vox2ras = function(...) ras)
-    expect_error(check_mni152_volume("volume.nii"), "would mirror")
+  it("refuses a right-handed volume, which would come out mirrored", {
+    local_mocked_bindings(volume_vox2ras = function(...) ras_1mm)
+    expect_error(check_mni152_grid("volume.nii"), "swaps left and right")
+  })
+
+  it("refuses another resolution, which would come out mislocated", {
+    local_mocked_bindings(volume_vox2ras = function(...) las_1.5mm)
+    expect_error(check_mni152_grid("volume.nii"), "built for a 1 mm grid")
   })
 
   it("stays quiet when the header cannot be read", {
     local_mocked_bindings(volume_vox2ras = function(...) NULL)
-    expect_identical(check_mni152_volume("volume.nii"), NA)
+    expect_identical(check_mni152_grid("volume.nii"), NA)
   })
 
   it("is reached by validate_registration for mni152 only", {
-    local_mocked_bindings(volume_vox2ras = function(...) ras)
+    local_mocked_bindings(volume_vox2ras = function(...) ras_1mm)
     expect_error(
       validate_registration("mni152", "fsaverage5", "volume.nii"),
-      "would mirror"
+      "does not apply"
     )
     expect_null(validate_registration("header", "fsaverage5", "volume.nii"))
   })
