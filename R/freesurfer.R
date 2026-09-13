@@ -327,14 +327,14 @@ check_mni152_grid <- function(input_volume) {
 
   cli::cli_abort(c(
     "{.val mni152} registration does not apply to {.path {input_volume}}.",
-    "x" = if (!handed) {
-      "{.file mni152.register.dat} assumes a left-handed (LAS) voxel order,
-        and this volume is right-handed (RAS): applying it swaps left and
-        right."
-    } else {
+    "x" = if (handed) {
       "{.file mni152.register.dat} is built for a 1 mm grid, and this volume
         has {.val {round(voxel_sizes, 3)}} mm voxels: applying it shifts
         regions off their anatomy."
+    } else {
+      "{.file mni152.register.dat} assumes a left-handed (LAS) voxel order,
+        and this volume is right-handed (RAS): applying it swaps left and
+        right."
     },
     "i" = "Either way the atlas still looks plausible, so this is refused
       rather than warned about.",
