@@ -594,11 +594,9 @@ testthat::describe("warn_if_subject_space_volume", {
 
 testthat::describe("validate_registration", {
   it("checks subject and volume space for mni152", {
-    reg_file <- withr::local_tempfile(fileext = ".dat")
-    file.create(reg_file)
     checked <- new.env()
+    local_mocked_bindings(have_fs = function(...) TRUE, .package = "freesurfer")
     local_mocked_bindings(
-      mni152_register_path = function() reg_file,
       check_mni152_subject = function(subject) {
         checked$subject <- subject
         invisible(TRUE)
@@ -609,11 +607,9 @@ testthat::describe("validate_registration", {
       }
     )
 
-    resolved <- validate_registration("mni152", "fsaverage5", "volume.nii")
-
+    expect_null(validate_registration("mni152", "fsaverage5", "volume.nii"))
     expect_identical(checked$subject, "fsaverage5")
     expect_identical(checked$volume, "volume.nii")
-    expect_identical(resolved$reg, reg_file)
   })
 
   it("skips the space checks for other registrations", {
@@ -624,8 +620,88 @@ testthat::describe("validate_registration", {
       }
     )
 
-    resolved <- validate_registration("header", "fsaverage5", "volume.nii")
+    expect_null(validate_registration("header", "fsaverage5", "volume.nii"))
+  })
 
-    expect_identical(resolved$regheader, "fsaverage5")
+  it("skips the space checks when FreeSurfer is absent", {
+    local_mocked_bindings(
+      have_fs = function(...) FALSE,
+      .package = "freesurfer"
+    )
+    local_mocked_bindings(
+      check_mni152_subject = function(...) cli::cli_abort("should not run"),
+      warn_if_subject_space_volume = function(...) {
+        cli::cli_abort("should not run")
+      }
+    )
+
+    expect_null(validate_registration("mni152", "fsaverage5", "volume.nii"))
+  })
+})
+
+
+testthat::describe("mni152_register_path without FreeSurfer", {
+  it("says FreeSurfer is missing instead of building an NA path", {
+    local_mocked_bindings(
+      fs_dir = function(...) NA_character_,
+      .package = "freesurfer"
+    )
+
+    expect_error(mni152_register_path(), "Cannot locate FreeSurfer")
+    expect_error(mni152_register_path(), "FREESURFER_HOME")
+    expect_error(registration_file("mni152"), "Cannot locate FreeSurfer")
+  })
+
+  it("never interpolates NA into a path", {
+    local_mocked_bindings(
+      fs_dir = function(...) NA_character_,
+      .package = "freesurfer"
+    )
+
+    message <- tryCatch(
+      mni152_register_path(),
+      error = function(e) cli::ansi_strip(conditionMessage(e))
+    )
+
+    expect_no_match(message, "NA/", fixed = TRUE)
+    expect_no_match(message, "'NA'", fixed = TRUE)
+  })
+})
+
+
+testthat::describe("validate_registration without FreeSurfer", {
+  it("defers FreeSurfer's transform to the projection step", {
+    local_mocked_bindings(
+      fs_dir = function(...) NA_character_,
+      have_fs = function(...) FALSE,
+      .package = "freesurfer"
+    )
+    local_mocked_bindings(
+      check_mni152_subject = function(...) cli::cli_abort("should not run"),
+      warn_if_subject_space_volume = function(...) {
+        cli::cli_abort("should not run")
+      }
+    )
+
+    expect_null(validate_registration("mni152", "fsaverage5", "volume.nii"))
+  })
+
+  it("still rejects a bad user-supplied path without FreeSurfer", {
+    local_mocked_bindings(
+      have_fs = function(...) FALSE,
+      .package = "freesurfer"
+    )
+
+    expect_error(
+      validate_registration("no/such/registration.dat", "fsaverage5"),
+      "Registration file not found"
+    )
+  })
+
+  it("still rejects a specification that is not a single string", {
+    expect_error(
+      validate_registration(TRUE, "fsaverage5"),
+      "single string"
+    )
   })
 })

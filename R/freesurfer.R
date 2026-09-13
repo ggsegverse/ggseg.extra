@@ -129,17 +129,27 @@ check_fs <- function(abort = FALSE) {
 #' space that `fsaverage` and its downsampled subjects live in.
 #' @noRd
 mni152_register_path <- function() {
-  as.character(
-    fs::path(freesurfer::fs_dir(), "average", "mni152.register.dat")
-  )
+  fs_home <- freesurfer::fs_dir()
+
+  if (length(fs_home) != 1L || is.na(fs_home) || !nzchar(fs_home)) {
+    cli::cli_abort(c(
+      "Cannot locate FreeSurfer's MNI152 registration.",
+      "x" = "FreeSurfer was not found, and {.envvar FREESURFER_HOME} is
+        not set.",
+      "i" = "{.code registration = \"mni152\"} needs FreeSurfer's
+        {.file average/mni152.register.dat}.",
+      "i" = "Use {.code registration = \"header\"}, or pass a register.dat
+        or LTA file, to project without FreeSurfer's transform."
+    ))
+  }
+
+  as.character(fs::path(fs_home, "average", "mni152.register.dat"))
 }
 
 
-#' Resolve a registration specification to a readable registration file
-#'
-#' @param registration `"mni152"` or a path to a register.dat or LTA file.
+#' Check that a registration specification is a single string
 #' @noRd
-registration_file <- function(registration) {
+check_registration_spec <- function(registration) {
   if (
     !is.character(registration) ||
       length(registration) != 1L ||
@@ -150,6 +160,17 @@ registration_file <- function(registration) {
       "i" = "Use {.val mni152}, {.val header}, or a path to a registration file." # nolint
     ))
   }
+
+  invisible(registration)
+}
+
+
+#' Resolve a registration specification to a readable registration file
+#'
+#' @param registration `"mni152"` or a path to a register.dat or LTA file.
+#' @noRd
+registration_file <- function(registration) {
+  check_registration_spec(registration)
 
   is_mni152 <- identical(registration, "mni152")
   file <- if (is_mni152) mni152_register_path() else registration
@@ -285,21 +306,36 @@ warn_if_subject_space_volume <- function(input_volume, subject) {
 
 #' Validate a registration specification against its subject and volume
 #'
-#' Runs the checks a header can support before a long pipeline starts, and
-#' returns the flags the projection will use, so the validated specification
-#' and the used one cannot drift apart.
+#' Runs the checks that cost nothing before a long pipeline starts: that the
+#' specification is a single string, and that a user-supplied registration
+#' file exists. FreeSurfer's own `mni152.register.dat` is deliberately left
+#' to the projection step, so a run that never projects, because its
+#' projection is cached or its steps exclude it, needs no FreeSurfer
+#' installation. The subject and volume space checks need FreeSurfer to read
+#' geometries at all, and are skipped when it is absent.
 #' @noRd
 validate_registration <- function(registration, subject, input_volume = NULL) {
-  resolved <- resolve_vol2surf_registration(registration, subject)
+  check_registration_spec(registration)
 
-  if (identical(registration, "mni152")) {
+  if (identical(registration, "header")) {
+    return(invisible(NULL))
+  }
+
+  if (!identical(registration, "mni152")) {
+    registration_file(registration)
+    return(invisible(NULL))
+  }
+
+  # FreeSurfer's own transform is resolved at projection time, so a pipeline
+  # whose projection is cached or skipped needs no FreeSurfer installation.
+  if (freesurfer::have_fs()) {
     check_mni152_subject(subject)
     if (!is.null(input_volume)) {
       warn_if_subject_space_volume(input_volume, subject)
     }
   }
 
-  resolved
+  invisible(NULL)
 }
 
 

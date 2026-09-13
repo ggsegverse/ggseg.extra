@@ -1497,7 +1497,7 @@ testthat::describe("wholebrain_project_to_surface", {
         subject = "fsaverage5",
         projfrac = 0.5,
         projfrac_range = NULL,
-        registration_args = reg_args("header"),
+        registration = "header",
         output_dir = tmp_dir,
         verbose = FALSE
       ),
@@ -1544,7 +1544,7 @@ testthat::describe("wholebrain_project_to_surface", {
         subject = "fsaverage5",
         projfrac = 0.5,
         projfrac_range = NULL,
-        registration_args = reg_args("header"),
+        registration = "header",
         output_dir = tmp_dir,
         verbose = TRUE
       ),
@@ -1587,7 +1587,7 @@ testthat::describe("wholebrain_project_to_surface", {
       subject = "fsaverage5",
       projfrac = 0.5,
       projfrac_range = NULL,
-      registration_args = reg_args("header"),
+      registration = "header",
       output_dir = tmp_dir,
       verbose = FALSE
     )
@@ -1631,7 +1631,7 @@ testthat::describe("wholebrain_project_to_surface", {
       subject = "fsaverage5",
       projfrac = 0.5,
       projfrac_range = NULL,
-      registration_args = reg_args("header"),
+      registration = "header",
       output_dir = tmp_dir,
       verbose = FALSE
     )
@@ -2727,7 +2727,7 @@ testthat::describe("wholebrain_project_to_surface unlisted labels", {
       subject = "fsaverage5",
       projfrac = 0.5,
       projfrac_range = NULL,
-      registration_args = reg_args("header"),
+      registration = "header",
       output_dir = tmp_dir,
       verbose = FALSE
     )
@@ -2761,7 +2761,7 @@ testthat::describe("wholebrain_project_to_surface unlisted labels", {
       subject = "fsaverage5",
       projfrac = 0.5,
       projfrac_range = NULL,
-      registration_args = reg_args("header"),
+      registration = "header",
       output_dir = output_dir,
       verbose = FALSE
     )
@@ -2969,17 +2969,17 @@ testthat::describe("wholebrain_vol2surf_overlay", {
 testthat::describe("write_registration_record", {
   it("records the registration the overlays were built with", {
     dir <- withr::local_tempdir()
-    config <- list(
+
+    write_registration_record(
+      dir,
       registration = "mni152",
       subject = "fsaverage5",
-      registration_args = list(
+      args = list(
         reg = "/opt/freesurfer/average/mni152.register.dat",
         srcsubject = "fsaverage5",
         regheader = NULL
       )
     )
-
-    write_registration_record(dir, config)
     record <- readLines(file.path(dir, "registration.txt"))
 
     expect_true(any(grepl("^registration: mni152$", record)))
@@ -2990,17 +2990,13 @@ testthat::describe("write_registration_record", {
 
   it("records a header registration without a source subject", {
     dir <- withr::local_tempdir()
-    config <- list(
+
+    write_registration_record(
+      dir,
       registration = "header",
       subject = "fsaverage5",
-      registration_args = list(
-        reg = NULL,
-        srcsubject = NULL,
-        regheader = "fsaverage5"
-      )
+      args = list(reg = NULL, srcsubject = NULL, regheader = "fsaverage5")
     )
-
-    write_registration_record(dir, config)
     record <- readLines(file.path(dir, "registration.txt"))
 
     expect_true(any(grepl("^registration: header$", record)))
@@ -3094,5 +3090,56 @@ testthat::describe("create_wholebrain_from_volume(regheader = )", {
       ),
       class = "lifecycle_warning_deprecated"
     )
+  })
+})
+
+
+testthat::describe("create_wholebrain_from_volume without FreeSurfer", {
+  it("does not need FreeSurfer's transform when it never projects", {
+    captured <- new.env()
+    local_mocked_bindings(
+      fs_dir = function(...) NA_character_,
+      have_fs = function(...) FALSE,
+      .package = "freesurfer"
+    )
+    local_mocked_bindings(
+      check_fs = function(abort = FALSE) invisible(TRUE),
+      wholebrain_project_to_surface = function(...) {
+        captured$projected <- TRUE
+        dplyr::tibble(
+          hemi = character(),
+          region = character(),
+          label = character(),
+          colour = character(),
+          vertices = list(),
+          source_label = character(),
+          source_idx = integer()
+        )
+      },
+      wholebrain_classify_labels = function(...) {
+        list(
+          cortical_labels = character(),
+          subcortical_labels = character(),
+          cerebellar_labels = character(),
+          vertex_counts = integer()
+        )
+      }
+    )
+
+    vol_file <- withr::local_tempfile(fileext = ".nii.gz")
+    RNifti::writeNifti(array(1L, dim = c(2, 2, 2)), vol_file)
+
+    expect_warning(
+      result <- create_wholebrain_from_volume(
+        input_volume = vol_file,
+        output_dir = withr::local_tempdir(),
+        steps = 1:2,
+        verbose = FALSE
+      ),
+      "No color lookup table"
+    )
+
+    expect_true(captured$projected)
+    expect_true("cortical_labels" %in% names(result))
   })
 })

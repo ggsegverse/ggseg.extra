@@ -565,7 +565,8 @@ read_neuromaps_volume <- function(
 
   all_data <- list()
   subject <- "fsaverage5"
-  reg <- validate_registration("mni152", subject, nifti_file)
+  validate_registration("mni152", subject, nifti_file)
+  reg <- resolve_vol2surf_registration("mni152", subject)
 
   for (hemi_short in c("lh", "rh")) {
     hemi <- hemi_to_long(hemi_short)

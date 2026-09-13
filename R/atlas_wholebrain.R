@@ -149,7 +149,7 @@
 #' No header identifies the space an arbitrary volume is in, so `"mni152"`
 #' is applied to whatever you pass. A volume sitting on the target subject's
 #' exact voxel grid warns, that being a claim a header does support, but a
-#' volume in some other non-MNI152 space cannot be recognised.
+#' volume in some other non-MNI152 space cannot be detected.
 #'
 #' `mni152.register.dat` targets the FSL/SPM MNI152 (NLin6) 1 mm template.
 #' Volumes in other MNI152 variants, such as the NLin2009cAsym template
@@ -233,9 +233,12 @@ create_wholebrain_from_volume <- function(
   regheader = lifecycle::deprecated()
 ) {
   if (lifecycle::is_present(regheader)) {
+    # match.call() rather than missing(): goodpractice's tidyverse_no_missing
+    # check rejects missing(), and registration has a real default to fall
+    # back on, so lifecycle::is_present() cannot answer this for it.
     registration <- registration_from_regheader(
       regheader,
-      missing(registration)
+      !"registration" %in% names(match.call())
     )
   }
 
@@ -695,11 +698,7 @@ validate_wholebrain_config <- function(
     cli::cli_abort("Color lookup table not found: {.path {input_lut}}")
   }
 
-  registration_args <- validate_registration(
-    registration,
-    subject,
-    input_volume
-  )
+  validate_registration(registration, subject, input_volume)
 
   config$output_dir <- normalizePath(config$output_dir, mustWork = FALSE)
 
@@ -720,7 +719,6 @@ validate_wholebrain_config <- function(
   config$projfrac_range <- projfrac_range
   config$subject <- subject
   config$registration <- registration
-  config$registration_args <- registration_args
   config$min_vertices <- as.integer(min_vertices)
   config
 }
@@ -782,7 +780,7 @@ wholebrain_compute_projection <- function(config, dirs) {
     subject = config$subject,
     projfrac = config$projfrac,
     projfrac_range = config$projfrac_range,
-    registration_args = config$registration_args,
+    registration = config$registration,
     output_dir = dirs$base,
     verbose = config$verbose
   )
@@ -792,7 +790,6 @@ wholebrain_compute_projection <- function(config, dirs) {
     atlas_data.rds = atlas_data,
     colortable.rds = colortable
   )
-  write_registration_record(dirs$base, config)
   if (config$verbose) {
     cli::cli_progress_done()
   }
@@ -892,12 +889,20 @@ wholebrain_project_to_surface <- function(
   subject,
   projfrac,
   projfrac_range,
-  registration_args,
+  registration,
   output_dir,
   verbose
 ) {
   surf_dir <- as.character(fs::path(output_dir, "surface_overlays"))
   mkdir(surf_dir)
+
+  registration_args <- resolve_vol2surf_registration(registration, subject)
+  write_registration_record(
+    output_dir,
+    registration,
+    subject,
+    registration_args
+  )
 
   projection_volume <- write_projection_volume(
     input_volume,
@@ -948,12 +953,11 @@ wholebrain_project_to_surface <- function(
 #' decision answerable later. It is deliberately not a cache entry, so it is
 #' never stamped, reused as pipeline state, or read back by the pipeline.
 #' @noRd
-write_registration_record <- function(dir, config) {
-  args <- config$registration_args
+write_registration_record <- function(dir, registration, subject, args) {
   writeLines(
     c(
-      paste("registration:", config$registration),
-      paste("subject:", config$subject),
+      paste("registration:", registration),
+      paste("subject:", subject),
       if (!is.null(args$reg)) paste("reg:", args$reg),
       if (!is.null(args$srcsubject)) paste("srcsubject:", args$srcsubject),
       if (!is.null(args$regheader)) paste("regheader:", args$regheader),

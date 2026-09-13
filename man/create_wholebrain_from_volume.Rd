@@ -219,7 +219,7 @@ of vertices.
 No header identifies the space an arbitrary volume is in, so \code{"mni152"}
 is applied to whatever you pass. A volume sitting on the target subject's
 exact voxel grid warns, that being a claim a header does support, but a
-volume in some other non-MNI152 space cannot be recognised.
+volume in some other non-MNI152 space cannot be detected.
 
 \code{mni152.register.dat} targets the FSL/SPM MNI152 (NLin6) 1 mm template.
 Volumes in other MNI152 variants, such as the NLin2009cAsym template
