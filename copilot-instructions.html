@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9023</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9024</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -124,6 +124,12 @@
 <p>only add information that is relevant for the R-package to NEWS.md. Any other changes related to workflows, pkgdown etc are not relevant to the R-package releases and thus dont shouldnt be listed in NEWS.</p>
 <p>Organise NEWS by user-facing and developer facing changes, and headings for minor vs breaking changes.</p>
 </div>
+<div class="section level3">
+<h3 id="cache-format-version">Cache format version<a class="anchor" aria-label="anchor" href="#cache-format-version"></a></h3>
+<ul><li>Pipeline intermediates are stamped with <code>cache_format_version()</code> (<code>R/cache_version.R</code>) in a <code>cache_manifest.rds</code> sidecar, and a cache stamped with a different version is recomputed or rejected. That function’s documentation is the canonical list of what is and is not stamped.</li>
+<li>When a change makes existing intermediates <strong>wrong</strong> rather than merely old — a fix to surface projection, label classification, contour extraction or anything else whose cached output would otherwise be reused — bump <code>cache_format_version()</code> in the same PR. Nothing detects a forgotten bump: the symptom is a maintainer rebuilding an atlas and silently getting the old one.</li>
+<li>Do not bump it for changes that leave existing intermediates valid. Atlas rebuilds cost hours of FreeSurfer time, so an unnecessary bump invalidates every atlas maintainer’s cache for nothing.</li>
+</ul></div>
 
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

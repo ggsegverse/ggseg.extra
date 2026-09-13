@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9023</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9024</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -63,6 +63,10 @@
       <small>Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.9.9.9024" id="ggsegextra-1999024">ggseg.extra 1.9.9.9024<a class="anchor" aria-label="anchor" href="#ggsegextra-1999024"></a></h2>
+<ul><li>Cached pipeline intermediates now record the cache format version that wrote them, in a <code>cache_manifest.rds</code> sidecar in the step directory. Rebuilding an atlas after a pipeline fix no longer silently reuses output the old pipeline made: a cache written by an older ggseg.extra is recomputed when its step is among the requested <code>steps</code>, and stops the pipeline with the step to rerun when it is not. Stamped: the step caches, the contour files, and the processed-image and mask directories. Still reused whenever the file exists: the snapshot images, the subcortical mesh directory, and the lookup table and volume the wholebrain pipeline passes to the subcortical one, so a fix to any of those still needs its cache cleared by hand.</li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9023" id="ggsegextra-1999023">ggseg.extra 1.9.9.9023<a class="anchor" aria-label="anchor" href="#ggsegextra-1999023"></a></h2>
 <ul><li>Subcortical and tract atlases built with terra 1.9-46 came out upside down in their 2D views: coronal and sagittal slices had the brain stem pointing up and the cerebellum above the basal ganglia, and axial slices were mirrored front to back. Contour extraction read the snapshot masks with <code><a href="https://rspatial.github.io/terra/reference/rast.html" class="external-link">terra::rast()</a></code>, which reads a PNG without map coordinates with y increasing upward, while <code>build_contour_sf()</code> still flipped the y-axis as if the coordinates were image rows. Masks are now decoded with ImageMagick into a raster with an explicit extent, so y always increases upward and nothing is flipped afterwards, whatever the terra version.</li>
