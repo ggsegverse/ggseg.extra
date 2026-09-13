@@ -105,7 +105,11 @@ process_and_mask_images <- function(
     p()
   }))
 
-  processed_files <- list.files(processed_dir, full.names = TRUE)
+  processed_files <- list.files(
+    processed_dir,
+    full.names = TRUE,
+    pattern = "\\.png$"
+  )
   invisible(lapply(processed_files, function(f) {
     extract_alpha_mask(
       f,

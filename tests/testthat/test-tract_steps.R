@@ -1043,7 +1043,8 @@ testthat::describe("run_image_steps (tract step_map)", {
     )
 
     config <- list(steps = 3L, verbose = FALSE, skip_existing = FALSE)
-    dirs <- list(snapshots = "s", processed = "p", masks = "m", base = "b")
+    dirs <- mock_dirs()
+    stamp_cache_dir(dirs$masks)
 
     run_image_steps(config, dirs, tract_step_map, 7L)
 
@@ -1060,7 +1061,8 @@ testthat::describe("run_image_steps (tract step_map)", {
     )
 
     config <- list(steps = 4L, verbose = FALSE)
-    dirs <- list(snapshots = "s", processed = "p", masks = "m", base = "b")
+    dirs <- mock_dirs()
+    stamp_cache_dir(dirs$masks)
 
     run_image_steps(config, dirs, tract_step_map, 7L)
 
@@ -1077,7 +1079,8 @@ testthat::describe("run_image_steps (tract step_map)", {
     )
 
     config <- list(steps = 5L, verbose = FALSE, smoothness = 1.0)
-    dirs <- list(snapshots = "s", processed = "p", masks = "m", base = "b")
+    dirs <- mock_dirs()
+    stamp_cache_dir(dirs$masks)
 
     run_image_steps(config, dirs, tract_step_map, 7L)
 
@@ -1094,7 +1097,8 @@ testthat::describe("run_image_steps (tract step_map)", {
     )
 
     config <- list(steps = 6L, verbose = FALSE, tolerance = 0.01)
-    dirs <- list(snapshots = "s", processed = "p", masks = "m", base = "b")
+    dirs <- mock_dirs()
+    stamp_cache_dir(dirs$masks)
 
     run_image_steps(config, dirs, tract_step_map, 7L)
 
@@ -1129,7 +1133,8 @@ testthat::describe("run_image_steps (tract step_map)", {
       smoothness = 1.0,
       tolerance = 0.01
     )
-    dirs <- list(snapshots = "s", processed = "p", masks = "m", base = "b")
+    dirs <- mock_dirs()
+    stamp_cache_dir(dirs$masks)
 
     run_image_steps(config, dirs, tract_step_map, 7L)
 

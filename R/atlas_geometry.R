@@ -265,7 +265,7 @@ extract_contours <- function(
     cli::cli_progress_step("{step} Extracting contours")
   }
 
-  regions <- list.files(input_dir, full.names = TRUE)
+  regions <- list.files(input_dir, full.names = TRUE, pattern = "\\.png$")
   region_names <- file_path_sans_ext(basename(regions))
 
   max_val <- probe_raster_max(regions)
@@ -281,7 +281,7 @@ extract_contours <- function(
   contours <- combine_region_contours(contourobjs)
   contours$y_axis <- "up"
 
-  save(contours, file = as.character(fs::path(output_dir, "contours.rda")))
+  save_cache_rda(contours, output_dir, "contours.rda")
 
   if (verbose) {
     cli::cli_progress_done()
@@ -317,6 +317,9 @@ read_mask_raster <- function(file) {
 
 
 #' Stop when cached contours predate the y-up coordinate convention
+#'
+#' Kept alongside the manifest check: this asserts the property the
+#' downstream code depends on, not the provenance of the file carrying it.
 #' @noRd
 check_contour_y_axis <- function(contours, contourfile) {
   if (identical(unique(contours$y_axis), "up")) {
@@ -418,14 +421,17 @@ smooth_contours <- function(
   step = "",
   verbose = get_verbose() # nolint: object_usage_linter
 ) {
-  load_rda(as.character(fs::path(dir, "contours.rda")))
+  load_cached_rda(
+    as.character(fs::path(dir, "contours.rda")),
+    contour_rerun_remedy
+  )
 
   contours <- filter_valid_geometries(contours)
   if (nrow(contours) == 0) {
     cli::cli_warn("No valid contours found after extraction")
   }
 
-  save(contours, file = as.character(fs::path(dir, "contours_smoothed.rda")))
+  save_cache_rda(contours, dir, "contours_smoothed.rda")
   invisible(contours)
 }
 
@@ -444,13 +450,16 @@ reduce_vertex <- function(
   step = "",
   verbose = get_verbose() # nolint: object_usage_linter
 ) {
-  load_rda(as.character(fs::path(dir, "contours_smoothed.rda")))
+  load_cached_rda(
+    as.character(fs::path(dir, "contours_smoothed.rda")),
+    contour_rerun_remedy
+  )
 
   contours <- filter_valid_geometries(contours)
   if (nrow(contours) == 0) {
     cli::cli_warn("No valid contours to simplify")
   }
-  save(contours, file = as.character(fs::path(dir, "contours_reduced.rda")))
+  save_cache_rda(contours, dir, "contours_reduced.rda")
   invisible(contours)
 }
 
@@ -782,7 +791,7 @@ arrange_contour_sf <- function(conts) {
 #' @importFrom dplyr group_by summarise ungroup
 #' @importFrom sf st_combine st_coordinates st_geometry
 make_multipolygon <- function(contourfile) {
-  load_rda(contourfile)
+  load_cached_rda(contourfile, contour_rerun_remedy)
   check_contour_y_axis(contours, contourfile)
 
   contours <- contours |>

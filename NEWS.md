@@ -1,3 +1,17 @@
+# ggseg.extra 1.9.9.9024
+
+- Cached pipeline intermediates now record the cache format version that
+  wrote them, in a `cache_manifest.rds` sidecar in the step directory.
+  Rebuilding an atlas after a pipeline fix no longer silently reuses output
+  the old pipeline made: a cache written by an older ggseg.extra is
+  recomputed when its step is among the requested `steps`, and stops the
+  pipeline with the step to rerun when it is not. Stamped: the step caches,
+  the contour files, and the processed-image and mask directories. Still
+  reused whenever the file exists: the snapshot images, the subcortical mesh
+  directory, and the lookup table and volume the wholebrain pipeline passes
+  to the subcortical one, so a fix to any of those still needs its cache
+  cleared by hand.
+
 # ggseg.extra 1.9.9.9023
 
 - Subcortical and tract atlases built with terra 1.9-46 came out upside down

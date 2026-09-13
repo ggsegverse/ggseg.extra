@@ -12,3 +12,4 @@ data-raw/**/*.mgz
 *.nii.gz
 *.mgz
 *.mat
+cache_manifest.rds
