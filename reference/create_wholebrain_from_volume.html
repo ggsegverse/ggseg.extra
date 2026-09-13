@@ -21,7 +21,7 @@ Requires FreeSurfer."><meta property="og:image" content="https://ggsegverse.gith
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9024</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9025</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -96,7 +96,7 @@ the mesh-based subcortical pipeline.</p>
 <span>  projfrac <span class="op">=</span> <span class="fl">0.5</span>,</span>
 <span>  projfrac_range <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">1</span>, <span class="fl">0.1</span><span class="op">)</span>,</span>
 <span>  subject <span class="op">=</span> <span class="st">"fsaverage5"</span>,</span>
-<span>  regheader <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  registration <span class="op">=</span> <span class="st">"mni152"</span>,</span>
 <span>  min_vertices <span class="op">=</span> <span class="fl">50L</span>,</span>
 <span>  cortical_labels <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  subcortical_labels <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -107,7 +107,8 @@ the mesh-based subcortical pipeline.</p>
 <span>  cleanup <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  verbose <span class="op">=</span> <span class="fu"><a href="get_verbose.html">get_verbose</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  skip_existing <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  steps <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  steps <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  regheader <span class="op">=</span> <span class="fu">lifecycle</span><span class="fu">::</span><span class="fu"><a href="https://lifecycle.r-lib.org/reference/deprecated.html" class="external-link">deprecated</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -157,11 +158,20 @@ Set to NULL to use single-depth <code>projfrac</code> instead.</p></dd>
 <dd><p>Target surface subject. Default "fsaverage5".</p></dd>
 
 
-<dt id="arg-regheader">regheader<a class="anchor" aria-label="anchor" href="#arg-regheader"></a></dt>
-<dd><p>If TRUE (default), assumes volume RAS coordinates match
-the subject space and uses <code>--regheader</code>. Works well for standard
-MNI152-space volumes. If FALSE, uses FreeSurfer's <code>--mni152reg</code>
-registration (may produce noisy results due to surf2surf resampling).</p></dd>
+<dt id="arg-registration">registration<a class="anchor" aria-label="anchor" href="#arg-registration"></a></dt>
+<dd><p>How the volume is registered to the surface subject.
+See the <strong>Registration</strong> section, which you should read before relying
+on the default. One of:</p><ul><li><p><code>"mni152"</code> (default): applies FreeSurfer's
+<code>average/mni152.register.dat</code>, the transform from the scanner RAS
+of the FSL/SPM MNI152 (NLin6) 1 mm template to the MNI305 space
+<code>fsaverage</code> lives in. Use this for volumes in a standard MNI152
+template space.</p></li>
+<li><p><code>"header"</code>: trusts the volume header and uses <code>--regheader</code>.
+Correct only when the volume already sits in the target subject's
+own scanner RAS, such as native, conformed or fsaverage-space
+volumes.</p></li>
+<li><p>A path to a register.dat or LTA file to apply instead.</p></li>
+</ul></dd>
 
 
 <dt id="arg-min-vertices">min_vertices<a class="anchor" aria-label="anchor" href="#arg-min-vertices"></a></dt>
@@ -242,6 +252,12 @@ Steps are:</p><ul><li><p>1: Project volume onto surface</p></li>
 <li><p>5: Run cerebellar pipeline</p></li>
 </ul><p>Use <code>steps = 1:2</code> to run projection and split only.</p></dd>
 
+
+<dt id="arg-regheader">regheader<a class="anchor" aria-label="anchor" href="#arg-regheader"></a></dt>
+<dd><p><a href="https://lifecycle.r-lib.org/articles/stages.html#deprecated" class="external-link"><img src="figures/lifecycle-deprecated.svg" alt="[Deprecated]"></a> Use <code>registration</code>
+instead. <code>TRUE</code> maps to <code>registration = "header"</code>, <code>FALSE</code> to
+<code>registration = "mni152"</code>. Supplying both is an error.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
@@ -297,6 +313,31 @@ left without a listed label take the most common label of their
 neighbours. Everything outside the cortex label becomes the <code>unknown</code>
 medial wall, which the cortical atlas keeps as grey context geometry
 rather than as a region.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="registration">Registration<a class="anchor" aria-label="anchor" href="#registration"></a></h2>
+
+
+<p>The default changed to <code>"mni152"</code> in this release; before it, the volume
+header was trusted and the MNI152-to-MNI305 transform was omitted
+altogether. Atlases built from MNI152 volumes by earlier versions must be
+rebuilt: relative to <code>"header"</code>, <code>"mni152"</code> moves the point each
+<code>fsaverage5</code> vertex samples by a median of 1.96 mm (1.18-2.60 mm),
+anteriorly and superiorly, and relabels roughly 18% (left) to 21% (right)
+of vertices.</p>
+<p>No header identifies the space an arbitrary volume is in, so <code>"mni152"</code>
+is applied to whatever you pass. A volume sitting on the target subject's
+exact voxel grid warns, that being a claim a header does support, but a
+volume in some other non-MNI152 space cannot be detected.</p>
+<p><code>mni152.register.dat</code> targets the FSL/SPM MNI152 (NLin6) 1 mm template.
+Volumes in other MNI152 variants, such as the NLin2009cAsym template
+<code>ggsegJulich</code> uses, keep a sub-millimetre residual rather than the
+roughly 2 mm the transform corrects. It is registered against
+<code>fsaverage</code>, so <code>subject</code> must share fsaverage's conformed geometry,
+which the <code>fsaverageN</code> subjects do; for any other subject, supply your
+own register.dat or LTA file.</p>
+<p>FreeSurfer's own <code>INFO</code> and <code>WARNING</code> lines about the registration are
+only visible with <code>verbose = TRUE</code>.</p>
     </div>
 
     <div class="section level2">

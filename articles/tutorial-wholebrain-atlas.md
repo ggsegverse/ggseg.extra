@@ -223,7 +223,17 @@ The pipeline does up to five things in sequence:
     at multiple cortical depths (default 0–1 in 0.1 steps) and takes the
     maximum label at each vertex. Unlabeled vertices are filled by
     mesh-neighbor dilation, constrained to the cortex mask so labels
-    don’t bleed into the medial wall.
+    don’t bleed into the medial wall. The volume is registered to the
+    surface subject first, using `registration`: the default `"mni152"`
+    applies FreeSurfer’s `mni152.register.dat`, the transform between
+    the MNI152 template space your volume is probably in and the MNI305
+    space `fsaverage` lives in. Pass `registration = "header"` instead
+    when the volume already sits in the target subject’s own scanner RAS
+    — a native or conformed volume, or one already in fsaverage space.
+    The choice moves every vertex by about 2 mm, so getting it wrong
+    yields an atlas that looks right and is not; see the
+    **Registration** section of
+    [`?create_wholebrain_from_volume`](https://ggsegverse.github.io/ggseg.extra/reference/create_wholebrain_from_volume.md).
 2.  **Classify labels** — Splits labels into cortical, subcortical, and
     cerebellar using the priority system described above.
 3.  **Run the cortical pipeline** — Takes the projected cortical labels
@@ -336,8 +346,10 @@ subcortical volumes, this is straightforward because FreeSurfer’s
 segmentation already includes cortex labels. For combined volumes, the
 pipeline has to synthesize this: it uses the volume’s orientation matrix
 to determine which side of the midline each cortical voxel sits on, then
-remaps them to FreeSurfer’s reference cortex labels. This works reliably
-for standard MNI152 volumes, but can break with unusual orientations.
+remaps them to FreeSurfer’s reference cortex labels. This uses the
+volume’s own orientation matrix, so it works for any volume whose header
+is correct, whatever `registration` you chose, but can break with
+unusual orientations.
 
 ## Post-processing
 

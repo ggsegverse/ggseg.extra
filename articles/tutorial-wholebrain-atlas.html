@@ -28,7 +28,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9024</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9025</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -251,7 +251,7 @@
 <p>The pipeline does up to five things in sequence:</p>
 <ol type="1">
 <li>
-<strong>Project volume onto surface</strong> — <code>mri_vol2surf</code> samples the volume at multiple cortical depths (default 0–1 in 0.1 steps) and takes the maximum label at each vertex. Unlabeled vertices are filled by mesh-neighbor dilation, constrained to the cortex mask so labels don’t bleed into the medial wall.</li>
+<strong>Project volume onto surface</strong> — <code>mri_vol2surf</code> samples the volume at multiple cortical depths (default 0–1 in 0.1 steps) and takes the maximum label at each vertex. Unlabeled vertices are filled by mesh-neighbor dilation, constrained to the cortex mask so labels don’t bleed into the medial wall. The volume is registered to the surface subject first, using <code>registration</code>: the default <code>"mni152"</code> applies FreeSurfer’s <code>mni152.register.dat</code>, the transform between the MNI152 template space your volume is probably in and the MNI305 space <code>fsaverage</code> lives in. Pass <code>registration = "header"</code> instead when the volume already sits in the target subject’s own scanner RAS — a native or conformed volume, or one already in fsaverage space. The choice moves every vertex by about 2 mm, so getting it wrong yields an atlas that looks right and is not; see the <strong>Registration</strong> section of <code><a href="../reference/create_wholebrain_from_volume.html">?create_wholebrain_from_volume</a></code>.</li>
 <li>
 <strong>Classify labels</strong> — Splits labels into cortical, subcortical, and cerebellar using the priority system described above.</li>
 <li>
@@ -302,7 +302,7 @@
 <p>Three things conspire to make whole-brain atlases harder than their single-type counterparts.</p>
 <p><strong>Label bleeding.</strong> When a combined volume gets projected onto the cortical surface, subcortical voxels that sit near the cortical ribbon can “steal” surface vertices. The thalamus, for instance, is close enough to the medial surface that its voxels sometimes end up on cortical vertices during projection. The pipeline handles this with a refinement step — after classification, it re-projects the volume with subcortical labels zeroed out, then re-fills using only cortical labels. But if your subcortical structures are unusually large or your cortical regions are thin, you may still see artifacts.</p>
 <p><strong>The medial wall boundary.</strong> Dilation fills unlabeled vertices by spreading neighboring labels across the mesh. Without a constraint, labels would spread across the medial wall — the flat cut surface between hemispheres where there’s no cortex. The pipeline uses FreeSurfer’s <code>{hemi}.cortex.label</code> file to mask the medial wall, but this only works if the label file exists for your target subject (it ships with fsaverage5 by default).</p>
-<p><strong>Hemisphere splitting for subcortical context.</strong> The subcortical pipeline needs brain outline geometry to provide spatial context — a faint cortex outline behind the subcortical structures. For purely subcortical volumes, this is straightforward because FreeSurfer’s segmentation already includes cortex labels. For combined volumes, the pipeline has to synthesize this: it uses the volume’s orientation matrix to determine which side of the midline each cortical voxel sits on, then remaps them to FreeSurfer’s reference cortex labels. This works reliably for standard MNI152 volumes, but can break with unusual orientations.</p>
+<p><strong>Hemisphere splitting for subcortical context.</strong> The subcortical pipeline needs brain outline geometry to provide spatial context — a faint cortex outline behind the subcortical structures. For purely subcortical volumes, this is straightforward because FreeSurfer’s segmentation already includes cortex labels. For combined volumes, the pipeline has to synthesize this: it uses the volume’s orientation matrix to determine which side of the midline each cortical voxel sits on, then remaps them to FreeSurfer’s reference cortex labels. This uses the volume’s own orientation matrix, so it works for any volume whose header is correct, whatever <code>registration</code> you chose, but can break with unusual orientations.</p>
 </section><section class="level2"><h2 id="post-processing">Post-processing<a class="anchor" aria-label="anchor" href="#post-processing"></a>
 </h2>
 <p>The raw atlas usually needs cleanup. Simplify the contours for faster plotting using topology-preserving simplification:</p>

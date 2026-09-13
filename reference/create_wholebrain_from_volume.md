@@ -21,7 +21,7 @@ create_wholebrain_from_volume(
   projfrac = 0.5,
   projfrac_range = c(0, 1, 0.1),
   subject = "fsaverage5",
-  regheader = TRUE,
+  registration = "mni152",
   min_vertices = 50L,
   cortical_labels = NULL,
   subcortical_labels = NULL,
@@ -32,7 +32,8 @@ create_wholebrain_from_volume(
   cleanup = NULL,
   verbose = get_verbose(),
   skip_existing = NULL,
-  steps = NULL
+  steps = NULL,
+  regheader = lifecycle::deprecated()
 )
 ```
 
@@ -77,12 +78,23 @@ create_wholebrain_from_volume(
 
   Target surface subject. Default "fsaverage5".
 
-- regheader:
+- registration:
 
-  If TRUE (default), assumes volume RAS coordinates match the subject
-  space and uses `--regheader`. Works well for standard MNI152-space
-  volumes. If FALSE, uses FreeSurfer's `--mni152reg` registration (may
-  produce noisy results due to surf2surf resampling).
+  How the volume is registered to the surface subject. See the
+  **Registration** section, which you should read before relying on the
+  default. One of:
+
+  - `"mni152"` (default): applies FreeSurfer's
+    `average/mni152.register.dat`, the transform from the scanner RAS of
+    the FSL/SPM MNI152 (NLin6) 1 mm template to the MNI305 space
+    `fsaverage` lives in. Use this for volumes in a standard MNI152
+    template space.
+
+  - `"header"`: trusts the volume header and uses `--regheader`. Correct
+    only when the volume already sits in the target subject's own
+    scanner RAS, such as native, conformed or fsaverage-space volumes.
+
+  - A path to a register.dat or LTA file to apply instead.
 
 - min_vertices:
 
@@ -170,6 +182,12 @@ create_wholebrain_from_volume(
 
   Use `steps = 1:2` to run projection and split only.
 
+- regheader:
+
+  **\[deprecated\]** Use `registration` instead. `TRUE` maps to
+  `registration = "header"`, `FALSE` to `registration = "mni152"`.
+  Supplying both is an error.
+
 ## Value
 
 A named list with elements `cortical`, `subcortical`, and `cerebellar`,
@@ -229,6 +247,32 @@ left without a listed label take the most common label of their
 neighbours. Everything outside the cortex label becomes the `unknown`
 medial wall, which the cortical atlas keeps as grey context geometry
 rather than as a region.
+
+## Registration
+
+The default changed to `"mni152"` in this release; before it, the volume
+header was trusted and the MNI152-to-MNI305 transform was omitted
+altogether. Atlases built from MNI152 volumes by earlier versions must
+be rebuilt: relative to `"header"`, `"mni152"` moves the point each
+`fsaverage5` vertex samples by a median of 1.96 mm (1.18-2.60 mm),
+anteriorly and superiorly, and relabels roughly 18% (left) to 21%
+(right) of vertices.
+
+No header identifies the space an arbitrary volume is in, so `"mni152"`
+is applied to whatever you pass. A volume sitting on the target
+subject's exact voxel grid warns, that being a claim a header does
+support, but a volume in some other non-MNI152 space cannot be detected.
+
+`mni152.register.dat` targets the FSL/SPM MNI152 (NLin6) 1 mm template.
+Volumes in other MNI152 variants, such as the NLin2009cAsym template
+`ggsegJulich` uses, keep a sub-millimetre residual rather than the
+roughly 2 mm the transform corrects. It is registered against
+`fsaverage`, so `subject` must share fsaverage's conformed geometry,
+which the `fsaverageN` subjects do; for any other subject, supply your
+own register.dat or LTA file.
+
+FreeSurfer's own `INFO` and `WARNING` lines about the registration are
+only visible with `verbose = TRUE`.
 
 ## Examples
 

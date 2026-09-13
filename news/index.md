@@ -1,5 +1,39 @@
 # Changelog
 
+## ggseg.extra 1.9.9.9025
+
+- [`create_wholebrain_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_wholebrain_from_volume.md)
+  now registers MNI152 volumes to the surface subject instead of
+  assuming the two spaces coincide. The new `registration` argument
+  replaces `regheader` and defaults to `"mni152"`, which applies
+  FreeSurfer’s `average/mni152.register.dat`; the old default passed
+  `--regheader`, equating FSL/SPM MNI152 scanner RAS with the MNI305
+  space `fsaverage` lives in and omitting the transform between them.
+  **This changes cortical atlas geometry**: the point each `fsaverage5`
+  vertex samples moves by a median of 1.96 mm (1.18-2.60 mm), anteriorly
+  and superiorly, and on a Neuromorphometrics volume 18.2% (lh) and
+  20.6% (rh) of vertices come back with a different label, so cortical
+  atlases built from MNI152 volumes with earlier versions must be
+  rebuilt. Pass `registration = "header"` for volumes already in the
+  target subject’s own scanner RAS, or a path to a register.dat or LTA
+  file for your own transform. Since no header identifies the space of
+  an arbitrary volume, `"mni152"` warns when the volume sits on the
+  target subject’s exact voxel grid and errors when `subject` does not
+  share `fsaverage`’s geometry.
+- `regheader` is deprecated in
+  [`create_wholebrain_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_wholebrain_from_volume.md).
+  `TRUE` maps to `registration = "header"` and `FALSE` to
+  `registration = "mni152"`; supplying both is an error.
+- Registered surface projections no longer come back as fractional
+  values. The old `regheader = FALSE` escape hatch passed `--mni152reg`
+  without `--srcsubject`, so `mri_vol2surf` sampled onto `fsaverage` and
+  then used nearest-neighbour surf2surf averaging to reach the target
+  subject, turning 63 distinct integer values into 1977 fractional ones.
+  Every registered projection now passes `--srcsubject`, so no
+  resampling happens.
+  [`read_neuromaps_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/read_neuromaps_volume.md)
+  had the same defect and was silently smoothing continuous maps.
+
 ## ggseg.extra 1.9.9.9024
 
 - Cached pipeline intermediates now record the cache format version that

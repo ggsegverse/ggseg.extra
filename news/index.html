@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9024</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9025</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -63,6 +63,14 @@
       <small>Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.9.9.9025" id="ggsegextra-1999025">ggseg.extra 1.9.9.9025<a class="anchor" aria-label="anchor" href="#ggsegextra-1999025"></a></h2>
+<ul><li>
+<code><a href="../reference/create_wholebrain_from_volume.html">create_wholebrain_from_volume()</a></code> now registers MNI152 volumes to the surface subject instead of assuming the two spaces coincide. The new <code>registration</code> argument replaces <code>regheader</code> and defaults to <code>"mni152"</code>, which applies FreeSurfer’s <code>average/mni152.register.dat</code>; the old default passed <code>--regheader</code>, equating FSL/SPM MNI152 scanner RAS with the MNI305 space <code>fsaverage</code> lives in and omitting the transform between them. <strong>This changes cortical atlas geometry</strong>: the point each <code>fsaverage5</code> vertex samples moves by a median of 1.96 mm (1.18-2.60 mm), anteriorly and superiorly, and on a Neuromorphometrics volume 18.2% (lh) and 20.6% (rh) of vertices come back with a different label, so cortical atlases built from MNI152 volumes with earlier versions must be rebuilt. Pass <code>registration = "header"</code> for volumes already in the target subject’s own scanner RAS, or a path to a register.dat or LTA file for your own transform. Since no header identifies the space of an arbitrary volume, <code>"mni152"</code> warns when the volume sits on the target subject’s exact voxel grid and errors when <code>subject</code> does not share <code>fsaverage</code>’s geometry.</li>
+<li>
+<code>regheader</code> is deprecated in <code><a href="../reference/create_wholebrain_from_volume.html">create_wholebrain_from_volume()</a></code>. <code>TRUE</code> maps to <code>registration = "header"</code> and <code>FALSE</code> to <code>registration = "mni152"</code>; supplying both is an error.</li>
+<li>Registered surface projections no longer come back as fractional values. The old <code>regheader = FALSE</code> escape hatch passed <code>--mni152reg</code> without <code>--srcsubject</code>, so <code>mri_vol2surf</code> sampled onto <code>fsaverage</code> and then used nearest-neighbour surf2surf averaging to reach the target subject, turning 63 distinct integer values into 1977 fractional ones. Every registered projection now passes <code>--srcsubject</code>, so no resampling happens. <code><a href="../reference/read_neuromaps_volume.html">read_neuromaps_volume()</a></code> had the same defect and was silently smoothing continuous maps.</li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9024" id="ggsegextra-1999024">ggseg.extra 1.9.9.9024<a class="anchor" aria-label="anchor" href="#ggsegextra-1999024"></a></h2>
 <ul><li>Cached pipeline intermediates now record the cache format version that wrote them, in a <code>cache_manifest.rds</code> sidecar in the step directory. Rebuilding an atlas after a pipeline fix no longer silently reuses output the old pipeline made: a cache written by an older ggseg.extra is recomputed when its step is among the requested <code>steps</code>, and stops the pipeline with the step to rerun when it is not. Stamped: the step caches, the contour files, and the processed-image and mask directories. Still reused whenever the file exists: the snapshot images, the subcortical mesh directory, and the lookup table and volume the wholebrain pipeline passes to the subcortical one, so a fix to any of those still needs its cache cleared by hand.</li>
