@@ -1497,7 +1497,7 @@ testthat::describe("wholebrain_project_to_surface", {
         subject = "fsaverage5",
         projfrac = 0.5,
         projfrac_range = NULL,
-        registration = "header",
+        registration_args = reg_args("header"),
         output_dir = tmp_dir,
         verbose = FALSE
       ),
@@ -1544,7 +1544,7 @@ testthat::describe("wholebrain_project_to_surface", {
         subject = "fsaverage5",
         projfrac = 0.5,
         projfrac_range = NULL,
-        registration = "header",
+        registration_args = reg_args("header"),
         output_dir = tmp_dir,
         verbose = TRUE
       ),
@@ -1587,7 +1587,7 @@ testthat::describe("wholebrain_project_to_surface", {
       subject = "fsaverage5",
       projfrac = 0.5,
       projfrac_range = NULL,
-      registration = "header",
+      registration_args = reg_args("header"),
       output_dir = tmp_dir,
       verbose = FALSE
     )
@@ -1631,7 +1631,7 @@ testthat::describe("wholebrain_project_to_surface", {
       subject = "fsaverage5",
       projfrac = 0.5,
       projfrac_range = NULL,
-      registration = "header",
+      registration_args = reg_args("header"),
       output_dir = tmp_dir,
       verbose = FALSE
     )
@@ -2727,7 +2727,7 @@ testthat::describe("wholebrain_project_to_surface unlisted labels", {
       subject = "fsaverage5",
       projfrac = 0.5,
       projfrac_range = NULL,
-      registration = "header",
+      registration_args = reg_args("header"),
       output_dir = tmp_dir,
       verbose = FALSE
     )
@@ -2761,7 +2761,7 @@ testthat::describe("wholebrain_project_to_surface unlisted labels", {
       subject = "fsaverage5",
       projfrac = 0.5,
       projfrac_range = NULL,
-      registration = "header",
+      registration_args = reg_args("header"),
       output_dir = output_dir,
       verbose = FALSE
     )
@@ -2899,74 +2899,41 @@ testthat::describe("unknown context through the wholebrain split", {
 })
 
 
-testthat::describe("wholebrain_vol2surf_overlay registration", {
-  capture_vol2surf <- function(registration, reg_file = NULL) {
+testthat::describe("wholebrain_vol2surf_overlay", {
+  forward_to_vol2surf <- function(registration_args) {
     caller <- parent.frame()
-    cap <- new.env()
-    local_mocked_bindings(
-      mni152_register_path = function() reg_file,
-      mri_vol2surf = function(input_file, output_file, ...) {
-        cap$args <- list(...)
-        RNifti::writeNifti(array(1L, dim = c(2, 1, 1)), output_file)
-      },
-      .env = caller
-    )
+    cap <- local_mock_mri_vol2surf(env = caller)
 
-    overlay <- wholebrain_vol2surf_overlay(
+    wholebrain_vol2surf_overlay(
       input_volume = "labels.nii.gz",
       hemi_short = "lh",
       subject = "fsaverage5",
       projfrac = 0.5,
       projfrac_range = NULL,
-      registration = registration,
+      registration_args = registration_args,
       surf_dir = withr::local_tempdir(.local_envir = caller),
       verbose = FALSE
     )
-    cap$overlay <- overlay
     cap
   }
 
-  it("applies FreeSurfer's MNI152 transform by default", {
+  it("passes a registration through with its source subject", {
     reg_file <- withr::local_tempfile(fileext = ".dat")
     file.create(reg_file)
 
-    cap <- capture_vol2surf("mni152", reg_file)
+    cap <- forward_to_vol2surf(reg_args(reg_file))
 
     expect_identical(cap$args$reg, reg_file)
     expect_identical(cap$args$srcsubject, "fsaverage5")
     expect_null(cap$args$regheader)
-    expect_no_match(cap$args$opts, "--regheader")
-    expect_match(
-      cap$args$opts,
-      paste("--interp nearest --trgsubject", shQuote("fsaverage5")),
-      fixed = TRUE
-    )
   })
 
-  it("trusts the volume header when asked to", {
-    cap <- capture_vol2surf("header")
+  it("passes a header registration through", {
+    cap <- forward_to_vol2surf(reg_args("header"))
 
     expect_null(cap$args$reg)
     expect_null(cap$args$srcsubject)
     expect_identical(cap$args$regheader, "fsaverage5")
-  })
-
-  it("applies a user-supplied registration file", {
-    reg_file <- withr::local_tempfile(fileext = ".lta")
-    file.create(reg_file)
-
-    cap <- capture_vol2surf(reg_file)
-
-    expect_identical(cap$args$reg, reg_file)
-    expect_identical(cap$args$srcsubject, "fsaverage5")
-    expect_null(cap$args$regheader)
-  })
-
-  it("errors on an unusable registration specification", {
-    expect_error(
-      capture_vol2surf("no/such/registration.dat"),
-      "Registration file not found"
-    )
   })
 
   it("keeps labels integer and listed when registering a real volume", {
@@ -2978,48 +2945,75 @@ testthat::describe("wholebrain_vol2surf_overlay registration", {
     skip_if(!file.exists(lut_file), "Test LUT file not found")
     colortable <- get_lut(lut_file)
 
-    overlay <- wholebrain_vol2surf_overlay(
-      input_volume = vol_file,
-      hemi_short = "lh",
-      subject = "fsaverage5",
-      projfrac = 0.5,
-      projfrac_range = c(0, 1, 0.1),
+    project <- function(registration) {
+      wholebrain_vol2surf_overlay(
+        input_volume = vol_file,
+        hemi_short = "lh",
+        subject = "fsaverage5",
+        projfrac = 0.5,
+        projfrac_range = c(0, 1, 0.1),
+        registration_args = reg_args(registration),
+        surf_dir = withr::local_tempdir(),
+        verbose = FALSE
+      )
+    }
+
+    overlay <- project("mni152")
+
+    expect_true(all(setdiff(unique(overlay), 0L) %in% colortable$idx))
+    expect_false(identical(overlay, project("header")))
+  })
+})
+
+
+testthat::describe("write_registration_record", {
+  it("records the registration the overlays were built with", {
+    dir <- withr::local_tempdir()
+    config <- list(
       registration = "mni152",
-      surf_dir = withr::local_tempdir(),
-      verbose = FALSE
-    )
-
-    labels <- setdiff(unique(overlay), 0L)
-    expect_true(all(labels %in% colortable$idx))
-    expect_lte(length(labels), nrow(colortable))
-
-    header_overlay <- wholebrain_vol2surf_overlay(
-      input_volume = vol_file,
-      hemi_short = "lh",
       subject = "fsaverage5",
-      projfrac = 0.5,
-      projfrac_range = c(0, 1, 0.1),
-      registration = "header",
-      surf_dir = withr::local_tempdir(),
-      verbose = FALSE
+      registration_args = list(
+        reg = "/opt/freesurfer/average/mni152.register.dat",
+        srcsubject = "fsaverage5",
+        regheader = NULL
+      )
     )
 
-    expect_false(identical(overlay, header_overlay))
-    expect_false(sum(overlay != 0L) == sum(header_overlay != 0L))
+    write_registration_record(dir, config)
+    record <- readLines(file.path(dir, "registration.txt"))
+
+    expect_true(any(grepl("^registration: mni152$", record)))
+    expect_true(any(grepl("^srcsubject: fsaverage5$", record)))
+    expect_true(any(grepl("mni152.register.dat", record, fixed = TRUE)))
+    expect_false(any(grepl("^regheader:", record)))
+  })
+
+  it("records a header registration without a source subject", {
+    dir <- withr::local_tempdir()
+    config <- list(
+      registration = "header",
+      subject = "fsaverage5",
+      registration_args = list(
+        reg = NULL,
+        srcsubject = NULL,
+        regheader = "fsaverage5"
+      )
+    )
+
+    write_registration_record(dir, config)
+    record <- readLines(file.path(dir, "registration.txt"))
+
+    expect_true(any(grepl("^registration: header$", record)))
+    expect_true(any(grepl("^regheader: fsaverage5$", record)))
+    expect_false(any(grepl("^reg:", record)))
   })
 })
 
 
 testthat::describe("registration_from_regheader", {
   it("maps TRUE to the header registration", {
-    withr::local_options(lifecycle_verbosity = "warning")
-
-    expect_warning(
-      registration_from_regheader(TRUE, registration_missing = TRUE),
-      class = "lifecycle_warning_deprecated"
-    )
-
     withr::local_options(lifecycle_verbosity = "quiet")
+
     expect_identical(
       registration_from_regheader(TRUE, registration_missing = TRUE),
       "header"
@@ -3027,17 +3021,20 @@ testthat::describe("registration_from_regheader", {
   })
 
   it("maps FALSE to the MNI152 registration", {
-    withr::local_options(lifecycle_verbosity = "warning")
-
-    expect_warning(
-      registration_from_regheader(FALSE, registration_missing = TRUE),
-      class = "lifecycle_warning_deprecated"
-    )
-
     withr::local_options(lifecycle_verbosity = "quiet")
+
     expect_identical(
       registration_from_regheader(FALSE, registration_missing = TRUE),
       "mni152"
+    )
+  })
+
+  it("warns that regheader is deprecated", {
+    withr::local_options(lifecycle_verbosity = "warning")
+
+    expect_warning(
+      registration_from_regheader(TRUE, registration_missing = TRUE),
+      class = "lifecycle_warning_deprecated"
     )
   })
 

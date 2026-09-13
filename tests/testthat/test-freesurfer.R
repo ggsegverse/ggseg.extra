@@ -1,5 +1,3 @@
-.cap <- new.env()
-
 testthat::describe("check_fs", {
   it("returns logical", {
     result <- check_fs()
@@ -75,14 +73,7 @@ testthat::describe("freesurfer_min_version", {
 
 testthat::describe("mri_vol2surf", {
   it("constructs correct command", {
-    .cap$captured_cmd <- NULL
-    local_mocked_bindings(
-      check_fs = function(abort = FALSE) invisible(TRUE),
-      run_cmd = function(cmd, verbose = FALSE) {
-        .cap$captured_cmd <- cmd
-        invisible(NULL)
-      }
-    )
+    cap <- local_mock_vol2surf()
 
     mri_vol2surf(
       input_file = "input.mgz",
@@ -91,22 +82,15 @@ testthat::describe("mri_vol2surf", {
       verbose = FALSE
     )
 
-    expect_match(.cap$captured_cmd, "mri_vol2surf")
-    expect_match(.cap$captured_cmd, paste("--mov", shQuote("input.mgz")))
-    expect_match(.cap$captured_cmd, paste("--o", shQuote("output.mgz")))
-    expect_match(.cap$captured_cmd, "--hemi lh")
-    expect_match(.cap$captured_cmd, "--projfrac 0.5")
+    expect_match(cap$cmd, "mri_vol2surf")
+    expect_match(cap$cmd, paste("--mov", shQuote("input.mgz")))
+    expect_match(cap$cmd, paste("--o", shQuote("output.mgz")))
+    expect_match(cap$cmd, "--hemi lh")
+    expect_match(cap$cmd, "--projfrac 0.5")
   })
 
   it("emits no registration flags when none are given", {
-    .cap$captured_cmd <- NULL
-    local_mocked_bindings(
-      check_fs = function(abort = FALSE) invisible(TRUE),
-      run_cmd = function(cmd, verbose = FALSE) {
-        .cap$captured_cmd <- cmd
-        invisible(NULL)
-      }
-    )
+    cap <- local_mock_vol2surf()
 
     mri_vol2surf(
       input_file = "input.mgz",
@@ -115,20 +99,13 @@ testthat::describe("mri_vol2surf", {
       verbose = FALSE
     )
 
-    expect_no_match(.cap$captured_cmd, "--reg ")
-    expect_no_match(.cap$captured_cmd, "--regheader")
-    expect_no_match(.cap$captured_cmd, "--srcsubject")
+    expect_no_match(cap$cmd, "--reg ")
+    expect_no_match(cap$cmd, "--regheader")
+    expect_no_match(cap$cmd, "--srcsubject")
   })
 
   it("passes a registration file together with its source subject", {
-    .cap$captured_cmd <- NULL
-    local_mocked_bindings(
-      check_fs = function(abort = FALSE) invisible(TRUE),
-      run_cmd = function(cmd, verbose = FALSE) {
-        .cap$captured_cmd <- cmd
-        invisible(NULL)
-      }
-    )
+    cap <- local_mock_vol2surf()
 
     mri_vol2surf(
       input_file = "input.mgz",
@@ -140,7 +117,7 @@ testthat::describe("mri_vol2surf", {
     )
 
     expect_match(
-      .cap$captured_cmd,
+      cap$cmd,
       paste(
         "--reg",
         shQuote("mni152.register.dat"),
@@ -149,18 +126,11 @@ testthat::describe("mri_vol2surf", {
       ),
       fixed = TRUE
     )
-    expect_no_match(.cap$captured_cmd, "--regheader")
+    expect_no_match(cap$cmd, "--regheader")
   })
 
   it("passes --regheader for volumes in the subject's own space", {
-    .cap$captured_cmd <- NULL
-    local_mocked_bindings(
-      check_fs = function(abort = FALSE) invisible(TRUE),
-      run_cmd = function(cmd, verbose = FALSE) {
-        .cap$captured_cmd <- cmd
-        invisible(NULL)
-      }
-    )
+    cap <- local_mock_vol2surf()
 
     mri_vol2surf(
       input_file = "input.mgz",
@@ -171,68 +141,12 @@ testthat::describe("mri_vol2surf", {
     )
 
     expect_match(
-      .cap$captured_cmd,
+      cap$cmd,
       paste("--regheader", shQuote("fsaverage5")),
       fixed = TRUE
     )
-    expect_no_match(.cap$captured_cmd, "--reg ")
-    expect_no_match(.cap$captured_cmd, "--srcsubject")
-  })
-
-  it("refuses a registration without a source subject", {
-    local_mocked_bindings(
-      check_fs = function(abort = FALSE) invisible(TRUE),
-      run_cmd = function(cmd, verbose = FALSE) invisible(NULL)
-    )
-
-    expect_error(
-      mri_vol2surf(
-        input_file = "input.mgz",
-        output_file = "output.mgz",
-        hemisphere = "lh",
-        reg = "mni152.register.dat",
-        verbose = FALSE
-      ),
-      "srcsubject"
-    )
-  })
-
-  it("refuses a source subject without a registration", {
-    local_mocked_bindings(
-      check_fs = function(abort = FALSE) invisible(TRUE),
-      run_cmd = function(cmd, verbose = FALSE) invisible(NULL)
-    )
-
-    expect_error(
-      mri_vol2surf(
-        input_file = "input.mgz",
-        output_file = "output.mgz",
-        hemisphere = "lh",
-        srcsubject = "fsaverage5",
-        verbose = FALSE
-      ),
-      "only applies together with"
-    )
-  })
-
-  it("refuses a registration and a header subject together", {
-    local_mocked_bindings(
-      check_fs = function(abort = FALSE) invisible(TRUE),
-      run_cmd = function(cmd, verbose = FALSE) invisible(NULL)
-    )
-
-    expect_error(
-      mri_vol2surf(
-        input_file = "input.mgz",
-        output_file = "output.mgz",
-        hemisphere = "lh",
-        reg = "mni152.register.dat",
-        srcsubject = "fsaverage5",
-        regheader = "fsaverage5",
-        verbose = FALSE
-      ),
-      "cannot both be given"
-    )
+    expect_no_match(cap$cmd, "--reg ")
+    expect_no_match(cap$cmd, "--srcsubject")
   })
 })
 
@@ -286,7 +200,7 @@ testthat::describe("resolve_vol2surf_registration", {
 
     expect_error(
       resolve_vol2surf_registration(reg_dir, "fsaverage5"),
-      "must be a file, not a directory"
+      "Registration file not found"
     )
   })
 
@@ -323,14 +237,7 @@ testthat::describe("resolve_vol2surf_registration", {
 
 testthat::describe("mri_pretess", {
   it("constructs correct command", {
-    .cap$captured_cmd <- NULL
-    local_mocked_bindings(
-      check_fs = function(abort = FALSE) invisible(TRUE),
-      run_cmd = function(cmd, verbose = FALSE) {
-        .cap$captured_cmd <- cmd
-        invisible(NULL)
-      }
-    )
+    cap <- local_mock_vol2surf()
 
     mri_pretess(
       template = "vol.mgz",
@@ -339,21 +246,14 @@ testthat::describe("mri_pretess", {
       verbose = FALSE
     )
 
-    expect_match(.cap$captured_cmd, "mri_pretess")
-    expect_match(.cap$captured_cmd, "vol.mgz")
-    expect_match(.cap$captured_cmd, "10")
-    expect_match(.cap$captured_cmd, "pretess.mgz")
+    expect_match(cap$cmd, "mri_pretess")
+    expect_match(cap$cmd, "vol.mgz")
+    expect_match(cap$cmd, "10")
+    expect_match(cap$cmd, "pretess.mgz")
   })
 
   it("appends opts to command", {
-    .cap$captured_cmd <- NULL
-    local_mocked_bindings(
-      check_fs = function(abort = FALSE) invisible(TRUE),
-      run_cmd = function(cmd, verbose = FALSE) {
-        .cap$captured_cmd <- cmd
-        invisible(NULL)
-      }
-    )
+    cap <- local_mock_vol2surf()
 
     mri_pretess(
       template = "vol.mgz",
@@ -363,21 +263,14 @@ testthat::describe("mri_pretess", {
       verbose = FALSE
     )
 
-    expect_match(.cap$captured_cmd, "--keep")
+    expect_match(cap$cmd, "--keep")
   })
 })
 
 
 testthat::describe("mri_tessellate", {
   it("constructs correct command", {
-    .cap$captured_cmd <- NULL
-    local_mocked_bindings(
-      check_fs = function(abort = FALSE) invisible(TRUE),
-      run_cmd = function(cmd, verbose = FALSE) {
-        .cap$captured_cmd <- cmd
-        invisible(NULL)
-      }
-    )
+    cap <- local_mock_vol2surf()
 
     mri_tessellate(
       input_file = "pretess.mgz",
@@ -386,21 +279,14 @@ testthat::describe("mri_tessellate", {
       verbose = FALSE
     )
 
-    expect_match(.cap$captured_cmd, "mri_tessellate")
-    expect_match(.cap$captured_cmd, "pretess.mgz")
-    expect_match(.cap$captured_cmd, "10")
-    expect_match(.cap$captured_cmd, "tess")
+    expect_match(cap$cmd, "mri_tessellate")
+    expect_match(cap$cmd, "pretess.mgz")
+    expect_match(cap$cmd, "10")
+    expect_match(cap$cmd, "tess")
   })
 
   it("appends opts to command", {
-    .cap$captured_cmd <- NULL
-    local_mocked_bindings(
-      check_fs = function(abort = FALSE) invisible(TRUE),
-      run_cmd = function(cmd, verbose = FALSE) {
-        .cap$captured_cmd <- cmd
-        invisible(NULL)
-      }
-    )
+    cap <- local_mock_vol2surf()
 
     mri_tessellate(
       input_file = "pretess.mgz",
@@ -410,21 +296,14 @@ testthat::describe("mri_tessellate", {
       verbose = FALSE
     )
 
-    expect_match(.cap$captured_cmd, "--extra-flag")
+    expect_match(cap$cmd, "--extra-flag")
   })
 })
 
 
 testthat::describe("mri_smooth", {
   it("constructs correct command", {
-    .cap$captured_cmd <- NULL
-    local_mocked_bindings(
-      check_fs = function(abort = FALSE) invisible(TRUE),
-      run_cmd = function(cmd, verbose = FALSE) {
-        .cap$captured_cmd <- cmd
-        invisible(NULL)
-      }
-    )
+    cap <- local_mock_vol2surf()
 
     mri_smooth(
       input_file = "tess",
@@ -432,19 +311,12 @@ testthat::describe("mri_smooth", {
       verbose = FALSE
     )
 
-    expect_match(.cap$captured_cmd, "mris_smooth")
-    expect_match(.cap$captured_cmd, "-nw")
+    expect_match(cap$cmd, "mris_smooth")
+    expect_match(cap$cmd, "-nw")
   })
 
   it("appends opts to command", {
-    .cap$captured_cmd <- NULL
-    local_mocked_bindings(
-      check_fs = function(abort = FALSE) invisible(TRUE),
-      run_cmd = function(cmd, verbose = FALSE) {
-        .cap$captured_cmd <- cmd
-        invisible(NULL)
-      }
-    )
+    cap <- local_mock_vol2surf()
 
     mri_smooth(
       input_file = "tess",
@@ -453,21 +325,14 @@ testthat::describe("mri_smooth", {
       verbose = FALSE
     )
 
-    expect_match(.cap$captured_cmd, "--seed 42")
+    expect_match(cap$cmd, "--seed 42")
   })
 })
 
 
 testthat::describe("mri_vol2surf with opts", {
   it("appends opts to command", {
-    .cap$captured_cmd <- NULL
-    local_mocked_bindings(
-      check_fs = function(abort = FALSE) invisible(TRUE),
-      run_cmd = function(cmd, verbose = FALSE) {
-        .cap$captured_cmd <- cmd
-        invisible(NULL)
-      }
-    )
+    cap <- local_mock_vol2surf()
 
     mri_vol2surf(
       input_file = "input.mgz",
@@ -477,21 +342,14 @@ testthat::describe("mri_vol2surf with opts", {
       verbose = FALSE
     )
 
-    expect_match(.cap$captured_cmd, "--interp trilinear")
+    expect_match(cap$cmd, "--interp trilinear")
   })
 })
 
 
 testthat::describe("mri_vol2surf with projfrac_range", {
   it("uses --projfrac-max for multi-depth projection", {
-    .cap$captured_cmd <- NULL
-    local_mocked_bindings(
-      check_fs = function(abort = FALSE) invisible(TRUE),
-      run_cmd = function(cmd, verbose = FALSE) {
-        .cap$captured_cmd <- cmd
-        invisible(NULL)
-      }
-    )
+    cap <- local_mock_vol2surf()
 
     mri_vol2surf(
       input_file = "input.mgz",
@@ -501,9 +359,9 @@ testthat::describe("mri_vol2surf with projfrac_range", {
       verbose = FALSE
     )
 
-    expect_match(.cap$captured_cmd, "--projfrac-max 0 1 0.1")
+    expect_match(cap$cmd, "--projfrac-max 0 1 0.1")
     expect_false(
-      grepl("--projfrac 0.5", .cap$captured_cmd, fixed = TRUE)
+      grepl("--projfrac 0.5", cap$cmd, fixed = TRUE)
     )
   })
 })
@@ -511,14 +369,7 @@ testthat::describe("mri_vol2surf with projfrac_range", {
 
 testthat::describe("mri_surf2surf_rereg", {
   it("constructs correct command", {
-    .cap$captured_cmd <- NULL
-    local_mocked_bindings(
-      check_fs = function(abort = FALSE) invisible(TRUE),
-      run_cmd = function(cmd, verbose = FALSE) {
-        .cap$captured_cmd <- cmd
-        invisible(NULL)
-      }
-    )
+    cap <- local_mock_vol2surf()
 
     tmp <- withr::local_tempdir()
 
@@ -530,24 +381,17 @@ testthat::describe("mri_surf2surf_rereg", {
       verbose = FALSE
     )
 
-    expect_match(.cap$captured_cmd, "mri_surf2surf")
-    expect_match(.cap$captured_cmd, paste("--srcsubject", shQuote("bert")))
+    expect_match(cap$cmd, "mri_surf2surf")
+    expect_match(cap$cmd, paste("--srcsubject", shQuote("bert")))
     expect_match(
-      .cap$captured_cmd,
+      cap$cmd,
       paste("--sval-annot", shQuote("aparc.DKTatlas"))
     )
-    expect_match(.cap$captured_cmd, "--hemi lh")
+    expect_match(cap$cmd, "--hemi lh")
   })
 
   it("warns about deprecated hemi argument and delegates to hemisphere", {
-    .cap$captured_cmd <- NULL
-    local_mocked_bindings(
-      check_fs = function(abort = FALSE) invisible(TRUE),
-      run_cmd = function(cmd, verbose = FALSE) {
-        .cap$captured_cmd <- cmd
-        invisible(NULL)
-      }
-    )
+    cap <- local_mock_vol2surf()
 
     tmp <- withr::local_tempdir()
 
@@ -561,7 +405,7 @@ testthat::describe("mri_surf2surf_rereg", {
       )
     )
 
-    expect_match(.cap$captured_cmd, "--hemi rh")
+    expect_match(cap$cmd, "--hemi rh")
   })
 })
 
@@ -682,15 +526,7 @@ testthat::describe("surf2asc", {
 })
 
 testthat::describe("check_mni152_subject", {
-  it("accepts fsaverage without reading any geometry", {
-    local_mocked_bindings(
-      subject_vox2ras = function(...) cli::cli_abort("should not be reached")
-    )
-
-    expect_true(check_mni152_subject("fsaverage"))
-  })
-
-  it("accepts a subject sharing fsaverage's conformed geometry", {
+  it("accepts a subject sharing fsaverage's geometry", {
     local_mocked_bindings(subject_vox2ras = function(...) diag(4))
 
     expect_true(check_mni152_subject("fsaverage5"))
@@ -718,21 +554,21 @@ testthat::describe("check_mni152_subject", {
 
 
 testthat::describe("warn_if_subject_space_volume", {
-  it("warns when the volume shares the subject's conformed grid", {
+  it("warns when the volume sits on the subject's own voxel grid", {
     local_mocked_bindings(
-      volume_direction_block = function(...) diag(3),
+      volume_vox2ras = function(...) diag(4),
       subject_vox2ras = function(...) diag(4)
     )
 
     expect_warning(
       warn_if_subject_space_volume("volume.mgz", "fsaverage5"),
-      "conformed voxel grid"
+      "own voxel grid"
     )
   })
 
-  it("stays silent for a volume on its own grid", {
+  it("stays silent for a volume on a different voxel grid", {
     local_mocked_bindings(
-      volume_direction_block = function(...) diag(c(1.5, 1.5, 1.5)),
+      volume_vox2ras = function(...) diag(c(1.5, 1.5, 1.5, 1)),
       subject_vox2ras = function(...) diag(4)
     )
 
@@ -744,7 +580,7 @@ testthat::describe("warn_if_subject_space_volume", {
 
   it("stays silent when the geometry cannot be read", {
     local_mocked_bindings(
-      volume_direction_block = function(...) NULL,
+      volume_vox2ras = function(...) NULL,
       subject_vox2ras = function(...) diag(4)
     )
 

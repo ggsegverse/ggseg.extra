@@ -397,3 +397,43 @@ local_cache_file <- function(
   }
   file
 }
+
+
+# Capture the command mri_vol2surf (and friends) would run, without a
+# FreeSurfer install. Returns an environment whose `cmd` holds the last
+# command built.
+local_mock_vol2surf <- function(env = parent.frame()) {
+  cap <- new.env()
+  testthat::local_mocked_bindings(
+    check_fs = function(abort = FALSE) invisible(TRUE),
+    run_cmd = function(cmd, verbose = FALSE) {
+      cap$cmd <- cmd
+      invisible(NULL)
+    },
+    .env = env
+  )
+  cap
+}
+
+# Capture the arguments the pipeline passes to mri_vol2surf, writing a
+# stand-in overlay so the caller can read it back. Returns an environment
+# whose `args` holds the arguments after `output_file`.
+local_mock_mri_vol2surf <- function(overlay = c(1L, 2L), env = parent.frame()) {
+  cap <- new.env()
+  testthat::local_mocked_bindings(
+    mri_vol2surf = function(input_file, output_file, ...) {
+      cap$args <- list(...)
+      RNifti::writeNifti(
+        array(overlay, dim = c(length(overlay), 1, 1)),
+        output_file
+      )
+    },
+    .env = env
+  )
+  cap
+}
+
+# The mri_vol2surf flags a registration specification resolves to.
+reg_args <- function(registration, subject = "fsaverage5") {
+  resolve_vol2surf_registration(registration, subject)
+}

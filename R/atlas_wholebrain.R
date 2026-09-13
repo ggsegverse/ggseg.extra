@@ -138,32 +138,26 @@
 #'   Use `steps = 1:2` to run projection and split only.
 #'
 #' @section Registration:
-#' `registration` decides how volume coordinates map onto the surface, and
-#' the wrong choice gives an atlas that looks plausible but sits about 2 mm
-#' from where it belongs.
+#' The default changed to `"mni152"` in this release; before it, the volume
+#' header was trusted and the MNI152-to-MNI305 transform was omitted
+#' altogether. Atlases built from MNI152 volumes by earlier versions must be
+#' rebuilt: relative to `"header"`, `"mni152"` moves the point each
+#' `fsaverage5` vertex samples by a median of 1.96 mm (1.18-2.60 mm),
+#' anteriorly and superiorly, and relabels roughly 18% (left) to 21% (right)
+#' of vertices.
 #'
-#' The default is `"mni152"`. It changed in version 1.9.9.9025; before that
-#' the volume header was trusted, which omitted the MNI152-to-MNI305
-#' transform entirely. Relative to `"header"`, `"mni152"` moves the point
-#' each `fsaverage5` vertex samples by a median of 1.96 mm (1.18-2.60 mm),
-#' anteriorly and superiorly, and changes the label of roughly 18% (left)
-#' to 21% (right) of vertices. Put the other way round, `"header"` on an
-#' MNI152 volume samples too far posterior and inferior.
-#'
-#' Nothing inspects the volume to work out which space it is in, so
-#' `"mni152"` is applied to whatever you pass. Use `"header"` for native,
-#' conformed or fsaverage-space volumes. A warning is issued when the
-#' volume shares the target subject's conformed voxel grid, which is the
-#' one case a header can reveal.
+#' No header identifies the space an arbitrary volume is in, so `"mni152"`
+#' is applied to whatever you pass. A volume sitting on the target subject's
+#' exact voxel grid warns, that being a claim a header does support, but a
+#' volume in some other non-MNI152 space cannot be recognised.
 #'
 #' `mni152.register.dat` targets the FSL/SPM MNI152 (NLin6) 1 mm template.
 #' Volumes in other MNI152 variants, such as the NLin2009cAsym template
-#' `ggsegJulich` uses, keep a sub-millimetre residual; that is still far
-#' better than the roughly 2 mm the transform corrects, but it is not
-#' exact. The transform is registered against `fsaverage`, so `subject`
-#' must share fsaverage's conformed geometry, which the `fsaverageN`
-#' subjects do. For any other subject, supply your own register.dat or LTA
-#' file.
+#' `ggsegJulich` uses, keep a sub-millimetre residual rather than the
+#' roughly 2 mm the transform corrects. It is registered against
+#' `fsaverage`, so `subject` must share fsaverage's conformed geometry,
+#' which the `fsaverageN` subjects do; for any other subject, supply your
+#' own register.dat or LTA file.
 #'
 #' FreeSurfer's own `INFO` and `WARNING` lines about the registration are
 #' only visible with `verbose = TRUE`.
@@ -290,7 +284,7 @@ registration_from_regheader <- function(regheader, registration_missing) {
   }
 
   lifecycle::deprecate_warn(
-    "2.0.0",
+    "1.9.9.9025",
     "create_wholebrain_from_volume(regheader = )",
     "create_wholebrain_from_volume(registration = )"
   )
@@ -701,7 +695,11 @@ validate_wholebrain_config <- function(
     cli::cli_abort("Color lookup table not found: {.path {input_lut}}")
   }
 
-  validate_registration(registration, subject, input_volume)
+  registration_args <- validate_registration(
+    registration,
+    subject,
+    input_volume
+  )
 
   config$output_dir <- normalizePath(config$output_dir, mustWork = FALSE)
 
@@ -722,6 +720,7 @@ validate_wholebrain_config <- function(
   config$projfrac_range <- projfrac_range
   config$subject <- subject
   config$registration <- registration
+  config$registration_args <- registration_args
   config$min_vertices <- as.integer(min_vertices)
   config
 }
@@ -783,7 +782,7 @@ wholebrain_compute_projection <- function(config, dirs) {
     subject = config$subject,
     projfrac = config$projfrac,
     projfrac_range = config$projfrac_range,
-    registration = config$registration,
+    registration_args = config$registration_args,
     output_dir = dirs$base,
     verbose = config$verbose
   )
@@ -793,6 +792,7 @@ wholebrain_compute_projection <- function(config, dirs) {
     atlas_data.rds = atlas_data,
     colortable.rds = colortable
   )
+  write_registration_record(dirs$base, config)
   if (config$verbose) {
     cli::cli_progress_done()
   }
@@ -892,7 +892,7 @@ wholebrain_project_to_surface <- function(
   subject,
   projfrac,
   projfrac_range,
-  registration,
+  registration_args,
   output_dir,
   verbose
 ) {
@@ -915,7 +915,7 @@ wholebrain_project_to_surface <- function(
       subject = subject,
       projfrac = projfrac,
       projfrac_range = projfrac_range,
-      registration = registration,
+      registration_args = registration_args,
       surf_dir = surf_dir,
       verbose = verbose
     )
@@ -937,6 +937,30 @@ wholebrain_project_to_surface <- function(
   }
 
   bind_rows(all_data)
+}
+
+
+#' Record which registration produced the surface overlays
+#'
+#' The projection is the step whose output cannot be judged by looking at
+#' it: a volume registered the wrong way yields a displaced atlas that still
+#' looks plausible. A plain-text sidecar beside the overlays keeps that
+#' decision answerable later. It is deliberately not a cache entry, so it is
+#' never stamped, reused as pipeline state, or read back by the pipeline.
+#' @noRd
+write_registration_record <- function(dir, config) {
+  args <- config$registration_args
+  writeLines(
+    c(
+      paste("registration:", config$registration),
+      paste("subject:", config$subject),
+      if (!is.null(args$reg)) paste("reg:", args$reg),
+      if (!is.null(args$srcsubject)) paste("srcsubject:", args$srcsubject),
+      if (!is.null(args$regheader)) paste("regheader:", args$regheader),
+      paste("ggseg.extra:", as.character(utils::packageVersion("ggseg.extra")))
+    ),
+    as.character(fs::path(dir, "registration.txt"))
+  )
 }
 
 
@@ -991,7 +1015,7 @@ wholebrain_vol2surf_overlay <- function(
   subject,
   projfrac,
   projfrac_range,
-  registration,
+  registration_args,
   surf_dir,
   verbose
 ) {
@@ -1000,17 +1024,15 @@ wholebrain_vol2surf_overlay <- function(
     paste0(hemi_short, "_overlay.nii.gz")
   ))
 
-  reg <- resolve_vol2surf_registration(registration, subject)
-
   mri_vol2surf(
     input_file = input_volume,
     output_file = output_mgz,
     hemisphere = hemi_short,
     projfrac = projfrac,
     projfrac_range = projfrac_range,
-    reg = reg$reg,
-    srcsubject = reg$srcsubject,
-    regheader = reg$regheader,
+    reg = registration_args$reg,
+    srcsubject = registration_args$srcsubject,
+    regheader = registration_args$regheader,
     opts = paste("--interp nearest --trgsubject", shQuote(subject)),
     verbose = verbose
   )

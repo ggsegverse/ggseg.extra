@@ -208,32 +208,26 @@ rather than as a region.
 
 \section{Registration}{
 
-\code{registration} decides how volume coordinates map onto the surface, and
-the wrong choice gives an atlas that looks plausible but sits about 2 mm
-from where it belongs.
+The default changed to \code{"mni152"} in this release; before it, the volume
+header was trusted and the MNI152-to-MNI305 transform was omitted
+altogether. Atlases built from MNI152 volumes by earlier versions must be
+rebuilt: relative to \code{"header"}, \code{"mni152"} moves the point each
+\code{fsaverage5} vertex samples by a median of 1.96 mm (1.18-2.60 mm),
+anteriorly and superiorly, and relabels roughly 18\% (left) to 21\% (right)
+of vertices.
 
-The default is \code{"mni152"}. It changed in version 1.9.9.9025; before that
-the volume header was trusted, which omitted the MNI152-to-MNI305
-transform entirely. Relative to \code{"header"}, \code{"mni152"} moves the point
-each \code{fsaverage5} vertex samples by a median of 1.96 mm (1.18-2.60 mm),
-anteriorly and superiorly, and changes the label of roughly 18\% (left)
-to 21\% (right) of vertices. Put the other way round, \code{"header"} on an
-MNI152 volume samples too far posterior and inferior.
-
-Nothing inspects the volume to work out which space it is in, so
-\code{"mni152"} is applied to whatever you pass. Use \code{"header"} for native,
-conformed or fsaverage-space volumes. A warning is issued when the
-volume shares the target subject's conformed voxel grid, which is the
-one case a header can reveal.
+No header identifies the space an arbitrary volume is in, so \code{"mni152"}
+is applied to whatever you pass. A volume sitting on the target subject's
+exact voxel grid warns, that being a claim a header does support, but a
+volume in some other non-MNI152 space cannot be recognised.
 
 \code{mni152.register.dat} targets the FSL/SPM MNI152 (NLin6) 1 mm template.
 Volumes in other MNI152 variants, such as the NLin2009cAsym template
-\code{ggsegJulich} uses, keep a sub-millimetre residual; that is still far
-better than the roughly 2 mm the transform corrects, but it is not
-exact. The transform is registered against \code{fsaverage}, so \code{subject}
-must share fsaverage's conformed geometry, which the \code{fsaverageN}
-subjects do. For any other subject, supply your own register.dat or LTA
-file.
+\code{ggsegJulich} uses, keep a sub-millimetre residual rather than the
+roughly 2 mm the transform corrects. It is registered against
+\code{fsaverage}, so \code{subject} must share fsaverage's conformed geometry,
+which the \code{fsaverageN} subjects do; for any other subject, supply your
+own register.dat or LTA file.
 
 FreeSurfer's own \code{INFO} and \code{WARNING} lines about the registration are
 only visible with \code{verbose = TRUE}.

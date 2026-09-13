@@ -647,6 +647,7 @@ testthat::describe("read_neuromaps_volume", {
 
     local_mocked_bindings(
       check_fs = function(...) invisible(TRUE),
+      check_mni152_subject = function(...) invisible(TRUE),
       mni152_register_path = function() reg_file,
       mri_vol2surf = function(input_file, output_file, hemisphere, ...) {
         cap$args <- list(...)
@@ -680,6 +681,7 @@ testthat::describe("read_neuromaps_volume", {
     n <- 10242L
     local_mocked_bindings(
       check_fs = function(...) invisible(TRUE),
+      check_mni152_subject = function(...) invisible(TRUE),
       mri_vol2surf = function(input_file, output_file, hemisphere, ...) {
         values <- if (grepl("lh", hemisphere, fixed = TRUE)) {
           c(rep(1, 5000), rep(2, 5242))
@@ -708,6 +710,7 @@ testthat::describe("read_neuromaps_volume", {
     n <- 10242L
     local_mocked_bindings(
       check_fs = function(...) invisible(TRUE),
+      check_mni152_subject = function(...) invisible(TRUE),
       mri_vol2surf = function(input_file, output_file, hemisphere, ...) {
         values <- c(rep(1, 5000), rep(2, 5242))
         RNifti::writeNifti(array(values, dim = c(n, 1, 1)), output_file)
@@ -730,6 +733,7 @@ testthat::describe("read_neuromaps_volume", {
     n <- 10242L
     local_mocked_bindings(
       check_fs = function(...) invisible(TRUE),
+      check_mni152_subject = function(...) invisible(TRUE),
       mri_vol2surf = function(input_file, output_file, hemisphere, ...) {
         values <- seq(0.1, 10, length.out = n)
         RNifti::writeNifti(array(values, dim = c(n, 1, 1)), output_file)
@@ -755,6 +759,7 @@ testthat::describe("read_neuromaps_volume", {
 
     local_mocked_bindings(
       check_fs = function(...) invisible(TRUE),
+      check_mni152_subject = function(...) invisible(TRUE),
       mri_vol2surf = function(...) invisible(NULL)
     )
 
@@ -774,6 +779,7 @@ testthat::describe("read_neuromaps_volume", {
     n <- 10242L
     local_mocked_bindings(
       check_fs = function(...) invisible(TRUE),
+      check_mni152_subject = function(...) invisible(TRUE),
       mri_vol2surf = function(input_file, output_file, hemisphere, ...) {
         values <- c(rep(0, 2000), rep(1, 4000), rep(2, 4242))
         RNifti::writeNifti(array(values, dim = c(n, 1, 1)), output_file)
@@ -922,6 +928,7 @@ testthat::describe("read_neuromaps_volume vertex count mismatch", {
 
     local_mocked_bindings(
       check_fs = function(...) invisible(TRUE),
+      check_mni152_subject = function(...) invisible(TRUE),
       mri_vol2surf = function(input_file, output_file, hemisphere, ...) {
         wrong_n <- 5000L
         values <- rep(1, wrong_n)
