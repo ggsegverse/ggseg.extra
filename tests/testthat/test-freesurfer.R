@@ -595,7 +595,7 @@ testthat::describe("warn_if_subject_space_volume", {
 testthat::describe("check_mni152_grid", {
   las_1mm <- diag(c(-1, 1, 1, 1))
   ras_1mm <- diag(c(1, 1, 1, 1))
-  las_1.5mm <- diag(c(-1.5, 1.5, 1.5, 1))
+  las_coarse <- diag(c(-1.5, 1.5, 1.5, 1))
 
   it("accepts the 1 mm left-handed grid the transform was built for", {
     local_mocked_bindings(volume_vox2ras = function(...) las_1mm)
@@ -608,7 +608,7 @@ testthat::describe("check_mni152_grid", {
   })
 
   it("refuses another resolution, which would come out mislocated", {
-    local_mocked_bindings(volume_vox2ras = function(...) las_1.5mm)
+    local_mocked_bindings(volume_vox2ras = function(...) las_coarse)
     expect_error(check_mni152_grid("volume.nii"), "built for a 1 mm grid")
   })
 
