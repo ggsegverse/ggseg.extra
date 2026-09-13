@@ -1,5 +1,3 @@
-.cap <- new.env()
-
 testthat::describe("check_fs", {
   it("returns logical", {
     result <- check_fs()
@@ -75,14 +73,7 @@ testthat::describe("freesurfer_min_version", {
 
 testthat::describe("mri_vol2surf", {
   it("constructs correct command", {
-    .cap$captured_cmd <- NULL
-    local_mocked_bindings(
-      check_fs = function(abort = FALSE) invisible(TRUE),
-      run_cmd = function(cmd, verbose = FALSE) {
-        .cap$captured_cmd <- cmd
-        invisible(NULL)
-      }
-    )
+    cap <- local_mock_vol2surf()
 
     mri_vol2surf(
       input_file = "input.mgz",
@@ -91,25 +82,162 @@ testthat::describe("mri_vol2surf", {
       verbose = FALSE
     )
 
-    expect_match(.cap$captured_cmd, "mri_vol2surf")
-    expect_match(.cap$captured_cmd, paste("--mov", shQuote("input.mgz")))
-    expect_match(.cap$captured_cmd, paste("--o", shQuote("output.mgz")))
-    expect_match(.cap$captured_cmd, "--hemi lh")
-    expect_match(.cap$captured_cmd, "--projfrac 0.5")
+    expect_match(cap$cmd, "mri_vol2surf")
+    expect_match(cap$cmd, paste("--mov", shQuote("input.mgz")))
+    expect_match(cap$cmd, paste("--o", shQuote("output.mgz")))
+    expect_match(cap$cmd, "--hemi lh")
+    expect_match(cap$cmd, "--projfrac 0.5")
+  })
+
+  it("emits no registration flags when none are given", {
+    cap <- local_mock_vol2surf()
+
+    mri_vol2surf(
+      input_file = "input.mgz",
+      output_file = "output.mgz",
+      hemisphere = "lh",
+      verbose = FALSE
+    )
+
+    expect_no_match(cap$cmd, "--reg ")
+    expect_no_match(cap$cmd, "--regheader")
+    expect_no_match(cap$cmd, "--srcsubject")
+  })
+
+  it("passes a registration file together with its source subject", {
+    cap <- local_mock_vol2surf()
+
+    mri_vol2surf(
+      input_file = "input.mgz",
+      output_file = "output.mgz",
+      hemisphere = "lh",
+      reg = "mni152.register.dat",
+      srcsubject = "fsaverage5",
+      verbose = FALSE
+    )
+
+    expect_match(
+      cap$cmd,
+      paste(
+        "--reg",
+        shQuote("mni152.register.dat"),
+        "--srcsubject",
+        shQuote("fsaverage5")
+      ),
+      fixed = TRUE
+    )
+    expect_no_match(cap$cmd, "--regheader")
+  })
+
+  it("passes --regheader for volumes in the subject's own space", {
+    cap <- local_mock_vol2surf()
+
+    mri_vol2surf(
+      input_file = "input.mgz",
+      output_file = "output.mgz",
+      hemisphere = "lh",
+      regheader = "fsaverage5",
+      verbose = FALSE
+    )
+
+    expect_match(
+      cap$cmd,
+      paste("--regheader", shQuote("fsaverage5")),
+      fixed = TRUE
+    )
+    expect_no_match(cap$cmd, "--reg ")
+    expect_no_match(cap$cmd, "--srcsubject")
+  })
+})
+
+
+testthat::describe("mni152_register_path", {
+  it("points at the transform in the FreeSurfer installation", {
+    local_mocked_bindings(
+      fs_dir = function(...) "/opt/freesurfer",
+      .package = "freesurfer"
+    )
+
+    expect_identical(
+      mni152_register_path(),
+      "/opt/freesurfer/average/mni152.register.dat"
+    )
+  })
+})
+
+
+testthat::describe("resolve_vol2surf_registration", {
+  it("maps 'mni152' to FreeSurfer's transform and a source subject", {
+    reg_file <- withr::local_tempfile(fileext = ".dat")
+    file.create(reg_file)
+    local_mocked_bindings(mni152_register_path = function() reg_file)
+
+    expect_identical(
+      resolve_vol2surf_registration("mni152", "fsaverage5"),
+      list(reg = reg_file, srcsubject = "fsaverage5", regheader = NULL)
+    )
+  })
+
+  it("maps 'header' to --regheader with no source subject", {
+    expect_identical(
+      resolve_vol2surf_registration("header", "fsaverage5"),
+      list(reg = NULL, srcsubject = NULL, regheader = "fsaverage5")
+    )
+  })
+
+  it("accepts a path to a registration file", {
+    reg_file <- withr::local_tempfile(fileext = ".lta")
+    file.create(reg_file)
+
+    expect_identical(
+      resolve_vol2surf_registration(reg_file, "fsaverage6"),
+      list(reg = reg_file, srcsubject = "fsaverage6", regheader = NULL)
+    )
+  })
+
+  it("rejects a directory given as a registration", {
+    reg_dir <- withr::local_tempdir()
+
+    expect_error(
+      resolve_vol2surf_registration(reg_dir, "fsaverage5"),
+      "Registration file not found"
+    )
+  })
+
+  it("errors when the given registration file does not exist", {
+    expect_error(
+      resolve_vol2surf_registration("no/such/registration.dat", "fsaverage5"),
+      "Registration file not found"
+    )
+  })
+
+  it("errors when FreeSurfer's own transform is missing", {
+    local_mocked_bindings(
+      mni152_register_path = function() "no/such/mni152.register.dat"
+    )
+
+    expect_error(
+      resolve_vol2surf_registration("mni152", "fsaverage5"),
+      "FREESURFER_HOME"
+    )
+  })
+
+  it("errors on a specification that is not a single string", {
+    expect_error(
+      resolve_vol2surf_registration(TRUE, "fsaverage5"),
+      "single string"
+    )
+    expect_error(
+      resolve_vol2surf_registration(c("mni152", "header"), "fsaverage5"),
+      "single string"
+    )
   })
 })
 
 
 testthat::describe("mri_pretess", {
   it("constructs correct command", {
-    .cap$captured_cmd <- NULL
-    local_mocked_bindings(
-      check_fs = function(abort = FALSE) invisible(TRUE),
-      run_cmd = function(cmd, verbose = FALSE) {
-        .cap$captured_cmd <- cmd
-        invisible(NULL)
-      }
-    )
+    cap <- local_mock_vol2surf()
 
     mri_pretess(
       template = "vol.mgz",
@@ -118,21 +246,14 @@ testthat::describe("mri_pretess", {
       verbose = FALSE
     )
 
-    expect_match(.cap$captured_cmd, "mri_pretess")
-    expect_match(.cap$captured_cmd, "vol.mgz")
-    expect_match(.cap$captured_cmd, "10")
-    expect_match(.cap$captured_cmd, "pretess.mgz")
+    expect_match(cap$cmd, "mri_pretess")
+    expect_match(cap$cmd, "vol.mgz")
+    expect_match(cap$cmd, "10")
+    expect_match(cap$cmd, "pretess.mgz")
   })
 
   it("appends opts to command", {
-    .cap$captured_cmd <- NULL
-    local_mocked_bindings(
-      check_fs = function(abort = FALSE) invisible(TRUE),
-      run_cmd = function(cmd, verbose = FALSE) {
-        .cap$captured_cmd <- cmd
-        invisible(NULL)
-      }
-    )
+    cap <- local_mock_vol2surf()
 
     mri_pretess(
       template = "vol.mgz",
@@ -142,21 +263,14 @@ testthat::describe("mri_pretess", {
       verbose = FALSE
     )
 
-    expect_match(.cap$captured_cmd, "--keep")
+    expect_match(cap$cmd, "--keep")
   })
 })
 
 
 testthat::describe("mri_tessellate", {
   it("constructs correct command", {
-    .cap$captured_cmd <- NULL
-    local_mocked_bindings(
-      check_fs = function(abort = FALSE) invisible(TRUE),
-      run_cmd = function(cmd, verbose = FALSE) {
-        .cap$captured_cmd <- cmd
-        invisible(NULL)
-      }
-    )
+    cap <- local_mock_vol2surf()
 
     mri_tessellate(
       input_file = "pretess.mgz",
@@ -165,21 +279,14 @@ testthat::describe("mri_tessellate", {
       verbose = FALSE
     )
 
-    expect_match(.cap$captured_cmd, "mri_tessellate")
-    expect_match(.cap$captured_cmd, "pretess.mgz")
-    expect_match(.cap$captured_cmd, "10")
-    expect_match(.cap$captured_cmd, "tess")
+    expect_match(cap$cmd, "mri_tessellate")
+    expect_match(cap$cmd, "pretess.mgz")
+    expect_match(cap$cmd, "10")
+    expect_match(cap$cmd, "tess")
   })
 
   it("appends opts to command", {
-    .cap$captured_cmd <- NULL
-    local_mocked_bindings(
-      check_fs = function(abort = FALSE) invisible(TRUE),
-      run_cmd = function(cmd, verbose = FALSE) {
-        .cap$captured_cmd <- cmd
-        invisible(NULL)
-      }
-    )
+    cap <- local_mock_vol2surf()
 
     mri_tessellate(
       input_file = "pretess.mgz",
@@ -189,21 +296,14 @@ testthat::describe("mri_tessellate", {
       verbose = FALSE
     )
 
-    expect_match(.cap$captured_cmd, "--extra-flag")
+    expect_match(cap$cmd, "--extra-flag")
   })
 })
 
 
 testthat::describe("mri_smooth", {
   it("constructs correct command", {
-    .cap$captured_cmd <- NULL
-    local_mocked_bindings(
-      check_fs = function(abort = FALSE) invisible(TRUE),
-      run_cmd = function(cmd, verbose = FALSE) {
-        .cap$captured_cmd <- cmd
-        invisible(NULL)
-      }
-    )
+    cap <- local_mock_vol2surf()
 
     mri_smooth(
       input_file = "tess",
@@ -211,19 +311,12 @@ testthat::describe("mri_smooth", {
       verbose = FALSE
     )
 
-    expect_match(.cap$captured_cmd, "mris_smooth")
-    expect_match(.cap$captured_cmd, "-nw")
+    expect_match(cap$cmd, "mris_smooth")
+    expect_match(cap$cmd, "-nw")
   })
 
   it("appends opts to command", {
-    .cap$captured_cmd <- NULL
-    local_mocked_bindings(
-      check_fs = function(abort = FALSE) invisible(TRUE),
-      run_cmd = function(cmd, verbose = FALSE) {
-        .cap$captured_cmd <- cmd
-        invisible(NULL)
-      }
-    )
+    cap <- local_mock_vol2surf()
 
     mri_smooth(
       input_file = "tess",
@@ -232,21 +325,14 @@ testthat::describe("mri_smooth", {
       verbose = FALSE
     )
 
-    expect_match(.cap$captured_cmd, "--seed 42")
+    expect_match(cap$cmd, "--seed 42")
   })
 })
 
 
 testthat::describe("mri_vol2surf with opts", {
   it("appends opts to command", {
-    .cap$captured_cmd <- NULL
-    local_mocked_bindings(
-      check_fs = function(abort = FALSE) invisible(TRUE),
-      run_cmd = function(cmd, verbose = FALSE) {
-        .cap$captured_cmd <- cmd
-        invisible(NULL)
-      }
-    )
+    cap <- local_mock_vol2surf()
 
     mri_vol2surf(
       input_file = "input.mgz",
@@ -256,21 +342,14 @@ testthat::describe("mri_vol2surf with opts", {
       verbose = FALSE
     )
 
-    expect_match(.cap$captured_cmd, "--interp trilinear")
+    expect_match(cap$cmd, "--interp trilinear")
   })
 })
 
 
 testthat::describe("mri_vol2surf with projfrac_range", {
   it("uses --projfrac-max for multi-depth projection", {
-    .cap$captured_cmd <- NULL
-    local_mocked_bindings(
-      check_fs = function(abort = FALSE) invisible(TRUE),
-      run_cmd = function(cmd, verbose = FALSE) {
-        .cap$captured_cmd <- cmd
-        invisible(NULL)
-      }
-    )
+    cap <- local_mock_vol2surf()
 
     mri_vol2surf(
       input_file = "input.mgz",
@@ -280,9 +359,9 @@ testthat::describe("mri_vol2surf with projfrac_range", {
       verbose = FALSE
     )
 
-    expect_match(.cap$captured_cmd, "--projfrac-max 0 1 0.1")
+    expect_match(cap$cmd, "--projfrac-max 0 1 0.1")
     expect_false(
-      grepl("--projfrac 0.5", .cap$captured_cmd, fixed = TRUE)
+      grepl("--projfrac 0.5", cap$cmd, fixed = TRUE)
     )
   })
 })
@@ -290,14 +369,7 @@ testthat::describe("mri_vol2surf with projfrac_range", {
 
 testthat::describe("mri_surf2surf_rereg", {
   it("constructs correct command", {
-    .cap$captured_cmd <- NULL
-    local_mocked_bindings(
-      check_fs = function(abort = FALSE) invisible(TRUE),
-      run_cmd = function(cmd, verbose = FALSE) {
-        .cap$captured_cmd <- cmd
-        invisible(NULL)
-      }
-    )
+    cap <- local_mock_vol2surf()
 
     tmp <- withr::local_tempdir()
 
@@ -309,24 +381,17 @@ testthat::describe("mri_surf2surf_rereg", {
       verbose = FALSE
     )
 
-    expect_match(.cap$captured_cmd, "mri_surf2surf")
-    expect_match(.cap$captured_cmd, paste("--srcsubject", shQuote("bert")))
+    expect_match(cap$cmd, "mri_surf2surf")
+    expect_match(cap$cmd, paste("--srcsubject", shQuote("bert")))
     expect_match(
-      .cap$captured_cmd,
+      cap$cmd,
       paste("--sval-annot", shQuote("aparc.DKTatlas"))
     )
-    expect_match(.cap$captured_cmd, "--hemi lh")
+    expect_match(cap$cmd, "--hemi lh")
   })
 
   it("warns about deprecated hemi argument and delegates to hemisphere", {
-    .cap$captured_cmd <- NULL
-    local_mocked_bindings(
-      check_fs = function(abort = FALSE) invisible(TRUE),
-      run_cmd = function(cmd, verbose = FALSE) {
-        .cap$captured_cmd <- cmd
-        invisible(NULL)
-      }
-    )
+    cap <- local_mock_vol2surf()
 
     tmp <- withr::local_tempdir()
 
@@ -340,7 +405,7 @@ testthat::describe("mri_surf2surf_rereg", {
       )
     )
 
-    expect_match(.cap$captured_cmd, "--hemi rh")
+    expect_match(cap$cmd, "--hemi rh")
   })
 })
 
@@ -456,6 +521,187 @@ testthat::describe("surf2asc", {
     expect_error(
       suppressWarnings(surf2asc(input, output, verbose = FALSE)),
       "Failed to rename"
+    )
+  })
+})
+
+testthat::describe("check_mni152_subject", {
+  it("accepts a subject sharing fsaverage's geometry", {
+    local_mocked_bindings(subject_vox2ras = function(...) diag(4))
+
+    expect_true(check_mni152_subject("fsaverage5"))
+  })
+
+  it("aborts for a subject on a different geometry", {
+    local_mocked_bindings(
+      subject_vox2ras = function(subject, ...) {
+        if (identical(subject, "fsaverage")) diag(4) else diag(c(1, 1, 1, 2))
+      }
+    )
+
+    expect_error(
+      check_mni152_subject("bert"),
+      "does not apply to subject"
+    )
+  })
+
+  it("warns when the geometry cannot be read", {
+    local_mocked_bindings(subject_vox2ras = function(...) NULL)
+
+    expect_warning(check_mni152_subject("bert"), "Could not confirm")
+  })
+})
+
+
+testthat::describe("warn_if_subject_space_volume", {
+  it("warns when the volume sits on the subject's own voxel grid", {
+    local_mocked_bindings(
+      volume_vox2ras = function(...) diag(4),
+      subject_vox2ras = function(...) diag(4)
+    )
+
+    expect_warning(
+      warn_if_subject_space_volume("volume.mgz", "fsaverage5"),
+      "own voxel grid"
+    )
+  })
+
+  it("stays silent for a volume on a different voxel grid", {
+    local_mocked_bindings(
+      volume_vox2ras = function(...) diag(c(1.5, 1.5, 1.5, 1)),
+      subject_vox2ras = function(...) diag(4)
+    )
+
+    result <- expect_no_warning(
+      warn_if_subject_space_volume("volume.nii", "fsaverage5")
+    )
+    expect_false(result)
+  })
+
+  it("stays silent when the geometry cannot be read", {
+    local_mocked_bindings(
+      volume_vox2ras = function(...) NULL,
+      subject_vox2ras = function(...) diag(4)
+    )
+
+    result <- expect_no_warning(
+      warn_if_subject_space_volume("volume.nii", "fsaverage5")
+    )
+    expect_false(result)
+  })
+})
+
+
+testthat::describe("validate_registration", {
+  it("checks subject and volume space for mni152", {
+    checked <- new.env()
+    local_mocked_bindings(have_fs = function(...) TRUE, .package = "freesurfer")
+    local_mocked_bindings(
+      check_mni152_subject = function(subject) {
+        checked$subject <- subject
+        invisible(TRUE)
+      },
+      warn_if_subject_space_volume = function(input_volume, subject) {
+        checked$volume <- input_volume
+        invisible(FALSE)
+      }
+    )
+
+    expect_null(validate_registration("mni152", "fsaverage5", "volume.nii"))
+    expect_identical(checked$subject, "fsaverage5")
+    expect_identical(checked$volume, "volume.nii")
+  })
+
+  it("skips the space checks for other registrations", {
+    local_mocked_bindings(
+      check_mni152_subject = function(...) cli::cli_abort("should not run"),
+      warn_if_subject_space_volume = function(...) {
+        cli::cli_abort("should not run")
+      }
+    )
+
+    expect_null(validate_registration("header", "fsaverage5", "volume.nii"))
+  })
+
+  it("skips the space checks when FreeSurfer is absent", {
+    local_mocked_bindings(
+      have_fs = function(...) FALSE,
+      .package = "freesurfer"
+    )
+    local_mocked_bindings(
+      check_mni152_subject = function(...) cli::cli_abort("should not run"),
+      warn_if_subject_space_volume = function(...) {
+        cli::cli_abort("should not run")
+      }
+    )
+
+    expect_null(validate_registration("mni152", "fsaverage5", "volume.nii"))
+  })
+})
+
+
+testthat::describe("mni152_register_path without FreeSurfer", {
+  it("says FreeSurfer is missing instead of building an NA path", {
+    local_mocked_bindings(
+      fs_dir = function(...) NA_character_,
+      .package = "freesurfer"
+    )
+
+    expect_error(mni152_register_path(), "Cannot locate FreeSurfer")
+    expect_error(mni152_register_path(), "FREESURFER_HOME")
+    expect_error(registration_file("mni152"), "Cannot locate FreeSurfer")
+  })
+
+  it("never interpolates NA into a path", {
+    local_mocked_bindings(
+      fs_dir = function(...) NA_character_,
+      .package = "freesurfer"
+    )
+
+    message <- tryCatch(
+      mni152_register_path(),
+      error = function(e) cli::ansi_strip(conditionMessage(e))
+    )
+
+    expect_no_match(message, "NA/", fixed = TRUE)
+    expect_no_match(message, "'NA'", fixed = TRUE)
+  })
+})
+
+
+testthat::describe("validate_registration without FreeSurfer", {
+  it("defers FreeSurfer's transform to the projection step", {
+    local_mocked_bindings(
+      fs_dir = function(...) NA_character_,
+      have_fs = function(...) FALSE,
+      .package = "freesurfer"
+    )
+    local_mocked_bindings(
+      check_mni152_subject = function(...) cli::cli_abort("should not run"),
+      warn_if_subject_space_volume = function(...) {
+        cli::cli_abort("should not run")
+      }
+    )
+
+    expect_null(validate_registration("mni152", "fsaverage5", "volume.nii"))
+  })
+
+  it("still rejects a bad user-supplied path without FreeSurfer", {
+    local_mocked_bindings(
+      have_fs = function(...) FALSE,
+      .package = "freesurfer"
+    )
+
+    expect_error(
+      validate_registration("no/such/registration.dat", "fsaverage5"),
+      "Registration file not found"
+    )
+  })
+
+  it("still rejects a specification that is not a single string", {
+    expect_error(
+      validate_registration(TRUE, "fsaverage5"),
+      "single string"
     )
   })
 })

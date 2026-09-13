@@ -195,6 +195,7 @@ plan(sequential)
 The pipeline does up to five things in sequence:
 
 1. **Project volume onto surface** — `mri_vol2surf` samples the volume at multiple cortical depths (default 0–1 in 0.1 steps) and takes the maximum label at each vertex. Unlabeled vertices are filled by mesh-neighbor dilation, constrained to the cortex mask so labels don't bleed into the medial wall.
+   The volume is registered to the surface subject first, using `registration`: the default `"mni152"` applies FreeSurfer's `mni152.register.dat`, the transform between the MNI152 template space your volume is probably in and the MNI305 space `fsaverage` lives in. Pass `registration = "header"` instead when the volume already sits in the target subject's own scanner RAS — a native or conformed volume, or one already in fsaverage space. The choice moves every vertex by about 2 mm, so getting it wrong yields an atlas that looks right and is not; see the **Registration** section of `?create_wholebrain_from_volume`.
 2. **Classify labels** — Splits labels into cortical, subcortical, and cerebellar using the priority system described above.
 3. **Run the cortical pipeline** — Takes the projected cortical labels through the same 8-step pipeline used by `create_cortical_from_annotation()`: screenshots, contour extraction, smoothing, and polygon conversion.
 4. **Run the subcortical pipeline** — Tessellates subcortical voxels into 3D meshes and creates projection views. Cortical labels are remapped to FreeSurfer's reference IDs (3 for left cortex, 42 for right) so the subcortical pipeline can generate brain outline context geometry.
@@ -270,7 +271,7 @@ The pipeline uses FreeSurfer's `{hemi}.cortex.label` file to mask the medial wal
 The subcortical pipeline needs brain outline geometry to provide spatial context — a faint cortex outline behind the subcortical structures.
 For purely subcortical volumes, this is straightforward because FreeSurfer's segmentation already includes cortex labels.
 For combined volumes, the pipeline has to synthesize this: it uses the volume's orientation matrix to determine which side of the midline each cortical voxel sits on, then remaps them to FreeSurfer's reference cortex labels.
-This works reliably for standard MNI152 volumes, but can break with unusual orientations.
+This uses the volume's own orientation matrix, so it works for any volume whose header is correct, whatever `registration` you chose, but can break with unusual orientations.
 
 ## Post-processing
 

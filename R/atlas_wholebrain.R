@@ -78,10 +78,24 @@
 #'   surface coverage than single-depth projection. Default `c(0, 1, 0.1)`.
 #'   Set to NULL to use single-depth `projfrac` instead.
 #' @param subject Target surface subject. Default "fsaverage5".
-#' @param regheader If TRUE (default), assumes volume RAS coordinates match
-#'   the subject space and uses `--regheader`. Works well for standard
-#'   MNI152-space volumes. If FALSE, uses FreeSurfer's `--mni152reg`
-#'   registration (may produce noisy results due to surf2surf resampling).
+#' @param registration How the volume is registered to the surface subject.
+#'   See the **Registration** section, which you should read before relying
+#'   on the default. One of:
+#'   \itemize{
+#'     \item `"mni152"` (default): applies FreeSurfer's
+#'       `average/mni152.register.dat`, the transform from the scanner RAS
+#'       of the FSL/SPM MNI152 (NLin6) 1 mm template to the MNI305 space
+#'       `fsaverage` lives in. Use this for volumes in a standard MNI152
+#'       template space.
+#'     \item `"header"`: trusts the volume header and uses `--regheader`.
+#'       Correct only when the volume already sits in the target subject's
+#'       own scanner RAS, such as native, conformed or fsaverage-space
+#'       volumes.
+#'     \item A path to a register.dat or LTA file to apply instead.
+#'   }
+#' @param regheader `r lifecycle::badge("deprecated")` Use `registration`
+#'   instead. `TRUE` maps to `registration = "header"`, `FALSE` to
+#'   `registration = "mni152"`. Supplying both is an error.
 #' @param min_vertices Minimum total vertex count across hemispheres for a
 #'   label to be classified as cortical by the vertex-count heuristic (see
 #'   **Label classification**). Ignored when `type` column or explicit label
@@ -122,6 +136,31 @@
 #'     \item 5: Run cerebellar pipeline
 #'   }
 #'   Use `steps = 1:2` to run projection and split only.
+#'
+#' @section Registration:
+#' The default changed to `"mni152"` in this release; before it, the volume
+#' header was trusted and the MNI152-to-MNI305 transform was omitted
+#' altogether. Atlases built from MNI152 volumes by earlier versions must be
+#' rebuilt: relative to `"header"`, `"mni152"` moves the point each
+#' `fsaverage5` vertex samples by a median of 1.96 mm (1.18-2.60 mm),
+#' anteriorly and superiorly, and relabels roughly 18% (left) to 21% (right)
+#' of vertices.
+#'
+#' No header identifies the space an arbitrary volume is in, so `"mni152"`
+#' is applied to whatever you pass. A volume sitting on the target subject's
+#' exact voxel grid warns, that being a claim a header does support, but a
+#' volume in some other non-MNI152 space cannot be detected.
+#'
+#' `mni152.register.dat` targets the FSL/SPM MNI152 (NLin6) 1 mm template.
+#' Volumes in other MNI152 variants, such as the NLin2009cAsym template
+#' `ggsegJulich` uses, keep a sub-millimetre residual rather than the
+#' roughly 2 mm the transform corrects. It is registered against
+#' `fsaverage`, so `subject` must share fsaverage's conformed geometry,
+#' which the `fsaverageN` subjects do; for any other subject, supply your
+#' own register.dat or LTA file.
+#'
+#' FreeSurfer's own `INFO` and `WARNING` lines about the registration are
+#' only visible with `verbose = TRUE`.
 #'
 #' @return A named list with elements `cortical`, `subcortical`, and
 #'   `cerebellar`, each a `ggseg_atlas` object (or NULL if no regions of
@@ -179,7 +218,7 @@ create_wholebrain_from_volume <- function(
   projfrac = 0.5,
   projfrac_range = c(0, 1, 0.1),
   subject = "fsaverage5",
-  regheader = TRUE,
+  registration = "mni152",
   min_vertices = 50L,
   cortical_labels = NULL,
   subcortical_labels = NULL,
@@ -190,8 +229,19 @@ create_wholebrain_from_volume <- function(
   cleanup = NULL,
   verbose = get_verbose(), # nolint: object_usage_linter
   skip_existing = NULL,
-  steps = NULL
+  steps = NULL,
+  regheader = lifecycle::deprecated()
 ) {
+  if (lifecycle::is_present(regheader)) {
+    # match.call() rather than missing(): goodpractice's tidyverse_no_missing
+    # check rejects missing(), and registration has a real default to fall
+    # back on, so lifecycle::is_present() cannot answer this for it.
+    registration <- registration_from_regheader(
+      regheader,
+      !"registration" %in% names(match.call())
+    )
+  }
+
   start_time <- Sys.time()
   opts <- validate_wholebrain_opts(
     cortical_opts,
@@ -206,7 +256,7 @@ create_wholebrain_from_volume <- function(
     projfrac,
     projfrac_range,
     subject,
-    regheader,
+    registration,
     min_vertices,
     verbose,
     cleanup,
@@ -222,6 +272,30 @@ create_wholebrain_from_volume <- function(
 }
 
 
+#' Map the deprecated regheader argument onto a registration specification
+#' @noRd
+registration_from_regheader <- function(regheader, registration_missing) {
+  if (!registration_missing) {
+    cli::cli_abort(c(
+      "Cannot use both {.arg registration} and {.arg regheader}.",
+      "i" = "{.arg regheader} is deprecated; keep {.arg registration} alone."
+    ))
+  }
+
+  if (!is.logical(regheader) || length(regheader) != 1L || is.na(regheader)) {
+    cli::cli_abort("{.arg regheader} must be {.code TRUE} or {.code FALSE}.")
+  }
+
+  lifecycle::deprecate_warn(
+    "1.9.9.9025",
+    "create_wholebrain_from_volume(regheader = )",
+    "create_wholebrain_from_volume(registration = )"
+  )
+
+  if (regheader) "header" else "mni152"
+}
+
+
 #' Validate the wholebrain config, create the output dirs and log the header
 #' @noRd
 wholebrain_setup <- function(
@@ -232,7 +306,7 @@ wholebrain_setup <- function(
   projfrac,
   projfrac_range,
   subject,
-  regheader,
+  registration,
   min_vertices,
   verbose,
   cleanup,
@@ -247,7 +321,7 @@ wholebrain_setup <- function(
     projfrac = projfrac,
     projfrac_range = projfrac_range,
     subject = subject,
-    regheader = regheader,
+    registration = registration,
     min_vertices = min_vertices,
     verbose = verbose,
     cleanup = cleanup,
@@ -595,7 +669,7 @@ validate_wholebrain_config <- function(
   projfrac,
   projfrac_range,
   subject,
-  regheader,
+  registration,
   min_vertices,
   verbose,
   cleanup,
@@ -624,6 +698,8 @@ validate_wholebrain_config <- function(
     cli::cli_abort("Color lookup table not found: {.path {input_lut}}")
   }
 
+  validate_registration(registration, subject, input_volume)
+
   config$output_dir <- normalizePath(config$output_dir, mustWork = FALSE)
 
   if (is.null(atlas_name)) {
@@ -642,7 +718,7 @@ validate_wholebrain_config <- function(
   config$projfrac <- projfrac
   config$projfrac_range <- projfrac_range
   config$subject <- subject
-  config$regheader <- regheader
+  config$registration <- registration
   config$min_vertices <- as.integer(min_vertices)
   config
 }
@@ -704,7 +780,7 @@ wholebrain_compute_projection <- function(config, dirs) {
     subject = config$subject,
     projfrac = config$projfrac,
     projfrac_range = config$projfrac_range,
-    regheader = config$regheader,
+    registration = config$registration,
     output_dir = dirs$base,
     verbose = config$verbose
   )
@@ -813,12 +889,20 @@ wholebrain_project_to_surface <- function(
   subject,
   projfrac,
   projfrac_range,
-  regheader,
+  registration,
   output_dir,
   verbose
 ) {
   surf_dir <- as.character(fs::path(output_dir, "surface_overlays"))
   mkdir(surf_dir)
+
+  registration_args <- resolve_vol2surf_registration(registration, subject)
+  write_registration_record(
+    output_dir,
+    registration,
+    subject,
+    registration_args
+  )
 
   projection_volume <- write_projection_volume(
     input_volume,
@@ -836,12 +920,10 @@ wholebrain_project_to_surface <- function(
       subject = subject,
       projfrac = projfrac,
       projfrac_range = projfrac_range,
-      regheader = regheader,
+      registration_args = registration_args,
       surf_dir = surf_dir,
       verbose = verbose
     )
-    # --mni152reg resamples fsaverage onto the target subject, which averages
-    # ids into values that are absent from the volume.
     overlay <- zero_unlisted_labels(overlay, colortable$idx)
     overlay <- mask_to_cortex(overlay, hemi_short, subject)
 
@@ -860,6 +942,29 @@ wholebrain_project_to_surface <- function(
   }
 
   bind_rows(all_data)
+}
+
+
+#' Record which registration produced the surface overlays
+#'
+#' The projection is the step whose output cannot be judged by looking at
+#' it: a volume registered the wrong way yields a displaced atlas that still
+#' looks plausible. A plain-text sidecar beside the overlays keeps that
+#' decision answerable later. It is deliberately not a cache entry, so it is
+#' never stamped, reused as pipeline state, or read back by the pipeline.
+#' @noRd
+write_registration_record <- function(dir, registration, subject, args) {
+  writeLines(
+    c(
+      paste("registration:", registration),
+      paste("subject:", subject),
+      if (!is.null(args$reg)) paste("reg:", args$reg),
+      if (!is.null(args$srcsubject)) paste("srcsubject:", args$srcsubject),
+      if (!is.null(args$regheader)) paste("regheader:", args$regheader),
+      paste("ggseg.extra:", as.character(utils::packageVersion("ggseg.extra")))
+    ),
+    as.character(fs::path(dir, "registration.txt"))
+  )
 }
 
 
@@ -914,7 +1019,7 @@ wholebrain_vol2surf_overlay <- function(
   subject,
   projfrac,
   projfrac_range,
-  regheader,
+  registration_args,
   surf_dir,
   verbose
 ) {
@@ -923,22 +1028,16 @@ wholebrain_vol2surf_overlay <- function(
     paste0(hemi_short, "_overlay.nii.gz")
   ))
 
-  reg_opts <- paste0(
-    "--interp nearest --trgsubject ",
-    subject
-  )
-  if (regheader) {
-    reg_opts <- paste(reg_opts, "--regheader", subject)
-  }
-
   mri_vol2surf(
     input_file = input_volume,
     output_file = output_mgz,
     hemisphere = hemi_short,
     projfrac = projfrac,
     projfrac_range = projfrac_range,
-    mni152reg = !regheader,
-    opts = reg_opts,
+    reg = registration_args$reg,
+    srcsubject = registration_args$srcsubject,
+    regheader = registration_args$regheader,
+    opts = paste("--interp nearest --trgsubject", shQuote(subject)),
     verbose = verbose
   )
 

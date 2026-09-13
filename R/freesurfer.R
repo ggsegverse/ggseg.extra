@@ -121,6 +121,224 @@ check_fs <- function(abort = FALSE) {
 }
 
 
+# Registration ----
+
+#' Path to FreeSurfer's MNI152-to-MNI305 registration
+#'
+#' `mni152.register.dat` maps FSL/SPM MNI152 scanner RAS onto the MNI305
+#' space that `fsaverage` and its downsampled subjects live in.
+#' @noRd
+mni152_register_path <- function() {
+  fs_home <- freesurfer::fs_dir()
+
+  if (length(fs_home) != 1L || is.na(fs_home) || !nzchar(fs_home)) {
+    cli::cli_abort(c(
+      "Cannot locate FreeSurfer's MNI152 registration.",
+      "x" = "FreeSurfer was not found, and {.envvar FREESURFER_HOME} is
+        not set.",
+      "i" = "{.code registration = \"mni152\"} needs FreeSurfer's
+        {.file average/mni152.register.dat}.",
+      "i" = "Use {.code registration = \"header\"}, or pass a register.dat
+        or LTA file, to project without FreeSurfer's transform."
+    ))
+  }
+
+  as.character(fs::path(fs_home, "average", "mni152.register.dat"))
+}
+
+
+#' Check that a registration specification is a single string
+#' @noRd
+check_registration_spec <- function(registration) {
+  if (
+    !is.character(registration) ||
+      length(registration) != 1L ||
+      is.na(registration)
+  ) {
+    cli::cli_abort(c(
+      "{.arg registration} must be a single string.",
+      "i" = "Use {.val mni152}, {.val header}, or a path to a registration file." # nolint
+    ))
+  }
+
+  invisible(registration)
+}
+
+
+#' Resolve a registration specification to a readable registration file
+#'
+#' @param registration `"mni152"` or a path to a register.dat or LTA file.
+#' @noRd
+registration_file <- function(registration) {
+  check_registration_spec(registration)
+
+  is_mni152 <- identical(registration, "mni152")
+  file <- if (is_mni152) mni152_register_path() else registration
+
+  if (!file.exists(file) || dir.exists(file)) {
+    cli::cli_abort(c(
+      "Registration file not found: {.path {file}}",
+      "i" = if (is_mni152) {
+        "Is {.envvar FREESURFER_HOME} pointing at a complete installation?"
+      } else {
+        "Give a register.dat or LTA file, {.val mni152}, or {.val header}."
+      }
+    ))
+  }
+
+  file
+}
+
+
+#' Translate a registration specification into `mri_vol2surf` flags
+#'
+#' The flags come as a set because they constrain one another. `--reg`
+#' always travels with `--srcsubject`: without it `mri_vol2surf` samples onto
+#' `fsaverage` and then reaches the target subject through `mri_surf2surf`
+#' nearest-neighbour averaging, which turns integer labels into fractional
+#' values the volume never held. `--regheader` is the other way of saying
+#' where the volume already sits, and so never accompanies `--reg`.
+#'
+#' @param registration One of `"mni152"`, `"header"`, or a path to a
+#'   register.dat or LTA file.
+#' @param subject Subject whose surfaces the volume is sampled onto.
+#' @noRd
+resolve_vol2surf_registration <- function(registration, subject) {
+  if (identical(registration, "header")) {
+    return(list(reg = NULL, srcsubject = NULL, regheader = subject))
+  }
+
+  list(
+    reg = registration_file(registration),
+    srcsubject = subject,
+    regheader = NULL
+  )
+}
+
+
+#' Voxel-to-RAS matrix of a subject's conformed volume
+#' @noRd
+subject_vox2ras <- function(subject, subjects_dir = freesurfer::fs_subj_dir()) {
+  orig <- as.character(fs::path(subjects_dir, subject, "mri", "orig.mgz"))
+  if (!file.exists(orig)) {
+    return(NULL)
+  }
+  read_vox2ras(orig)
+}
+
+
+#' Voxel-to-RAS matrix of a volume, or NULL when its header cannot be read
+#'
+#' Advisory probe: a header the reader cannot parse leaves the space unknown
+#' rather than surfacing that reader's own warnings.
+#' @noRd
+volume_vox2ras <- function(input_volume) {
+  tryCatch(
+    suppressWarnings(read_vox2ras(input_volume)),
+    error = function(e) NULL
+  )
+}
+
+
+#' Do two volumes sit on the same voxel grid?
+#' @noRd
+same_geometry <- function(a, b) {
+  !is.null(a) && !is.null(b) && isTRUE(all.equal(a, b, tolerance = 1e-4))
+}
+
+
+#' Check that FreeSurfer's MNI152 transform applies to a subject
+#'
+#' `mni152.register.dat` is registered against `fsaverage`. It is meaningful
+#' for subjects sharing fsaverage's conformed geometry, which the downsampled
+#' `fsaverageN` subjects do, and wrong for anyone else.
+#' @noRd
+check_mni152_subject <- function(subject) {
+  reference <- subject_vox2ras("fsaverage")
+  candidate <- subject_vox2ras(subject)
+
+  if (is.null(reference) || is.null(candidate)) {
+    cli::cli_warn(c(
+      "Could not confirm that {.val {subject}} shares fsaverage's geometry.",
+      "i" = "{.file mni152.register.dat} is registered against
+        {.val fsaverage}."
+    ))
+    return(invisible(NA))
+  }
+
+  if (!same_geometry(reference, candidate)) {
+    cli::cli_abort(c(
+      "{.val mni152} registration does not apply to subject {.val {subject}}.",
+      "x" = "{.file mni152.register.dat} is registered against
+        {.val fsaverage}, and {.val {subject}} does not share its conformed
+        geometry.",
+      "i" = "Supply your own register.dat or LTA file as {.arg registration}."
+    ))
+  }
+
+  invisible(TRUE)
+}
+
+
+#' Warn when a volume already sits on the surface subject's own voxel grid
+#'
+#' Grid identity is the one claim a header supports: a volume on the
+#' subject's exact grid is in that subject's space, not an MNI152 template,
+#' and registering it as one displaces the atlas while it still looks
+#' plausible. A volume in some other non-MNI152 space cannot be recognised.
+#' @noRd
+warn_if_subject_space_volume <- function(input_volume, subject) {
+  if (!same_geometry(volume_vox2ras(input_volume), subject_vox2ras(subject))) {
+    return(invisible(FALSE))
+  }
+
+  cli::cli_warn(c(
+    "{.path {input_volume}} sits on {.val {subject}}'s own voxel grid.",
+    "!" = "{.code registration = \"mni152\"} treats it as an MNI152 template,
+      which displaces the atlas by roughly 2 mm in a way that still looks
+      plausible.",
+    "i" = "Use {.code registration = \"header\"} for a volume already in the
+      target subject's own scanner RAS."
+  ))
+  invisible(TRUE)
+}
+
+
+#' Validate a registration specification against its subject and volume
+#'
+#' Runs the checks that cost nothing before a long pipeline starts: that the
+#' specification is a single string, and that a user-supplied registration
+#' file exists. FreeSurfer's own `mni152.register.dat` is deliberately left
+#' to the projection step, so a run that never projects, because its
+#' projection is cached or its steps exclude it, needs no FreeSurfer
+#' installation. The subject and volume space checks need FreeSurfer to read
+#' geometries at all, and are skipped when it is absent.
+#' @noRd
+validate_registration <- function(registration, subject, input_volume = NULL) {
+  check_registration_spec(registration)
+
+  if (identical(registration, "header")) {
+    return(invisible(NULL))
+  }
+
+  if (!identical(registration, "mni152")) {
+    registration_file(registration)
+    return(invisible(NULL))
+  }
+
+  # FreeSurfer's own transform is resolved at projection time, so a pipeline
+  # whose projection is cached or skipped needs no FreeSurfer installation.
+  if (freesurfer::have_fs()) {
+    check_mni152_subject(subject)
+    if (!is.null(input_volume)) {
+      warn_if_subject_space_volume(input_volume, subject)
+    }
+  }
+
+  invisible(NULL)
+}
+
+
 # FreeSurfer command wrappers ----
 
 #' Convert volume to surface
@@ -133,6 +351,11 @@ check_fs <- function(abort = FALSE) {
 #' @param projfrac_range numeric vector `c(min, max, delta)` for multi-depth
 #'   projection via `--projfrac-max`. Takes the maximum value across depths,
 #'   giving much better coverage for volumetric parcellations.
+#' @param reg registration file passed to `--reg`. Requires `srcsubject`.
+#' @param srcsubject subject the registration resolves to, passed to
+#'   `--srcsubject`.
+#' @param regheader subject passed to `--regheader`, for volumes already in
+#'   that subject's scanner RAS.
 #' @template verbose
 #' @template opts
 #' @noRd
@@ -142,7 +365,9 @@ mri_vol2surf <- function(
   hemisphere,
   projfrac = 0.5,
   projfrac_range = NULL,
-  mni152reg = TRUE,
+  reg = NULL,
+  srcsubject = NULL,
+  regheader = NULL,
   opts = NULL,
   verbose = get_verbose() # nolint: object_usage_linter
 ) {
@@ -162,8 +387,18 @@ mri_vol2surf <- function(
     shQuote(output_file)
   )
 
-  if (mni152reg) {
-    cmd <- paste(cmd, "--mni152reg")
+  if (!is.null(reg)) {
+    cmd <- paste(
+      cmd,
+      "--reg",
+      shQuote(reg),
+      "--srcsubject",
+      shQuote(srcsubject)
+    )
+  }
+
+  if (!is.null(regheader)) {
+    cmd <- paste(cmd, "--regheader", shQuote(regheader))
   }
 
   hemisphere <- match.arg(hemisphere, c("lh", "rh"))

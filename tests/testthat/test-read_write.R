@@ -634,7 +634,45 @@ testthat::describe("read_annotation_data", {
 
 
 testthat::describe("read_neuromaps_volume", {
+  it("registers the volume with FreeSurfer's MNI152 transform", {
+    skip_if_not_installed("RNifti")
+
+    output_dir <- withr::local_tempdir()
+    surf_dir <- file.path(output_dir, "surface_overlays")
+    dir.create(surf_dir, recursive = TRUE)
+
+    reg_file <- withr::local_tempfile(fileext = ".dat")
+    file.create(reg_file)
+    cap <- new.env()
+
+    local_mocked_bindings(
+      check_fs = function(...) invisible(TRUE),
+      check_mni152_subject = function(...) invisible(TRUE),
+      mni152_register_path = function() reg_file,
+      mri_vol2surf = function(input_file, output_file, hemisphere, ...) {
+        cap$args <- list(...)
+        RNifti::writeNifti(
+          array(rep(1, 10242L), dim = c(10242L, 1, 1)),
+          output_file
+        )
+      }
+    )
+
+    result <- read_neuromaps_volume("fake.nii.gz", output_dir = output_dir)
+
+    expect_s3_class(result, "tbl_df")
+    expect_identical(cap$args$reg, reg_file)
+    expect_identical(cap$args$srcsubject, "fsaverage5")
+    expect_null(cap$args$regheader)
+    expect_match(
+      cap$args$opts,
+      paste("--trgsubject", shQuote("fsaverage5")),
+      fixed = TRUE
+    )
+  })
+
   it("projects volume to surface and returns atlas data", {
+    local_mock_mni152_path()
     skip_if_not_installed("RNifti")
 
     output_dir <- withr::local_tempdir()
@@ -644,6 +682,7 @@ testthat::describe("read_neuromaps_volume", {
     n <- 10242L
     local_mocked_bindings(
       check_fs = function(...) invisible(TRUE),
+      check_mni152_subject = function(...) invisible(TRUE),
       mri_vol2surf = function(input_file, output_file, hemisphere, ...) {
         values <- if (grepl("lh", hemisphere, fixed = TRUE)) {
           c(rep(1, 5000), rep(2, 5242))
@@ -663,6 +702,7 @@ testthat::describe("read_neuromaps_volume", {
   })
 
   it("auto-assigns colours to regions without colour", {
+    local_mock_mni152_path()
     skip_if_not_installed("RNifti")
 
     output_dir <- withr::local_tempdir()
@@ -672,6 +712,7 @@ testthat::describe("read_neuromaps_volume", {
     n <- 10242L
     local_mocked_bindings(
       check_fs = function(...) invisible(TRUE),
+      check_mni152_subject = function(...) invisible(TRUE),
       mri_vol2surf = function(input_file, output_file, hemisphere, ...) {
         values <- c(rep(1, 5000), rep(2, 5242))
         RNifti::writeNifti(array(values, dim = c(n, 1, 1)), output_file)
@@ -685,6 +726,7 @@ testthat::describe("read_neuromaps_volume", {
   })
 
   it("handles continuous values with binning", {
+    local_mock_mni152_path()
     skip_if_not_installed("RNifti")
 
     output_dir <- withr::local_tempdir()
@@ -694,6 +736,7 @@ testthat::describe("read_neuromaps_volume", {
     n <- 10242L
     local_mocked_bindings(
       check_fs = function(...) invisible(TRUE),
+      check_mni152_subject = function(...) invisible(TRUE),
       mri_vol2surf = function(input_file, output_file, hemisphere, ...) {
         values <- seq(0.1, 10, length.out = n)
         RNifti::writeNifti(array(values, dim = c(n, 1, 1)), output_file)
@@ -713,12 +756,14 @@ testthat::describe("read_neuromaps_volume", {
   })
 
   it("errors when mri_vol2surf fails to produce output", {
+    local_mock_mni152_path()
     skip_if_not_installed("RNifti")
 
     output_dir <- withr::local_tempdir()
 
     local_mocked_bindings(
       check_fs = function(...) invisible(TRUE),
+      check_mni152_subject = function(...) invisible(TRUE),
       mri_vol2surf = function(...) invisible(NULL)
     )
 
@@ -729,6 +774,7 @@ testthat::describe("read_neuromaps_volume", {
   })
 
   it("includes medial wall as unknown region for parcellation data", {
+    local_mock_mni152_path()
     skip_if_not_installed("RNifti")
 
     output_dir <- withr::local_tempdir()
@@ -738,6 +784,7 @@ testthat::describe("read_neuromaps_volume", {
     n <- 10242L
     local_mocked_bindings(
       check_fs = function(...) invisible(TRUE),
+      check_mni152_subject = function(...) invisible(TRUE),
       mri_vol2surf = function(input_file, output_file, hemisphere, ...) {
         values <- c(rep(0, 2000), rep(1, 4000), rep(2, 4242))
         RNifti::writeNifti(array(values, dim = c(n, 1, 1)), output_file)
@@ -878,6 +925,7 @@ testthat::describe("parse_continuous_values", {
 
 testthat::describe("read_neuromaps_volume vertex count mismatch", {
   it("aborts when projected surface has wrong vertex count", {
+    local_mock_mni152_path()
     skip_if_not_installed("RNifti")
 
     output_dir <- withr::local_tempdir()
@@ -886,6 +934,7 @@ testthat::describe("read_neuromaps_volume vertex count mismatch", {
 
     local_mocked_bindings(
       check_fs = function(...) invisible(TRUE),
+      check_mni152_subject = function(...) invisible(TRUE),
       mri_vol2surf = function(input_file, output_file, hemisphere, ...) {
         wrong_n <- 5000L
         values <- rep(1, wrong_n)

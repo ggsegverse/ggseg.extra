@@ -564,6 +564,9 @@ read_neuromaps_volume <- function(
   mkdir(surf_dir)
 
   all_data <- list()
+  subject <- "fsaverage5"
+  validate_registration("mni152", subject, nifti_file)
+  reg <- resolve_vol2surf_registration("mni152", subject)
 
   for (hemi_short in c("lh", "rh")) {
     hemi <- hemi_to_long(hemi_short)
@@ -577,8 +580,10 @@ read_neuromaps_volume <- function(
       output_file = output_nii,
       hemisphere = hemi_short,
       projfrac_range = c(0, 1, 0.1),
-      mni152reg = TRUE,
-      opts = paste("--interp trilinear --trgsubject fsaverage5")
+      reg = reg$reg,
+      srcsubject = reg$srcsubject,
+      regheader = reg$regheader,
+      opts = paste("--interp trilinear --trgsubject", shQuote(subject))
     )
 
     if (!file.exists(output_nii)) {
@@ -811,6 +816,17 @@ reorient_volume_to_ras <- function(vol, vox2ras) {
 }
 
 
+#' Extension of a volume file, seeing through a `.gz` wrapper
+#' @noRd
+volume_ext <- function(file) {
+  ext <- tolower(tools::file_ext(file))
+  if (ext == "gz") {
+    ext <- tolower(tools::file_ext(sub("\\.gz$", "", file)))
+  }
+  ext
+}
+
+
 #' Read neuroimaging volume file
 #'
 #' Reads volume data from common neuroimaging formats including
@@ -833,10 +849,7 @@ read_volume <- function(file, reorient = TRUE) {
     cli::cli_abort("Volume file not found: {.path {file}}")
   }
 
-  ext <- tolower(tools::file_ext(file))
-  if (ext == "gz") {
-    ext <- tools::file_ext(sub("\\.gz$", "", file))
-  }
+  ext <- volume_ext(file)
 
   vol <- switch(
     ext,

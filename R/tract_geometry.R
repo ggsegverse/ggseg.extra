@@ -420,12 +420,7 @@ load_vox2ras_matrix <- function(template_file, coords_are_voxels) {
     return(NULL)
   }
 
-  ext <- tolower(tools::file_ext(template_file))
-  if (ext == "gz") {
-    ext <- tools::file_ext(sub("\\.gz$", "", template_file))
-  }
-
-  vox2ras <- read_vox2ras(template_file, ext)
+  vox2ras <- read_vox2ras(template_file)
 
   if (is.null(vox2ras)) {
     cli::cli_warn(c(
@@ -445,7 +440,8 @@ load_vox2ras_matrix <- function(template_file, coords_are_voxels) {
 #' Returns `NULL` for an unsupported extension, a missing reader package, or a
 #' header read error; the caller decides how to report the fallback.
 #' @noRd
-read_vox2ras <- function(template_file, ext) {
+read_vox2ras <- function(template_file) {
+  ext <- volume_ext(template_file)
   if (ext == "mgz") {
     if (!requireNamespace("freesurferformats", quietly = TRUE)) {
       return(NULL)

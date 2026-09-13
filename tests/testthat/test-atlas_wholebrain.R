@@ -1232,7 +1232,7 @@ testthat::describe("create_wholebrain_from_volume integration", {
     result <- create_wholebrain_from_volume(
       input_volume = vol_file,
       input_lut = lut_file,
-      regheader = TRUE,
+      registration = "header",
       steps = 1:2,
       verbose = FALSE
     )
@@ -1497,7 +1497,7 @@ testthat::describe("wholebrain_project_to_surface", {
         subject = "fsaverage5",
         projfrac = 0.5,
         projfrac_range = NULL,
-        regheader = TRUE,
+        registration = "header",
         output_dir = tmp_dir,
         verbose = FALSE
       ),
@@ -1544,7 +1544,7 @@ testthat::describe("wholebrain_project_to_surface", {
         subject = "fsaverage5",
         projfrac = 0.5,
         projfrac_range = NULL,
-        regheader = TRUE,
+        registration = "header",
         output_dir = tmp_dir,
         verbose = TRUE
       ),
@@ -1587,7 +1587,7 @@ testthat::describe("wholebrain_project_to_surface", {
       subject = "fsaverage5",
       projfrac = 0.5,
       projfrac_range = NULL,
-      regheader = TRUE,
+      registration = "header",
       output_dir = tmp_dir,
       verbose = FALSE
     )
@@ -1631,7 +1631,7 @@ testthat::describe("wholebrain_project_to_surface", {
       subject = "fsaverage5",
       projfrac = 0.5,
       projfrac_range = NULL,
-      regheader = TRUE,
+      registration = "header",
       output_dir = tmp_dir,
       verbose = FALSE
     )
@@ -2727,7 +2727,7 @@ testthat::describe("wholebrain_project_to_surface unlisted labels", {
       subject = "fsaverage5",
       projfrac = 0.5,
       projfrac_range = NULL,
-      regheader = TRUE,
+      registration = "header",
       output_dir = tmp_dir,
       verbose = FALSE
     )
@@ -2761,7 +2761,7 @@ testthat::describe("wholebrain_project_to_surface unlisted labels", {
       subject = "fsaverage5",
       projfrac = 0.5,
       projfrac_range = NULL,
-      regheader = TRUE,
+      registration = "header",
       output_dir = output_dir,
       verbose = FALSE
     )
@@ -2895,5 +2895,251 @@ testthat::describe("unknown context through the wholebrain split", {
 
     expect_unknown_is_context(atlas, "lh_unknown")
     expect_identical(atlas$core$label, "lh_a")
+  })
+})
+
+
+testthat::describe("wholebrain_vol2surf_overlay", {
+  forward_to_vol2surf <- function(registration_args) {
+    caller <- parent.frame()
+    cap <- local_mock_mri_vol2surf(env = caller)
+
+    wholebrain_vol2surf_overlay(
+      input_volume = "labels.nii.gz",
+      hemi_short = "lh",
+      subject = "fsaverage5",
+      projfrac = 0.5,
+      projfrac_range = NULL,
+      registration_args = registration_args,
+      surf_dir = withr::local_tempdir(.local_envir = caller),
+      verbose = FALSE
+    )
+    cap
+  }
+
+  it("passes a registration through with its source subject", {
+    reg_file <- withr::local_tempfile(fileext = ".dat")
+    file.create(reg_file)
+
+    cap <- forward_to_vol2surf(reg_args(reg_file))
+
+    expect_identical(cap$args$reg, reg_file)
+    expect_identical(cap$args$srcsubject, "fsaverage5")
+    expect_null(cap$args$regheader)
+  })
+
+  it("passes a header registration through", {
+    cap <- forward_to_vol2surf(reg_args("header"))
+
+    expect_null(cap$args$reg)
+    expect_null(cap$args$srcsubject)
+    expect_identical(cap$args$regheader, "fsaverage5")
+  })
+
+  it("keeps labels integer and listed when registering a real volume", {
+    skip_if_no_freesurfer()
+
+    vol_file <- test_mgz_file()
+    skip_if(!file.exists(vol_file), "Test volume file not found")
+    lut_file <- test_lut_file()
+    skip_if(!file.exists(lut_file), "Test LUT file not found")
+    colortable <- get_lut(lut_file)
+
+    project <- function(registration) {
+      wholebrain_vol2surf_overlay(
+        input_volume = vol_file,
+        hemi_short = "lh",
+        subject = "fsaverage5",
+        projfrac = 0.5,
+        projfrac_range = c(0, 1, 0.1),
+        registration_args = reg_args(registration),
+        surf_dir = withr::local_tempdir(),
+        verbose = FALSE
+      )
+    }
+
+    overlay <- project("mni152")
+
+    expect_true(all(setdiff(unique(overlay), 0L) %in% colortable$idx))
+    expect_false(identical(overlay, project("header")))
+  })
+})
+
+
+testthat::describe("write_registration_record", {
+  it("records the registration the overlays were built with", {
+    dir <- withr::local_tempdir()
+
+    write_registration_record(
+      dir,
+      registration = "mni152",
+      subject = "fsaverage5",
+      args = list(
+        reg = "/opt/freesurfer/average/mni152.register.dat",
+        srcsubject = "fsaverage5",
+        regheader = NULL
+      )
+    )
+    record <- readLines(file.path(dir, "registration.txt"))
+
+    expect_true(any(grepl("^registration: mni152$", record)))
+    expect_true(any(grepl("^srcsubject: fsaverage5$", record)))
+    expect_true(any(grepl("mni152.register.dat", record, fixed = TRUE)))
+    expect_false(any(grepl("^regheader:", record)))
+  })
+
+  it("records a header registration without a source subject", {
+    dir <- withr::local_tempdir()
+
+    write_registration_record(
+      dir,
+      registration = "header",
+      subject = "fsaverage5",
+      args = list(reg = NULL, srcsubject = NULL, regheader = "fsaverage5")
+    )
+    record <- readLines(file.path(dir, "registration.txt"))
+
+    expect_true(any(grepl("^registration: header$", record)))
+    expect_true(any(grepl("^regheader: fsaverage5$", record)))
+    expect_false(any(grepl("^reg:", record)))
+  })
+})
+
+
+testthat::describe("registration_from_regheader", {
+  it("maps TRUE to the header registration", {
+    withr::local_options(lifecycle_verbosity = "quiet")
+
+    expect_identical(
+      registration_from_regheader(TRUE, registration_missing = TRUE),
+      "header"
+    )
+  })
+
+  it("maps FALSE to the MNI152 registration", {
+    withr::local_options(lifecycle_verbosity = "quiet")
+
+    expect_identical(
+      registration_from_regheader(FALSE, registration_missing = TRUE),
+      "mni152"
+    )
+  })
+
+  it("warns that regheader is deprecated", {
+    withr::local_options(lifecycle_verbosity = "warning")
+
+    expect_warning(
+      registration_from_regheader(TRUE, registration_missing = TRUE),
+      class = "lifecycle_warning_deprecated"
+    )
+  })
+
+  it("refuses to override an explicit registration", {
+    expect_error(
+      registration_from_regheader(TRUE, registration_missing = FALSE),
+      "Cannot use both"
+    )
+  })
+
+  it("refuses anything that is not a single TRUE or FALSE", {
+    expect_error(
+      registration_from_regheader(NA, registration_missing = TRUE),
+      "must be"
+    )
+    expect_error(
+      registration_from_regheader("yes", registration_missing = TRUE),
+      "must be"
+    )
+    expect_error(
+      registration_from_regheader(c(TRUE, FALSE), registration_missing = TRUE),
+      "must be"
+    )
+  })
+})
+
+
+testthat::describe("create_wholebrain_from_volume(regheader = )", {
+  it("errors when given alongside registration", {
+    local_mocked_bindings(check_fs = function(abort = FALSE) invisible(TRUE))
+
+    expect_error(
+      create_wholebrain_from_volume(
+        input_volume = "missing-volume.nii.gz",
+        output_dir = withr::local_tempdir(),
+        registration = "header",
+        regheader = FALSE,
+        verbose = FALSE
+      ),
+      "Cannot use both"
+    )
+  })
+
+  it("is deprecated in favour of registration", {
+    withr::local_options(lifecycle_verbosity = "warning")
+    local_mocked_bindings(check_fs = function(abort = FALSE) invisible(TRUE))
+
+    expect_warning(
+      expect_error(
+        create_wholebrain_from_volume(
+          input_volume = "missing-volume.nii.gz",
+          output_dir = withr::local_tempdir(),
+          regheader = TRUE,
+          verbose = FALSE
+        ),
+        "Volume file not found"
+      ),
+      class = "lifecycle_warning_deprecated"
+    )
+  })
+})
+
+
+testthat::describe("create_wholebrain_from_volume without FreeSurfer", {
+  it("does not need FreeSurfer's transform when it never projects", {
+    captured <- new.env()
+    local_mocked_bindings(
+      fs_dir = function(...) NA_character_,
+      have_fs = function(...) FALSE,
+      .package = "freesurfer"
+    )
+    local_mocked_bindings(
+      check_fs = function(abort = FALSE) invisible(TRUE),
+      wholebrain_project_to_surface = function(...) {
+        captured$projected <- TRUE
+        dplyr::tibble(
+          hemi = character(),
+          region = character(),
+          label = character(),
+          colour = character(),
+          vertices = list(),
+          source_label = character(),
+          source_idx = integer()
+        )
+      },
+      wholebrain_classify_labels = function(...) {
+        list(
+          cortical_labels = character(),
+          subcortical_labels = character(),
+          cerebellar_labels = character(),
+          vertex_counts = integer()
+        )
+      }
+    )
+
+    vol_file <- withr::local_tempfile(fileext = ".nii.gz")
+    RNifti::writeNifti(array(1L, dim = c(2, 2, 2)), vol_file)
+
+    expect_warning(
+      result <- create_wholebrain_from_volume(
+        input_volume = vol_file,
+        output_dir = withr::local_tempdir(),
+        steps = 1:2,
+        verbose = FALSE
+      ),
+      "No color lookup table"
+    )
+
+    expect_true(captured$projected)
+    expect_true("cortical_labels" %in% names(result))
   })
 })
