@@ -592,6 +592,36 @@ testthat::describe("warn_if_subject_space_volume", {
 })
 
 
+testthat::describe("check_mni152_volume", {
+  las <- diag(c(-1, 1, 1, 1))
+  ras <- diag(c(1, 1, 1, 1))
+
+  it("accepts a left-handed volume", {
+    local_mocked_bindings(volume_vox2ras = function(...) las)
+    expect_true(check_mni152_volume("volume.nii"))
+  })
+
+  it("aborts on a right-handed volume that would come out mirrored", {
+    local_mocked_bindings(volume_vox2ras = function(...) ras)
+    expect_error(check_mni152_volume("volume.nii"), "would mirror")
+  })
+
+  it("stays quiet when the header cannot be read", {
+    local_mocked_bindings(volume_vox2ras = function(...) NULL)
+    expect_identical(check_mni152_volume("volume.nii"), NA)
+  })
+
+  it("is reached by validate_registration for mni152 only", {
+    local_mocked_bindings(volume_vox2ras = function(...) ras)
+    expect_error(
+      validate_registration("mni152", "fsaverage5", "volume.nii"),
+      "would mirror"
+    )
+    expect_null(validate_registration("header", "fsaverage5", "volume.nii"))
+  })
+})
+
+
 testthat::describe("validate_registration", {
   it("checks subject and volume space for mni152", {
     checked <- new.env()

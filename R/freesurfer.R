@@ -287,6 +287,36 @@ check_mni152_subject <- function(subject) {
 #' and registering it as one displaces the atlas while it still looks
 #' plausible. A volume in some other non-MNI152 space cannot be recognised.
 #' @noRd
+#' Stop when the volume's voxel order mirrors what mni152.register.dat assumes
+#'
+#' `mni152.register.dat` is a tkregister matrix tied to the left-handed
+#' (LAS) MNI152 grid. tkreg coordinates come from the volume's own voxel
+#' order, so applying the matrix to a right-handed (RAS) volume mirrors left
+#' and right: the atlas comes back with every region on the wrong side, which
+#' still looks like a plausible brain.
+#' @noRd
+check_mni152_volume <- function(input_volume) {
+  vox2ras <- volume_vox2ras(input_volume)
+
+  if (is.null(vox2ras)) {
+    return(invisible(NA))
+  }
+
+  if (det(vox2ras[1:3, 1:3]) <= 0) {
+    return(invisible(TRUE))
+  }
+
+  cli::cli_abort(c(
+    "{.val mni152} registration would mirror {.path {input_volume}}.",
+    "x" = "{.file mni152.register.dat} assumes the left-handed (LAS) MNI152
+      voxel order, and this volume is right-handed (RAS).",
+    "i" = "Applying it anyway swaps left and right in the finished atlas.",
+    "i" = "Use {.code registration = \"header\"}, or resample the volume to
+      the LAS MNI152 grid first."
+  ))
+}
+
+
 warn_if_subject_space_volume <- function(input_volume, subject) {
   if (!same_geometry(volume_vox2ras(input_volume), subject_vox2ras(subject))) {
     return(invisible(FALSE))
@@ -328,6 +358,10 @@ validate_registration <- function(registration, subject, input_volume = NULL) {
 
   # FreeSurfer's own transform is resolved at projection time, so a pipeline
   # whose projection is cached or skipped needs no FreeSurfer installation.
+  if (!is.null(input_volume)) {
+    check_mni152_volume(input_volume)
+  }
+
   if (freesurfer::have_fs()) {
     check_mni152_subject(subject)
     if (!is.null(input_volume)) {
