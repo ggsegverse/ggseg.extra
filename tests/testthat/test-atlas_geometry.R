@@ -1,8 +1,8 @@
 .cap <- new.env()
 
 skip_without_mask_io <- function() {
-  testthat::skip_if_not_installed("magick")
-  testthat::skip_if_not_installed("terra")
+  skip_if_not_installed("magick")
+  skip_if_not_installed("terra")
 }
 
 save_contours_fixture <- function(path, y_axis = "up", contours = NULL) {
