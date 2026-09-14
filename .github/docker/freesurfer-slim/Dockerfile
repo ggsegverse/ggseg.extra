@@ -8,9 +8,11 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 COPY include.txt /tmp/include.txt
 # Streaming extraction: only the whitelisted members ever touch disk, so the
-# 16 GB full install never exists on the builder.
+# 16 GB full install never exists on the builder. Members in the tarball are
+# prefixed (./freesurfer/...), hence the leading wildcard in include.txt.
 RUN curl -sSL "https://surfer.nmr.mgh.harvard.edu/pub/dist/freesurfer/${FS_VERSION}/freesurfer-linux-ubuntu22_amd64-${FS_VERSION}.tar.gz" \
-    | tar -xz --no-same-owner -C /opt -T /tmp/include.txt \
+    | tar -xz --no-same-owner --wildcards -C /opt -T /tmp/include.txt \
+    && find /opt -maxdepth 2 \
     && du -sh /opt/freesurfer /opt/freesurfer/lib /opt/freesurfer/subjects
 # lib/ is pulled in whole only so ldd can tell us which shared objects the
 # retained binaries resolve from it; keep those and drop the rest.
