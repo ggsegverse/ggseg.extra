@@ -147,7 +147,7 @@ subcort_create_snapshots <- function(
   dims <- dim(vol)
 
   if (is.null(slabs)) {
-    slabs <- default_subcortical_slabs(dims)
+    slabs <- default_subcortical_slabs(vol, labels = colortable$idx)
   }
 
   cortex_slices <- create_cortex_slices(slabs, dims, vol = vol)
@@ -327,34 +327,113 @@ subcort_snapshot_cortex <- function(
 
 #' Default subcortical atlas slab configuration
 #'
-#' Creates projection slabs calibrated for subcortical structures.
-#' Uses anatomically-calibrated ranges based on typical aseg label positions.
+#' Frames the projection slabs on the bounding box of the structures the
+#' atlas actually draws, so the band follows the anatomy of *this* volume.
 #'
-#' @param dims Volume dimensions (3-element vector)
+#' This used to rescale slice indices calibrated on a 256^3 1 mm conformed
+#' volume by the ratio `dims[1] / 256`. A dimension ratio carries neither
+#' voxel size nor origin, and the x dimension was used to scale y and z, so
+#' on a 4 mm atlas volume the axial band landed roughly 30 mm too superior
+#' -- above the subcortex entirely -- while on 1.5 mm volumes the inferior
+#' 40 mm of the atlas was never cut. A bounding box needs no affine and no
+#' assumption about which anatomy a subcortical atlas covers, which is what
+#' the hand-written slab calls in the ggsegHO build scripts already do.
+#'
+#' @param vol Label volume in the builder's frame (3D integer array).
+#' @param labels Integer label ids to frame the slabs on. Defaults to every
+#'   non-zero label in `vol`. Cortical context labels are dropped either way.
 #'
 #' @return data.frame with columns: name, type, start, end
 #' @keywords internal
 #' @noRd
-default_subcortical_slabs <- function(dims) {
-  mid_x <- dims[1] %/% 2
-  chunk_size <- 10
-  scale <- dims[1] / 256
+default_subcortical_slabs <- function(vol, labels = NULL) {
+  labels <- subcort_slab_labels(vol, labels)
 
-  z_lo <- min(round(85 * scale), dims[3])
-  z_hi <- min(round(152 * scale), dims[3])
-  y_lo <- min(round(110 * scale), dims[2])
-  y_hi <- min(round(154 * scale), dims[2])
+  slabs <- subcortical_slabs(
+    vol,
+    labels = labels,
+    coronal = 3,
+    axial = 3
+  )
+  slabs <- rbind(slabs, sagittal_hemi_slab(vol, labels))
 
-  axial_views <- make_view_chunks(z_lo, z_hi, chunk_size, "axial")
-  coronal_views <- make_view_chunks(y_lo, y_hi, chunk_size, "coronal")
+  drop_empty_slabs(slabs, vol, labels)
+}
 
-  sagittal_views <- data.frame(
-    name = "sagittal",
+
+#' Labels a default slab band may be framed on
+#'
+#' The cortical context labels are excluded deliberately: the whole-brain
+#' pipeline remaps each cortical hemisphere to FreeSurfer index 3 or 42, and
+#' those two labels span the entire brain, so a bounding box that includes
+#' them is the whole brain rather than the subcortex. `detect_cortex_labels()`
+#' is the same source `subcort_cortex_volume()` uses, so the labels drawn as
+#' the grey reference outline are exactly the ones that cannot frame a slab.
+#' @noRd
+subcort_slab_labels <- function(vol, labels = NULL) {
+  present <- setdiff(unique(as.vector(vol)), 0L)
+  cortex <- unlist(detect_cortex_labels(vol), use.names = FALSE)
+  labels <- setdiff(intersect(labels %||% present, present), cortex)
+
+  if (length(labels) == 0) {
+    cli::cli_abort("No subcortical labels found in the volume.")
+  }
+  labels
+}
+
+
+#' Sagittal slab covering one hemisphere only
+#'
+#' A sagittal slab spanning the whole head flattens both hemispheres onto one
+#' panel, drawing every left structure underneath its right twin. The slab is
+#' therefore clipped at the midline -- estimated as the centre of the label
+#' bounding box, which is symmetric about it -- and kept on the low-x side,
+#' which is the left hemisphere in the builder's RAS frame.
+#' @noRd
+sagittal_hemi_slab <- function(vol, labels) {
+  idx <- which(
+    array(as.vector(vol) %in% labels, dim = dim(vol)),
+    arr.ind = TRUE
+  )
+  x <- range(idx[, 1])
+  mid <- round(mean(x))
+
+  data.frame(
+    name = "sagittal_left",
     type = "sagittal",
-    start = mid_x,
-    end = mid_x,
+    start = x[1],
+    end = max(mid, x[1]),
     stringsAsFactors = FALSE
   )
+}
 
-  rbind(axial_views, coronal_views, sagittal_views)
+
+#' Drop slabs that no labelled voxel falls into
+#'
+#' Tiling a bounding box can still leave a panel blank when the structures
+#' are sparse along an axis; an empty panel is worse than one fewer panel.
+#' @noRd
+drop_empty_slabs <- function(slabs, vol, labels) {
+  mask <- array(as.vector(vol) %in% labels, dim = dim(vol))
+  filled <- list(
+    sagittal = apply(mask, 1L, any),
+    coronal = apply(mask, 2L, any),
+    axial = apply(mask, 3L, any)
+  )
+
+  keep <- vapply(
+    seq_len(nrow(slabs)),
+    function(i) {
+      rng <- seq(slabs$start[i], slabs$end[i])
+      any(filled[[slabs$type[i]]][rng])
+    },
+    logical(1)
+  )
+
+  out <- slabs[keep, , drop = FALSE]
+  if (nrow(out) == 0) {
+    cli::cli_abort("Every default slab came out empty.")
+  }
+  rownames(out) <- NULL
+  out
 }

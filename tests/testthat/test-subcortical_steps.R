@@ -224,7 +224,7 @@ testthat::describe("subcort_create_snapshots", {
         vol[5, 5, 5] <- 3L
         vol
       },
-      default_subcortical_slabs = function(dims) {
+      default_subcortical_slabs = function(vol, labels = NULL) {
         data.frame(
           name = "ax_1",
           type = "axial",
@@ -358,7 +358,7 @@ testthat::describe("subcort_create_snapshots", {
         vol <- array(0L, dim = c(10, 10, 10))
         vol
       },
-      default_subcortical_slabs = function(dims) {
+      default_subcortical_slabs = function(vol, labels = NULL) {
         data.frame(
           name = "ax_1",
           type = "axial",
@@ -455,38 +455,109 @@ testthat::describe("subcort_snapshot_cortex", {
 
 
 testthat::describe("default_subcortical_slabs", {
-  it("creates slabs for standard 256 brain", {
-    dims <- c(256, 256, 256)
-    result <- default_subcortical_slabs(dims)
+  sub_vol <- function(dims = c(40, 40, 40)) {
+    vol <- array(0L, dim = dims)
+    vol[10:30, 12:28, 8:24] <- 17L
+    vol[14:26, 16:24, 12:20] <- 18L
+    vol
+  }
+
+  it("frames the slabs on the label bounding box", {
+    result <- default_subcortical_slabs(sub_vol())
 
     expect_s3_class(result, "data.frame")
     expect_true(all(c("name", "type", "start", "end") %in% names(result)))
-    expect_true("axial" %in% result$type)
-    expect_true("coronal" %in% result$type)
-    expect_true("sagittal" %in% result$type)
+
+    axial <- result[result$type == "axial", ]
+    coronal <- result[result$type == "coronal", ]
+    expect_identical(c(min(axial$start), max(axial$end)), c(8, 24))
+    expect_identical(c(min(coronal$start), max(coronal$end)), c(12, 28))
   })
 
-  it("scales slabs for different volume sizes", {
-    dims_256 <- c(256, 256, 256)
-    dims_512 <- c(512, 512, 512)
+  it("follows the labels rather than the volume dimensions", {
+    small <- default_subcortical_slabs(sub_vol(c(40, 40, 40)))
+    big <- default_subcortical_slabs(sub_vol(c(200, 200, 200)))
 
-    result_256 <- default_subcortical_slabs(dims_256)
-    result_512 <- default_subcortical_slabs(dims_512)
+    axial_small <- small[small$type == "axial", ]
+    big_axial <- big[big$type == "axial", ]
 
-    axial_256 <- result_256[result_256$type == "axial", ]
-    axial_512 <- result_512[result_512$type == "axial", ]
-
-    expect_identical(axial_512$start[1] / axial_256$start[1], 2)
+    expect_identical(min(axial_small$start), min(big_axial$start))
+    expect_identical(max(axial_small$end), max(big_axial$end))
   })
 
-  it("creates single sagittal midline slice", {
-    dims <- c(256, 256, 256)
-    result <- default_subcortical_slabs(dims)
+  it("ignores the whole-hemisphere cortical context labels", {
+    vol <- sub_vol()
+    vol[2:38, 2:38, 2:38][vol[2:38, 2:38, 2:38] == 0L] <- 3L
 
+    result <- default_subcortical_slabs(vol)
+    axial <- result[result$type == "axial", ]
+
+    expect_identical(c(min(axial$start), max(axial$end)), c(8, 24))
+  })
+
+  it("restricts the band to the labels it is given", {
+    result <- default_subcortical_slabs(sub_vol(), labels = 18L)
+    axial <- result[result$type == "axial", ]
+
+    expect_identical(c(min(axial$start), max(axial$end)), c(12, 20))
+  })
+
+  it("errors when the volume holds no subcortical labels", {
+    vol <- array(0L, dim = c(10, 10, 10))
+    vol[2:8, 2:8, 2:8] <- 3L
+
+    expect_error(default_subcortical_slabs(vol), "No subcortical labels")
+  })
+
+  it("clips the sagittal slab to one side of the midline", {
+    result <- default_subcortical_slabs(sub_vol())
     sagittal <- result[result$type == "sagittal", ]
+
     expect_identical(nrow(sagittal), 1L)
-    expect_identical(sagittal$start, 128)
-    expect_identical(sagittal$end, 128)
+    expect_identical(sagittal$name, "sagittal_left")
+    expect_identical(sagittal$start, 10)
+    expect_lt(sagittal$end, 30)
+  })
+
+  it("leaves no panel without a labelled voxel", {
+    vol <- array(0L, dim = c(40, 40, 40))
+    vol[10:30, 12:28, 8:10] <- 17L
+    vol[10:30, 12:28, 22:24] <- 18L
+
+    result <- default_subcortical_slabs(vol)
+    axes <- c(sagittal = 1L, coronal = 2L, axial = 3L)
+
+    filled <- vapply(
+      seq_len(nrow(result)),
+      function(i) {
+        d <- axes[[result$type[i]]]
+        rng <- seq(result$start[i], result$end[i])
+        any(apply(vol > 0, d, any)[rng])
+      },
+      logical(1)
+    )
+    expect_true(all(filled))
+  })
+
+  it("leaves no structure out of every view", {
+    vol <- sub_vol()
+    result <- default_subcortical_slabs(vol)
+    axes <- c(sagittal = 1L, coronal = 2L, axial = 3L)
+
+    seen <- unique(unlist(lapply(seq_len(nrow(result)), function(i) {
+      d <- axes[[result$type[i]]]
+      rng <- seq(result$start[i], result$end[i])
+      sub <- switch(
+        result$type[i],
+        sagittal = vol[rng, , , drop = FALSE],
+        coronal = vol[, rng, , drop = FALSE],
+        # nolint next: commas_linter. air formats empty subscripts unspaced.
+        axial = vol[,, rng, drop = FALSE]
+      )
+      unique(as.vector(sub))
+    })))
+
+    expect_true(all(c(17L, 18L) %in% seen))
   })
 })
 
