@@ -25,6 +25,16 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
+      - name: Install FreeSurfer license
+        env:
+          FREESURFER_LICENSE: ${{ secrets.FREESURFER_LICENSE }}
+        run: |
+          if [ -z "$FREESURFER_LICENSE" ]; then
+            echo "::error::FREESURFER_LICENSE secret is not set; FreeSurfer tests would silently skip."
+            exit 1
+          fi
+          printf '%s\n' "$FREESURFER_LICENSE" > "$FS_LICENSE"
+
       # Exercises every retained binary and the fsaverage5 subject directly,
       # so a broken image fails here before any R is involved.
       - name: Smoke-test FreeSurfer binaries
@@ -46,16 +56,6 @@ jobs:
           mri_vol2vol --mov "$aseg" --targ "$aseg" --regheader --nearest \
             --o "$work/vol2vol.mgz" > /dev/null
           ls -l "$work"
-
-      - name: Install FreeSurfer license
-        env:
-          FREESURFER_LICENSE: ${{ secrets.FREESURFER_LICENSE }}
-        run: |
-          if [ -z "$FREESURFER_LICENSE" ]; then
-            echo "::error::FREESURFER_LICENSE secret is not set; FreeSurfer tests would silently skip."
-            exit 1
-          fi
-          printf '%s\n' "$FREESURFER_LICENSE" > "$FS_LICENSE"
 
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
