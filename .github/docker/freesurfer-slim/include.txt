@@ -13,6 +13,4 @@
 *freesurfer/bin/mris_smooth
 *freesurfer/average/mni152.register.dat
 *freesurfer/subjects/fsaverage5
-*freesurfer/subjects/fsaverage5/*
 *freesurfer/lib
-*freesurfer/lib/*
