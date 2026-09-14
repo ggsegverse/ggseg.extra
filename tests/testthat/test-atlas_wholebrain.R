@@ -1217,6 +1217,66 @@ testthat::describe("wholebrain_run_subcortical verbose logging", {
     )
     expect_false("cortical_a" %in% .cap$captured_lut$label)
   })
+
+  it("keeps subcortical labels off the brain-outline indices", {
+    test_dir <- withr::local_tempdir()
+    dirs <- list(
+      base = test_dir,
+      snapshots = test_dir,
+      processed = test_dir,
+      masks = test_dir
+    )
+
+    .cap$captured_lut <- NULL
+    .cap$captured <- NULL
+    colortable <- data.frame(
+      idx = c(3L, 42L, 60L),
+      label = c("amygdala", "pallidum", "cortical_a"),
+      R = c(255L, 0L, 0L),
+      G = c(0L, 255L, 0L),
+      B = c(0L, 0L, 255L),
+      A = c(0L, 0L, 0L),
+      roi = c("0003", "0042", "0060"),
+      color = c("#FF0000", "#00FF00", "#0000FF"),
+      stringsAsFactors = FALSE
+    )
+
+    local_mocked_bindings(
+      write_lut = function(ct, ...) {
+        .cap$captured_lut <- ct
+        invisible(NULL)
+      },
+      wholebrain_prepare_subcortical_volume = function(...) {
+        .cap$captured <- list(...)
+        invisible("filtered.nii.gz")
+      },
+      create_subcortical_from_volume = function(...) {
+        structure(
+          list(
+            core = data.frame(stringsAsFactors = FALSE, region = "amygdala")
+          ),
+          class = "ggseg_atlas"
+        )
+      }
+    )
+
+    config <- list(
+      atlas_name = "test",
+      verbose = FALSE,
+      input_volume = "fake.nii.gz",
+      output_dir = test_dir,
+      skip_existing = FALSE,
+      tolerance = 1,
+      smoothness = 5
+    )
+    split <- list(subcortical_labels = c("amygdala", "pallidum"))
+
+    wholebrain_run_subcortical(config, dirs, split, colortable = colortable)
+
+    expect_false(any(.cap$captured_lut$idx %in% SUBCORT_RESERVED_IDX))
+    expect_identical(.cap$captured$subcortical_idx, c(3L, 42L))
+    expect_identical(.cap$captured$target_idx, .cap$captured_lut$idx)
+  })
 })
 
 
@@ -2145,6 +2205,80 @@ testthat::describe("wholebrain_prepare_subcortical_volume", {
     expect_identical(result[1, 1, 1], 10L)
     expect_identical(result[5, 1, 1], 0L)
     expect_true(result[3, 1, 1] %in% c(3, 42))
+  })
+
+  it("writes subcortical voxels under their target index", {
+    skip_if_not_installed("RNifti")
+    vol <- array(0L, dim = c(6, 3, 3))
+    vol[1, 1, 1] <- 3L
+    vol[3, 1, 1] <- 20L
+    vol_file <- withr::local_tempfile(fileext = ".nii.gz")
+    RNifti::writeNifti(RNifti::asNifti(vol), vol_file)
+    out_file <- withr::local_tempfile(fileext = ".nii.gz")
+
+    wholebrain_prepare_subcortical_volume(
+      input_volume = vol_file,
+      subcortical_idx = 3L,
+      cortical_idx = 20L,
+      output_file = out_file,
+      target_idx = 101L
+    )
+
+    result <- drop(as.array(RNifti::readNifti(out_file)))
+    expect_identical(result[1, 1, 1], 101L)
+    expect_true(result[3, 1, 1] %in% c(3L, 42L))
+  })
+})
+
+
+testthat::describe("reindex_reserved_subcort_idx", {
+  it("leaves a colliding-free colortable untouched", {
+    ct <- data.frame(
+      idx = c(10L, 20L, 30L),
+      label = c("a", "b", "c"),
+      stringsAsFactors = FALSE
+    )
+    result <- reindex_reserved_subcort_idx(ct, verbose = FALSE)
+    expect_identical(result$idx, ct$idx)
+    expect_identical(result$source_idx, ct$idx)
+  })
+
+  it("moves indices reserved for the brain outline", {
+    ct <- data.frame(
+      idx = c(3L, 10L, 42L, 16L),
+      label = c("amygdala", "putamen", "pallidum", "thalamus"),
+      stringsAsFactors = FALSE
+    )
+    result <- reindex_reserved_subcort_idx(ct, verbose = FALSE)
+    expect_false(any(result$idx %in% SUBCORT_RESERVED_IDX))
+    expect_identical(result$source_idx, ct$idx)
+    expect_identical(result$idx[2], 10L)
+    expect_identical(anyDuplicated(result$idx), 0L)
+    expect_identical(result$label, ct$label)
+  })
+
+  it("never reuses an index the colortable already holds", {
+    ct <- data.frame(
+      idx = c(3L, 1L, 2L, 4L, 5L),
+      label = letters[1:5],
+      stringsAsFactors = FALSE
+    )
+    result <- reindex_reserved_subcort_idx(ct, verbose = FALSE)
+    expect_identical(anyDuplicated(result$idx), 0L)
+    expect_false(result$idx[1] %in% SUBCORT_RESERVED_IDX)
+    expect_identical(result$idx[-1], ct$idx[-1])
+  })
+
+  it("reports the reindexed labels when verbose", {
+    ct <- data.frame(
+      idx = c(3L, 10L),
+      label = c("amygdala", "putamen"),
+      stringsAsFactors = FALSE
+    )
+    expect_message(
+      reindex_reserved_subcort_idx(ct, verbose = TRUE),
+      "amygdala"
+    )
   })
 })
 

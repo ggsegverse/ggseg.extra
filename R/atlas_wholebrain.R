@@ -595,6 +595,16 @@ DEPRECATED_POST_CREATION_ARGS <- c(
 )
 
 
+# Index values the subcortical pipeline writes into its own volume to build
+# the grey brain outline: 3/42 are the FreeSurfer cortex labels the cortical
+# hemispheres are remapped to, and 7/8/46/47/16 are the cerebellum and
+# brainstem labels the outline is extended with. A subcortical structure
+# carrying one of these indices would be fused with a whole hemisphere of
+# cortex, which lands the silhouette in `core` instead of leaving it as
+# context.
+SUBCORT_RESERVED_IDX <- c(3L, 7L, 8L, 16L, 42L, 46L, 47L)
+
+
 SUBCORT_MANAGED_ARGS <- c(
   "input_volume",
   "input_lut",
@@ -1594,6 +1604,7 @@ wholebrain_run_subcortical <- function(
   subcort_lut <- as.character(fs::path(dirs$base, "subcort_lut.txt"))
   required_cols <- c("idx", "label", "R", "G", "B", "A")
   subcort_ct <- fill_missing_rgb(subcort_ct, "subcort")
+  subcort_ct <- reindex_reserved_subcort_idx(subcort_ct, config$verbose)
   write_lut(subcort_ct[, required_cols], subcort_lut)
 
   cortical_idx <- colortable$idx[
@@ -1603,9 +1614,10 @@ wholebrain_run_subcortical <- function(
   filtered_vol <- as.character(fs::path(dirs$base, "subcort_volume.nii.gz"))
   wholebrain_prepare_subcortical_volume(
     input_volume = config$input_volume,
-    subcortical_idx = subcort_ct$idx,
+    subcortical_idx = subcort_ct$source_idx,
     cortical_idx = cortical_idx,
-    output_file = filtered_vol
+    output_file = filtered_vol,
+    target_idx = subcort_ct$idx
   )
 
   subcort_name <- paste0(config$atlas_name, "_subcortical")
@@ -1735,27 +1747,76 @@ wholebrain_prepare_cerebellar_volume <- function(
 }
 
 
+#' Move subcortical indices off the values reserved for the brain outline
+#'
+#' The subcortical volume carries the cortical hemispheres alongside the
+#' subcortical structures, under the indices in `SUBCORT_RESERVED_IDX`. An
+#' atlas LUT that uses one of those values for a real structure would have
+#' that structure fused with a whole hemisphere of cortex, so the silhouette
+#' ends up as a legended `core` region instead of grey context. Reindexing is
+#' invisible in the finished atlas: regions are identified by label, and the
+#' LUT written for the pipeline carries the new indices.
+#'
+#' @param ct Subcortical colortable with `idx` and `label` columns
+#' @param verbose Report the reindexed labels
+#'
+#' @return `ct` with a `source_idx` column holding the original indices and
+#'   `idx` moved off the reserved values
+#' @noRd
+reindex_reserved_subcort_idx <- function(ct, verbose = TRUE) {
+  ct$source_idx <- ct$idx
+  clashing <- ct$idx %in% SUBCORT_RESERVED_IDX
+  if (!any(clashing)) {
+    return(ct)
+  }
+
+  taken <- union(ct$idx, SUBCORT_RESERVED_IDX)
+  available <- setdiff(seq_len(max(taken) + sum(clashing)), taken)
+  ct$idx[clashing] <- available[seq_len(sum(clashing))]
+
+  if (verbose) {
+    # nolint next: object_usage_linter.
+    moved <- paste0(
+      ct$label[clashing],
+      " (",
+      ct$source_idx[clashing],
+      " -> ",
+      ct$idx[clashing],
+      ")"
+    )
+    cli::cli_alert_info(
+      "Reindexed {sum(clashing)} subcortical label{?s} clashing with the
+      brain outline: {moved}",
+      wrap = TRUE
+    )
+  }
+
+  ct
+}
+
+
 #' Prepare volume for subcortical pipeline with cortex reference
 #'
-#' Keeps subcortical labels unchanged and remaps cortical labels to FS cortex
-#' reference, so the subcortical pipeline can generate brain outline context
-#' geometry via `detect_cortex_labels()`. Cortical labels are split by
-#' hemisphere using the volume midpoint: left hemisphere voxels map to label 3
-#' (FS left cortex), right hemisphere to label 42 (FS right cortex).
-#' All other labels are zeroed.
+#' Keeps subcortical labels (optionally reindexed through `target_idx`) and
+#' remaps cortical labels to FS cortex reference, so the subcortical pipeline
+#' can generate brain outline context geometry via `detect_cortex_labels()`.
+#' Cortical labels are split by hemisphere using the volume midpoint: left
+#' hemisphere voxels map to label 3 (FS left cortex), right hemisphere to
+#' label 42 (FS right cortex). All other labels are zeroed.
 #' @noRd
 # nolint next: object_length_linter.
 wholebrain_prepare_subcortical_volume <- function(
   input_volume,
   subcortical_idx,
   cortical_idx,
-  output_file
+  output_file,
+  target_idx = subcortical_idx
 ) {
   vol <- read_volume(input_volume, reorient = FALSE)
   arr <- as.array(vol)
   result <- array(0L, dim = dim(arr))
-  for (idx in subcortical_idx) {
-    result[arr == idx] <- idx
+  for (i in seq_along(subcortical_idx)) {
+    result[arr == subcortical_idx[i]] <- target_idx[i]
   }
   cortical_mask <- arr %in% cortical_idx
   xform <- RNifti::xform(vol)
