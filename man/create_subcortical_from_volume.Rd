@@ -44,7 +44,10 @@ contours). Defaults to \code{\link[=tempdir]{tempdir()}}.}
 
 \item{slabs}{A data.frame specifying projection slabs with columns \code{name},
 \code{type} ("axial", "coronal", "sagittal"), \code{start} (first slice), \code{end}
-(last slice). Default projects entire volume from each direction.
+(last slice). Defaults to three coronal and three axial slabs tiling the
+bounding box of the atlas's own labels, plus one left-hemisphere
+sagittal slab, so the band follows the anatomy of the volume rather than
+a fixed set of slice indices.
 Unlike slices, projections show ALL structures in their spatial
 relationships - like an X-ray view. May also be a named list of
 \code{\link[=subcortical_slabs]{subcortical_slabs()}} arguments (e.g.
