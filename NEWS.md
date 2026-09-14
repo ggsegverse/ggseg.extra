@@ -1,3 +1,12 @@
+# ggseg.extra 1.9.9.9030
+
+- CI can now run the FreeSurfer-gated tests. A slim image
+  (`ghcr.io/ggsegverse/freesurfer-slim`) carries the nine FreeSurfer binaries
+  the package shells out to plus the fsaverage5 subject, and a container job
+  runs the suite on it, failing if any FreeSurfer test skipped. New end-to-end
+  tests build cortical, subcortical, and wholebrain atlases from the shipped
+  fsaverage5 data.
+
 # ggseg.extra 1.9.9.9029
 
 - `atlas_smooth()` no longer multiplies an atlas's vertex count. Rounding a
