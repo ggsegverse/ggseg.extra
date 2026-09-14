@@ -1,5 +1,21 @@
 # Changelog
 
+## ggseg.extra 1.9.9.9027
+
+- [`create_wholebrain_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_wholebrain_from_volume.md)
+  no longer fuses a subcortical structure with a whole hemisphere of
+  cortex. The subcortical volume carries the cortical hemispheres
+  alongside the structures, under the FreeSurfer cortex indices (3, 42)
+  plus the cerebellum and brainstem indices the brain outline is
+  extended with (7, 8, 16, 46, 47). Any atlas whose own LUT used one of
+  those values for a real structure had that structure absorb the
+  silhouette, so the cortex outline appeared as a labelled `core` region
+  instead of grey context. Colliding labels are now moved onto free
+  index values before the volume and LUT are written; labels, regions
+  and palettes are unchanged. **Affected atlases must be rebuilt**: each
+  of Julich, Hammersmith, Mcalt and Craddock has one structure carrying
+  the silhouette.
+
 ## ggseg.extra 1.9.9.9026
 
 - `registration = "mni152"` now refuses a volume stored in right-handed

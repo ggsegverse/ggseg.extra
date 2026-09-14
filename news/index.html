@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9026</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9027</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -63,6 +63,11 @@
       <small>Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.9.9.9027" id="ggsegextra-1999027">ggseg.extra 1.9.9.9027<a class="anchor" aria-label="anchor" href="#ggsegextra-1999027"></a></h2>
+<ul><li>
+<code><a href="../reference/create_wholebrain_from_volume.html">create_wholebrain_from_volume()</a></code> no longer fuses a subcortical structure with a whole hemisphere of cortex. The subcortical volume carries the cortical hemispheres alongside the structures, under the FreeSurfer cortex indices (3, 42) plus the cerebellum and brainstem indices the brain outline is extended with (7, 8, 16, 46, 47). Any atlas whose own LUT used one of those values for a real structure had that structure absorb the silhouette, so the cortex outline appeared as a labelled <code>core</code> region instead of grey context. Colliding labels are now moved onto free index values before the volume and LUT are written; labels, regions and palettes are unchanged. <strong>Affected atlases must be rebuilt</strong>: each of Julich, Hammersmith, Mcalt and Craddock has one structure carrying the silhouette.</li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9026" id="ggsegextra-1999026">ggseg.extra 1.9.9.9026<a class="anchor" aria-label="anchor" href="#ggsegextra-1999026"></a></h2>
 <ul><li>
