@@ -233,10 +233,22 @@ subject_vox2ras <- function(subject, subjects_dir = freesurfer::fs_subj_dir()) {
 #' rather than surfacing that reader's own warnings.
 #' @noRd
 volume_vox2ras <- function(input_volume) {
-  tryCatch(
+  if (!file.exists(input_volume)) {
+    return(NULL)
+  }
+
+  vox2ras <- tryCatch(
     suppressWarnings(read_vox2ras(input_volume)),
     error = function(e) NULL
   )
+
+  # A reader handed an unreadable file can return a default header whose
+  # matrix is all zeros, which would otherwise read as a valid orientation.
+  if (is.null(vox2ras) || det(vox2ras[1:3, 1:3]) == 0) {
+    return(NULL)
+  }
+
+  vox2ras
 }
 
 
@@ -287,6 +299,51 @@ check_mni152_subject <- function(subject) {
 #' and registering it as one displaces the atlas while it still looks
 #' plausible. A volume in some other non-MNI152 space cannot be recognised.
 #' @noRd
+#' Stop when mni152.register.dat does not apply to this volume's grid
+#'
+#' `mni152.register.dat` is a tkregister matrix, and tkreg coordinates are
+#' derived from the volume's own voxel order, size and field of view. It is
+#' therefore exact only for the 1 mm left-handed (LAS) MNI152 grid it was
+#' built for. On a right-handed volume it mirrors left and right outright; on
+#' an LAS volume of another resolution it mislocates by a few per cent of
+#' vertices (7.7% measured at 1.5 mm, ~28% at 4 mm, against the same volume
+#' resampled to 1 mm first). Both produce an atlas that still looks
+#' plausible, so this refuses rather than warns.
+#' @noRd
+check_mni152_grid <- function(input_volume) {
+  vox2ras <- volume_vox2ras(input_volume)
+
+  if (is.null(vox2ras)) {
+    return(invisible(NA))
+  }
+
+  voxel_sizes <- sqrt(colSums(vox2ras[1:3, 1:3]^2))
+  handed <- det(vox2ras[1:3, 1:3]) < 0
+  millimetre <- all(abs(voxel_sizes - 1) < 0.01)
+
+  if (handed && millimetre) {
+    return(invisible(TRUE))
+  }
+
+  cli::cli_abort(c(
+    "{.val mni152} registration does not apply to {.path {input_volume}}.",
+    "x" = if (handed) {
+      "{.file mni152.register.dat} is built for a 1 mm grid, and this volume
+        has {.val {round(voxel_sizes, 3)}} mm voxels: applying it shifts
+        regions off their anatomy."
+    } else {
+      "{.file mni152.register.dat} assumes a left-handed (LAS) voxel order,
+        and this volume is right-handed (RAS): applying it swaps left and
+        right."
+    },
+    "i" = "Either way the atlas still looks plausible, so this is refused
+      rather than warned about.",
+    "i" = "Use {.code registration = \"header\"}, or resample the volume onto
+      the 1 mm LAS MNI152 grid first."
+  ))
+}
+
+
 warn_if_subject_space_volume <- function(input_volume, subject) {
   if (!same_geometry(volume_vox2ras(input_volume), subject_vox2ras(subject))) {
     return(invisible(FALSE))
@@ -328,6 +385,10 @@ validate_registration <- function(registration, subject, input_volume = NULL) {
 
   # FreeSurfer's own transform is resolved at projection time, so a pipeline
   # whose projection is cached or skipped needs no FreeSurfer installation.
+  if (!is.null(input_volume)) {
+    check_mni152_grid(input_volume)
+  }
+
   if (freesurfer::have_fs()) {
     check_mni152_subject(subject)
     if (!is.null(input_volume)) {

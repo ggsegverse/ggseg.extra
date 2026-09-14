@@ -3127,7 +3127,9 @@ testthat::describe("create_wholebrain_from_volume without FreeSurfer", {
     )
 
     vol_file <- withr::local_tempfile(fileext = ".nii.gz")
-    RNifti::writeNifti(array(1L, dim = c(2, 2, 2)), vol_file)
+    vol <- RNifti::asNifti(array(1L, dim = c(2, 2, 2)))
+    RNifti::qform(vol) <- structure(diag(c(-1, 1, 1, 1)), code = 4L)
+    RNifti::writeNifti(vol, vol_file)
 
     expect_warning(
       result <- create_wholebrain_from_volume(
