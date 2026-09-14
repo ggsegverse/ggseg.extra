@@ -11,6 +11,14 @@
 #' Note that the default `method = "close"` fills holes narrower than
 #' `smoothness`; see `method` for alternatives that preserve them.
 #'
+#' Rounding a corner replaces it with an arc, which costs vertices: a
+#' morphological close lays down eight segments per quarter turn. Those the
+#' rounding added are dropped again before the atlas is returned, so a
+#' preceding [atlas_simplify()] still counts rather than being undone.
+#' Geometry that is already as sparse as its shapes allow - a raw voxel
+#' tracing - keeps a little of the growth, since simplification cannot take
+#' a ring below the vertices it needs.
+#'
 #' By default all labels are smoothed equally. Use `labels` to smooth only
 #' matching labels, or `exclude` to smooth everything except matching labels.
 #' Only one of `labels` or `exclude` may be specified.
@@ -36,8 +44,17 @@
 #'   are smoothed; others are left unchanged.
 #' @param exclude Optional regex pattern. Labels matching this pattern are
 #'   left unchanged; all others are smoothed.
+#' @param close_gaps Whether to hand back the slivers rounding opens between
+#'   neighbouring regions. Every method moves each region's boundary on its
+#'   own, and a boundary shared with the region next door moves the other way
+#'   for the neighbour, so a hairline gap opens along every shared edge. With
+#'   `TRUE`, the default, area that no longer belongs to any region but
+#'   borders two of them is given back to one of them, and the parcellation
+#'   closes again. Set `FALSE` for geometry that is not a coverage - separate
+#'   tract tubes, say - where there is nothing to close.
 #'
-#' @return The `ggseg_atlas`, with its geometry rounded off.
+#' @return The `ggseg_atlas`, with its geometry rounded off, at close to the
+#'   vertex count it arrived with.
 #' @family atlas geometry
 #' @seealso [atlas_simplify()] to reduce the vertex count, and
 #'   [atlas_dilate()] to grow or shrink regions. Each does one thing: how
@@ -69,7 +86,8 @@ atlas_smooth <- function(
   smoothness = 0.4,
   labels = NULL,
   exclude = NULL,
-  method = c("close", "chaikin", "ksmooth", "spline")
+  method = c("close", "chaikin", "ksmooth", "spline"),
+  close_gaps = TRUE
 ) {
   method <- match.arg(method)
   check_smoothness(smoothness)
@@ -94,6 +112,7 @@ atlas_smooth <- function(
   was_polygon <- ggseg.formats::is_atlas_polygon(atlas)
   sf_data <- ggseg.formats::atlas_geom(ggseg.formats::as_sf_atlas(atlas))
 
+  before <- sf_data
   sf_data <- geometry_op_subset(
     sf_data,
     labels,
@@ -101,9 +120,22 @@ atlas_smooth <- function(
     function(d) smooth_sf_light(d, smoothness = smoothness, method = method),
     what = "smooth"
   )
+  if (!identical(sf_data, before)) {
+    if (isTRUE(close_gaps)) {
+      sf_data <- close_gaps_by_view(sf_data, before)
+    }
+    sf_data <- trim_rounded_corners(
+      sf_data,
+      before,
+      labels,
+      exclude,
+      close_gaps
+    )
+  }
 
   rehydrate_smoothed_atlas(atlas, sf_data, was_polygon)
 }
+
 
 #' Grow or shrink an atlas's regions
 #'
@@ -182,6 +214,15 @@ atlas_dilate <- function(atlas, amount, labels = NULL, exclude = NULL) {
 #'   smaller and blockier; near 1 is an effective no-op.
 #' @param labels,exclude Regex selecting which labels to simplify, or which
 #'   to leave alone. Give at most one.
+#' @param close_gaps Whether to hand back any sliver the simplification
+#'   opens between neighbouring regions. Simplification is topology-aware,
+#'   so on geometry straight out of a pipeline, whose neighbours share their
+#'   boundary vertex for vertex, it opens none and this does nothing. It
+#'   earns its keep on geometry that has been reshaped since - rounded off by
+#'   [atlas_smooth()], or traced region by region from separate masks - where
+#'   the rings no longer agree and the shared edge comes apart. With `TRUE`,
+#'   the default, area that no longer belongs to any region but borders two
+#'   of them is given back to one of them.
 #'
 #' @return The `ggseg_atlas`, in the representation it arrived in.
 #' @family atlas geometry
@@ -194,7 +235,103 @@ atlas_dilate <- function(atlas, amount, labels = NULL, exclude = NULL) {
 #' # Halve the atlas, sparing the structures.
 #' atlas <- atlas_simplify(my_atlas, keep = 0.5, labels = "^cortex")
 #' }
-atlas_simplify <- function(atlas, keep = 0.05, labels = NULL, exclude = NULL) {
+atlas_simplify <- function(
+  atlas,
+  keep = 0.05,
+  labels = NULL,
+  exclude = NULL,
+  close_gaps = TRUE
+) {
+  check_simplify_args(keep, labels, exclude)
+
+  if (is.null(ggseg.formats::atlas_geom(atlas))) {
+    cli::cli_warn("Atlas has no 2D geometry, nothing to simplify")
+    return(atlas)
+  }
+
+  was_polygon <- ggseg.formats::is_atlas_polygon(atlas)
+  sf_data <- ggseg.formats::atlas_geom(ggseg.formats::as_sf_atlas(atlas))
+
+  before <- sf_data
+  sf_data <- geometry_op_subset(
+    sf_data,
+    labels,
+    exclude,
+    function(d) simplify_sf_topology(d, keep = keep),
+    what = "simplify"
+  )
+  if (isTRUE(close_gaps) && !identical(sf_data, before)) {
+    sf_data <- close_gaps_by_view(sf_data, before)
+  }
+
+  rehydrate_smoothed_atlas(atlas, sf_data, was_polygon)
+}
+
+
+#' Take the rounded corners back down to the vertex count they started at
+#'
+#' Rounding a corner replaces it with an arc, and an arc costs vertices: a
+#' morphological close lays down eight segments per quarter turn, so
+#' smoothing used to leave an atlas several times larger than it found it and
+#' silently undo any simplification that came before. An arc of two or three
+#' segments reads the same at plotting size, so the extra ones are dropped
+#' again here.
+#'
+#' Simplification will not take a ring below the handful of vertices that
+#' keeps its shape, so one pass lands above what it was asked for and the
+#' trim asks again. Geometry already at that floor when it arrived - a raw
+#' voxel tracing, say - cannot be brought all the way back, so the trim also
+#' stops once a pass has stopped buying anything, and backs a pass out
+#' entirely if closing its gaps cost more than it saved.
+#' @noRd
+trim_rounded_corners <- function(
+  sf_data,
+  before,
+  labels,
+  exclude,
+  close_gaps,
+  passes = 4L
+) {
+  rows <- dilate_mask(before$label, labels, exclude)
+  target <- sum(count_vertices(before[rows, , drop = FALSE]))
+  if (target == 0) {
+    return(sf_data)
+  }
+
+  grown <- sum(count_vertices(sf_data[rows, , drop = FALSE]))
+  for (pass in seq_len(passes)) {
+    if (grown <= target * 1.1) {
+      break
+    }
+    previous <- sf_data
+    sf_data <- geometry_op_subset(
+      sf_data,
+      labels,
+      exclude,
+      function(d) simplify_sf_topology(d, keep = target / grown),
+      what = "simplify"
+    )
+    if (isTRUE(close_gaps)) {
+      sf_data <- close_gaps_by_view(sf_data, previous)
+    }
+    # Closing the gaps the simplification opened can cost more vertices than
+    # the simplification saved, so a pass is kept only if it came out ahead.
+    trimmed <- sum(count_vertices(sf_data[rows, , drop = FALSE]))
+    if (trimmed >= grown) {
+      return(previous)
+    }
+    if (trimmed > grown * 0.95) {
+      break
+    }
+    grown <- trimmed
+  }
+  sf_data
+}
+
+
+#' Validate what atlas_simplify() was handed
+#' @noRd
+check_simplify_args <- function(keep, labels, exclude) {
   if (!is.numeric(keep) || length(keep) != 1L || is.na(keep)) {
     cli::cli_abort("{.arg keep} must be a single number between 0 and 1.")
   }
@@ -206,24 +343,7 @@ atlas_simplify <- function(atlas, keep = 0.05, labels = NULL, exclude = NULL) {
       "Specify only one of {.arg labels} or {.arg exclude}, not both."
     )
   }
-
-  if (is.null(ggseg.formats::atlas_geom(atlas))) {
-    cli::cli_warn("Atlas has no 2D geometry, nothing to simplify")
-    return(atlas)
-  }
-
-  was_polygon <- ggseg.formats::is_atlas_polygon(atlas)
-  sf_data <- ggseg.formats::atlas_geom(ggseg.formats::as_sf_atlas(atlas))
-
-  sf_data <- geometry_op_subset(
-    sf_data,
-    labels,
-    exclude,
-    function(d) simplify_sf_topology(d, keep = keep),
-    what = "simplify"
-  )
-
-  rehydrate_smoothed_atlas(atlas, sf_data, was_polygon)
+  invisible(NULL)
 }
 
 
@@ -584,11 +704,20 @@ simplify_sf_topology <- function(sf_data, keep = 0.05) {
     length(unique(sf_data[[group_col]])) > 1
 
   if (multi_group) {
-    parts <- lapply(unique(sf_data[[group_col]]), function(g) {
-      group_sf <- sf_data[sf_data[[group_col]] == g, , drop = FALSE]
+    # Each view is a separate picture, so shared boundaries are only shared
+    # within one. Row order is draw order, so the groups are put back in the
+    # order they arrived in rather than the order they were simplified in.
+    groups <- split(seq_len(nrow(sf_data)), sf_data[[group_col]])
+    parts <- lapply(groups, function(rows) {
+      group_sf <- sf_data[rows, , drop = FALSE]
       rmapshaper::ms_simplify(group_sf, keep = keep, keep_shapes = TRUE)
     })
     sf_data <- do.call(rbind, parts)
+    sf_data <- sf_data[
+      order(unlist(groups, use.names = FALSE)),
+      ,
+      drop = FALSE
+    ]
   } else {
     sf_data <- rmapshaper::ms_simplify(sf_data, keep = keep, keep_shapes = TRUE)
   }
@@ -838,4 +967,209 @@ check_dilate_args <- function(amount, labels, exclude) {
     )
   }
   invisible(NULL)
+}
+
+
+# Coverage repair ----
+
+#' Give back the slivers a per-region operation opened between neighbours
+#'
+#' Reshaping a region moves its boundary, and a boundary shared with the
+#' region next door moves the other way for the neighbour, so a hairline
+#' sliver opens along every shared edge. The area is not lost, it is simply
+#' unclaimed: this finds the holes the reshaping left in the parcellation and
+#' hands each one to a region that borders it, so the coverage closes again.
+#'
+#' Only area that *was* covered is handed back. Space that was already open
+#' between separate structures is anatomy, not damage, and stays open; so
+#' does a shaving along the outside of the coverage, which is what the
+#' reshaping was asked for.
+#'
+#' @param new_sf The sf data.frame after the operation.
+#' @param old_sf The same rows before it.
+#' @return `new_sf`, with the slivers merged back in.
+#' @noRd
+close_coverage_gaps <- function(new_sf, old_sf, passes = 3L) {
+  if (nrow(new_sf) < 2L || nrow(new_sf) != nrow(old_sf)) {
+    return(new_sf)
+  }
+  parcels <- which(!is_backdrop_row(old_sf))
+  if (length(parcels) < 2L) {
+    return(new_sf)
+  }
+  covered <- sf::st_union(
+    sf::st_make_valid(sf::st_geometry(old_sf)[parcels])
+  )
+  for (pass in seq_len(passes)) {
+    filled <- fill_reopened_area(new_sf, parcels, covered)
+    if (is.null(filled)) {
+      break
+    }
+    new_sf <- filled
+  }
+  new_sf
+}
+
+
+#' Which rows are the picture behind the parcellation, not part of it
+#'
+#' An atlas often draws a grey brain silhouette under its regions as
+#' anatomical context. It covers the parcels rather than abutting them, so it
+#' would hide every gap between them: a hole in the parcellation is not a
+#' hole in a coverage the backdrop is part of. A row covering most of what
+#' the group covers is taken to be one.
+#' @noRd
+is_backdrop_row <- function(sf_data) {
+  geom <- sf::st_make_valid(sf::st_geometry(sf_data))
+  total <- as.numeric(sf::st_area(sf::st_union(geom)))
+  if (length(total) != 1L || !is.finite(total) || total <= 0) {
+    return(rep(FALSE, length(geom)))
+  }
+  as.numeric(sf::st_area(geom)) / total > 0.5
+}
+
+
+#' One pass of the repair, or `NULL` when there is nothing left to close
+#'
+#' Merging a sliver back in lands its edge on the neighbour's to within
+#' floating-point, which can leave a thinner one behind, so the repair is run
+#' again until it finds nothing.
+#' @noRd
+fill_reopened_area <- function(new_sf, parcels, covered) {
+  parcel_geom <- sf::st_make_valid(sf::st_geometry(new_sf)[parcels])
+  pieces <- reopened_area(sf::st_union(parcel_geom), covered)
+  if (length(pieces) == 0L) {
+    return(NULL)
+  }
+  owner <- parcels[claim_pieces(pieces, parcel_geom)]
+  merge_pieces_into(new_sf, pieces, owner)
+}
+
+
+#' The holes a reshaping punched in ground the regions used to cover
+#' @noRd
+reopened_area <- function(new_union, old_union) {
+  holes <- union_holes(new_union)
+  if (length(holes) == 0L) {
+    return(holes)
+  }
+  reopened <- suppressWarnings(sf::st_intersection(holes, old_union))
+  reopened <- polygonal_parts(reopened)
+  reopened[as.numeric(sf::st_area(reopened)) > 0]
+}
+
+
+#' Every interior ring of a unioned coverage, as a polygon
+#' @noRd
+union_holes <- function(geom) {
+  polys <- suppressWarnings(
+    sf::st_cast(sf::st_cast(geom, "MULTIPOLYGON"), "POLYGON")
+  )
+  rings <- list()
+  for (poly in polys) {
+    if (length(poly) < 2L) {
+      next
+    }
+    for (ring in poly[-1L]) {
+      rings[[length(rings) + 1L]] <- sf::st_polygon(list(ring))
+    }
+  }
+  sf::st_sfc(rings, crs = sf::st_crs(geom))
+}
+
+
+#' Keep only the polygonal parts of a geometry set
+#'
+#' Differencing and intersecting coverages returns whatever falls out -
+#' polygons, but also the lines and points where two boundaries only touch.
+#' Only the polygons carry area worth handing back.
+#' @noRd
+polygonal_parts <- function(geom) {
+  geom <- geom[!sf::st_is_empty(geom)]
+  if (length(geom) == 0L) {
+    return(geom)
+  }
+  parts <- list()
+  for (g in geom) {
+    for (part in polygons_within(g)) {
+      parts[[length(parts) + 1L]] <- part
+    }
+  }
+  sf::st_sfc(parts, crs = sf::st_crs(geom))
+}
+
+
+#' Every POLYGON inside one geometry, however it is nested
+#' @noRd
+polygons_within <- function(g) {
+  switch(
+    class(g)[[2L]],
+    POLYGON = list(g),
+    MULTIPOLYGON = lapply(unclass(g), sf::st_polygon),
+    GEOMETRYCOLLECTION = unlist(
+      lapply(unclass(g), polygons_within),
+      recursive = FALSE
+    ),
+    list()
+  )
+}
+
+
+#' Which row each sliver belongs to
+#'
+#' A sliver borders the regions it was taken from, so the first of those
+#' claims it. One that borders nothing - a rounding artefact adrift inside a
+#' single region - goes to whichever region is nearest.
+#' @noRd
+claim_pieces <- function(pieces, geom) {
+  bordering <- sf::st_intersects(pieces, sf::st_boundary(geom))
+  owner <- vapply(
+    bordering,
+    function(hit) if (length(hit) > 0L) hit[[1L]] else NA_integer_,
+    integer(1)
+  )
+  adrift <- is.na(owner)
+  if (any(adrift)) {
+    owner[adrift] <- sf::st_nearest_feature(pieces[adrift], geom)
+  }
+  owner
+}
+
+
+#' Union each sliver into the row that claimed it
+#' @noRd
+merge_pieces_into <- function(sf_data, pieces, owner) {
+  geom <- sf::st_geometry(sf_data)
+  for (row in unique(owner)) {
+    addition <- sf::st_union(pieces[owner == row])
+    merged <- sf::st_make_valid(sf::st_union(geom[row], addition))
+    merged <- polygonal_parts(merged)
+    if (length(merged) == 0L) {
+      next
+    }
+    geom[row] <- sf::st_cast(sf::st_union(merged), "MULTIPOLYGON")
+  }
+  sf::st_geometry(sf_data) <- sf::st_make_valid(geom)
+  sf_data
+}
+
+
+#' Repair the coverage one view at a time
+#'
+#' Views are laid out side by side in one set of coordinates but are separate
+#' pictures, so a sliver may only ever be handed to a region in its own view.
+#' @noRd
+close_gaps_by_view <- function(new_sf, old_sf) {
+  if (!"view" %in% names(new_sf)) {
+    return(close_coverage_gaps(new_sf, old_sf))
+  }
+  for (v in unique(new_sf$view)) {
+    rows <- which(new_sf$view == v)
+    repaired <- close_coverage_gaps(
+      new_sf[rows, , drop = FALSE],
+      old_sf[rows, , drop = FALSE]
+    )
+    sf::st_geometry(new_sf)[rows] <- sf::st_geometry(repaired)
+  }
+  sf::st_make_valid(new_sf)
 }

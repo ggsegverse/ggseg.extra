@@ -9,7 +9,8 @@ atlas_smooth(
   smoothness = 0.4,
   labels = NULL,
   exclude = NULL,
-  method = c("close", "chaikin", "ksmooth", "spline")
+  method = c("close", "chaikin", "ksmooth", "spline"),
+  close_gaps = TRUE
 )
 }
 \arguments{
@@ -29,7 +30,7 @@ are smoothed; others are left unchanged.}
 left unchanged; all others are smoothed.}
 
 \item{method}{Smoothing method. \code{"close"} (the default) is a
-morphological closing: a positive then negative \code{\link[sf:geos_unary]{sf::st_buffer()}}.
+morphological closing: a positive then negative \code{\link[sf:st_buffer]{sf::st_buffer()}}.
 It rounds outlines but \strong{fills holes narrower than the smoothing
 distance},
 which erases the sulci of a thin cortical ribbon. The remaining
@@ -38,9 +39,19 @@ dilating the shape, so enclosed holes stay open: \code{"chaikin"} (corner
 cutting), \code{"ksmooth"} (kernel smoothing) and \code{"spline"}. Choose
 \code{"close"} to round solid shapes such as tract tubes, and one of the
 others when the geometry has holes worth keeping.}
+
+\item{close_gaps}{Whether to hand back the slivers rounding opens between
+neighbouring regions. Every method moves each region's boundary on its
+own, and a boundary shared with the region next door moves the other way
+for the neighbour, so a hairline gap opens along every shared edge. With
+\code{TRUE}, the default, area that no longer belongs to any region but
+borders two of them is given back to one of them, and the parcellation
+closes again. Set \code{FALSE} for geometry that is not a coverage - separate
+tract tubes, say - where there is nothing to close.}
 }
 \value{
-The \code{ggseg_atlas}, with its geometry rounded off.
+The \code{ggseg_atlas}, with its geometry rounded off, and no larger
+than it arrived.
 }
 \description{
 Topology-preserving simplification of atlas sf geometry via
@@ -51,6 +62,11 @@ between adjacent regions are simplified together, preventing gaps.
 \details{
 Note that the default \code{method = "close"} fills holes narrower than
 \code{smoothness}; see \code{method} for alternatives that preserve them.
+
+Rounding a corner replaces it with an arc, which costs vertices. Those
+the rounding added are dropped again before the atlas is returned, so
+smoothing never leaves an atlas larger than it found it and a preceding
+\code{\link[=atlas_simplify]{atlas_simplify()}} still counts.
 
 By default all labels are smoothed equally. Use \code{labels} to smooth only
 matching labels, or \code{exclude} to smooth everything except matching labels.
@@ -81,8 +97,8 @@ separate questions and get tuned at separate times. Simplify before
 smoothing, not after - dropping vertices from a rounded outline replaces
 its curves with straight chords, putting the stair-step back.
 
-Other atlas geometry: 
-\code{\link{atlas_dilate}()},
-\code{\link{atlas_simplify}()}
+Other atlas geometry:
+\code{\link[=atlas_dilate]{atlas_dilate()}},
+\code{\link[=atlas_simplify]{atlas_simplify()}}
 }
 \concept{atlas geometry}

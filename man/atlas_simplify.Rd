@@ -4,7 +4,13 @@
 \alias{atlas_simplify}
 \title{Reduce an atlas's vertex count}
 \usage{
-atlas_simplify(atlas, keep = 0.05, labels = NULL, exclude = NULL)
+atlas_simplify(
+  atlas,
+  keep = 0.05,
+  labels = NULL,
+  exclude = NULL,
+  close_gaps = TRUE
+)
 }
 \arguments{
 \item{atlas}{A \code{ggseg_atlas} object with 2D geometry.}
@@ -14,6 +20,16 @@ smaller and blockier; near 1 is an effective no-op.}
 
 \item{labels, exclude}{Regex selecting which labels to simplify, or which
 to leave alone. Give at most one.}
+
+\item{close_gaps}{Whether to hand back any sliver the simplification
+opens between neighbouring regions. Simplification is topology-aware,
+so on geometry straight out of a pipeline, whose neighbours share their
+boundary vertex for vertex, it opens none and this does nothing. It
+earns its keep on geometry that has been reshaped since - rounded off by
+\code{\link[=atlas_smooth]{atlas_smooth()}}, or traced region by region from separate masks - where
+the rings no longer agree and the shared edge comes apart. With \code{TRUE},
+the default, area that no longer belongs to any region but borders two
+of them is given back to one of them.}
 }
 \value{
 The \code{ggseg_atlas}, in the representation it arrived in.
@@ -39,8 +55,8 @@ atlas <- atlas_simplify(my_atlas, keep = 0.5, labels = "^cortex")
 grow or shrink them. Simplify first and smooth afterwards, so the
 smoothing has the last word on the outline.
 
-Other atlas geometry: 
-\code{\link{atlas_dilate}()},
-\code{\link{atlas_smooth}()}
+Other atlas geometry:
+\code{\link[=atlas_dilate]{atlas_dilate()}},
+\code{\link[=atlas_smooth]{atlas_smooth()}}
 }
 \concept{atlas geometry}

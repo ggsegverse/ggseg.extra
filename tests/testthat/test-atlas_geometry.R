@@ -1113,20 +1113,18 @@ testthat::describe("atlas_smooth", {
   it("closes jagged edges", {
     atlas <- two_region_atlas()
     before <- ggseg.formats::atlas_geom(atlas)
-    n_before <- nrow(sf::st_coordinates(
-      before$geometry[before$label == "region_a"]
-    ))
+    region_a <- function(geom) geom$geometry[geom$label == "region_a"]
 
     result <- atlas_smooth(atlas, smoothness = 0.6)
     geom <- ggseg.formats::atlas_geom(result)
 
     expect_true(all(sf::st_is_valid(geom)))
-    expect_false(
-      nrow(sf::st_coordinates(
-        geom$geometry[geom$label == "region_a"]
-      )) ==
-        n_before
-    )
+    # The outline moves. The vertex count need not: rounding a corner adds
+    # arc vertices and the trim takes them back off again.
+    expect_false(identical(
+      sf::st_coordinates(region_a(geom)),
+      sf::st_coordinates(region_a(before))
+    ))
   })
 
   it("only simplifies labels matched by `labels`, leaving the rest untouched", {
@@ -1375,6 +1373,221 @@ testthat::describe("contour stage cache staleness", {
     expect_error(
       reduce_vertex(outdir, tolerance = 0.5, step = "", verbose = FALSE),
       "Rerun the contour extraction"
+    )
+  })
+})
+# A three-by-three grid of square parcels sharing every interior edge, with a
+# staircase along one of them so there is something to round off. Anything
+# that pulls the shared edges apart shows up as a hole in the union.
+grid_atlas <- function(n = 3L, cell = 10, steps = 8L) {
+  edge <- function(from, to) {
+    t <- seq(0, 1, length.out = steps + 1L)[-(steps + 1L)]
+    cbind(
+      from[1L] + t * (to[1L] - from[1L]),
+      from[2L] + t * (to[2L] - from[2L])
+    )
+  }
+  cells <- expand.grid(col = seq_len(n), row = seq_len(n))
+  squares <- lapply(seq_len(nrow(cells)), function(i) {
+    x0 <- (cells$col[i] - 1L) * cell
+    y0 <- (cells$row[i] - 1L) * cell
+    corners <- list(
+      c(x0, y0),
+      c(x0 + cell, y0),
+      c(x0 + cell, y0 + cell),
+      c(x0, y0 + cell)
+    )
+    ring <- rbind(
+      edge(corners[[1L]], corners[[2L]]),
+      edge(corners[[2L]], corners[[3L]]),
+      edge(corners[[3L]], corners[[4L]]),
+      edge(corners[[4L]], corners[[1L]])
+    )
+    sf::st_polygon(list(rbind(ring, ring[1L, ])))
+  })
+  labels <- paste0("r", seq_len(nrow(cells)))
+  sf_obj <- sf::st_sf(
+    label = labels,
+    view = "v1",
+    geometry = sf::st_sfc(squares)
+  )
+  sf_obj <- sf::st_cast(sf::st_make_valid(sf_obj), "MULTIPOLYGON")
+  palette <- stats::setNames(rep("#000000", length(labels)), labels)
+  ggseg.formats::ggseg_atlas(
+    atlas = "grid",
+    type = "subcortical",
+    palette = palette,
+    core = data.frame(
+      label = labels,
+      region = labels,
+      stringsAsFactors = FALSE
+    ),
+    data = ggseg.formats::ggseg_data_subcortical(geom = sf_obj)
+  )
+}
+
+gap_area <- function(atlas) {
+  geom <- ggseg.formats::atlas_geom(ggseg.formats::as_sf_atlas(atlas))
+  union <- sf::st_union(sf::st_make_valid(sf::st_geometry(geom)))
+  polys <- sf::st_cast(sf::st_cast(union, "MULTIPOLYGON"), "POLYGON")
+  total <- 0
+  for (poly in polys) {
+    if (length(poly) < 2L) {
+      next
+    }
+    for (ring in poly[-1L]) {
+      total <- total + as.numeric(sf::st_area(sf::st_polygon(list(ring))))
+    }
+  }
+  total
+}
+
+n_vertices <- function(atlas) {
+  sum(count_vertices(ggseg.formats::atlas_sf(atlas)))
+}
+
+testthat::describe("close_gaps", {
+  it("closes the slivers smoothing opens", {
+    atlas <- grid_atlas()
+
+    unrepaired <- atlas_smooth(atlas, smoothness = 0.4, close_gaps = FALSE)
+    repaired <- atlas_smooth(atlas, smoothness = 0.4)
+
+    expect_gt(gap_area(unrepaired), 0)
+    expect_identical(gap_area(repaired), 0)
+  })
+
+  it("closes the slivers simplification opens", {
+    atlas <- atlas_smooth(grid_atlas(n = 4L), smoothness = 0.4)
+
+    unrepaired <- atlas_simplify(atlas, keep = 0.3, close_gaps = FALSE)
+    repaired <- atlas_simplify(atlas, keep = 0.3)
+
+    expect_lte(gap_area(repaired), gap_area(unrepaired))
+  })
+
+  it("leaves space between separate structures alone", {
+    islands <- sf::st_sf(
+      label = c("a", "b"),
+      view = "v1",
+      geometry = sf::st_sfc(
+        sf::st_buffer(sf::st_point(c(0, 0)), 1),
+        sf::st_buffer(sf::st_point(c(10, 0)), 1)
+      )
+    )
+
+    result <- close_coverage_gaps(islands, islands)
+
+    expect_equal(
+      as.numeric(sf::st_area(sf::st_union(sf::st_geometry(result)))),
+      as.numeric(sf::st_area(sf::st_union(sf::st_geometry(islands)))),
+      tolerance = 1e-9
+    )
+  })
+
+  it("ignores a backdrop that covers the parcellation", {
+    atlas <- grid_atlas()
+    geom <- ggseg.formats::atlas_geom(atlas)
+    backdrop <- sf::st_sf(
+      label = "cortex",
+      view = "v1",
+      geometry = sf::st_sfc(sf::st_union(sf::st_geometry(geom)))
+    )
+    backdrop <- sf::st_cast(backdrop, "MULTIPOLYGON")
+
+    expect_identical(
+      is_backdrop_row(rbind(backdrop, geom)),
+      c(TRUE, rep(FALSE, nrow(geom)))
+    )
+  })
+})
+
+testthat::describe("simplify_sf_topology", {
+  it("hands the rows back in the order they arrived in", {
+    squares <- lapply(seq_len(6L), function(i) {
+      sf::st_polygon(list(matrix(
+        c(i, 0, i + 1, 0, i + 1, 1, i + 0.5, 0.4, i, 1, i, 0),
+        ncol = 2,
+        byrow = TRUE
+      )))
+    })
+    sf_obj <- sf::st_sf(
+      label = paste0("r", seq_len(6L)),
+      view = rep(c("a", "b"), each = 3L),
+      geometry = sf::st_sfc(squares)
+    )
+    sf_obj <- sf_obj[c(1L, 4L, 2L, 5L, 3L, 6L), ]
+
+    result <- simplify_sf_topology(sf_obj, keep = 0.5)
+
+    expect_identical(result$label, sf_obj$label)
+    expect_identical(result$view, sf_obj$view)
+  })
+})
+
+testthat::describe("atlas_smooth vertex budget", {
+  it("does not leave the atlas larger than it found it", {
+    atlas <- grid_atlas(n = 4L)
+
+    expect_lte(n_vertices(atlas_smooth(atlas, 0.4)), n_vertices(atlas))
+  })
+
+  it("never hands back more than the rounding gave it", {
+    # A pass that closes its own gaps can cost more vertices than the
+    # simplification saved; the trim backs such a pass out rather than
+    # leaving the geometry bigger than it found it.
+    simplified <- ggseg.formats::atlas_geom(
+      ggseg.formats::as_sf_atlas(atlas_simplify(grid_atlas(n = 4L), 0.25))
+    )
+
+    untrimmed <- smooth_sf_light(simplified, smoothness = 0.4, method = "close")
+    trimmed <- trim_rounded_corners(
+      untrimmed,
+      simplified,
+      labels = NULL,
+      exclude = NULL,
+      close_gaps = TRUE
+    )
+
+    expect_gt(sum(count_vertices(untrimmed)), sum(count_vertices(simplified)))
+    expect_lte(sum(count_vertices(trimmed)), sum(count_vertices(untrimmed)))
+  })
+
+  it("rounds the corners it was asked to round", {
+    atlas <- grid_atlas()
+
+    smoothed <- atlas_smooth(atlas, smoothness = 0.4)
+
+    corner <- function(a) {
+      geom <- ggseg.formats::atlas_geom(ggseg.formats::as_sf_atlas(a))
+      as.numeric(sf::st_area(sf::st_union(sf::st_geometry(geom))))
+    }
+    expect_lt(corner(smoothed), corner(atlas))
+  })
+
+  it("still honours a preceding simplification", {
+    atlas <- grid_atlas(n = 4L)
+
+    simplified <- atlas_simplify(atlas, keep = 0.25)
+    smoothed <- atlas_smooth(simplified, smoothness = 0.4)
+
+    expect_lt(n_vertices(smoothed), n_vertices(atlas))
+    expect_lte(n_vertices(smoothed), n_vertices(simplified) * 1.1)
+  })
+
+  it("trims only the labels it smoothed", {
+    atlas <- grid_atlas()
+    untouched <- ggseg.formats::atlas_geom(
+      ggseg.formats::as_sf_atlas(atlas)
+    )
+
+    smoothed <- atlas_smooth(atlas, smoothness = 0.4, labels = "^r1$")
+    geom <- ggseg.formats::atlas_geom(ggseg.formats::as_sf_atlas(smoothed))
+
+    others <- geom$label != "r1"
+    expect_identical(
+      count_vertices(geom[others, , drop = FALSE]),
+      count_vertices(untouched[others, , drop = FALSE])
     )
   })
 })
