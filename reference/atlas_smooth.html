@@ -15,7 +15,7 @@ between adjacent regions are simplified together, preventing gaps."><meta proper
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9028</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9029</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -84,7 +84,8 @@ between adjacent regions are simplified together, preventing gaps.</p>
 <span>  smoothness <span class="op">=</span> <span class="fl">0.4</span>,</span>
 <span>  labels <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  exclude <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"close"</span>, <span class="st">"chaikin"</span>, <span class="st">"ksmooth"</span>, <span class="st">"spline"</span><span class="op">)</span></span>
+<span>  method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"close"</span>, <span class="st">"chaikin"</span>, <span class="st">"ksmooth"</span>, <span class="st">"spline"</span><span class="op">)</span>,</span>
+<span>  close_gaps <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -127,15 +128,31 @@ cutting), <code>"ksmooth"</code> (kernel smoothing) and <code>"spline"</code>. C
 <code>"close"</code> to round solid shapes such as tract tubes, and one of the
 others when the geometry has holes worth keeping.</p></dd>
 
+
+<dt id="arg-close-gaps">close_gaps<a class="anchor" aria-label="anchor" href="#arg-close-gaps"></a></dt>
+<dd><p>Whether to hand back the slivers rounding opens between
+neighbouring regions. Every method moves each region's boundary on its
+own, and a boundary shared with the region next door moves the other way
+for the neighbour, so a hairline gap opens along every shared edge. With
+<code>TRUE</code>, the default, area that no longer belongs to any region but
+borders two of them is given back to one of them, and the parcellation
+closes again. Set <code>FALSE</code> for geometry that is not a coverage - separate
+tract tubes, say - where there is nothing to close.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>The <code>ggseg_atlas</code>, with its geometry rounded off.</p>
+    <p>The <code>ggseg_atlas</code>, with its geometry rounded off, and no larger
+than it arrived.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>Note that the default <code>method = "close"</code> fills holes narrower than
 <code>smoothness</code>; see <code>method</code> for alternatives that preserve them.</p>
+<p>Rounding a corner replaces it with an arc, which costs vertices. Those
+the rounding added are dropped again before the atlas is returned, so
+smoothing never leaves an atlas larger than it found it and a preceding
+<code><a href="atlas_simplify.html">atlas_simplify()</a></code> still counts.</p>
 <p>By default all labels are smoothed equally. Use <code>labels</code> to smooth only
 matching labels, or <code>exclude</code> to smooth everything except matching labels.
 Only one of <code>labels</code> or <code>exclude</code> may be specified.</p>

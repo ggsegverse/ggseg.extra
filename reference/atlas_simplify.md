@@ -6,7 +6,13 @@ atlas costs less to store and to draw.
 ## Usage
 
 ``` r
-atlas_simplify(atlas, keep = 0.05, labels = NULL, exclude = NULL)
+atlas_simplify(
+  atlas,
+  keep = 0.05,
+  labels = NULL,
+  exclude = NULL,
+  close_gaps = TRUE
+)
 ```
 
 ## Arguments
@@ -24,6 +30,19 @@ atlas_simplify(atlas, keep = 0.05, labels = NULL, exclude = NULL)
 
   Regex selecting which labels to simplify, or which to leave alone.
   Give at most one.
+
+- close_gaps:
+
+  Whether to hand back any sliver the simplification opens between
+  neighbouring regions. Simplification is topology-aware, so on geometry
+  straight out of a pipeline, whose neighbours share their boundary
+  vertex for vertex, it opens none and this does nothing. It earns its
+  keep on geometry that has been reshaped since - rounded off by
+  [`atlas_smooth()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_smooth.md),
+  or traced region by region from separate masks - where the rings no
+  longer agree and the shared edge comes apart. With `TRUE`, the
+  default, area that no longer belongs to any region but borders two of
+  them is given back to one of them.
 
 ## Value
 

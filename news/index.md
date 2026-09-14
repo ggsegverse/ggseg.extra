@@ -1,5 +1,50 @@
 # Changelog
 
+## ggseg.extra 1.9.9.9029
+
+- [`atlas_smooth()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_smooth.md)
+  no longer multiplies an atlas’s vertex count. Rounding a corner
+  replaces it with an arc, and the default morphological close lays down
+  eight segments per quarter turn, so smoothing grew the geometry
+  several times over and silently undid any
+  [`atlas_simplify()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_simplify.md)
+  that ran before it: on ggsegHO’s `ho2_cort`, simplifying to 9812
+  vertices and then smoothing came back at 35682, larger than the 30878
+  it started from. The arcs are now taken back down to the two or three
+  segments that read the same at plotting size, and the same pair of
+  calls comes back at 13784. Geometry already as sparse as its shapes
+  allow, such as a raw voxel tracing, keeps a little of the growth:
+  simplification will not take a ring below the vertices it needs to
+  stay itself.
+
+- [`atlas_smooth()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_smooth.md)
+  and
+  [`atlas_simplify()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_simplify.md)
+  no longer open gaps between neighbouring regions. Both reshape each
+  region on its own, so a boundary shared with the region next door
+  moved the other way for the neighbour and a hairline sliver opened
+  along every shared edge; on ggsegHO’s `ho2_cort` a single
+  [`atlas_smooth()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_smooth.md)
+  opened 111 of them in the lateral view alone. Each function now finds
+  the holes it punched in ground the regions used to cover and hands
+  them back, taking that view to none. Space that was already open
+  between separate structures is anatomy and stays open, as does a
+  shaving along the outside of the coverage. Pass `close_gaps = FALSE`
+  for geometry that is not a coverage.
+
+  On geometry straight out of a pipeline, whose neighbours share their
+  boundary vertex for vertex,
+  [`atlas_simplify()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_simplify.md)
+  opens no gaps and the repair does nothing. It earns its keep on
+  geometry reshaped since, such as an atlas already rounded off or one
+  traced region by region from separate masks.
+
+- [`atlas_simplify()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_simplify.md)
+  no longer reshuffles the rows of a multi-view atlas. Row order is draw
+  order, so a plain `atlas_simplify(atlas, keep = )` could paint a
+  structure underneath the region it belongs on top of, and left each
+  view’s rows grouped in whatever order the views were simplified in.
+
 ## ggseg.extra 1.9.9.9028
 
 - The default subcortical projection slabs are now framed on the

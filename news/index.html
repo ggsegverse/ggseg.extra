@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9028</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9029</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -63,6 +63,15 @@
       <small>Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.9.9.9029" id="ggsegextra-1999029">ggseg.extra 1.9.9.9029<a class="anchor" aria-label="anchor" href="#ggsegextra-1999029"></a></h2>
+<ul><li><p><code><a href="../reference/atlas_smooth.html">atlas_smooth()</a></code> no longer multiplies an atlas’s vertex count. Rounding a corner replaces it with an arc, and the default morphological close lays down eight segments per quarter turn, so smoothing grew the geometry several times over and silently undid any <code><a href="../reference/atlas_simplify.html">atlas_simplify()</a></code> that ran before it: on ggsegHO’s <code>ho2_cort</code>, simplifying to 9812 vertices and then smoothing came back at 35682, larger than the 30878 it started from. The arcs are now taken back down to the two or three segments that read the same at plotting size, and the same pair of calls comes back at 13784. Geometry already as sparse as its shapes allow, such as a raw voxel tracing, keeps a little of the growth: simplification will not take a ring below the vertices it needs to stay itself.</p></li>
+<li>
+<p><code><a href="../reference/atlas_smooth.html">atlas_smooth()</a></code> and <code><a href="../reference/atlas_simplify.html">atlas_simplify()</a></code> no longer open gaps between neighbouring regions. Both reshape each region on its own, so a boundary shared with the region next door moved the other way for the neighbour and a hairline sliver opened along every shared edge; on ggsegHO’s <code>ho2_cort</code> a single <code><a href="../reference/atlas_smooth.html">atlas_smooth()</a></code> opened 111 of them in the lateral view alone. Each function now finds the holes it punched in ground the regions used to cover and hands them back, taking that view to none. Space that was already open between separate structures is anatomy and stays open, as does a shaving along the outside of the coverage. Pass <code>close_gaps = FALSE</code> for geometry that is not a coverage.</p>
+<p>On geometry straight out of a pipeline, whose neighbours share their boundary vertex for vertex, <code><a href="../reference/atlas_simplify.html">atlas_simplify()</a></code> opens no gaps and the repair does nothing. It earns its keep on geometry reshaped since, such as an atlas already rounded off or one traced region by region from separate masks.</p>
+</li>
+<li><p><code><a href="../reference/atlas_simplify.html">atlas_simplify()</a></code> no longer reshuffles the rows of a multi-view atlas. Row order is draw order, so a plain <code>atlas_simplify(atlas, keep = )</code> could paint a structure underneath the region it belongs on top of, and left each view’s rows grouped in whatever order the views were simplified in.</p></li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9028" id="ggsegextra-1999028">ggseg.extra 1.9.9.9028<a class="anchor" aria-label="anchor" href="#ggsegextra-1999028"></a></h2>
 <ul><li>The default subcortical projection slabs are now framed on the bounding box of the atlas’s own labels instead of slice indices calibrated on a 256^3 1 mm conformed volume and rescaled by <code>dims[1] / 256</code>. A dimension ratio carries neither voxel size nor origin, and the x dimension was used to scale y and z, so on a 4 mm atlas volume the axial band sat about 30 mm too superior — above the subcortex entirely, so the only thing a panel could contain was a misclassified cortical parcel — and on 1.5 mm volumes the inferior 40 mm of the atlas, cerebellum and brainstem included, was never cut. The default is now three coronal and three axial slabs tiling the label bounding box plus one sagittal slab, and it guarantees that no panel is empty and no structure is missing from every view. Builds that pass <code>slabs</code> explicitly are unaffected.</li>

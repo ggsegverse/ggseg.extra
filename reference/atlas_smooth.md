@@ -14,7 +14,8 @@ atlas_smooth(
   smoothness = 0.4,
   labels = NULL,
   exclude = NULL,
-  method = c("close", "chaikin", "ksmooth", "spline")
+  method = c("close", "chaikin", "ksmooth", "spline"),
+  close_gaps = TRUE
 )
 ```
 
@@ -58,14 +59,32 @@ atlas_smooth(
   as tract tubes, and one of the others when the geometry has holes
   worth keeping.
 
+- close_gaps:
+
+  Whether to hand back the slivers rounding opens between neighbouring
+  regions. Every method moves each region's boundary on its own, and a
+  boundary shared with the region next door moves the other way for the
+  neighbour, so a hairline gap opens along every shared edge. With
+  `TRUE`, the default, area that no longer belongs to any region but
+  borders two of them is given back to one of them, and the parcellation
+  closes again. Set `FALSE` for geometry that is not a coverage -
+  separate tract tubes, say - where there is nothing to close.
+
 ## Value
 
-The `ggseg_atlas`, with its geometry rounded off.
+The `ggseg_atlas`, with its geometry rounded off, and no larger than it
+arrived.
 
 ## Details
 
 Note that the default `method = "close"` fills holes narrower than
 `smoothness`; see `method` for alternatives that preserve them.
+
+Rounding a corner replaces it with an arc, which costs vertices. Those
+the rounding added are dropped again before the atlas is returned, so
+smoothing never leaves an atlas larger than it found it and a preceding
+[`atlas_simplify()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_simplify.md)
+still counts.
 
 By default all labels are smoothed equally. Use `labels` to smooth only
 matching labels, or `exclude` to smooth everything except matching
