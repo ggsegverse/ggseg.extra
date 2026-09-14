@@ -6,11 +6,11 @@
   indices (3, 42) plus the cerebellum and brainstem indices the brain outline
   is extended with (7, 8, 16, 46, 47). Any atlas whose own LUT used one of
   those values for a real structure had that structure absorb the silhouette,
-  so the cortex outline appeared as a legended `core` region instead of grey
-  context. Colliding labels are now reindexed onto free values before the
+  so the cortex outline appeared as a labelled `core` region instead of grey
+  context. Colliding labels are now moved onto free index values before the
   volume and LUT are written; labels, regions and palettes are unchanged.
-  **Affected atlases must be rebuilt**: Julich, Hammersmith, MCALT and
-  Craddock/ADHD200 each have one structure carrying the silhouette.
+  **Affected atlases must be rebuilt**: each of Julich, Hammersmith, Mcalt
+  and Craddock has one structure carrying the silhouette.
 
 # ggseg.extra 1.9.9.9026
 
