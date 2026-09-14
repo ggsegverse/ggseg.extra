@@ -28,6 +28,7 @@ jobs:
       # Exercises every retained binary and the fsaverage5 subject directly,
       # so a broken image fails here before any R is involved.
       - name: Smoke-test FreeSurfer binaries
+        shell: bash
         run: |
           set -euo pipefail
           work="$(mktemp -d)"
