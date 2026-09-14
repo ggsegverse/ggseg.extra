@@ -37,7 +37,6 @@ jobs:
           driver: docker
 
       - uses: docker/login-action@v3
-        if: ${{ github.event_name != 'pull_request' }}
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -45,22 +44,24 @@ jobs:
 
       - name: Resolve tags
         id: tags
+        env:
+          REF: ${{ github.head_ref || github.ref_name }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
         run: |
           short="${R_VERSION%.*}"
           tags="${IMAGE}:${FS_VERSION}-r${R_VERSION},${IMAGE}:${FS_VERSION}-r${short}"
-          if [ "${{ github.ref_name }}" = "${{ github.event.repository.default_branch }}" ]; then
+          ref="$REF"
+          if [ "$ref" = "$DEFAULT_BRANCH" ]; then
             tags="${tags},${IMAGE}:latest"
           else
-            safe_ref="$(echo '${{ github.ref_name }}' | tr '/' '-')"
-            tags="${tags},${IMAGE}:${safe_ref}"
+            tags="${tags},${IMAGE}:$(echo "$ref" | tr '/' '-')"
           fi
           echo "tags=${tags}" >> "$GITHUB_OUTPUT"
 
       - uses: docker/build-push-action@v6
         with:
           context: .github/docker/freesurfer-slim
-          push: ${{ github.event_name != 'pull_request' }}
-          load: ${{ github.event_name == 'pull_request' }}
+          push: true
           tags: ${{ steps.tags.outputs.tags }}
           build-args: |
             FS_VERSION=${{ env.FS_VERSION }}
