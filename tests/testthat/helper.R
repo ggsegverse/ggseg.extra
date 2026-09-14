@@ -49,6 +49,12 @@ skip_render_on_windows <- function() {
   skip_on_os("windows")
 }
 
+# Helper to skip tests that read snapshot masks (magick decode + terra raster)
+skip_without_mask_io <- function() {
+  skip_if_not_installed("magick")
+  skip_if_not_installed("terra")
+}
+
 # Helper to skip tests requiring ImageMagick
 skip_if_no_imagemagick <- function() {
   if (!has_magick()) {

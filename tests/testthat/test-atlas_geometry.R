@@ -1,10 +1,5 @@
 .cap <- new.env()
 
-skip_without_mask_io <- function() {
-  skip_if_not_installed("magick")
-  skip_if_not_installed("terra")
-}
-
 save_contours_fixture <- function(path, y_axis = "up", contours = NULL) {
   square <- function(x0) {
     sf::st_polygon(list(matrix(
