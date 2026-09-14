@@ -255,7 +255,7 @@ make_view_chunks <- function(lo, hi, chunk_size, type) {
 #' For axial/coronal slabs, uses the midpoint of the projection range.
 #'
 #' @param slabs data.frame with columns: name, type, start, end
-#' @inheritParams default_subcortical_slabs
+#' @inheritParams default_tract_slabs
 #' @param cortex_x X coordinate for non-hemisphere-specific sagittal slices
 #'
 #' @return data.frame with columns: x, y, z, view, name

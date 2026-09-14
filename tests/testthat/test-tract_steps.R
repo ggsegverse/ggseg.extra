@@ -555,8 +555,10 @@ testthat::describe("default_tract_slabs", {
 
   it("creates wider projections than subcortical", {
     dims <- c(256, 256, 256)
+    vol <- array(0L, dim = dims)
+    vol[100:156, 100:156, 85:152] <- 17L
     tract_slabs <- default_tract_slabs(dims)
-    subcort_slabs <- default_subcortical_slabs(dims)
+    subcort_slabs <- default_subcortical_slabs(vol)
 
     tract_axial <- tract_slabs[tract_slabs$type == "axial", ]
     subcort_axial <- subcort_slabs[subcort_slabs$type == "axial", ]

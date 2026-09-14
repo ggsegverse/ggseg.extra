@@ -30,7 +30,10 @@
 #' @template output_dir
 #' @param slabs A data.frame specifying projection slabs with columns `name`,
 #'   `type` ("axial", "coronal", "sagittal"), `start` (first slice), `end`
-#'   (last slice). Default projects entire volume from each direction.
+#'   (last slice). Defaults to three coronal and three axial slabs tiling the
+#'   bounding box of the atlas's own labels, plus one left-hemisphere
+#'   sagittal slab, so the band follows the anatomy of the volume rather than
+#'   a fixed set of slice indices.
 #'   Unlike slices, projections show ALL structures in their spatial
 #'   relationships - like an X-ray view. May also be a named list of
 #'   [subcortical_slabs()] arguments (e.g.
