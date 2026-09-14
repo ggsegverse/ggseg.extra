@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9027</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9028</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -63,6 +63,11 @@
       <small>Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.9.9.9028" id="ggsegextra-1999028">ggseg.extra 1.9.9.9028<a class="anchor" aria-label="anchor" href="#ggsegextra-1999028"></a></h2>
+<ul><li>The default subcortical projection slabs are now framed on the bounding box of the atlas’s own labels instead of slice indices calibrated on a 256^3 1 mm conformed volume and rescaled by <code>dims[1] / 256</code>. A dimension ratio carries neither voxel size nor origin, and the x dimension was used to scale y and z, so on a 4 mm atlas volume the axial band sat about 30 mm too superior — above the subcortex entirely, so the only thing a panel could contain was a misclassified cortical parcel — and on 1.5 mm volumes the inferior 40 mm of the atlas, cerebellum and brainstem included, was never cut. The default is now three coronal and three axial slabs tiling the label bounding box plus one sagittal slab, and it guarantees that no panel is empty and no structure is missing from every view. Builds that pass <code>slabs</code> explicitly are unaffected.</li>
+<li>The default sagittal slab is clipped to the left of the midline rather than spanning the whole head, so left structures are no longer drawn underneath their right twins, and it is named <code>sagittal_left</code> so the panel is flipped to face the same way as the other views.</li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9027" id="ggsegextra-1999027">ggseg.extra 1.9.9.9027<a class="anchor" aria-label="anchor" href="#ggsegextra-1999027"></a></h2>
 <ul><li>

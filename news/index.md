@@ -1,5 +1,25 @@
 # Changelog
 
+## ggseg.extra 1.9.9.9028
+
+- The default subcortical projection slabs are now framed on the
+  bounding box of the atlas’s own labels instead of slice indices
+  calibrated on a 256^3 1 mm conformed volume and rescaled by
+  `dims[1] / 256`. A dimension ratio carries neither voxel size nor
+  origin, and the x dimension was used to scale y and z, so on a 4 mm
+  atlas volume the axial band sat about 30 mm too superior — above the
+  subcortex entirely, so the only thing a panel could contain was a
+  misclassified cortical parcel — and on 1.5 mm volumes the inferior 40
+  mm of the atlas, cerebellum and brainstem included, was never cut. The
+  default is now three coronal and three axial slabs tiling the label
+  bounding box plus one sagittal slab, and it guarantees that no panel
+  is empty and no structure is missing from every view. Builds that pass
+  `slabs` explicitly are unaffected.
+- The default sagittal slab is clipped to the left of the midline rather
+  than spanning the whole head, so left structures are no longer drawn
+  underneath their right twins, and it is named `sagittal_left` so the
+  panel is flipped to face the same way as the other views.
+
 ## ggseg.extra 1.9.9.9027
 
 - [`create_wholebrain_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_wholebrain_from_volume.md)
