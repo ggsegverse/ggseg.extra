@@ -21,7 +21,7 @@ create_wholebrain_from_volume(
   projfrac = 0.5,
   projfrac_range = c(0, 1, 0.1),
   subject = "fsaverage5",
-  registration = "mni152",
+  registration = "header",
   min_vertices = 50L,
   cortical_labels = NULL,
   subcortical_labels = NULL,
@@ -84,15 +84,16 @@ create_wholebrain_from_volume(
   **Registration** section, which you should read before relying on the
   default. One of:
 
-  - `"mni152"` (default): applies FreeSurfer's
-    `average/mni152.register.dat`, the transform from the scanner RAS of
-    the FSL/SPM MNI152 (NLin6) 1 mm template to the MNI305 space
-    `fsaverage` lives in. Use this for volumes in a standard MNI152
-    template space.
+  - `"header"` (default): trusts the volume header and uses
+    `--regheader`. Leaves an MNI152 volume roughly 2 mm out, because
+    `fsaverage` lives in MNI305, but that error is uniform and small,
+    and it is how every atlas in the ggsegverse was built.
 
-  - `"header"`: trusts the volume header and uses `--regheader`. Correct
-    only when the volume already sits in the target subject's own
-    scanner RAS, such as native, conformed or fsaverage-space volumes.
+  - `"mni152"`: applies FreeSurfer's `average/mni152.register.dat`, the
+    transform from the FSL/SPM MNI152 (NLin6) 1 mm template to the
+    MNI305 space `fsaverage` lives in. Exact only for volumes on that 1
+    mm LAS grid; anything else is refused rather than silently
+    mislocated.
 
   - A path to a register.dat or LTA file to apply instead.
 
@@ -250,18 +251,28 @@ rather than as a region.
 
 ## Registration
 
-The default changed to `"mni152"` in this release; before it, the volume
-header was trusted and the MNI152-to-MNI305 transform was omitted
-altogether. Atlases built from MNI152 volumes by earlier versions must
-be rebuilt: relative to `"header"`, `"mni152"` moves the point each
-`fsaverage5` vertex samples by a median of 1.96 mm (1.18-2.60 mm),
-anteriorly and superiorly, and relabels roughly 18% (left) to 21%
-(right) of vertices.
+`fsaverage` lives in MNI305, so an MNI152 volume projected with
+`"header"` samples roughly 2 mm off, uniformly, anteriorly and
+inferiorly. Every atlas in the ggsegverse was built that way. For
+reference maps meant for visualisation that error is usually acceptable,
+which is why it remains the default.
 
-No header identifies the space an arbitrary volume is in, so `"mni152"`
-is applied to whatever you pass. A volume sitting on the target
-subject's exact voxel grid warns, that being a claim a header does
-support, but a volume in some other non-MNI152 space cannot be detected.
+`"mni152"` removes it, but only for volumes on the grid
+`mni152.register.dat` was built for: 1 mm, left-handed (LAS). tkregister
+coordinates are derived from the volume's own voxel order, size and
+field of view, so the same matrix applied to a right-handed volume
+mirrors left and right, and applied to an LAS volume of another
+resolution mislocates regions (7.7% of vertices at 1.5 mm, about 28% at
+4 mm, measured against the same volume resampled to 1 mm first). Both
+mistakes produce an atlas that still looks anatomically plausible, so an
+unsuitable grid is refused rather than warned about. To use `"mni152"`
+with such a volume, resample it onto the 1 mm LAS MNI152 grid first.
+
+No header identifies the space an arbitrary volume is in, so the
+registration you name is applied to whatever you pass. A volume sitting
+on the target subject's exact voxel grid warns, that being a claim a
+header does support, but a volume in some other non-MNI152 space cannot
+be detected.
 
 `mni152.register.dat` targets the FSL/SPM MNI152 (NLin6) 1 mm template.
 Volumes in other MNI152 variants, such as the NLin2009cAsym template

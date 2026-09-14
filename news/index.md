@@ -1,5 +1,17 @@
 # Changelog
 
+## ggseg.extra 1.9.9.9026
+
+- `registration = "mni152"` now refuses a volume stored in right-handed
+  (RAS) voxel order instead of silently mirroring it.
+  `mni152.register.dat` is a tkregister matrix tied to the left-handed
+  (LAS) MNI152 grid, and tkreg coordinates come from the volume’s own
+  voxel order, so applying it across a change of handedness swaps left
+  and right in the finished atlas — which still looks like a plausible
+  brain. Volumes stored LAS, which is the usual MNI152 layout, are
+  unaffected. Use `registration = "header"` or resample to the LAS grid
+  for a right-handed volume.
+
 ## ggseg.extra 1.9.9.9025
 
 - [`create_wholebrain_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_wholebrain_from_volume.md)

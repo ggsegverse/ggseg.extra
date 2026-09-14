@@ -21,7 +21,7 @@ Requires FreeSurfer."><meta property="og:image" content="https://ggsegverse.gith
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9025</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9026</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -96,7 +96,7 @@ the mesh-based subcortical pipeline.</p>
 <span>  projfrac <span class="op">=</span> <span class="fl">0.5</span>,</span>
 <span>  projfrac_range <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">1</span>, <span class="fl">0.1</span><span class="op">)</span>,</span>
 <span>  subject <span class="op">=</span> <span class="st">"fsaverage5"</span>,</span>
-<span>  registration <span class="op">=</span> <span class="st">"mni152"</span>,</span>
+<span>  registration <span class="op">=</span> <span class="st">"header"</span>,</span>
 <span>  min_vertices <span class="op">=</span> <span class="fl">50L</span>,</span>
 <span>  cortical_labels <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  subcortical_labels <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -161,15 +161,15 @@ Set to NULL to use single-depth <code>projfrac</code> instead.</p></dd>
 <dt id="arg-registration">registration<a class="anchor" aria-label="anchor" href="#arg-registration"></a></dt>
 <dd><p>How the volume is registered to the surface subject.
 See the <strong>Registration</strong> section, which you should read before relying
-on the default. One of:</p><ul><li><p><code>"mni152"</code> (default): applies FreeSurfer's
-<code>average/mni152.register.dat</code>, the transform from the scanner RAS
-of the FSL/SPM MNI152 (NLin6) 1 mm template to the MNI305 space
-<code>fsaverage</code> lives in. Use this for volumes in a standard MNI152
-template space.</p></li>
-<li><p><code>"header"</code>: trusts the volume header and uses <code>--regheader</code>.
-Correct only when the volume already sits in the target subject's
-own scanner RAS, such as native, conformed or fsaverage-space
-volumes.</p></li>
+on the default. One of:</p><ul><li><p><code>"header"</code> (default): trusts the volume header and uses
+<code>--regheader</code>. Leaves an MNI152 volume roughly 2 mm out, because
+<code>fsaverage</code> lives in MNI305, but that error is uniform and small,
+and it is how every atlas in the ggsegverse was built.</p></li>
+<li><p><code>"mni152"</code>: applies FreeSurfer's <code>average/mni152.register.dat</code>,
+the transform from the FSL/SPM MNI152 (NLin6) 1 mm template to the
+MNI305 space <code>fsaverage</code> lives in. Exact only for volumes on that
+1 mm LAS grid; anything else is refused rather than silently
+mislocated.</p></li>
 <li><p>A path to a register.dat or LTA file to apply instead.</p></li>
 </ul></dd>
 
@@ -318,17 +318,26 @@ rather than as a region.</p>
     <h2 id="registration">Registration<a class="anchor" aria-label="anchor" href="#registration"></a></h2>
 
 
-<p>The default changed to <code>"mni152"</code> in this release; before it, the volume
-header was trusted and the MNI152-to-MNI305 transform was omitted
-altogether. Atlases built from MNI152 volumes by earlier versions must be
-rebuilt: relative to <code>"header"</code>, <code>"mni152"</code> moves the point each
-<code>fsaverage5</code> vertex samples by a median of 1.96 mm (1.18-2.60 mm),
-anteriorly and superiorly, and relabels roughly 18% (left) to 21% (right)
-of vertices.</p>
-<p>No header identifies the space an arbitrary volume is in, so <code>"mni152"</code>
-is applied to whatever you pass. A volume sitting on the target subject's
-exact voxel grid warns, that being a claim a header does support, but a
-volume in some other non-MNI152 space cannot be detected.</p>
+<p><code>fsaverage</code> lives in MNI305, so an MNI152 volume projected with
+<code>"header"</code> samples roughly 2 mm off, uniformly, anteriorly and
+inferiorly. Every atlas in the ggsegverse was built that way. For
+reference maps meant for visualisation that error is usually acceptable,
+which is why it remains the default.</p>
+<p><code>"mni152"</code> removes it, but only for volumes on the grid
+<code>mni152.register.dat</code> was built for: 1 mm, left-handed (LAS). tkregister
+coordinates are derived from the volume's own voxel order, size and field
+of view, so the same matrix applied to a right-handed volume mirrors left
+and right, and applied to an LAS volume of another resolution mislocates
+regions (7.7% of vertices at 1.5 mm, about 28% at 4 mm, measured against
+the same volume resampled to 1 mm first). Both mistakes produce an atlas
+that still looks anatomically plausible, so an unsuitable grid is refused
+rather than warned about. To use <code>"mni152"</code> with such a volume, resample
+it onto the 1 mm LAS MNI152 grid first.</p>
+<p>No header identifies the space an arbitrary volume is in, so the
+registration you name is applied to whatever you pass. A volume sitting
+on the target subject's exact voxel grid warns, that being a claim a
+header does support, but a volume in some other non-MNI152 space cannot
+be detected.</p>
 <p><code>mni152.register.dat</code> targets the FSL/SPM MNI152 (NLin6) 1 mm template.
 Volumes in other MNI152 variants, such as the NLin2009cAsym template
 <code>ggsegJulich</code> uses, keep a sub-millimetre residual rather than the
