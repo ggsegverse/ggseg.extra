@@ -29,6 +29,7 @@ RUN set -e; \
 
 FROM rocker/r-ver:${R_VERSION}
 ARG FS_VERSION
+ARG R_VERSION
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
@@ -42,12 +43,15 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 # rocker pins CRAN to the snapshot current at its R release, which strands
 # packages published since; track the rolling snapshot like the other runners.
-# ggsegverse packages come from the org's r-universe, listed first so its
-# development versions win over the CRAN releases.
-ENV CRAN=https://p3m.dev/cran/__linux__/noble/latest \
-    GGSEGVERSE=https://ggsegverse.r-universe.dev
-RUN sed -i "s|options(repos = c(CRAN = '[^']*')|options(repos = c(ggsegverse = '${GGSEGVERSE}', CRAN = '${CRAN}')|" \
-      /usr/local/lib/R/etc/Rprofile.site \
+# ggsegverse packages come from the org's r-universe. pak prefers binaries
+# over source regardless of repository order, and P3M serves Linux binaries,
+# so the universe's own noble binary tree is used rather than its source root.
+ENV CRAN=https://p3m.dev/cran/__linux__/noble/latest
+RUN R_SHORT="${R_VERSION%.*}" \
+    && GGSEGVERSE="https://ggsegverse.r-universe.dev/bin/linux/noble-x86_64/${R_SHORT}" \
+    && curl -sSf -o /dev/null "${GGSEGVERSE}/src/contrib/PACKAGES" \
+    && sed -i "s|options(repos = c(CRAN = '[^']*')|options(repos = c(ggsegverse = '${GGSEGVERSE}', CRAN = '${CRAN}')|" \
+         /usr/local/lib/R/etc/Rprofile.site \
     && grep -q "ggsegverse = '${GGSEGVERSE}', CRAN = '${CRAN}'" /usr/local/lib/R/etc/Rprofile.site
 # has_magick() probes the ImageMagick 7 `magick` binary; Ubuntu 24.04 ships
 # version 6, so take the official portable build and unpack it without FUSE.

@@ -60,8 +60,11 @@ jobs:
             --o "$work/vol2vol.mgz" > /dev/null
           ls -l "$work"
 
+      # upgrade makes pak rank by version, so the r-universe development
+      # builds of ggsegverse packages beat the CRAN releases.
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
+          upgrade: "TRUE"
           extra-packages: |
             any::testthat
             github::muschellij2/freesurfer

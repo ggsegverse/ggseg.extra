@@ -30,11 +30,17 @@ version 6. With it, every test in the suite runs in the container.
 
 ## Package repositories
 
-`Rprofile.site` lists two repositories in order: the ggsegverse r-universe
-first, so ggseg, ggseg3d, ggseg.formats and friends install at their
-development versions, then the rolling P3M CRAN snapshot for everything
-else. rocker's default pins CRAN to a dated snapshot, which strands packages
-published after the R release the image tracks.
+`Rprofile.site` lists two repositories: the ggsegverse r-universe, so ggseg,
+ggseg3d, ggseg.formats and friends install at their development versions,
+and the rolling P3M CRAN snapshot for everything else. rocker's default pins
+CRAN to a dated snapshot, which strands packages published after the R
+release the image tracks.
+
+Repository order alone does not decide which copy pak installs: its default
+policy prefers binaries over source, and P3M serves Linux binaries. The
+universe entry therefore points at its noble binary tree for the image's R
+version, and `freesurfer-tests.yaml` passes `upgrade: TRUE` so the newer
+version wins.
 
 ## Adding a binary or subject
 
