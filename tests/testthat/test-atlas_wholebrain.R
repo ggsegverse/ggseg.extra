@@ -2186,6 +2186,7 @@ testthat::describe("wholebrain_prepare_cerebellar_volume", {
 testthat::describe("wholebrain_prepare_subcortical_volume", {
   it("zeros non-subcortical non-cortical voxels", {
     skip_if_not_installed("RNifti")
+    local_no_aseg_ribbon()
     vol <- array(0L, dim = c(6, 3, 3))
     vol[1, 1, 1] <- 10L
     vol[3, 1, 1] <- 20L
@@ -2209,6 +2210,7 @@ testthat::describe("wholebrain_prepare_subcortical_volume", {
 
   it("writes subcortical voxels under their target index", {
     skip_if_not_installed("RNifti")
+    local_no_aseg_ribbon()
     vol <- array(0L, dim = c(6, 3, 3))
     vol[1, 1, 1] <- 3L
     vol[3, 1, 1] <- 20L
@@ -2609,6 +2611,7 @@ testthat::describe("wholebrain_prepare_cerebellar_volume orientation", {
 testthat::describe("wholebrain_prepare_subcortical_volume left-high", {
   it("handles a negative x-axis xform and reorients output to RAS", {
     skip_if_not_installed("RNifti")
+    local_no_aseg_ribbon()
     vol <- array(0L, dim = c(6, 3, 3))
     vol[1, 1, 1] <- 10L
     vol[6, 1, 1] <- 20L
@@ -2636,6 +2639,7 @@ testthat::describe("wholebrain_prepare_subcortical_volume left-high", {
 
   it("splits cortex at the 1-based midline voxel", {
     skip_if_not_installed("RNifti")
+    local_no_aseg_ribbon()
     # 5 cortical voxels along x (3x3 in y/z so read_volume keeps it 3D);
     # world_x = voxel_x - 2, so the world origin sits at 0-based voxel 2
     # (1-based voxel 3).
@@ -3277,5 +3281,435 @@ testthat::describe("create_wholebrain_from_volume without FreeSurfer", {
 
     expect_true(captured$projected)
     expect_true("cortical_labels" %in% names(result))
+  })
+})
+
+
+testthat::describe("wholebrain cortex context from the aseg ribbon", {
+  it("keeps only the voxels the ribbon covers when the mantle is solid", {
+    skip_if_not_installed("RNifti")
+    arr <- array(1000L, dim = c(6, 3, 3))
+    vol_file <- withr::local_tempfile(fileext = ".nii.gz")
+    RNifti::writeNifti(RNifti::asNifti(arr), vol_file)
+    out_file <- withr::local_tempfile(fileext = ".nii.gz")
+
+    # 54 cortical voxels against an 18-voxel ribbon: a solid mantle.
+    left <- right <- array(FALSE, dim = dim(arr))
+    left[1, , ] <- TRUE
+    right[6, , ] <- TRUE
+    local_mocked_bindings(
+      aseg_context_volume = function(...) mock_cortex_ribbon(left, right)
+    )
+
+    wholebrain_prepare_subcortical_volume(
+      input_volume = vol_file,
+      subcortical_idx = integer(0),
+      cortical_idx = 1000L,
+      output_file = out_file
+    )
+
+    result <- as.array(RNifti::readNifti(out_file))
+    expect_identical(sum(result == 3L), 9L)
+    expect_identical(sum(result == 42L), 9L)
+    # The four middle x-slices are cortex the ribbon does not cover: the
+    # sulcal space that makes the silhouette read as a brain.
+    expect_identical(sum(result == 0L), 36L)
+  })
+
+  it("never writes context over a structure", {
+    skip_if_not_installed("RNifti")
+    arr <- array(1000L, dim = c(6, 3, 3))
+    arr[2, 2, 2] <- 10L
+    vol_file <- withr::local_tempfile(fileext = ".nii.gz")
+    RNifti::writeNifti(RNifti::asNifti(arr), vol_file)
+    out_file <- withr::local_tempfile(fileext = ".nii.gz")
+
+    ribbon <- array(0L, dim = dim(arr))
+    ribbon[1:3, , ] <- 3L
+    local_mocked_bindings(aseg_context_volume = function(...) ribbon)
+
+    wholebrain_prepare_subcortical_volume(
+      input_volume = vol_file,
+      subcortical_idx = 10L,
+      cortical_idx = 1000L,
+      output_file = out_file,
+      target_idx = 101L
+    )
+
+    result <- as.array(RNifti::readNifti(out_file))
+    expect_identical(result[2, 2, 2], 101L)
+    expect_identical(sum(result == 3L), 26L)
+  })
+
+  it("keeps a cortical mask that is already a ribbon", {
+    skip_if_not_installed("RNifti")
+    arr <- array(0L, dim = c(6, 3, 3))
+    arr[1:2, , ] <- 1000L
+    vol_file <- withr::local_tempfile(fileext = ".nii.gz")
+    RNifti::writeNifti(RNifti::asNifti(arr), vol_file)
+    out_file <- withr::local_tempfile(fileext = ".nii.gz")
+
+    ribbon <- array(3L, dim = dim(arr))
+    local_mocked_bindings(aseg_context_volume = function(...) ribbon)
+
+    wholebrain_prepare_subcortical_volume(
+      input_volume = vol_file,
+      subcortical_idx = integer(0),
+      cortical_idx = 1000L,
+      output_file = out_file
+    )
+
+    # Every cortical voxel is context and nothing else is, which is the
+    # midline split this has always done.
+    result <- as.array(RNifti::readNifti(out_file))
+    expect_identical(sum(result %in% c(3L, 42L)), 18L)
+  })
+
+  it("does not look for an aseg when the atlas has no cortex", {
+    skip_if_not_installed("RNifti")
+    arr <- array(0L, dim = c(4, 3, 3))
+    arr[1, 1, 1] <- 10L
+    vol_file <- withr::local_tempfile(fileext = ".nii.gz")
+    RNifti::writeNifti(RNifti::asNifti(arr), vol_file)
+    out_file <- withr::local_tempfile(fileext = ".nii.gz")
+
+    seen <- new.env()
+    seen$called <- FALSE
+    local_mocked_bindings(
+      aseg_context_volume = function(...) {
+        seen$called <- TRUE
+        NULL
+      }
+    )
+
+    wholebrain_prepare_subcortical_volume(
+      input_volume = vol_file,
+      subcortical_idx = 10L,
+      cortical_idx = integer(0),
+      output_file = out_file
+    )
+
+    expect_false(seen$called)
+    result <- as.array(RNifti::readNifti(out_file))
+    expect_identical(sum(result %in% c(3L, 42L)), 0L)
+  })
+})
+
+
+testthat::describe("cortex_mask_is_solid", {
+  it("calls a mantle several ribbons thick solid", {
+    mask <- array(TRUE, dim = c(4, 4, 4))
+    ribbon <- array(0L, dim = c(4, 4, 4))
+    ribbon[1, , ] <- 3L
+    expect_true(cortex_mask_is_solid(mask, ribbon, verbose = FALSE))
+  })
+
+  it("calls a mask no thicker than the ribbon a ribbon", {
+    mask <- array(FALSE, dim = c(4, 4, 4))
+    mask[1, , ] <- TRUE
+    ribbon <- array(3L, dim = c(4, 4, 4))
+    expect_false(cortex_mask_is_solid(mask, ribbon, verbose = FALSE))
+  })
+
+  it("says which way it decided when verbose", {
+    mask <- array(FALSE, dim = c(4, 4, 4))
+    mask[1, , ] <- TRUE
+    ribbon <- array(3L, dim = c(4, 4, 4))
+    expect_message(
+      cortex_mask_is_solid(mask, ribbon, verbose = TRUE),
+      "already a ribbon"
+    )
+  })
+
+  it("survives an empty ribbon", {
+    mask <- array(TRUE, dim = c(2, 2, 2))
+    expect_true(
+      cortex_mask_is_solid(mask, array(0L, dim = c(2, 2, 2)), verbose = FALSE)
+    )
+  })
+})
+
+
+testthat::describe("aseg_volume_path", {
+  it("warns and returns NULL without FreeSurfer", {
+    local_mocked_bindings(try_have_fs = function() FALSE)
+    expect_warning(
+      expect_null(aseg_volume_path("cvs_avg35_inMNI152")),
+      "FreeSurfer is not available"
+    )
+  })
+
+  it("warns and returns NULL when the subject has no aseg", {
+    subj_dir <- withr::local_tempdir()
+    local_mocked_bindings(try_have_fs = function() TRUE)
+    local_mocked_bindings(
+      fs_subj_dir = function() subj_dir,
+      .package = "freesurfer"
+    )
+    expect_warning(
+      expect_null(aseg_volume_path("nosuchsubject")),
+      "does not exist"
+    )
+  })
+
+  it("returns the path when the aseg is there", {
+    subj_dir <- withr::local_tempdir()
+    mri <- file.path(subj_dir, "subj", "mri")
+    dir.create(mri, recursive = TRUE)
+    file.create(file.path(mri, "aseg.mgz"))
+    local_mocked_bindings(try_have_fs = function() TRUE)
+    local_mocked_bindings(
+      fs_subj_dir = function() subj_dir,
+      .package = "freesurfer"
+    )
+    expect_identical(
+      aseg_volume_path("subj"),
+      as.character(fs::path(mri, "aseg.mgz"))
+    )
+  })
+})
+
+
+testthat::describe("try_have_fs", {
+  it("is FALSE when have_fs() errors", {
+    local_mocked_bindings(
+      have_fs = function() stop("no FREESURFER_HOME"),
+      .package = "freesurfer"
+    )
+    expect_false(try_have_fs())
+  })
+})
+
+
+testthat::describe("resample_aseg_to_grid", {
+  it("builds a nearest-neighbour header resampling onto the atlas grid", {
+    cap <- new.env()
+    local_mocked_bindings(
+      run_cmd = function(cmd, ...) {
+        cap$cmd <- cmd
+        file.create(gsub("['\"]", "", sub(".*--o ", "", cmd)))
+        0L
+      }
+    )
+    out <- resample_aseg_to_grid("aseg.mgz", "atlas.nii.gz", verbose = 0L)
+
+    expect_true(grepl("mri_vol2vol", cap$cmd, fixed = TRUE))
+    expect_true(grepl("--regheader", cap$cmd, fixed = TRUE))
+    expect_true(grepl("--nearest", cap$cmd, fixed = TRUE))
+    expect_true(grepl("--targ", cap$cmd, fixed = TRUE))
+    expect_true(endsWith(out, ".nii"))
+    unlink(out)
+  })
+
+  it("warns and returns NULL when the command fails", {
+    local_mocked_bindings(
+      run_cmd = function(cmd, ...) cli::cli_abort("boom")
+    )
+    expect_warning(
+      expect_null(resample_aseg_to_grid("aseg.mgz", "a.nii.gz", verbose = 0L)),
+      "mri_vol2vol"
+    )
+  })
+})
+
+
+testthat::describe("aseg_context_volume", {
+  it("returns NULL when there is no aseg to resample", {
+    local_mocked_bindings(aseg_volume_path = function(...) NULL)
+    expect_null(
+      aseg_context_volume(
+        "a.nii.gz",
+        "subj",
+        c(2L, 2L, 2L),
+        array(TRUE, c(2, 2, 2))
+      )
+    )
+  })
+
+  it("warns and returns NULL when the resampled grid differs", {
+    skip_if_not_installed("RNifti")
+    resampled <- withr::local_tempfile(fileext = ".nii.gz")
+    RNifti::writeNifti(RNifti::asNifti(array(3L, dim = c(2, 2, 2))), resampled)
+    local_mocked_bindings(aseg_volume_path = function(...) "aseg.mgz")
+    local_mocked_bindings(resample_aseg_to_grid = function(...) resampled)
+
+    expect_warning(
+      expect_null(aseg_context_volume(
+        "a.nii.gz",
+        "subj",
+        c(3L, 3L, 3L),
+        array(TRUE, c(3, 3, 3))
+      )),
+      "does not share the volume's grid"
+    )
+  })
+
+  it("keeps the cortex and posterior fossa indices and nothing else", {
+    skip_if_not_installed("RNifti")
+    aseg <- array(0L, dim = c(2, 2, 2))
+    aseg[1, 1, 1] <- 3L
+    aseg[2, 1, 1] <- 42L
+    aseg[1, 2, 1] <- 8L
+    aseg[2, 2, 1] <- 16L
+    # Cerebellar white matter and an unrelated structure are dropped.
+    aseg[1, 1, 2] <- 7L
+    aseg[2, 1, 2] <- 17L
+    resampled <- withr::local_tempfile(fileext = ".nii.gz")
+    RNifti::writeNifti(RNifti::asNifti(aseg), resampled)
+    local_mocked_bindings(aseg_volume_path = function(...) "aseg.mgz")
+    local_mocked_bindings(resample_aseg_to_grid = function(...) resampled)
+
+    context <- aseg_context_volume(
+      "a.nii.gz",
+      "subj",
+      c(2L, 2L, 2L),
+      array(TRUE, c(2, 2, 2))
+    )
+    expect_identical(
+      sort(unique(as.vector(context))),
+      c(0L, 3L, 8L, 16L, 42L)
+    )
+    expect_identical(context[1, 1, 2], 0L)
+    expect_identical(context[2, 1, 2], 0L)
+  })
+})
+
+
+testthat::describe("aseg_fossa_idx", {
+  it("is cerebellar cortex and brain stem, not cerebellar white matter", {
+    expect_identical(
+      aseg_fossa_idx(),
+      c(cerebellum_left = 8L, cerebellum_right = 47L, brainstem = 16L)
+    )
+    # 7 and 46 fill the cerebellum into a solid lump that merges with the
+    # occipital lobe; without them it stays a foliated shell.
+    expect_false(any(c(7L, 46L) %in% aseg_fossa_idx()))
+  })
+
+  it("is part of the context volume alongside the cortical ribbon", {
+    expect_identical(
+      aseg_context_idx(),
+      c(aseg_cortex_idx(), aseg_fossa_idx())
+    )
+  })
+})
+
+
+testthat::describe("posterior fossa context", {
+  fossa_volume <- function(structure_slice = NULL) {
+    arr <- array(1000L, dim = c(6, 3, 3))
+    if (!is.null(structure_slice)) {
+      arr[structure_slice, , ] <- 10L
+    }
+    arr
+  }
+
+  # Cortex on the outer x-slices, cerebellum and brain stem in the middle.
+  fossa_aseg <- function(dims = c(6, 3, 3)) {
+    aseg <- array(0L, dim = dims)
+    aseg[1, , ] <- 3L
+    aseg[6, , ] <- 42L
+    aseg[3, , ] <- 8L
+    aseg[4, , ] <- 16L
+    aseg
+  }
+
+  write_context <- function(arr, aseg, env = parent.frame()) {
+    vol_file <- withr::local_tempfile(fileext = ".nii.gz", .local_envir = env)
+    RNifti::writeNifti(RNifti::asNifti(arr), vol_file)
+    out_file <- withr::local_tempfile(fileext = ".nii.gz", .local_envir = env)
+    local_mocked_bindings(
+      aseg_context_volume = function(...) aseg,
+      .env = env
+    )
+    wholebrain_prepare_subcortical_volume(
+      input_volume = vol_file,
+      subcortical_idx = 10L,
+      cortical_idx = 1000L,
+      output_file = out_file,
+      target_idx = 101L
+    )
+    as.array(RNifti::readNifti(out_file))
+  }
+
+  it("fills the fossa behind a solid mantle", {
+    skip_if_not_installed("RNifti")
+    result <- write_context(fossa_volume(), fossa_aseg())
+
+    expect_identical(sum(result == 8L), 9L)
+    expect_identical(sum(result == 16L), 9L)
+    expect_identical(sum(result == 3L), 9L)
+    expect_identical(sum(result == 42L), 9L)
+  })
+
+  it("fills the fossa even when the atlas keeps its own cortical ribbon", {
+    skip_if_not_installed("RNifti")
+    # Cortex on one x-slice only: a ribbon, not a mantle, so the cerebral
+    # context stays the atlas's own. The fossa is empty either way, so it is
+    # filled regardless.
+    arr <- array(0L, dim = c(6, 3, 3))
+    arr[1, , ] <- 1000L
+    result <- write_context(arr, fossa_aseg())
+
+    expect_identical(sum(result == 8L), 9L)
+    expect_identical(sum(result == 16L), 9L)
+    # The atlas's own single cortical slice, split at the midline.
+    expect_identical(sum(result %in% c(3L, 42L)), 9L)
+  })
+
+  it("never writes fossa context over a structure", {
+    skip_if_not_installed("RNifti")
+    result <- write_context(fossa_volume(structure_slice = 3), fossa_aseg())
+
+    # The whole x = 3 slice is a structure, so the cerebellum there is not
+    # drawn over it.
+    expect_identical(sum(result == 101L), 9L)
+    expect_identical(sum(result == 8L), 0L)
+    expect_identical(sum(result == 16L), 9L)
+  })
+
+  it("is skipped entirely when no aseg can be had", {
+    skip_if_not_installed("RNifti")
+    arr <- fossa_volume()
+    vol_file <- withr::local_tempfile(fileext = ".nii.gz")
+    RNifti::writeNifti(RNifti::asNifti(arr), vol_file)
+    out_file <- withr::local_tempfile(fileext = ".nii.gz")
+    local_no_aseg_ribbon()
+
+    wholebrain_prepare_subcortical_volume(
+      input_volume = vol_file,
+      subcortical_idx = integer(0),
+      cortical_idx = 1000L,
+      output_file = out_file
+    )
+
+    result <- as.array(RNifti::readNifti(out_file))
+    expect_identical(sum(result %in% aseg_fossa_idx()), 0L)
+  })
+})
+
+
+testthat::describe("ribbon_lands_on_volume", {
+  it("rejects an empty ribbon", {
+    ribbon <- array(0L, dim = c(2, 2, 2))
+    expect_warning(
+      expect_false(ribbon_lands_on_volume(ribbon, array(TRUE, c(2, 2, 2)))),
+      "no cortex"
+    )
+  })
+
+  it("rejects a ribbon that lands outside the volume", {
+    ribbon <- array(3L, dim = c(4, 1, 1))
+    brain <- array(c(TRUE, FALSE, FALSE, FALSE), dim = c(4, 1, 1))
+    expect_warning(
+      expect_false(ribbon_lands_on_volume(ribbon, brain)),
+      "not in the same space"
+    )
+  })
+
+  it("accepts a ribbon that lands on the volume", {
+    ribbon <- array(3L, dim = c(4, 1, 1))
+    brain <- array(c(TRUE, TRUE, TRUE, FALSE), dim = c(4, 1, 1))
+    expect_true(ribbon_lands_on_volume(ribbon, brain))
   })
 })

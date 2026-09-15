@@ -34,11 +34,33 @@
 #' This prevents unlisted structures (e.g. white matter, ventricle masks)
 #' from bleeding onto the cortical surface during label dilation.
 #'
-#' Cortical voxels are also used to generate the brain-outline reference
-#' geometry for the subcortical pipeline. The volume's orientation matrix
-#' (`xform`) is used to split cortical voxels by hemisphere: left-hemisphere
-#' voxels map to FreeSurfer label 3 (left cortex) and right-hemisphere to
-#' label 42 (right cortex).
+#' The subcortical pipeline also gets a brain-outline reference to draw as
+#' grey context behind its structures, under FreeSurfer's cortex labels 3
+#' (left) and 42 (right). By default that is the atlas's own cortical voxels,
+#' split by hemisphere at the volume's midline: left-hemisphere voxels map to
+#' label 3, right-hemisphere to label 42.
+#'
+#' A parcellation that covers both banks of every sulcus makes a solid mantle
+#' that way, and no amount of polishing can put sulci into a silhouette that
+#' never had any. When the cortical labels hold more than 1.5 times the voxels
+#' of a cortical ribbon, the context is taken from FreeSurfer's `aseg`
+#' instead, where sulcal CSF is unlabelled: its ribbon is resampled onto this
+#' volume's own grid through the two headers
+#' (`mri_vol2vol --regheader --nearest`) and written wherever no structure
+#' claims the voxel. An atlas whose cortical labels are already a ribbon, such
+#' as one derived from a surface, keeps its own.
+#'
+#' Either way, the `aseg` cerebellar cortex and brain stem are added to the
+#' context, so the posterior fossa is not drawn as empty space behind an
+#' atlas that reaches below the tentorium or one whose cerebellum lives in a
+#' separate atlas. Cerebellar white matter is left out: without it the
+#' cerebellum stays a foliated shell rather than a solid lump that merges
+#' with the occipital lobe.
+#'
+#' When no usable `aseg` is available - no FreeSurfer, no `aseg.mgz` for the
+#' subject, a failed resampling, or a ribbon that does not land inside this
+#' volume, which is what a volume in some other space looks like - the
+#' midline split is used and the pipeline warns.
 #'
 #' @section Human oversight:
 #' This is the most complex pipeline in ggsegExtra and the one most likely
@@ -1617,7 +1639,8 @@ wholebrain_run_subcortical <- function(
     subcortical_idx = subcort_ct$source_idx,
     cortical_idx = cortical_idx,
     output_file = filtered_vol,
-    target_idx = subcort_ct$idx
+    target_idx = subcort_ct$idx,
+    verbose = config$verbose
   )
 
   subcort_name <- paste0(config$atlas_name, "_subcortical")
@@ -1798,11 +1821,17 @@ reindex_reserved_subcort_idx <- function(ct, verbose = TRUE) {
 #' Prepare volume for subcortical pipeline with cortex reference
 #'
 #' Keeps subcortical labels (optionally reindexed through `target_idx`) and
-#' remaps cortical labels to FS cortex reference, so the subcortical pipeline
-#' can generate brain outline context geometry via `detect_cortex_labels()`.
-#' Cortical labels are split by hemisphere using the volume midpoint: left
-#' hemisphere voxels map to label 3 (FS left cortex), right hemisphere to
-#' label 42 (FS right cortex). All other labels are zeroed.
+#' adds the FreeSurfer cortex indices 3 (left) and 42 (right) as context, so
+#' the subcortical pipeline can generate brain outline geometry via
+#' `detect_cortex_labels()`. All other labels are zeroed.
+#'
+#' Which voxels become context decides whether that outline reads as a brain
+#' or as a potato. A parcellation covers both banks of every sulcus, so the
+#' union of its cortical labels is a solid mantle. The shape comes from
+#' FreeSurfer's `aseg` instead, where sulcal CSF is unlabelled: it is
+#' resampled onto this volume's own grid and its cortical ribbon is written
+#' wherever no structure claims the voxel. Without a usable `aseg` the atlas's
+#' own cortical mask is used, which is the old solid silhouette.
 #' @noRd
 # nolint next: object_length_linter.
 wholebrain_prepare_subcortical_volume <- function(
@@ -1810,7 +1839,9 @@ wholebrain_prepare_subcortical_volume <- function(
   subcortical_idx,
   cortical_idx,
   output_file,
-  target_idx = subcortical_idx
+  target_idx = subcortical_idx,
+  cortex_subject = "cvs_avg35_inMNI152",
+  verbose = get_verbose()
 ) {
   vol <- read_volume(input_volume, reorient = FALSE)
   arr <- as.array(vol)
@@ -1818,26 +1849,345 @@ wholebrain_prepare_subcortical_volume <- function(
   for (i in seq_along(subcortical_idx)) {
     result[arr == subcortical_idx[i]] <- target_idx[i]
   }
-  cortical_mask <- arr %in% cortical_idx
-  xform <- RNifti::xform(vol)
-  # xform maps 0-based voxel indices to world; slice.index() is 1-based, so
-  # shift the midline voxel to 1-based before comparing.
-  x0_voxel <- round(solve(xform, c(0, 0, 0, 1))[1]) + 1L
-  x_idx <- slice.index(arr, 1)
-  left_is_high <- xform[1, 1] < 0
-  if (left_is_high) {
-    result[cortical_mask & x_idx > x0_voxel] <- 3L
-    result[cortical_mask & x_idx <= x0_voxel] <- 42L
-  } else {
-    result[cortical_mask & x_idx <= x0_voxel] <- 3L
-    result[cortical_mask & x_idx > x0_voxel] <- 42L
-  }
+  result <- wholebrain_write_cortex_context(
+    result = result,
+    arr = arr,
+    vol = vol,
+    cortical_idx = cortical_idx,
+    input_volume = input_volume,
+    cortex_subject = cortex_subject,
+    verbose = verbose
+  )
   out <- RNifti::asNifti(result, reference = vol)
   if (RNifti::orientation(out) != "RAS") {
     RNifti::orientation(out) <- "RAS"
   }
   RNifti::writeNifti(out, output_file)
   invisible(output_file)
+}
+
+
+#' Write the cortex context indices into the volume
+#'
+#' An atlas whose own cortical mask is already a ribbon keeps it, split at the
+#' midline, which is what this always did. Only a solid mantle is replaced,
+#' with the resampled `aseg` ribbon written into voxels no structure claims.
+#' The same midline split is the fallback when no ribbon can be had. An atlas
+#' with no cortical labels at all gets no context either way: the whole-brain
+#' split decided this parcellation has no cortex to draw.
+#' @noRd
+# nolint next: object_length_linter.
+wholebrain_write_cortex_context <- function(
+  result,
+  arr,
+  vol,
+  cortical_idx,
+  input_volume,
+  cortex_subject,
+  verbose
+) {
+  cortical_mask <- arr %in% cortical_idx
+  if (!any(cortical_mask)) {
+    return(result)
+  }
+
+  aseg <- aseg_context_volume(
+    input_volume = input_volume,
+    subject = cortex_subject,
+    dims = dim(arr),
+    brain_mask = arr != 0,
+    verbose = verbose
+  )
+  if (is.null(aseg)) {
+    return(wholebrain_cortex_by_midline(result, cortical_mask, vol))
+  }
+
+  result <- wholebrain_write_cerebrum(result, cortical_mask, vol, aseg, verbose)
+  write_aseg_context(result, aseg, aseg_fossa_idx())
+}
+
+
+#' Cerebral cortex context: the `aseg` ribbon, or the atlas's own mask
+#' @noRd
+wholebrain_write_cerebrum <- function(
+  result,
+  cortical_mask,
+  vol,
+  aseg,
+  verbose
+) {
+  if (!cortex_mask_is_solid(cortical_mask, aseg, verbose)) {
+    return(wholebrain_cortex_by_midline(result, cortical_mask, vol))
+  }
+  write_aseg_context(result, aseg, aseg_cortex_idx())
+}
+
+
+#' Copy `aseg` labels into the voxels no structure claims
+#' @noRd
+write_aseg_context <- function(result, aseg, idx) {
+  free <- result == 0L
+  for (i in idx) {
+    result[free & aseg == i] <- i
+  }
+  result
+}
+
+
+#' Split a cortical mask into hemispheres at the volume midline
+#'
+#' The fallback when no `aseg` ribbon is available. Left-hemisphere voxels
+#' map to label 3 (FS left cortex), right-hemisphere to label 42.
+#' @noRd
+wholebrain_cortex_by_midline <- function(result, cortical_mask, vol) {
+  xform <- RNifti::xform(vol)
+  # xform maps 0-based voxel indices to world; slice.index() is 1-based, so
+  # shift the midline voxel to 1-based before comparing.
+  x0_voxel <- round(solve(xform, c(0, 0, 0, 1))[1]) + 1L
+  x_idx <- slice.index(result, 1)
+  left_is_high <- xform[1, 1] < 0
+  cortex <- aseg_cortex_idx()
+  low <- if (left_is_high) cortex[["right"]] else cortex[["left"]]
+  high <- if (left_is_high) cortex[["left"]] else cortex[["right"]]
+  result[cortical_mask & x_idx <= x0_voxel] <- low
+  result[cortical_mask & x_idx > x0_voxel] <- high
+  result
+}
+
+
+# aseg cortical ribbon ----
+
+#' FreeSurfer `aseg` indices for the left and right cortical ribbon
+#' @noRd
+aseg_cortex_idx <- function() {
+  c(left = 3L, right = 42L)
+}
+
+
+#' `aseg` indices that fill the posterior fossa behind the structures
+#'
+#' Cortex alone stops at the tentorium, so a subcortical atlas that reaches
+#' below it - or one whose cerebellum has been split off into an atlas of its
+#' own, as `ggsegMcalt`'s has - is drawn against empty space where the
+#' cerebellum and brain stem should be.
+#'
+#' Cerebellar white matter (7, 46) is deliberately left out. Filling it makes
+#' the cerebellum a solid lump that merges with the occipital lobe in
+#' sagittal views and reads as more subcortex; the cortex alone comes through
+#' as the foliated shell it is, which is what makes it recognisable as
+#' cerebellum. [detect_context_labels()] excludes it for the same reason.
+#' @noRd
+aseg_fossa_idx <- function() {
+  c(cerebellum_left = 8L, cerebellum_right = 47L, brainstem = 16L)
+}
+
+
+#' Every `aseg` index the context silhouette is drawn from
+#' @noRd
+aseg_context_idx <- function() {
+  c(aseg_cortex_idx(), aseg_fossa_idx())
+}
+
+
+#' Is the atlas's own cortical mask a solid mantle rather than a ribbon?
+#'
+#' Not every parcellation needs this fix. One derived from a surface, such as
+#' `MarsAtlas`, is already a cortical ribbon in the volume and draws a
+#' silhouette with sulci of its own, which the `aseg`'s would only replace
+#' with another brain's. One that covers both banks of every sulcus does not.
+#'
+#' The two are told apart by how many voxels the mask holds against the
+#' resampled ribbon in the same grid, which is the same anatomy measured the
+#' thin way. Measured: `MarsAtlas` 0.78, Julich 1.96, Hammersmith 2.23. The
+#' threshold sits between them with room on both sides, and both ways of
+#' being wrong leave the atlas exactly as it was.
+#'
+#' @param cortical_mask Logical array of the atlas's cortical voxels.
+#' @param aseg The resampled `aseg` context volume. Only its cortical ribbon
+#'   counts here; the posterior fossa labels are not cortex.
+#' @param verbose Report the decision.
+#' @param factor How many ribbons' worth of voxels counts as solid.
+#' @noRd
+cortex_mask_is_solid <- function(
+  cortical_mask,
+  aseg,
+  verbose = get_verbose(),
+  factor = 1.5
+) {
+  ratio <- sum(cortical_mask) / max(1L, sum(aseg %in% aseg_cortex_idx()))
+  if (ratio >= factor) {
+    return(TRUE)
+  }
+
+  if (verbose) {
+    cli::cli_alert_info(
+      "Cortical labels are already a ribbon ({round(ratio, 2)} times the
+      {.field aseg} ribbon); keeping them as the context silhouette.",
+      wrap = TRUE
+    )
+  }
+  FALSE
+}
+
+#' Resample the FreeSurfer `aseg` context labels onto a volume's own grid
+#'
+#' `mri_vol2vol --regheader` resamples through the two headers, so no new
+#' transform is invented: the atlas volume is taken to be in the space its
+#' header claims, exactly as the rest of the pipeline takes it. Nearest
+#' neighbour keeps the label values intact.
+#'
+#' Returns `NULL`, with a warning, whenever the result cannot be trusted:
+#' FreeSurfer missing, the subject's `aseg` missing, the resampling failing,
+#' a grid mismatch, or labels that do not land inside the volume's own brain
+#' - the last being what a volume in some other space looks like.
+#'
+#' @param input_volume Path to the atlas volume, used as the target grid.
+#' @param subject FreeSurfer subject to take the `aseg` from.
+#' @param dims Expected dimensions of the resampled volume.
+#' @param brain_mask Logical array, `TRUE` wherever the atlas volume is
+#'   non-zero.
+#' @template verbose
+#' @return Integer array of the [aseg_context_idx()] values and 0, or `NULL`.
+#' @noRd
+aseg_context_volume <- function(
+  input_volume,
+  subject,
+  dims,
+  brain_mask,
+  verbose = get_verbose()
+) {
+  aseg <- aseg_volume_path(subject)
+  if (is.null(aseg)) {
+    return(NULL)
+  }
+
+  resampled <- resample_aseg_to_grid(aseg, input_volume, verbose)
+  if (is.null(resampled)) {
+    return(NULL)
+  }
+  on.exit(unlink(resampled), add = TRUE)
+
+  context <- as.array(read_volume(resampled, reorient = FALSE))
+  if (!identical(dim(context), dims)) {
+    warn_solid_cortex_context(
+      "the resampled {.field aseg} does not share the volume's grid"
+    )
+    return(NULL)
+  }
+
+  context[!context %in% aseg_context_idx()] <- 0L
+  if (!ribbon_lands_on_volume(context, brain_mask)) {
+    return(NULL)
+  }
+  storage.mode(context) <- "integer"
+  context
+}
+
+
+#' Locate a subject's `aseg.mgz`, or `NULL` when it cannot be used
+#' @noRd
+aseg_volume_path <- function(subject) {
+  if (
+    !rlang::is_installed("freesurfer") ||
+      !isTRUE(try_have_fs())
+  ) {
+    warn_solid_cortex_context("FreeSurfer is not available")
+    return(NULL)
+  }
+
+  aseg <- as.character(fs::path(
+    freesurfer::fs_subj_dir(),
+    subject,
+    "mri",
+    "aseg.mgz"
+  ))
+  if (!file.exists(aseg)) {
+    warn_solid_cortex_context(
+      "{.path {aseg}} does not exist"
+    )
+    return(NULL)
+  }
+  aseg
+}
+
+
+#' `freesurfer::have_fs()` without letting its failures escape
+#' @noRd
+try_have_fs <- function() {
+  tryCatch(freesurfer::have_fs(), error = function(e) FALSE)
+}
+
+
+#' Run `mri_vol2vol`, returning the output path or `NULL` on failure
+#' @noRd
+resample_aseg_to_grid <- function(aseg, input_volume, verbose) {
+  out_file <- tempfile(fileext = paste0(".", volume_ext(input_volume)))
+  cmd <- paste(
+    "mri_vol2vol",
+    "--mov",
+    shQuote(aseg),
+    "--targ",
+    shQuote(input_volume),
+    "--regheader",
+    "--nearest",
+    "--o",
+    shQuote(out_file)
+  )
+  ok <- tryCatch(
+    {
+      run_cmd(cmd, verbose = max(0L, as.integer(verbose) - 1L))
+      file.exists(out_file)
+    },
+    error = function(e) FALSE
+  )
+  if (!ok) {
+    unlink(out_file)
+    warn_solid_cortex_context("{.code mri_vol2vol} failed")
+    return(NULL)
+  }
+  out_file
+}
+
+
+#' Is the resampled ribbon actually sitting on this volume's brain?
+#'
+#' A volume in a space its header does not describe still resamples without
+#' error; the ribbon simply lands somewhere else. Requiring most of it to
+#' fall on non-zero voxels catches that, and catches an empty ribbon.
+#' @noRd
+ribbon_lands_on_volume <- function(ribbon, brain_mask, min_overlap = 0.5) {
+  inside <- ribbon > 0L
+  n <- sum(inside)
+  if (n == 0L) {
+    warn_solid_cortex_context("the resampled {.field aseg} has no cortex")
+    return(FALSE)
+  }
+
+  overlap <- sum(inside & brain_mask) / n
+  if (overlap < min_overlap) {
+    # nolint next: object_usage_linter.
+    pct <- round(100 * overlap)
+    warn_solid_cortex_context(
+      "only {pct}% of the {.field aseg} cortex lands inside the volume,
+      so the two are not in the same space"
+    )
+    return(FALSE)
+  }
+  TRUE
+}
+
+
+#' Warn that the context silhouette falls back to the solid cortical mask
+#' @noRd
+warn_solid_cortex_context <- function(reason) {
+  cli::cli_warn(
+    c(
+      "Drawing the cortical context as a solid silhouette: {reason}.",
+      "i" = "With a FreeSurfer {.field aseg} the context keeps its sulci
+      and gyri instead."
+    ),
+    wrap = TRUE
+  )
 }
 
 

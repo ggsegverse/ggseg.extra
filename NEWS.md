@@ -1,3 +1,76 @@
+# ggseg.extra 1.9.9.9030
+
+- The grey cortical silhouette `create_wholebrain_from_volume()` draws behind
+  a subcortical atlas now has sulci and gyri when the parcellation it is built
+  from cannot give it any. It came from the union of the atlas's own cortical
+  labels, and a parcellation that covers both banks of every sulcus - the Julich
+  maximum probability map holds 751,113 cortical voxels on the left alone - is a
+  solid mantle in the volume, before any contour is traced or any polishing
+  applied. The shape now comes from FreeSurfer's `aseg`, where sulcal CSF is
+  unlabelled: it is resampled onto the atlas volume's own grid with
+  `mri_vol2vol --regheader --nearest`, which goes through the two headers and
+  invents no transform, and its cortical ribbon is written wherever no
+  structure claims the voxel. This is where `ggsegHO`'s `ho_sub` silhouette
+  has always come from.
+
+  An atlas whose own cortical labels are already a ribbon keeps them, so a
+  parcellation derived from a surface is untouched: another brain's ribbon
+  would only replace sulci it already has. The two are told apart by how many
+  voxels the cortical mask holds against the resampled ribbon in the same
+  grid - the same anatomy measured the thin way. Measured: `MarsAtlas` 0.78,
+  Julich 1.96, Hammersmith 2.23; anything from 1.5 up counts as solid.
+
+  The parcels themselves are untouched; only the `cortex_` context changes.
+
+  When no usable `aseg` is available - no FreeSurfer, no `aseg.mgz` for the
+  subject, a failed resampling, or a ribbon that lands outside the volume
+  because it is not in the space its header claims - the context falls back
+  to the atlas's own cortical labels and says so.
+
+- The grey context now fills the posterior fossa as well. Cortex alone stops
+  at the tentorium, so a subcortical atlas that reaches below it - or one
+  whose cerebellum has been split off into an atlas of its own, as
+  `ggsegMcalt`'s has - was drawn against empty space where the cerebellum and
+  brain stem should be. The `aseg` cerebellar cortex and brain stem are now
+  written into the context alongside the cortical ribbon, for every
+  whole-brain atlas, whether or not its cortical mantle needed replacing.
+
+  Cerebellar white matter is deliberately left out. Filling it makes the
+  cerebellum a solid lump that merges with the occipital lobe in sagittal
+  views and reads as more subcortex; the cortex alone comes through as the
+  foliated shell that makes it recognisable as cerebellum.
+
+- Subcortical snapshot PNGs now carry a signature of what they were drawn
+  from, and one whose signature does not match what the run would draw is
+  redrawn rather than reused. A snapshot can go stale without the pipeline
+  changing: `<view>_<label>.png` records which label and which slab, but not
+  which *voxels* that label held, and both move underneath it -
+  `reindex_reserved_subcort_idx()` can hand a structure a different index,
+  and a rebuilt volume can hand an index different voxels. An atlas cache
+  predating the reindexing reused `axial_1_Pallidum_l.png` drawn when 42
+  meant Pallidum and now means the right cortical hemisphere, and rendered a
+  nucleus as a solid hemisphere. The signature hashes the structure's voxels,
+  the slab framing them, the volume's dimensions and the cache format
+  version, so that class of bug cannot recur. The processed and mask copies
+  made from a redrawn snapshot are dropped with it.
+
+- The cache format version is now 2, because the intermediates the previous
+  one cached are wrong rather than merely old: the context volume changed,
+  and with it the cortex slice each view is taken at. Cached steps written by
+  an earlier ggseg.extra are recomputed. Every whole-brain atlas has to be
+  rebuilt to pick up the sulci; the bump and the snapshot signatures together
+  are what make `skip_existing = TRUE` rebuild them rather than keep the old
+  pictures.
+
+- The subcortical pipeline no longer traces images left behind by a run with a
+  different slab configuration. Snapshots, processed images and masks are read
+  back whole - contour extraction traces every mask it finds - so a PNG named
+  for a slab this run does not have was assembled into the atlas as a row with
+  no view and no geometry, and `st_coordinates()` then failed at
+  `atlas_view_gather()` with "number of columns of matrices must match". Any
+  image this configuration cannot name is now cleared once the slabs are
+  known, whether they were computed or loaded from cache.
+
 # ggseg.extra 1.9.9.9029
 
 - `atlas_smooth()` no longer multiplies an atlas's vertex count. Rounding a

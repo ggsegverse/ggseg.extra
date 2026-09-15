@@ -1098,3 +1098,72 @@ testthat::describe("subcort_drop_missing_labels", {
     )
   })
 })
+
+
+testthat::describe("subcortical pipeline snapshot pruning", {
+  it("clears images left by an earlier slab configuration", {
+    dirs <- mock_subcort_dirs()
+    slabs <- data.frame(
+      stringsAsFactors = FALSE,
+      name = "ax_1",
+      type = "axial",
+      start = 1,
+      end = 10
+    )
+    colortable <- data.frame(stringsAsFactors = FALSE, idx = 10, label = "r")
+
+    local_mocked_bindings(
+      check_fs = function(...) TRUE,
+      setup_atlas_dirs = function(...) dirs,
+      load_or_run_step = function(step, steps, ...) {
+        list(
+          run = FALSE,
+          data = list(
+            "colortable.rds" = colortable,
+            "vol_labels.rds" = 10,
+            "meshes_list.rds" = list(),
+            "components.rds" = list(
+              core = data.frame(
+                stringsAsFactors = FALSE,
+                hemi = NA,
+                region = "r",
+                label = "r"
+              ),
+              palette = c(r = "#FF0000"),
+              meshes_df = data.frame(stringsAsFactors = FALSE, label = "r")
+            ),
+            "slabs.rds" = slabs,
+            "cortex_slices.rds" = NULL
+          )
+        )
+      },
+      process_and_mask_images = function(...) invisible(NULL),
+      extract_contours = function(...) invisible(NULL),
+      smooth_contours = function(...) invisible(NULL),
+      reduce_vertex = function(...) invisible(NULL)
+    )
+
+    file.create(file.path(dirs$masks, c("ax_1_r.png", "ax_9_r.png")))
+
+    vol_file <- withr::local_tempfile(fileext = ".mgz")
+    file.create(vol_file)
+    lut_file <- withr::local_tempfile(fileext = ".txt")
+    file.create(lut_file)
+    withr::local_options(ggseg.extra.output_dir = withr::local_tempdir())
+
+    expect_error(
+      create_subcortical_from_volume(
+        input_volume = vol_file,
+        input_lut = lut_file,
+        steps = 9,
+        verbose = FALSE
+      ),
+      "contours_reduced"
+    )
+
+    # The stale mask is what st_coordinates() chokes on at assembly: it
+    # traces into a view this configuration has no slab for.
+    expect_true(file.exists(file.path(dirs$masks, "ax_1_r.png")))
+    expect_false(file.exists(file.path(dirs$masks, "ax_9_r.png")))
+  })
+})
