@@ -28,6 +28,14 @@ The image also carries ImageMagick 7 from the official portable build, since
 `has_magick()` probes the `magick` binary and Ubuntu's apt package is
 version 6. With it, every test in the suite runs in the container.
 
+## Package repositories
+
+`Rprofile.site` lists two repositories in order: the ggsegverse r-universe
+first, so ggseg, ggseg3d, ggseg.formats and friends install at their
+development versions, then the rolling P3M CRAN snapshot for everything
+else. rocker's default pins CRAN to a dated snapshot, which strands packages
+published after the R release the image tracks.
+
 ## Adding a binary or subject
 
 Append the tarball member path to `include.txt` (directories extract

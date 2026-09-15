@@ -42,9 +42,13 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 # rocker pins CRAN to the snapshot current at its R release, which strands
 # packages published since; track the rolling snapshot like the other runners.
-ENV CRAN=https://p3m.dev/cran/__linux__/noble/latest
-RUN sed -i "s|CRAN = '[^']*'|CRAN = '${CRAN}'|" /usr/local/lib/R/etc/Rprofile.site \
-    && grep -q "${CRAN}" /usr/local/lib/R/etc/Rprofile.site
+# ggsegverse packages come from the org's r-universe, listed first so its
+# development versions win over the CRAN releases.
+ENV CRAN=https://p3m.dev/cran/__linux__/noble/latest \
+    GGSEGVERSE=https://ggsegverse.r-universe.dev
+RUN sed -i "s|options(repos = c(CRAN = '[^']*')|options(repos = c(ggsegverse = '${GGSEGVERSE}', CRAN = '${CRAN}')|" \
+      /usr/local/lib/R/etc/Rprofile.site \
+    && grep -q "ggsegverse = '${GGSEGVERSE}', CRAN = '${CRAN}'" /usr/local/lib/R/etc/Rprofile.site
 # has_magick() probes the ImageMagick 7 `magick` binary; Ubuntu 24.04 ships
 # version 6, so take the official portable build and unpack it without FUSE.
 ARG IMAGEMAGICK_VERSION=7.1.2-31
