@@ -1,5 +1,23 @@
 # Changelog
 
+## ggseg.extra 1.9.9.9030
+
+- CI can now run the FreeSurfer-gated tests. A slim image
+  (`ghcr.io/ggsegverse/freesurfer-slim`) carries the ten FreeSurfer
+  binaries the package shells out to plus the fsaverage5 subject, and a
+  container job runs the suite on it, failing if any FreeSurfer test
+  skipped. New end-to-end tests build cortical, subcortical, and
+  wholebrain atlases from the shipped fsaverage5 data.
+- [`create_wholebrain_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_wholebrain_from_volume.md)
+  now drops colour table entries the volume never carries before
+  classifying labels. With the full FreeSurferColorLUT every entry that
+  never projected, over a thousand of them, was reported as subcortical
+  whether or not a single voxel held it.
+- Reading a tessellated surface without `mris_convert` on the path now
+  aborts with a pointer to the missing binary. The fallback reader
+  cannot parse the QUAD surfaces `mri_tessellate` writes and used to
+  hand back a mesh whose faces pointed at vertices that did not exist.
+
 ## ggseg.extra 1.9.9.9029
 
 - [`atlas_smooth()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_smooth.md)
