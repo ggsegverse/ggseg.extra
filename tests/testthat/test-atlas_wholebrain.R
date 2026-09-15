@@ -1498,6 +1498,7 @@ testthat::describe("create_wholebrain_from_volume verbose LUT path", {
           stringsAsFactors = FALSE
         )
       },
+      keep_labels_in_volume = function(colortable, ...) colortable,
       wholebrain_project_to_surface = function(...) {
         tibble(
           hemi = "left",
@@ -1520,6 +1521,47 @@ testthat::describe("create_wholebrain_from_volume verbose LUT path", {
         verbose = TRUE
       ),
       "Color LUT"
+    )
+  })
+})
+
+
+testthat::describe("keep_labels_in_volume", {
+  lut <- data.frame(
+    idx = c(10L, 17L, 49L, 2000L),
+    label = c("Left-Thalamus", "Left-Hippocampus", "Right-Thalamus", "Absent"),
+    stringsAsFactors = FALSE
+  )
+
+  it("drops colour table entries the volume never carries", {
+    local_mocked_bindings(
+      read_volume = function(...) array(c(0L, 10L, 49L, 49L), dim = c(2, 2, 1))
+    )
+
+    kept <- keep_labels_in_volume(lut, "vol.mgz", verbose = FALSE)
+
+    expect_identical(kept$idx, c(10L, 49L))
+  })
+
+  it("reports how many entries were dropped when verbose", {
+    local_mocked_bindings(
+      read_volume = function(...) array(c(0L, 10L, 49L, 49L), dim = c(2, 2, 1))
+    )
+
+    expect_message(
+      keep_labels_in_volume(lut, "vol.mgz", verbose = TRUE),
+      "Dropped 2 colour table entries"
+    )
+  })
+
+  it("errors when no colour table entry matches the volume", {
+    local_mocked_bindings(
+      read_volume = function(...) array(c(0L, 3L, 3L, 0L), dim = c(2, 2, 1))
+    )
+
+    expect_error(
+      keep_labels_in_volume(lut, "vol.mgz", verbose = FALSE),
+      "No matching labels"
     )
   })
 })

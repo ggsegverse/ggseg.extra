@@ -791,7 +791,11 @@ wholebrain_compute_projection <- function(config, dirs) {
     ))
     generate_colortable_from_volume(config$input_volume)
   } else {
-    get_lut(config$input_lut)
+    keep_labels_in_volume(
+      get_lut(config$input_lut),
+      config$input_volume,
+      config$verbose
+    )
   }
 
   atlas_data <- wholebrain_project_to_surface(
@@ -815,6 +819,32 @@ wholebrain_compute_projection <- function(config, dirs) {
   }
 
   list(atlas_data = atlas_data, colortable = colortable)
+}
+
+
+#' Restrict a colour table to the labels the volume actually contains
+#'
+#' A full FreeSurferColorLUT carries over a thousand entries; every one that
+#' never projected onto the surface would otherwise be classified as
+#' subcortical, whether or not a single voxel carries it.
+#' @noRd
+keep_labels_in_volume <- function(colortable, input_volume, verbose) {
+  vol <- read_volume(input_volume, reorient = FALSE)
+  present <- unique(c(vol))
+  present <- present[!is.na(present) & present != 0]
+
+  kept <- colortable[colortable$idx %in% present, , drop = FALSE]
+  if (nrow(kept) == 0) {
+    cli::cli_abort("No matching labels found in volume and color table")
+  }
+
+  dropped <- nrow(colortable) - nrow(kept)
+  if (verbose && dropped > 0) {
+    cli::cli_alert_info(
+      "Dropped {dropped} colour table entr{?y/ies} absent from the volume"
+    )
+  }
+  kept
 }
 
 

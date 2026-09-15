@@ -280,6 +280,33 @@ testthat::describe("read_fs_surface", {
     expect_identical(result$faces$i, 1)
   })
 
+  it("aborts when the fallback reader returns faces outside the vertex table", {
+    local_mocked_bindings(
+      surf2asc = function(...) stop("mris_convert not found"),
+      read_dpv = function(...) stop("no file"),
+      get_verbose = function() FALSE
+    )
+
+    local_mocked_bindings(
+      read.fs.surface = function(file) {
+        list(
+          vertices = matrix(c(1, 2, 3, 4, 5, 6, 7, 8, 9), ncol = 3),
+          faces = matrix(c(1, 2, 9), ncol = 3)
+        )
+      },
+      .package = "freesurferformats"
+    )
+
+    expect_error(
+      read_fs_surface("test_surface"),
+      "non-existent vertices"
+    )
+    expect_error(
+      read_fs_surface("test_surface"),
+      "mris_convert not found"
+    )
+  })
+
   it("errors when surf2asc fails and freesurferformats unavailable", {
     local_mocked_bindings(
       surf2asc = function(...) stop("conversion failed"),
