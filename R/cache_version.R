@@ -7,14 +7,17 @@
 #' silently reuse output from the pipeline the change fixed.
 #'
 #' Stamped, and so checked before reuse: the `.rds` step caches, the contour
-#' `.rda` files, the processed-image and mask directories, and the cortex
-#' silhouette snapshots (the one snapshot whose content depends on how the
-#' pipeline builds its context volume - a stale one is redrawn rather than
-#' aborted on). Not stamped, and so still reused whenever the file exists:
-#' the structure snapshot PNGs, the subcortical mesh directory
-#' (`dirs$meshes`), and the lookup table and volume the wholebrain pipeline
-#' hands to the subcortical one. This is the canonical list; `NEWS.md` and
-#' `.github/copilot-instructions.md` point here rather than restating it.
+#' `.rda` files, and the processed-image and mask directories. Not stamped,
+#' and so still reused whenever the file exists: the subcortical mesh
+#' directory (`dirs$meshes`), and the lookup table and volume the wholebrain
+#' pipeline hands to the subcortical one.
+#'
+#' The subcortical snapshot PNGs are neither: they carry a signature of what
+#' they were drawn from instead (see [snapshot_signature()]), which catches a
+#' stale one whether the pipeline changed or only its inputs did. This format
+#' version is part of that signature, so a bump invalidates them too. This is
+#' the canonical list; `NEWS.md` and `.github/copilot-instructions.md` point
+#' here rather than restating it.
 #'
 #' @return Integer format version.
 #' @noRd
@@ -224,4 +227,93 @@ abort_stale_cache <- function(paths, versions, remedy) {
     "i" = "This ggseg.extra writes cache format {cache_format_version()}.",
     "i" = remedy
   ))
+}
+
+
+# Snapshot provenance ----
+
+#' Signature of everything a snapshot PNG was drawn from
+#'
+#' The format version alone cannot catch a stale snapshot, because a snapshot
+#' can go stale without the pipeline changing at all. `<view>_<label>.png`
+#' says which label and which slab, but not *which voxels* that label held,
+#' and both move underneath it: `reindex_reserved_subcort_idx()` can hand a
+#' structure a different index, and a rebuilt volume can hand an index
+#' different voxels. An atlas cache predating the reindexing reuses
+#' `axial_1_Pallidum_l.png` drawn when 42 meant Pallidum and now means the
+#' right cortical hemisphere, and renders a nucleus as a solid hemisphere.
+#'
+#' So the signature hashes the voxels themselves, not the label id: the
+#' structure's voxel indices, the slab that frames them, the volume's
+#' dimensions, and the cache format version. Anything that can change the
+#' picture changes the signature, and a snapshot whose signature does not
+#' match what this run would draw is redrawn.
+#'
+#' @param ... The inputs the snapshot depends on.
+#' @return A single hash string.
+#' @noRd
+snapshot_signature <- function(...) {
+  rlang::hash(list(cache_format_version(), ...))
+}
+
+snapshot_manifest_name <- "snapshot_manifest.rds"
+
+#' Read a snapshot directory's filename-to-signature map
+#'
+#' A missing, unreadable or malformed manifest reads as empty, which marks
+#' every snapshot in that directory stale: they are redrawn rather than
+#' trusted. That is also what an atlas cache from before signatures existed
+#' looks like.
+#' @noRd
+read_snapshot_manifest <- function(dir) {
+  file <- as.character(fs::path(dir, snapshot_manifest_name))
+  if (!file.exists(file)) {
+    return(character())
+  }
+  manifest <- tryCatch(readRDS(file), error = function(e) NULL)
+  if (!is.character(manifest) || is.null(names(manifest))) {
+    return(character())
+  }
+  manifest
+}
+
+#' Record the signatures of the snapshots this run drew or reused
+#'
+#' Merged into whatever the directory already holds, because structure and
+#' cortex snapshots share it and are written in separate passes. Call from
+#' the main thread only: it is a read-modify-write on state shared by every
+#' snapshot in the directory.
+#' @noRd
+record_snapshot_signatures <- function(dir, signatures) {
+  if (length(signatures) == 0L) {
+    return(invisible(signatures))
+  }
+  manifest <- read_snapshot_manifest(dir)
+  manifest[names(signatures)] <- unname(signatures)
+
+  file <- as.character(fs::path(dir, snapshot_manifest_name))
+  staged <- tempfile(
+    pattern = "snapshot_manifest",
+    tmpdir = dir,
+    fileext = ".rds"
+  )
+  saveRDS(manifest, staged)
+  if (!file.rename(staged, file)) {
+    unlink(staged)
+    cli::cli_warn("Could not update the snapshot manifest in {.path {dir}}")
+  }
+  invisible(signatures)
+}
+
+#' Can an existing snapshot be reused, or must it be redrawn?
+#'
+#' @param file Path to the snapshot PNG.
+#' @param signature What this run would draw there.
+#' @param manifest The directory's recorded signatures.
+#' @param skip_existing Whether reuse was asked for at all.
+#' @noRd
+snapshot_is_current <- function(file, signature, manifest, skip_existing) {
+  skip_existing &&
+    file.exists(file) &&
+    identical(unname(manifest[basename(file)]), signature)
 }

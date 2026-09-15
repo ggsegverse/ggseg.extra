@@ -153,7 +153,16 @@ subcort_create_snapshots <- function(
   cortex_slices <- create_cortex_slices(slabs, dims, vol = vol)
   cortex_labels <- detect_cortex_labels(vol)
 
-  subcort_snapshot_structures(vol, dims, colortable, slabs, dirs, skip_existing)
+  manifest <- read_snapshot_manifest(dirs$snapshots)
+  signatures <- subcort_snapshot_structures(
+    vol,
+    dims,
+    colortable,
+    slabs,
+    dirs,
+    skip_existing,
+    manifest
+  )
 
   cortex_vol <- subcort_cortex_volume(vol, dims, cortex_labels)
 
@@ -165,13 +174,23 @@ subcort_create_snapshots <- function(
   # cortex_vol has no voxels (consistent with how empty structures are
   # skipped above).
   if (sum(cortex_vol) > 0) {
-    subcort_snapshot_cortex(
-      cortex_vol,
-      cortex_slices,
-      dirs,
-      skip_existing
+    signatures <- c(
+      signatures,
+      subcort_snapshot_cortex(
+        cortex_vol,
+        cortex_slices,
+        dirs,
+        skip_existing,
+        manifest
+      )
     )
   }
+
+  # Written once, from the main thread, after every pass that draws.
+  record_snapshot_signatures(
+    dirs$snapshots,
+    signatures[file.exists(fs::path(dirs$snapshots, names(signatures)))]
+  )
 
   list(slabs = slabs, cortex_slices = cortex_slices)
 }
@@ -247,6 +266,10 @@ prune_stale_snapshots <- function(dirs, expected) {
 
 
 #' Snapshot every structure x view combination of a subcortical atlas
+#'
+#' Returns the signature of every snapshot the grid names, keyed by file
+#' name, for the caller to record once the drawing is done. The signatures
+#' are built here, in the main thread, so the workers only look theirs up.
 #' @noRd
 subcort_snapshot_structures <- function(
   vol,
@@ -254,25 +277,39 @@ subcort_snapshot_structures <- function(
   colortable,
   slabs,
   dirs,
-  skip_existing
+  skip_existing,
+  manifest = character()
 ) {
   snapshot_grid <- expand.grid(
     struct_idx = seq_len(nrow(colortable)),
     view_idx = seq_len(nrow(slabs)),
     stringsAsFactors = FALSE
   )
+  args <- subcort_snapshot_args(colortable, slabs, snapshot_grid)
+  args$signature <- subcort_structure_signatures(
+    vol,
+    dims,
+    colortable,
+    slabs,
+    snapshot_grid
+  )
+  signatures <- stats::setNames(
+    args$signature,
+    paste0(args$view_name, "_", sanitize_label(args$label_name), ".png")
+  )
 
   p <- progressor(steps = nrow(snapshot_grid))
 
   invisible(safe_future_pmap(
-    subcort_snapshot_args(colortable, slabs, snapshot_grid),
+    args,
     function(
       label_id,
       label_name,
       view_type,
       view_start,
       view_end,
-      view_name
+      view_name,
+      signature
     ) {
       subcort_snapshot_one(
         vol = vol,
@@ -284,16 +321,57 @@ subcort_snapshot_structures <- function(
         view_type = view_type,
         view_start = view_start,
         view_end = view_end,
-        view_name = view_name
+        view_name = view_name,
+        signature = signature,
+        manifest = manifest
       )
       p()
       NULL
     },
     .options = furrr_options(
       packages = "ggseg.extra",
-      globals = c("dims", "vol", "dirs", "skip_existing", "p")
+      globals = c("dims", "vol", "dirs", "skip_existing", "manifest", "p")
     )
   ))
+
+  signatures
+}
+
+
+#' Signature of each structure x view snapshot the grid names
+#'
+#' The voxels a label holds are hashed once per structure rather than once
+#' per structure x view: what the snapshot depends on is the voxel set, not
+#' the index that happens to name it this time round.
+#' @noRd
+subcort_structure_signatures <- function(
+  vol,
+  dims,
+  colortable,
+  slabs,
+  snapshot_grid
+) {
+  voxels <- vapply(
+    colortable$idx,
+    function(idx) rlang::hash(which(vol == idx)),
+    character(1)
+  )
+
+  vapply(
+    seq_len(nrow(snapshot_grid)),
+    function(i) {
+      view <- slabs[snapshot_grid$view_idx[i], ]
+      snapshot_signature(
+        voxels[[snapshot_grid$struct_idx[i]]],
+        dims,
+        view$type,
+        view$start,
+        view$end,
+        view$name
+      )
+    },
+    character(1)
+  )
 }
 
 
@@ -312,6 +390,11 @@ subcort_snapshot_args <- function(colortable, slabs, snapshot_grid) {
 
 
 #' Snapshot a single structure in a single view, skipping empty structures
+#'
+#' An existing snapshot is reused only when its recorded signature matches
+#' what this run would draw. When it does not, it is redrawn and the
+#' processed and mask copies made from it are dropped, so the image step
+#' remakes those from the new picture rather than the old one.
 #' @noRd
 subcort_snapshot_one <- function(
   vol,
@@ -323,13 +406,20 @@ subcort_snapshot_one <- function(
   view_type,
   view_start,
   view_end,
-  view_name
+  view_name,
+  signature = NULL,
+  manifest = character()
 ) {
+  outfile <- structure_snapshot_file(dirs$snapshots, view_name, label_name)
+  if (snapshot_is_current(outfile, signature, manifest, skip_existing)) {
+    return(invisible(NULL))
+  }
+  clear_stale_snapshot(outfile, dirs)
+
   structure_vol <- array(0L, dim = dims)
   structure_vol[vol == label_id] <- 1L
 
   if (sum(structure_vol) > 0) {
-    hemi <- extract_hemi_from_view(view_type, view_name)
     snapshot_partial_projection(
       vol = structure_vol,
       view = view_type,
@@ -339,11 +429,38 @@ subcort_snapshot_one <- function(
       label = label_name,
       output_dir = dirs$snapshots,
       colour = "red",
-      hemi = hemi,
-      skip_existing = skip_existing
+      hemi = extract_hemi_from_view(view_type, view_name),
+      skip_existing = FALSE
     )
   }
   invisible(NULL)
+}
+
+
+#' Delete a snapshot, and what was made from it, before redrawing it
+#'
+#' A redraw does not always write: a structure with no voxels in the slab
+#' renders nothing, and so does one whose projection is empty. Drawing over
+#' the old file is therefore not enough - it would simply stay, and go on
+#' standing in for a picture this run would not draw at all. That is how a
+#' snapshot of the right cortical hemisphere, drawn when index 42 still meant
+#' one, survived a rebuild as `axial_3_region_0042.png` and put a solid
+#' hemisphere where an amygdala belongs. Clearing first makes an empty
+#' redraw mean an absent snapshot, which is what it is.
+#' @noRd
+clear_stale_snapshot <- function(outfile, dirs) {
+  unlink(outfile)
+  drop_derived_images(outfile, dirs)
+}
+
+
+#' Path of a structure's snapshot in one view
+#' @noRd
+structure_snapshot_file <- function(output_dir, view_name, label) {
+  as.character(fs::path(
+    output_dir,
+    paste0(view_name, "_", sanitize_label(label), ".png")
+  ))
 }
 
 
@@ -369,29 +486,43 @@ subcort_cortex_volume <- function(vol, dims, cortex_labels) {
 
 #' Render the cortex reference outline for each cortex slice
 #'
-#' Unlike the structure snapshots, these are stamped with the cache format
-#' version. The silhouette is the one snapshot whose content depends on how
-#' the pipeline builds its context volume, so a pipeline that builds it
-#' differently must not reuse the picture the old one drew - and an
-#' unstamped PNG from before this was tracked counts as stale. Redrawing a
-#' handful of slices is cheap, so a stale one is replaced rather than
-#' aborted on, and the processed and mask copies made from it are dropped
-#' so the image step remakes those too.
+#' The silhouette is the snapshot whose content depends on how the pipeline
+#' builds its context volume, so its signature hashes that volume's voxels
+#' along with the slice taken through them. A snapshot whose signature does
+#' not match is redrawn rather than aborted on - a handful of slices is
+#' cheap - and the processed and mask copies made from it are dropped so the
+#' image step remakes those too.
+#'
+#' Returns the signatures keyed by file name, for the caller to record.
 #' @noRd
 subcort_snapshot_cortex <- function(
   cortex_vol,
   cortex_slices,
   dirs,
-  skip_existing
+  skip_existing,
+  manifest = character()
 ) {
-  files <- vapply(
+  voxels <- rlang::hash(which(cortex_vol > 0))
+
+  signatures <- vapply(
     seq_len(nrow(cortex_slices)),
     function(i) {
       cs <- cortex_slices[i, ]
       hemi <- extract_hemi_from_view(cs$view, cs$name)
       outfile <- cortex_slice_file(dirs$snapshots, cs$name, hemi)
+      signature <- snapshot_signature(
+        voxels,
+        dim(cortex_vol),
+        cs$x,
+        cs$y,
+        cs$z,
+        cs$view,
+        cs$name,
+        hemi
+      )
 
-      if (!cortex_snapshot_is_current(outfile, skip_existing)) {
+      if (!snapshot_is_current(outfile, signature, manifest, skip_existing)) {
+        clear_stale_snapshot(outfile, dirs)
         snapshot_cortex_slice(
           vol = cortex_vol,
           x = cs$x,
@@ -403,23 +534,26 @@ subcort_snapshot_cortex <- function(
           output_dir = dirs$snapshots,
           skip_existing = FALSE
         )
-        drop_derived_images(outfile, dirs)
       }
-      outfile
+      signature
+    },
+    character(1),
+    USE.NAMES = FALSE
+  )
+
+  names(signatures) <- vapply(
+    seq_len(nrow(cortex_slices)),
+    function(i) {
+      cs <- cortex_slices[i, ]
+      basename(cortex_slice_file(
+        ".",
+        cs$name,
+        extract_hemi_from_view(cs$view, cs$name)
+      ))
     },
     character(1)
   )
-
-  invisible(stamp_cache_files(files[file.exists(files)]))
-}
-
-
-#' Is an existing cortex snapshot reusable under this cache format?
-#' @noRd
-cortex_snapshot_is_current <- function(outfile, skip_existing) {
-  skip_existing &&
-    file.exists(outfile) &&
-    !is_stale_version(cache_file_version(outfile))
+  signatures
 }
 
 

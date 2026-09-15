@@ -50,6 +50,13 @@
 #' claims the voxel. An atlas whose cortical labels are already a ribbon, such
 #' as one derived from a surface, keeps its own.
 #'
+#' Either way, the `aseg` cerebellar cortex and brain stem are added to the
+#' context, so the posterior fossa is not drawn as empty space behind an
+#' atlas that reaches below the tentorium or one whose cerebellum lives in a
+#' separate atlas. Cerebellar white matter is left out: without it the
+#' cerebellum stays a foliated shell rather than a solid lump that merges
+#' with the occipital lobe.
+#'
 #' When no usable `aseg` is available - no FreeSurfer, no `aseg.mgz` for the
 #' subject, a failed resampling, or a ribbon that does not land inside this
 #' volume, which is what a volume in some other space looks like - the
@@ -1884,23 +1891,45 @@ wholebrain_write_cortex_context <- function(
     return(result)
   }
 
-  ribbon <- aseg_cortex_ribbon(
+  aseg <- aseg_context_volume(
     input_volume = input_volume,
     subject = cortex_subject,
     dims = dim(arr),
     brain_mask = arr != 0,
     verbose = verbose
   )
-  if (
-    is.null(ribbon) || !cortex_mask_is_solid(cortical_mask, ribbon, verbose)
-  ) {
+  if (is.null(aseg)) {
     return(wholebrain_cortex_by_midline(result, cortical_mask, vol))
   }
 
-  cortex <- aseg_cortex_idx()
+  result <- wholebrain_write_cerebrum(result, cortical_mask, vol, aseg, verbose)
+  write_aseg_context(result, aseg, aseg_fossa_idx())
+}
+
+
+#' Cerebral cortex context: the `aseg` ribbon, or the atlas's own mask
+#' @noRd
+wholebrain_write_cerebrum <- function(
+  result,
+  cortical_mask,
+  vol,
+  aseg,
+  verbose
+) {
+  if (!cortex_mask_is_solid(cortical_mask, aseg, verbose)) {
+    return(wholebrain_cortex_by_midline(result, cortical_mask, vol))
+  }
+  write_aseg_context(result, aseg, aseg_cortex_idx())
+}
+
+
+#' Copy `aseg` labels into the voxels no structure claims
+#' @noRd
+write_aseg_context <- function(result, aseg, idx) {
   free <- result == 0L
-  result[free & ribbon == cortex[["left"]]] <- cortex[["left"]]
-  result[free & ribbon == cortex[["right"]]] <- cortex[["right"]]
+  for (i in idx) {
+    result[free & aseg == i] <- i
+  }
   result
 }
 
@@ -1935,6 +1964,31 @@ aseg_cortex_idx <- function() {
 }
 
 
+#' `aseg` indices that fill the posterior fossa behind the structures
+#'
+#' Cortex alone stops at the tentorium, so a subcortical atlas that reaches
+#' below it - or one whose cerebellum has been split off into an atlas of its
+#' own, as `ggsegMcalt`'s has - is drawn against empty space where the
+#' cerebellum and brain stem should be.
+#'
+#' Cerebellar white matter (7, 46) is deliberately left out. Filling it makes
+#' the cerebellum a solid lump that merges with the occipital lobe in
+#' sagittal views and reads as more subcortex; the cortex alone comes through
+#' as the foliated shell it is, which is what makes it recognisable as
+#' cerebellum. [detect_context_labels()] excludes it for the same reason.
+#' @noRd
+aseg_fossa_idx <- function() {
+  c(cerebellum_left = 8L, cerebellum_right = 47L, brainstem = 16L)
+}
+
+
+#' Every `aseg` index the context silhouette is drawn from
+#' @noRd
+aseg_context_idx <- function() {
+  c(aseg_cortex_idx(), aseg_fossa_idx())
+}
+
+
 #' Is the atlas's own cortical mask a solid mantle rather than a ribbon?
 #'
 #' Not every parcellation needs this fix. One derived from a surface, such as
@@ -1949,17 +2003,18 @@ aseg_cortex_idx <- function() {
 #' being wrong leave the atlas exactly as it was.
 #'
 #' @param cortical_mask Logical array of the atlas's cortical voxels.
-#' @param ribbon The resampled `aseg` ribbon.
+#' @param aseg The resampled `aseg` context volume. Only its cortical ribbon
+#'   counts here; the posterior fossa labels are not cortex.
 #' @param verbose Report the decision.
 #' @param factor How many ribbons' worth of voxels counts as solid.
 #' @noRd
 cortex_mask_is_solid <- function(
   cortical_mask,
-  ribbon,
+  aseg,
   verbose = get_verbose(),
   factor = 1.5
 ) {
-  ratio <- sum(cortical_mask) / max(1L, sum(ribbon > 0L))
+  ratio <- sum(cortical_mask) / max(1L, sum(aseg %in% aseg_cortex_idx()))
   if (ratio >= factor) {
     return(TRUE)
   }
@@ -1974,17 +2029,17 @@ cortex_mask_is_solid <- function(
   FALSE
 }
 
-#' Resample a FreeSurfer `aseg` cortical ribbon onto a volume's own grid
+#' Resample the FreeSurfer `aseg` context labels onto a volume's own grid
 #'
 #' `mri_vol2vol --regheader` resamples through the two headers, so no new
 #' transform is invented: the atlas volume is taken to be in the space its
 #' header claims, exactly as the rest of the pipeline takes it. Nearest
 #' neighbour keeps the label values intact.
 #'
-#' Returns `NULL`, with a warning, whenever the ribbon cannot be trusted:
+#' Returns `NULL`, with a warning, whenever the result cannot be trusted:
 #' FreeSurfer missing, the subject's `aseg` missing, the resampling failing,
-#' a grid mismatch, or a ribbon that does not land inside the volume's own
-#' brain - the last being what a volume in some other space looks like.
+#' a grid mismatch, or labels that do not land inside the volume's own brain
+#' - the last being what a volume in some other space looks like.
 #'
 #' @param input_volume Path to the atlas volume, used as the target grid.
 #' @param subject FreeSurfer subject to take the `aseg` from.
@@ -1992,9 +2047,9 @@ cortex_mask_is_solid <- function(
 #' @param brain_mask Logical array, `TRUE` wherever the atlas volume is
 #'   non-zero.
 #' @template verbose
-#' @return Integer array of the [aseg_cortex_idx()] values and 0, or `NULL`.
+#' @return Integer array of the [aseg_context_idx()] values and 0, or `NULL`.
 #' @noRd
-aseg_cortex_ribbon <- function(
+aseg_context_volume <- function(
   input_volume,
   subject,
   dims,
@@ -2012,20 +2067,20 @@ aseg_cortex_ribbon <- function(
   }
   on.exit(unlink(resampled), add = TRUE)
 
-  ribbon <- as.array(read_volume(resampled, reorient = FALSE))
-  if (!identical(dim(ribbon), dims)) {
+  context <- as.array(read_volume(resampled, reorient = FALSE))
+  if (!identical(dim(context), dims)) {
     warn_solid_cortex_context(
       "the resampled {.field aseg} does not share the volume's grid"
     )
     return(NULL)
   }
 
-  ribbon[!ribbon %in% aseg_cortex_idx()] <- 0L
-  if (!ribbon_lands_on_volume(ribbon, brain_mask)) {
+  context[!context %in% aseg_context_idx()] <- 0L
+  if (!ribbon_lands_on_volume(context, brain_mask)) {
     return(NULL)
   }
-  storage.mode(ribbon) <- "integer"
-  ribbon
+  storage.mode(context) <- "integer"
+  context
 }
 
 

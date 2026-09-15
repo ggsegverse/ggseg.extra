@@ -27,14 +27,40 @@
   because it is not in the space its header claims - the context falls back
   to the atlas's own cortical labels and says so.
 
-- The cache format version is now 2, because the context volume the previous
-  one cached is wrong rather than merely old. Cached steps written by an
-  earlier ggseg.extra are recomputed, and the cortex silhouette snapshot is
-  now stamped too, so a rebuild redraws it instead of reusing the picture the
-  old pipeline drew and drops the processed and mask copies made from it.
-  Every whole-brain atlas has to be rebuilt to pick up the sulci; this is what
-  makes `skip_existing = TRUE` rebuild them rather than keep the old
-  silhouette. The structure snapshots are unchanged and still reused.
+- The grey context now fills the posterior fossa as well. Cortex alone stops
+  at the tentorium, so a subcortical atlas that reaches below it - or one
+  whose cerebellum has been split off into an atlas of its own, as
+  `ggsegMcalt`'s has - was drawn against empty space where the cerebellum and
+  brain stem should be. The `aseg` cerebellar cortex and brain stem are now
+  written into the context alongside the cortical ribbon, for every
+  whole-brain atlas, whether or not its cortical mantle needed replacing.
+
+  Cerebellar white matter is deliberately left out. Filling it makes the
+  cerebellum a solid lump that merges with the occipital lobe in sagittal
+  views and reads as more subcortex; the cortex alone comes through as the
+  foliated shell that makes it recognisable as cerebellum.
+
+- Subcortical snapshot PNGs now carry a signature of what they were drawn
+  from, and one whose signature does not match what the run would draw is
+  redrawn rather than reused. A snapshot can go stale without the pipeline
+  changing: `<view>_<label>.png` records which label and which slab, but not
+  which *voxels* that label held, and both move underneath it -
+  `reindex_reserved_subcort_idx()` can hand a structure a different index,
+  and a rebuilt volume can hand an index different voxels. An atlas cache
+  predating the reindexing reused `axial_1_Pallidum_l.png` drawn when 42
+  meant Pallidum and now means the right cortical hemisphere, and rendered a
+  nucleus as a solid hemisphere. The signature hashes the structure's voxels,
+  the slab framing them, the volume's dimensions and the cache format
+  version, so that class of bug cannot recur. The processed and mask copies
+  made from a redrawn snapshot are dropped with it.
+
+- The cache format version is now 2, because the intermediates the previous
+  one cached are wrong rather than merely old: the context volume changed,
+  and with it the cortex slice each view is taken at. Cached steps written by
+  an earlier ggseg.extra are recomputed. Every whole-brain atlas has to be
+  rebuilt to pick up the sulci; the bump and the snapshot signatures together
+  are what make `skip_existing = TRUE` rebuild them rather than keep the old
+  pictures.
 
 - The subcortical pipeline no longer traces images left behind by a run with a
   different slab configuration. Snapshots, processed images and masks are read

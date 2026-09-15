@@ -1240,24 +1240,147 @@ testthat::describe("prune_stale_snapshots", {
 })
 
 
-testthat::describe("cortex silhouette snapshot staleness", {
-  it("redraws an unstamped snapshot and drops what was made from it", {
-    dirs <- mock_subcort_dirs()
-    outfile <- file.path(dirs$snapshots, "ax_1_cortex_left.png")
-    file.create(outfile)
-    for (dir in c(dirs$processed, dirs$masks)) {
-      file.create(file.path(dir, "ax_1_cortex_left.png"))
-    }
+testthat::describe("snapshot signatures", {
+  it("changes when the voxels a label holds change", {
+    a <- snapshot_signature(rlang::hash(1:10), c(4L, 4L, 4L), "axial", 1, 4)
+    b <- snapshot_signature(rlang::hash(2:11), c(4L, 4L, 4L), "axial", 1, 4)
+    expect_false(identical(a, b))
+  })
 
-    .cap$drawn <- 0L
-    local_mocked_bindings(
-      extract_hemi_from_view = function(...) "left",
-      snapshot_cortex_slice = function(...) {
-        .cap$drawn <- .cap$drawn + 1L
-        invisible(NULL)
-      }
+  it("changes when the slab framing them changes", {
+    voxels <- rlang::hash(1:10)
+    a <- snapshot_signature(voxels, c(4L, 4L, 4L), "axial", 1, 4)
+    b <- snapshot_signature(voxels, c(4L, 4L, 4L), "axial", 1, 5)
+    expect_false(identical(a, b))
+  })
+
+  it("is stable for the same inputs", {
+    expect_identical(
+      snapshot_signature(rlang::hash(1:10), c(4L, 4L, 4L), "axial"),
+      snapshot_signature(rlang::hash(1:10), c(4L, 4L, 4L), "axial")
     )
-    cortex_slices <- data.frame(
+  })
+
+  it("changes when the cache format version does", {
+    before <- snapshot_signature("x")
+    local_mocked_bindings(cache_format_version = function() 9999L)
+    expect_false(identical(before, snapshot_signature("x")))
+  })
+})
+
+
+testthat::describe("snapshot manifest", {
+  it("reads as empty when there is none", {
+    expect_identical(
+      read_snapshot_manifest(withr::local_tempdir()),
+      character()
+    )
+  })
+
+  it("reads as empty when it holds the wrong kind of thing", {
+    dir <- withr::local_tempdir()
+    saveRDS(1:3, file.path(dir, "snapshot_manifest.rds"))
+    expect_identical(read_snapshot_manifest(dir), character())
+  })
+
+  it("merges rather than replacing what a previous pass recorded", {
+    dir <- withr::local_tempdir()
+    record_snapshot_signatures(dir, c(a.png = "sig-a"))
+    record_snapshot_signatures(dir, c(b.png = "sig-b"))
+
+    manifest <- read_snapshot_manifest(dir)
+    expect_identical(manifest[["a.png"]], "sig-a")
+    expect_identical(manifest[["b.png"]], "sig-b")
+  })
+
+  it("writes nothing when there is nothing to record", {
+    dir <- withr::local_tempdir()
+    record_snapshot_signatures(dir, character())
+    expect_false(file.exists(file.path(dir, "snapshot_manifest.rds")))
+  })
+})
+
+
+testthat::describe("snapshot_is_current", {
+  local_snapshot <- function(signature = NULL, env = parent.frame()) {
+    dir <- withr::local_tempdir(.local_envir = env)
+    file <- file.path(dir, "ax_1_r.png")
+    file.create(file)
+    if (!is.null(signature)) {
+      record_snapshot_signatures(
+        dir,
+        stats::setNames(signature, basename(file))
+      )
+    }
+    file
+  }
+
+  it("rejects a snapshot from before signatures were recorded", {
+    file <- local_snapshot()
+    expect_false(
+      snapshot_is_current(
+        file,
+        "sig",
+        read_snapshot_manifest(dirname(file)),
+        TRUE
+      )
+    )
+  })
+
+  it("rejects a snapshot recorded under a different signature", {
+    file <- local_snapshot("old")
+    expect_false(
+      snapshot_is_current(
+        file,
+        "new",
+        read_snapshot_manifest(dirname(file)),
+        TRUE
+      )
+    )
+  })
+
+  it("accepts a snapshot recorded under this signature", {
+    file <- local_snapshot("sig")
+    expect_true(
+      snapshot_is_current(
+        file,
+        "sig",
+        read_snapshot_manifest(dirname(file)),
+        TRUE
+      )
+    )
+  })
+
+  it("rejects everything when reuse was not asked for", {
+    file <- local_snapshot("sig")
+    expect_false(
+      snapshot_is_current(
+        file,
+        "sig",
+        read_snapshot_manifest(dirname(file)),
+        FALSE
+      )
+    )
+  })
+
+  it("rejects a signature recorded for a file that is gone", {
+    file <- local_snapshot("sig")
+    unlink(file)
+    expect_false(
+      snapshot_is_current(
+        file,
+        "sig",
+        read_snapshot_manifest(dirname(file)),
+        TRUE
+      )
+    )
+  })
+})
+
+
+testthat::describe("cortex silhouette snapshot staleness", {
+  cortex_slice_row <- function() {
+    data.frame(
       x = NA,
       y = NA,
       z = 5,
@@ -1265,10 +1388,33 @@ testthat::describe("cortex silhouette snapshot staleness", {
       name = "ax_1",
       stringsAsFactors = FALSE
     )
+  }
 
-    subcort_snapshot_cortex(
+  local_counting_slice <- function(env = parent.frame()) {
+    .cap$drawn <- 0L
+    local_mocked_bindings(
+      extract_hemi_from_view = function(...) "left",
+      snapshot_cortex_slice = function(output_dir, view_name, hemi, ...) {
+        .cap$drawn <- .cap$drawn + 1L
+        file.create(cortex_slice_file(output_dir, view_name, hemi))
+        invisible(NULL)
+      },
+      .env = env
+    )
+  }
+
+  it("redraws an unrecorded snapshot and drops what was made from it", {
+    dirs <- mock_subcort_dirs()
+    outfile <- file.path(dirs$snapshots, "ax_1_cortex_left.png")
+    file.create(outfile)
+    for (dir in c(dirs$processed, dirs$masks)) {
+      file.create(file.path(dir, "ax_1_cortex_left.png"))
+    }
+    local_counting_slice()
+
+    signatures <- subcort_snapshot_cortex(
       array(1L, dim = c(4, 4, 4)),
-      cortex_slices,
+      cortex_slice_row(),
       dirs,
       skip_existing = TRUE
     )
@@ -1276,42 +1422,203 @@ testthat::describe("cortex silhouette snapshot staleness", {
     expect_identical(.cap$drawn, 1L)
     expect_false(file.exists(file.path(dirs$processed, basename(outfile))))
     expect_false(file.exists(file.path(dirs$masks, basename(outfile))))
-    expect_identical(
-      cache_file_version(outfile),
-      cache_format_version()
-    )
+    expect_named(signatures, "ax_1_cortex_left.png")
   })
 
-  it("reuses a snapshot stamped by this cache format", {
+  it("reuses a snapshot recorded for this context volume", {
     dirs <- mock_subcort_dirs()
     outfile <- file.path(dirs$snapshots, "ax_1_cortex_left.png")
     file.create(outfile)
-    stamp_cache_files(outfile)
+    local_counting_slice()
+    cortex_vol <- array(1L, dim = c(4, 4, 4))
 
-    .cap$drawn <- 0L
-    local_mocked_bindings(
-      extract_hemi_from_view = function(...) "left",
-      snapshot_cortex_slice = function(...) {
-        .cap$drawn <- .cap$drawn + 1L
-        invisible(NULL)
-      }
-    )
-    cortex_slices <- data.frame(
-      x = NA,
-      y = NA,
-      z = 5,
-      view = "axial",
-      name = "ax_1",
-      stringsAsFactors = FALSE
-    )
-
-    subcort_snapshot_cortex(
-      array(1L, dim = c(4, 4, 4)),
-      cortex_slices,
+    signatures <- subcort_snapshot_cortex(
+      cortex_vol,
+      cortex_slice_row(),
       dirs,
       skip_existing = TRUE
     )
+    record_snapshot_signatures(dirs$snapshots, signatures)
+    .cap$drawn <- 0L
+
+    subcort_snapshot_cortex(
+      cortex_vol,
+      cortex_slice_row(),
+      dirs,
+      skip_existing = TRUE,
+      manifest = read_snapshot_manifest(dirs$snapshots)
+    )
 
     expect_identical(.cap$drawn, 0L)
+  })
+
+  it("redraws when the context volume itself changed", {
+    dirs <- mock_subcort_dirs()
+    outfile <- file.path(dirs$snapshots, "ax_1_cortex_left.png")
+    file.create(outfile)
+    local_counting_slice()
+
+    signatures <- subcort_snapshot_cortex(
+      array(1L, dim = c(4, 4, 4)),
+      cortex_slice_row(),
+      dirs,
+      skip_existing = TRUE
+    )
+    record_snapshot_signatures(dirs$snapshots, signatures)
+    .cap$drawn <- 0L
+
+    # The same slice through a context volume with sulci in it is a different
+    # picture, and the old one must not be kept.
+    sulcal <- array(1L, dim = c(4, 4, 4))
+    sulcal[,, 2] <- 0L
+
+    subcort_snapshot_cortex(
+      sulcal,
+      cortex_slice_row(),
+      dirs,
+      skip_existing = TRUE,
+      manifest = read_snapshot_manifest(dirs$snapshots)
+    )
+
+    expect_identical(.cap$drawn, 1L)
+  })
+})
+
+
+testthat::describe("structure snapshot staleness", {
+  structure_vol <- function(idx_for_left = 42L) {
+    vol <- array(0L, dim = c(4, 4, 4))
+    vol[1, , ] <- idx_for_left
+    vol
+  }
+
+  colortable_for <- function(idx) {
+    data.frame(idx = idx, label = "Pallidum_l", stringsAsFactors = FALSE)
+  }
+
+  slabs_row <- function() {
+    data.frame(
+      name = "ax_1",
+      type = "axial",
+      start = 1,
+      end = 4,
+      stringsAsFactors = FALSE
+    )
+  }
+
+  local_counting_projection <- function(env = parent.frame()) {
+    .cap$drawn <- 0L
+    local_mocked_bindings(
+      extract_hemi_from_view = function(...) "left",
+      progressor = function(...) function(...) NULL,
+      future_pmap = mock_future_pmap,
+      furrr_options = function(...) list(),
+      snapshot_partial_projection = function(
+        output_dir,
+        view_name,
+        label,
+        ...
+      ) {
+        .cap$drawn <- .cap$drawn + 1L
+        file.create(structure_snapshot_file(output_dir, view_name, label))
+        invisible(NULL)
+      },
+      .env = env
+    )
+  }
+
+  draw <- function(vol, colortable, dirs, manifest = character()) {
+    subcort_snapshot_structures(
+      vol,
+      dim(vol),
+      colortable,
+      slabs_row(),
+      dirs,
+      skip_existing = TRUE,
+      manifest = manifest
+    )
+  }
+
+  it("reuses a snapshot whose voxels are unchanged", {
+    dirs <- mock_subcort_dirs()
+    outfile <- file.path(dirs$snapshots, "ax_1_Pallidum_l.png")
+    file.create(outfile)
+    local_counting_projection()
+    vol <- structure_vol()
+
+    signatures <- draw(vol, colortable_for(42L), dirs)
+    record_snapshot_signatures(dirs$snapshots, signatures)
+    .cap$drawn <- 0L
+
+    draw(vol, colortable_for(42L), dirs, read_snapshot_manifest(dirs$snapshots))
+
+    expect_identical(.cap$drawn, 0L)
+  })
+
+  it("redraws when reindexing hands the label different voxels", {
+    dirs <- mock_subcort_dirs()
+    outfile <- file.path(dirs$snapshots, "ax_1_Pallidum_l.png")
+    file.create(outfile)
+    for (dir in c(dirs$processed, dirs$masks)) {
+      file.create(file.path(dir, "ax_1_Pallidum_l.png"))
+    }
+    local_counting_projection()
+
+    # Drawn when 42 meant Pallidum_l.
+    signatures <- draw(structure_vol(42L), colortable_for(42L), dirs)
+    record_snapshot_signatures(dirs$snapshots, signatures)
+    .cap$drawn <- 0L
+
+    # Rebuilt volume: 42 is now the right cortical hemisphere and Pallidum_l
+    # has been reindexed to 6, holding a different set of voxels. Reusing the
+    # old PNG here is what renders a nucleus as a solid hemisphere.
+    moved <- array(0L, dim = c(4, 4, 4))
+    moved[2, , ] <- 6L
+    draw(
+      moved,
+      colortable_for(6L),
+      dirs,
+      read_snapshot_manifest(dirs$snapshots)
+    )
+
+    expect_identical(.cap$drawn, 1L)
+    expect_false(file.exists(file.path(dirs$processed, "ax_1_Pallidum_l.png")))
+    expect_false(file.exists(file.path(dirs$masks, "ax_1_Pallidum_l.png")))
+  })
+
+  it("redraws when the slab framing the structure changes", {
+    dirs <- mock_subcort_dirs()
+    file.create(file.path(dirs$snapshots, "ax_1_Pallidum_l.png"))
+    local_counting_projection()
+    vol <- structure_vol()
+
+    record_snapshot_signatures(
+      dirs$snapshots,
+      draw(vol, colortable_for(42L), dirs)
+    )
+    .cap$drawn <- 0L
+
+    wider <- slabs_row()
+    wider$end <- 3
+    subcort_snapshot_structures(
+      vol,
+      dim(vol),
+      colortable_for(42L),
+      wider,
+      dirs,
+      skip_existing = TRUE,
+      manifest = read_snapshot_manifest(dirs$snapshots)
+    )
+
+    expect_identical(.cap$drawn, 1L)
+  })
+
+  it("names every signature after the file it belongs to", {
+    dirs <- mock_subcort_dirs()
+    local_counting_projection()
+
+    signatures <- draw(structure_vol(), colortable_for(42L), dirs)
+
+    expect_named(signatures, "ax_1_Pallidum_l.png")
   })
 })

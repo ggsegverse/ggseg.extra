@@ -193,6 +193,13 @@ volume's own grid through the two headers
 claims the voxel. An atlas whose cortical labels are already a ribbon, such
 as one derived from a surface, keeps its own.
 
+Either way, the \code{aseg} cerebellar cortex and brain stem are added to the
+context, so the posterior fossa is not drawn as empty space behind an
+atlas that reaches below the tentorium or one whose cerebellum lives in a
+separate atlas. Cerebellar white matter is left out: without it the
+cerebellum stays a foliated shell rather than a solid lump that merges
+with the occipital lobe.
+
 When no usable \code{aseg} is available - no FreeSurfer, no \code{aseg.mgz} for the
 subject, a failed resampling, or a ribbon that does not land inside this
 volume, which is what a volume in some other space looks like - the
