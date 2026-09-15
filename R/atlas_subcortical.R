@@ -497,22 +497,18 @@ subcort_resolve_labels <- function(config, dirs) {
     return(subcort_cached_labels(cached, config$verbose))
   }
 
-  colortable <- subcort_load_colortable(config$input_lut, config$input_volume)
-
   if (config$verbose) {
     cli::cli_progress_step("1/9 Extracting labels from volume")
   }
 
-  vol <- read_volume(config$input_volume)
-  vol_labels <- unique(c(vol))
-  vol_labels <- vol_labels[!is.na(vol_labels) & vol_labels != 0]
-  colortable <- colortable[colortable$idx %in% vol_labels, ]
-
+  loaded <- load_volume_colortable(
+    config$input_lut,
+    config$input_volume,
+    config$verbose
+  )
+  colortable <- loaded$colortable
+  vol_labels <- loaded$vol_labels
   colortable$label <- sanitize_label(colortable$label)
-
-  if (nrow(colortable) == 0) {
-    cli::cli_abort("No matching labels found in volume and color table")
-  }
 
   if (config$verbose) {
     cli::cli_alert_success("Found {nrow(colortable)} subcortical structures")
@@ -540,20 +536,6 @@ subcort_cached_labels <- function(cached, verbose) {
     colortable = cached$data[["colortable.rds"]],
     vol_labels = cached$data[["vol_labels.rds"]]
   )
-}
-
-
-#' @noRd
-subcort_load_colortable <- function(input_lut, input_volume) {
-  if (is.null(input_lut)) {
-    cli::cli_warn(c(
-      "No color lookup table provided",
-      "i" = "Region names will be generic (e.g., 'region_0010')",
-      "i" = "The atlas will have no palette; plotting picks its own colours"
-    ))
-    return(generate_colortable_from_volume(input_volume))
-  }
-  get_lut(input_lut)
 }
 
 
