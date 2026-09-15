@@ -288,9 +288,7 @@ read_fs_surface <- function(file, verbose = get_verbose()) {
   )
 
   fell_back <- is.character(surf2asc_result)
-  mesh <- if (!fell_back) {
-    surf2asc_result
-  } else {
+  mesh <- if (fell_back) {
     if (!requireNamespace("freesurferformats", quietly = TRUE)) {
       cli::cli_abort(c(
         "Failed to read surface file: {.path {file}}",
@@ -312,6 +310,8 @@ read_fs_surface <- function(file, verbose = get_verbose()) {
         k = surf$faces[, 3]
       )
     )
+  } else {
+    surf2asc_result
   }
 
   # A mesh whose faces point outside its vertex table would otherwise travel
