@@ -32,7 +32,7 @@ ARG FS_VERSION
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
-        bc tcsh perl git pandoc curl wget jq zstd sudo imagemagick \
+        bc tcsh perl git pandoc curl wget jq zstd sudo \
         libgomp1 libopenblas0-openmp libglu1-mesa libgl1 \
         libxt6 libxmu6 libxext6 libxrender1 libxi6 libxss1 \
         libgdal-dev libproj-dev libgeos-dev libudunits2-dev \
