@@ -317,7 +317,7 @@ read_fs_surface <- function(file, verbose = get_verbose()) {
   # unreliably; a mesh whose faces point outside its vertex table would
   # otherwise travel on as a warning and surface much later as a broken atlas.
   face_idx <- unlist(faces, use.names = FALSE)
-  if (any(is.na(face_idx)) || any(face_idx < 1L | face_idx > nrow(vertices))) {
+  if (anyNA(face_idx) || any(face_idx < 1L | face_idx > nrow(vertices))) {
     cli::cli_abort(c(
       "Failed to read surface file: {.path {file}}",
       "x" = "FreeSurfer conversion failed ({surf2asc_result}) and the \\

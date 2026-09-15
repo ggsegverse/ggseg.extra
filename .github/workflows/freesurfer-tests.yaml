@@ -43,6 +43,7 @@ jobs:
           set -euo pipefail
           ls "$SUBJECTS_DIR/fsaverage5" "$SUBJECTS_DIR/fsaverage5/mri" "$SUBJECTS_DIR/fsaverage5/label"
           work="$(mktemp -d)"
+          magick --version | head -1
           aseg=tests/testthat/testdata/volumetric/aseg.mgz
           mri_info "$aseg" > /dev/null
           mri_convert "$aseg" "$work/aseg.nii.gz" > /dev/null

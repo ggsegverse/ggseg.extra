@@ -45,6 +45,17 @@ RUN apt-get update \
 ENV CRAN=https://p3m.dev/cran/__linux__/noble/latest
 RUN sed -i "s|CRAN = '[^']*'|CRAN = '${CRAN}'|" /usr/local/lib/R/etc/Rprofile.site \
     && grep -q "${CRAN}" /usr/local/lib/R/etc/Rprofile.site
+# has_magick() probes the ImageMagick 7 `magick` binary; Ubuntu 24.04 ships
+# version 6, so take the official portable build and unpack it without FUSE.
+ARG IMAGEMAGICK_VERSION=7.1.2-31
+RUN curl -sSL -o /tmp/magick.AppImage \
+      "https://github.com/ImageMagick/ImageMagick/releases/download/${IMAGEMAGICK_VERSION}/ImageMagick-${IMAGEMAGICK_VERSION}-gcc-x86_64.AppImage" \
+    && chmod +x /tmp/magick.AppImage \
+    && cd /opt && /tmp/magick.AppImage --appimage-extract > /dev/null \
+    && mv /opt/squashfs-root /opt/imagemagick \
+    && ln -s /opt/imagemagick/AppRun /usr/local/bin/magick \
+    && rm /tmp/magick.AppImage \
+    && magick --version | grep -q "Version: ImageMagick 7"
 COPY --from=freesurfer /opt/freesurfer /opt/freesurfer
 ENV OS=Linux \
     FS_OVERRIDE=0 \

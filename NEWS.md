@@ -8,8 +8,8 @@
   fsaverage5 data.
 - `create_wholebrain_from_volume()` now drops colour table entries the volume
   never carries before classifying labels. With the full FreeSurferColorLUT
-  every unprojected entry, over a thousand of them, was reported as
-  subcortical whether or not a single voxel held it.
+  every entry that never projected, over a thousand of them, was
+  reported as subcortical whether or not a single voxel held it.
 - Reading a tessellated surface without `mris_convert` on the path now aborts
   with a pointer to the missing binary. The fallback reader cannot parse the
   QUAD surfaces `mri_tessellate` writes and used to hand back a mesh whose
