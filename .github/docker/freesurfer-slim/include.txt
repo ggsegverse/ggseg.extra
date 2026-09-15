@@ -11,6 +11,7 @@
 *freesurfer/bin/mri_pretess
 *freesurfer/bin/mri_tessellate
 *freesurfer/bin/mris_smooth
+*freesurfer/bin/mris_convert
 *freesurfer/average/mni152.register.dat
 *freesurfer/subjects/fsaverage5
 *freesurfer/lib

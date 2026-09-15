@@ -49,6 +49,7 @@ jobs:
           mri_pretess "$aseg" 10 "$aseg" "$work/pretess.mgz" > /dev/null
           mri_tessellate "$work/pretess.mgz" 10 "$work/lh.surf" > /dev/null
           mris_smooth -nw -n 2 "$work/lh.surf" "$work/lh.smooth" > /dev/null
+          mris_convert "$work/lh.smooth" "$work/lh.smooth.asc" > /dev/null
           mri_vol2surf --mov "$aseg" --regheader fsaverage5 --hemi lh \
             --projfrac 0.5 --interp nearest --o "$work/lh.header.mgh" > /dev/null
           mri_vol2surf --mov "$aseg" --reg "$FREESURFER_HOME/average/mni152.register.dat" \

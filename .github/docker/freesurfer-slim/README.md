@@ -6,11 +6,13 @@ CI image for running the FreeSurfer-gated tests. Published as
 ## Why a subset
 
 A full FreeSurfer install is 16-19 GB; the official Docker images are 5-14 GB
-depending on version. A standard GitHub runner has 14 GB of disk. ggseg.extra
-shells out to nine binaries and reads one subject, so the image keeps only:
+depending on version. ggseg.extra shells out to ten binaries and reads one
+subject, so the image keeps only:
 
 - `bin/`: mri_info, mri_convert, mri_coreg, mri_vol2vol, mri_vol2surf,
-  mri_surf2surf, mri_pretess, mri_tessellate, mris_smooth
+  mri_surf2surf, mri_pretess, mri_tessellate, mris_smooth, mris_convert
+  (the last one is reached through `freesurfer::mris_convert()`, so grep
+  this repo for `mris_` and for `freesurfer::` calls when auditing the list)
 - `subjects/fsaverage5` (the package's default subject everywhere)
 - `average/mni152.register.dat` (the `registration = "mni152"` path)
 - `FreeSurferColorLUT.txt`, `build-stamp.txt`, and the two env scripts the
