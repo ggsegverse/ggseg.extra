@@ -1470,6 +1470,7 @@ testthat::describe("cortex silhouette snapshot staleness", {
     # The same slice through a context volume with sulci in it is a different
     # picture, and the old one must not be kept.
     sulcal <- array(1L, dim = c(4, 4, 4))
+    # nolint next: commas_linter. air formats empty subscripts without spaces.
     sulcal[,, 2] <- 0L
 
     subcort_snapshot_cortex(
