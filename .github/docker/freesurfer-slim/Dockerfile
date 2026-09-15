@@ -11,29 +11,28 @@ COPY include.txt /tmp/include.txt
 # 16 GB full install never exists on the builder. Members in the tarball are
 # prefixed (./freesurfer/...), hence the leading wildcard in include.txt.
 RUN curl -sSL "https://surfer.nmr.mgh.harvard.edu/pub/dist/freesurfer/${FS_VERSION}/freesurfer-linux-ubuntu22_amd64-${FS_VERSION}.tar.gz" \
-    | tar -xz --no-same-owner --wildcards -C /opt -T /tmp/include.txt \
-    && find /opt -maxdepth 2 \
-    && du -sh /opt/freesurfer /opt/freesurfer/lib /opt/freesurfer/subjects
+    | tar -xz --no-same-owner --wildcards -C /opt -T /tmp/include.txt
 # lib/ is pulled in whole only so ldd can tell us which shared objects the
-# retained binaries resolve from it; keep those and drop the rest.
+# retained binaries resolve from it; keep those, flattened, and drop the rest.
 RUN set -e; \
-    libdirs="$(find /opt/freesurfer/lib -name '*.so*' -printf '%h\n' | sort -u | paste -sd:)"; \
-    mkdir -p /opt/fs-keep; \
-    for b in /opt/freesurfer/bin/*; do \
-      LD_LIBRARY_PATH="$libdirs" ldd "$b" 2>/dev/null || true; \
-    done | awk '$3 ~ /^\/opt\/freesurfer\/lib\// {print $3}' | sort -u | tee /opt/fs-keep/manifest.txt \
-    | xargs -r -I{} cp -a {} /opt/fs-keep/; \
-    rm -rf /opt/freesurfer/lib && mkdir /opt/freesurfer/lib \
-    && cp -a /opt/fs-keep/. /opt/freesurfer/lib/ && rm -rf /opt/fs-keep \
+    mv /opt/freesurfer/lib /tmp/lib && mkdir /opt/freesurfer/lib; \
+    libdirs="$(find /tmp/lib -name '*.so*' -printf '%h\n' | sort -u | paste -sd:)"; \
+    LD_LIBRARY_PATH="$libdirs" ldd /opt/freesurfer/bin/* 2>/dev/null \
+      | awk '$3 ~ /^\/tmp\/lib\// {print $3}' | sort -u \
+      | xargs -r cp -a -t /opt/freesurfer/lib; \
+    rm -rf /tmp/lib \
     && du -sh /opt/freesurfer
 
 FROM rocker/r-ver:${R_VERSION}
 ARG FS_VERSION
 ARG R_VERSION
 ENV DEBIAN_FRONTEND=noninteractive
+# curl, wget, jq, zstd and sudo are what r-lib/actions/setup-r-dependencies
+# shells out to inside a container job; the -dev libraries are what sf, terra
+# and magick compile against when P3M has no binary.
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
-        bc tcsh perl git pandoc curl wget jq zstd sudo \
+        git pandoc curl wget jq zstd sudo \
         libgomp1 libopenblas0-openmp libglu1-mesa libgl1 \
         libxt6 libxmu6 libxext6 libxrender1 libxi6 libxss1 \
         libgdal-dev libproj-dev libgeos-dev libudunits2-dev \
@@ -47,17 +46,17 @@ RUN apt-get update \
 # over source regardless of repository order, and P3M serves Linux binaries,
 # so the universe's own noble binary tree is used rather than its source root.
 ENV CRAN=https://p3m.dev/cran/__linux__/noble/latest
-RUN R_SHORT="${R_VERSION%.*}" \
-    && GGSEGVERSE="https://ggsegverse.r-universe.dev/bin/linux/noble-x86_64/${R_SHORT}" \
+RUN GGSEGVERSE="https://ggsegverse.r-universe.dev/bin/linux/noble-x86_64/${R_VERSION%.*}" \
     && curl -sSf -o /dev/null "${GGSEGVERSE}/src/contrib/PACKAGES" \
-    && sed -i "s|options(repos = c(CRAN = '[^']*')|options(repos = c(ggsegverse = '${GGSEGVERSE}', CRAN = '${CRAN}')|" \
-         /usr/local/lib/R/etc/Rprofile.site \
-    && grep -q "ggsegverse = '${GGSEGVERSE}', CRAN = '${CRAN}'" /usr/local/lib/R/etc/Rprofile.site
+    && echo "options(repos = c(ggsegverse = '${GGSEGVERSE}', CRAN = '${CRAN}'))" \
+         >> /usr/local/lib/R/etc/Rprofile.site
 # has_magick() probes the ImageMagick 7 `magick` binary; Ubuntu 24.04 ships
 # version 6, so take the official portable build and unpack it without FUSE.
 ARG IMAGEMAGICK_VERSION=7.1.2-31
+ARG IMAGEMAGICK_SHA256=b22dee096a68e7eb6771a6f98c16490ea78d399ffa27f34ca2ec4f02e707fd9c
 RUN curl -sSL -o /tmp/magick.AppImage \
       "https://github.com/ImageMagick/ImageMagick/releases/download/${IMAGEMAGICK_VERSION}/ImageMagick-${IMAGEMAGICK_VERSION}-gcc-x86_64.AppImage" \
+    && echo "${IMAGEMAGICK_SHA256}  /tmp/magick.AppImage" | sha256sum -c - \
     && chmod +x /tmp/magick.AppImage \
     && cd /opt && /tmp/magick.AppImage --appimage-extract > /dev/null \
     && mv /opt/squashfs-root /opt/imagemagick \
@@ -79,10 +78,8 @@ RUN set -e; \
         echo "unresolved libraries in $b:"; ldd "$b" | grep 'not found'; exit 1; \
       fi; \
     done \
-    && mri_info --version && mri_convert --version \
     && test -f /opt/freesurfer/subjects/fsaverage5/surf/lh.white \
-    && test -f /opt/freesurfer/average/mni152.register.dat \
-    && du -sh /opt/freesurfer
+    && test -f /opt/freesurfer/average/mni152.register.dat
 LABEL org.opencontainers.image.source="https://github.com/ggsegverse/ggseg.extra" \
       org.opencontainers.image.description="rocker/r-ver plus the FreeSurfer ${FS_VERSION} subset ggseg.extra shells out to" \
       org.opencontainers.image.licenses="MIT AND LicenseRef-FreeSurfer"

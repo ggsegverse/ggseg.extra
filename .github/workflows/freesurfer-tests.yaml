@@ -20,8 +20,10 @@ jobs:
         password: ${{ secrets.GITHUB_TOKEN }}
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
-      R_KEEP_PKG_SOURCE: yes
       FS_LICENSE: /opt/freesurfer/license.txt
+      # Turns skip_if_no_freesurfer() into a failure, so this job cannot pass
+      # while silently skipping the tests it exists to run.
+      GGSEG_REQUIRE_FREESURFER: "true"
     steps:
       - uses: actions/checkout@v6
 

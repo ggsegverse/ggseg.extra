@@ -35,7 +35,16 @@ skip_if_not_installed <- function(pkg) {
 # FreeSurfer is Unix-only, so anything that shells out to it is skipped on
 # Windows unconditionally (the runner also segfaults intermittently under the
 # parallel native geometry stack there).
+# With GGSEG_REQUIRE_FREESURFER set, as in the container CI job, a missing
+# FreeSurfer is a failure rather than a skip, so the job cannot go green while
+# silently running none of the FreeSurfer tests.
 skip_if_no_freesurfer <- function() {
+  if (nzchar(Sys.getenv("GGSEG_REQUIRE_FREESURFER"))) {
+    if (!freesurfer::have_fs() || !nzchar(Sys.which("mri_info"))) {
+      stop("GGSEG_REQUIRE_FREESURFER is set but FreeSurfer is not available")
+    }
+    return(invisible(TRUE))
+  }
   testthat::skip_on_os("windows")
   testthat::skip_if_not_installed(
     "freesurfer",
@@ -70,6 +79,11 @@ test_label_files <- function() {
     lh_region2 = file.path(testdata_dir(), "cortical", "lh.region2.label"),
     rh_region1 = file.path(testdata_dir(), "cortical", "rh.region1.label")
   )
+}
+
+# Helper to address files of the fsaverage5 subject FreeSurfer ships
+fsaverage5_file <- function(...) {
+  file.path(freesurfer::fs_subj_dir(), "fsaverage5", ...)
 }
 
 # Helper to get test MGZ file

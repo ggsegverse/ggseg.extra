@@ -1498,7 +1498,7 @@ testthat::describe("create_wholebrain_from_volume verbose LUT path", {
           stringsAsFactors = FALSE
         )
       },
-      keep_labels_in_volume = function(colortable, ...) colortable,
+      volume_label_ids = function(...) 1L,
       wholebrain_project_to_surface = function(...) {
         tibble(
           hemi = "left",
@@ -1534,35 +1534,60 @@ testthat::describe("keep_labels_in_volume", {
   )
 
   it("drops colour table entries the volume never carries", {
-    local_mocked_bindings(
-      read_volume = function(...) array(c(0L, 10L, 49L, 49L), dim = c(2, 2, 1))
-    )
-
-    kept <- keep_labels_in_volume(lut, "vol.mgz", verbose = FALSE)
+    kept <- keep_labels_in_volume(lut, c(10L, 49L))
 
     expect_identical(kept$idx, c(10L, 49L))
   })
 
   it("reports how many entries were dropped when verbose", {
-    local_mocked_bindings(
-      read_volume = function(...) array(c(0L, 10L, 49L, 49L), dim = c(2, 2, 1))
-    )
-
     expect_message(
-      keep_labels_in_volume(lut, "vol.mgz", verbose = TRUE),
+      keep_labels_in_volume(lut, c(10L, 49L), verbose = TRUE),
       "Dropped 2 colour table entries"
     )
   })
 
   it("errors when no colour table entry matches the volume", {
-    local_mocked_bindings(
-      read_volume = function(...) array(c(0L, 3L, 3L, 0L), dim = c(2, 2, 1))
-    )
-
     expect_error(
-      keep_labels_in_volume(lut, "vol.mgz", verbose = FALSE),
+      keep_labels_in_volume(lut, 3L),
       "No matching labels"
     )
+  })
+})
+
+
+testthat::describe("load_volume_colortable", {
+  it("reads the volume once and returns its labels with the filtered table", {
+    local_mocked_bindings(
+      read_volume = function(...) array(c(0L, 49L, 10L, 49L), dim = c(2, 2, 1))
+    )
+    lut <- data.frame(
+      idx = c(10L, 49L, 2000L),
+      label = c("a", "b", "absent"),
+      R = 0L,
+      G = 0L,
+      B = 0L,
+      A = 0L,
+      stringsAsFactors = FALSE
+    )
+
+    loaded <- load_volume_colortable(lut, "vol.mgz")
+
+    expect_identical(loaded$vol_labels, c(10L, 49L))
+    expect_identical(loaded$colortable$idx, c(10L, 49L))
+  })
+
+  it("generates a colour table from the volume when none is given", {
+    local_mocked_bindings(
+      read_volume = function(...) array(c(0L, 49L, 10L, 49L), dim = c(2, 2, 1))
+    )
+
+    expect_warning(
+      loaded <- load_volume_colortable(NULL, "vol.mgz"),
+      "No color lookup table"
+    )
+
+    expect_identical(loaded$vol_labels, c(10L, 49L))
+    expect_identical(loaded$colortable$label, c("region_0010", "region_0049"))
   })
 })
 

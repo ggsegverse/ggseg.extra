@@ -275,61 +275,63 @@ read_fs_surface <- function(file, verbose = get_verbose()) {
       surf2asc(file, dpv_file, verbose = verbose)
       mesh <- read_dpv(dpv_file)
 
-      vertices <- mesh$vertices
-      faces <- data.frame(
-        i = mesh$faces$i + 1L,
-        j = mesh$faces$j + 1L,
-        k = mesh$faces$k + 1L
+      list(
+        vertices = mesh$vertices,
+        faces = data.frame(
+          i = mesh$faces$i + 1L,
+          j = mesh$faces$j + 1L,
+          k = mesh$faces$k + 1L
+        )
       )
-
-      list(vertices = vertices, faces = faces)
     },
     error = function(e) conditionMessage(e)
   )
 
-  if (!is.character(surf2asc_result)) {
-    return(surf2asc_result)
+  fell_back <- is.character(surf2asc_result)
+  mesh <- if (!fell_back) {
+    surf2asc_result
+  } else {
+    if (!requireNamespace("freesurferformats", quietly = TRUE)) {
+      cli::cli_abort(c(
+        "Failed to read surface file: {.path {file}}",
+        "i" = "FreeSurfer conversion failed and {.pkg freesurferformats} \\
+               not available",
+        "x" = "Conversion error: {surf2asc_result}"
+      ))
+    }
+    surf <- freesurferformats::read.fs.surface(file)
+    list(
+      vertices = data.frame(
+        x = surf$vertices[, 1],
+        y = surf$vertices[, 2],
+        z = surf$vertices[, 3]
+      ),
+      faces = data.frame(
+        i = surf$faces[, 1],
+        j = surf$faces[, 2],
+        k = surf$faces[, 3]
+      )
+    )
   }
 
-  if (!requireNamespace("freesurferformats", quietly = TRUE)) {
+  # A mesh whose faces point outside its vertex table would otherwise travel
+  # on as a warning and surface much later as a broken atlas. The fallback is
+  # the usual culprit: freesurferformats cannot reliably read the QUAD
+  # surfaces mri_tessellate writes.
+  face_idx <- unlist(mesh$faces, use.names = FALSE)
+  if (!all(face_idx %in% seq_len(nrow(mesh$vertices)))) {
     cli::cli_abort(c(
       "Failed to read surface file: {.path {file}}",
-      "i" = "FreeSurfer conversion failed and {.pkg freesurferformats} \\
-             not available",
-      "x" = "Conversion error: {surf2asc_result}"
+      "x" = "The surface has faces that reference non-existent vertices.",
+      "i" = if (fell_back) {
+        "FreeSurfer conversion failed ({surf2asc_result}); make \\
+         {.code mris_convert} available on {.envvar PATH} so the surface \\
+         is not read through the fallback."
+      }
     ))
   }
 
-  surf <- freesurferformats::read.fs.surface(file)
-
-  vertices <- data.frame(
-    x = surf$vertices[, 1],
-    y = surf$vertices[, 2],
-    z = surf$vertices[, 3]
-  )
-  faces <- data.frame(
-    i = surf$faces[, 1],
-    j = surf$faces[, 2],
-    k = surf$faces[, 3]
-  )
-
-  # mri_tessellate writes QUAD surfaces, which freesurferformats reads
-  # unreliably; a mesh whose faces point outside its vertex table would
-  # otherwise travel on as a warning and surface much later as a broken atlas.
-  face_idx <- unlist(faces, use.names = FALSE)
-  if (anyNA(face_idx) || any(face_idx < 1L | face_idx > nrow(vertices))) {
-    cli::cli_abort(c(
-      "Failed to read surface file: {.path {file}}",
-      "x" = "FreeSurfer conversion failed ({surf2asc_result}) and the \\
-             fallback reader returned faces that reference non-existent \\
-             vertices.",
-      "i" = "Make {.code mris_convert} available on {.envvar PATH}; the \\
-             fallback cannot read the QUAD surfaces {.code mri_tessellate} \\
-             writes."
-    ))
-  }
-
-  list(vertices = vertices, faces = faces)
+  mesh
 }
 
 
@@ -347,9 +349,7 @@ read_fs_surface <- function(file, verbose = get_verbose()) {
 #' @noRd
 # nolint next: object_length_linter.
 generate_colortable_from_volume <- function(volume_file) {
-  vol <- read_volume(volume_file)
-  vol_labels <- sort(unique(c(vol)))
-  vol_labels <- vol_labels[vol_labels != 0]
+  vol_labels <- volume_label_ids(volume_file)
 
   # Names are synthesized because the pipeline needs something to key on;
   # colours are not, because nothing downstream renders with them and an

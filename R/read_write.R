@@ -220,6 +220,60 @@ is_ctab <- function(x) {
 #'   R = c(0L, 205L), G = c(0L, 130L), B = c(0L, 176L), A = c(0L, 0L)
 #' )
 #' get_lut(ct)
+#' Non-zero label ids present in a volume
+#' @noRd
+volume_label_ids <- function(input_volume) {
+  ids <- unique(c(read_volume(input_volume)))
+  sort(ids[!is.na(ids) & ids != 0])
+}
+
+
+#' Restrict a colour table to the labels a volume actually contains
+#'
+#' A full FreeSurferColorLUT carries over a thousand entries; downstream
+#' classification would otherwise treat every one of them as a region the
+#' atlas holds, whether or not a single voxel carries it.
+#' @noRd
+keep_labels_in_volume <- function(colortable, vol_labels, verbose = FALSE) {
+  kept <- colortable[colortable$idx %in% vol_labels, , drop = FALSE]
+  if (nrow(kept) == 0) {
+    cli::cli_abort("No matching labels found in volume and color table")
+  }
+
+  dropped <- nrow(colortable) - nrow(kept)
+  if (verbose && dropped > 0) {
+    cli::cli_alert_info(
+      "Dropped {dropped} colour table entr{?y/ies} absent from the volume"
+    )
+  }
+  kept
+}
+
+
+#' Colour table for a volume, generated when none was supplied
+#'
+#' @return List with the `colortable` restricted to labels in the volume and
+#'   the `vol_labels` themselves.
+#' @noRd
+load_volume_colortable <- function(input_lut, input_volume, verbose = FALSE) {
+  if (is.null(input_lut)) {
+    cli::cli_warn(c(
+      "No color lookup table provided",
+      "i" = "Region names will be generic (e.g., 'region_0010')",
+      "i" = "The atlas will have no palette; plotting picks its own colours"
+    ))
+    colortable <- generate_colortable_from_volume(input_volume)
+    return(list(colortable = colortable, vol_labels = colortable$idx))
+  }
+
+  vol_labels <- volume_label_ids(input_volume)
+  list(
+    colortable = keep_labels_in_volume(get_lut(input_lut), vol_labels, verbose),
+    vol_labels = vol_labels
+  )
+}
+
+
 get_lut <- function(lut) {
   colourtable <- if (is.character(lut)) {
     read_lut(lut)
