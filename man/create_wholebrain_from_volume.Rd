@@ -179,19 +179,24 @@ from bleeding onto the cortical surface during label dilation.
 
 The subcortical pipeline also gets a brain-outline reference to draw as
 grey context behind its structures, under FreeSurfer's cortex labels 3
-(left) and 42 (right). It is the cortical ribbon of FreeSurfer's \code{aseg},
-resampled onto this volume's own grid through the two headers
+(left) and 42 (right). By default that is the atlas's own cortical voxels,
+split by hemisphere at the volume's midline: left-hemisphere voxels map to
+label 3, right-hemisphere to label 42.
+
+A parcellation that covers both banks of every sulcus makes a solid mantle
+that way, and no amount of polishing can put sulci into a silhouette that
+never had any. When the cortical labels hold more than 1.5 times the voxels
+of a cortical ribbon, the context is taken from FreeSurfer's \code{aseg}
+instead, where sulcal CSF is unlabelled: its ribbon is resampled onto this
+volume's own grid through the two headers
 (\code{mri_vol2vol --regheader --nearest}) and written wherever no structure
-claims the voxel. The ribbon is used rather than the atlas's own cortical
-labels because a parcellation covers both banks of every sulcus, which
-makes its mantle solid; in the \code{aseg}, sulcal CSF is unlabelled, so the
-silhouette keeps its sulci and gyri.
+claims the voxel. An atlas whose cortical labels are already a ribbon, such
+as one derived from a surface, keeps its own.
 
 When no usable \code{aseg} is available - no FreeSurfer, no \code{aseg.mgz} for the
 subject, a failed resampling, or a ribbon that does not land inside this
 volume, which is what a volume in some other space looks like - the
-context falls back to the atlas's own cortical voxels, split by hemisphere
-at the volume's midline, and warns. That silhouette is solid.
+midline split is used and the pipeline warns.
 }
 
 \section{Human oversight}{

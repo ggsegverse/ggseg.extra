@@ -36,19 +36,24 @@
 #'
 #' The subcortical pipeline also gets a brain-outline reference to draw as
 #' grey context behind its structures, under FreeSurfer's cortex labels 3
-#' (left) and 42 (right). It is the cortical ribbon of FreeSurfer's `aseg`,
-#' resampled onto this volume's own grid through the two headers
+#' (left) and 42 (right). By default that is the atlas's own cortical voxels,
+#' split by hemisphere at the volume's midline: left-hemisphere voxels map to
+#' label 3, right-hemisphere to label 42.
+#'
+#' A parcellation that covers both banks of every sulcus makes a solid mantle
+#' that way, and no amount of polishing can put sulci into a silhouette that
+#' never had any. When the cortical labels hold more than 1.5 times the voxels
+#' of a cortical ribbon, the context is taken from FreeSurfer's `aseg`
+#' instead, where sulcal CSF is unlabelled: its ribbon is resampled onto this
+#' volume's own grid through the two headers
 #' (`mri_vol2vol --regheader --nearest`) and written wherever no structure
-#' claims the voxel. The ribbon is used rather than the atlas's own cortical
-#' labels because a parcellation covers both banks of every sulcus, which
-#' makes its mantle solid; in the `aseg`, sulcal CSF is unlabelled, so the
-#' silhouette keeps its sulci and gyri.
+#' claims the voxel. An atlas whose cortical labels are already a ribbon, such
+#' as one derived from a surface, keeps its own.
 #'
 #' When no usable `aseg` is available - no FreeSurfer, no `aseg.mgz` for the
 #' subject, a failed resampling, or a ribbon that does not land inside this
 #' volume, which is what a volume in some other space looks like - the
-#' context falls back to the atlas's own cortical voxels, split by hemisphere
-#' at the volume's midline, and warns. That silhouette is solid.
+#' midline split is used and the pipeline warns.
 #'
 #' @section Human oversight:
 #' This is the most complex pipeline in ggsegExtra and the one most likely
@@ -1857,11 +1862,12 @@ wholebrain_prepare_subcortical_volume <- function(
 
 #' Write the cortex context indices into the volume
 #'
-#' Prefers the resampled `aseg` ribbon, which is written into voxels no
-#' structure claims, and falls back to the atlas's own cortical mask split at
-#' the midline when no ribbon is available. An atlas with no cortical labels
-#' at all gets no context either way: the whole-brain split decided this
-#' parcellation has no cortex to draw.
+#' An atlas whose own cortical mask is already a ribbon keeps it, split at the
+#' midline, which is what this always did. Only a solid mantle is replaced,
+#' with the resampled `aseg` ribbon written into voxels no structure claims.
+#' The same midline split is the fallback when no ribbon can be had. An atlas
+#' with no cortical labels at all gets no context either way: the whole-brain
+#' split decided this parcellation has no cortex to draw.
 #' @noRd
 # nolint next: object_length_linter.
 wholebrain_write_cortex_context <- function(
@@ -1885,7 +1891,9 @@ wholebrain_write_cortex_context <- function(
     brain_mask = arr != 0,
     verbose = verbose
   )
-  if (is.null(ribbon)) {
+  if (
+    is.null(ribbon) || !cortex_mask_is_solid(cortical_mask, ribbon, verbose)
+  ) {
     return(wholebrain_cortex_by_midline(result, cortical_mask, vol))
   }
 
@@ -1924,6 +1932,46 @@ wholebrain_cortex_by_midline <- function(result, cortical_mask, vol) {
 #' @noRd
 aseg_cortex_idx <- function() {
   c(left = 3L, right = 42L)
+}
+
+
+#' Is the atlas's own cortical mask a solid mantle rather than a ribbon?
+#'
+#' Not every parcellation needs this fix. One derived from a surface, such as
+#' `MarsAtlas`, is already a cortical ribbon in the volume and draws a
+#' silhouette with sulci of its own, which the `aseg`'s would only replace
+#' with another brain's. One that covers both banks of every sulcus does not.
+#'
+#' The two are told apart by how many voxels the mask holds against the
+#' resampled ribbon in the same grid, which is the same anatomy measured the
+#' thin way. Measured: `MarsAtlas` 0.78, Julich 1.96, Hammersmith 2.23. The
+#' threshold sits between them with room on both sides, and both ways of
+#' being wrong leave the atlas exactly as it was.
+#'
+#' @param cortical_mask Logical array of the atlas's cortical voxels.
+#' @param ribbon The resampled `aseg` ribbon.
+#' @param verbose Report the decision.
+#' @param factor How many ribbons' worth of voxels counts as solid.
+#' @noRd
+cortex_mask_is_solid <- function(
+  cortical_mask,
+  ribbon,
+  verbose = get_verbose(),
+  factor = 1.5
+) {
+  ratio <- sum(cortical_mask) / max(1L, sum(ribbon > 0L))
+  if (ratio >= factor) {
+    return(TRUE)
+  }
+
+  if (verbose) {
+    cli::cli_alert_info(
+      "Cortical labels are already a ribbon ({round(ratio, 2)} times the
+      {.field aseg} ribbon); keeping them as the context silhouette.",
+      wrap = TRUE
+    )
+  }
+  FALSE
 }
 
 #' Resample a FreeSurfer `aseg` cortical ribbon onto a volume's own grid

@@ -3286,16 +3286,17 @@ testthat::describe("create_wholebrain_from_volume without FreeSurfer", {
 
 
 testthat::describe("wholebrain cortex context from the aseg ribbon", {
-  it("keeps only the voxels the ribbon covers", {
+  it("keeps only the voxels the ribbon covers when the mantle is solid", {
     skip_if_not_installed("RNifti")
-    arr <- array(1000L, dim = c(4, 3, 3))
+    arr <- array(1000L, dim = c(6, 3, 3))
     vol_file <- withr::local_tempfile(fileext = ".nii.gz")
     RNifti::writeNifti(RNifti::asNifti(arr), vol_file)
     out_file <- withr::local_tempfile(fileext = ".nii.gz")
 
+    # 54 cortical voxels against an 18-voxel ribbon: a solid mantle.
     left <- right <- array(FALSE, dim = dim(arr))
     left[1, , ] <- TRUE
-    right[4, , ] <- TRUE
+    right[6, , ] <- TRUE
     local_mocked_bindings(
       aseg_cortex_ribbon = function(...) mock_cortex_ribbon(left, right)
     )
@@ -3310,15 +3311,40 @@ testthat::describe("wholebrain cortex context from the aseg ribbon", {
     result <- as.array(RNifti::readNifti(out_file))
     expect_identical(sum(result == 3L), 9L)
     expect_identical(sum(result == 42L), 9L)
-    # The two middle x-slices are cortex the ribbon does not cover: the
+    # The four middle x-slices are cortex the ribbon does not cover: the
     # sulcal space that makes the silhouette read as a brain.
-    expect_identical(sum(result == 0L), 18L)
+    expect_identical(sum(result == 0L), 36L)
   })
 
-  it("draws context where the ribbon reaches past the atlas's own labels", {
+  it("never writes context over a structure", {
     skip_if_not_installed("RNifti")
-    arr <- array(0L, dim = c(4, 3, 3))
-    arr[1, , ] <- 1000L
+    arr <- array(1000L, dim = c(6, 3, 3))
+    arr[2, 2, 2] <- 10L
+    vol_file <- withr::local_tempfile(fileext = ".nii.gz")
+    RNifti::writeNifti(RNifti::asNifti(arr), vol_file)
+    out_file <- withr::local_tempfile(fileext = ".nii.gz")
+
+    ribbon <- array(0L, dim = dim(arr))
+    ribbon[1:3, , ] <- 3L
+    local_mocked_bindings(aseg_cortex_ribbon = function(...) ribbon)
+
+    wholebrain_prepare_subcortical_volume(
+      input_volume = vol_file,
+      subcortical_idx = 10L,
+      cortical_idx = 1000L,
+      output_file = out_file,
+      target_idx = 101L
+    )
+
+    result <- as.array(RNifti::readNifti(out_file))
+    expect_identical(result[2, 2, 2], 101L)
+    expect_identical(sum(result == 3L), 26L)
+  })
+
+  it("keeps a cortical mask that is already a ribbon", {
+    skip_if_not_installed("RNifti")
+    arr <- array(0L, dim = c(6, 3, 3))
+    arr[1:2, , ] <- 1000L
     vol_file <- withr::local_tempfile(fileext = ".nii.gz")
     RNifti::writeNifti(RNifti::asNifti(arr), vol_file)
     out_file <- withr::local_tempfile(fileext = ".nii.gz")
@@ -3333,33 +3359,10 @@ testthat::describe("wholebrain cortex context from the aseg ribbon", {
       output_file = out_file
     )
 
-    # The silhouette is anatomical context, not a map of the atlas's
-    # coverage, so it spans the ribbon rather than stopping at the parcels.
+    # Every cortical voxel is context and nothing else is, which is the
+    # midline split this has always done.
     result <- as.array(RNifti::readNifti(out_file))
-    expect_identical(sum(result == 3L), 36L)
-  })
-
-  it("never writes context over a structure", {
-    skip_if_not_installed("RNifti")
-    arr <- array(1000L, dim = c(4, 3, 3))
-    arr[2, 2, 2] <- 10L
-    vol_file <- withr::local_tempfile(fileext = ".nii.gz")
-    RNifti::writeNifti(RNifti::asNifti(arr), vol_file)
-    out_file <- withr::local_tempfile(fileext = ".nii.gz")
-
-    ribbon <- array(3L, dim = dim(arr))
-    local_mocked_bindings(aseg_cortex_ribbon = function(...) ribbon)
-
-    wholebrain_prepare_subcortical_volume(
-      input_volume = vol_file,
-      subcortical_idx = 10L,
-      cortical_idx = 1000L,
-      output_file = out_file,
-      target_idx = 101L
-    )
-
-    result <- as.array(RNifti::readNifti(out_file))
-    expect_identical(result[2, 2, 2], 101L)
+    expect_identical(sum(result %in% c(3L, 42L)), 18L)
   })
 
   it("does not look for an aseg when the atlas has no cortex", {
@@ -3388,6 +3391,40 @@ testthat::describe("wholebrain cortex context from the aseg ribbon", {
     expect_false(called)
     result <- as.array(RNifti::readNifti(out_file))
     expect_identical(sum(result %in% c(3L, 42L)), 0L)
+  })
+})
+
+
+testthat::describe("cortex_mask_is_solid", {
+  it("calls a mantle several ribbons thick solid", {
+    mask <- array(TRUE, dim = c(4, 4, 4))
+    ribbon <- array(0L, dim = c(4, 4, 4))
+    ribbon[1, , ] <- 3L
+    expect_true(cortex_mask_is_solid(mask, ribbon, verbose = FALSE))
+  })
+
+  it("calls a mask no thicker than the ribbon a ribbon", {
+    mask <- array(FALSE, dim = c(4, 4, 4))
+    mask[1, , ] <- TRUE
+    ribbon <- array(3L, dim = c(4, 4, 4))
+    expect_false(cortex_mask_is_solid(mask, ribbon, verbose = FALSE))
+  })
+
+  it("says which way it decided when verbose", {
+    mask <- array(FALSE, dim = c(4, 4, 4))
+    mask[1, , ] <- TRUE
+    ribbon <- array(3L, dim = c(4, 4, 4))
+    expect_message(
+      cortex_mask_is_solid(mask, ribbon, verbose = TRUE),
+      "already a ribbon"
+    )
+  })
+
+  it("survives an empty ribbon", {
+    mask <- array(TRUE, dim = c(2, 2, 2))
+    expect_true(
+      cortex_mask_is_solid(mask, array(0L, dim = c(2, 2, 2)), verbose = FALSE)
+    )
   })
 })
 
