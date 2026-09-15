@@ -21,14 +21,7 @@ options(
 
 # Helper to get test data directory
 testdata_dir <- function() {
-  testthat::test_path("testdata")
-}
-
-# Helper to skip tests if package not installed
-skip_if_not_installed <- function(pkg) {
-  if (!requireNamespace(pkg, quietly = TRUE)) {
-    testthat::skip(paste0("Package '", pkg, "' not installed"))
-  }
+  test_path("testdata")
 }
 
 # Helper to skip tests requiring FreeSurfer.
@@ -45,8 +38,8 @@ skip_if_no_freesurfer <- function() {
     }
     return(invisible(TRUE))
   }
-  testthat::skip_on_os("windows")
-  testthat::skip_if_not_installed(
+  skip_on_os("windows")
+  skip_if_not_installed(
     "freesurfer",
     minimum_version = freesurfer_min_version()
   )
@@ -54,7 +47,7 @@ skip_if_no_freesurfer <- function() {
   # when the binaries are not on PATH. Also require a representative binary to
   # be resolvable so tests that shell out (e.g. mri_info) skip instead of error.
   if (!freesurfer::have_fs() || !nzchar(Sys.which("mri_info"))) {
-    testthat::skip("FreeSurfer not available")
+    skip("FreeSurfer not available")
   }
 }
 
@@ -62,13 +55,19 @@ skip_if_no_freesurfer <- function() {
 # native geometry/plotly stack that segfaults intermittently on the parallel
 # Windows CI runner; the render path is not OS-specific, so skip it there.
 skip_render_on_windows <- function() {
-  testthat::skip_on_os("windows")
+  skip_on_os("windows")
+}
+
+# Helper to skip tests that read snapshot masks (magick decode + terra raster)
+skip_without_mask_io <- function() {
+  skip_if_not_installed("magick")
+  skip_if_not_installed("terra")
 }
 
 # Helper to skip tests requiring ImageMagick
 skip_if_no_imagemagick <- function() {
   if (!has_magick()) {
-    testthat::skip("ImageMagick not available")
+    skip("ImageMagick not available")
   }
 }
 
@@ -129,7 +128,7 @@ expect_messages <- function(expr, ...) {
     }
   )
   for (pat in patterns) {
-    testthat::expect_true(
+    expect_true(
       any(grepl(pat, rec$caught)),
       label = paste0(
         "Expected at least one message matching '",
@@ -139,7 +138,7 @@ expect_messages <- function(expr, ...) {
     )
   }
   if (length(patterns) == 0L) {
-    testthat::expect_gt(length(rec$caught), 0)
+    expect_gt(length(rec$caught), 0)
   }
   invisible(result)
 }
@@ -156,7 +155,7 @@ expect_warnings <- function(expr, regexp) {
       }
     }
   )
-  testthat::expect_gt(length(rec$caught), 0)
+  expect_gt(length(rec$caught), 0)
   invisible(result)
 }
 
@@ -285,7 +284,7 @@ skip_if_offline <- function() {
       close(con)
     },
     error = function(e) {
-      testthat::skip("No internet connection available")
+      skip("No internet connection available")
     }
   )
 }
@@ -354,10 +353,10 @@ mock_context_sf <- function(labels, view = "lateral") {
 }
 
 expect_unknown_is_context <- function(atlas, unknown_labels) {
-  testthat::expect_true(all(unknown_labels %in% atlas$data$geom$label))
-  testthat::expect_false(any(unknown_labels %in% atlas$core$label))
-  testthat::expect_false(any(unknown_labels %in% names(atlas$palette)))
-  testthat::expect_false(any(unknown_labels %in% atlas$data$vertices$label))
+  expect_true(all(unknown_labels %in% atlas$data$geom$label))
+  expect_false(any(unknown_labels %in% atlas$core$label))
+  expect_false(any(unknown_labels %in% names(atlas$palette)))
+  expect_false(any(unknown_labels %in% atlas$data$vertices$label))
 }
 
 local_fake_fsaverage <- function(
@@ -377,19 +376,19 @@ local_fake_fsaverage <- function(
     )
     file.create(file.path(subj_dir, "label", paste0(hemi, ".cortex.label")))
   }
-  testthat::local_mocked_bindings(
+  local_mocked_bindings(
     fs_subj_dir = function() tmp_dir,
     .package = "freesurfer",
     .env = env
   )
-  testthat::local_mocked_bindings(
+  local_mocked_bindings(
     read.fs.surface = function(f) {
       list(vertices = matrix(0, nrow = n_vertices, ncol = 3), faces = faces)
     },
     .package = "freesurferformats",
     .env = env
   )
-  testthat::local_mocked_bindings(
+  local_mocked_bindings(
     read_label_vertices = function(...) cortex,
     .env = env
   )
@@ -418,7 +417,7 @@ local_cache_file <- function(
 # command built.
 local_mock_vol2surf <- function(env = parent.frame()) {
   cap <- new.env()
-  testthat::local_mocked_bindings(
+  local_mocked_bindings(
     check_fs = function(abort = FALSE) invisible(TRUE),
     run_cmd = function(cmd, verbose = FALSE) {
       cap$cmd <- cmd
@@ -434,7 +433,7 @@ local_mock_vol2surf <- function(env = parent.frame()) {
 # whose `args` holds the arguments after `output_file`.
 local_mock_mri_vol2surf <- function(overlay = c(1L, 2L), env = parent.frame()) {
   cap <- new.env()
-  testthat::local_mocked_bindings(
+  local_mocked_bindings(
     mri_vol2surf = function(input_file, output_file, ...) {
       cap$args <- list(...)
       RNifti::writeNifti(
@@ -453,7 +452,7 @@ local_mock_mri_vol2surf <- function(overlay = c(1L, 2L), env = parent.frame()) {
 local_mock_mni152_path <- function(env = parent.frame()) {
   reg_file <- withr::local_tempfile(fileext = ".dat", .local_envir = env)
   file.create(reg_file)
-  testthat::local_mocked_bindings(
+  local_mocked_bindings(
     mni152_register_path = function() reg_file,
     .env = env
   )

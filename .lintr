@@ -1,2 +1,5 @@
 
-exclusions: list("inst/rstudio/templates", "inst/templates", "vignettes/*.qmd")
+exclusions: list("inst/rstudio/templates", "inst/templates", "vignettes/*.qmd",
+  # testthat is attached when tests run, but lintr cannot see that from
+  # inside a helper definition, so bare skip()/test_path() read as undefined.
+  "tests/testthat/helper.R" = list(object_usage_linter = Inf))
