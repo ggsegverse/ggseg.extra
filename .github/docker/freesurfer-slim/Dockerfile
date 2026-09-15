@@ -1,4 +1,4 @@
-ARG R_VERSION=4.5.3
+ARG R_VERSION=4.6.1
 ARG FS_VERSION=7.4.1
 
 FROM ubuntu:22.04 AS freesurfer
@@ -40,6 +40,11 @@ RUN apt-get update \
         libcurl4-openssl-dev libssl-dev libxml2-dev \
         libfontconfig1-dev libfreetype6-dev libpng-dev libtiff-dev libjpeg-dev \
     && rm -rf /var/lib/apt/lists/*
+# rocker pins CRAN to the snapshot current at its R release, which strands
+# packages published since; track the rolling snapshot like the other runners.
+ENV CRAN=https://p3m.dev/cran/__linux__/noble/latest
+RUN sed -i "s|CRAN = '[^']*'|CRAN = '${CRAN}'|" /usr/local/lib/R/etc/Rprofile.site \
+    && grep -q "${CRAN}" /usr/local/lib/R/etc/Rprofile.site
 COPY --from=freesurfer /opt/freesurfer /opt/freesurfer
 ENV OS=Linux \
     FS_OVERRIDE=0 \
