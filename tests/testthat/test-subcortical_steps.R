@@ -1171,3 +1171,147 @@ testthat::describe("subcort_create_meshes", {
     )
   })
 })
+
+
+testthat::describe("subcort_snapshot_names", {
+  it("names every structure x view combination", {
+    colortable <- data.frame(
+      idx = c(10, 11),
+      label = c("Left Putamen", "Right-Putamen"),
+      stringsAsFactors = FALSE
+    )
+    slabs <- data.frame(
+      name = c("axial_1", "axial_2"),
+      stringsAsFactors = FALSE
+    )
+
+    names <- subcort_snapshot_names(colortable, slabs)
+
+    expect_length(names, 4L)
+    expect_true("axial_1_Left_Putamen.png" %in% names)
+    expect_false(any(grepl("cortex", names)))
+  })
+
+  it("adds the cortex slices when they are drawn", {
+    local_mocked_bindings(extract_hemi_from_view = function(...) "")
+    colortable <- data.frame(idx = 10, label = "a", stringsAsFactors = FALSE)
+    slabs <- data.frame(name = "axial_1", stringsAsFactors = FALSE)
+    cortex_slices <- data.frame(
+      view = "axial",
+      name = "axial_1",
+      stringsAsFactors = FALSE
+    )
+
+    names <- subcort_snapshot_names(colortable, slabs, cortex_slices)
+
+    expect_true("axial_1_cortex_.png" %in% names)
+  })
+})
+
+
+testthat::describe("prune_stale_snapshots", {
+  it("removes images no slab in this run can produce", {
+    dirs <- mock_subcort_dirs()
+    for (dir in c(dirs$snapshots, dirs$processed, dirs$masks)) {
+      file.create(file.path(dir, c("axial_1_a.png", "axial_9_a.png")))
+      file.create(file.path(dir, "cache_manifest.rds"))
+    }
+
+    expect_message(
+      stale <- prune_stale_snapshots(dirs, "axial_1_a.png"),
+      "earlier slab configuration"
+    )
+
+    expect_length(stale, 3L)
+    for (dir in c(dirs$snapshots, dirs$processed, dirs$masks)) {
+      expect_true(file.exists(file.path(dir, "axial_1_a.png")))
+      expect_false(file.exists(file.path(dir, "axial_9_a.png")))
+      expect_true(file.exists(file.path(dir, "cache_manifest.rds")))
+    }
+  })
+
+  it("says nothing when every image belongs to this run", {
+    dirs <- mock_subcort_dirs()
+    file.create(file.path(dirs$snapshots, "axial_1_a.png"))
+
+    expect_silent(stale <- prune_stale_snapshots(dirs, "axial_1_a.png"))
+    expect_length(stale, 0L)
+  })
+})
+
+
+testthat::describe("cortex silhouette snapshot staleness", {
+  it("redraws an unstamped snapshot and drops what was made from it", {
+    dirs <- mock_subcort_dirs()
+    outfile <- file.path(dirs$snapshots, "ax_1_cortex_left.png")
+    file.create(outfile)
+    for (dir in c(dirs$processed, dirs$masks)) {
+      file.create(file.path(dir, "ax_1_cortex_left.png"))
+    }
+
+    drawn <- 0L
+    local_mocked_bindings(
+      extract_hemi_from_view = function(...) "left",
+      snapshot_cortex_slice = function(...) {
+        drawn <<- drawn + 1L
+        invisible(NULL)
+      }
+    )
+    cortex_slices <- data.frame(
+      x = NA,
+      y = NA,
+      z = 5,
+      view = "axial",
+      name = "ax_1",
+      stringsAsFactors = FALSE
+    )
+
+    subcort_snapshot_cortex(
+      array(1L, dim = c(4, 4, 4)),
+      cortex_slices,
+      dirs,
+      skip_existing = TRUE
+    )
+
+    expect_identical(drawn, 1L)
+    expect_false(file.exists(file.path(dirs$processed, basename(outfile))))
+    expect_false(file.exists(file.path(dirs$masks, basename(outfile))))
+    expect_identical(
+      cache_file_version(outfile),
+      cache_format_version()
+    )
+  })
+
+  it("reuses a snapshot stamped by this cache format", {
+    dirs <- mock_subcort_dirs()
+    outfile <- file.path(dirs$snapshots, "ax_1_cortex_left.png")
+    file.create(outfile)
+    stamp_cache_files(outfile)
+
+    drawn <- 0L
+    local_mocked_bindings(
+      extract_hemi_from_view = function(...) "left",
+      snapshot_cortex_slice = function(...) {
+        drawn <<- drawn + 1L
+        invisible(NULL)
+      }
+    )
+    cortex_slices <- data.frame(
+      x = NA,
+      y = NA,
+      z = 5,
+      view = "axial",
+      name = "ax_1",
+      stringsAsFactors = FALSE
+    )
+
+    subcort_snapshot_cortex(
+      array(1L, dim = c(4, 4, 4)),
+      cortex_slices,
+      dirs,
+      skip_existing = TRUE
+    )
+
+    expect_identical(drawn, 0L)
+  })
+})

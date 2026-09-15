@@ -7,17 +7,19 @@
 #' silently reuse output from the pipeline the change fixed.
 #'
 #' Stamped, and so checked before reuse: the `.rds` step caches, the contour
-#' `.rda` files, and the processed-image and mask directories. Not stamped,
-#' and so still reused whenever the file exists: the snapshot PNGs, the
-#' subcortical mesh directory (`dirs$meshes`), and the lookup table and
-#' volume the wholebrain pipeline hands to the subcortical one. This is the
-#' canonical list; `NEWS.md` and `.github/copilot-instructions.md` point
-#' here rather than restating it.
+#' `.rda` files, the processed-image and mask directories, and the cortex
+#' silhouette snapshots (the one snapshot whose content depends on how the
+#' pipeline builds its context volume - a stale one is redrawn rather than
+#' aborted on). Not stamped, and so still reused whenever the file exists:
+#' the structure snapshot PNGs, the subcortical mesh directory
+#' (`dirs$meshes`), and the lookup table and volume the wholebrain pipeline
+#' hands to the subcortical one. This is the canonical list; `NEWS.md` and
+#' `.github/copilot-instructions.md` point here rather than restating it.
 #'
 #' @return Integer format version.
 #' @noRd
 cache_format_version <- function() {
-  1L
+  2L
 }
 
 cache_manifest_name <- "cache_manifest.rds"

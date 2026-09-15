@@ -1,3 +1,42 @@
+# ggseg.extra 1.9.9.9030
+
+- The grey cortical silhouette `create_wholebrain_from_volume()` draws behind
+  a subcortical atlas now has sulci and gyri. It was built from the union of
+  the atlas's own cortical labels, and a parcellation covers both banks of
+  every sulcus - Julich's maximum probability map is 751,113 cortical voxels
+  on the left alone - so the mantle was already solid in the volume, before
+  any contour was traced or any polishing applied. The shape now comes from
+  FreeSurfer's `aseg`, where sulcal CSF is unlabelled: it is resampled onto
+  the atlas volume's own grid with `mri_vol2vol --regheader --nearest`, which
+  goes through the two headers and invents no transform, and its cortical
+  ribbon is written wherever no structure claims the voxel. This is where
+  `ggsegHO`'s `ho_sub` silhouette has always come from.
+
+  The parcels themselves are untouched; only the `cortex_` context changes.
+
+  When no usable `aseg` is available - no FreeSurfer, no `aseg.mgz` for the
+  subject, a failed resampling, or a ribbon that lands outside the volume
+  because it is not in the space its header claims - the context falls back
+  to the old solid silhouette and says so.
+
+- The cache format version is now 2, because the context volume the previous
+  one cached is wrong rather than merely old. Cached steps written by an
+  earlier ggseg.extra are recomputed, and the cortex silhouette snapshot is
+  now stamped too, so a rebuild redraws it instead of reusing the picture the
+  old pipeline drew and drops the processed and mask copies made from it.
+  Every whole-brain atlas has to be rebuilt to pick up the sulci; this is what
+  makes `skip_existing = TRUE` rebuild them rather than keep the old
+  silhouette. The structure snapshots are unchanged and still reused.
+
+- The subcortical pipeline no longer traces images left behind by a run with a
+  different slab configuration. Snapshots, processed images and masks are read
+  back whole - contour extraction traces every mask it finds - so a PNG named
+  for a slab this run does not have was assembled into the atlas as a row with
+  no view and no geometry, and `st_coordinates()` then failed at
+  `atlas_view_gather()` with "number of columns of matrices must match". Any
+  image this configuration cannot name is now cleared once the slabs are
+  known, whether they were computed or loaded from cache.
+
 # ggseg.extra 1.9.9.9029
 
 - `atlas_smooth()` no longer multiplies an atlas's vertex count. Rounding a

@@ -203,11 +203,7 @@ snapshot_cortex_slice <- function(
   height = 400,
   skip_existing = get_skip_existing()
 ) {
-  output_dir <- path.expand(output_dir)
-  outfile <- as.character(fs::path(
-    output_dir,
-    paste0(view_name, "_cortex_", hemi, ".png")
-  ))
+  outfile <- cortex_slice_file(path.expand(output_dir), view_name, hemi)
 
   if (skip_existing && file.exists(outfile)) {
     return(invisible(outfile))
@@ -216,6 +212,16 @@ snapshot_cortex_slice <- function(
   pos <- switch(slice_view, "axial" = z, "coronal" = y, "sagittal" = x)
   slice <- extract_slice_2d(vol, slice_view, pos, hemi = hemi)
   render_slice_png(slice, outfile, width = width, height = height)
+}
+
+
+#' Path of the cortex reference snapshot for one view
+#' @noRd
+cortex_slice_file <- function(output_dir, view_name, hemi) {
+  as.character(fs::path(
+    output_dir,
+    paste0(view_name, "_cortex_", hemi, ".png")
+  ))
 }
 
 

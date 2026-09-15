@@ -177,11 +177,21 @@ listed in the LUT are kept; all other non-zero voxels are zeroed out.
 This prevents unlisted structures (e.g. white matter, ventricle masks)
 from bleeding onto the cortical surface during label dilation.
 
-Cortical voxels are also used to generate the brain-outline reference
-geometry for the subcortical pipeline. The volume's orientation matrix
-(\code{xform}) is used to split cortical voxels by hemisphere: left-hemisphere
-voxels map to FreeSurfer label 3 (left cortex) and right-hemisphere to
-label 42 (right cortex).
+The subcortical pipeline also gets a brain-outline reference to draw as
+grey context behind its structures, under FreeSurfer's cortex labels 3
+(left) and 42 (right). It is the cortical ribbon of FreeSurfer's \code{aseg},
+resampled onto this volume's own grid through the two headers
+(\code{mri_vol2vol --regheader --nearest}) and written wherever no structure
+claims the voxel. The ribbon is used rather than the atlas's own cortical
+labels because a parcellation covers both banks of every sulcus, which
+makes its mantle solid; in the \code{aseg}, sulcal CSF is unlabelled, so the
+silhouette keeps its sulci and gyri.
+
+When no usable \code{aseg} is available - no FreeSurfer, no \code{aseg.mgz} for the
+subject, a failed resampling, or a ribbon that does not land inside this
+volume, which is what a volume in some other space looks like - the
+context falls back to the atlas's own cortical voxels, split by hemisphere
+at the volume's midline, and warns. That silhouette is solid.
 }
 
 \section{Human oversight}{

@@ -177,6 +177,75 @@ subcort_create_snapshots <- function(
 }
 
 
+#' Every snapshot filename this run can produce
+#'
+#' A structure with no voxels in a slab is skipped rather than drawn, so this
+#' is a superset of what actually appears. It is used to tell this run's
+#' output from an earlier one's, which only needs the superset.
+#' @noRd
+subcort_snapshot_names <- function(colortable, slabs, cortex_slices = NULL) {
+  grid <- expand.grid(
+    label = colortable$label,
+    view = slabs$name,
+    stringsAsFactors = FALSE
+  )
+  structures <- paste0(grid$view, "_", sanitize_label(grid$label), ".png")
+
+  if (is.null(cortex_slices)) {
+    return(structures)
+  }
+
+  cortex <- vapply(
+    seq_len(nrow(cortex_slices)),
+    function(i) {
+      cs <- cortex_slices[i, ]
+      basename(cortex_slice_file(
+        ".",
+        cs$name,
+        extract_hemi_from_view(
+          cs$view,
+          cs$name
+        )
+      ))
+    },
+    character(1)
+  )
+  c(structures, cortex)
+}
+
+
+#' Delete snapshots, and the images made from them, that this run cannot draw
+#'
+#' The snapshot, processed and mask directories are read back whole - contour
+#' extraction traces every mask it finds - so a PNG left behind by a run with
+#' different slabs is silently assembled into the atlas. It carries a view
+#' name the current configuration does not know, which lands in the atlas as a
+#' row with no view and no geometry, and `st_coordinates()` then fails on the
+#' mix of empty and non-empty geometries with "number of columns of matrices
+#' must match". Nothing downstream can tell those files from this run's, so
+#' they are cleared here, where the configuration that names them is known.
+#' @noRd
+prune_stale_snapshots <- function(dirs, expected) {
+  stale <- unlist(lapply(
+    c(dirs$snapshots, dirs$processed, dirs$masks),
+    function(dir) {
+      files <- list.files(dir, pattern = "\\.png$")
+      as.character(fs::path(dir, setdiff(files, expected)))
+    }
+  ))
+
+  if (length(stale) == 0L) {
+    return(invisible(character()))
+  }
+
+  unlink(stale)
+  cli::cli_alert_info(
+    "Removed {length(stale)} image{?s} left by an earlier slab configuration"
+  )
+  invisible(stale)
+}
+
+
 #' Snapshot every structure x view combination of a subcortical atlas
 #' @noRd
 subcort_snapshot_structures <- function(
@@ -299,6 +368,15 @@ subcort_cortex_volume <- function(vol, dims, cortex_labels) {
 
 
 #' Render the cortex reference outline for each cortex slice
+#'
+#' Unlike the structure snapshots, these are stamped with the cache format
+#' version. The silhouette is the one snapshot whose content depends on how
+#' the pipeline builds its context volume, so a pipeline that builds it
+#' differently must not reuse the picture the old one drew - and an
+#' unstamped PNG from before this was tracked counts as stale. Redrawing a
+#' handful of slices is cheap, so a stale one is replaced rather than
+#' aborted on, and the processed and mask copies made from it are dropped
+#' so the image step remakes those too.
 #' @noRd
 subcort_snapshot_cortex <- function(
   cortex_vol,
@@ -306,22 +384,53 @@ subcort_snapshot_cortex <- function(
   dirs,
   skip_existing
 ) {
-  invisible(lapply(seq_len(nrow(cortex_slices)), function(i) {
-    cs <- cortex_slices[i, ]
-    hemi <- extract_hemi_from_view(cs$view, cs$name)
+  files <- vapply(
+    seq_len(nrow(cortex_slices)),
+    function(i) {
+      cs <- cortex_slices[i, ]
+      hemi <- extract_hemi_from_view(cs$view, cs$name)
+      outfile <- cortex_slice_file(dirs$snapshots, cs$name, hemi)
 
-    snapshot_cortex_slice(
-      vol = cortex_vol,
-      x = cs$x,
-      y = cs$y,
-      z = cs$z,
-      slice_view = cs$view,
-      view_name = cs$name,
-      hemi = hemi,
-      output_dir = dirs$snapshots,
-      skip_existing = skip_existing
-    )
-  }))
+      if (!cortex_snapshot_is_current(outfile, skip_existing)) {
+        snapshot_cortex_slice(
+          vol = cortex_vol,
+          x = cs$x,
+          y = cs$y,
+          z = cs$z,
+          slice_view = cs$view,
+          view_name = cs$name,
+          hemi = hemi,
+          output_dir = dirs$snapshots,
+          skip_existing = FALSE
+        )
+        drop_derived_images(outfile, dirs)
+      }
+      outfile
+    },
+    character(1)
+  )
+
+  invisible(stamp_cache_files(files[file.exists(files)]))
+}
+
+
+#' Is an existing cortex snapshot reusable under this cache format?
+#' @noRd
+cortex_snapshot_is_current <- function(outfile, skip_existing) {
+  skip_existing &&
+    file.exists(outfile) &&
+    !is_stale_version(cache_file_version(outfile))
+}
+
+
+#' Remove the processed and mask copies derived from a snapshot
+#' @noRd
+drop_derived_images <- function(snapshot_file, dirs) {
+  derived <- fs::path(
+    c(dirs$processed, dirs$masks),
+    basename(snapshot_file)
+  )
+  unlink(as.character(derived))
 }
 
 
