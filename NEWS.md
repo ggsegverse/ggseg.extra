@@ -3,8 +3,8 @@
 - The grey cortical silhouette `create_wholebrain_from_volume()` draws behind
   a subcortical atlas now has sulci and gyri when the parcellation it is built
   from cannot give it any. It came from the union of the atlas's own cortical
-  labels, and a parcellation that covers both banks of every sulcus - Julich's
-  maximum probability map is 751,113 cortical voxels on the left alone - is a
+  labels, and a parcellation that covers both banks of every sulcus - the Julich
+  maximum probability map holds 751,113 cortical voxels on the left alone - is a
   solid mantle in the volume, before any contour is traced or any polishing
   applied. The shape now comes from FreeSurfer's `aseg`, where sulcal CSF is
   unlabelled: it is resampled onto the atlas volume's own grid with

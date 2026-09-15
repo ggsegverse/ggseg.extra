@@ -3373,10 +3373,11 @@ testthat::describe("wholebrain cortex context from the aseg ribbon", {
     RNifti::writeNifti(RNifti::asNifti(arr), vol_file)
     out_file <- withr::local_tempfile(fileext = ".nii.gz")
 
-    called <- FALSE
+    seen <- new.env()
+    seen$called <- FALSE
     local_mocked_bindings(
       aseg_cortex_ribbon = function(...) {
-        called <<- TRUE
+        seen$called <- TRUE
         NULL
       }
     )
@@ -3388,7 +3389,7 @@ testthat::describe("wholebrain cortex context from the aseg ribbon", {
       output_file = out_file
     )
 
-    expect_false(called)
+    expect_false(seen$called)
     result <- as.array(RNifti::readNifti(out_file))
     expect_identical(sum(result %in% c(3L, 42L)), 0L)
   })

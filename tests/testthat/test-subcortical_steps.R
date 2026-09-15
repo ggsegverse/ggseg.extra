@@ -1189,7 +1189,7 @@ testthat::describe("subcort_snapshot_names", {
 
     expect_length(names, 4L)
     expect_true("axial_1_Left_Putamen.png" %in% names)
-    expect_false(any(grepl("cortex", names)))
+    expect_false(any(grepl("cortex", names, fixed = TRUE)))
   })
 
   it("adds the cortex slices when they are drawn", {
@@ -1249,11 +1249,11 @@ testthat::describe("cortex silhouette snapshot staleness", {
       file.create(file.path(dir, "ax_1_cortex_left.png"))
     }
 
-    drawn <- 0L
+    .cap$drawn <- 0L
     local_mocked_bindings(
       extract_hemi_from_view = function(...) "left",
       snapshot_cortex_slice = function(...) {
-        drawn <<- drawn + 1L
+        .cap$drawn <- .cap$drawn + 1L
         invisible(NULL)
       }
     )
@@ -1273,7 +1273,7 @@ testthat::describe("cortex silhouette snapshot staleness", {
       skip_existing = TRUE
     )
 
-    expect_identical(drawn, 1L)
+    expect_identical(.cap$drawn, 1L)
     expect_false(file.exists(file.path(dirs$processed, basename(outfile))))
     expect_false(file.exists(file.path(dirs$masks, basename(outfile))))
     expect_identical(
@@ -1288,11 +1288,11 @@ testthat::describe("cortex silhouette snapshot staleness", {
     file.create(outfile)
     stamp_cache_files(outfile)
 
-    drawn <- 0L
+    .cap$drawn <- 0L
     local_mocked_bindings(
       extract_hemi_from_view = function(...) "left",
       snapshot_cortex_slice = function(...) {
-        drawn <<- drawn + 1L
+        .cap$drawn <- .cap$drawn + 1L
         invisible(NULL)
       }
     )
@@ -1312,6 +1312,6 @@ testthat::describe("cortex silhouette snapshot staleness", {
       skip_existing = TRUE
     )
 
-    expect_identical(drawn, 0L)
+    expect_identical(.cap$drawn, 0L)
   })
 })
