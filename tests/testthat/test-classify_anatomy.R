@@ -18,29 +18,36 @@ cortical_sheet_aseg <- function() {
   aseg
 }
 
+cortical_sheet_lut <- function() {
+  data.frame(
+    idx = 1:2,
+    label = c("thin_sheet", "deep_blob"),
+    R = c(10L, 20L),
+    G = c(10L, 20L),
+    B = c(10L, 20L),
+    A = 0L,
+    stringsAsFactors = FALSE
+  )
+}
+
+# Copies rather than returning source_file, because the production caller
+# unlinks whatever it gets back and would take the fixture with it.
 mocked_resample <- function(source_file, target, verbose) {
   copy <- tempfile(fileext = ".nii.gz")
   file.copy(source_file, copy)
   copy
 }
 
-small_atlas_data <- function(labels, vertex_counts) {
-  bind_rows(mapply(
-    function(lbl, n) {
-      tibble(
-        hemi = "left",
-        region = lbl,
-        label = paste0("lh_", lbl),
-        colour = "#FF0000",
-        vertices = list(seq_len(n) - 1L),
-        source_label = lbl,
-        source_idx = match(lbl, labels)
-      )
-    },
-    labels,
-    vertex_counts,
-    SIMPLIFY = FALSE
-  ))
+# Stands in for the FreeSurfer subject: writes the aseg array to a file and
+# points the production lookup and resample at it.
+local_aseg <- function(aseg = cortical_sheet_aseg(), env = parent.frame()) {
+  aseg_file <- write_test_volume(aseg)
+  withr::defer(unlink(aseg_file), envir = env)
+  local_mocked_bindings(
+    aparc_aseg_path = function(subject) aseg_file,
+    resample_volume_to_grid = mocked_resample,
+    .env = env
+  )
 }
 
 
@@ -55,423 +62,6 @@ testthat::describe("subcortical_grey_idx()", {
     expect_true(all(
       c(10L, 17L, 18L, 49L, 53L, 54L) %in% subcortical_grey_idx()
     ))
-  })
-})
-
-
-testthat::describe("label_composition()", {
-  it("measures where each label sits, not how large it is", {
-    volume <- write_test_volume(cortical_sheet_volume())
-    aseg_file <- write_test_volume(cortical_sheet_aseg())
-    local_mocked_bindings(
-      aparc_aseg_path = function(subject) aseg_file,
-      resample_volume_to_grid = mocked_resample
-    )
-    lut <- data.frame(
-      idx = 1:2,
-      label = c("thin_sheet", "deep_blob"),
-      stringsAsFactors = FALSE
-    )
-
-    comp <- label_composition(volume, lut, verbose = 0L)
-
-    expect_identical(comp$label, c("thin_sheet", "deep_blob"))
-    expect_identical(comp$cortex, c(1, 0))
-    expect_identical(comp$subcortex, c(0, 1))
-  })
-
-  it("does not count ventricle voxels as grey matter", {
-    arr <- array(0L, dim = c(10L, 10L, 10L))
-    arr[1:8, 1, 1] <- 1L
-    volume <- write_test_volume(arr)
-
-    aseg <- array(2L, dim = c(10L, 10L, 10L))
-    aseg[1:6, 1, 1] <- 4L
-    aseg[7:8, 1, 1] <- 1001L
-    aseg_file <- write_test_volume(aseg)
-    local_mocked_bindings(
-      aparc_aseg_path = function(subject) aseg_file,
-      resample_volume_to_grid = mocked_resample
-    )
-
-    lut <- data.frame(idx = 1L, label = "beside_ventricle")
-    comp <- label_composition(volume, lut, verbose = 0L)
-
-    expect_identical(comp$subcortex, 0)
-    expect_equal(comp$cortex, 0.25)
-    expect_identical(
-      classify_labels_by_anatomy(comp)$cortical,
-      "beside_ventricle"
-    )
-  })
-
-  it("refuses an aseg that lands outside the volume's brain", {
-    arr <- array(0L, dim = c(10L, 10L, 10L))
-    arr[1:4, 1:4, 1] <- 1L
-    volume <- write_test_volume(arr)
-
-    aseg <- array(0L, dim = c(10L, 10L, 10L))
-    aseg[1:4, 1:4, 10] <- 1001L
-    aseg_file <- write_test_volume(aseg)
-    local_mocked_bindings(
-      aparc_aseg_path = function(subject) aseg_file,
-      resample_volume_to_grid = mocked_resample
-    )
-
-    lut <- data.frame(idx = 1L, label = "somewhere_else")
-    expect_warning(
-      expect_null(label_composition(volume, lut, verbose = 0L)),
-      "not in the same space"
-    )
-  })
-
-  it("refuses an aseg on a different grid", {
-    volume <- write_test_volume(cortical_sheet_volume())
-    aseg_file <- write_test_volume(array(1001L, dim = c(8L, 8L, 8L)))
-    local_mocked_bindings(
-      aparc_aseg_path = function(subject) aseg_file,
-      resample_volume_to_grid = mocked_resample
-    )
-
-    lut <- data.frame(idx = 1L, label = "thin_sheet")
-    expect_warning(
-      expect_null(label_composition(volume, lut, verbose = 0L)),
-      "does not share the volume's grid"
-    )
-  })
-
-  it("refuses an aseg with no grey matter at all", {
-    volume <- write_test_volume(cortical_sheet_volume())
-    aseg_file <- write_test_volume(array(2L, dim = c(10L, 10L, 10L)))
-    local_mocked_bindings(
-      aparc_aseg_path = function(subject) aseg_file,
-      resample_volume_to_grid = mocked_resample
-    )
-
-    lut <- data.frame(idx = 1L, label = "thin_sheet")
-    expect_warning(
-      expect_null(label_composition(volume, lut, verbose = 0L)),
-      "no grey matter"
-    )
-  })
-
-  it("returns NULL when FreeSurfer has no aparc\\+aseg to offer", {
-    volume <- write_test_volume(cortical_sheet_volume())
-    local_mocked_bindings(aparc_aseg_path = function(subject) NULL)
-
-    lut <- data.frame(idx = 1L, label = "thin_sheet")
-    expect_null(label_composition(volume, lut, verbose = 0L))
-  })
-
-  it("returns NULL when no lookup-table label has any voxel", {
-    volume <- write_test_volume(cortical_sheet_volume())
-    aseg_file <- write_test_volume(cortical_sheet_aseg())
-    local_mocked_bindings(
-      aparc_aseg_path = function(subject) aseg_file,
-      resample_volume_to_grid = mocked_resample
-    )
-
-    lut <- data.frame(idx = 99L, label = "absent")
-    expect_warning(
-      expect_null(label_composition(volume, lut, verbose = 0L)),
-      "no lookup-table label has any voxel"
-    )
-  })
-
-  it("returns NULL when the volume cannot be read", {
-    volume <- withr::local_tempfile(fileext = ".nii.gz")
-    file.create(volume)
-    aseg_file <- write_test_volume(cortical_sheet_aseg())
-    local_mocked_bindings(
-      aparc_aseg_path = function(subject) aseg_file,
-      resample_volume_to_grid = mocked_resample
-    )
-
-    lut <- data.frame(idx = 1L, label = "thin_sheet")
-    expect_warning(
-      expect_null(label_composition(volume, lut, verbose = 0L)),
-      "not a readable 3D volume"
-    )
-  })
-})
-
-
-testthat::describe("classify_labels_by_anatomy()", {
-  it("separates cerebellum before cortex", {
-    comp <- data.frame(
-      idx = 1:2,
-      label = c("tentorium_straddler", "temporal"),
-      cortex = c(0.3, 0.9),
-      subcortex = c(0, 0),
-      cerebellum = c(0.6, 0),
-      brainstem = c(0, 0)
-    )
-    result <- classify_labels_by_anatomy(comp)
-    expect_identical(result$cerebellar, "tentorium_straddler")
-    expect_identical(result$cortical, "temporal")
-  })
-
-  it("keeps a white-matter label out of cortex despite a stray ribbon voxel", {
-    comp <- data.frame(
-      idx = 1L,
-      label = "deep_white",
-      cortex = 0.01,
-      subcortex = 0,
-      cerebellum = 0,
-      brainstem = 0
-    )
-    expect_identical(classify_labels_by_anatomy(comp)$subcortical, "deep_white")
-  })
-
-  it("calls a label with no labelled grey subcortical", {
-    comp <- data.frame(
-      idx = 1L,
-      label = "unlabelled",
-      cortex = 0,
-      subcortex = 0,
-      cerebellum = 0,
-      brainstem = 0
-    )
-    expect_identical(classify_labels_by_anatomy(comp)$subcortical, "unlabelled")
-  })
-})
-
-
-testthat::describe("wholebrain_classify_labels() anatomy priority", {
-  it("calls a thin cortical sheet cortical even below min_vertices", {
-    volume <- write_test_volume(cortical_sheet_volume())
-    aseg_file <- write_test_volume(cortical_sheet_aseg())
-    local_mocked_bindings(
-      aparc_aseg_path = function(subject) aseg_file,
-      resample_volume_to_grid = mocked_resample
-    )
-    ad <- small_atlas_data(c("thin_sheet", "deep_blob"), c(20, 19))
-    ct <- data.frame(
-      idx = 1:2,
-      label = c("thin_sheet", "deep_blob"),
-      stringsAsFactors = FALSE
-    )
-
-    result <- wholebrain_classify_labels(
-      ad,
-      colortable = ct,
-      volume = volume,
-      min_vertices = 50L
-    )
-
-    expect_identical(result$cortical_labels, "thin_sheet")
-    expect_identical(result$subcortical_labels, "deep_blob")
-  })
-
-  it("leaves labels with no voxels of their own subcortical", {
-    volume <- write_test_volume(cortical_sheet_volume())
-    aseg_file <- write_test_volume(cortical_sheet_aseg())
-    local_mocked_bindings(
-      aparc_aseg_path = function(subject) aseg_file,
-      resample_volume_to_grid = mocked_resample
-    )
-    ad <- small_atlas_data("thin_sheet", 20)
-    ct <- data.frame(
-      idx = c(1L, 99L),
-      label = c("thin_sheet", "never_drawn"),
-      stringsAsFactors = FALSE
-    )
-
-    result <- wholebrain_classify_labels(
-      ad,
-      colortable = ct,
-      volume = volume,
-      min_vertices = 50L
-    )
-
-    expect_identical(result$cortical_labels, "thin_sheet")
-    expect_identical(result$subcortical_labels, "never_drawn")
-  })
-
-  it("never overrides an explicit type column", {
-    volume <- write_test_volume(cortical_sheet_volume())
-    local_mocked_bindings(
-      label_composition = function(...) {
-        cli::cli_abort("Anatomy must not run when the LUT declares a type")
-      }
-    )
-    ad <- small_atlas_data(c("thin_sheet", "deep_blob"), c(20, 19))
-    ct <- data.frame(
-      idx = 1:2,
-      label = c("thin_sheet", "deep_blob"),
-      type = c("subcortical", "cortical"),
-      stringsAsFactors = FALSE
-    )
-
-    result <- wholebrain_classify_labels(
-      ad,
-      colortable = ct,
-      volume = volume,
-      min_vertices = 50L
-    )
-
-    expect_identical(result$cortical_labels, "deep_blob")
-    expect_identical(result$subcortical_labels, "thin_sheet")
-  })
-
-  it("never overrides explicit label vectors", {
-    volume <- write_test_volume(cortical_sheet_volume())
-    local_mocked_bindings(
-      label_composition = function(...) {
-        cli::cli_abort("Anatomy must not run when labels are given explicitly")
-      }
-    )
-    ad <- small_atlas_data(c("thin_sheet", "deep_blob"), c(20, 19))
-    ct <- data.frame(
-      idx = 1:2,
-      label = c("thin_sheet", "deep_blob"),
-      stringsAsFactors = FALSE
-    )
-
-    result <- wholebrain_classify_labels(
-      ad,
-      colortable = ct,
-      volume = volume,
-      min_vertices = 50L,
-      subcortical_labels = "thin_sheet",
-      cortical_labels = "deep_blob"
-    )
-
-    expect_identical(result$cortical_labels, "deep_blob")
-    expect_identical(result$subcortical_labels, "thin_sheet")
-  })
-
-  it("reports the anatomical classification when verbose", {
-    volume <- write_test_volume(cortical_sheet_volume())
-    aseg_file <- write_test_volume(cortical_sheet_aseg())
-    local_mocked_bindings(
-      aparc_aseg_path = function(subject) aseg_file,
-      resample_volume_to_grid = mocked_resample
-    )
-    ad <- small_atlas_data(c("thin_sheet", "deep_blob"), c(20, 19))
-    ct <- data.frame(
-      idx = 1:2,
-      label = c("thin_sheet", "deep_blob"),
-      stringsAsFactors = FALSE
-    )
-
-    expect_messages(
-      wholebrain_classify_labels(
-        ad,
-        colortable = ct,
-        volume = volume,
-        min_vertices = 50L,
-        verbose = TRUE
-      ),
-      "Classified 2 labels by aparc\\+aseg anatomy"
-    )
-  })
-})
-
-
-testthat::describe("wholebrain_classify_labels() vertex-count fallback", {
-  it("falls back to the vertex count without a volume, and warns", {
-    ad <- small_atlas_data(c("big", "small"), c(100, 10))
-
-    expect_warning(
-      result <- wholebrain_classify_labels(ad, min_vertices = 50L),
-      "Classified 2 labels by surface vertex count, not by anatomy"
-    )
-
-    expect_identical(result$cortical_labels, "big")
-    expect_identical(result$subcortical_labels, "small")
-  })
-
-  it("falls back when the colortable has no idx column", {
-    volume <- write_test_volume(cortical_sheet_volume())
-    ad <- small_atlas_data(c("big", "small"), c(100, 10))
-    ct <- data.frame(label = c("big", "small"), stringsAsFactors = FALSE)
-
-    expect_warning(
-      result <- wholebrain_classify_labels(
-        ad,
-        colortable = ct,
-        volume = volume,
-        min_vertices = 50L
-      ),
-      "by surface vertex count"
-    )
-    expect_identical(result$cortical_labels, "big")
-  })
-
-  it("falls back when FreeSurfer cannot supply an aparc\\+aseg", {
-    volume <- write_test_volume(cortical_sheet_volume())
-    local_mocked_bindings(have_fs_quietly = function() FALSE)
-    ad <- small_atlas_data(c("big", "small"), c(100, 10))
-    ct <- data.frame(
-      idx = 1:2,
-      label = c("big", "small"),
-      stringsAsFactors = FALSE
-    )
-
-    expect_warning(
-      expect_warning(
-        result <- wholebrain_classify_labels(
-          ad,
-          colortable = ct,
-          volume = volume,
-          min_vertices = 50L
-        ),
-        "FreeSurfer is not available"
-      ),
-      "by surface vertex count"
-    )
-    expect_identical(result$cortical_labels, "big")
-  })
-
-  it("stays quiet when nothing is left for it to guess at", {
-    ad <- small_atlas_data(c("big", "small"), c(100, 10))
-    expect_no_warning(
-      wholebrain_classify_labels(
-        ad,
-        min_vertices = 50L,
-        cortical_labels = "big",
-        subcortical_labels = "small"
-      )
-    )
-  })
-})
-
-
-testthat::describe("aparc_aseg_path()", {
-  it("warns when FreeSurfer is not available", {
-    local_mocked_bindings(have_fs_quietly = function() FALSE)
-    expect_warning(
-      expect_null(aparc_aseg_path("cvs_avg35_inMNI152")),
-      "FreeSurfer is not available"
-    )
-  })
-
-  it("warns when the subject has no aparc\\+aseg", {
-    local_mocked_bindings(have_fs_quietly = function() TRUE)
-    local_mocked_bindings(
-      fs_subj_dir = function() {
-        withr::local_tempdir(.local_envir = parent.frame(2))
-      },
-      .package = "freesurfer"
-    )
-    expect_warning(
-      expect_null(aparc_aseg_path("no_such_subject")),
-      "does not exist"
-    )
-  })
-})
-
-
-testthat::describe("resample_volume_to_grid()", {
-  it("warns and returns NULL when mri_vol2vol fails", {
-    local_mocked_bindings(run_cmd = function(...) stop("no freesurfer"))
-    expect_warning(
-      expect_null(
-        resample_volume_to_grid("aseg.mgz", "target.nii.gz", verbose = 0L)
-      ),
-      "mri_vol2vol.*failed"
-    )
   })
 })
 
@@ -510,6 +100,392 @@ testthat::describe("tissue_class()", {
         "other",
         "other"
       )
+    )
+  })
+})
+
+
+testthat::describe("classify_labels_by_anatomy()", {
+  it("separates cerebellum before cortex", {
+    comp <- data.frame(
+      idx = 1:2,
+      label = c("tentorium_straddler", "temporal"),
+      cortex = c(0.3, 0.9),
+      subcortex = c(0, 0),
+      cerebellum = c(0.6, 0),
+      brainstem = c(0, 0)
+    )
+    expect_identical(
+      classify_labels_by_anatomy(comp),
+      c("cerebellar", "cortical")
+    )
+  })
+
+  it("leaves a cerebellar peduncle label to the brainstem on a tie", {
+    comp <- data.frame(
+      idx = 1L,
+      label = "peduncle",
+      cortex = 0,
+      subcortex = 0,
+      cerebellum = 0.4,
+      brainstem = 0.5
+    )
+    expect_identical(classify_labels_by_anatomy(comp), "subcortical")
+  })
+
+  it("keeps a white-matter label out of cortex despite a stray ribbon voxel", {
+    comp <- data.frame(
+      idx = 1L,
+      label = "deep_white",
+      cortex = 0.01,
+      subcortex = 0,
+      cerebellum = 0,
+      brainstem = 0
+    )
+    expect_identical(classify_labels_by_anatomy(comp), "subcortical")
+  })
+
+  it("keeps a label out of cerebellum despite a stray cerebellar voxel", {
+    comp <- data.frame(
+      idx = 1L,
+      label = "mostly_unlabelled",
+      cortex = 0,
+      subcortex = 0,
+      cerebellum = 0.01,
+      brainstem = 0
+    )
+    expect_identical(classify_labels_by_anatomy(comp), "subcortical")
+  })
+
+  it("calls a label with no labelled grey subcortical", {
+    comp <- data.frame(
+      idx = 1L,
+      label = "unlabelled",
+      cortex = 0,
+      subcortex = 0,
+      cerebellum = 0,
+      brainstem = 0
+    )
+    expect_identical(classify_labels_by_anatomy(comp), "subcortical")
+  })
+})
+
+
+testthat::describe("lut_classify_anatomy()", {
+  it("types a thin cortical sheet cortical and a deep blob subcortical", {
+    volume <- write_test_volume(cortical_sheet_volume())
+    local_aseg()
+
+    result <- lut_classify_anatomy(volume, cortical_sheet_lut(), verbose = 0L)
+
+    expect_s3_class(result, "data.frame")
+    expect_identical(result$type, c("cortical", "subcortical"))
+    expect_identical(result$label, c("thin_sheet", "deep_blob"))
+    expect_identical(result$R, c(10L, 20L))
+  })
+
+  it("does not count ventricle voxels as grey matter", {
+    arr <- array(0L, dim = c(10L, 10L, 10L))
+    arr[1:8, 1, 1] <- 1L
+    volume <- write_test_volume(arr)
+
+    aseg <- array(2L, dim = c(10L, 10L, 10L))
+    aseg[1:6, 1, 1] <- 4L
+    aseg[7:8, 1, 1] <- 1001L
+    local_aseg(aseg)
+
+    lut <- data.frame(idx = 1L, label = "beside_ventricle")
+    expect_identical(
+      lut_classify_anatomy(volume, lut, verbose = 0L)$type,
+      "cortical"
+    )
+  })
+
+  it("reads a LUT given as a file path", {
+    volume <- write_test_volume(cortical_sheet_volume())
+    local_aseg()
+    lut_file <- tempfile(fileext = ".txt")
+    write_lut(cortical_sheet_lut(), lut_file)
+
+    expect_identical(
+      lut_classify_anatomy(volume, lut_file, verbose = 0L)$type,
+      c("cortical", "subcortical")
+    )
+  })
+
+  it("replaces an existing type column", {
+    volume <- write_test_volume(cortical_sheet_volume())
+    local_aseg()
+    lut <- cortical_sheet_lut()
+    lut$type <- c("subcortical", "cortical")
+
+    expect_identical(
+      lut_classify_anatomy(volume, lut, verbose = 0L)$type,
+      c("cortical", "subcortical")
+    )
+  })
+
+  it("types labels the volume does not carry as subcortical, and says so", {
+    volume <- write_test_volume(cortical_sheet_volume())
+    local_aseg()
+    lut <- rbind(
+      cortical_sheet_lut(),
+      data.frame(
+        idx = 99L,
+        label = "never_drawn",
+        R = 1L,
+        G = 1L,
+        B = 1L,
+        A = 0L
+      )
+    )
+
+    result <- expect_warnings(
+      lut_classify_anatomy(volume, lut, verbose = 0L),
+      "not in the volume"
+    )
+    expect_identical(
+      result$type,
+      c("cortical", "subcortical", "subcortical")
+    )
+  })
+
+  it("reports the split when verbose", {
+    volume <- write_test_volume(cortical_sheet_volume())
+    local_aseg()
+
+    expect_messages(
+      lut_classify_anatomy(volume, cortical_sheet_lut(), verbose = 1L),
+      "1 cortical, 1 subcortical, 0 cerebellar"
+    )
+  })
+
+  it("writes a type column that survives a LUT round trip", {
+    volume <- write_test_volume(cortical_sheet_volume())
+    local_aseg()
+    lut_file <- tempfile(fileext = ".txt")
+
+    typed <- lut_classify_anatomy(volume, cortical_sheet_lut(), verbose = 0L)
+    write_lut(typed, lut_file)
+
+    expect_identical(read_lut(lut_file)$type, typed$type)
+  })
+
+  it("honours a raised min_cortical", {
+    volume <- write_test_volume(cortical_sheet_volume())
+    local_aseg()
+    lut <- data.frame(idx = 1L, label = "half_cortical")
+
+    # The sheet is wholly cortical, so only a threshold above 1 excludes it.
+    expect_identical(
+      lut_classify_anatomy(volume, lut, min_cortical = 1, verbose = 0L)$type,
+      "cortical"
+    )
+  })
+
+  it("honours a raised min_fraction", {
+    arr <- array(0L, dim = c(10L, 10L, 10L))
+    arr[1:10, 1, 1] <- 1L
+    volume <- write_test_volume(arr)
+
+    aseg <- array(2L, dim = c(10L, 10L, 10L))
+    aseg[1, 1, 1] <- 1001L
+    local_aseg(aseg)
+    lut <- data.frame(idx = 1L, label = "one_ribbon_voxel")
+
+    expect_identical(
+      lut_classify_anatomy(volume, lut, min_fraction = 0.05, verbose = 0L)$type,
+      "cortical"
+    )
+    expect_identical(
+      lut_classify_anatomy(volume, lut, min_fraction = 0.2, verbose = 0L)$type,
+      "subcortical"
+    )
+  })
+
+  it("leaves the background label untyped and does not call it absent", {
+    volume <- write_test_volume(cortical_sheet_volume())
+    local_aseg()
+    lut <- rbind(
+      data.frame(
+        idx = 0L,
+        label = "Unknown",
+        R = 0L,
+        G = 0L,
+        B = 0L,
+        A = 0L
+      ),
+      cortical_sheet_lut()
+    )
+
+    result <- NULL
+    expect_no_warning(
+      result <- lut_classify_anatomy(volume, lut, verbose = 0L)
+    )
+    expect_identical(result$type, c(NA, "cortical", "subcortical"))
+  })
+
+  it("errors on a repeated label, which would mistype a row", {
+    volume <- write_test_volume(cortical_sheet_volume())
+    lut <- data.frame(idx = 1:2, label = c("same", "same"))
+    expect_error(
+      lut_classify_anatomy(volume, lut),
+      "repeated .*label"
+    )
+  })
+
+  it("errors on a repeated idx", {
+    volume <- write_test_volume(cortical_sheet_volume())
+    lut <- data.frame(idx = c(1L, 1L), label = c("a", "b"))
+    expect_error(
+      lut_classify_anatomy(volume, lut),
+      "repeated .*idx"
+    )
+  })
+
+  it("errors on an empty LUT", {
+    volume <- write_test_volume(cortical_sheet_volume())
+    expect_error(
+      lut_classify_anatomy(
+        volume,
+        data.frame(idx = integer(), label = character())
+      ),
+      "no rows to classify"
+    )
+  })
+
+  it("errors on a threshold that is not a share", {
+    volume <- write_test_volume(cortical_sheet_volume())
+    expect_error(
+      lut_classify_anatomy(volume, cortical_sheet_lut(), min_cortical = "0.6"),
+      "min_cortical.*must be a single number between 0 and 1"
+    )
+    expect_error(
+      lut_classify_anatomy(volume, cortical_sheet_lut(), min_cerebellar = 2),
+      "min_cerebellar.*must be a single number between 0 and 1"
+    )
+  })
+
+  it("errors when the volume does not exist", {
+    expect_error(
+      lut_classify_anatomy("no-such-volume.nii.gz", cortical_sheet_lut()),
+      "Volume file not found"
+    )
+  })
+
+  it("errors when the LUT is neither a path nor a usable data.frame", {
+    volume <- write_test_volume(cortical_sheet_volume())
+    expect_error(
+      lut_classify_anatomy(volume, data.frame(x = 1)),
+      "must be a LUT file path or a data.frame"
+    )
+  })
+})
+
+
+testthat::describe("lut_classify_anatomy() space guards", {
+  it("refuses an aseg that lands outside the volume's brain", {
+    arr <- array(0L, dim = c(10L, 10L, 10L))
+    arr[1:4, 1:4, 1] <- 1L
+    volume <- write_test_volume(arr)
+
+    aseg <- array(0L, dim = c(10L, 10L, 10L))
+    aseg[1:4, 1:4, 10] <- 1001L
+    local_aseg(aseg)
+
+    lut <- data.frame(idx = 1L, label = "somewhere_else")
+    expect_error(
+      lut_classify_anatomy(volume, lut, verbose = 0L),
+      "not in the same space"
+    )
+  })
+
+  it("refuses an aseg on a different grid", {
+    volume <- write_test_volume(cortical_sheet_volume())
+    local_aseg(array(1001L, dim = c(8L, 8L, 8L)))
+
+    expect_error(
+      lut_classify_anatomy(volume, cortical_sheet_lut(), verbose = 0L),
+      "does not share the volume's grid"
+    )
+  })
+
+  it("refuses an aseg with no grey matter at all", {
+    volume <- write_test_volume(cortical_sheet_volume())
+    local_aseg(array(2L, dim = c(10L, 10L, 10L)))
+
+    expect_error(
+      lut_classify_anatomy(volume, cortical_sheet_lut(), verbose = 0L),
+      "no grey matter"
+    )
+  })
+
+  it("refuses when no LUT label has a voxel in the volume", {
+    volume <- write_test_volume(cortical_sheet_volume())
+    local_aseg()
+
+    lut <- data.frame(idx = 99L, label = "absent")
+    expect_error(
+      lut_classify_anatomy(volume, lut, verbose = 0L),
+      "has a single voxel"
+    )
+  })
+
+  it("refuses an unreadable volume", {
+    volume <- tempfile(fileext = ".nii.gz")
+    file.create(volume)
+    local_aseg()
+
+    expect_error(
+      lut_classify_anatomy(volume, cortical_sheet_lut(), verbose = 0L),
+      "not a readable 3D volume"
+    )
+  })
+})
+
+
+testthat::describe("aparc_aseg_path()", {
+  it("errors when FreeSurfer is not available", {
+    local_mocked_bindings(have_fs_quietly = function() FALSE)
+    expect_error(
+      aparc_aseg_path("cvs_avg35_inMNI152"),
+      "FreeSurfer is not available"
+    )
+  })
+
+  it("errors when the freesurfer package is not installed", {
+    local_mocked_bindings(have_fs_quietly = function() TRUE)
+    local_mocked_bindings(
+      is_installed = function(pkg, ...) FALSE,
+      .package = "rlang"
+    )
+    expect_error(
+      aparc_aseg_path("cvs_avg35_inMNI152"),
+      "FreeSurfer is not available"
+    )
+  })
+
+  it("errors when the subject has no aparc\\+aseg", {
+    local_mocked_bindings(have_fs_quietly = function() TRUE)
+    subjects <- withr::local_tempdir()
+    local_mocked_bindings(
+      fs_subj_dir = function() subjects,
+      .package = "freesurfer"
+    )
+    expect_error(
+      aparc_aseg_path("no_such_subject"),
+      "does not exist"
+    )
+  })
+})
+
+
+testthat::describe("resample_volume_to_grid()", {
+  it("errors when mri_vol2vol fails", {
+    local_mocked_bindings(run_cmd = function(...) stop("no freesurfer"))
+    expect_error(
+      resample_volume_to_grid("aseg.mgz", "target.nii.gz", verbose = 0L),
+      "mri_vol2vol.*failed"
     )
   })
 })

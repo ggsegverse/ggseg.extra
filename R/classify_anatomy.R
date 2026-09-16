@@ -1,5 +1,219 @@
 # Anatomy-based label classification ----
 
+#' Classify lookup-table labels as cortical, subcortical, or cerebellar
+#'
+#' Fills in a lookup table's `type` column by reading where each label sits
+#' in FreeSurfer's `aparc+aseg`, rather than by matching label names. This is
+#' an authoring tool: run it once while building an atlas, write the `type`
+#' column it returns into the lookup table, and commit that. A declared
+#' classification is reviewable in a diff and reproducible without
+#' FreeSurfer; the vertex-count fallback in
+#' [create_wholebrain_from_volume()] is neither.
+#'
+#' `aparc+aseg` is resampled onto the volume's own grid with
+#' `mri_vol2vol --regheader --nearest`, which goes through the two headers
+#' and invents no transform. Each label is then judged on the share of the
+#' *labelled grey matter* it touches - cortical ribbon, deep grey,
+#' cerebellar cortex or brainstem - ignoring white matter and the voxels
+#' `aparc+aseg` does not label at all. That normalisation is what makes the
+#' test independent of a label's size: a volume clustered on EPI data
+#' reaches past the edge of FreeSurfer's brain, so a superficial parcel can
+#' be mostly unlabelled and still unambiguously cortical in the grey it does
+#' touch.
+#'
+#' Cerebellum is separated first, because a label straddling the tentorium
+#' reads as part cortical. A label that touches no labelled grey matter at
+#' all, and one whose winning tissue is under `min_fraction` of its own
+#' voxels, are both called subcortical: the share alone would let a single
+#' stray ribbon voxel decide an otherwise unlabelled label.
+#'
+#' @param volume Path to the labelled atlas volume (`.nii`, `.nii.gz` or
+#'   `.mgz`), in the space its header claims.
+#' @param lut A lookup table: a path to a LUT file, or a data.frame with
+#'   `idx` and `label` columns. Any existing `type` column is replaced.
+#' @param subject FreeSurfer subject to take the `aparc+aseg` from. The
+#'   default sits in MNI152 space, which is where most published
+#'   parcellations are distributed.
+#' @param min_cortical Minimum share of a label's labelled grey matter that
+#'   must be cortical ribbon for the label to be called cortical.
+#' @param min_cerebellar Minimum share of a label's labelled grey matter
+#'   that must be cerebellar cortex for the label to be called cerebellar.
+#' @param min_fraction Minimum share of a label's *own voxels* that must sit
+#'   on the winning tissue, whatever the grey-matter share says. This is what
+#'   stops one ribbon voxel from making a white-matter label cortical.
+#' @template verbose
+#'
+#' @return The lookup table as a data.frame, with a `type` column of
+#'   `"cortical"`, `"subcortical"` or `"cerebellar"`. Labels the volume does
+#'   not carry are typed `"subcortical"`, matching how
+#'   [create_wholebrain_from_volume()] treats a label that never reaches the
+#'   surface, and warned about. The background label `idx = 0` is left
+#'   `NA`.
+#'
+#' @seealso [create_wholebrain_from_volume()], which consumes the `type`
+#'   column; [read_lut()] and [write_lut()] to read and write the table.
+#' @export
+#' @examples
+#' \dontrun{
+#' # Authoring an atlas: classify once, then commit the column.
+#' lut <- read_lut("julich_LUT.txt")
+#' lut <- lut_classify_anatomy("julich_mpm.nii.gz", lut)
+#' table(lut$type)
+#' write_lut(lut, "julich_LUT.txt")
+#'
+#' # create_wholebrain_from_volume() then reads the column instead of
+#' # falling back to counting surface vertices.
+#' create_wholebrain_from_volume(
+#'   input_volume = "julich_mpm.nii.gz",
+#'   input_lut = "julich_LUT.txt"
+#' )
+#' }
+lut_classify_anatomy <- function(
+  volume,
+  lut,
+  subject = "cvs_avg35_inMNI152",
+  min_cortical = 0.6,
+  min_cerebellar = 0.5,
+  min_fraction = 0.05,
+  verbose = get_verbose()
+) {
+  lut <- as_classifiable_lut(lut)
+  verbose <- as_verbosity(verbose)
+  check_share(min_cortical, "min_cortical")
+  check_share(min_cerebellar, "min_cerebellar")
+  check_share(min_fraction, "min_fraction")
+  if (!file.exists(volume)) {
+    cli::cli_abort("Volume file not found: {.path {volume}}")
+  }
+
+  composition <- label_composition(volume, lut, subject, verbose)
+  verdict <- classify_labels_by_anatomy(
+    composition,
+    min_cortical = min_cortical,
+    min_cerebellar = min_cerebellar,
+    min_fraction = min_fraction
+  )
+
+  lut$type <- lut_type_column(lut, composition$idx, verdict)
+  warn_absent_labels(lut, composition$idx)
+  if (verbose > 0L) {
+    report_anatomy_split(lut$type)
+  }
+  lut
+}
+
+
+#' Is this one number between 0 and 1?
+#' @noRd
+is_share <- function(x) {
+  is.numeric(x) && length(x) == 1L && !is.na(x) && x >= 0 && x <= 1
+}
+
+
+#' A threshold has to be one number between 0 and 1
+#' @noRd
+check_share <- function(x, arg) {
+  if (!is_share(x)) {
+    cli::cli_abort(
+      "{.arg {arg}} must be a single number between 0 and 1, not {.val {x}}"
+    )
+  }
+  invisible(x)
+}
+
+
+#' Accept a LUT as a path or a data.frame, or abort
+#' @noRd
+as_classifiable_lut <- function(lut) {
+  if (is.character(lut) && length(lut) == 1L) {
+    lut <- read_lut(lut)
+  }
+  if (!is.data.frame(lut) || !all(c("idx", "label") %in% names(lut))) {
+    cli::cli_abort(c(
+      "{.arg lut} must be a LUT file path or a data.frame",
+      "i" = "A data.frame needs at least {.field idx} and {.field label}
+      columns."
+    ))
+  }
+  if (nrow(lut) == 0L) {
+    cli::cli_abort("{.arg lut} has no rows to classify")
+  }
+  # Every verdict is computed per index and written back per row, so a
+  # repeated index or name would hand one label's anatomy to another.
+  check_lut_unique(lut$idx, "idx")
+  check_lut_unique(lut$label, "label")
+  lut
+}
+
+
+#' A LUT column that identifies rows cannot repeat itself
+#' @noRd
+check_lut_unique <- function(values, column) {
+  duplicated_values <- unique(values[duplicated(values)])
+  if (length(duplicated_values) > 0) {
+    cli::cli_abort(c(
+      "{.arg lut} has {length(duplicated_values)} repeated
+      {.field {column}} value{?s}",
+      "x" = "Repeated: {.val {duplicated_values}}",
+      "i" = "Each row must name a distinct label, or one label's anatomy
+      would be written onto another."
+    ))
+  }
+  invisible(values)
+}
+
+
+#' The `type` value for every row of the lookup table
+#'
+#' Keyed on `idx`, which is what the composition was measured per. A label
+#' the volume does not carry has no composition to judge, so it takes the
+#' same verdict `create_wholebrain_from_volume()` gives a label that never
+#' reaches the surface.
+#' @noRd
+lut_type_column <- function(lut, classified_idx, verdict) {
+  type <- rep("subcortical", nrow(lut))
+  row <- match(lut$idx, classified_idx)
+  type[!is.na(row)] <- verdict[row[!is.na(row)]]
+  # Index 0 is the background, not a structure; it has no anatomy and the
+  # pipeline never asks about it.
+  type[lut$idx == 0L] <- NA_character_
+  type
+}
+
+
+#' Warn about lookup-table labels the volume does not carry
+#' @noRd
+warn_absent_labels <- function(lut, classified_idx) {
+  absent <- setdiff(lut$idx[lut$idx != 0L], classified_idx)
+  if (length(absent) == 0L) {
+    return(invisible(NULL))
+  }
+  cli::cli_warn(c(
+    "{length(absent)} label{?s} {?is/are} not in the volume, and {?is/are}
+    typed {.val subcortical}.",
+    "i" = "Absent: {.val {lut$label[match(absent, lut$idx)]}}"
+  ))
+  invisible(NULL)
+}
+
+
+#' Report the classification split
+#' @noRd
+report_anatomy_split <- function(type) {
+  # nolint next: object_usage_linter.
+  counts <- table(factor(
+    type[!is.na(type)],
+    levels = c("cortical", "subcortical", "cerebellar")
+  ))
+  cli::cli_alert_info(
+    "{counts[['cortical']]} cortical, {counts[['subcortical']]} subcortical,
+    {counts[['cerebellar']]} cerebellar labels",
+    wrap = TRUE
+  )
+  invisible(NULL)
+}
+
+
 #' `aseg` label ids that make up cortical grey matter
 #'
 #' The undivided `Left-/Right-Cerebral-Cortex` ids, which is what a subject
@@ -16,7 +230,8 @@ cortical_grey_idx <- function() {
 #' `aparc+aseg` numbers the cortical parcels 1000-1035 on the left and
 #' 2000-2035 on the right. The upper bound matters: `wmparc` carries white
 #' matter at 3000-4035 and unsegmented white matter at 5001/5002, and none of
-#' that is cortex.
+#' that is cortex. The range is specific to `aparc+aseg`; the Destrieux
+#' `aparc.a2009s+aseg` numbers its parcels from 11100 and would need its own.
 #' @noRd
 cortical_parcel_range <- function() {
   c(1000L, 2999L)
@@ -28,7 +243,7 @@ cortical_parcel_range <- function() {
 #' Thalamus, caudate, putamen, pallidum, hippocampus, amygdala, accumbens and
 #' ventral DC, per hemisphere. The ventricles are deliberately absent: they
 #' are CSF, not grey matter, and counting them inflates the deep-grey share of
-#' every parcel that borders a ventricle.
+#' every label that borders a ventricle.
 #' @noRd
 subcortical_grey_idx <- function() {
   c(
@@ -86,22 +301,19 @@ grey_matter_idx <- function() {
 #'
 #' Resamples `aparc+aseg` onto the atlas volume's own grid and measures, for
 #' each label, the fraction of its voxels that fall on cortical, deep,
-#' cerebellar and brainstem grey matter. This is an anatomical measurement:
-#' it reads where a label sits, not how large it is.
+#' cerebellar and brainstem grey matter.
 #'
-#' Returns `NULL`, with a warning, whenever the composition cannot be
-#' trusted - FreeSurfer missing, the subject's `aparc+aseg` missing, the
-#' resampling failing, a grid mismatch, or grey matter that does not land
-#' inside the volume's own brain, which is what a volume in some other space
-#' looks like.
+#' Aborts whenever the composition cannot be trusted - FreeSurfer missing,
+#' the subject's `aparc+aseg` missing, the resampling failing, a grid
+#' mismatch, or grey matter that does not land inside the volume's own brain,
+#' which is what a volume in some other space looks like.
 #'
 #' @param volume Path to the labelled atlas volume.
-#' @param lut Data frame with `idx` and `label` columns naming the volume's
-#'   labels.
+#' @param lut Data frame with `idx` and `label` columns.
 #' @param subject FreeSurfer subject to take the `aparc+aseg` from.
 #' @template verbose
 #' @return Data frame with `idx`, `label`, `cortex`, `subcortex`,
-#'   `cerebellum` and `brainstem` columns, or `NULL`.
+#'   `cerebellum` and `brainstem` columns.
 #' @noRd
 label_composition <- function(
   volume,
@@ -110,14 +322,7 @@ label_composition <- function(
   verbose = get_verbose()
 ) {
   source_file <- aparc_aseg_path(subject)
-  if (is.null(source_file)) {
-    return(NULL)
-  }
-
   parcellation <- read_label_volume(volume)
-  if (is.null(parcellation)) {
-    return(NULL)
-  }
 
   aseg <- aparc_aseg_on_grid(
     source_file,
@@ -126,14 +331,12 @@ label_composition <- function(
     parcellation > 0L,
     verbose
   )
-  if (is.null(aseg)) {
-    return(NULL)
-  }
 
   label_ids <- intersect(lut$idx, sort(unique(parcellation[parcellation > 0L])))
   if (length(label_ids) == 0L) {
-    warn_anatomy_unavailable("no lookup-table label has any voxel")
-    return(NULL)
+    abort_anatomy_unavailable(
+      "no label in {.arg lut} has a single voxel in {.path {volume}}"
+    )
   }
 
   data.frame(
@@ -182,16 +385,6 @@ tissue_class <- function(hit) {
 
 #' Classify labels from their `aparc+aseg` composition
 #'
-#' Each label is judged on the share of the *labelled grey matter* it touches,
-#' ignoring white matter and voxels `aparc+aseg` does not label at all. That
-#' normalisation is what makes the test independent of parcel size: a volume
-#' drawn on EPI data reaches past the edge of FreeSurfer's brain, so a
-#' superficial parcel can be two-thirds unlabelled and still unambiguously
-#' cortical in the grey it does touch.
-#'
-#' Cerebellum is separated first, because a label straddling the tentorium
-#' reads as part cortical.
-#'
 #' @param composition Data frame from `label_composition()`.
 #' @param min_cortical Minimum cortical share of labelled grey for a label to
 #'   be cortical.
@@ -199,8 +392,8 @@ tissue_class <- function(hit) {
 #'   to be cerebellar.
 #' @param min_fraction Minimum raw fraction of a label's voxels on the
 #'   winning tissue, whatever the share.
-#' @return Named list of `cortical`, `subcortical` and `cerebellar` label
-#'   character vectors.
+#' @return Character vector of `"cortical"`, `"subcortical"` or
+#'   `"cerebellar"`, one per row of `composition`.
 #' @noRd
 classify_labels_by_anatomy <- function(
   composition,
@@ -220,20 +413,20 @@ classify_labels_by_anatomy <- function(
   is_cerebellar <- share(composition$cerebellum) >= min_cerebellar &
     composition$cerebellum >= min_fraction &
     composition$cerebellum >= composition$cortex &
-    composition$cerebellum >= composition$subcortex
+    composition$cerebellum >= composition$subcortex &
+    composition$cerebellum >= composition$brainstem
   is_cortical <- !is_cerebellar &
     share(composition$cortex) >= min_cortical &
     composition$cortex >= min_fraction
 
-  list(
-    cortical = composition$label[is_cortical],
-    subcortical = composition$label[!is_cortical & !is_cerebellar],
-    cerebellar = composition$label[is_cerebellar]
-  )
+  verdict <- rep("subcortical", nrow(composition))
+  verdict[is_cortical] <- "cortical"
+  verdict[is_cerebellar] <- "cerebellar"
+  verdict
 }
 
 
-#' Resample `aparc+aseg` onto a volume's own grid, or `NULL`
+#' Resample `aparc+aseg` onto a volume's own grid
 #'
 #' `mri_vol2vol --regheader` resamples through the two headers, so no new
 #' transform is invented: the atlas volume is taken to be in the space its
@@ -245,7 +438,7 @@ classify_labels_by_anatomy <- function(
 #' @param dims Expected dimensions of the resampled volume.
 #' @param brain_mask Logical array, `TRUE` wherever the volume is non-zero.
 #' @template verbose
-#' @return Integer array of `aseg` label values, or `NULL`.
+#' @return Integer array of `aseg` label values.
 #' @noRd
 aparc_aseg_on_grid <- function(
   source_file,
@@ -255,35 +448,29 @@ aparc_aseg_on_grid <- function(
   verbose
 ) {
   resampled <- resample_volume_to_grid(source_file, volume, verbose)
-  if (is.null(resampled)) {
-    return(NULL)
-  }
   on.exit(unlink(resampled), add = TRUE)
 
   aseg <- read_label_volume(resampled)
-  if (is.null(aseg)) {
-    return(NULL)
-  }
   if (!identical(dim(aseg), dims)) {
-    warn_anatomy_unavailable(
+    abort_anatomy_unavailable(
       "the resampled {.field aparc+aseg} does not share the volume's grid"
     )
-    return(NULL)
   }
 
-  if (!grey_lands_on_volume(aseg, brain_mask)) {
-    return(NULL)
-  }
+  check_grey_lands_on_volume(aseg, brain_mask)
   aseg
 }
 
 
-#' Locate a subject's `aparc+aseg.mgz`, or `NULL` when it cannot be used
+#' Locate a subject's `aparc+aseg.mgz`
 #' @noRd
 aparc_aseg_path <- function(subject) {
-  if (!rlang::is_installed("freesurfer") || !isTRUE(have_fs_quietly())) {
-    warn_anatomy_unavailable("FreeSurfer is not available")
-    return(NULL)
+  installed <- rlang::is_installed(
+    "freesurfer",
+    version = freesurfer_min_version()
+  )
+  if (!installed || !isTRUE(have_fs_quietly())) {
+    abort_anatomy_unavailable("FreeSurfer is not available")
   }
 
   aseg <- as.character(fs::path(
@@ -293,32 +480,38 @@ aparc_aseg_path <- function(subject) {
     "aparc+aseg.mgz"
   ))
   if (!file.exists(aseg)) {
-    warn_anatomy_unavailable("{.path {aseg}} does not exist")
-    return(NULL)
+    abort_anatomy_unavailable(
+      "{.path {aseg}} does not exist, so {.val {subject}} cannot be the
+      reference"
+    )
   }
   aseg
 }
 
 
-#' Read a labelled volume as an integer array, or `NULL` when unreadable
-#'
-#' Anatomical classification is an improvement on a fallback that always
-#' works, so an unreadable volume has to degrade into that fallback rather
-#' than break the pipeline.
+#' Read a labelled volume as an integer array
 #' @noRd
 read_label_volume <- function(file) {
-  arr <- tryCatch(
-    as.array(read_volume(file, reorient = FALSE)),
-    # RNifti warns before it errors on a truncated header, so a warning here
-    # means the same thing an error does: no usable volume came back.
-    error = function(e) NULL,
-    warning = function(w) NULL
+  arr <- withCallingHandlers(
+    tryCatch(
+      as.array(read_volume(file, reorient = FALSE)),
+      error = function(e) NULL
+    ),
+    # RNifti warns on its way to erroring on a truncated header. The error is
+    # the signal; the warning would only duplicate it, less clearly.
+    warning = function(w) invokeRestart("muffleWarning")
   )
   if (is.null(arr) || length(dim(arr)) != 3L) {
-    warn_anatomy_unavailable("{.path {file}} is not a readable 3D volume")
-    return(NULL)
+    abort_anatomy_unavailable("{.path {file}} is not a readable 3D volume")
   }
-  storage.mode(arr) <- "integer"
+  if (is.integer(arr)) {
+    return(arr)
+  }
+  # Label ids stored as float must round, not truncate: 2.9999 is label 3.
+  # Done in one pass because a 1mm grid is millions of voxels per copy.
+  dims <- dim(arr)
+  arr <- as.integer(round(as.double(arr)))
+  dim(arr) <- dims
   arr
 }
 
@@ -330,7 +523,7 @@ have_fs_quietly <- function() {
 }
 
 
-#' Run `mri_vol2vol --regheader --nearest`, or `NULL` on failure
+#' Run `mri_vol2vol --regheader --nearest`
 #' @noRd
 resample_volume_to_grid <- function(source_file, target, verbose) {
   out_file <- tempfile(fileext = paste0(".", volume_ext(target)))
@@ -354,8 +547,7 @@ resample_volume_to_grid <- function(source_file, target, verbose) {
   )
   if (!ok) {
     unlink(out_file)
-    warn_anatomy_unavailable("{.code mri_vol2vol} failed")
-    return(NULL)
+    abort_anatomy_unavailable("{.code mri_vol2vol} failed")
   }
   out_file
 }
@@ -367,44 +559,40 @@ resample_volume_to_grid <- function(source_file, target, verbose) {
 #' error; the grey matter simply lands somewhere else. Requiring most of it
 #' to fall on non-zero voxels catches that, and catches an empty result.
 #' @noRd
-grey_lands_on_volume <- function(aseg, brain_mask, min_overlap = 0.5) {
+check_grey_lands_on_volume <- function(aseg, brain_mask, min_overlap = 0.5) {
   parcels <- cortical_parcel_range()
   inside <- (aseg >= parcels[1] & aseg <= parcels[2]) |
     aseg %in% grey_matter_idx()
   n <- sum(inside)
   if (n == 0L) {
-    warn_anatomy_unavailable(
+    abort_anatomy_unavailable(
       "the resampled {.field aparc+aseg} has no grey matter"
     )
-    return(FALSE)
   }
 
   overlap <- sum(inside & brain_mask) / n
   if (overlap < min_overlap) {
     # nolint next: object_usage_linter.
     pct <- round(100 * overlap)
-    warn_anatomy_unavailable(
+    abort_anatomy_unavailable(
       "only {pct}% of the {.field aparc+aseg} grey matter lands inside the
       volume, so the two are not in the same space"
     )
-    return(FALSE)
   }
-  TRUE
+  invisible(TRUE)
 }
 
 
-#' Warn that anatomical classification is unavailable
+#' Abort because the labels cannot be classified by anatomy
 #' @noRd
-warn_anatomy_unavailable <- function(reason, .envir = parent.frame()) {
-  # nolint next: object_usage_linter.
-  detail <- cli::format_inline(reason, .envir = .envir)
-  cli::cli_warn(
+abort_anatomy_unavailable <- function(reason, .envir = parent.frame()) {
+  cli::cli_abort(
     c(
-      "Cannot classify labels by anatomy: {detail}.",
-      "i" = "Falling back to the surface vertex count, which measures label
-      area rather than depth."
+      paste0("Cannot classify labels by anatomy: ", reason, "."),
+      "i" = "Classifying by anatomy needs FreeSurfer and a volume in the
+      space its header claims."
     ),
+    .envir = .envir,
     wrap = TRUE
   )
-  invisible(NULL)
 }

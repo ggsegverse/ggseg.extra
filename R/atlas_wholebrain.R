@@ -24,17 +24,18 @@
 #'    with values `"cortical"` or `"subcortical"`, that classification is
 #'    used for any labels not covered by the function arguments. This is the
 #'    recommended approach for reproducible atlas creation.
-#' 3. **Anatomy**: FreeSurfer's `aparc+aseg` is resampled onto the volume's
-#'    own grid and each remaining label is classified by the share of
-#'    labelled grey matter it touches - cortical ribbon, deep grey,
-#'    cerebellar cortex or brainstem. This reads where a label sits rather
-#'    than how large it is, and needs no name matching.
-#' 4. **Vertex-count heuristic** (last resort): Labels with at least
+#' 3. **Vertex-count heuristic** (fallback): Labels with at least
 #'    `min_vertices` vertices on the surface projection are classified as
-#'    cortical; the rest as subcortical. This only runs when no usable
-#'    `aparc+aseg` is available - no FreeSurfer, or a volume whose header
-#'    puts it in some other space - and warns when it does, because it
-#'    measures a label's surface area rather than its depth.
+#'    cortical; the rest as subcortical. It measures how much surface a
+#'    label covers rather than where the label sits, so a small cortical
+#'    parcel and a deep structure look the same to it. It warns whenever it
+#'    runs; treat that warning as a request to declare the labels instead.
+#'
+#' [lut_classify_anatomy()] writes the `type` column for a lookup table that
+#' has none, by reading each label's position in FreeSurfer's `aparc+aseg`.
+#' Run it once while authoring the atlas and commit the column it returns:
+#' a declared classification is reviewable in a diff, where an inferred one
+#' is not.
 #'
 #' @section Volume pre-processing:
 #' Before surface projection, the volume is filtered so that only voxel IDs
@@ -110,8 +111,7 @@
 #'   shares a label name, so a lookup table whose labels carry `_left` /
 #'   `_right` suffixes contributes one hemisphere per label while an
 #'   unsuffixed one contributes both. Only reached for labels that a `type`
-#'   column and the explicit label vectors leave unclassified, and then only
-#'   when no usable `aparc+aseg` is available. Default 50.
+#'   column and the explicit label vectors leave unclassified. Default 50.
 #' @param cortical_labels Character vector of label names to force as cortical.
 #'   Highest priority; overrides LUT `type` and the vertex-count heuristic.
 #' @param subcortical_labels Character vector of label names to force as
@@ -1139,7 +1139,6 @@ wholebrain_resolve_split <- function(
   split <- wholebrain_classify_labels(
     atlas_data = projection$atlas_data,
     colortable = projection$colortable,
-    volume = config$input_volume,
     min_vertices = config$min_vertices,
     cortical_labels = cortical_labels,
     subcortical_labels = subcortical_labels,
@@ -1163,19 +1162,15 @@ wholebrain_resolve_split <- function(
 #'    arguments (highest)
 #' 2. `type` column on the colortable (`"cortical"`, `"subcortical"`, or
 #'    `"cerebellar"`)
-#' 3. Anatomy: the share of labelled grey matter each label touches in
-#'    FreeSurfer's `aparc+aseg`, resampled onto the volume's own grid
-#' 4. Vertex-count heuristic: labels with >= `min_vertices` on the surface
-#'    projection are cortical, the rest subcortical (lowest). This runs only
-#'    when no usable `aparc+aseg` exists, and warns when it does, because it
-#'    measures a label's surface area rather than its depth.
+#' 3. Vertex-count heuristic: labels with >= `min_vertices` on the surface
+#'    projection are cortical, the rest subcortical (lowest). It warns
+#'    whenever it runs, because it measures a label's surface area rather
+#'    than its depth.
 #'
 #' @param atlas_data Tibble from `wholebrain_project_to_surface()` with
 #'   `source_label` and `vertices` columns.
 #' @param colortable Colortable data.frame. If it has a `type` column with
 #'   values `"cortical"` / `"subcortical"` / `"cerebellar"`, that is used.
-#' @param volume Path to the labelled volume, used for the anatomical
-#'   classification. `NULL` skips straight to the vertex-count fallback.
 #' @param min_vertices Minimum vertex count on the surface projection for
 #'   cortical classification, summed over every region sharing a label name.
 #' @param cortical_labels Manual override: force these labels as cortical.
@@ -1189,7 +1184,6 @@ wholebrain_resolve_split <- function(
 wholebrain_classify_labels <- function(
   atlas_data,
   colortable = NULL,
-  volume = NULL,
   min_vertices = 50L,
   cortical_labels = NULL,
   subcortical_labels = NULL,
@@ -1211,17 +1205,9 @@ wholebrain_classify_labels <- function(
   classified_cerebellar <- assigned$cerebellar
 
   if (length(assigned$remaining) > 0) {
-    auto <- classify_labels_unassigned(
-      assigned,
-      prep,
-      colortable,
-      volume,
-      min_vertices,
-      verbose
-    )
+    auto <- classify_labels_auto(assigned, prep, min_vertices)
     classified_cortical <- c(classified_cortical, auto$cortical)
     classified_subcortical <- c(classified_subcortical, auto$subcortical)
-    classified_cerebellar <- c(classified_cerebellar, auto$cerebellar)
   }
 
   if (verbose) {
@@ -1270,7 +1256,7 @@ classify_labels_inputs <- function(atlas_data, colortable) {
 #' Assign labels from the manual overrides and the LUT `type` column
 #'
 #' @return List with the labels classified so far plus the still-unassigned
-#'   `remaining` labels and whether the colortable had a `type` column.
+#'   `remaining` labels.
 #' @noRd
 classify_labels_assign <- function(
   prep,
@@ -1310,81 +1296,8 @@ classify_labels_assign <- function(
     cortical = classified_cortical,
     subcortical = classified_subcortical,
     cerebellar = classified_cerebellar,
-    remaining = remaining,
-    has_type = has_type
+    remaining = remaining
   )
-}
-
-
-#' Classify the labels the overrides and the `type` column left over
-#'
-#' Anatomy first; the vertex count only when no usable `aparc+aseg` exists.
-#' @noRd
-classify_labels_unassigned <- function(
-  assigned,
-  prep,
-  colortable,
-  volume,
-  min_vertices,
-  verbose
-) {
-  anatomy <- classify_labels_anatomy(
-    assigned$remaining,
-    colortable,
-    volume,
-    verbose
-  )
-  if (!is.null(anatomy)) {
-    return(anatomy)
-  }
-  classify_labels_auto(assigned, prep, min_vertices)
-}
-
-
-#' Classify the still-unassigned labels from their `aparc+aseg` composition
-#'
-#' Returns `NULL` when the composition is unavailable, which is the caller's
-#' signal to fall back to the vertex count.
-#' @noRd
-classify_labels_anatomy <- function(remaining, colortable, volume, verbose) {
-  if (is.null(volume) || !has_lut_columns(colortable)) {
-    return(NULL)
-  }
-
-  composition <- label_composition(volume, colortable, verbose = verbose)
-  if (is.null(composition)) {
-    return(NULL)
-  }
-
-  by_anatomy <- classify_labels_by_anatomy(composition)
-  cerebellar <- intersect(remaining, by_anatomy$cerebellar)
-  # A lookup table that gives two ids the same label name can have that name
-  # come back in two verdicts at once; cerebellum wins, as it does in the
-  # predicate itself.
-  cortical <- setdiff(intersect(remaining, by_anatomy$cortical), cerebellar)
-
-  if (verbose) {
-    cli::cli_alert_info(
-      "Classified {length(remaining)} label{?s} by
-      {.field aparc+aseg} anatomy",
-      wrap = TRUE
-    )
-  }
-
-  list(
-    cortical = cortical,
-    # Labels with no voxels of their own never reach the composition, and
-    # a label that is neither cortical nor cerebellar is subcortical.
-    subcortical = setdiff(remaining, c(cortical, cerebellar)),
-    cerebellar = cerebellar
-  )
-}
-
-
-#' Does this colortable carry the `idx`/`label` pair anatomy needs?
-#' @noRd
-has_lut_columns <- function(colortable) {
-  !is.null(colortable) && all(c("idx", "label") %in% names(colortable))
 }
 
 
@@ -1413,11 +1326,7 @@ classify_labels_auto <- function(assigned, prep, min_vertices) {
     volume_only
   )
 
-  list(
-    cortical = auto_cortical,
-    subcortical = auto_subcortical,
-    cerebellar = character(0)
-  )
+  list(cortical = auto_cortical, subcortical = auto_subcortical)
 }
 
 
@@ -1432,10 +1341,10 @@ warn_vertex_count_fallback <- function(n) {
       "Classified {n} label{?s} by surface vertex count, not by anatomy.",
       "!" = "The vertex count measures how much surface a label covers, so a
       small cortical parcel and a deep structure look the same to it.",
-      "i" = "Add a {.field type} column
-      ({.val cortical}/{.val subcortical}/{.val cerebellar}) to the lookup
-      table, or pass {.arg cortical_labels}/{.arg subcortical_labels}/
-      {.arg cerebellar_labels}, to classify these labels explicitly."
+      "i" = "Declare the labels instead: {.fn lut_classify_anatomy} fills in
+      a {.field type} column from FreeSurfer's {.field aparc+aseg}, or pass
+      {.arg cortical_labels}/{.arg subcortical_labels}/
+      {.arg cerebellar_labels}."
     ),
     wrap = TRUE
   )

@@ -78,8 +78,7 @@ label to be classified as cortical by the vertex-count heuristic (see
 shares a label name, so a lookup table whose labels carry \verb{_left} /
 \verb{_right} suffixes contributes one hemisphere per label while an
 unsuffixed one contributes both. Only reached for labels that a \code{type}
-column and the explicit label vectors leave unclassified, and then only
-when no usable \code{aparc+aseg} is available. Default 50.}
+column and the explicit label vectors leave unclassified. Default 50.}
 
 \item{cortical_labels}{Character vector of label names to force as cortical.
 Highest priority; overrides LUT \code{type} and the vertex-count heuristic.}
@@ -168,18 +167,19 @@ mechanisms are available, applied in priority order:
 with values \code{"cortical"} or \code{"subcortical"}, that classification is
 used for any labels not covered by the function arguments. This is the
 recommended approach for reproducible atlas creation.
-\item \strong{Anatomy}: FreeSurfer's \code{aparc+aseg} is resampled onto the volume's
-own grid and each remaining label is classified by the share of
-labelled grey matter it touches - cortical ribbon, deep grey,
-cerebellar cortex or brainstem. This reads where a label sits rather
-than how large it is, and needs no name matching.
-\item \strong{Vertex-count heuristic} (last resort): Labels with at least
+\item \strong{Vertex-count heuristic} (fallback): Labels with at least
 \code{min_vertices} vertices on the surface projection are classified as
-cortical; the rest as subcortical. This only runs when no usable
-\code{aparc+aseg} is available - no FreeSurfer, or a volume whose header
-puts it in some other space - and warns when it does, because it
-measures a label's surface area rather than its depth.
+cortical; the rest as subcortical. It measures how much surface a
+label covers rather than where the label sits, so a small cortical
+parcel and a deep structure look the same to it. It warns whenever it
+runs; treat that warning as a request to declare the labels instead.
 }
+
+\code{\link[=lut_classify_anatomy]{lut_classify_anatomy()}} writes the \code{type} column for a lookup table that
+has none, by reading each label's position in FreeSurfer's \code{aparc+aseg}.
+Run it once while authoring the atlas and commit the column it returns:
+a declared classification is reviewable in a diff, where an inferred one
+is not.
 }
 
 \section{Volume pre-processing}{

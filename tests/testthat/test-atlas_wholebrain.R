@@ -443,17 +443,14 @@ testthat::describe("create_wholebrain_from_volume pipeline flow", {
 
     expect_warning(
       expect_warning(
-        expect_warning(
-          {
-            result <- create_wholebrain_from_volume(
-              input_volume = vol_file,
-              steps = 1:2,
-              verbose = FALSE
-            )
-          },
-          "No color lookup table"
-        ),
-        "Cannot classify labels by anatomy"
+        {
+          result <- create_wholebrain_from_volume(
+            input_volume = vol_file,
+            steps = 1:2,
+            verbose = FALSE
+          )
+        },
+        "No color lookup table"
       ),
       "by surface vertex count"
     )
@@ -1296,15 +1293,12 @@ testthat::describe("create_wholebrain_from_volume integration", {
     skip_if(!file.exists(lut_file), "Test LUT file not found")
 
     expect_warning(
-      expect_warning(
-        result <- create_wholebrain_from_volume(
-          input_volume = vol_file,
-          input_lut = lut_file,
-          registration = "header",
-          steps = 1:2,
-          verbose = FALSE
-        ),
-        "Cannot classify labels by anatomy"
+      result <- create_wholebrain_from_volume(
+        input_volume = vol_file,
+        input_lut = lut_file,
+        registration = "header",
+        steps = 1:2,
+        verbose = FALSE
       ),
       "by surface vertex count"
     )
@@ -1526,17 +1520,14 @@ testthat::describe("create_wholebrain_from_volume verbose LUT path", {
     )
 
     expect_warning(
-      expect_warning(
-        expect_messages(
-          create_wholebrain_from_volume(
-            input_volume = vol_file,
-            input_lut = lut_file,
-            steps = 1:2,
-            verbose = TRUE
-          ),
-          "Color LUT"
+      expect_messages(
+        create_wholebrain_from_volume(
+          input_volume = vol_file,
+          input_lut = lut_file,
+          steps = 1:2,
+          verbose = TRUE
         ),
-        "Cannot classify labels by anatomy"
+        "Color LUT"
       ),
       "by surface vertex count"
     )

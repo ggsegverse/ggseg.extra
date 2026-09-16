@@ -1,29 +1,39 @@
 # ggseg.extra 1.9.9.9031
 
-- `create_wholebrain_from_volume()` now classifies labels by anatomy rather
-  than by size. FreeSurfer's `aparc+aseg` is resampled onto the volume's own
-  grid and each label is judged on the share of labelled grey matter it
-  touches - cortical ribbon, deep grey, cerebellar cortex or brainstem -
-  with white matter and unlabelled voxels left out of the comparison. The
-  vertex-count heuristic it replaces measured how much surface a label
-  covered, so on a fine parcellation it split the atlas roughly in half at
-  the threshold: the Julich-Brain maps came out 119 cortical / 135
-  subcortical, where anatomy gives 250 cortical / 38 subcortical / 8
-  cerebellar. `Area_45_(IFG)` and `CA1_(Hippocampus)` project to 20 and 19
-  vertices respectively and were indistinguishable to a vertex count.
+- New `lut_classify_anatomy()` fills in a lookup table's `type` column by
+  reading where each label sits in FreeSurfer's `aparc+aseg`, rather than by
+  matching label names. It is an authoring tool: run it once while building
+  an atlas, commit the column it returns, and
+  `create_wholebrain_from_volume()` reads the declaration instead of
+  guessing. A declared classification is reviewable in a diff and
+  reproducible without FreeSurfer; an inferred one is neither.
+
+  `aparc+aseg` is resampled onto the volume's own grid with
+  `mri_vol2vol --regheader --nearest`, and each label is judged on the share
+  of the labelled grey matter it touches, ignoring white matter and the
+  voxels `aparc+aseg` does not label. That normalisation is what makes the
+  test independent of a label's size. On the Julich-Brain maps it gives 250
+  cortical, 38 subcortical and 8 cerebellar labels, against the 119 / 135
+  the vertex count produces for the same 294 parcels.
+
 - Grey matter is defined as grey matter. The lateral, 3rd and 4th ventricles
-  are CSF and are excluded from the deep-grey set, as is cerebellar white
-  matter; an earlier version of this predicate counted the ventricles as
-  deep grey, which inflated the deep-grey share of every label bordering a
-  ventricle. On the Julich maps that inflation reached 0.12 across 25
-  labels.
-- The vertex-count heuristic is now the last resort, and says so. It runs
-  only when no usable `aparc+aseg` exists - FreeSurfer missing, or a volume
-  whose header puts it in another space - and warns when it does, naming how
-  many labels it guessed at and pointing at the `type` column. Atlases that
-  supply a `type` column or explicit `cortical_labels` / `subcortical_labels`
-  / `cerebellar_labels` are unaffected: both still take priority over
-  anatomy.
+  are CSF and are not deep grey, and cerebellar white matter is white matter,
+  so neither counts towards the share. The cortical test is bounded to
+  1000-2999 rather than being open-ended, so the white matter `wmparc` numbers
+  from 3000 up cannot read as cortex.
+
+- `create_wholebrain_from_volume()` now warns whenever it falls back to the
+  vertex-count heuristic, naming how many labels it classified by size and
+  pointing at `lut_classify_anatomy()`. The heuristic measures how much
+  surface a label covers rather than where it sits, so a small cortical
+  parcel and a deep structure look the same to it; on a fine parcellation it
+  splits the atlas at the threshold rather than at the anatomy. It used to
+  say so only under `verbose`.
+
+- `write_lut()` writes the `type` column as a 7th field when the table has
+  one, so a classification survives the round trip through `read_lut()`. The
+  reader has always accepted the field.
+
 - `min_vertices` is documented correctly. It was described as a count
   "across hemispheres", but the count is summed per label name, so a lookup
   table whose labels carry `_left` / `_right` suffixes only ever accumulates

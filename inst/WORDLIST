@@ -71,6 +71,7 @@ DKT
 DTI
 entorhinal
 env
+EPI
 errored
 fasciculus
 Fastigial
@@ -175,6 +176,7 @@ NIfTI
 niftiImage
 nii
 NLin
+normalisation
 Nx
 occipital
 ORCID
@@ -210,6 +212,7 @@ repositions
 reticulate
 retune
 retuning
+reviewable
 RGBA
 rgdal
 rh
@@ -243,6 +246,7 @@ superiorly
 sysdata
 TCK
 tempfile
+tentorium
 terra
 th
 tibble
