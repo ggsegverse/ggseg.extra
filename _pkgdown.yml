@@ -110,6 +110,7 @@ reference:
       - get_ctab
       - lut_add
       - lut_combine
+      - lut_classify_anatomy
 
   - title: Subcortical Helpers
     desc: Compose slice views and anatomical context for subcortical atlases
