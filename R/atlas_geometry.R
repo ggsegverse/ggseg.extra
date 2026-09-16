@@ -846,6 +846,7 @@ build_contour_sf <- function(contours_file, slabs, cortex_slices = NULL) {
   }
 
   conts$view <- match_contour_views(filenm_base, all_view_names)
+  validate_contour_views(conts$view, filenm_base, all_view_names)
 
   conts <- layout_volumetric_views(conts) # nolint: object_usage_linter.
 
@@ -853,6 +854,30 @@ build_contour_sf <- function(contours_file, slabs, cortex_slices = NULL) {
   conts$label <- strip_view_prefix(filenm_base, conts$view)
 
   arrange_contour_sf(conts)
+}
+
+
+#' Abort when a contour belongs to no view the atlas is being built from
+#'
+#' Contours are read from the output directory rather than from the slab table,
+#' so a directory carrying files from an earlier run with a different slab
+#' layout contributes contours that match no current view. Left alone they
+#' travel through the atlas with `view = NA` and fail far downstream, in the
+#' view packing, with an error that says nothing about stale files.
+#' @noRd
+validate_contour_views <- function(views, filenm_base, all_view_names) {
+  unmatched <- unique(filenm_base[is.na(views)])
+  n <- length(unmatched)
+  if (n == 0L) {
+    return(invisible(NULL))
+  }
+  cli::cli_abort(c(
+    "{n} contour{?s} match{?es/} none of the atlas's views.",
+    "i" = "View{?s}: {.val {all_view_names}}.",
+    "x" = "Unmatched: {.val {utils::head(unmatched, 10L)}}.",
+    "i" = "Contours left from an earlier slab layout are the usual cause; \\
+           rebuild into a clean output directory."
+  ))
 }
 
 
@@ -875,18 +900,14 @@ match_contour_views <- function(filenm_base, all_view_names) {
 
 
 #' Strip the leading view name from each contour filename
+#'
+#' Every contour has a view by this point: `validate_contour_views()` has
+#' already rejected the ones that matched none.
 #' @noRd
 strip_view_prefix <- function(filenm_base, views) {
   vapply(
     seq_along(filenm_base),
-    function(i) {
-      fn <- filenm_base[i]
-      vn <- views[i]
-      if (is.na(vn)) {
-        return(fn)
-      }
-      sub(paste0("^", vn, "_"), "", fn)
-    },
+    function(i) sub(paste0("^", views[i], "_"), "", filenm_base[i]),
     character(1)
   )
 }
