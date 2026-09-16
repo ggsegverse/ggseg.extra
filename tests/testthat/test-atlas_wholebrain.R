@@ -26,7 +26,7 @@ testthat::describe("wholebrain_classify_labels", {
       c("region_a", "region_b"),
       c(100, 200)
     )
-    result <- wholebrain_classify_labels(ad, min_vertices = 50L)
+    result <- classify_by_vertex_count(ad, min_vertices = 50L)
     expect_true("region_a" %in% result$cortical_labels)
     expect_true("region_b" %in% result$cortical_labels)
     expect_length(result$subcortical_labels, 0)
@@ -37,7 +37,7 @@ testthat::describe("wholebrain_classify_labels", {
       c("region_a", "region_b"),
       c(10, 20)
     )
-    result <- wholebrain_classify_labels(ad, min_vertices = 50L)
+    result <- classify_by_vertex_count(ad, min_vertices = 50L)
     expect_length(result$cortical_labels, 0)
     expect_true("region_a" %in% result$subcortical_labels)
     expect_true("region_b" %in% result$subcortical_labels)
@@ -48,7 +48,7 @@ testthat::describe("wholebrain_classify_labels", {
       c("big", "small", "exact"),
       c(100, 10, 50)
     )
-    result <- wholebrain_classify_labels(ad, min_vertices = 50L)
+    result <- classify_by_vertex_count(ad, min_vertices = 50L)
     expect_true("big" %in% result$cortical_labels)
     expect_true("exact" %in% result$cortical_labels)
     expect_true("small" %in% result$subcortical_labels)
@@ -59,7 +59,7 @@ testthat::describe("wholebrain_classify_labels", {
       c("region_a", "region_b"),
       c(10, 200)
     )
-    result <- wholebrain_classify_labels(
+    result <- classify_by_vertex_count(
       ad,
       min_vertices = 50L,
       cortical_labels = "region_a"
@@ -74,7 +74,7 @@ testthat::describe("wholebrain_classify_labels", {
       c("region_a", "region_b"),
       c(100, 200)
     )
-    result <- wholebrain_classify_labels(
+    result <- classify_by_vertex_count(
       ad,
       min_vertices = 50L,
       subcortical_labels = "region_a"
@@ -88,7 +88,7 @@ testthat::describe("wholebrain_classify_labels", {
       c("region_a", "region_b", "region_c"),
       c(100, 200, 5)
     )
-    result <- wholebrain_classify_labels(
+    result <- classify_by_vertex_count(
       ad,
       min_vertices = 50L,
       cortical_labels = "region_c",
@@ -119,13 +119,13 @@ testthat::describe("wholebrain_classify_labels", {
         source_idx = 1L
       )
     )
-    result <- wholebrain_classify_labels(ad, min_vertices = 50L)
+    result <- classify_by_vertex_count(ad, min_vertices = 50L)
     expect_true("r" %in% result$cortical_labels)
   })
 
   it("returns vertex_counts in result", {
     ad <- make_atlas_data(c("a", "b"), c(100, 10))
-    result <- wholebrain_classify_labels(ad, min_vertices = 50L)
+    result <- classify_by_vertex_count(ad, min_vertices = 50L)
     expect_true("vertex_counts" %in% names(result))
     expect_identical(as.integer(result$vertex_counts["a"]), 100L)
     expect_identical(as.integer(result$vertex_counts["b"]), 10L)
@@ -152,7 +152,7 @@ testthat::describe("wholebrain_classify_labels", {
       c("cortex_a", "cerebellum_left", "cerebellum_right"),
       c(100, 80, 80)
     )
-    result <- wholebrain_classify_labels(
+    result <- classify_by_vertex_count(
       ad,
       min_vertices = 50L,
       cerebellar_labels = c("cerebellum_left", "cerebellum_right")
@@ -209,7 +209,7 @@ testthat::describe("wholebrain_classify_labels", {
 
   it("returns cerebellar_labels in result", {
     ad <- make_atlas_data(c("a", "b"), c(100, 10))
-    result <- wholebrain_classify_labels(
+    result <- classify_by_vertex_count(
       ad,
       min_vertices = 50L,
       cerebellar_labels = "b"
@@ -243,7 +243,7 @@ testthat::describe("wholebrain_classify_labels", {
       label = c("cortex_a", "deep_nucleus"),
       stringsAsFactors = FALSE
     )
-    result <- wholebrain_classify_labels(
+    result <- classify_by_vertex_count(
       ad,
       colortable = ct,
       min_vertices = 50L
@@ -260,7 +260,7 @@ testthat::describe("wholebrain_classify_labels", {
       label = c("cortex_a", "lobule_I", "lobule_II"),
       stringsAsFactors = FALSE
     )
-    result <- wholebrain_classify_labels(
+    result <- classify_by_vertex_count(
       ad,
       colortable = ct,
       min_vertices = 50L,
@@ -442,14 +442,20 @@ testthat::describe("create_wholebrain_from_volume pipeline flow", {
     file.create(vol_file)
 
     expect_warning(
-      {
-        result <- create_wholebrain_from_volume(
-          input_volume = vol_file,
-          steps = 1:2,
-          verbose = FALSE
-        )
-      },
-      "No color lookup table"
+      expect_warning(
+        expect_warning(
+          {
+            result <- create_wholebrain_from_volume(
+              input_volume = vol_file,
+              steps = 1:2,
+              verbose = FALSE
+            )
+          },
+          "No color lookup table"
+        ),
+        "Cannot classify labels by anatomy"
+      ),
+      "by surface vertex count"
     )
 
     expect_true("cortical_labels" %in% names(result))
@@ -752,7 +758,7 @@ testthat::describe("wholebrain_classify_labels verbose output", {
   it("prints classification summary when verbose", {
     ad <- make_atlas_data_v(c("big", "small"), c(100, 10))
     expect_messages(
-      wholebrain_classify_labels(ad, min_vertices = 50L, verbose = TRUE),
+      classify_by_vertex_count(ad, min_vertices = 50L, verbose = TRUE),
       "cortical"
     )
   })
@@ -760,7 +766,7 @@ testthat::describe("wholebrain_classify_labels verbose output", {
   it("prints subcortical detail when subcortical labels exist", {
     ad <- make_atlas_data_v(c("big", "tiny"), c(200, 5))
     expect_messages(
-      wholebrain_classify_labels(ad, min_vertices = 50L, verbose = TRUE),
+      classify_by_vertex_count(ad, min_vertices = 50L, verbose = TRUE),
       "Subcortical"
     )
   })
@@ -768,7 +774,7 @@ testthat::describe("wholebrain_classify_labels verbose output", {
   it("does not print subcortical detail when all cortical", {
     ad <- make_atlas_data_v(c("big", "bigger"), c(200, 300))
     expect_messages(
-      wholebrain_classify_labels(ad, min_vertices = 50L, verbose = TRUE),
+      classify_by_vertex_count(ad, min_vertices = 50L, verbose = TRUE),
       "2 cortical, 0 subcortical"
     )
   })
@@ -1289,12 +1295,18 @@ testthat::describe("create_wholebrain_from_volume integration", {
     lut_file <- test_lut_file()
     skip_if(!file.exists(lut_file), "Test LUT file not found")
 
-    result <- create_wholebrain_from_volume(
-      input_volume = vol_file,
-      input_lut = lut_file,
-      registration = "header",
-      steps = 1:2,
-      verbose = FALSE
+    expect_warning(
+      expect_warning(
+        result <- create_wholebrain_from_volume(
+          input_volume = vol_file,
+          input_lut = lut_file,
+          registration = "header",
+          steps = 1:2,
+          verbose = FALSE
+        ),
+        "Cannot classify labels by anatomy"
+      ),
+      "by surface vertex count"
     )
 
     expect_true("cortical_labels" %in% names(result))
@@ -1513,14 +1525,20 @@ testthat::describe("create_wholebrain_from_volume verbose LUT path", {
       log_elapsed = function(...) NULL
     )
 
-    expect_messages(
-      create_wholebrain_from_volume(
-        input_volume = vol_file,
-        input_lut = lut_file,
-        steps = 1:2,
-        verbose = TRUE
+    expect_warning(
+      expect_warning(
+        expect_messages(
+          create_wholebrain_from_volume(
+            input_volume = vol_file,
+            input_lut = lut_file,
+            steps = 1:2,
+            verbose = TRUE
+          ),
+          "Color LUT"
+        ),
+        "Cannot classify labels by anatomy"
       ),
-      "Color LUT"
+      "by surface vertex count"
     )
   })
 })
@@ -2005,7 +2023,7 @@ testthat::describe("wholebrain_classify_labels additional verbose branches", {
   it("prints cerebellar detail when cerebellar labels exist and verbose", {
     ad <- make_atlas_data_v(c("cortex_a", "lobule_I"), c(100, 80))
     expect_messages(
-      wholebrain_classify_labels(
+      classify_by_vertex_count(
         ad,
         min_vertices = 50L,
         cerebellar_labels = "lobule_I",
@@ -2015,11 +2033,14 @@ testthat::describe("wholebrain_classify_labels additional verbose branches", {
     )
   })
 
-  it("prints vertex count info when no type column", {
+  it("warns loudly when it falls back to the vertex count", {
     ad <- make_atlas_data_v(c("big", "small"), c(100, 10))
-    expect_messages(
-      wholebrain_classify_labels(ad, min_vertices = 50L, verbose = TRUE),
-      "classifying.*labels by vertex count"
+    expect_warning(
+      expect_messages(
+        wholebrain_classify_labels(ad, min_vertices = 50L, verbose = TRUE),
+        "cortical"
+      ),
+      "Classified 2 labels by surface vertex count"
     )
   })
 })
@@ -3039,7 +3060,7 @@ testthat::describe("unknown context through the wholebrain split", {
   )
 
   it("is not classified as a region", {
-    split <- wholebrain_classify_labels(atlas_data, min_vertices = 50L)
+    split <- classify_by_vertex_count(atlas_data, min_vertices = 50L)
 
     expect_false(
       "unknown" %in%

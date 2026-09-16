@@ -464,3 +464,12 @@ local_mock_mni152_path <- function(env = parent.frame()) {
 reg_args <- function(registration, subject = "fsaverage5") {
   resolve_vol2surf_registration(registration, subject)
 }
+
+classify_by_vertex_count <- function(...) {
+  result <- NULL
+  expect_warning(
+    result <- wholebrain_classify_labels(...),
+    "by surface vertex count"
+  )
+  result
+}

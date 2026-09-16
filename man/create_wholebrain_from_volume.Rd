@@ -72,10 +72,14 @@ mislocated.
 \item A path to a register.dat or LTA file to apply instead.
 }}
 
-\item{min_vertices}{Minimum total vertex count across hemispheres for a
+\item{min_vertices}{Minimum vertex count on the surface projection for a
 label to be classified as cortical by the vertex-count heuristic (see
-\strong{Label classification}). Ignored when \code{type} column or explicit label
-vectors are provided. Default 50.}
+\strong{Label classification}). The count is summed over every region that
+shares a label name, so a lookup table whose labels carry \verb{_left} /
+\verb{_right} suffixes contributes one hemisphere per label while an
+unsuffixed one contributes both. Only consulted when neither a \code{type}
+column, explicit label vectors, nor a usable \code{aparc+aseg} is available.
+Default 50.}
 
 \item{cortical_labels}{Character vector of label names to force as cortical.
 Highest priority; overrides LUT \code{type} and the vertex-count heuristic.}
@@ -164,9 +168,17 @@ mechanisms are available, applied in priority order:
 with values \code{"cortical"} or \code{"subcortical"}, that classification is
 used for any labels not covered by the function arguments. This is the
 recommended approach for reproducible atlas creation.
-\item \strong{Vertex-count heuristic} (fallback): Labels with at least
+\item \strong{Anatomy}: FreeSurfer's \code{aparc+aseg} is resampled onto the volume's
+own grid and each remaining label is classified by the share of
+labelled grey matter it touches - cortical ribbon, deep grey,
+cerebellar cortex or brainstem. This reads where a label sits rather
+than how large it is, and needs no name matching.
+\item \strong{Vertex-count heuristic} (last resort): Labels with at least
 \code{min_vertices} vertices on the surface projection are classified as
-cortical; the rest as subcortical.
+cortical; the rest as subcortical. This only runs when no usable
+\code{aparc+aseg} is available - no FreeSurfer, or a volume whose header
+puts it in some other space - and warns when it does, because it
+measures a label's surface area rather than its depth.
 }
 }
 

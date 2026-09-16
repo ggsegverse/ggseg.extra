@@ -95,6 +95,14 @@ testthat::describe("create_wholebrain_from_volume on fsaverage5", {
       c("Left-Thalamus", "Left-Hippocampus", "Right-Putamen") %in%
         result$subcortical_labels
     ))
-    expect_setequal(result$cerebellar_labels, cerebellum)
+    expect_true(all(cerebellum %in% result$cerebellar_labels))
+    expect_true(all(
+      c("Left-Cerebellum-White-Matter", "Right-Cerebellum-White-Matter") %in%
+        result$cerebellar_labels
+    ))
+    expect_false(any(
+      c("Left-Cerebellum-White-Matter", "Right-Cerebellum-White-Matter") %in%
+        result$subcortical_labels
+    ))
   })
 })
