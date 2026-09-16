@@ -76,16 +76,34 @@ testthat::describe("create_wholebrain_from_volume on fsaverage5", {
 
     cerebellum <- c("Left-Cerebellum-Cortex", "Right-Cerebellum-Cortex")
 
-    result <- create_wholebrain_from_volume(
-      input_volume = fsaverage5_file("mri", "aseg.mgz"),
-      input_lut = file.path(freesurfer::fs_dir(), "FreeSurferColorLUT.txt"),
-      atlas_name = "aseg_fsaverage5",
-      output_dir = withr::local_tempdir(),
-      registration = "header",
-      cerebellar_labels = cerebellum,
-      steps = 1:2,
-      verbose = FALSE
-    )
+    output_dir <- withr::local_tempdir()
+    build <- function() {
+      create_wholebrain_from_volume(
+        input_volume = fsaverage5_file("mri", "aseg.mgz"),
+        input_lut = file.path(freesurfer::fs_dir(), "FreeSurferColorLUT.txt"),
+        atlas_name = "aseg_fsaverage5",
+        output_dir = output_dir,
+        registration = "header",
+        cerebellar_labels = cerebellum,
+        steps = 1:2,
+        verbose = FALSE
+      )
+    }
+
+    # An installation without the anatomy subject - the slim CI image is one -
+    # classifies by vertex count instead, and says so.
+    result <- NULL
+    if (anatomy_subject_available()) {
+      result <- build()
+    } else {
+      expect_warning(
+        expect_warning(
+          result <- build(),
+          "Cannot classify labels by anatomy"
+        ),
+        "by surface vertex count"
+      )
+    }
 
     expect_true(all(
       c("Left-Cerebral-Cortex", "Right-Cerebral-Cortex") %in%
@@ -96,13 +114,27 @@ testthat::describe("create_wholebrain_from_volume on fsaverage5", {
         result$subcortical_labels
     ))
     expect_true(all(cerebellum %in% result$cerebellar_labels))
-    expect_true(all(
-      c("Left-Cerebellum-White-Matter", "Right-Cerebellum-White-Matter") %in%
-        result$cerebellar_labels
-    ))
-    expect_false(any(
-      c("Left-Cerebellum-White-Matter", "Right-Cerebellum-White-Matter") %in%
-        result$subcortical_labels
-    ))
+  })
+
+  it("puts cerebellar white matter with the cerebellum, not the subcortex", {
+    skip_if_no_freesurfer()
+    skip_if(
+      !anatomy_subject_available(),
+      "cvs_avg35_inMNI152 has no aparc+aseg to classify against"
+    )
+
+    result <- create_wholebrain_from_volume(
+      input_volume = fsaverage5_file("mri", "aseg.mgz"),
+      input_lut = file.path(freesurfer::fs_dir(), "FreeSurferColorLUT.txt"),
+      atlas_name = "aseg_fsaverage5",
+      output_dir = withr::local_tempdir(),
+      registration = "header",
+      steps = 1:2,
+      verbose = FALSE
+    )
+
+    wm <- c("Left-Cerebellum-White-Matter", "Right-Cerebellum-White-Matter")
+    expect_true(all(wm %in% result$cerebellar_labels))
+    expect_false(any(wm %in% result$subcortical_labels))
   })
 })

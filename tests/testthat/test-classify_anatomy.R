@@ -44,7 +44,7 @@ small_atlas_data <- function(labels, vertex_counts) {
 }
 
 
-describe("subcortical_grey_idx()", {
+testthat::describe("subcortical_grey_idx()", {
   it("excludes the ventricles, which are CSF and not grey matter", {
     ventricles <- c(4L, 5L, 14L, 15L, 43L, 44L)
     expect_length(intersect(subcortical_grey_idx(), ventricles), 0L)
@@ -59,7 +59,7 @@ describe("subcortical_grey_idx()", {
 })
 
 
-describe("label_composition()", {
+testthat::describe("label_composition()", {
   it("measures where each label sits, not how large it is", {
     volume <- write_test_volume(cortical_sheet_volume())
     aseg_file <- write_test_volume(cortical_sheet_aseg())
@@ -196,7 +196,7 @@ describe("label_composition()", {
 })
 
 
-describe("classify_labels_by_anatomy()", {
+testthat::describe("classify_labels_by_anatomy()", {
   it("separates cerebellum before cortex", {
     comp <- data.frame(
       idx = 1:2,
@@ -237,7 +237,7 @@ describe("classify_labels_by_anatomy()", {
 })
 
 
-describe("wholebrain_classify_labels() anatomy priority", {
+testthat::describe("wholebrain_classify_labels() anatomy priority", {
   it("calls a thin cortical sheet cortical even below min_vertices", {
     volume <- write_test_volume(cortical_sheet_volume())
     aseg_file <- write_test_volume(cortical_sheet_aseg())
@@ -369,7 +369,7 @@ describe("wholebrain_classify_labels() anatomy priority", {
 })
 
 
-describe("wholebrain_classify_labels() vertex-count fallback", {
+testthat::describe("wholebrain_classify_labels() vertex-count fallback", {
   it("falls back to the vertex count without a volume, and warns", {
     ad <- small_atlas_data(c("big", "small"), c(100, 10))
 
@@ -438,7 +438,7 @@ describe("wholebrain_classify_labels() vertex-count fallback", {
 })
 
 
-describe("aparc_aseg_path()", {
+testthat::describe("aparc_aseg_path()", {
   it("warns when FreeSurfer is not available", {
     local_mocked_bindings(have_fs_quietly = function() FALSE)
     expect_warning(
@@ -463,7 +463,7 @@ describe("aparc_aseg_path()", {
 })
 
 
-describe("resample_volume_to_grid()", {
+testthat::describe("resample_volume_to_grid()", {
   it("warns and returns NULL when mri_vol2vol fails", {
     local_mocked_bindings(run_cmd = function(...) stop("no freesurfer"))
     expect_warning(
@@ -476,7 +476,7 @@ describe("resample_volume_to_grid()", {
 })
 
 
-describe("tissue_class()", {
+testthat::describe("tissue_class()", {
   it("counts the aparc cortical parcels of both hemispheres as cortex", {
     expect_identical(
       as.character(tissue_class(c(1000L, 1035L, 2000L, 2035L, 3L, 42L))),

@@ -473,3 +473,12 @@ classify_by_vertex_count <- function(...) {
   )
   result
 }
+
+anatomy_subject_available <- function(subject = "cvs_avg35_inMNI152") {
+  file.exists(file.path(
+    freesurfer::fs_subj_dir(),
+    subject,
+    "mri",
+    "aparc+aseg.mgz"
+  ))
+}
