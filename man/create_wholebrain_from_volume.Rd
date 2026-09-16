@@ -77,9 +77,9 @@ label to be classified as cortical by the vertex-count heuristic (see
 \strong{Label classification}). The count is summed over every region that
 shares a label name, so a lookup table whose labels carry \verb{_left} /
 \verb{_right} suffixes contributes one hemisphere per label while an
-unsuffixed one contributes both. Only consulted when neither a \code{type}
-column, explicit label vectors, nor a usable \code{aparc+aseg} is available.
-Default 50.}
+unsuffixed one contributes both. Only reached for labels that a \code{type}
+column and the explicit label vectors leave unclassified, and then only
+when no usable \code{aparc+aseg} is available. Default 50.}
 
 \item{cortical_labels}{Character vector of label names to force as cortical.
 Highest priority; overrides LUT \code{type} and the vertex-count heuristic.}

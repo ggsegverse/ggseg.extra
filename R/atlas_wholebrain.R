@@ -109,9 +109,9 @@
 #'   **Label classification**). The count is summed over every region that
 #'   shares a label name, so a lookup table whose labels carry `_left` /
 #'   `_right` suffixes contributes one hemisphere per label while an
-#'   unsuffixed one contributes both. Only consulted when neither a `type`
-#'   column, explicit label vectors, nor a usable `aparc+aseg` is available.
-#'   Default 50.
+#'   unsuffixed one contributes both. Only reached for labels that a `type`
+#'   column and the explicit label vectors leave unclassified, and then only
+#'   when no usable `aparc+aseg` is available. Default 50.
 #' @param cortical_labels Character vector of label names to force as cortical.
 #'   Highest priority; overrides LUT `type` and the vertex-count heuristic.
 #' @param subcortical_labels Character vector of label names to force as
@@ -1357,8 +1357,11 @@ classify_labels_anatomy <- function(remaining, colortable, volume, verbose) {
   }
 
   by_anatomy <- classify_labels_by_anatomy(composition)
-  cortical <- intersect(remaining, by_anatomy$cortical)
   cerebellar <- intersect(remaining, by_anatomy$cerebellar)
+  # A lookup table that gives two ids the same label name can have that name
+  # come back in two verdicts at once; cerebellum wins, as it does in the
+  # predicate itself.
+  cortical <- setdiff(intersect(remaining, by_anatomy$cortical), cerebellar)
 
   if (verbose) {
     cli::cli_alert_info(

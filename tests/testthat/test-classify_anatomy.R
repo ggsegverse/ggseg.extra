@@ -474,3 +474,42 @@ describe("resample_volume_to_grid()", {
     )
   })
 })
+
+
+describe("tissue_class()", {
+  it("counts the aparc cortical parcels of both hemispheres as cortex", {
+    expect_identical(
+      as.character(tissue_class(c(1000L, 1035L, 2000L, 2035L, 3L, 42L))),
+      rep("cortex", 6L)
+    )
+  })
+
+  it("does not count wmparc white matter as cortex", {
+    expect_identical(
+      as.character(tissue_class(c(3000L, 4035L, 5001L, 5002L, 2L, 41L))),
+      rep("other", 6L)
+    )
+  })
+
+  it("does not count ventricles or CSF as any kind of grey", {
+    expect_identical(
+      as.character(tissue_class(c(4L, 14L, 15L, 43L, 24L))),
+      rep("other", 5L)
+    )
+  })
+
+  it("separates deep, cerebellar and brainstem grey", {
+    expect_identical(
+      as.character(tissue_class(c(10L, 53L, 8L, 47L, 16L, 7L, 46L))),
+      c(
+        "subcortex",
+        "subcortex",
+        "cerebellum",
+        "cerebellum",
+        "brainstem",
+        "other",
+        "other"
+      )
+    )
+  })
+})

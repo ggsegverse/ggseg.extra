@@ -2,12 +2,24 @@
 
 #' `aseg` label ids that make up cortical grey matter
 #'
-#' `aparc+aseg` numbers the cortical parcels from 1000 upwards, and falls
-#' back to the undivided `Left-/Right-Cerebral-Cortex` ids when a subject has
-#' no parcellation.
+#' The undivided `Left-/Right-Cerebral-Cortex` ids, which is what a subject
+#' with no parcellation falls back to. The `aparc` parcels are a range rather
+#' than a list, and live in `cortical_parcel_range()`.
 #' @noRd
 cortical_grey_idx <- function() {
   c(3L, 42L)
+}
+
+
+#' Range of `aparc` cortical parcel ids
+#'
+#' `aparc+aseg` numbers the cortical parcels 1000-1035 on the left and
+#' 2000-2035 on the right. The upper bound matters: `wmparc` carries white
+#' matter at 3000-4035 and unsegmented white matter at 5001/5002, and none of
+#' that is cortex.
+#' @noRd
+cortical_parcel_range <- function() {
+  c(1000L, 2999L)
 }
 
 
@@ -55,6 +67,18 @@ cerebellar_grey_idx <- function() {
 #' @noRd
 brainstem_idx <- function() {
   16L
+}
+
+
+#' Every `aseg` label id this predicate counts as grey matter
+#' @noRd
+grey_matter_idx <- function() {
+  c(
+    cortical_grey_idx(),
+    subcortical_grey_idx(),
+    cerebellar_grey_idx(),
+    brainstem_idx()
+  )
 }
 
 
@@ -112,29 +136,46 @@ label_composition <- function(
     return(NULL)
   }
 
-  fractions <- t(vapply(
-    label_ids,
-    function(id) composition_of(aseg[parcellation == id]),
-    numeric(4)
-  ))
-
   data.frame(
     idx = label_ids,
     label = lut$label[match(label_ids, lut$idx)],
-    fractions,
+    tissue_fractions(parcellation, aseg, label_ids),
     stringsAsFactors = FALSE
   )
 }
 
 
-#' Grey-matter fractions of one label's `aseg` values
+#' Fraction of each label's voxels on each kind of grey matter
+#'
+#' Crosstabulated in a single pass over the voxels, rather than once per
+#' label: a fine parcellation has hundreds of labels and a millimetre grid
+#' has millions of voxels.
 #' @noRd
-composition_of <- function(hit) {
-  c(
-    cortex = mean(hit >= 1000L | hit %in% cortical_grey_idx()),
-    subcortex = mean(hit %in% subcortical_grey_idx()),
-    cerebellum = mean(hit %in% cerebellar_grey_idx()),
-    brainstem = mean(hit == brainstem_idx())
+tissue_fractions <- function(parcellation, aseg, label_ids) {
+  keep <- parcellation %in% label_ids
+  counts <- table(
+    factor(parcellation[keep], levels = label_ids),
+    tissue_class(aseg[keep])
+  )
+  fractions <- as.data.frame.matrix(counts / rowSums(counts))
+  fractions[, c("cortex", "subcortex", "cerebellum", "brainstem")]
+}
+
+
+#' Which kind of grey matter, if any, each `aseg` value is
+#' @noRd
+tissue_class <- function(hit) {
+  parcels <- cortical_parcel_range()
+  class <- rep("other", length(hit))
+  class[
+    (hit >= parcels[1] & hit <= parcels[2]) | hit %in% cortical_grey_idx()
+  ] <- "cortex"
+  class[hit %in% subcortical_grey_idx()] <- "subcortex"
+  class[hit %in% cerebellar_grey_idx()] <- "cerebellum"
+  class[hit == brainstem_idx()] <- "brainstem"
+  factor(
+    class,
+    levels = c("cortex", "subcortex", "cerebellum", "brainstem", "other")
   )
 }
 
@@ -327,14 +368,9 @@ resample_volume_to_grid <- function(source_file, target, verbose) {
 #' to fall on non-zero voxels catches that, and catches an empty result.
 #' @noRd
 grey_lands_on_volume <- function(aseg, brain_mask, min_overlap = 0.5) {
-  inside <- aseg >= 1000L |
-    aseg %in%
-      c(
-        cortical_grey_idx(),
-        subcortical_grey_idx(),
-        cerebellar_grey_idx(),
-        brainstem_idx()
-      )
+  parcels <- cortical_parcel_range()
+  inside <- (aseg >= parcels[1] & aseg <= parcels[2]) |
+    aseg %in% grey_matter_idx()
   n <- sum(inside)
   if (n == 0L) {
     warn_anatomy_unavailable(
