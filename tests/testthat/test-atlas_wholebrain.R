@@ -3572,6 +3572,32 @@ testthat::describe("aseg_context_volume", {
     expect_identical(context[1, 1, 2], 0L)
     expect_identical(context[2, 1, 2], 0L)
   })
+
+  it("judges the space on the cortical ribbon, not the posterior fossa", {
+    skip_if_not_installed("RNifti")
+    # The fossa is wanted exactly where the atlas has nothing, so an atlas
+    # labelling grey matter only - MarsAtlas - fails the overlap gate if the
+    # fossa counts towards it, and loses its context entirely.
+    aseg <- array(0L, dim = c(4, 4, 4))
+    aseg[, , 1] <- 3L
+    aseg[, , 2:4] <- 8L
+    brain_mask <- array(FALSE, dim = c(4, 4, 4))
+    brain_mask[, , 1] <- TRUE
+    resampled <- withr::local_tempfile(fileext = ".nii.gz")
+    RNifti::writeNifti(RNifti::asNifti(aseg), resampled)
+    local_mocked_bindings(aseg_volume_path = function(...) "aseg.mgz")
+    local_mocked_bindings(resample_aseg_to_grid = function(...) resampled)
+
+    context <- aseg_context_volume(
+      "a.nii.gz",
+      "subj",
+      c(4L, 4L, 4L),
+      brain_mask
+    )
+
+    expect_false(is.null(context))
+    expect_true(any(context == 8L))
+  })
 })
 
 
@@ -3695,6 +3721,15 @@ testthat::describe("ribbon_lands_on_volume", {
     expect_warning(
       expect_false(ribbon_lands_on_volume(ribbon, array(TRUE, c(2, 2, 2)))),
       "no cortex"
+    )
+  })
+
+  it("reports the overlap it measured", {
+    ribbon <- array(3L, dim = c(4, 1, 1))
+    brain <- array(c(TRUE, FALSE, FALSE, FALSE), dim = c(4, 1, 1))
+    expect_warning(
+      ribbon_lands_on_volume(ribbon, brain),
+      "25%"
     )
   })
 

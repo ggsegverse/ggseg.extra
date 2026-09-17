@@ -2076,7 +2076,14 @@ aseg_context_volume <- function(
   }
 
   context[!context %in% aseg_context_idx()] <- 0L
-  if (!ribbon_lands_on_volume(context, brain_mask)) {
+
+  # The gate asks whether the two volumes are in the same space, and only the
+  # cortical ribbon can answer: the posterior fossa labels are wanted precisely
+  # where the atlas has nothing, so counting them makes an atlas that labels
+  # grey matter only look mis-spaced.
+  ribbon <- context
+  ribbon[!ribbon %in% aseg_cortex_idx()] <- 0L
+  if (!ribbon_lands_on_volume(ribbon, brain_mask)) {
     return(NULL)
   }
   storage.mode(context) <- "integer"
@@ -2179,7 +2186,8 @@ ribbon_lands_on_volume <- function(ribbon, brain_mask, min_overlap = 0.5) {
 
 #' Warn that the context silhouette falls back to the solid cortical mask
 #' @noRd
-warn_solid_cortex_context <- function(reason) {
+warn_solid_cortex_context <- function(reason, .envir = parent.frame()) {
+  reason <- cli::format_inline(reason, .envir = .envir)
   cli::cli_warn(
     c(
       "Drawing the cortical context as a solid silhouette: {reason}.",
