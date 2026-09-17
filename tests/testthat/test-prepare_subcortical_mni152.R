@@ -73,12 +73,7 @@ testthat::describe("prepare_subcortical_mni152", {
   it("embeds MNI152 parcels into the fsaverage5 aseg context", {
     skip_if(!freesurfer::have_fs(), "FreeSurfer not available")
 
-    aseg_mgz <- file.path(
-      freesurfer::fs_subj_dir(),
-      "fsaverage5",
-      "mri",
-      "aseg.mgz"
-    )
+    aseg_mgz <- fsaverage5_file("mri", "aseg.mgz")
     skip_if(!file.exists(aseg_mgz), "fsaverage5 aseg not available")
     reg <- file.path(freesurfer::fs_dir(), "average", "mni152.register.dat")
     skip_if(!file.exists(reg), "mni152.register.dat not available")

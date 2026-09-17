@@ -1,0 +1,17 @@
+*freesurfer/build-stamp.txt
+*freesurfer/FreeSurferEnv.sh
+*freesurfer/SetUpFreeSurfer.sh
+*freesurfer/FreeSurferColorLUT.txt
+*freesurfer/bin/mri_info
+*freesurfer/bin/mri_convert
+*freesurfer/bin/mri_coreg
+*freesurfer/bin/mri_vol2vol
+*freesurfer/bin/mri_vol2surf
+*freesurfer/bin/mri_surf2surf
+*freesurfer/bin/mri_pretess
+*freesurfer/bin/mri_tessellate
+*freesurfer/bin/mris_smooth
+*freesurfer/bin/mris_convert
+*freesurfer/average/mni152.register.dat
+*freesurfer/subjects/fsaverage5
+*freesurfer/lib

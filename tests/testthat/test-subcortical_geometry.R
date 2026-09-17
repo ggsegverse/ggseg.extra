@@ -247,7 +247,7 @@ testthat::describe("read_fs_surface", {
       read_dpv = function(f) {
         list(
           vertices = data.frame(x = 1:3, y = 1:3, z = 1:3),
-          faces = data.frame(i = 0:2, j = 1:3, k = 2:4)
+          faces = data.frame(i = 0:2, j = c(1L, 2L, 0L), k = c(2L, 0L, 1L))
         )
       },
       get_verbose = function() FALSE
@@ -258,26 +258,60 @@ testthat::describe("read_fs_surface", {
     expect_identical(result$faces$i, 1:3)
   })
 
-  it("falls back to freesurferformats when surf2asc fails", {
+  local_fallback_surface <- function(faces, env = parent.frame()) {
     local_mocked_bindings(
-      surf2asc = function(...) stop("conversion failed"),
+      surf2asc = function(...) stop("mris_convert not found"),
       read_dpv = function(...) stop("no file"),
-      get_verbose = function() FALSE
+      get_verbose = function() FALSE,
+      .env = env
     )
-
     local_mocked_bindings(
       read.fs.surface = function(file) {
         list(
           vertices = matrix(c(1, 2, 3, 4, 5, 6, 7, 8, 9), ncol = 3),
-          faces = matrix(c(1, 2, 3), ncol = 3)
+          faces = faces
         )
       },
-      .package = "freesurferformats"
+      .package = "freesurferformats",
+      .env = env
     )
+  }
+
+  it("falls back to freesurferformats when surf2asc fails", {
+    local_fallback_surface(matrix(c(1, 2, 3), ncol = 3))
 
     result <- read_fs_surface("test_surface")
     expect_identical(result$vertices$x, c(1, 2, 3))
     expect_identical(result$faces$i, 1)
+  })
+
+  it("aborts when the fallback reader returns faces outside the vertex table", {
+    local_fallback_surface(matrix(c(1, 2, 9), ncol = 3))
+
+    err <- expect_error(
+      read_fs_surface("test_surface"),
+      "non-existent vertices"
+    )
+    expect_match(conditionMessage(err), "mris_convert not found")
+  })
+
+  it("aborts when the converted surface has faces outside the vertex table", {
+    local_mocked_bindings(
+      surf2asc = function(...) NULL,
+      read_dpv = function(...) {
+        list(
+          vertices = data.frame(x = 1:3, y = 1:3, z = 1:3),
+          faces = data.frame(i = 0L, j = 1L, k = 7L)
+        )
+      },
+      get_verbose = function() FALSE
+    )
+
+    err <- expect_error(
+      read_fs_surface("test_surface"),
+      "non-existent vertices"
+    )
+    expect_no_match(conditionMessage(err), "mris_convert")
   })
 
   it("errors when surf2asc fails and freesurferformats unavailable", {

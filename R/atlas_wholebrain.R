@@ -805,16 +805,11 @@ wholebrain_compute_projection <- function(config, dirs) {
     cli::cli_progress_step("Projecting volume onto surface")
   }
 
-  colortable <- if (is.null(config$input_lut)) {
-    cli::cli_warn(c(
-      "No color lookup table provided",
-      "i" = "Region names will be generic (e.g., 'region_0010')",
-      "i" = "The atlas will have no palette; plotting picks its own colours"
-    ))
-    generate_colortable_from_volume(config$input_volume)
-  } else {
-    get_lut(config$input_lut)
-  }
+  colortable <- load_volume_colortable(
+    config$input_lut,
+    config$input_volume,
+    config$verbose
+  )$colortable
 
   atlas_data <- wholebrain_project_to_surface(
     input_volume = config$input_volume,
