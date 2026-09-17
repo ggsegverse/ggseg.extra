@@ -1,5 +1,15 @@
 # ggseg.extra 1.9.9.9031
 
+- The brain silhouette drawn behind a subcortical atlas is no longer built
+  from the atlas's own parcels when their ids happen to land between 1000 and
+  2999. `detect_cortex_labels()` read any label in that range as an
+  `aparc+aseg` cortical parcellation, so a parcellation embedded in an aseg
+  with its ids shifted into the 1000s had its parcels taken for left cortex
+  and no right cortex at all, and the "brain outline" came out as a fragment
+  of deep grey rather than the cortical ribbon. The plain-aseg cortex labels
+  (3 and 42) now win whenever the volume carries both, which an `aparc+aseg`
+  does not.
+
 - New `lut_classify_anatomy()` fills in a lookup table's `type` column by
   reading where each label sits in FreeSurfer's `aparc+aseg`, rather than by
   matching label names. It is an authoring tool: run it once while building

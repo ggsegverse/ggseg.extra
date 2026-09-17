@@ -317,8 +317,31 @@ testthat::describe("detect_cortex_labels", {
 
     result <- detect_cortex_labels(vol)
 
-    expect_identical(result$left, 3)
-    expect_identical(result$right, 42)
+    expect_identical(result$left, 3L)
+    expect_identical(result$right, 42L)
+  })
+
+  it("keeps the aseg cortex when parcels also sit in the aparc range", {
+    vol <- array(0L, dim = c(10, 10, 10))
+    vol[1:4, , ] <- 3L
+    vol[5:8, , ] <- 42L
+    vol[9, , ] <- 1001L
+    vol[10, , ] <- 1016L
+
+    result <- detect_cortex_labels(vol)
+
+    expect_identical(result$left, 3L)
+    expect_identical(result$right, 42L)
+  })
+
+  it("still reads a single-hemisphere aparc as aparc", {
+    vol <- array(0L, dim = c(10, 10, 10))
+    vol[1:9, , ] <- 1001L
+
+    result <- detect_cortex_labels(vol)
+
+    expect_identical(result$left, 1001L)
+    expect_identical(result$right, integer(0))
   })
 })
 
