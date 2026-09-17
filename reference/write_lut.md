@@ -24,7 +24,10 @@ write_ctab(x, path)
 
 - x:
 
-  A data.frame with columns: idx, label, R, G, B, A.
+  A data.frame with columns: idx, label, R, G, B, A, and optionally
+  type, which is written as a 7th field so that
+  [`read_lut()`](https://ggsegverse.github.io/ggseg.extra/reference/read_lut.md)
+  reads it back.
 
 - path:
 
@@ -37,7 +40,9 @@ Invisibly returns the lines written.
 ## See also
 
 [`read_lut()`](https://ggsegverse.github.io/ggseg.extra/reference/read_lut.md),
-[`is_lut()`](https://ggsegverse.github.io/ggseg.extra/reference/is_lut.md)
+[`is_lut()`](https://ggsegverse.github.io/ggseg.extra/reference/is_lut.md),
+[`lut_classify_anatomy()`](https://ggsegverse.github.io/ggseg.extra/reference/lut_classify_anatomy.md)
+to fill in the type column
 
 ## Examples
 

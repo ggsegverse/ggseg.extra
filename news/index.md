@@ -1,5 +1,53 @@
 # Changelog
 
+## ggseg.extra 1.9.9.9031
+
+- New
+  [`lut_classify_anatomy()`](https://ggsegverse.github.io/ggseg.extra/reference/lut_classify_anatomy.md)
+  fills in a lookup table’s `type` column by reading where each label
+  sits in FreeSurfer’s `aparc+aseg`, rather than by matching label
+  names. It is an authoring tool: run it once while building an atlas,
+  commit the column it returns, and
+  [`create_wholebrain_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_wholebrain_from_volume.md)
+  reads the declaration instead of guessing. A declared classification
+  is reviewable in a diff and reproducible without FreeSurfer; an
+  inferred one is neither.
+
+  `aparc+aseg` is resampled onto the volume’s own grid with
+  `mri_vol2vol --regheader --nearest`, and each label is judged on the
+  share of the labelled grey matter it touches, ignoring white matter
+  and the voxels `aparc+aseg` does not label. That normalisation is what
+  makes the test independent of a label’s size. On the Julich-Brain maps
+  it gives 250 cortical, 38 subcortical and 8 cerebellar labels, against
+  the 119 / 135 the vertex count produces for the same 294 parcels.
+
+- Grey matter is defined as grey matter. The lateral, 3rd and 4th
+  ventricles are CSF and are not deep grey, and cerebellar white matter
+  is white matter, so neither counts towards the share. The cortical
+  test is bounded to 1000-2999 rather than being open-ended, so the
+  white matter `wmparc` numbers from 3000 up cannot read as cortex.
+
+- [`create_wholebrain_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_wholebrain_from_volume.md)
+  now warns whenever it falls back to the vertex-count heuristic, naming
+  how many labels it classified by size and pointing at
+  [`lut_classify_anatomy()`](https://ggsegverse.github.io/ggseg.extra/reference/lut_classify_anatomy.md).
+  The heuristic measures how much surface a label covers rather than
+  where it sits, so a small cortical parcel and a deep structure look
+  the same to it; on a fine parcellation it splits the atlas at the
+  threshold rather than at the anatomy. It used to say so only under
+  `verbose`.
+
+- [`write_lut()`](https://ggsegverse.github.io/ggseg.extra/reference/write_lut.md)
+  writes the `type` column as a 7th field when the table has one, so a
+  classification survives the round trip through
+  [`read_lut()`](https://ggsegverse.github.io/ggseg.extra/reference/read_lut.md).
+  The reader has always accepted the field.
+
+- `min_vertices` is documented correctly. It was described as a count
+  “across hemispheres”, but the count is summed per label name, so a
+  lookup table whose labels carry `_left` / `_right` suffixes only ever
+  accumulates one hemisphere.
+
 ## ggseg.extra 1.9.9.9030
 
 - The subcortical and tract pipelines now abort when a contour file

@@ -28,7 +28,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9030</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9031</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -206,11 +206,16 @@
 <span>  <span class="op">)</span>,</span>
 <span>  stringsAsFactors <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-<p>The <code>type</code> column is the key piece. Without it, the pipeline falls back to a vertex-count heuristic — counting how many surface vertices each label covers after volume-to-surface projection — which works for clear-cut cases but gets unreliable for regions near the cortical/subcortical boundary. If you know which labels belong where (and you usually do), spell it out.</p>
+<p>The <code>type</code> column is the key piece. Without it, the pipeline falls back to a vertex-count heuristic — counting how many surface vertices each label covers after volume-to-surface projection — which works for clear-cut cases but gets unreliable for regions near the cortical/subcortical boundary. It warns whenever it runs, and you should treat that warning as a request to declare the labels instead. If you know which labels belong where (and you usually do), spell it out.</p>
+<p>When you don’t — a fine-grained parcellation with hundreds of numbered parcels is the usual case — <code><a href="../reference/lut_classify_anatomy.html">lut_classify_anatomy()</a></code> works the column out for you, from where each label sits in FreeSurfer’s <code>aparc+aseg</code> rather than from its name:</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">lut</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/lut_classify_anatomy.html">lut_classify_anatomy</a></span><span class="op">(</span><span class="st">"data-raw/ho_combined_remapped.nii.gz"</span>, <span class="va">lut</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/table.html" class="external-link">table</a></span><span class="op">(</span><span class="va">lut</span><span class="op">$</span><span class="va">type</span><span class="op">)</span></span></code></pre></div>
+<p>Run it once, eyeball the result, and commit the column. That is the point: a <code>type</code> column you have committed is visible in a code review and reproducible by someone without FreeSurfer, where a classification inferred at build time is neither.</p>
 </section><section class="level2"><h2 id="the-two-pass-verification-workflow">The two-pass verification workflow<a class="anchor" aria-label="anchor" href="#the-two-pass-verification-workflow"></a>
 </h2>
 <p>The wholebrain pipeline is the most complex pipeline in ggseg.extra, and the one most likely to need manual correction. Running the full pipeline blind is asking for trouble. Instead, run steps 1–2 first to project the volume onto the surface and classify labels, then inspect the result before committing to the expensive steps:</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/create_wholebrain_from_volume.html">create_wholebrain_from_volume</a></span><span class="op">(</span></span>
 <span>  input_volume <span class="op">=</span> <span class="va">remapped_path</span>,</span>
 <span>  input_lut <span class="op">=</span> <span class="va">lut</span>,</span>
@@ -223,14 +228,15 @@
 <span><span class="va">result</span><span class="op">$</span><span class="va">subcortical_labels</span></span></code></pre></div>
 <p>Check that every cortical region you expect is in <code>cortical_labels</code> and every subcortical structure is in <code>subcortical_labels</code>. If the automatic classification got something wrong — a small cortical region classified as subcortical because it has few surface vertices, or a large subcortical structure bleeding onto the surface — you have three options:</p>
 <ol type="1">
-<li>Add or fix the <code>type</code> column in your LUT (recommended for reproducibility)</li>
+<li>Add or fix the <code>type</code> column in your LUT (recommended for reproducibility), by hand or with <code><a href="../reference/lut_classify_anatomy.html">lut_classify_anatomy()</a></code>
+</li>
 <li>Pass <code>cortical_labels</code> and <code>subcortical_labels</code> arguments to override specific labels</li>
 <li>Adjust <code>min_vertices</code> if using the heuristic fallback</li>
 </ol>
 <p>Once the split looks right, run the full pipeline.</p>
 </section><section class="level2"><h2 id="running-the-full-pipeline">Running the full pipeline<a class="anchor" aria-label="anchor" href="#running-the-full-pipeline"></a>
 </h2>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://progressr.futureverse.org" class="external-link">progressr</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://future.futureverse.org" class="external-link">future</a></span><span class="op">)</span></span>
 <span></span>
@@ -266,7 +272,7 @@
 </h2>
 <p>Some whole-brain parcellations include cerebellar regions alongside cortical and subcortical structures — the Buckner atlas and Schaefer+Melbourne combined parcellations are common examples.</p>
 <p>The pipeline handles this as a fifth step. Classification works the same way as the cortical/subcortical split: you can mark labels as cerebellar via the <code>type</code> column in your LUT (set to <code>"cerebellar"</code>), pass them explicitly with <code>cerebellar_labels</code>, or let the heuristic sort them out.</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">lut</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
 <span>  idx <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">subcort_remapped_ids</span>, <span class="fl">101</span><span class="op">:</span><span class="fl">148</span>, <span class="fl">301</span><span class="op">:</span><span class="fl">310</span><span class="op">)</span>,</span>
 <span>  label <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">subcortical_labels</span>, <span class="va">cortical_labels</span>, <span class="va">cerebellar_labels</span><span class="op">)</span>,</span>
@@ -283,7 +289,7 @@
 <span><span class="op">)</span></span></code></pre></div>
 <p>When cerebellar labels are detected, step 5 filters the volume to keep only those labels, transforms them into SUIT cerebellar space, and runs them through the cerebellar pipeline. The result lands in <code>$cerebellar</code> — a <code>ggseg_atlas</code> with SUIT flatmap polygons and 3D meshes, ready for <code><a href="https://ggsegverse.github.io/ggseg/reference/ggseg.html" class="external-link">ggseg()</a></code> and <code><a href="https://ggsegverse.github.io/ggseg3d/reference/ggseg3d.html" class="external-link">ggseg3d()</a></code>.</p>
 <p>The verification workflow at <code>steps = 1:2</code> now reports three lists:</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/create_wholebrain_from_volume.html">create_wholebrain_from_volume</a></span><span class="op">(</span></span>
 <span>  input_volume <span class="op">=</span> <span class="va">remapped_path</span>,</span>
 <span>  input_lut <span class="op">=</span> <span class="va">lut</span>,</span>
@@ -306,7 +312,7 @@
 </section><section class="level2"><h2 id="post-processing">Post-processing<a class="anchor" aria-label="anchor" href="#post-processing"></a>
 </h2>
 <p>The raw atlas usually needs cleanup. Simplify the contours for faster plotting using topology-preserving simplification:</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">ho_cort</span> <span class="op">&lt;-</span> <span class="va">ho</span><span class="op">$</span><span class="va">cortical</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/atlas_smooth.html">atlas_smooth</a></span><span class="op">(</span>keep <span class="op">=</span> <span class="fl">0.05</span><span class="op">)</span></span>
 <span></span>
@@ -314,14 +320,14 @@
 <span>  <span class="fu"><a href="../reference/atlas_smooth.html">atlas_smooth</a></span><span class="op">(</span>keep <span class="op">=</span> <span class="fl">0.05</span><span class="op">)</span></span></code></pre></div>
 <p>Lower <code>keep</code> values produce simpler polygons with fewer vertices — important for keeping atlas file sizes manageable. The right value depends on your atlas: parcellations with many small regions need higher <code>keep</code> values than those with a few large ones.</p>
 <p>You can also remove unwanted regions from the subcortical atlas (ventricles, white matter) and set context regions, just like in the <a href="tutorial-subcortical-atlas.html">subcortical tutorial</a>:</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">ho_sub</span> <span class="op">&lt;-</span> <span class="va">ho_sub</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_remove</a></span><span class="op">(</span><span class="st">"Ventricle"</span>, match_on <span class="op">=</span> <span class="st">"label"</span><span class="op">)</span></span></code></pre></div>
 </section><section class="level2"><h2 id="structuring-atlas-metadata">Structuring atlas metadata<a class="anchor" aria-label="anchor" href="#structuring-atlas-metadata"></a>
 </h2>
 <p>Before saving, clean up region names and add grouping columns. The <a href="post-processing.html">post-processing vignette</a> covers this in detail — the key idea is that <code>label</code> stays machine-readable (matching the source parcellation) while <code>region</code> becomes human-readable for plot legends.</p>
 <p>The Harvard-Oxford atlas is a good example of both:</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">ho_cort</span> <span class="op">&lt;-</span> <span class="va">ho_cort</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_rename</a></span><span class="op">(</span><span class="st">"Left |Right "</span>, <span class="st">""</span>, match_on <span class="op">=</span> <span class="st">"region"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_rename</a></span><span class="op">(</span><span class="st">"-"</span>, <span class="st">" "</span>, match_on <span class="op">=</span> <span class="st">"region"</span><span class="op">)</span></span>
@@ -341,7 +347,7 @@
 </section><section class="level2"><h2 id="saving">Saving<a class="anchor" aria-label="anchor" href="#saving"></a>
 </h2>
 <p>The conventional pattern for atlas packages is to save cortical and subcortical atlases as separate internal data objects:</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">.hoCort</span> <span class="op">&lt;-</span> <span class="va">ho_cort</span></span>
 <span><span class="va">.hoSub</span> <span class="op">&lt;-</span> <span class="va">ho_sub</span></span>
 <span></span>

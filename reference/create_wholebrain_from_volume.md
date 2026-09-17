@@ -99,10 +99,13 @@ create_wholebrain_from_volume(
 
 - min_vertices:
 
-  Minimum total vertex count across hemispheres for a label to be
+  Minimum vertex count on the surface projection for a label to be
   classified as cortical by the vertex-count heuristic (see **Label
-  classification**). Ignored when `type` column or explicit label
-  vectors are provided. Default 50.
+  classification**). The count is summed over every region that shares a
+  label name, so a lookup table whose labels carry `_left` / `_right`
+  suffixes contributes one hemisphere per label while an unsuffixed one
+  contributes both. Only reached for labels that a `type` column and the
+  explicit label vectors leave unclassified. Default 50.
 
 - cortical_labels:
 
@@ -211,7 +214,17 @@ Three mechanisms are available, applied in priority order:
 
 3.  **Vertex-count heuristic** (fallback): Labels with at least
     `min_vertices` vertices on the surface projection are classified as
-    cortical; the rest as subcortical.
+    cortical; the rest as subcortical. It measures how much surface a
+    label covers rather than where the label sits, so a small cortical
+    parcel and a deep structure look the same to it. It warns whenever
+    it runs; treat that warning as a request to declare the labels
+    instead.
+
+[`lut_classify_anatomy()`](https://ggsegverse.github.io/ggseg.extra/reference/lut_classify_anatomy.md)
+writes the `type` column for a lookup table that has none, by reading
+each label's position in FreeSurfer's `aparc+aseg`. Run it once while
+authoring the atlas and commit the column it returns: a declared
+classification is reviewable in a diff, where an inferred one is not.
 
 ## Volume pre-processing
 

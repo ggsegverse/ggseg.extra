@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9030</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9031</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -63,6 +63,17 @@
       <small>Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.9.9.9031" id="ggsegextra-1999031">ggseg.extra 1.9.9.9031<a class="anchor" aria-label="anchor" href="#ggsegextra-1999031"></a></h2>
+<ul><li>
+<p>New <code><a href="../reference/lut_classify_anatomy.html">lut_classify_anatomy()</a></code> fills in a lookup table’s <code>type</code> column by reading where each label sits in FreeSurfer’s <code>aparc+aseg</code>, rather than by matching label names. It is an authoring tool: run it once while building an atlas, commit the column it returns, and <code><a href="../reference/create_wholebrain_from_volume.html">create_wholebrain_from_volume()</a></code> reads the declaration instead of guessing. A declared classification is reviewable in a diff and reproducible without FreeSurfer; an inferred one is neither.</p>
+<p><code>aparc+aseg</code> is resampled onto the volume’s own grid with <code>mri_vol2vol --regheader --nearest</code>, and each label is judged on the share of the labelled grey matter it touches, ignoring white matter and the voxels <code>aparc+aseg</code> does not label. That normalisation is what makes the test independent of a label’s size. On the Julich-Brain maps it gives 250 cortical, 38 subcortical and 8 cerebellar labels, against the 119 / 135 the vertex count produces for the same 294 parcels.</p>
+</li>
+<li><p>Grey matter is defined as grey matter. The lateral, 3rd and 4th ventricles are CSF and are not deep grey, and cerebellar white matter is white matter, so neither counts towards the share. The cortical test is bounded to 1000-2999 rather than being open-ended, so the white matter <code>wmparc</code> numbers from 3000 up cannot read as cortex.</p></li>
+<li><p><code><a href="../reference/create_wholebrain_from_volume.html">create_wholebrain_from_volume()</a></code> now warns whenever it falls back to the vertex-count heuristic, naming how many labels it classified by size and pointing at <code><a href="../reference/lut_classify_anatomy.html">lut_classify_anatomy()</a></code>. The heuristic measures how much surface a label covers rather than where it sits, so a small cortical parcel and a deep structure look the same to it; on a fine parcellation it splits the atlas at the threshold rather than at the anatomy. It used to say so only under <code>verbose</code>.</p></li>
+<li><p><code><a href="../reference/write_lut.html">write_lut()</a></code> writes the <code>type</code> column as a 7th field when the table has one, so a classification survives the round trip through <code><a href="../reference/read_lut.html">read_lut()</a></code>. The reader has always accepted the field.</p></li>
+<li><p><code>min_vertices</code> is documented correctly. It was described as a count “across hemispheres”, but the count is summed per label name, so a lookup table whose labels carry <code>_left</code> / <code>_right</code> suffixes only ever accumulates one hemisphere.</p></li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9030" id="ggsegextra-1999030">ggseg.extra 1.9.9.9030<a class="anchor" aria-label="anchor" href="#ggsegextra-1999030"></a></h2>
 <ul><li><p>The subcortical and tract pipelines now abort when a contour file matches none of the views the atlas is being built from, naming the unmatched files and the views it knows about. Contours are read from the output directory rather than from the slab table, so rebuilding into a directory left over from a different slab layout silently carried the old contours into the atlas with no view; that failed much later, inside the view packing, with an error that said nothing about stale files.</p></li>

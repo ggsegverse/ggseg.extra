@@ -15,7 +15,7 @@ read_lut(), get_lut(), is_lut(), lut_add(), and lut_combine()."><meta property="
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9030</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9031</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -89,7 +89,9 @@ read_lut(), get_lut(), is_lut(), lut_add(), and lut_combine()."><meta property="
 
 
 <dl><dt id="arg-x">x<a class="anchor" aria-label="anchor" href="#arg-x"></a></dt>
-<dd><p>A data.frame with columns: idx, label, R, G, B, A.</p></dd>
+<dd><p>A data.frame with columns: idx, label, R, G, B, A, and
+optionally type, which is written as a 7th field so that <code><a href="read_lut.html">read_lut()</a></code>
+reads it back.</p></dd>
 
 
 <dt id="arg-path">path<a class="anchor" aria-label="anchor" href="#arg-path"></a></dt>
@@ -102,7 +104,8 @@ read_lut(), get_lut(), is_lut(), lut_add(), and lut_combine()."><meta property="
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p><code><a href="read_lut.html">read_lut()</a></code>, <code><a href="is_lut.html">is_lut()</a></code></p></div>
+    <div class="dont-index"><p><code><a href="read_lut.html">read_lut()</a></code>, <code><a href="is_lut.html">is_lut()</a></code>, <code><a href="lut_classify_anatomy.html">lut_classify_anatomy()</a></code> to fill in
+the type column</p></div>
     </div>
 
     <div class="section level2">

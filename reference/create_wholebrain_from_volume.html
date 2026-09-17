@@ -21,7 +21,7 @@ Requires FreeSurfer."><meta property="og:image" content="https://ggsegverse.gith
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9030</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9031</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -175,10 +175,13 @@ mislocated.</p></li>
 
 
 <dt id="arg-min-vertices">min_vertices<a class="anchor" aria-label="anchor" href="#arg-min-vertices"></a></dt>
-<dd><p>Minimum total vertex count across hemispheres for a
+<dd><p>Minimum vertex count on the surface projection for a
 label to be classified as cortical by the vertex-count heuristic (see
-<strong>Label classification</strong>). Ignored when <code>type</code> column or explicit label
-vectors are provided. Default 50.</p></dd>
+<strong>Label classification</strong>). The count is summed over every region that
+shares a label name, so a lookup table whose labels carry <code>_left</code> /
+<code>_right</code> suffixes contributes one hemisphere per label while an
+unsuffixed one contributes both. Only reached for labels that a <code>type</code>
+column and the explicit label vectors leave unclassified. Default 50.</p></dd>
 
 
 <dt id="arg-cortical-labels">cortical_labels<a class="anchor" aria-label="anchor" href="#arg-cortical-labels"></a></dt>
@@ -279,8 +282,16 @@ used for any labels not covered by the function arguments. This is the
 recommended approach for reproducible atlas creation.</p></li>
 <li><p><strong>Vertex-count heuristic</strong> (fallback): Labels with at least
 <code>min_vertices</code> vertices on the surface projection are classified as
-cortical; the rest as subcortical.</p></li>
-</ol></div>
+cortical; the rest as subcortical. It measures how much surface a
+label covers rather than where the label sits, so a small cortical
+parcel and a deep structure look the same to it. It warns whenever it
+runs; treat that warning as a request to declare the labels instead.</p></li>
+</ol><p><code><a href="lut_classify_anatomy.html">lut_classify_anatomy()</a></code> writes the <code>type</code> column for a lookup table that
+has none, by reading each label's position in FreeSurfer's <code>aparc+aseg</code>.
+Run it once while authoring the atlas and commit the column it returns:
+a declared classification is reviewable in a diff, where an inferred one
+is not.</p>
+    </div>
     <div class="section level2">
     <h2 id="volume-pre-processing">Volume pre-processing<a class="anchor" aria-label="anchor" href="#volume-pre-processing"></a></h2>
 
