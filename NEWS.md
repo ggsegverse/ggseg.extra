@@ -41,6 +41,14 @@
 
 # ggseg.extra 1.9.9.9030
 
+- The subcortical and tract pipelines now abort when a contour file matches
+  none of the views the atlas is being built from, naming the unmatched files
+  and the views it knows about. Contours are read from the output directory
+  rather than from the slab table, so rebuilding into a directory left over
+  from a different slab layout silently carried the old contours into the
+  atlas with no view; that failed much later, inside the view packing, with an
+  error that said nothing about stale files.
+
 - CI can now run the FreeSurfer-gated tests. A slim image
   (`ghcr.io/ggsegverse/freesurfer-slim`) carries the ten FreeSurfer binaries
   the package shells out to plus the fsaverage5 subject, and a container job
