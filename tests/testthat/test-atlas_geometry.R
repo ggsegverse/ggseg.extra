@@ -217,7 +217,7 @@ testthat::describe("build_contour_sf", {
     expect_true("cortex_1" %in% result$view)
   })
 
-  it("uses filename as label when view is NA", {
+  it("aborts when a contour matches none of the atlas's views", {
     contours_file <- withr::local_tempfile(fileext = ".rda")
 
     contours <- sf::st_sf(
@@ -249,10 +249,48 @@ testthat::describe("build_contour_sf", {
       layout_volumetric_views = function(df) df
     )
 
-    result <- build_contour_sf(contours_file, slabs)
+    expect_error(
+      build_contour_sf(contours_file, slabs),
+      "match.*none of the atlas's views"
+    )
+  })
 
-    expect_identical(result$label, "unmatched_region")
-    expect_true(is.na(result$view))
+  it("names the unmatched contours and the views it knows about", {
+    contours_file <- withr::local_tempfile(fileext = ".rda")
+
+    square <- function(x) {
+      sf::st_polygon(list(matrix(
+        c(x, 0, x + 1, 0, x + 1, 1, x, 0),
+        ncol = 2,
+        byrow = TRUE
+      )))
+    }
+    contours <- sf::st_sf(
+      filenm = c("axial_1_regionA", "axial_9_stale", "coronal_7_stale"),
+      geometry = sf::st_sfc(square(0), square(2), square(4))
+    )
+    save_contours_fixture(contours_file, contours = contours)
+
+    slabs <- data.frame(
+      name = "axial_1",
+      type = "axial",
+      start = 85,
+      end = 95,
+      stringsAsFactors = FALSE
+    )
+
+    local_mocked_bindings(
+      make_multipolygon = function(f) {
+        env <- new.env()
+        load(f, envir = env)
+        env$contours
+      },
+      layout_volumetric_views = function(df) df
+    )
+
+    expect_error(build_contour_sf(contours_file, slabs), "axial_9_stale")
+    expect_error(build_contour_sf(contours_file, slabs), "coronal_7_stale")
+    expect_error(build_contour_sf(contours_file, slabs), "axial_1")
   })
 
   it("keeps the top of a mask up and its left side left", {
