@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9032</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9033</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -381,13 +381,55 @@ so switching method does not mean re-finding the value.</p>
 <p>All three return a modified <code>ggseg_atlas</code>, so you can
 <code><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot()</a></code> the result and adjust before committing.</p>
 </div>
+<div class="section level3">
+<h3 id="context-and-core-are-two-different-problems">Context and core are two different problems<a class="anchor" aria-label="anchor" href="#context-and-core-are-two-different-problems"></a>
+</h3>
+<p>A subcortical or whole-brain atlas carries two kinds of geometry at
+once, and one undifferentiated pass is wrong for one of them. The
+<code>^cortex</code> context is a thin sulcal ribbon whose job is to be
+a silhouette you read structures against. The structures are solid
+nuclei with nothing interior to lose. Polish both with the same settings
+and the ribbon loses its sulci and flattens into a blob, which is the
+one thing the context was there to avoid.</p>
+<p>Polish them separately — the context gently and with
+<code>"chaikin"</code>, the structures more firmly and with the default
+<code>"close"</code>:</p>
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">atlas</span> <span class="op">&lt;-</span> <span class="va">atlas</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/atlas_simplify.html">atlas_simplify</a></span><span class="op">(</span>keep <span class="op">=</span> <span class="fl">0.5</span>, labels <span class="op">=</span> <span class="st">"^cortex"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/atlas_smooth.html">atlas_smooth</a></span><span class="op">(</span>smoothness <span class="op">=</span> <span class="fl">0.35</span>, labels <span class="op">=</span> <span class="st">"^cortex"</span>, method <span class="op">=</span> <span class="st">"chaikin"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/atlas_simplify.html">atlas_simplify</a></span><span class="op">(</span>keep <span class="op">=</span> <span class="fl">0.25</span>, exclude <span class="op">=</span> <span class="st">"^cortex"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/atlas_smooth.html">atlas_smooth</a></span><span class="op">(</span>smoothness <span class="op">=</span> <span class="fl">0.4</span>, exclude <span class="op">=</span> <span class="st">"^cortex"</span><span class="op">)</span></span></code></pre></div>
+<p>Each of those four numbers is answering a question about the geometry
+it applies to:</p>
+<ul>
+<li>The context keeps half its vertices. Every gyral crown and sulcal
+fragment in the ribbon is a contour ring of its own, so simplifying it
+costs whole rings rather than only vertices — push <code>keep</code>
+much below 0.5 and small crowns disappear outright.</li>
+<li>The context is smoothed with <code>"chaikin"</code>. Corner cutting
+takes off the voxel staircase without moving the rings that remain. The
+default <code>"close"</code> dilates and then erodes, which fattens the
+ribbon until adjacent sulci merge.</li>
+<li>The structures keep a quarter of their vertices. A solid nucleus has
+no interior rings at risk, so it takes the firmer simplification.</li>
+<li>The structures are smoothed with the default <code>"close"</code>, a
+touch harder than the context, so they read as smooth shapes rather than
+as traced voxels.</li>
+</ul>
+<p>These values are a starting point, not constants: they were chosen by
+comparing renders, and a coarser or finer parcellation will want
+different ones. What carries over is the split — gently and
+<code>"chaikin"</code> for the context, firmly and <code>"close"</code>
+for the core.</p>
+</div>
 </div>
 <div class="section level2">
 <h2 id="rebuilding-the-atlas">Rebuilding the atlas<a class="anchor" aria-label="anchor" href="#rebuilding-the-atlas"></a>
 </h2>
 <p>After modifying components directly (e.g., editing <code>$core</code>
 by hand), reconstruct the atlas to ensure consistency:</p>
-<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">atlas</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/ggseg_atlas.html" class="external-link">ggseg_atlas</a></span><span class="op">(</span></span>
 <span>  atlas <span class="op">=</span> <span class="va">atlas</span><span class="op">$</span><span class="va">atlas</span>,</span>
 <span>  type <span class="op">=</span> <span class="va">atlas</span><span class="op">$</span><span class="va">type</span>,</span>
@@ -402,7 +444,7 @@ consistent.</p>
 <h2 id="putting-it-together">Putting it together<a class="anchor" aria-label="anchor" href="#putting-it-together"></a>
 </h2>
 <p>A typical post-processing pipeline for a subcortical atlas:</p>
-<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">atlas</span> <span class="op">&lt;-</span> <span class="va">atlas_raw</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_remove</a></span><span class="op">(</span><span class="st">"White-Matter"</span>, match_on <span class="op">=</span> <span class="st">"label"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_remove</a></span><span class="op">(</span><span class="st">"-Ventricle"</span>, match_on <span class="op">=</span> <span class="st">"label"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
@@ -412,8 +454,10 @@ consistent.</p>
 <span>  <span class="fu">atlas_view_remove_region_small</span><span class="op">(</span>min_area <span class="op">=</span> <span class="fl">100</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_view_gather</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/atlas_dilate.html">atlas_dilate</a></span><span class="op">(</span><span class="fl">0.6</span>, exclude <span class="op">=</span> <span class="st">"^cortex"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="../reference/atlas_simplify.html">atlas_simplify</a></span><span class="op">(</span>keep <span class="op">=</span> <span class="fl">0.3</span>, labels <span class="op">=</span> <span class="st">"^cortex"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="../reference/atlas_smooth.html">atlas_smooth</a></span><span class="op">(</span>smoothness <span class="op">=</span> <span class="fl">0.4</span><span class="op">)</span></span></code></pre></div>
+<span>  <span class="fu"><a href="../reference/atlas_simplify.html">atlas_simplify</a></span><span class="op">(</span>keep <span class="op">=</span> <span class="fl">0.5</span>, labels <span class="op">=</span> <span class="st">"^cortex"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/atlas_smooth.html">atlas_smooth</a></span><span class="op">(</span>smoothness <span class="op">=</span> <span class="fl">0.35</span>, labels <span class="op">=</span> <span class="st">"^cortex"</span>, method <span class="op">=</span> <span class="st">"chaikin"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/atlas_simplify.html">atlas_simplify</a></span><span class="op">(</span>keep <span class="op">=</span> <span class="fl">0.25</span>, exclude <span class="op">=</span> <span class="st">"^cortex"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/atlas_smooth.html">atlas_smooth</a></span><span class="op">(</span>smoothness <span class="op">=</span> <span class="fl">0.4</span>, exclude <span class="op">=</span> <span class="st">"^cortex"</span><span class="op">)</span></span></code></pre></div>
 <p>Each step is a pure transformation — pipe them together, inspect the
 result, adjust as needed.</p>
 </div>

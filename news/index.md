@@ -1,5 +1,56 @@
 # Changelog
 
+## ggseg.extra 1.9.9.9033
+
+- New
+  [`lut_generate_colors()`](https://ggsegverse.github.io/ggseg.extra/reference/lut_generate_colors.md)
+  builds a palette for a lookup table that ships names only, with every
+  RGB channel `0 0 0 0`. Sent down a pipeline as-is such a table leaves
+  the atlas without a palette, the plotting packages assign one, and the
+  render comes back as large blocks of repeated hue.
+
+  Colours are assigned per structure rather than per region, so a
+  structure’s two hemispheres share one the way FreeSurfer’s own tables
+  do. The hemisphere marker is read off with the same affix set the rest
+  of the package pairs hemispheres by, so `Left-`, `rh_`, `L_`, `_right`
+  and `-lh` all count, plus the `ctx-lh-` and `wm-rh-` prefixes
+  FreeSurfer’s cortical and white-matter tables use. A table written one
+  way and read another silently ships two hues per structure and still
+  renders, so this is one affix set rather than a second opinion about
+  what a hemisphere looks like. Hues are spread evenly around the circle
+  and stepped through three luminances, so neighbouring hues on a
+  crowded wheel still separate. Rows with `idx = 0` are the background
+  rather than a structure and are left as they are, which is what lets
+  the output of
+  [`lut_classify_anatomy()`](https://ggsegverse.github.io/ggseg.extra/reference/lut_classify_anatomy.md) -
+  where the background’s `type` is `NA` - go straight in as
+  `by = "type"`.
+
+  `by` names a column whose groups are each coloured from the whole
+  circle rather than from a slice of one shared circle. `by = "type"` is
+  the whole-brain case: the cortical and subcortical rows become two
+  atlases that are never plotted together, so a colour only has to be
+  unique within an atlas.
+
+  [`grDevices::hcl()`](https://rdrr.io/r/grDevices/hcl.html) clips
+  out-of-gamut colours without saying so, which at a few hundred
+  structures hands back two of them the identical colour. Two structures
+  sharing a colour value reads as a rendering fault rather than a
+  palette one, so it is an error instead, naming `chroma` and
+  `luminance` as the way out - lower the chroma. Colours merely growing
+  close is not an error: one chroma and three luminances hold only so
+  many, and past roughly sixty structures that is the ramp’s limit
+  rather than a fault. The documentation says so.
+
+- The post-processing vignette now covers polishing a context and a
+  structure core separately. They are different problems: the `^cortex`
+  context is a thin sulcal ribbon that exists to be a silhouette, the
+  structures are solid nuclei. One undifferentiated pass smooths the
+  ribbon’s sulci shut and flattens it into a blob. The recipe is the
+  context gently and with `method = "chaikin"`, which cuts corners
+  without moving contour rings, and the core more firmly with the
+  default `close`.
+
 ## ggseg.extra 1.9.9.9032
 
 - The whole-brain cortical context only borrows FreeSurfer’s `aseg`

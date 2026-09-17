@@ -51,6 +51,7 @@
 <url><loc>https://ggsegverse.github.io/ggseg.extra/reference/lut_add.html</loc></url>
 <url><loc>https://ggsegverse.github.io/ggseg.extra/reference/lut_classify_anatomy.html</loc></url>
 <url><loc>https://ggsegverse.github.io/ggseg.extra/reference/lut_combine.html</loc></url>
+<url><loc>https://ggsegverse.github.io/ggseg.extra/reference/lut_generate_colors.html</loc></url>
 <url><loc>https://ggsegverse.github.io/ggseg.extra/reference/mri_surf2surf_rereg.html</loc></url>
 <url><loc>https://ggsegverse.github.io/ggseg.extra/reference/new_project_setup_atlas_repo.html</loc></url>
 <url><loc>https://ggsegverse.github.io/ggseg.extra/reference/prepare_subcortical_anatomical.html</loc></url>

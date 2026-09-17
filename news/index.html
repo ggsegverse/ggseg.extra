@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9032</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9033</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -63,6 +63,16 @@
       <small>Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.9.9.9033" id="ggsegextra-1999033">ggseg.extra 1.9.9.9033<a class="anchor" aria-label="anchor" href="#ggsegextra-1999033"></a></h2>
+<ul><li>
+<p>New <code><a href="../reference/lut_generate_colors.html">lut_generate_colors()</a></code> builds a palette for a lookup table that ships names only, with every RGB channel <code>0 0 0 0</code>. Sent down a pipeline as-is such a table leaves the atlas without a palette, the plotting packages assign one, and the render comes back as large blocks of repeated hue.</p>
+<p>Colours are assigned per structure rather than per region, so a structure’s two hemispheres share one the way FreeSurfer’s own tables do. The hemisphere marker is read off with the same affix set the rest of the package pairs hemispheres by, so <code>Left-</code>, <code>rh_</code>, <code>L_</code>, <code>_right</code> and <code>-lh</code> all count, plus the <code>ctx-lh-</code> and <code>wm-rh-</code> prefixes FreeSurfer’s cortical and white-matter tables use. A table written one way and read another silently ships two hues per structure and still renders, so this is one affix set rather than a second opinion about what a hemisphere looks like. Hues are spread evenly around the circle and stepped through three luminances, so neighbouring hues on a crowded wheel still separate. Rows with <code>idx = 0</code> are the background rather than a structure and are left as they are, which is what lets the output of <code><a href="../reference/lut_classify_anatomy.html">lut_classify_anatomy()</a></code> - where the background’s <code>type</code> is <code>NA</code> - go straight in as <code>by = "type"</code>.</p>
+<p><code>by</code> names a column whose groups are each coloured from the whole circle rather than from a slice of one shared circle. <code>by = "type"</code> is the whole-brain case: the cortical and subcortical rows become two atlases that are never plotted together, so a colour only has to be unique within an atlas.</p>
+<p><code><a href="https://rdrr.io/r/grDevices/hcl.html" class="external-link">grDevices::hcl()</a></code> clips out-of-gamut colours without saying so, which at a few hundred structures hands back two of them the identical colour. Two structures sharing a colour value reads as a rendering fault rather than a palette one, so it is an error instead, naming <code>chroma</code> and <code>luminance</code> as the way out - lower the chroma. Colours merely growing close is not an error: one chroma and three luminances hold only so many, and past roughly sixty structures that is the ramp’s limit rather than a fault. The documentation says so.</p>
+</li>
+<li><p>The post-processing vignette now covers polishing a context and a structure core separately. They are different problems: the <code>^cortex</code> context is a thin sulcal ribbon that exists to be a silhouette, the structures are solid nuclei. One undifferentiated pass smooths the ribbon’s sulci shut and flattens it into a blob. The recipe is the context gently and with <code>method = "chaikin"</code>, which cuts corners without moving contour rings, and the core more firmly with the default <code>close</code>.</p></li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9032" id="ggsegextra-1999032">ggseg.extra 1.9.9.9032<a class="anchor" aria-label="anchor" href="#ggsegextra-1999032"></a></h2>
 <ul><li><p>The whole-brain cortical context only borrows FreeSurfer’s <code>aseg</code> ribbon when the atlas’s grid is fine enough to carry one. A ribbon is 2.5-3 mm thick; resampled onto a 4 mm grid it cannot keep a voxel across itself and the silhouette traced from it breaks into disconnected islands, which is less legible than the solid mantle it replaced. The pipeline now measures the resampled ribbon itself - the share of its voxels whose six face neighbours are all ribbon - and declines the substitution below 0.1, the value a 2.5 mm grid gives. Measured: Hammersmith and Julich (1 mm) 0.49, <code>Mcalt</code> (1.5 mm) 0.29, Craddock 200 and the ADHD-200 parcellations (4 mm) 0.03. The 4 mm atlases keep their own cortical labels, as they did before the ribbon substitution existed.</p></li>

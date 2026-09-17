@@ -307,6 +307,50 @@ All three return a modified `ggseg_atlas`, so you can
 [`plot()`](https://rdrr.io/r/graphics/plot.default.html) the result and
 adjust before committing.
 
+### Context and core are two different problems
+
+A subcortical or whole-brain atlas carries two kinds of geometry at
+once, and one undifferentiated pass is wrong for one of them. The
+`^cortex` context is a thin sulcal ribbon whose job is to be a
+silhouette you read structures against. The structures are solid nuclei
+with nothing interior to lose. Polish both with the same settings and
+the ribbon loses its sulci and flattens into a blob, which is the one
+thing the context was there to avoid.
+
+Polish them separately — the context gently and with `"chaikin"`, the
+structures more firmly and with the default `"close"`:
+
+``` r
+
+atlas <- atlas |>
+  atlas_simplify(keep = 0.5, labels = "^cortex") |>
+  atlas_smooth(smoothness = 0.35, labels = "^cortex", method = "chaikin") |>
+  atlas_simplify(keep = 0.25, exclude = "^cortex") |>
+  atlas_smooth(smoothness = 0.4, exclude = "^cortex")
+```
+
+Each of those four numbers is answering a question about the geometry it
+applies to:
+
+- The context keeps half its vertices. Every gyral crown and sulcal
+  fragment in the ribbon is a contour ring of its own, so simplifying it
+  costs whole rings rather than only vertices — push `keep` much below
+  0.5 and small crowns disappear outright.
+- The context is smoothed with `"chaikin"`. Corner cutting takes off the
+  voxel staircase without moving the rings that remain. The default
+  `"close"` dilates and then erodes, which fattens the ribbon until
+  adjacent sulci merge.
+- The structures keep a quarter of their vertices. A solid nucleus has
+  no interior rings at risk, so it takes the firmer simplification.
+- The structures are smoothed with the default `"close"`, a touch harder
+  than the context, so they read as smooth shapes rather than as traced
+  voxels.
+
+These values are a starting point, not constants: they were chosen by
+comparing renders, and a coarser or finer parcellation will want
+different ones. What carries over is the split — gently and `"chaikin"`
+for the context, firmly and `"close"` for the core.
+
 ## Rebuilding the atlas
 
 After modifying components directly (e.g., editing `$core` by hand),
@@ -341,8 +385,10 @@ atlas <- atlas_raw |>
   atlas_view_remove_region_small(min_area = 100) |>
   atlas_view_gather() |>
   atlas_dilate(0.6, exclude = "^cortex") |>
-  atlas_simplify(keep = 0.3, labels = "^cortex") |>
-  atlas_smooth(smoothness = 0.4)
+  atlas_simplify(keep = 0.5, labels = "^cortex") |>
+  atlas_smooth(smoothness = 0.35, labels = "^cortex", method = "chaikin") |>
+  atlas_simplify(keep = 0.25, exclude = "^cortex") |>
+  atlas_smooth(smoothness = 0.4, exclude = "^cortex")
 ```
 
 Each step is a pure transformation — pipe them together, inspect the

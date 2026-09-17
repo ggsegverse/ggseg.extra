@@ -166,6 +166,8 @@ Read, write, and manipulate FreeSurfer color tables
   : Combine FreeSurfer LUTs
 - [`lut_classify_anatomy()`](https://ggsegverse.github.io/ggseg.extra/reference/lut_classify_anatomy.md)
   : Classify lookup-table labels as cortical, subcortical, or cerebellar
+- [`lut_generate_colors()`](https://ggsegverse.github.io/ggseg.extra/reference/lut_generate_colors.md)
+  : Generate a palette for a colourless lookup table
 
 ## Subcortical Helpers
 
