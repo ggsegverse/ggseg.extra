@@ -408,16 +408,29 @@ slice_along_axis <- function(vol, axis, i) {
 #' @noRd
 detect_cortex_labels <- function(vol) {
   vol_labels <- unique(as.vector(vol))
-  has_aparc <- any(vol_labels >= 1000 & vol_labels < 3000)
 
-  if (has_aparc) {
-    list(
+  # The plain-aseg cortex labels win whenever the volume carries both of them.
+  # An aparc+aseg parcellates the whole ribbon into 1000+/2000+ and keeps
+  # essentially no 3/42 behind, so their presence says the cortex is labelled
+  # the plain way -- whatever else happens to sit in the 1000-2999 range.
+  #
+  # That distinction matters because a subcortical parcellation embedded in an
+  # aseg routinely shifts its parcel ids clear of the aseg's own, and landing
+  # them in the 1000s used to be read as "this is an aparc+aseg". The parcels
+  # were then taken for left cortex, the right hemisphere came up empty, and
+  # the brain silhouette was drawn from the parcels instead of the ribbon.
+  if (all(c(3L, 42L) %in% vol_labels)) {
+    return(list(left = 3L, right = 42L))
+  }
+
+  if (any(vol_labels >= 1000 & vol_labels < 3000)) {
+    return(list(
       left = intersect(1000:1999, vol_labels),
       right = intersect(2000:2999, vol_labels)
-    )
-  } else {
-    list(left = 3, right = 42)
+    ))
   }
+
+  list(left = 3L, right = 42L)
 }
 
 
