@@ -71,6 +71,11 @@
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9031" id="ggsegextra-1999031">ggseg.extra 1.9.9.9031<a class="anchor" aria-label="anchor" href="#ggsegextra-1999031"></a></h2>
 <ul><li>
+<p>The brain silhouette drawn behind a subcortical atlas is no longer built from the atlas’s own parcels when their ids happen to land between 1000 and</p>
+<ol start="2999" style="list-style-type: decimal"><li>
+<code>detect_cortex_labels()</code> read any label in that range as an <code>aparc+aseg</code> cortical parcellation, so a parcellation embedded in an aseg with its ids shifted into the 1000s had its parcels taken for left cortex and no right cortex at all, and the “brain outline” came out as a fragment of deep grey rather than the cortical ribbon. The plain-aseg cortex labels (3 and 42) now win whenever the volume carries both, which an <code>aparc+aseg</code> does not.</li>
+</ol></li>
+<li>
 <p>New <code><a href="../reference/lut_classify_anatomy.html">lut_classify_anatomy()</a></code> fills in a lookup table’s <code>type</code> column by reading where each label sits in FreeSurfer’s <code>aparc+aseg</code>, rather than by matching label names. It is an authoring tool: run it once while building an atlas, commit the column it returns, and <code><a href="../reference/create_wholebrain_from_volume.html">create_wholebrain_from_volume()</a></code> reads the declaration instead of guessing. A declared classification is reviewable in a diff and reproducible without FreeSurfer; an inferred one is neither.</p>
 <p><code>aparc+aseg</code> is resampled onto the volume’s own grid with <code>mri_vol2vol --regheader --nearest</code>, and each label is judged on the share of the labelled grey matter it touches, ignoring white matter and the voxels <code>aparc+aseg</code> does not label. That normalisation is what makes the test independent of a label’s size. On the Julich-Brain maps it gives 250 cortical, 38 subcortical and 8 cerebellar labels, against the 119 / 135 the vertex count produces for the same 294 parcels.</p>
 </li>
