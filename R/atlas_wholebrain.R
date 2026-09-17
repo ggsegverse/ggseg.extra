@@ -26,7 +26,16 @@
 #'    recommended approach for reproducible atlas creation.
 #' 3. **Vertex-count heuristic** (fallback): Labels with at least
 #'    `min_vertices` vertices on the surface projection are classified as
-#'    cortical; the rest as subcortical.
+#'    cortical; the rest as subcortical. It measures how much surface a
+#'    label covers rather than where the label sits, so a small cortical
+#'    parcel and a deep structure look the same to it. It warns whenever it
+#'    runs; treat that warning as a request to declare the labels instead.
+#'
+#' [lut_classify_anatomy()] writes the `type` column for a lookup table that
+#' has none, by reading each label's position in FreeSurfer's `aparc+aseg`.
+#' Run it once while authoring the atlas and commit the column it returns:
+#' a declared classification is reviewable in a diff, where an inferred one
+#' is not.
 #'
 #' @section Volume pre-processing:
 #' Before surface projection, the volume is filtered so that only voxel IDs
@@ -118,10 +127,13 @@
 #' @param regheader `r lifecycle::badge("deprecated")` Use `registration`
 #'   instead. `TRUE` maps to `registration = "header"`, `FALSE` to
 #'   `registration = "mni152"`. Supplying both is an error.
-#' @param min_vertices Minimum total vertex count across hemispheres for a
+#' @param min_vertices Minimum vertex count on the surface projection for a
 #'   label to be classified as cortical by the vertex-count heuristic (see
-#'   **Label classification**). Ignored when `type` column or explicit label
-#'   vectors are provided. Default 50.
+#'   **Label classification**). The count is summed over every region that
+#'   shares a label name, so a lookup table whose labels carry `_left` /
+#'   `_right` suffixes contributes one hemisphere per label while an
+#'   unsuffixed one contributes both. Only reached for labels that a `type`
+#'   column and the explicit label vectors leave unclassified. Default 50.
 #' @param cortical_labels Character vector of label names to force as cortical.
 #'   Highest priority; overrides LUT `type` and the vertex-count heuristic.
 #' @param subcortical_labels Character vector of label names to force as
@@ -1173,13 +1185,16 @@ wholebrain_resolve_split <- function(
 #' 2. `type` column on the colortable (`"cortical"`, `"subcortical"`, or
 #'    `"cerebellar"`)
 #' 3. Vertex-count heuristic: labels with >= `min_vertices` on the surface
-#'    projection are cortical, the rest subcortical (lowest)
+#'    projection are cortical, the rest subcortical (lowest). It warns
+#'    whenever it runs, because it measures a label's surface area rather
+#'    than its depth.
 #'
 #' @param atlas_data Tibble from `wholebrain_project_to_surface()` with
 #'   `source_label` and `vertices` columns.
 #' @param colortable Colortable data.frame. If it has a `type` column with
 #'   values `"cortical"` / `"subcortical"` / `"cerebellar"`, that is used.
-#' @param min_vertices Minimum total vertex count for cortical classification.
+#' @param min_vertices Minimum vertex count on the surface projection for
+#'   cortical classification, summed over every region sharing a label name.
 #' @param cortical_labels Manual override: force these labels as cortical.
 #' @param subcortical_labels Manual override: force these labels as subcortical.
 #' @param cerebellar_labels Manual override: force these labels as cerebellar.
@@ -1212,7 +1227,7 @@ wholebrain_classify_labels <- function(
   classified_cerebellar <- assigned$cerebellar
 
   if (length(assigned$remaining) > 0) {
-    auto <- classify_labels_auto(assigned, prep, min_vertices, verbose)
+    auto <- classify_labels_auto(assigned, prep, min_vertices)
     classified_cortical <- c(classified_cortical, auto$cortical)
     classified_subcortical <- c(classified_subcortical, auto$subcortical)
   }
@@ -1263,7 +1278,7 @@ classify_labels_inputs <- function(atlas_data, colortable) {
 #' Assign labels from the manual overrides and the LUT `type` column
 #'
 #' @return List with the labels classified so far plus the still-unassigned
-#'   `remaining` labels and whether the colortable had a `type` column.
+#'   `remaining` labels.
 #' @noRd
 classify_labels_assign <- function(
   prep,
@@ -1303,15 +1318,19 @@ classify_labels_assign <- function(
     cortical = classified_cortical,
     subcortical = classified_subcortical,
     cerebellar = classified_cerebellar,
-    remaining = remaining,
-    has_type = has_type
+    remaining = remaining
   )
 }
 
 
 #' Classify the still-unassigned labels with the vertex-count heuristic
+#'
+#' The last resort: it measures how much surface a label covers, not where
+#' the label sits, so a small cortical parcel is indistinguishable from a
+#' deep structure. Warns unconditionally, because silently guessing this is
+#' how atlases have shipped with half their parcels in the wrong table.
 #' @noRd
-classify_labels_auto <- function(assigned, prep, min_vertices, verbose) {
+classify_labels_auto <- function(assigned, prep, min_vertices) {
   # Only apply vertex-count heuristic to labels that actually projected
   # onto the cortical surface. Labels only in the volume (not projected)
   # are left unclassified here — they stay subcortical by default.
@@ -1319,13 +1338,8 @@ classify_labels_auto <- function(assigned, prep, min_vertices, verbose) {
   projected_remaining <- intersect(assigned$remaining, prep$projected_labels)
   volume_only <- setdiff(assigned$remaining, prep$projected_labels)
 
-  if (verbose && !assigned$has_type && length(projected_remaining) > 0) {
-    cli::cli_alert_info(
-      "No {.field type} column in LUT; classifying
-      {length(projected_remaining)} labels by vertex count",
-      wrap = TRUE
-    )
-  }
+  warn_vertex_count_fallback(length(projected_remaining))
+
   auto_cortical <- projected_remaining[
     vertex_counts[projected_remaining] >= min_vertices
   ]
@@ -1335,6 +1349,28 @@ classify_labels_auto <- function(assigned, prep, min_vertices, verbose) {
   )
 
   list(cortical = auto_cortical, subcortical = auto_subcortical)
+}
+
+
+#' Warn that labels were classified by size rather than by anatomy
+#' @noRd
+warn_vertex_count_fallback <- function(n) {
+  if (n == 0L) {
+    return(invisible(NULL))
+  }
+  cli::cli_warn(
+    c(
+      "Classified {n} label{?s} by surface vertex count, not by anatomy.",
+      "!" = "The vertex count measures how much surface a label covers, so a
+      small cortical parcel and a deep structure look the same to it.",
+      "i" = "Declare the labels instead: {.fn lut_classify_anatomy} fills in
+      a {.field type} column from FreeSurfer's {.field aparc+aseg}, or pass
+      {.arg cortical_labels}/{.arg subcortical_labels}/
+      {.arg cerebellar_labels}."
+    ),
+    wrap = TRUE
+  )
+  invisible(NULL)
 }
 
 

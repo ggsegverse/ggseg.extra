@@ -72,10 +72,13 @@ mislocated.
 \item A path to a register.dat or LTA file to apply instead.
 }}
 
-\item{min_vertices}{Minimum total vertex count across hemispheres for a
+\item{min_vertices}{Minimum vertex count on the surface projection for a
 label to be classified as cortical by the vertex-count heuristic (see
-\strong{Label classification}). Ignored when \code{type} column or explicit label
-vectors are provided. Default 50.}
+\strong{Label classification}). The count is summed over every region that
+shares a label name, so a lookup table whose labels carry \verb{_left} /
+\verb{_right} suffixes contributes one hemisphere per label while an
+unsuffixed one contributes both. Only reached for labels that a \code{type}
+column and the explicit label vectors leave unclassified. Default 50.}
 
 \item{cortical_labels}{Character vector of label names to force as cortical.
 Highest priority; overrides LUT \code{type} and the vertex-count heuristic.}
@@ -166,8 +169,17 @@ used for any labels not covered by the function arguments. This is the
 recommended approach for reproducible atlas creation.
 \item \strong{Vertex-count heuristic} (fallback): Labels with at least
 \code{min_vertices} vertices on the surface projection are classified as
-cortical; the rest as subcortical.
+cortical; the rest as subcortical. It measures how much surface a
+label covers rather than where the label sits, so a small cortical
+parcel and a deep structure look the same to it. It warns whenever it
+runs; treat that warning as a request to declare the labels instead.
 }
+
+\code{\link[=lut_classify_anatomy]{lut_classify_anatomy()}} writes the \code{type} column for a lookup table that
+has none, by reading each label's position in FreeSurfer's \code{aparc+aseg}.
+Run it once while authoring the atlas and commit the column it returns:
+a declared classification is reviewable in a diff, where an inferred one
+is not.
 }
 
 \section{Volume pre-processing}{

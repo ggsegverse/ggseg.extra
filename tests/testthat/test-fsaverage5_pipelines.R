@@ -76,15 +76,21 @@ testthat::describe("create_wholebrain_from_volume on fsaverage5", {
 
     cerebellum <- c("Left-Cerebellum-Cortex", "Right-Cerebellum-Cortex")
 
-    result <- create_wholebrain_from_volume(
-      input_volume = fsaverage5_file("mri", "aseg.mgz"),
-      input_lut = file.path(freesurfer::fs_dir(), "FreeSurferColorLUT.txt"),
-      atlas_name = "aseg_fsaverage5",
-      output_dir = withr::local_tempdir(),
-      registration = "header",
-      cerebellar_labels = cerebellum,
-      steps = 1:2,
-      verbose = FALSE
+    # FreeSurferColorLUT.txt carries no type column, so the pipeline falls
+    # back to the vertex count for whatever the explicit vectors leave over.
+    result <- NULL
+    expect_warning(
+      result <- create_wholebrain_from_volume(
+        input_volume = fsaverage5_file("mri", "aseg.mgz"),
+        input_lut = file.path(freesurfer::fs_dir(), "FreeSurferColorLUT.txt"),
+        atlas_name = "aseg_fsaverage5",
+        output_dir = withr::local_tempdir(),
+        registration = "header",
+        cerebellar_labels = cerebellum,
+        steps = 1:2,
+        verbose = FALSE
+      ),
+      "by surface vertex count"
     )
 
     expect_true(all(
