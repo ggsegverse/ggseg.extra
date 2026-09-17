@@ -59,6 +59,12 @@
 #' claims the voxel. An atlas whose cortical labels are already a ribbon, such
 #' as one derived from a surface, keeps its own.
 #'
+#' A ribbon is 2.5-3 mm thick, so a volume sampled more coarsely than that
+#' cannot hold one: the resampled ribbon breaks into islands and the
+#' silhouette with it. The substitution is declined when the resampled
+#' ribbon is not at least a voxel thick through most of itself, and the
+#' atlas's own cortical labels are used, as they were before.
+#'
 #' Either way, the `aseg` cerebellar cortex and brain stem are added to the
 #' context, so the posterior fossa is not drawn as empty space behind an
 #' atlas that reaches below the tentorium or one whose cerebellum lives in a
@@ -1861,8 +1867,9 @@ reindex_reserved_subcort_idx <- function(ct, verbose = TRUE) {
 #' union of its cortical labels is a solid mantle. The shape comes from
 #' FreeSurfer's `aseg` instead, where sulcal CSF is unlabelled: it is
 #' resampled onto this volume's own grid and its cortical ribbon is written
-#' wherever no structure claims the voxel. Without a usable `aseg` the atlas's
-#' own cortical mask is used, which is the old solid silhouette.
+#' wherever no structure claims the voxel. Without a usable `aseg`, or on a
+#' grid too coarse to carry a ribbon, the atlas's own cortical mask is used,
+#' which is the old solid silhouette.
 #' @noRd
 # nolint next: object_length_linter.
 wholebrain_prepare_subcortical_volume <- function(
@@ -1902,9 +1909,10 @@ wholebrain_prepare_subcortical_volume <- function(
 #'
 #' An atlas whose own cortical mask is already a ribbon keeps it, split at the
 #' midline, which is what this always did. Only a solid mantle is replaced,
-#' with the resampled `aseg` ribbon written into voxels no structure claims.
-#' The same midline split is the fallback when no ribbon can be had. An atlas
-#' with no cortical labels at all gets no context either way: the whole-brain
+#' with the resampled `aseg` ribbon written into voxels no structure claims,
+#' and only where the grid is fine enough to carry a ribbon. The same midline
+#' split is the fallback when no ribbon can be had. An atlas with no cortical
+#' labels at all gets no context either way: the whole-brain
 #' split decided this parcellation has no cortex to draw.
 #' @noRd
 # nolint next: object_length_linter.
@@ -1939,6 +1947,10 @@ wholebrain_write_cortex_context <- function(
 
 
 #' Cerebral cortex context: the `aseg` ribbon, or the atlas's own mask
+#'
+#' Two things have to hold before the ribbon is worth substituting: the
+#' atlas's own mask has to be a solid mantle, and the grid has to be fine
+#' enough to carry a ribbon at all.
 #' @noRd
 wholebrain_write_cerebrum <- function(
   result,
@@ -1947,7 +1959,8 @@ wholebrain_write_cerebrum <- function(
   aseg,
   verbose
 ) {
-  if (!cortex_mask_is_solid(cortical_mask, aseg, verbose)) {
+  solid <- cortex_mask_is_solid(cortical_mask, aseg, verbose)
+  if (!solid || !ribbon_is_resolved(aseg, verbose)) {
     return(wholebrain_cortex_by_midline(result, cortical_mask, vol))
   }
   write_aseg_context(result, aseg, aseg_cortex_idx())
@@ -2036,7 +2049,7 @@ aseg_context_idx <- function() {
 #' @param cortical_mask Logical array of the atlas's cortical voxels.
 #' @param aseg The resampled `aseg` context volume. Only its cortical ribbon
 #'   counts here; the posterior fossa labels are not cortex.
-#' @param verbose Report the decision.
+#' @param verbose Report the decision, either way.
 #' @param factor How many ribbons' worth of voxels counts as solid.
 #' @noRd
 cortex_mask_is_solid <- function(
@@ -2046,18 +2059,136 @@ cortex_mask_is_solid <- function(
   factor = 1.5
 ) {
   ratio <- sum(cortical_mask) / max(1L, sum(aseg %in% aseg_cortex_idx()))
-  if (ratio >= factor) {
-    return(TRUE)
-  }
-
+  solid <- ratio >= factor
   if (verbose) {
+    log_cortex_mask_decision(solid, round(ratio, 2))
+  }
+  solid
+}
+
+
+#' Say which silhouette the cortical mask's own thickness argues for
+#' @noRd
+log_cortex_mask_decision <- function(solid, ratio) {
+  if (solid) {
     cli::cli_alert_info(
-      "Cortical labels are already a ribbon ({round(ratio, 2)} times the
-      {.field aseg} ribbon); keeping them as the context silhouette.",
+      "Cortical labels are a solid mantle ({ratio} times the {.field aseg}
+      ribbon); looking to the {.field aseg} ribbon for the silhouette.",
       wrap = TRUE
     )
+    return(invisible(NULL))
   }
-  FALSE
+  cli::cli_alert_info(
+    "Cortical labels are already a ribbon ({ratio} times the {.field aseg}
+    ribbon); keeping them as the context silhouette.",
+    wrap = TRUE
+  )
+  invisible(NULL)
+}
+
+
+#' Is the grid fine enough for the resampled ribbon to hold together?
+#'
+#' A cortical ribbon is 2.5-3 mm thick. Sampled on a grid whose step is
+#' coarser than that, it cannot keep a voxel across itself everywhere, and
+#' the silhouette traced from it breaks into disconnected islands - which is
+#' worse than the solid mantle it replaces: anatomically right and illegible.
+#' The ratio in `cortex_mask_is_solid()` does not see this; Craddock 200
+#' (1.58) and ADHD-200 400 (2.82) sit at opposite ends of it and fragment
+#' alike, because what they share is a 4 mm grid.
+#'
+#' What is measured is the ribbon itself rather than the voxel size, so an
+#' anisotropic grid, an oblique volume, or anything else the resampling does
+#' to the ribbon is caught by the same number: the share of ribbon voxels
+#' whose six face neighbours are all ribbon too. That share is what having
+#' more than one voxel across the ribbon means.
+#'
+#' Calibrated by resampling the `cvs_avg35_inMNI152` ribbon to a range of
+#' isotropic grids: 1.0 mm 0.49, 1.5 mm 0.29, 2.0 mm 0.18, 2.5 mm 0.11,
+#' 3.0 mm 0.06, 4.0 mm 0.03. The threshold is the value at a 2.5 mm step,
+#' the thin end of the ribbon and the coarsest grid that can still hold one.
+#' The atlases either side of it are not close to it: the 1.5 mm `Mcalt`
+#' measures 0.29, the 4 mm parcellations 0.028 to 0.031.
+#'
+#' @param aseg The resampled `aseg` context volume.
+#' @param verbose Report the decision, either way.
+#' @param min_interior Share of ribbon voxels that must have a full ribbon
+#'   neighbourhood.
+#' @noRd
+ribbon_is_resolved <- function(
+  aseg,
+  verbose = get_verbose(),
+  min_interior = 0.1
+) {
+  ribbon <- array(aseg %in% aseg_cortex_idx(), dim = dim(aseg))
+  interior <- ribbon_interior_fraction(ribbon)
+  resolved <- interior >= min_interior
+  if (verbose) {
+    log_ribbon_resolution(resolved, round(interior, 3), min_interior)
+  }
+  resolved
+}
+
+
+#' Say whether the resampled ribbon survived the grid it landed on
+#' @noRd
+log_ribbon_resolution <- function(resolved, interior, min_interior) {
+  if (resolved) {
+    cli::cli_alert_info(
+      "Taking the silhouette from the resampled {.field aseg} ribbon
+      ({interior} of its voxels are a full ribbon thick).",
+      wrap = TRUE
+    )
+    return(invisible(NULL))
+  }
+  cli::cli_alert_info(
+    "The grid is too coarse to carry a ribbon ({interior} of the resampled
+    {.field aseg} ribbon's voxels are a full ribbon thick, against
+    {min_interior}); keeping the atlas's own cortical labels as the context
+    silhouette.",
+    wrap = TRUE
+  )
+  invisible(NULL)
+}
+
+
+#' Share of a mask's voxels whose six face neighbours are all mask too
+#'
+#' The three-dimensional mask eroded by one voxel, over the mask. Voxels on
+#' the volume's own face are never interior, since what lies beyond them is
+#' not mask.
+#' @noRd
+ribbon_interior_fraction <- function(mask) {
+  total <- sum(mask)
+  if (total == 0L) {
+    return(0)
+  }
+  interior <- mask
+  for (axis in seq_len(3L)) {
+    for (step in c(-1L, 1L)) {
+      interior <- interior & shift_mask(mask, axis, step)
+    }
+  }
+  sum(interior) / total
+}
+
+
+#' A logical array shifted one voxel along an axis, filling with `FALSE`
+#' @noRd
+shift_mask <- function(mask, axis, step) {
+  dims <- dim(mask)
+  shifted <- array(FALSE, dim = dims)
+  if (dims[axis] < 2L) {
+    return(shifted)
+  }
+  from <- lapply(dims, seq_len)
+  to <- from
+  keep_low <- seq_len(dims[axis] - 1L)
+  keep_high <- seq.int(2L, dims[axis])
+  from[[axis]] <- if (step > 0L) keep_low else keep_high
+  to[[axis]] <- if (step > 0L) keep_high else keep_low
+  shifted[to[[1]], to[[2]], to[[3]]] <- mask[from[[1]], from[[2]], from[[3]]]
+  shifted
 }
 
 #' Resample the FreeSurfer `aseg` context labels onto a volume's own grid
