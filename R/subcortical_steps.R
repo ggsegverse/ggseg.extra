@@ -123,7 +123,7 @@ subcort_build_components <- function(colortable, meshes_list) {
     ct_row <- colortable[colortable$label == label_name, ]
     tibble(
       hemi = detect_hemi(label_name),
-      region = clean_region_name(label_name),
+      region = label_to_region(label_name),
       label = label_name,
       colour = ct_row$color[1],
       mesh = list(meshes_list[[label_name]])

@@ -47,31 +47,53 @@ testthat::describe("detect_hemi", {
 })
 
 
-testthat::describe("clean_region_name", {
-  it("removes hemisphere prefix and normalizes", {
-    expect_identical(clean_region_name("Left-Thalamus"), "thalamus")
-    expect_identical(clean_region_name("right_Amygdala"), "amygdala")
+testthat::describe("label_to_region", {
+  it("flattens every separator a build script might key on", {
+    # A script keying a `name` column on `region` has to key on what the
+    # pipeline derives. Handling underscores but not hyphens is how one
+    # region silently joins to NA.
     expect_identical(
-      clean_region_name("lh.superior_frontal"),
+      label_to_region("Central_Lateral-Lateral_Posterior-Medial_Pulvinar_Left"),
+      "central lateral lateral posterior medial pulvinar"
+    )
+    expect_identical(
+      label_to_region("Ventral_Anterior_Right"),
+      "ventral anterior"
+    )
+    expect_identical(label_to_region("SNc_PBP_VTA_Right"), "snc pbp vta")
+  })
+
+  it("is vectorised over labels", {
+    expect_identical(
+      label_to_region(c("Pu_Left", "Pu_Right", "AV_Left")),
+      c("pu", "pu", "av")
+    )
+  })
+
+  it("removes hemisphere prefix and normalizes", {
+    expect_identical(label_to_region("Left-Thalamus"), "thalamus")
+    expect_identical(label_to_region("right_Amygdala"), "amygdala")
+    expect_identical(
+      label_to_region("lh.superior_frontal"),
       "superior frontal"
     )
   })
 
   it("converts underscores and dashes to spaces", {
-    expect_identical(clean_region_name("superior_frontal"), "superior frontal")
-    expect_identical(clean_region_name("pre-central"), "pre central")
+    expect_identical(label_to_region("superior_frontal"), "superior frontal")
+    expect_identical(label_to_region("pre-central"), "pre central")
   })
 
   it("can skip hemisphere removal", {
     expect_identical(
-      clean_region_name("Left-Thalamus", remove_hemi = FALSE),
+      label_to_region("Left-Thalamus", remove_hemi = FALSE),
       "left thalamus"
     )
   })
 
   it("can skip normalization", {
     expect_identical(
-      clean_region_name("Left-Thalamus", normalize = FALSE),
+      label_to_region("Left-Thalamus", normalize = FALSE),
       "Thalamus"
     )
   })
@@ -99,7 +121,7 @@ testthat::describe("clean_region_name", {
         info = paste("detect_hemi failed on", label)
       )
       expect_false(
-        grepl("(^|\\s)(left|right|lh|rh|l|r)(\\s|$)", clean_region_name(label)),
+        grepl("(^|\\s)(left|right|lh|rh|l|r)(\\s|$)", label_to_region(label)),
         info = paste("hemisphere left in region for", label)
       )
     }
@@ -107,29 +129,29 @@ testthat::describe("clean_region_name", {
 
   it("pairs the hemispheres of a structure on region", {
     expect_identical(
-      clean_region_name("L_Fx"),
-      clean_region_name("R_Fx")
+      label_to_region("L_Fx"),
+      label_to_region("R_Fx")
     )
     expect_identical(
-      clean_region_name("Fx_L"),
-      clean_region_name("Fx_R")
+      label_to_region("Fx_L"),
+      label_to_region("Fx_R")
     )
     expect_identical(
-      clean_region_name("Area_5L_SPL_left"),
-      clean_region_name("Area_5L_SPL_right")
+      label_to_region("Area_5L_SPL_left"),
+      label_to_region("Area_5L_SPL_right")
     )
   })
 
   it("keeps a name that is only a hemisphere word", {
-    expect_identical(clean_region_name("left"), "left")
+    expect_identical(label_to_region("left"), "left")
   })
 
   it("does not strip a leading letter that is not an affix", {
     expect_identical(
-      clean_region_name("Rolandic_operculum"),
+      label_to_region("Rolandic_operculum"),
       "rolandic operculum"
     )
-    expect_identical(clean_region_name("Lingual"), "lingual")
+    expect_identical(label_to_region("Lingual"), "lingual")
   })
 })
 
