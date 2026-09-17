@@ -205,6 +205,12 @@ volume's own grid through the two headers
 claims the voxel. An atlas whose cortical labels are already a ribbon, such
 as one derived from a surface, keeps its own.
 
+A ribbon is 2.5-3 mm thick, so a volume sampled more coarsely than that
+cannot hold one: the resampled ribbon breaks into islands and the
+silhouette with it. The substitution is declined when the resampled
+ribbon is not at least a voxel thick through most of itself, and the
+atlas's own cortical labels are used, as they were before.
+
 Either way, the \code{aseg} cerebellar cortex and brain stem are added to the
 context, so the posterior fossa is not drawn as empty space behind an
 atlas that reaches below the tentorium or one whose cerebellum lives in a
