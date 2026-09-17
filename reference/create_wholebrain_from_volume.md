@@ -233,11 +233,33 @@ listed in the LUT are kept; all other non-zero voxels are zeroed out.
 This prevents unlisted structures (e.g. white matter, ventricle masks)
 from bleeding onto the cortical surface during label dilation.
 
-Cortical voxels are also used to generate the brain-outline reference
-geometry for the subcortical pipeline. The volume's orientation matrix
-(`xform`) is used to split cortical voxels by hemisphere:
-left-hemisphere voxels map to FreeSurfer label 3 (left cortex) and
-right-hemisphere to label 42 (right cortex).
+The subcortical pipeline also gets a brain-outline reference to draw as
+grey context behind its structures, under FreeSurfer's cortex labels 3
+(left) and 42 (right). By default that is the atlas's own cortical
+voxels, split by hemisphere at the volume's midline: left-hemisphere
+voxels map to label 3, right-hemisphere to label 42.
+
+A parcellation that covers both banks of every sulcus makes a solid
+mantle that way, and no amount of polishing can put sulci into a
+silhouette that never had any. When the cortical labels hold more than
+1.5 times the voxels of a cortical ribbon, the context is taken from
+FreeSurfer's `aseg` instead, where sulcal CSF is unlabelled: its ribbon
+is resampled onto this volume's own grid through the two headers
+(`mri_vol2vol --regheader --nearest`) and written wherever no structure
+claims the voxel. An atlas whose cortical labels are already a ribbon,
+such as one derived from a surface, keeps its own.
+
+Either way, the `aseg` cerebellar cortex and brain stem are added to the
+context, so the posterior fossa is not drawn as empty space behind an
+atlas that reaches below the tentorium or one whose cerebellum lives in
+a separate atlas. Cerebellar white matter is left out: without it the
+cerebellum stays a foliated shell rather than a solid lump that merges
+with the occipital lobe.
+
+When no usable `aseg` is available - no FreeSurfer, no `aseg.mgz` for
+the subject, a failed resampling, or a ribbon that does not land inside
+this volume, which is what a volume in some other space looks like - the
+midline split is used and the pipeline warns.
 
 ## Human oversight
 
