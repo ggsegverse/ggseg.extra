@@ -3646,9 +3646,12 @@ testthat::describe("aseg_context_volume", {
     # labelling grey matter only - MarsAtlas - fails the overlap gate if the
     # fossa counts towards it, and loses its context entirely.
     aseg <- array(0L, dim = c(4, 4, 4))
+    # nolint next: commas_linter. air formats empty subscripts without spaces.
     aseg[,, 1] <- 3L
+    # nolint next: commas_linter. air formats empty subscripts without spaces.
     aseg[,, 2:4] <- 8L
     brain_mask <- array(FALSE, dim = c(4, 4, 4))
+    # nolint next: commas_linter. air formats empty subscripts without spaces.
     brain_mask[,, 1] <- TRUE
     resampled <- withr::local_tempfile(fileext = ".nii.gz")
     RNifti::writeNifti(RNifti::asNifti(aseg), resampled)
