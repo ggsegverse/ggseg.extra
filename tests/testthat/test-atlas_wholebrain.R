@@ -3511,7 +3511,7 @@ testthat::describe("cortex_mask_is_solid", {
 
 testthat::describe("aseg_volume_path", {
   it("warns and returns NULL without FreeSurfer", {
-    local_mocked_bindings(try_have_fs = function() FALSE)
+    local_mocked_bindings(have_fs_quietly = function() FALSE)
     expect_warning(
       expect_null(aseg_volume_path("cvs_avg35_inMNI152")),
       "FreeSurfer is not available"
@@ -3520,7 +3520,7 @@ testthat::describe("aseg_volume_path", {
 
   it("warns and returns NULL when the subject has no aseg", {
     subj_dir <- withr::local_tempdir()
-    local_mocked_bindings(try_have_fs = function() TRUE)
+    local_mocked_bindings(have_fs_quietly = function() TRUE)
     local_mocked_bindings(
       fs_subj_dir = function() subj_dir,
       .package = "freesurfer"
@@ -3536,7 +3536,7 @@ testthat::describe("aseg_volume_path", {
     mri <- file.path(subj_dir, "subj", "mri")
     dir.create(mri, recursive = TRUE)
     file.create(file.path(mri, "aseg.mgz"))
-    local_mocked_bindings(try_have_fs = function() TRUE)
+    local_mocked_bindings(have_fs_quietly = function() TRUE)
     local_mocked_bindings(
       fs_subj_dir = function() subj_dir,
       .package = "freesurfer"
@@ -3549,43 +3549,20 @@ testthat::describe("aseg_volume_path", {
 })
 
 
-testthat::describe("try_have_fs", {
-  it("is FALSE when have_fs() errors", {
-    local_mocked_bindings(
-      have_fs = function() stop("no FREESURFER_HOME"),
-      .package = "freesurfer"
-    )
-    expect_false(try_have_fs())
-  })
-})
-
-
-testthat::describe("resample_aseg_to_grid", {
-  it("builds a nearest-neighbour header resampling onto the atlas grid", {
-    cap <- new.env()
-    local_mocked_bindings(
-      run_cmd = function(cmd, ...) {
-        cap$cmd <- cmd
-        file.create(gsub("['\"]", "", sub(".*--o ", "", cmd)))
-        0L
-      }
-    )
-    out <- resample_aseg_to_grid("aseg.mgz", "atlas.nii.gz", verbose = 0L)
-
-    expect_true(grepl("mri_vol2vol", cap$cmd, fixed = TRUE))
-    expect_true(grepl("--regheader", cap$cmd, fixed = TRUE))
-    expect_true(grepl("--nearest", cap$cmd, fixed = TRUE))
-    expect_true(grepl("--targ", cap$cmd, fixed = TRUE))
-    expect_true(endsWith(out, ".nii"))
-    unlink(out)
-  })
-
-  it("warns and returns NULL when the command fails", {
+testthat::describe("aseg_context_volume resampling", {
+  it("warns and falls back when the resampling fails", {
     local_mocked_bindings(
       run_cmd = function(cmd, ...) cli::cli_abort("boom")
     )
+    local_mocked_bindings(aseg_volume_path = function(...) "aseg.mgz")
+
     expect_warning(
-      expect_null(resample_aseg_to_grid("aseg.mgz", "a.nii.gz", verbose = 0L)),
+      expect_null(aseg_context_volume(
+        "a.nii.gz",
+        "subj",
+        c(2L, 2L, 2L),
+        array(TRUE, c(2, 2, 2))
+      )),
       "mri_vol2vol"
     )
   })
@@ -3610,7 +3587,7 @@ testthat::describe("aseg_context_volume", {
     resampled <- withr::local_tempfile(fileext = ".nii.gz")
     RNifti::writeNifti(RNifti::asNifti(array(3L, dim = c(2, 2, 2))), resampled)
     local_mocked_bindings(aseg_volume_path = function(...) "aseg.mgz")
-    local_mocked_bindings(resample_aseg_to_grid = function(...) resampled)
+    local_mocked_bindings(resample_volume_to_grid = function(...) resampled)
 
     expect_warning(
       expect_null(aseg_context_volume(
@@ -3636,7 +3613,7 @@ testthat::describe("aseg_context_volume", {
     resampled <- withr::local_tempfile(fileext = ".nii.gz")
     RNifti::writeNifti(RNifti::asNifti(aseg), resampled)
     local_mocked_bindings(aseg_volume_path = function(...) "aseg.mgz")
-    local_mocked_bindings(resample_aseg_to_grid = function(...) resampled)
+    local_mocked_bindings(resample_volume_to_grid = function(...) resampled)
 
     context <- aseg_context_volume(
       "a.nii.gz",
@@ -3668,7 +3645,7 @@ testthat::describe("aseg_context_volume", {
     resampled <- withr::local_tempfile(fileext = ".nii.gz")
     RNifti::writeNifti(RNifti::asNifti(aseg), resampled)
     local_mocked_bindings(aseg_volume_path = function(...) "aseg.mgz")
-    local_mocked_bindings(resample_aseg_to_grid = function(...) resampled)
+    local_mocked_bindings(resample_volume_to_grid = function(...) resampled)
 
     context <- aseg_context_volume(
       "a.nii.gz",

@@ -2092,8 +2092,9 @@ aseg_context_volume <- function(
     return(NULL)
   }
 
-  resampled <- resample_aseg_to_grid(aseg, input_volume, verbose)
+  resampled <- resample_volume_to_grid(aseg, input_volume, verbose)
   if (is.null(resampled)) {
+    warn_solid_cortex_context("{.code mri_vol2vol} failed")
     return(NULL)
   }
   on.exit(unlink(resampled), add = TRUE)
@@ -2127,7 +2128,7 @@ aseg_context_volume <- function(
 aseg_volume_path <- function(subject) {
   if (
     !rlang::is_installed("freesurfer") ||
-      !isTRUE(try_have_fs())
+      !isTRUE(have_fs_quietly())
   ) {
     warn_solid_cortex_context("FreeSurfer is not available")
     return(NULL)
@@ -2149,44 +2150,6 @@ aseg_volume_path <- function(subject) {
 }
 
 
-#' `freesurfer::have_fs()` without letting its failures escape
-#' @noRd
-try_have_fs <- function() {
-  tryCatch(freesurfer::have_fs(), error = function(e) FALSE)
-}
-
-
-#' Run `mri_vol2vol`, returning the output path or `NULL` on failure
-#' @noRd
-resample_aseg_to_grid <- function(aseg, input_volume, verbose) {
-  out_file <- tempfile(fileext = paste0(".", volume_ext(input_volume)))
-  cmd <- paste(
-    "mri_vol2vol",
-    "--mov",
-    shQuote(aseg),
-    "--targ",
-    shQuote(input_volume),
-    "--regheader",
-    "--nearest",
-    "--o",
-    shQuote(out_file)
-  )
-  ok <- tryCatch(
-    {
-      run_cmd(cmd, verbose = max(0L, as.integer(verbose) - 1L))
-      file.exists(out_file)
-    },
-    error = function(e) FALSE
-  )
-  if (!ok) {
-    unlink(out_file)
-    warn_solid_cortex_context("{.code mri_vol2vol} failed")
-    return(NULL)
-  }
-  out_file
-}
-
-
 #' Is the resampled ribbon actually sitting on this volume's brain?
 #'
 #' A volume in a space its header does not describe still resamples without
@@ -2194,14 +2157,12 @@ resample_aseg_to_grid <- function(aseg, input_volume, verbose) {
 #' fall on non-zero voxels catches that, and catches an empty ribbon.
 #' @noRd
 ribbon_lands_on_volume <- function(ribbon, brain_mask, min_overlap = 0.5) {
-  inside <- ribbon > 0L
-  n <- sum(inside)
-  if (n == 0L) {
+  overlap <- resampled_overlap(ribbon > 0L, brain_mask)
+
+  if (is.na(overlap)) {
     warn_solid_cortex_context("the resampled {.field aseg} has no cortex")
     return(FALSE)
   }
-
-  overlap <- sum(inside & brain_mask) / n
   if (overlap < min_overlap) {
     # nolint next: object_usage_linter.
     pct <- round(100 * overlap)
