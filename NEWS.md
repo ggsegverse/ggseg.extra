@@ -1,4 +1,4 @@
-# ggseg.extra 1.9.9.9030
+# ggseg.extra 1.9.9.9031
 
 - The grey cortical silhouette `create_wholebrain_from_volume()` draws behind
   a subcortical atlas now has sulci and gyri when the parcellation it is built
@@ -17,8 +17,9 @@
   parcellation derived from a surface is untouched: another brain's ribbon
   would only replace sulci it already has. The two are told apart by how many
   voxels the cortical mask holds against the resampled ribbon in the same
-  grid - the same anatomy measured the thin way. Measured: `MarsAtlas` 0.78,
-  Julich 1.96, Hammersmith 2.23; anything from 1.5 up counts as solid.
+  grid - the same anatomy measured the thin way. Measured: `MarsAtlas` 0.92,
+  Miccai 1.33, Craddock 1.58, Mcalt 1.61, Julich 2.44, Hammersmith 2.23;
+  anything from 1.5 up counts as solid.
 
   The parcels themselves are untouched; only the `cortex_` context changes.
 
