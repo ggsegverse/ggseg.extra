@@ -2074,7 +2074,9 @@ cortex_mask_is_solid <- function(
 #'
 #' @param input_volume Path to the atlas volume, used as the target grid.
 #' @param subject FreeSurfer subject to take the `aseg` from.
-#' @param dims Expected dimensions of the resampled volume.
+#' @param dims Dimensions of the atlas volume's own grid, which the
+#'   resampled `aseg` has to match for the two to be talking about the same
+#'   voxels.
 #' @param brain_mask Logical array, `TRUE` wherever the atlas volume is
 #'   non-zero.
 #' @template verbose

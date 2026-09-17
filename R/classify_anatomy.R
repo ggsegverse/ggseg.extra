@@ -435,7 +435,8 @@ classify_labels_by_anatomy <- function(
 #'
 #' @param source_file Path to the subject's `aparc+aseg.mgz`.
 #' @param volume Path to the atlas volume, used as the target grid.
-#' @param dims Expected dimensions of the resampled volume.
+#' @param dims Dimensions of the parcellation being classified, which the
+#'   resampled `aparc+aseg` has to match.
 #' @param brain_mask Logical array, `TRUE` wherever the volume is non-zero.
 #' @template verbose
 #' @return Integer array of `aseg` label values.
