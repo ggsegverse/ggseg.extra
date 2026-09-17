@@ -428,10 +428,26 @@ testthat::describe("aparc_aseg_path()", {
 
 
 testthat::describe("resample_volume_to_grid()", {
-  it("errors when mri_vol2vol fails", {
+  it("returns NULL when mri_vol2vol fails", {
+    # The resampler is shared with the whole-brain context pipeline, which
+    # warns where this one aborts, so the failure is the caller's to report.
+    local_mocked_bindings(run_cmd = function(...) stop("no freesurfer"))
+    expect_null(
+      resample_volume_to_grid("aseg.mgz", "target.nii.gz", verbose = 0L)
+    )
+  })
+
+  it("is reported as an anatomy failure by the caller", {
+    local_mocked_bindings(aparc_aseg_path = function(subject) "aseg.mgz")
     local_mocked_bindings(run_cmd = function(...) stop("no freesurfer"))
     expect_error(
-      resample_volume_to_grid("aseg.mgz", "target.nii.gz", verbose = 0L),
+      aparc_aseg_on_grid(
+        "aseg.mgz",
+        write_test_volume(cortical_sheet_volume()),
+        c(10L, 10L, 10L),
+        array(TRUE, c(10, 10, 10)),
+        verbose = 0L
+      ),
       "mri_vol2vol.*failed"
     )
   })

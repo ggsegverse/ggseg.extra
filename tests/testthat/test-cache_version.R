@@ -220,11 +220,12 @@ testthat::describe("check_cache_current", {
 
   it("names both the found and the expected format version", {
     file <- local_cache_file()
+    stamped <- cache_format_version()
     local_mocked_bindings(cache_format_version = function() 9999L)
 
     expect_error(
       check_cache_current(file, "Rerun step 1"),
-      "written by cache format 1"
+      paste("written by cache format", stamped)
     )
   })
 })

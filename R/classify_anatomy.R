@@ -435,7 +435,8 @@ classify_labels_by_anatomy <- function(
 #'
 #' @param source_file Path to the subject's `aparc+aseg.mgz`.
 #' @param volume Path to the atlas volume, used as the target grid.
-#' @param dims Expected dimensions of the resampled volume.
+#' @param dims Dimensions of the parcellation being classified, which the
+#'   resampled `aparc+aseg` has to match.
 #' @param brain_mask Logical array, `TRUE` wherever the volume is non-zero.
 #' @template verbose
 #' @return Integer array of `aseg` label values.
@@ -448,6 +449,9 @@ aparc_aseg_on_grid <- function(
   verbose
 ) {
   resampled <- resample_volume_to_grid(source_file, volume, verbose)
+  if (is.null(resampled)) {
+    abort_anatomy_unavailable("{.code mri_vol2vol} failed")
+  }
   on.exit(unlink(resampled), add = TRUE)
 
   aseg <- read_label_volume(resampled)
@@ -524,6 +528,10 @@ have_fs_quietly <- function() {
 
 
 #' Run `mri_vol2vol --regheader --nearest`
+#'
+#' Returns the output path, or `NULL` when the command fails. Shared with the
+#' whole-brain context pipeline, which warns and carries on where this
+#' caller aborts, so the failure is reported by the caller rather than here.
 #' @noRd
 resample_volume_to_grid <- function(source_file, target, verbose) {
   out_file <- tempfile(fileext = paste0(".", volume_ext(target)))
@@ -547,7 +555,7 @@ resample_volume_to_grid <- function(source_file, target, verbose) {
   )
   if (!ok) {
     unlink(out_file)
-    abort_anatomy_unavailable("{.code mri_vol2vol} failed")
+    return(NULL)
   }
   out_file
 }
@@ -563,14 +571,13 @@ check_grey_lands_on_volume <- function(aseg, brain_mask, min_overlap = 0.5) {
   parcels <- cortical_parcel_range()
   inside <- (aseg >= parcels[1] & aseg <= parcels[2]) |
     aseg %in% grey_matter_idx()
-  n <- sum(inside)
-  if (n == 0L) {
+  overlap <- resampled_overlap(inside, brain_mask)
+
+  if (is.na(overlap)) {
     abort_anatomy_unavailable(
       "the resampled {.field aparc+aseg} has no grey matter"
     )
   }
-
-  overlap <- sum(inside & brain_mask) / n
   if (overlap < min_overlap) {
     # nolint next: object_usage_linter.
     pct <- round(100 * overlap)
@@ -580,6 +587,21 @@ check_grey_lands_on_volume <- function(aseg, brain_mask, min_overlap = 0.5) {
     )
   }
   invisible(TRUE)
+}
+
+
+#' Fraction of a resampled volume's voxels that land on the target's brain
+#'
+#' A volume in a space its header does not describe still resamples without
+#' error; it simply lands somewhere else. `NA` when nothing was selected at
+#' all, which each caller reports in its own words.
+#' @noRd
+resampled_overlap <- function(inside, brain_mask) {
+  n <- sum(inside)
+  if (n == 0L) {
+    return(NA_real_)
+  }
+  sum(inside & brain_mask) / n
 }
 
 

@@ -465,6 +465,25 @@ reg_args <- function(registration, subject = "fsaverage5") {
   resolve_vol2surf_registration(registration, subject)
 }
 
+
+# Pretend no FreeSurfer aseg is available, so the cortical context falls back
+# to the solid silhouette without shelling out or warning.
+local_no_aseg_ribbon <- function(env = parent.frame()) {
+  local_mocked_bindings(
+    aseg_context_volume = function(...) NULL,
+    .env = env
+  )
+}
+
+# A context volume in the shape aseg_context_volume() returns: left cortex
+# where `left` is TRUE, right cortex where `right` is TRUE, 0 elsewhere.
+mock_cortex_ribbon <- function(left, right) {
+  ribbon <- array(0L, dim = dim(left))
+  ribbon[left] <- 3L
+  ribbon[right] <- 42L
+  ribbon
+}
+
 classify_by_vertex_count <- function(...) {
   result <- NULL
   expect_warning(

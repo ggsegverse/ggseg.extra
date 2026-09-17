@@ -246,6 +246,14 @@ subcort_run_pipeline <- function(
 
   slabs <- resolve_subcort_slabs_spec(slabs, config$input_volume)
   snaps <- subcort_resolve_snapshots(config, dirs, labels$colortable, slabs)
+  prune_stale_snapshots(
+    dirs,
+    subcort_snapshot_names(
+      labels$colortable,
+      snaps$slabs,
+      snaps$cortex_slices
+    )
+  )
   subcort_image_steps(config, dirs, dilate, vertex_size_limits)
 
   if (9L %in% config$steps) {
