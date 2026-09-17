@@ -140,7 +140,18 @@ lut <- data.frame(
 
 The `type` column is the key piece.
 Without it, the pipeline falls back to a vertex-count heuristic — counting how many surface vertices each label covers after volume-to-surface projection — which works for clear-cut cases but gets unreliable for regions near the cortical/subcortical boundary.
+It warns whenever it runs, and you should treat that warning as a request to declare the labels instead.
 If you know which labels belong where (and you usually do), spell it out.
+
+When you don't — a fine-grained parcellation with hundreds of numbered parcels is the usual case — `lut_classify_anatomy()` works the column out for you, from where each label sits in FreeSurfer's `aparc+aseg` rather than from its name:
+
+``` r
+lut <- lut_classify_anatomy("data-raw/ho_combined_remapped.nii.gz", lut)
+table(lut$type)
+```
+
+Run it once, eyeball the result, and commit the column.
+That is the point: a `type` column you have committed is visible in a code review and reproducible by someone without FreeSurfer, where a classification inferred at build time is neither.
 
 ## The two-pass verification workflow
 
@@ -164,7 +175,7 @@ result$subcortical_labels
 Check that every cortical region you expect is in `cortical_labels` and every subcortical structure is in `subcortical_labels`.
 If the automatic classification got something wrong — a small cortical region classified as subcortical because it has few surface vertices, or a large subcortical structure bleeding onto the surface — you have three options:
 
-1. Add or fix the `type` column in your LUT (recommended for reproducibility)
+1. Add or fix the `type` column in your LUT (recommended for reproducibility), by hand or with `lut_classify_anatomy()`
 2. Pass `cortical_labels` and `subcortical_labels` arguments to override specific labels
 3. Adjust `min_vertices` if using the heuristic fallback
 

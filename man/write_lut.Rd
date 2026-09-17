@@ -10,7 +10,9 @@ write_lut(x, path)
 write_ctab(x, path)
 }
 \arguments{
-\item{x}{A data.frame with columns: idx, label, R, G, B, A.}
+\item{x}{A data.frame with columns: idx, label, R, G, B, A, and
+optionally type, which is written as a 7th field so that \code{\link[=read_lut]{read_lut()}}
+reads it back.}
 
 \item{path}{Path to write to.}
 }
@@ -34,5 +36,6 @@ out <- tempfile()
 write_lut(ct, out)
 }
 \seealso{
-\code{\link[=read_lut]{read_lut()}}, \code{\link[=is_lut]{is_lut()}}
+\code{\link[=read_lut]{read_lut()}}, \code{\link[=is_lut]{is_lut()}}, \code{\link[=lut_classify_anatomy]{lut_classify_anatomy()}} to fill in
+the type column
 }

@@ -129,10 +129,13 @@ read_ctab <- function(path) {
 #'
 #' Write a LUT to file in FreeSurfer format.
 #'
-#' @param x A data.frame with columns: idx, label, R, G, B, A.
+#' @param x A data.frame with columns: idx, label, R, G, B, A, and
+#'   optionally type, which is written as a 7th field so that [read_lut()]
+#'   reads it back.
 #' @param path Path to write to.
 #' @return Invisibly returns the lines written.
-#' @seealso [read_lut()], [is_lut()]
+#' @seealso [read_lut()], [is_lut()], [lut_classify_anatomy()] to fill in
+#'   the type column
 #' @export
 #' @examples
 #' ct <- data.frame(
@@ -149,12 +152,8 @@ write_lut <- function(x, path) {
              {.field G}, {.field B}, {.field A}"
     ))
   }
-  lls <- vapply(
-    seq_len(nrow(x)),
-    function(i) lut_line(x$idx[i], x$label[i], x$R[i], x$G[i], x$B[i], x$A[i]),
-    character(1)
-  )
-  lls <- c(lls, "")
+  type <- check_writable_type(x)
+  lls <- c(lut_line(x$idx, x$label, x$R, x$G, x$B, x$A, type), "")
   writeLines(lls, path)
   invisible(lls)
 }
@@ -1216,13 +1215,13 @@ parse_continuous_values <- function(values, hemi, hemi_short, n_bins) {
 
 
 #' @noRd
-lut_line <- function(idx, name, red, green, blue, alpha) {
+lut_line <- function(idx, name, red, green, blue, alpha, type) {
   # Names are padded to 30 characters for readability but never truncated.
   # FreeSurfer parses the LUT on whitespace, and its own
   # FreeSurferColorLUT.txt carries names up to 47 characters, so a cap here
   # only corrupted long labels -- and silently merged any two that shared a
   # prefix once cut.
-  sprintf(
+  line <- sprintf(
     "% 3s  % -30s  % 3s % 3s % 3s % 3s",
     idx,
     name,
@@ -1231,6 +1230,32 @@ lut_line <- function(idx, name, red, green, blue, alpha) {
     blue,
     alpha
   )
+  ifelse(is.na(type), line, paste0(line, "  ", type))
+}
+
+
+#' The `type` column as a writable character vector, or all `NA`
+#'
+#' `read_lut()` matches the 7th field with `\\w+`, and its pattern is
+#' anchored, so a type carrying anything else does not make that field
+#' unreadable - it makes the whole line unreadable, silently losing the
+#' label and its colours too. Refuse to write one.
+#' @noRd
+check_writable_type <- function(x) {
+  if (!"type" %in% names(x)) {
+    return(rep(NA_character_, nrow(x)))
+  }
+  type <- as.character(x$type)
+  bad <- !is.na(type) & !grepl("^\\w+$", type)
+  if (any(bad)) {
+    cli::cli_abort(c(
+      "{.field type} must be a single word, or {.fn read_lut} cannot read
+      the line back",
+      "x" = "Not a single word: {.val {unique(type[bad])}}",
+      "i" = "Allowed: letters, digits and underscores."
+    ))
+  }
+  type
 }
 
 

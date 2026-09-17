@@ -151,6 +151,18 @@ progressr::handlers(global = TRUE)
 # =============================================================================
 # Uncomment this section for whole-brain volumetric parcellations that
 # contain both cortical and subcortical regions.
+#
+# The lookup table needs a `type` column saying which labels are cortical,
+# subcortical and cerebellar; without one the pipeline guesses from how much
+# surface each label covers, and warns that it did. `lut_classify_anatomy()`
+# works the column out from FreeSurfer's `aparc+aseg`. Run it once and commit
+# the table it returns.
+
+# lut <- lut_classify_anatomy(
+#   here::here("data-raw", "ATLASNAME.nii.gz"),
+#   here::here("data-raw", "ATLASNAME_LUT.txt")
+# )
+# write_lut(lut, here::here("data-raw", "ATLASNAME_LUT.txt"))
 
 # ATLASNAME <- create_wholebrain_from_volume(
 #   input_volume = here::here("data-raw", "ATLASNAME.nii.gz"),

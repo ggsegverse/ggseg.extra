@@ -464,3 +464,66 @@ local_mock_mni152_path <- function(env = parent.frame()) {
 reg_args <- function(registration, subject = "fsaverage5") {
   resolve_vol2surf_registration(registration, subject)
 }
+
+classify_by_vertex_count <- function(...) {
+  result <- NULL
+  expect_warning(
+    result <- wholebrain_classify_labels(...),
+    "by surface vertex count"
+  )
+  result
+}
+
+
+# Fixtures for the anatomy label classifier.
+write_test_volume <- function(arr) {
+  file <- tempfile(fileext = ".nii.gz")
+  RNifti::writeNifti(RNifti::asNifti(arr), file)
+  file
+}
+
+cortical_sheet_volume <- function() {
+  arr <- array(0L, dim = c(10L, 10L, 10L))
+  arr[2:9, 2:9, 9] <- 1L
+  arr[4:6, 4:6, 4:6] <- 2L
+  arr
+}
+
+cortical_sheet_aseg <- function() {
+  aseg <- array(2L, dim = c(10L, 10L, 10L))
+  aseg[2:9, 2:9, 9] <- 1001L
+  aseg[4:6, 4:6, 4:6] <- 10L
+  aseg
+}
+
+cortical_sheet_lut <- function() {
+  data.frame(
+    idx = 1:2,
+    label = c("thin_sheet", "deep_blob"),
+    R = c(10L, 20L),
+    G = c(10L, 20L),
+    B = c(10L, 20L),
+    A = 0L,
+    stringsAsFactors = FALSE
+  )
+}
+
+# Copies rather than returning source_file, because the production caller
+# unlinks whatever it gets back and would take the fixture with it.
+mocked_resample <- function(source_file, target, verbose) {
+  copy <- tempfile(fileext = ".nii.gz")
+  file.copy(source_file, copy)
+  copy
+}
+
+# Stands in for the FreeSurfer subject: writes the aseg array to a file and
+# points the production lookup and resample at it.
+local_aseg <- function(aseg = cortical_sheet_aseg(), env = parent.frame()) {
+  aseg_file <- write_test_volume(aseg)
+  withr::defer(unlink(aseg_file), envir = env)
+  local_mocked_bindings(
+    aparc_aseg_path = function(subject) aseg_file,
+    resample_volume_to_grid = mocked_resample,
+    .env = env
+  )
+}

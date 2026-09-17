@@ -235,6 +235,80 @@ testthat::describe("write_lut", {
     expect_identical(read_back$idx, ctab$idx)
   })
 
+  it("writes the type column so read_lut() reads it back", {
+    ctab <- data.frame(
+      stringsAsFactors = FALSE,
+      idx = c(1L, 2L, 3L),
+      label = c("Region1", "Region2", "Region3"),
+      R = c(255, 0, 0),
+      G = c(0, 255, 0),
+      B = c(0, 0, 255),
+      A = c(0, 0, 0),
+      type = c("cortical", "subcortical", "cerebellar")
+    )
+
+    tmp <- withr::local_tempfile(fileext = ".txt")
+    write_lut(ctab, tmp)
+
+    expect_identical(read_lut(tmp)$type, ctab$type)
+  })
+
+  it("omits the type field for rows that have none", {
+    ctab <- data.frame(
+      stringsAsFactors = FALSE,
+      idx = c(1L, 2L),
+      label = c("Region1", "Region2"),
+      R = c(255, 0),
+      G = c(0, 255),
+      B = c(0, 0),
+      A = c(0, 0),
+      type = c("cortical", NA_character_)
+    )
+
+    tmp <- withr::local_tempfile(fileext = ".txt")
+    write_lut(ctab, tmp)
+
+    lines <- readLines(tmp)
+    expect_match(lines[1], "cortical$")
+    expect_match(lines[2], "0$")
+    expect_identical(read_lut(tmp)$type, ctab$type)
+  })
+
+  it("refuses a type that read_lut() could not parse back", {
+    ctab <- data.frame(
+      stringsAsFactors = FALSE,
+      idx = 1L,
+      label = "Region1",
+      R = 255,
+      G = 0,
+      B = 0,
+      A = 0,
+      type = "deep grey"
+    )
+
+    expect_error(
+      write_lut(ctab, withr::local_tempfile(fileext = ".txt")),
+      "must be a single word"
+    )
+  })
+
+  it("writes a factor type as its label", {
+    ctab <- data.frame(
+      idx = 1L,
+      label = "Region1",
+      R = 255,
+      G = 0,
+      B = 0,
+      A = 0,
+      type = factor("cortical")
+    )
+
+    tmp <- withr::local_tempfile(fileext = ".txt")
+    write_lut(ctab, tmp)
+
+    expect_identical(read_lut(tmp)$type, "cortical")
+  })
+
   it("writes long label names without truncating them", {
     long_label <- strrep("a", 40)
     ctab <- data.frame(
