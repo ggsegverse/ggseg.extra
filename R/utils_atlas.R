@@ -1,3 +1,69 @@
+# Region name utilities ----
+
+#' Derive an atlas `region` from a label
+#'
+#' The rule every atlas pipeline here uses to fill the `region` column: strip
+#' the hemisphere affix, turn brackets, hyphens, underscores and slashes into
+#' spaces, lower-case the result and squeeze runs of whitespace.
+#'
+#' Exported because atlas build scripts need to reproduce it exactly. A script
+#' that adds a `name` column keyed on `region`, for instance, has to key on
+#' what the pipeline will actually derive; re-implementing the rule by hand is
+#' how a key silently stops matching (an underscore handled but a hyphen not,
+#' and one region joins to `NA`).
+#'
+#' The affixes stripped here must match the ones `detect_hemi()` recognises.
+#' Where they disagree the hemisphere ends up in `region` as well as `hemi`:
+#' `detect_hemi()` reads the `L_`/`R_` convention, so `R_Fx` correctly gave
+#' hemi `"right"`, while this function left the prefix in place and produced
+#' region `"r fx"`. Two hemispheres of one structure then look like two
+#' different structures, since `region` is what pairs them.
+#'
+#' @param label_name Character vector of labels.
+#' @param remove_hemi Strip hemisphere affixes (default `TRUE`).
+#' @param normalize Lower-case and convert separators to spaces
+#'   (default `TRUE`).
+#' @return A character vector of region names.
+#' @export
+#' @examples
+#' label_to_region("Left-Thalamus")
+#' label_to_region("Central_Lateral-Lateral_Posterior_Left")
+#' label_to_region(c("Pu_Left", "SNc_PBP_VTA_Right"))
+label_to_region <- function(
+  label_name,
+  remove_hemi = TRUE,
+  normalize = TRUE
+) {
+  region <- label_name
+
+  if (remove_hemi) {
+    stripped <- gsub(
+      "^(Left|Right|left|right|lh|rh|L|R)[- _.]+",
+      "",
+      region
+    )
+    stripped <- gsub(
+      "[- _.]+(left|right|lh|rh|l|r)$",
+      "",
+      stripped,
+      ignore.case = TRUE
+    )
+    # Never strip a label down to nothing: a structure genuinely named "left"
+    # would otherwise lose its whole name.
+    region <- ifelse(nzchar(stripped), stripped, region)
+  }
+
+  if (normalize) {
+    region <- gsub("[()]", " ", region)
+    region <- gsub("[-_/]", " ", region)
+    region <- tolower(region)
+    region <- gsub("\\s+", " ", trimws(region))
+  }
+
+  region
+}
+
+
 # Atlas name derivation ----
 
 #' @noRd
@@ -107,60 +173,6 @@ hemi_to_short <- function(hemi_long) {
   } else {
     hemi_long
   }
-}
-
-
-# Region name utilities ----
-
-#' Clean region name from label
-#'
-#' Removes hemisphere affixes and normalizes the region name by converting
-#' dashes and underscores to spaces and lowercasing.
-#'
-#' The affixes stripped here must match the ones [detect_hemi()] recognises.
-#' Where they disagree the hemisphere ends up in `region` as well as `hemi`:
-#' `detect_hemi()` reads the `L_`/`R_` convention, so `R_Fx` correctly gave
-#' hemi "right", while this function left the prefix in place and produced
-#' region "r fx". Two hemispheres of one structure then look like two
-#' different structures, since `region` is what pairs them.
-#'
-#' @param label_name Label name to clean
-#' @param remove_hemi Remove hemisphere affixes (default TRUE)
-#' @param normalize Convert to lowercase with spaces (default TRUE)
-#' @return Cleaned region name
-#' @noRd
-clean_region_name <- function(
-  label_name,
-  remove_hemi = TRUE,
-  normalize = TRUE
-) {
-  region <- label_name
-
-  if (remove_hemi) {
-    stripped <- gsub(
-      "^(Left|Right|left|right|lh|rh|L|R)[- _.]+",
-      "",
-      region
-    )
-    stripped <- gsub(
-      "[- _.]+(left|right|lh|rh|l|r)$",
-      "",
-      stripped,
-      ignore.case = TRUE
-    )
-    # Never strip a label down to nothing: a structure genuinely named "left"
-    # would otherwise lose its whole name.
-    region <- ifelse(nzchar(stripped), stripped, region)
-  }
-
-  if (normalize) {
-    region <- gsub("[()]", " ", region)
-    region <- gsub("[-_/]", " ", region)
-    region <- tolower(region)
-    region <- gsub("\\s+", " ", trimws(region))
-  }
-
-  region
 }
 
 

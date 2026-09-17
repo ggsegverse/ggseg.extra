@@ -134,7 +134,7 @@ structure_palette <- function(labels, chroma, luminance) {
 }
 
 structure_of <- function(labels) {
-  clean_region_name(
+  label_to_region(
     sub("^(ctx|wm)[-_.][lr]h[-_.]", "", labels, ignore.case = TRUE),
     normalize = FALSE
   )

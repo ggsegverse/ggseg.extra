@@ -150,6 +150,7 @@ reference:
       - convert_legacy_brain_atlas
       - read_tractography
       - mri_surf2surf_rereg
+      - label_to_region
       - get_verbose
       - is_verbose
       - as_verbosity

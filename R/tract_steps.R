@@ -128,7 +128,7 @@ tract_build_core <- function(meshes_list, colours, tract_names) {
     tract_name <- names(meshes_list)[i]
     data.frame(
       hemi = detect_hemi(tract_name, default = "midline"),
-      region = clean_region_name(tract_name),
+      region = label_to_region(tract_name),
       label = tract_name,
       stringsAsFactors = FALSE
     )

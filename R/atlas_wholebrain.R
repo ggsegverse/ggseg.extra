@@ -927,7 +927,7 @@ overlay_label_row <- function(
 
   tibble(
     hemi = hemi,
-    region = clean_region_name(label_name),
+    region = label_to_region(label_name),
     label = paste(hemi_short, safe_name, sep = "_"),
     colour = colour,
     vertices = list(which(overlay == label_val) - 1L),
