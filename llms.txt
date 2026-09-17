@@ -223,27 +223,43 @@ General package utilities
 
 - [`read_annotation_data()`](https://ggsegverse.github.io/ggseg.extra/reference/read_annotation_data.md)
   : Read annotation data from files
+
 - [`read_cifti_annotation()`](https://ggsegverse.github.io/ggseg.extra/reference/read_cifti_annotation.md)
   : Read CIFTI annotation file
+
 - [`read_cifti_subcortical()`](https://ggsegverse.github.io/ggseg.extra/reference/read_cifti_subcortical.md)
   **\[experimental\]** : Extract subcortical labels from a CIFTI file
+
 - [`read_gifti_annotation()`](https://ggsegverse.github.io/ggseg.extra/reference/read_gifti_annotation.md)
   : Read GIFTI annotation files
+
 - [`read_neuromaps_annotation()`](https://ggsegverse.github.io/ggseg.extra/reference/read_neuromaps_annotation.md)
   : Read neuromaps annotation files
+
 - [`read_neuromaps_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/read_neuromaps_volume.md)
   : Read neuromaps volume annotation via surface projection
+
 - [`reexports`](https://ggsegverse.github.io/ggseg.extra/reference/reexports.md)
   [`convert_legacy_brain_atlas`](https://ggsegverse.github.io/ggseg.extra/reference/reexports.md)
   : Objects exported from other packages
+
 - [`read_tractography()`](https://ggsegverse.github.io/ggseg.extra/reference/read_tractography.md)
   : Read tractography file
+
 - [`mri_surf2surf_rereg()`](https://ggsegverse.github.io/ggseg.extra/reference/mri_surf2surf_rereg.md)
   : Re-register an annotation file
+
+- [`label_to_region()`](https://ggsegverse.github.io/ggseg.extra/reference/label_to_region.md)
+  :
+
+  Derive an atlas `region` from a label
+
 - [`get_verbose()`](https://ggsegverse.github.io/ggseg.extra/reference/get_verbose.md)
   : Get verbose setting
+
 - [`is_verbose()`](https://ggsegverse.github.io/ggseg.extra/reference/is_verbose.md)
   : Get verbosity level
+
 - [`as_verbosity()`](https://ggsegverse.github.io/ggseg.extra/reference/as_verbosity.md)
   : Coerce a value to a verbosity level
 

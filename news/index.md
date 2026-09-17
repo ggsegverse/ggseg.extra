@@ -1,5 +1,17 @@
 # Changelog
 
+## ggseg.extra 1.9.9.9034
+
+- [`label_to_region()`](https://ggsegverse.github.io/ggseg.extra/reference/label_to_region.md)
+  is exported. It is the rule the pipelines use to fill an atlas’s
+  `region` column from its labels – strip the hemisphere affix, turn
+  brackets, hyphens, underscores and slashes into spaces, lower-case,
+  squeeze whitespace – and was internal as `clean_region_name()`. Build
+  scripts need to reproduce it exactly: one that adds a `name` column
+  keyed on `region` has to key on what the pipeline will actually
+  derive, and re-implementing the rule by hand is how a key silently
+  stops matching.
+
 ## ggseg.extra 1.9.9.9033
 
 - New

@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9033</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9034</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -63,6 +63,11 @@
       <small>Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.9.9.9034" id="ggsegextra-1999034">ggseg.extra 1.9.9.9034<a class="anchor" aria-label="anchor" href="#ggsegextra-1999034"></a></h2>
+<ul><li>
+<code><a href="../reference/label_to_region.html">label_to_region()</a></code> is exported. It is the rule the pipelines use to fill an atlas’s <code>region</code> column from its labels – strip the hemisphere affix, turn brackets, hyphens, underscores and slashes into spaces, lower-case, squeeze whitespace – and was internal as <code>clean_region_name()</code>. Build scripts need to reproduce it exactly: one that adds a <code>name</code> column keyed on <code>region</code> has to key on what the pipeline will actually derive, and re-implementing the rule by hand is how a key silently stops matching.</li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9033" id="ggsegextra-1999033">ggseg.extra 1.9.9.9033<a class="anchor" aria-label="anchor" href="#ggsegextra-1999033"></a></h2>
 <ul><li>

@@ -48,6 +48,7 @@
 <url><loc>https://ggsegverse.github.io/ggseg.extra/reference/index.html</loc></url>
 <url><loc>https://ggsegverse.github.io/ggseg.extra/reference/is_lut.html</loc></url>
 <url><loc>https://ggsegverse.github.io/ggseg.extra/reference/is_verbose.html</loc></url>
+<url><loc>https://ggsegverse.github.io/ggseg.extra/reference/label_to_region.html</loc></url>
 <url><loc>https://ggsegverse.github.io/ggseg.extra/reference/lut_add.html</loc></url>
 <url><loc>https://ggsegverse.github.io/ggseg.extra/reference/lut_classify_anatomy.html</loc></url>
 <url><loc>https://ggsegverse.github.io/ggseg.extra/reference/lut_combine.html</loc></url>
