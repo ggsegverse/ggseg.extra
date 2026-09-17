@@ -1,5 +1,23 @@
 # Changelog
 
+## ggseg.extra 1.9.9.9032
+
+- The whole-brain cortical context only borrows FreeSurfer’s `aseg`
+  ribbon when the atlas’s grid is fine enough to carry one. A ribbon is
+  2.5-3 mm thick; resampled onto a 4 mm grid it cannot keep a voxel
+  across itself and the silhouette traced from it breaks into
+  disconnected islands, which is less legible than the solid mantle it
+  replaced. The pipeline now measures the resampled ribbon itself - the
+  share of its voxels whose six face neighbours are all ribbon - and
+  declines the substitution below 0.1, the value a 2.5 mm grid gives.
+  Measured: Hammersmith and Julich (1 mm) 0.49, `Mcalt` (1.5 mm) 0.29,
+  Craddock 200 and the ADHD-200 parcellations (4 mm) 0.03. The 4 mm
+  atlases keep their own cortical labels, as they did before the ribbon
+  substitution existed.
+
+- The cortical context now reports which silhouette it drew in every
+  case, rather than only when it kept the atlas’s own labels.
+
 ## ggseg.extra 1.9.9.9031
 
 - New

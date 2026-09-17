@@ -21,7 +21,7 @@ Requires FreeSurfer."><meta property="og:image" content="https://ggsegverse.gith
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9031</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9032</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -314,6 +314,11 @@ volume's own grid through the two headers
 (<code>mri_vol2vol --regheader --nearest</code>) and written wherever no structure
 claims the voxel. An atlas whose cortical labels are already a ribbon, such
 as one derived from a surface, keeps its own.</p>
+<p>A ribbon is 2.5-3 mm thick, so a volume sampled more coarsely than that
+cannot hold one: the resampled ribbon breaks into islands and the
+silhouette with it. The substitution is declined when the resampled
+ribbon is not at least a voxel thick through most of itself, and the
+atlas's own cortical labels are used, as they were before.</p>
 <p>Either way, the <code>aseg</code> cerebellar cortex and brain stem are added to the
 context, so the posterior fossa is not drawn as empty space behind an
 atlas that reaches below the tentorium or one whose cerebellum lives in a
