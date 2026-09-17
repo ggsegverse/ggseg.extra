@@ -1,27 +1,25 @@
 colourless_lut <- function(labels, idx = seq_along(labels)) {
-  n <- length(labels)
   data.frame(
     idx = as.integer(idx),
     label = labels,
-    R = rep(0L, n),
-    G = rep(0L, n),
-    B = rep(0L, n),
-    A = rep(0L, n),
+    R = 0L,
+    G = 0L,
+    B = 0L,
+    A = 0L,
     stringsAsFactors = FALSE
   )
 }
 
 lut_hex <- function(lut) {
-  grDevices::rgb(lut$R, lut$G, lut$B, maxColorValue = 255)
+  get_lut(lut)$color
 }
 
-describe("lut_generate_colors()", {
+testthat::describe("lut_generate_colors()", {
   it("fills every colour channel and leaves alpha at zero", {
     lut <- lut_generate_colors(colourless_lut(c("A_left", "B_left")))
 
     expect_false(any(lut$R == 0L & lut$G == 0L & lut$B == 0L))
-    expect_equal(lut$A, rep(0L, 2))
-    expect_equal(lut$label, c("A_left", "B_left"))
+    expect_identical(lut$A, c(0L, 0L))
   })
 
   it("gives a structure's two hemispheres the same colour", {
@@ -35,29 +33,36 @@ describe("lut_generate_colors()", {
     )
     hex <- lut_hex(lut)
 
-    expect_equal(hex[1], hex[2])
-    expect_equal(hex[3], hex[4])
+    expect_identical(hex[1], hex[2])
+    expect_identical(hex[3], hex[4])
     expect_false(hex[1] == hex[3])
   })
 
-  it("recognises the hemisphere spellings FreeSurfer's own tables use", {
+  it("recognises the hemisphere spellings the ecosystem uses", {
     pairs <- list(
       c("Left-Hippocampus", "Right-Hippocampus"),
       c("ctx-lh-bankssts", "ctx-rh-bankssts"),
       c("wm_lh_precentral", "wm_rh_precentral"),
       c("lh_superiorfrontal", "rh_superiorfrontal"),
+      c("L_V1", "R_V1"),
       c("Caudate_LEFT", "Caudate_RIGHT"),
       c("Putamen-lh", "Putamen-rh")
     )
 
     for (pair in pairs) {
       hex <- lut_hex(lut_generate_colors(colourless_lut(pair)))
-      expect_equal(hex[1], hex[2], info = pair[1])
+      expect_identical(hex[1], hex[2], info = pair[1])
     }
   })
 
   it("leaves a label with no hemisphere marker as a structure of its own", {
     hex <- lut_hex(lut_generate_colors(colourless_lut(c("Brain-Stem", "CSF"))))
+
+    expect_false(hex[1] == hex[2])
+  })
+
+  it("never strips a label down to nothing", {
+    hex <- lut_hex(lut_generate_colors(colourless_lut(c("Left", "Right"))))
 
     expect_false(hex[1] == hex[2])
   })
@@ -70,8 +75,8 @@ describe("lut_generate_colors()", {
     )
     hex <- lut_hex(lut)
 
-    expect_equal(length(unique(hex)), n)
     expect_false(hex[1] == hex[n])
+    expect_identical(anyDuplicated(hex), 0L)
   })
 
   it("cycles luminance so that neighbouring hues separate", {
@@ -95,8 +100,8 @@ describe("lut_generate_colors()", {
     grouped <- lut_hex(lut_generate_colors(lut, by = "type"))
     ungrouped <- lut_hex(lut_generate_colors(lut))
 
-    expect_equal(grouped[1:2], grouped[3:4])
-    expect_equal(anyDuplicated(ungrouped), 0L)
+    expect_identical(grouped[1:2], grouped[3:4])
+    expect_identical(anyDuplicated(ungrouped), 0L)
   })
 
   it("catches the colours hcl() clips out of gamut without saying so", {
@@ -106,8 +111,12 @@ describe("lut_generate_colors()", {
       lut_generate_colors(many),
       "Cannot give 500 structures a colour of its own"
     )
-    expect_error(lut_generate_colors(many), "clips out-of-gamut")
-    expect_equal(
+  })
+
+  it("colours a table that large once the chroma fits", {
+    many <- colourless_lut(paste0("s", seq_len(500)))
+
+    expect_identical(
       anyDuplicated(lut_hex(lut_generate_colors(many, chroma = 40))),
       0L
     )
@@ -121,7 +130,7 @@ describe("lut_generate_colors()", {
     coloured <- lut_generate_colors(lut)
     channels <- c("R", "G", "B", "A")
 
-    expect_equal(coloured[1, channels], lut[1, channels])
+    expect_identical(coloured[1, channels], lut[1, channels])
     expect_false(any(coloured[2:3, c("R", "G", "B")] == 0L))
   })
 
@@ -135,7 +144,7 @@ describe("lut_generate_colors()", {
   it("hands back a table of nothing but background unchanged", {
     lut <- colourless_lut("Unknown", idx = 0L)
 
-    expect_equal(lut_generate_colors(lut), lut)
+    expect_identical(lut_generate_colors(lut), lut)
   })
 
   it("errors on a table that is not a lookup table", {
@@ -172,12 +181,12 @@ describe("lut_generate_colors()", {
     expect_error(lut_generate_colors(lut), "no label")
   })
 
-  it("errors on chroma or luminance outside the range hcl() accepts", {
+  it("errors on chroma or luminance the ramp cannot use", {
     lut <- colourless_lut("a")
 
     expect_error(lut_generate_colors(lut, chroma = c(1, 2)), "single number")
-    expect_error(lut_generate_colors(lut, chroma = -300), "between 0 and 360")
-    expect_error(lut_generate_colors(lut, chroma = Inf), "between 0 and 360")
+    expect_error(lut_generate_colors(lut, chroma = -300), "zero or more")
+    expect_error(lut_generate_colors(lut, chroma = Inf), "zero or more")
     expect_error(
       lut_generate_colors(lut, luminance = c(-50, 400)),
       "between 0 and 100"

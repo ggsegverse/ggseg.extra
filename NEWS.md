@@ -7,10 +7,13 @@
 
   Colours are assigned per structure rather than per region, so a structure's
   two hemispheres share one the way FreeSurfer's own tables do. The
-  hemisphere marker is stripped in any of the spellings the ecosystem uses -
-  `ctx-lh-`, `wm-rh-`, `lh_`, `Left-`, `_right`, `-lh` - because a table
-  written one way and read another silently ships two hues per structure and
-  still renders. Hues are spread evenly around the circle and stepped through
+  hemisphere marker is read off with the same affix set the rest of the
+  package pairs hemispheres by, so `Left-`, `rh_`, `L_`, `_right` and `-lh`
+  all count, plus the `ctx-lh-` and `wm-rh-` prefixes FreeSurfer's cortical
+  and white-matter tables use. A table written one way and read another
+  silently ships two hues per structure and still renders, so this is one
+  affix set rather than a second opinion about what a hemisphere looks
+  like. Hues are spread evenly around the circle and stepped through
   three luminances, so neighbouring hues on a crowded wheel still separate.
   Rows with `idx = 0` are the background rather than a structure and are left
   as they are, which is what lets the output of `lut_classify_anatomy()` -
@@ -26,9 +29,10 @@
   few hundred structures hands back two of them the identical colour. Two
   structures sharing a colour value reads as a rendering fault rather than a
   palette one, so it is an error instead, naming `chroma` and `luminance` as
-  the way out. Colours merely growing close is not an error: one chroma and
-  three luminances hold only so many, and past roughly sixty structures that
-  is the ramp's limit rather than a fault. The documentation says so.
+  the way out - lower the chroma. Colours merely growing close is not an
+  error: one chroma and three luminances hold only so many, and past roughly
+  sixty structures that is the ramp's limit rather than a fault. The
+  documentation says so.
 
 - The post-processing vignette now covers polishing a context and a structure
   core separately. They are different problems: the `^cortex` context is a

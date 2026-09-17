@@ -18,8 +18,10 @@ colour then has to be unique within an atlas rather than within the
 table, and each atlas gets the whole circle to spend. The default,
 \code{NULL}, colours the table as one atlas.}
 
-\item{chroma}{Colour intensity, 0 to 360, passed to \code{\link[grDevices:hcl]{grDevices::hcl()}} and
-held constant across the palette.}
+\item{chroma}{Colour intensity, zero or more, passed to
+\code{\link[grDevices:hcl]{grDevices::hcl()}} and held constant across the palette. Asking for more
+than the display can show is what makes colours collide, so lowering
+this is the usual answer to the error that reports one.}
 
 \item{luminance}{Lightness values, 0 to 100, passed to \code{\link[grDevices:hcl]{grDevices::hcl()}}
 and cycled through in order as the hue advances.}
@@ -38,23 +40,26 @@ sets \code{A} to \code{0}.
 }
 \details{
 Colours are assigned per \emph{structure}, not per region, so a structure's two
-hemispheres share one the way FreeSurfer's own tables do. A hemisphere
-marker is stripped from the label before the hue is chosen, in any of the
-spellings the ecosystem uses: a \verb{ctx-lh-} / \verb{wm-rh-} or \code{lh_} / \code{rh.}
-prefix, a \verb{Left-} / \verb{Right-} prefix, and a \verb{_left} / \verb{_right} or \code{-lh}
-suffix. A label carrying none of them is a structure of its own.
+hemispheres share one the way FreeSurfer's own tables do. The hemisphere
+marker is read off the label in the spellings the rest of the package
+recognises - a \verb{Left-} / \code{rh_} / \code{L_} prefix or a \verb{_right} / \code{-lh} suffix -
+plus the \verb{ctx-lh-} and \verb{wm-rh-} prefixes FreeSurfer's cortical and
+white-matter tables use. A label carrying none of them is a structure of
+its own.
 
 Hues are spread evenly around the colour circle in order of first
 appearance, and stepped through \code{luminance} in turn so that neighbouring
 hues still separate. Reordering the table's rows therefore reshuffles the
 palette; generate it once and commit the result.
 
-Two structures are never given the same colour. They can still be given
-close ones: one chroma and three luminances only hold so many colours, and
-beyond roughly sixty structures neighbouring hues stop being tellable
-apart. That is a limit of the ramp rather than a fault, and a parcellation
-that fine is usually read by hovering a region rather than by matching it
-to a legend.
+No two structures are given the same colour: \code{grDevices::hcl()} clips
+out-of-gamut colours without saying so, and where that would hand back a
+colour twice this errors rather than let it through. Colours growing
+merely \emph{close} is not an error. One chroma and three luminances hold only
+so many, and past roughly sixty structures neighbouring hues stop being
+easy to tell apart - a limit of the ramp rather than a fault, and a
+parcellation that fine is read by hovering a region rather than by
+matching it to a legend.
 
 Rows with \code{idx = 0} are the background rather than a structure, and are
 left exactly as they are. Every other row has its \code{R}, \code{G}, \code{B} and \code{A}
