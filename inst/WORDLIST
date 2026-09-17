@@ -35,6 +35,7 @@ Centerline
 centerlines
 centre
 centred
+chroma
 chromote
 chromote's
 CIFTI
@@ -48,6 +49,7 @@ colour
 Colour
 coloured
 colouring
+colourless
 colours
 commissural
 Connectome
@@ -116,6 +118,7 @@ Grayordinate
 grayordinates
 grey
 gyri
+gyral
 gyrified
 gyrus
 gz
@@ -143,6 +146,7 @@ Lifecycle
 lifecycle
 lintr
 lobule
+luminances
 LTA
 LUT
 LUTs

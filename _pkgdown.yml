@@ -111,6 +111,7 @@ reference:
       - lut_add
       - lut_combine
       - lut_classify_anatomy
+      - lut_generate_colors
 
   - title: Subcortical Helpers
     desc: Compose slice views and anatomical context for subcortical atlases

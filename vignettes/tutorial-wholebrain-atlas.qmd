@@ -153,6 +153,21 @@ table(lut$type)
 Run it once, eyeball the result, and commit the column.
 That is the point: a `type` column you have committed is visible in a code review and reproducible by someone without FreeSurfer, where a classification inferred at build time is neither.
 
+### When the release ships no colours
+
+Plenty of parcellations come as names only, with every RGB channel set to `0 0 0 0`.
+Sent down the pipeline that way the atlas arrives with no palette, the plotting packages assign one, and the render comes back as large blocks of repeated hue.
+`lut_generate_colors()` builds a palette from the label names instead:
+
+``` r
+lut <- lut_generate_colors(lut, by = "type")
+write_lut(lut, "data-raw/my_atlas_LUT.txt")
+```
+
+Colours are assigned per structure rather than per region, so a structure's two hemispheres share one — the way FreeSurfer's own tables do.
+`by = "type"` is what matters on a whole-brain table: the cortical and subcortical rows become two atlases that are never plotted together, so a colour only has to be unique within an atlas, and each half gets the whole colour circle to spend rather than a thin slice of a shared one.
+Write the coloured table back out and commit it, for the same reason you commit the `type` column.
+
 ## The two-pass verification workflow
 
 The wholebrain pipeline is the most complex pipeline in ggseg.extra, and the one most likely to need manual correction.
