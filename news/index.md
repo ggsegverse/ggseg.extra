@@ -2,17 +2,28 @@
 
 ## ggseg.extra 1.9.9.9030
 
+- The subcortical and tract pipelines now abort when a contour file
+  matches none of the views the atlas is being built from, naming the
+  unmatched files and the views it knows about. Contours are read from
+  the output directory rather than from the slab table, so rebuilding
+  into a directory left over from a different slab layout silently
+  carried the old contours into the atlas with no view; that failed much
+  later, inside the view packing, with an error that said nothing about
+  stale files.
+
 - CI can now run the FreeSurfer-gated tests. A slim image
   (`ghcr.io/ggsegverse/freesurfer-slim`) carries the ten FreeSurfer
   binaries the package shells out to plus the fsaverage5 subject, and a
   container job runs the suite on it, failing if any FreeSurfer test
   skipped. New end-to-end tests build cortical, subcortical, and
   wholebrain atlases from the shipped fsaverage5 data.
+
 - [`create_wholebrain_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_wholebrain_from_volume.md)
   now drops colour table entries the volume never carries before
   classifying labels. With the full FreeSurferColorLUT every entry that
   never projected, over a thousand of them, was reported as subcortical
   whether or not a single voxel held it.
+
 - Reading a tessellated surface without `mris_convert` on the path now
   aborts with a pointer to the missing binary. The fallback reader
   cannot parse the QUAD surfaces `mri_tessellate` writes and used to
