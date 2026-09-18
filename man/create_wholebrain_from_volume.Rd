@@ -17,6 +17,7 @@ create_wholebrain_from_volume(
   cortical_labels = NULL,
   subcortical_labels = NULL,
   cerebellar_labels = NULL,
+  cerebellar_space = c("suit", "MNI152NLin6AsymC", "MNI152NLin2009cSymC"),
   cortical_opts = list(),
   subcortical_opts = list(),
   cerebellar_opts = list(),
@@ -91,6 +92,16 @@ heuristic.}
 cerebellar. These go through the cerebellar SUIT flatmap pipeline instead
 of cortical or subcortical. Uses the bundled SUIT surfaces from
 \code{\link[=suit_flatmap_path]{suit_flatmap_path()}} and \code{\link[=suit_3d_path]{suit_3d_path()}}.}
+
+\item{cerebellar_space}{Space \code{input_volume}'s cerebellar labels are in.
+The flatmap they are drawn on is in SUIT space, so a volume in any other
+space has to be transformed first or the result will not correspond to
+the flatmap. \code{"suit"} (the default) takes the volume as already
+transformed. \code{"MNI152NLin6AsymC"} or \code{"MNI152NLin2009cSymC"} transform it
+with the matching \code{\link[=suit_deformation_field]{suit_deformation_field()}} before building the atlas.
+Nothing in a NIfTI header records which space a volume is in, so this
+cannot be detected and the default is an assumption: set it if your
+volume is in an MNI space.}
 
 \item{cortical_opts}{Named list of extra arguments forwarded to the
 cortical sub-pipeline. Allowed entry: \code{views}. Unknown entries error.
