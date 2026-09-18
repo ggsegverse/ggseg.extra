@@ -13,7 +13,7 @@ anatomical brain-outline context) with the user's atlas labels
 project_volume_anatomical(
   input_volume,
   lut = NULL,
-  registration = NULL,
+  registration = "header",
   target_subject = "cvs_avg35_inMNI152",
   threshold = 0.3,
   id_offset = 200L,
@@ -41,12 +41,18 @@ project_volume_anatomical(
 
 - registration:
 
-  Path to an LTA file (typically from
+  How the volume reaches the target's grid: `"header"` (the default)
+  trusts the volume's own xform (`mri_vol2vol --regheader`), `"mni152"`
+  applies FreeSurfer's `mni152.register.dat`, or give a path to an LTA
+  file (typically from
   [`coregister_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/coregister_volume.md)).
-  If `NULL`, `mri_vol2vol` falls back to `--regheader` and trusts the
-  volume's xform. The LTA must be registered to a volume on the same
-  subject's conformed grid as `aparc+aseg.mgz` (true for any `recon-all`
-  output); a mismatch is caught and aborted.
+  The same vocabulary as
+  [`create_wholebrain_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_wholebrain_from_volume.md)
+  and
+  [`prepare_subcortical_mni152()`](https://ggsegverse.github.io/ggseg.extra/reference/prepare_subcortical_mni152.md).
+  `NULL` is deprecated; it meant `"header"`. An LTA must be registered
+  to a volume on the same subject's conformed grid as `aparc+aseg.mgz`
+  (true for any `recon-all` output); a mismatch is caught and aborted.
 
 - target_subject:
 

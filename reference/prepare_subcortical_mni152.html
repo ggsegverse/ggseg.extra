@@ -33,7 +33,7 @@ mri_coreg)."><meta property="og:image" content="https://ggsegverse.github.io/ggs
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9037</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9038</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -112,7 +112,7 @@ computed from an arbitrary volume (it targets <code>cvs_avg35_inMNI152</code> vi
 <span>  lut <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  replace_labels <span class="op">=</span> <span class="fu"><a href="aseg_subcortical_labels.html">aseg_subcortical_labels</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  target_subject <span class="op">=</span> <span class="st">"fsaverage5"</span>,</span>
-<span>  registration <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  registration <span class="op">=</span> <span class="st">"mni152"</span>,</span>
 <span>  output_file <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  subjects_dir <span class="op">=</span> <span class="fu">freesurfer</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/freesurfer/man/fs_dir.html" class="external-link">fs_subj_dir</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  verbose <span class="op">=</span> <span class="fu"><a href="get_verbose.html">get_verbose</a></span><span class="op">(</span><span class="op">)</span></span>
@@ -152,8 +152,12 @@ context. Defaults to <code>"fsaverage5"</code>.</p></dd>
 
 
 <dt id="arg-registration">registration<a class="anchor" aria-label="anchor" href="#arg-registration"></a></dt>
-<dd><p>Path to the MNI152 registration <code>.dat</code>. Defaults to
-<code>mni152.register.dat</code> under <code>FREESURFER_HOME/average</code>.</p></dd>
+<dd><p>How the parcels reach the target's grid: <code>"mni152"</code>
+(the default) applies FreeSurfer's <code>mni152.register.dat</code>, <code>"header"</code>
+trusts the volume's own xform, or give a path to a register.dat or LTA
+file. The same vocabulary as <code><a href="create_wholebrain_from_volume.html">create_wholebrain_from_volume()</a></code> and
+<code><a href="project_volume_anatomical.html">project_volume_anatomical()</a></code>. <code>NULL</code> is deprecated; it meant
+<code>"mni152"</code>.</p></dd>
 
 
 <dt id="arg-output-file">output_file<a class="anchor" aria-label="anchor" href="#arg-output-file"></a></dt>

@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9037</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9038</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -63,6 +63,14 @@
       <small>Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.9.9.9038" id="ggsegextra-1999038">ggseg.extra 1.9.9.9038<a class="anchor" aria-label="anchor" href="#ggsegextra-1999038"></a></h2>
+<ul><li>
+<p><code>registration</code> means one thing across the package. It was an argument in three exported functions with incompatible vocabularies, and <code>registration = NULL</code> silently meant “apply the MNI152 transform” in <code><a href="../reference/prepare_subcortical_mni152.html">prepare_subcortical_mni152()</a></code> and “trust the header” in <code><a href="../reference/project_volume_anatomical.html">project_volume_anatomical()</a></code> – opposite instructions under one spelling.</p>
+<p>All three now take <code>"mni152"</code>, <code>"header"</code>, or a path to a register.dat or LTA file, resolved by one function rather than three. Defaults keep each function’s existing behaviour: <code>"mni152"</code> for <code><a href="../reference/prepare_subcortical_mni152.html">prepare_subcortical_mni152()</a></code>, <code>"header"</code> for <code><a href="../reference/project_volume_anatomical.html">project_volume_anatomical()</a></code>. <code>NULL</code> still works and warns, naming the word that caller meant by it, so existing code keeps running while it moves over.</p>
+<p><code><a href="../reference/prepare_subcortical_mni152.html">prepare_subcortical_mni152()</a></code> gains <code>"header"</code> and <code><a href="../reference/project_volume_anatomical.html">project_volume_anatomical()</a></code> gains <code>"mni152"</code> as a side effect of sharing the vocabulary. No geometry changes and no atlas needs rebuilding.</p>
+</li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9037" id="ggsegextra-1999037">ggseg.extra 1.9.9.9037<a class="anchor" aria-label="anchor" href="#ggsegextra-1999037"></a></h2>
 <ul><li>

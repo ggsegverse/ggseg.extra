@@ -1,5 +1,30 @@
 # Changelog
 
+## ggseg.extra 1.9.9.9038
+
+- `registration` means one thing across the package. It was an argument
+  in three exported functions with incompatible vocabularies, and
+  `registration = NULL` silently meant “apply the MNI152 transform” in
+  [`prepare_subcortical_mni152()`](https://ggsegverse.github.io/ggseg.extra/reference/prepare_subcortical_mni152.md)
+  and “trust the header” in
+  [`project_volume_anatomical()`](https://ggsegverse.github.io/ggseg.extra/reference/project_volume_anatomical.md)
+  – opposite instructions under one spelling.
+
+  All three now take `"mni152"`, `"header"`, or a path to a register.dat
+  or LTA file, resolved by one function rather than three. Defaults keep
+  each function’s existing behaviour: `"mni152"` for
+  [`prepare_subcortical_mni152()`](https://ggsegverse.github.io/ggseg.extra/reference/prepare_subcortical_mni152.md),
+  `"header"` for
+  [`project_volume_anatomical()`](https://ggsegverse.github.io/ggseg.extra/reference/project_volume_anatomical.md).
+  `NULL` still works and warns, naming the word that caller meant by it,
+  so existing code keeps running while it moves over.
+
+  [`prepare_subcortical_mni152()`](https://ggsegverse.github.io/ggseg.extra/reference/prepare_subcortical_mni152.md)
+  gains `"header"` and
+  [`project_volume_anatomical()`](https://ggsegverse.github.io/ggseg.extra/reference/project_volume_anatomical.md)
+  gains `"mni152"` as a side effect of sharing the vocabulary. No
+  geometry changes and no atlas needs rebuilding.
+
 ## ggseg.extra 1.9.9.9037
 
 - [`create_wholebrain_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_wholebrain_from_volume.md)

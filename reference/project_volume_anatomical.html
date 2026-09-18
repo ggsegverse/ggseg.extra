@@ -21,7 +21,7 @@ threshold)."><meta property="og:image" content="https://ggsegverse.github.io/ggs
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9037</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9038</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -91,7 +91,7 @@ labels (replacing <code>aparc+aseg</code> voxels wherever a label wins above
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">project_volume_anatomical</span><span class="op">(</span></span>
 <span>  <span class="va">input_volume</span>,</span>
 <span>  lut <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  registration <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  registration <span class="op">=</span> <span class="st">"header"</span>,</span>
 <span>  target_subject <span class="op">=</span> <span class="st">"cvs_avg35_inMNI152"</span>,</span>
 <span>  threshold <span class="op">=</span> <span class="fl">0.3</span>,</span>
 <span>  id_offset <span class="op">=</span> <span class="fl">200L</span>,</span>
@@ -120,11 +120,14 @@ projected. To project a subset, subset the <code>lut</code>.</p></dd>
 
 
 <dt id="arg-registration">registration<a class="anchor" aria-label="anchor" href="#arg-registration"></a></dt>
-<dd><p>Path to an LTA file (typically from
-<code><a href="coregister_volume.html">coregister_volume()</a></code>). If <code>NULL</code>, <code>mri_vol2vol</code> falls back to
-<code>--regheader</code> and trusts the volume's xform. The LTA must be registered
-to a volume on the same subject's conformed grid as <code>aparc+aseg.mgz</code>
-(true for any <code>recon-all</code> output); a mismatch is caught and aborted.</p></dd>
+<dd><p>How the volume reaches the target's grid: <code>"header"</code>
+(the default) trusts the volume's own xform (<code>mri_vol2vol --regheader</code>),
+<code>"mni152"</code> applies FreeSurfer's <code>mni152.register.dat</code>, or give a path to
+an LTA file (typically from <code><a href="coregister_volume.html">coregister_volume()</a></code>). The same vocabulary
+as <code><a href="create_wholebrain_from_volume.html">create_wholebrain_from_volume()</a></code> and <code><a href="prepare_subcortical_mni152.html">prepare_subcortical_mni152()</a></code>.
+<code>NULL</code> is deprecated; it meant <code>"header"</code>. An LTA must be registered to a
+volume on the same subject's conformed grid as <code>aparc+aseg.mgz</code> (true for
+any <code>recon-all</code> output); a mismatch is caught and aborted.</p></dd>
 
 
 <dt id="arg-target-subject">target_subject<a class="anchor" aria-label="anchor" href="#arg-target-subject"></a></dt>

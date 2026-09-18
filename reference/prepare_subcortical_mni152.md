@@ -26,7 +26,7 @@ prepare_subcortical_mni152(
   lut = NULL,
   replace_labels = aseg_subcortical_labels(),
   target_subject = "fsaverage5",
-  registration = NULL,
+  registration = "mni152",
   output_file = NULL,
   subjects_dir = freesurfer::fs_subj_dir(),
   verbose = get_verbose()
@@ -66,8 +66,14 @@ prepare_subcortical_mni152(
 
 - registration:
 
-  Path to the MNI152 registration `.dat`. Defaults to
-  `mni152.register.dat` under `FREESURFER_HOME/average`.
+  How the parcels reach the target's grid: `"mni152"` (the default)
+  applies FreeSurfer's `mni152.register.dat`, `"header"` trusts the
+  volume's own xform, or give a path to a register.dat or LTA file. The
+  same vocabulary as
+  [`create_wholebrain_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_wholebrain_from_volume.md)
+  and
+  [`project_volume_anatomical()`](https://ggsegverse.github.io/ggseg.extra/reference/project_volume_anatomical.md).
+  `NULL` is deprecated; it meant `"mni152"`.
 
 - output_file:
 
