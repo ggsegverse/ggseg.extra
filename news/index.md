@@ -1,5 +1,34 @@
 # Changelog
 
+## ggseg.extra 1.9.9.9036
+
+- [`project_volume_anatomical()`](https://ggsegverse.github.io/ggseg.extra/reference/project_volume_anatomical.md)
+  no longer merges a parcel into a FreeSurfer structure without saying
+  so. Parcels and context share one volume and one colour table, so a
+  parcel id that equals a context id is indistinguishable from it
+  afterwards: the table drops the context row and that structure’s
+  surviving voxels take the parcel’s name and colour.
+  [`prepare_subcortical_mni152()`](https://ggsegverse.github.io/ggseg.extra/reference/prepare_subcortical_mni152.md)
+  has aborted on this since 1.9.9.9018, but the projection path only
+  checked the seven reserved cerebral white-matter and corpus-callosum
+  ids, so with `protect_cortex = TRUE` a label of 800 or more at the
+  default `id_offset = 200` landed on the protected cortical ribbon, and
+  any id matching `aparc+aseg` at `id_offset = 0` collapsed, in silence.
+
+  Both entry points now share one guard, and it is exact rather than
+  conservative: only context that *survives* the merge can be
+  mislabelled, so a context id the parcels overwrite completely is no
+  longer reported as a collision. The old check could not tell the two
+  apart and refused ids that were in fact safe.
+
+  Whether a context id survives generally depends on argmax, threshold
+  and cortex protection, so the full check has to wait for the merge.
+  What `protect_cortex` shields does not depend on any of them, so those
+  ids are checked before registration and fail there instead of minutes
+  later. Both read one definition of what protection covers, and a test
+  holds them to it, so the early check cannot drift into refusing an id
+  that would have been safe.
+
 ## ggseg.extra 1.9.9.9035
 
 - The grey brain outline behind a subcortical atlas no longer paints

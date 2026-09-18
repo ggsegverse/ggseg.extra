@@ -15,7 +15,7 @@ colour table, ready to feed create_subcortical_from_volume()."><meta property="o
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9035</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9036</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -136,7 +136,9 @@ label. Defaults to <code>0.3</code>.</p></dd>
 <dd><p>Integer added to every input label ID when writing
 the merged volume to avoid collisions with FreeSurfer <code>aparc+aseg</code>
 labels. Defaults to <code>200L</code>. Set to <code>0L</code> if you have already remapped
-your IDs (or if you've verified there are no collisions).</p></dd>
+your IDs. Either way, a shifted ID that would land on an <code>aparc+aseg</code>
+structure still standing in the merged volume is an error rather than a
+silent merge.</p></dd>
 
 
 <dt id="arg-protect-cortex">protect_cortex<a class="anchor" aria-label="anchor" href="#arg-protect-cortex"></a></dt>

@@ -63,8 +63,9 @@ project_volume_anatomical(
 
   Integer added to every input label ID when writing the merged volume
   to avoid collisions with FreeSurfer `aparc+aseg` labels. Defaults to
-  `200L`. Set to `0L` if you have already remapped your IDs (or if
-  you've verified there are no collisions).
+  `200L`. Set to `0L` if you have already remapped your IDs. Either way,
+  a shifted ID that would land on an `aparc+aseg` structure still
+  standing in the merged volume is an error rather than a silent merge.
 
 - protect_cortex:
 

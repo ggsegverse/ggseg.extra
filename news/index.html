@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9035</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9036</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -63,6 +63,14 @@
       <small>Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.9.9.9036" id="ggsegextra-1999036">ggseg.extra 1.9.9.9036<a class="anchor" aria-label="anchor" href="#ggsegextra-1999036"></a></h2>
+<ul><li>
+<p><code><a href="../reference/project_volume_anatomical.html">project_volume_anatomical()</a></code> no longer merges a parcel into a FreeSurfer structure without saying so. Parcels and context share one volume and one colour table, so a parcel id that equals a context id is indistinguishable from it afterwards: the table drops the context row and that structure’s surviving voxels take the parcel’s name and colour. <code><a href="../reference/prepare_subcortical_mni152.html">prepare_subcortical_mni152()</a></code> has aborted on this since 1.9.9.9018, but the projection path only checked the seven reserved cerebral white-matter and corpus-callosum ids, so with <code>protect_cortex = TRUE</code> a label of 800 or more at the default <code>id_offset = 200</code> landed on the protected cortical ribbon, and any id matching <code>aparc+aseg</code> at <code>id_offset = 0</code> collapsed, in silence.</p>
+<p>Both entry points now share one guard, and it is exact rather than conservative: only context that <em>survives</em> the merge can be mislabelled, so a context id the parcels overwrite completely is no longer reported as a collision. The old check could not tell the two apart and refused ids that were in fact safe.</p>
+<p>Whether a context id survives generally depends on argmax, threshold and cortex protection, so the full check has to wait for the merge. What <code>protect_cortex</code> shields does not depend on any of them, so those ids are checked before registration and fail there instead of minutes later. Both read one definition of what protection covers, and a test holds them to it, so the early check cannot drift into refusing an id that would have been safe.</p>
+</li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9035" id="ggsegextra-1999035">ggseg.extra 1.9.9.9035<a class="anchor" aria-label="anchor" href="#ggsegextra-1999035"></a></h2>
 <ul><li>The grey brain outline behind a subcortical atlas no longer paints over its own structures in the sagittal panel. <code>arrange_contour_sf()</code> sorts the outline to the bottom layer by matching its label exactly against <code>cortex_</code> and <code>cortex</code>, but sagittal snapshots are named per hemisphere, so the outline arrives as <code>cortex_left</code> or <code>cortex_right</code>, missed the match and stayed last in the table. In <code>ggsegCraddock::adhd200_400_subcortical()</code> that is a blank grey silhouette with all twenty of its sagittal structures hidden behind it; every subcortical atlas built by this pipeline carries the same two labels. The match is now anchored rather than exact, which still cannot catch <code>Cerebellar_Cortex_*</code> and let cerebellum sort above the outline. Atlases need rebuilding to pick this up.</li>
