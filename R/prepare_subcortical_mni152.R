@@ -208,27 +208,20 @@ embed_labels_in_aseg <- function(aseg, parcels, replace_labels) {
 
 #' Abort when parcel ids reuse aseg ids that stay as context
 #'
-#' `build_anatomical_lut()` drops any context id that matches a parcel id, so
-#' a collision silently renames and recolours the surviving aseg structure
-#' after the parcel wherever that id appears.
+#' The parcels are stamped into the aseg unshifted, so a parcel id is already
+#' the id it will carry in the merged volume.
 #'
 #' @param labels Integer parcel ids to embed.
 #' @param aseg Integer array of aseg labels.
 #' @param replace_labels Integer aseg ids blanked before stamping.
 #' @noRd
 validate_labels_clear_of_aseg <- function(labels, aseg, replace_labels) {
-  context_ids <- setdiff(
-    unique(as.integer(round(aseg))),
-    c(0L, as.integer(replace_labels))
+  validate_ids_clear_of_context(
+    parcel_ids = labels,
+    shifted_ids = labels,
+    context_array = aseg,
+    blanked_ids = replace_labels,
+    remedy = "Shift the parcel ids (in the volume and {.arg lut}) clear of \\
+              the aseg ids, or add them to {.arg replace_labels}."
   )
-  collide <- intersect(as.integer(labels), context_ids)
-  n <- length(collide)
-  if (n > 0L) {
-    cli::cli_abort(c(
-      "{cli::qty(n)}Parcel id{?s} {.val {collide}} {?is/are} \\
-       also kept as aseg context.",
-      "i" = "Shift the parcel ids (in the volume and {.arg lut}) clear of the \\
-             aseg ids, or add them to {.arg replace_labels}."
-    ))
-  }
 }
