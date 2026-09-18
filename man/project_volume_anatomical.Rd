@@ -43,7 +43,9 @@ label. Defaults to \code{0.3}.}
 \item{id_offset}{Integer added to every input label ID when writing
 the merged volume to avoid collisions with FreeSurfer \code{aparc+aseg}
 labels. Defaults to \code{200L}. Set to \code{0L} if you have already remapped
-your IDs (or if you've verified there are no collisions).}
+your IDs. Either way, a shifted ID that would land on an \code{aparc+aseg}
+structure still standing in the merged volume is an error rather than a
+silent merge.}
 
 \item{protect_cortex}{Logical. If \code{TRUE} (default), the cerebral outline
 in \code{aparc+aseg} is never overwritten by user labels even when argmax

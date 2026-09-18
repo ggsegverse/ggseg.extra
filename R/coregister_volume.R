@@ -141,7 +141,9 @@ coregister_volume <- function(
 #' @param id_offset Integer added to every input label ID when writing
 #'   the merged volume to avoid collisions with FreeSurfer `aparc+aseg`
 #'   labels. Defaults to `200L`. Set to `0L` if you have already remapped
-#'   your IDs (or if you've verified there are no collisions).
+#'   your IDs. Either way, a shifted ID that would land on an `aparc+aseg`
+#'   structure still standing in the merged volume is an error rather than a
+#'   silent merge.
 #' @param protect_cortex Logical. If `TRUE` (default), the cerebral outline
 #'   in `aparc+aseg` is never overwritten by user labels even when argmax
 #'   wins above `threshold`: the cortical ribbon (aparc labels `1000-2999`)
@@ -214,7 +216,18 @@ project_volume_anatomical <- function(
   prep <- project_load_volumes(in_path, lut, aparc_mgz, aparc_nii)
 
   check_registration_grid(registration, dim(prep$arr_aparc), dim(prep$arr))
-  validate_offset_no_collision(prep$label_ids, id_offset)
+
+  # The protected context is knowable now, so the ids it rules out fail here
+  # rather than after registration has run. project_merged_labels() repeats
+  # the check against everything that actually survived.
+  validate_ids_clear_of_context(
+    parcel_ids = prep$label_ids,
+    shifted_ids = as.integer(prep$label_ids) + id_offset,
+    context_array = protected_context_ids(prep$arr_aparc, protect_cortex),
+    blanked_ids = integer(),
+    remedy = "Choose an {.arg id_offset} that keeps the shifted ids clear of \\
+              the {.field aparc+aseg} context {.arg protect_cortex} shields."
+  )
 
   project_start_message(prep$label_ids, target_subject, verbose)
 
@@ -421,6 +434,15 @@ project_merged_labels <- function(
     prep$lut_df
   )
 
+  validate_ids_clear_of_context(
+    parcel_ids = prep$label_ids,
+    shifted_ids = as.integer(prep$label_ids) + id_offset,
+    context_array = as.vector(prep$arr_aparc)[!keep],
+    blanked_ids = integer(),
+    remedy = "Choose an {.arg id_offset} that keeps the shifted ids clear of \\
+              the {.field aparc+aseg} context left standing."
+  )
+
   build_merged_volume(
     prep$arr_aparc,
     keep,
@@ -493,32 +515,55 @@ validate_projection_args <- function(threshold, id_offset) {
   invisible(TRUE)
 }
 
-#' Abort when a shifted label ID collides with a protected FreeSurfer label
+#' Abort when a parcel id is also a context id that survives the merge
 #'
-#' `id_offset` exists to keep the user's label IDs clear of `aparc+aseg`
-#' labels (see [project_volume_anatomical()]). If the shift still lands on
-#' one of the reserved cerebral white-matter / corpus-callosum IDs, the
-#' collision is invisible downstream: `build_anatomical_lut()` excludes any
-#' FreeSurfer ID that matches a shifted user ID from its context table
-#' before checking for duplicates, so the shared ID silently gets the
-#' user's label name and colour, swallowing the FreeSurfer structure into
-#' it wherever the two overlap.
+#' Parcels and context share one volume and one colour table once merged, so
+#' an id that means both is indistinguishable afterwards: the colour table
+#' drops the context row for any id a parcel claims, and that structure's
+#' surviving voxels take the parcel's name and colour with no error and no
+#' warning. The check has to run while the two are still separable -- after
+#' the merge a parcel id and a context id are the same integer.
+#'
+#' Only context that *survives* counts. A context id the parcels overwrite
+#' completely leaves nothing behind to be mislabelled, so callers pass the
+#' context as it will remain: the ids they blank wholesale as `blanked_ids`,
+#' or, where the overwrite is decided per voxel, only the voxels they keep.
 #' @noRd
-validate_offset_no_collision <- function(label_ids, id_offset) {
-  shifted <- as.integer(label_ids) + id_offset
-  reserved <- cerebral_white_matter_labels()
-  collide <- shifted %in% reserved
-  n <- sum(collide)
-  if (n > 0L) {
-    cli::cli_abort(c(
-      "{.arg id_offset} = {id_offset} shifts {cli::qty(n)} label{?s} \\
-       {.val {label_ids[collide]}} onto reserved FreeSurfer \\
-       {cli::qty(n)} ID{?s} {.val {shifted[collide]}}.",
-      "i" = "Choose an {.arg id_offset} that keeps shifted IDs clear of \\
-             {.val {reserved}}."
-    ))
+validate_ids_clear_of_context <- function(
+  parcel_ids,
+  shifted_ids,
+  context_array,
+  blanked_ids,
+  remedy
+) {
+  parcel_ids <- as.integer(parcel_ids)
+  shifted_ids <- as.integer(shifted_ids)
+  # Recycling would quietly report the wrong ids rather than fail, and this
+  # is the guard that exists to stop a silent mismatch.
+  stopifnot(length(parcel_ids) == length(shifted_ids))
+
+  context_ids <- setdiff(
+    unique(as.integer(round(context_array))),
+    c(0L, as.integer(blanked_ids))
+  )
+  collide <- which(shifted_ids %in% context_ids)
+  n <- length(collide)
+  if (n == 0L) {
+    return(invisible(TRUE))
   }
-  invisible(TRUE)
+
+  shifted_note <- if (identical(parcel_ids, shifted_ids)) {
+    NULL
+  } else {
+    c("x" = "Shifted onto {.val {shifted_ids[collide]}}.")
+  }
+
+  cli::cli_abort(c(
+    "{cli::qty(n)}Parcel id{?s} {.val {parcel_ids[collide]}} \\
+     {?is/are} also kept as context.",
+    shifted_note,
+    "i" = remedy
+  ))
 }
 
 #' Resolve which atlas labels to project
@@ -736,20 +781,52 @@ cerebral_white_matter_labels <- function() {
   c(2L, 41L, 251L, 252L, 253L, 254L, 255L)
 }
 
+#' Which ids `protect_cortex` shields, split for reporting
+#'
+#' One definition of what protection covers, so the collision check that runs
+#' before registration cannot come to disagree with what protection then does.
+#' @noRd
+protected_context_masks <- function(ids) {
+  list(
+    # Standard aparc+aseg (DKT) cortical ribbon labels span 1000-2999.
+    cortex = ids >= 1000 & ids < 3000,
+    cerebral_wm = ids %in% cerebral_white_matter_labels()
+  )
+}
+
+#' @noRd
+is_protected_context <- function(ids) {
+  masks <- protected_context_masks(ids)
+  masks$cortex | masks$cerebral_wm
+}
+
+#' Context ids guaranteed to outlast the merge
+#'
+#' Protection decides nothing per voxel that argmax could overturn: whatever
+#' it covers is still there afterwards. That makes these ids checkable before
+#' registration rather than after it, with no risk of refusing an id that
+#' would in fact have been safe.
+#' @noRd
+protected_context_ids <- function(arr_aparc, protect_cortex) {
+  if (!protect_cortex) {
+    return(integer())
+  }
+  ids <- unique(as.integer(round(as.vector(arr_aparc))))
+  ids[is_protected_context(ids)]
+}
+
 #' @noRd
 apply_cortex_protection <- function(keep, arr_aparc, protect_cortex, verbose) {
   if (!protect_cortex) {
     return(keep)
   }
   arr_flat <- as.vector(arr_aparc)
-  # Standard aparc+aseg (DKT) cortical ribbon labels span 1000-2999.
-  is_cortex <- arr_flat >= 1000 & arr_flat < 3000
-  is_cerebral_wm <- arr_flat %in% cerebral_white_matter_labels()
-  keep <- keep & !is_cortex & !is_cerebral_wm
+  masks <- protected_context_masks(arr_flat)
+  keep <- keep & !(masks$cortex | masks$cerebral_wm)
   if (verbose) {
     cli::cli_alert_info(
-      "Protected {sum(is_cortex)} cortex and \\
-       {sum(is_cerebral_wm)} cerebral-WM voxels from overwrite."
+      "Protected {sum(masks$cortex)} cortex and \\
+       {sum(masks$cerebral_wm)} cerebral-WM voxels from overwrite."
     )
   }
   keep

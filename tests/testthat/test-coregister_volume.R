@@ -98,7 +98,7 @@ testthat::describe("project_volume_anatomical validation", {
     )
   })
 
-  it("errors when the shifted label ids collide with corpus callosum", {
+  it("errors when a shifted label id collides with surviving context", {
     fake_dir <- withr::local_tempdir()
     subj_dir <- fs::path(fake_dir, "cvs_avg35_inMNI152", "mri")
     fs::dir_create(subj_dir)
@@ -115,47 +115,93 @@ testthat::describe("project_volume_anatomical validation", {
           label_ids = c(51L, 52L),
           aparc_mgz = "aparc.nii.gz",
           aparc = NULL,
-          arr_aparc = array(0L, dim = c(2, 2, 2))
+          arr_aparc = array(c(251L, 0L, 0L, 0L), dim = c(2, 2, 1))
+        )
+      },
+      project_label_argmax = function(...) {
+        list(
+          argmax_idx = c(2L, 2L, 2L, 2L),
+          max_prob = c(0.1, 0.9, 0.9, 0.9)
         )
       }
     )
 
+    # 51 + 200 = 251, and voxel 1 falls below threshold so the aparc's own
+    # 251 survives the merge under the same id.
     expect_error(
       project_volume_anatomical(
         "atlas.nii.gz",
         id_offset = 200L,
         subjects_dir = fake_dir,
+        protect_cortex = FALSE,
         verbose = FALSE
       ),
-      "reserved FreeSurfer"
+      "also kept as context"
     )
   })
 })
 
-testthat::describe("validate_offset_no_collision", {
-  it("passes when no shifted id collides with a reserved label", {
-    expect_true(validate_offset_no_collision(c(11L, 12L), 200L))
+testthat::describe("validate_ids_clear_of_context", {
+  clear_of <- function(...) {
+    args <- list(...)
+    do.call(
+      validate_ids_clear_of_context,
+      utils::modifyList(
+        list(
+          parcel_ids = c(11L, 12L),
+          shifted_ids = c(211L, 212L),
+          context_array = c(0L, 2L, 17L, 1011L),
+          blanked_ids = integer(),
+          remedy = "Shift them."
+        ),
+        args
+      )
+    )
+  }
+
+  it("passes when no parcel id is also surviving context", {
+    expect_true(clear_of())
   })
 
-  it("errors when a shifted id lands on a corpus callosum label", {
+  it("aborts when a shifted id is also surviving context", {
     expect_error(
-      validate_offset_no_collision(c(51L, 52L), 200L),
-      "reserved FreeSurfer"
+      clear_of(shifted_ids = c(211L, 17L)),
+      "also kept as context"
     )
   })
 
-  it("errors when a shifted id lands on a cerebral white matter label", {
+  it("names both the parcel id and the id it shifted onto", {
+    err <- expect_error(clear_of(shifted_ids = c(211L, 17L)))
+
+    expect_match(conditionMessage(err), "12")
+    expect_match(conditionMessage(err), "17")
+  })
+
+  it("does not report a shift when the ids were never shifted", {
+    err <- expect_error(
+      clear_of(parcel_ids = c(11L, 17L), shifted_ids = c(11L, 17L))
+    )
+
+    expect_no_match(conditionMessage(err), "Shifted onto")
+  })
+
+  it("treats a blanked context id as clear", {
+    expect_true(clear_of(shifted_ids = c(211L, 17L), blanked_ids = 17L))
+  })
+
+  it("treats background as clear", {
+    expect_true(clear_of(shifted_ids = c(211L, 0L)))
+  })
+
+  it("reads a float context array as the ids it rounds to", {
     expect_error(
-      validate_offset_no_collision(39L, 2L),
-      "reserved FreeSurfer"
+      clear_of(shifted_ids = c(211L, 17L), context_array = c(0, 17.0001)),
+      "also kept as context"
     )
   })
 
-  it("reports the offending original and shifted ids", {
-    expect_error(
-      validate_offset_no_collision(c(11L, 53L), 200L),
-      "53.*253|253.*53"
-    )
+  it("refuses parcel and shifted id vectors that are not parallel", {
+    expect_error(clear_of(shifted_ids = 17L), "length")
   })
 })
 
@@ -679,6 +725,102 @@ testthat::describe("project_merged_labels", {
     # voxel 4 prob .1 < .3 -> not kept, stays 50
     expect_identical(as.vector(merged), c(2L, 212L, 1011L, 50L))
   })
+
+  it("aborts when a shifted id lands on cortex that protection keeps", {
+    prep <- list(
+      label_ids = c(11L, 811L),
+      arr = NULL,
+      vol = NULL,
+      aparc_mgz = NULL,
+      arr_aparc = array(c(2L, 17L, 1011L, 50L), dim = c(2, 2, 1))
+    )
+    local_mocked_bindings(
+      project_label_argmax = function(...) {
+        list(
+          argmax_idx = c(1L, 2L, 2L, 1L),
+          max_prob = c(0.9, 0.9, 0.9, 0.9)
+        )
+      }
+    )
+
+    # 811 + 200 = 1011, and protect_cortex keeps voxel 3 as cortex 1011, so
+    # the parcel and the ribbon would share an id in the merged volume.
+    # 811 also takes voxel 2, so it is not lost to protection entirely --
+    # this is the collision on its own, not the protection warning.
+    expect_error(
+      project_merged_labels(
+        prep,
+        registration = NULL,
+        threshold = 0.3,
+        protect_cortex = TRUE,
+        id_offset = 200L,
+        verbose = FALSE
+      ),
+      "also kept as context"
+    )
+  })
+
+  it("aborts when id_offset is 0 and a parcel id matches the aparc", {
+    prep <- list(
+      label_ids = c(17L, 12L),
+      arr = NULL,
+      vol = NULL,
+      aparc_mgz = NULL,
+      arr_aparc = array(c(2L, 17L, 1011L, 50L), dim = c(2, 2, 1))
+    )
+    local_mocked_bindings(
+      project_label_argmax = function(...) {
+        list(
+          argmax_idx = c(2L, 2L, 2L, 2L),
+          max_prob = c(0.9, 0.1, 0.9, 0.9)
+        )
+      }
+    )
+
+    # Voxel 2 keeps aparc 17 (below threshold), which parcel 17 also claims.
+    expect_error(
+      project_merged_labels(
+        prep,
+        registration = NULL,
+        threshold = 0.3,
+        protect_cortex = FALSE,
+        id_offset = 0L,
+        verbose = FALSE
+      ),
+      "also kept as context"
+    )
+  })
+
+  it("accepts a parcel id that overwrites its context id completely", {
+    prep <- list(
+      label_ids = c(17L, 12L),
+      arr = NULL,
+      vol = NULL,
+      aparc_mgz = NULL,
+      arr_aparc = array(c(2L, 17L, 50L, 50L), dim = c(2, 2, 1))
+    )
+    local_mocked_bindings(
+      project_label_argmax = function(...) {
+        list(
+          argmax_idx = c(2L, 1L, 2L, 2L),
+          max_prob = c(0.9, 0.9, 0.9, 0.9)
+        )
+      }
+    )
+
+    # Parcel 17 takes the only voxel aparc 17 had, so nothing survives to be
+    # mislabelled and the shared id is not a collision.
+    merged <- project_merged_labels(
+      prep,
+      registration = NULL,
+      threshold = 0.3,
+      protect_cortex = FALSE,
+      id_offset = 0L,
+      verbose = FALSE
+    )
+
+    expect_identical(as.vector(merged), c(12L, 17L, 12L, 12L))
+  })
 })
 
 testthat::describe("project_volume_anatomical execution", {
@@ -785,6 +927,128 @@ testthat::describe("apply_cortex_protection verbose", {
       ),
       "Protected"
     )
+  })
+})
+
+testthat::describe("protected_context_ids", {
+  it("returns the cortex and cerebral-WM ids present in the aparc", {
+    arr_aparc <- array(c(2L, 17L, 1011L, 50L, 253L, 41L), dim = c(3, 2, 1))
+
+    expect_setequal(
+      protected_context_ids(arr_aparc, protect_cortex = TRUE),
+      c(2L, 1011L, 253L, 41L)
+    )
+  })
+
+  it("protects nothing when protect_cortex is FALSE", {
+    arr_aparc <- array(c(2L, 17L, 1011L, 50L), dim = c(2, 2, 1))
+
+    expect_identical(
+      protected_context_ids(arr_aparc, protect_cortex = FALSE),
+      integer()
+    )
+  })
+
+  it("agrees with what apply_cortex_protection actually protects", {
+    arr_aparc <- c(0L, 2L, 17L, 41L, 50L, 999L, 1000L, 2999L, 3000L, 253L)
+
+    kept <- apply_cortex_protection(
+      rep(TRUE, length(arr_aparc)),
+      arr_aparc,
+      protect_cortex = TRUE,
+      verbose = FALSE
+    )
+
+    expect_setequal(
+      protected_context_ids(arr_aparc, protect_cortex = TRUE),
+      unique(arr_aparc[!kept])
+    )
+  })
+})
+
+testthat::describe("project_volume_anatomical early collision check", {
+  it("aborts before registration when a shifted id hits protected cortex", {
+    fake_dir <- withr::local_tempdir()
+    subj_dir <- fs::path(fake_dir, "cvs_avg35_inMNI152", "mri")
+    fs::dir_create(subj_dir)
+    file.create(fs::path(subj_dir, "aparc+aseg.mgz"))
+
+    local_mocked_bindings(
+      check_fs = function(...) TRUE,
+      resolve_volume_path = function(x) x,
+      project_load_volumes = function(...) {
+        list(
+          vol = NULL,
+          arr = NULL,
+          lut_df = NULL,
+          label_ids = c(11L, 811L),
+          aparc_mgz = "aparc.nii.gz",
+          aparc = NULL,
+          arr_aparc = array(c(2L, 17L, 1011L, 50L), dim = c(2, 2, 1))
+        )
+      },
+      project_label_argmax = function(...) {
+        cli::cli_abort("Registration must not run before the id check.")
+      }
+    )
+
+    # 811 + 200 = 1011, which protect_cortex shields, so this is decidable
+    # without resampling anything.
+    expect_error(
+      project_volume_anatomical(
+        "atlas.nii.gz",
+        id_offset = 200L,
+        subjects_dir = fake_dir,
+        verbose = FALSE
+      ),
+      "also kept as context"
+    )
+  })
+
+  it("leaves the late check to catch what protection does not shield", {
+    fake_dir <- withr::local_tempdir()
+    subj_dir <- fs::path(fake_dir, "cvs_avg35_inMNI152", "mri")
+    fs::dir_create(subj_dir)
+    file.create(fs::path(subj_dir, "aparc+aseg.mgz"))
+
+    calls <- new.env(parent = emptyenv())
+    calls$argmax <- FALSE
+    local_mocked_bindings(
+      check_fs = function(...) TRUE,
+      resolve_volume_path = function(x) x,
+      project_load_volumes = function(...) {
+        list(
+          vol = NULL,
+          arr = NULL,
+          lut_df = NULL,
+          label_ids = c(51L, 52L),
+          aparc_mgz = "aparc.nii.gz",
+          aparc = NULL,
+          arr_aparc = array(c(251L, 0L, 0L, 0L), dim = c(2, 2, 1))
+        )
+      },
+      project_label_argmax = function(...) {
+        calls$argmax <- TRUE
+        list(
+          argmax_idx = c(2L, 2L, 2L, 2L),
+          max_prob = c(0.1, 0.9, 0.9, 0.9)
+        )
+      }
+    )
+
+    # 251 is cerebral-WM, but protect_cortex = FALSE leaves it unshielded, so
+    # nothing is decidable up front and the merge has to be computed first.
+    expect_error(
+      project_volume_anatomical(
+        "atlas.nii.gz",
+        id_offset = 200L,
+        subjects_dir = fake_dir,
+        protect_cortex = FALSE,
+        verbose = FALSE
+      ),
+      "also kept as context"
+    )
+    expect_true(calls$argmax)
   })
 })
 
