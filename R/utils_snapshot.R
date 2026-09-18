@@ -220,6 +220,37 @@ get_contours <- function(
 }
 
 
+# Direct polygonisation ----
+
+#' Raster of a projection matrix, in voxel coordinates with y running up
+#'
+#' The PNG round-trip this replaces renders the projection onto a fixed
+#' 400x400 canvas, so the anatomy arrives letterboxed, rescaled and quantised:
+#' a region whose true width:height is 2 comes back as 1.985, and its
+#' coordinates are canvas pixels rather than anything anatomical. Reading the
+#' matrix straight into a raster keeps the voxel grid it already had, which is
+#' exact and needs no scale to interpret.
+#'
+#' A PNG also carries no coordinates, so whoever reads it decides which way y
+#' runs -- that is what drew every 2D subcortical and tract atlas upside down.
+#' Here the extent says it, in the orientation the cerebellar pipeline has
+#' always used, which is why that pipeline never had the bug. Naming it once
+#' is what lets the subcortical and tract pipelines move onto it.
+#'
+#' The extent is stated rather than left to `terra::rast()`'s default for a
+#' matrix, which is the same, so that what the coordinates mean is written
+#' down rather than inherited.
+#' @noRd
+projection_raster <- function(proj) {
+  rlang::check_installed("terra", reason = "for contour extraction")
+
+  terra::rast(
+    t(proj[, rev(seq_len(ncol(proj))), drop = FALSE]),
+    extent = terra::ext(0, nrow(proj), 0, ncol(proj))
+  )
+}
+
+
 # View generation utilities ----
 
 #' Create chunked view ranges for projections

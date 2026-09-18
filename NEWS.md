@@ -1,3 +1,18 @@
+# ggseg.extra 1.9.9.9039
+
+- Groundwork for tracing contours without the PNG round-trip (#139). No
+  behaviour change: the cerebellar pipeline's way of reading a projection
+  matrix into a raster is now a named `projection_raster()` rather than an
+  idiom inlined in one function, so the subcortical and tract pipelines have
+  something to move onto.
+
+  The round-trip it will replace renders a projection onto a fixed 400x400
+  canvas, so the anatomy arrives letterboxed, rescaled and quantised -- a
+  region whose true width:height is 2 comes back as 1.985, in canvas pixels
+  rather than voxels. Reading the matrix directly is exact, and an extent
+  states which way y runs where a PNG leaves it to whoever reads the file,
+  which is what drew every 2D subcortical and tract atlas upside down.
+
 # ggseg.extra 1.9.9.9038
 
 - `registration` means one thing across the package. It was an argument in
