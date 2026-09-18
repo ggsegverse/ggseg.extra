@@ -2661,6 +2661,139 @@ testthat::describe("wholebrain_refine_cortical_projection verbose", {
 })
 
 
+testthat::describe("wholebrain_cerebellar_to_suit", {
+  cer_config <- function(space) {
+    list(verbose = FALSE, cerebellar_space = space)
+  }
+
+  it("leaves a volume already in SUIT space alone", {
+    dirs <- list(base = withr::local_tempdir())
+
+    expect_identical(
+      wholebrain_cerebellar_to_suit("cer.nii.gz", cer_config("suit"), dirs),
+      "cer.nii.gz"
+    )
+  })
+
+  it("does not transform when the config never set a space", {
+    dirs <- list(base = withr::local_tempdir())
+
+    expect_identical(
+      wholebrain_cerebellar_to_suit("cer.nii.gz", list(verbose = FALSE), dirs),
+      "cer.nii.gz"
+    )
+  })
+
+  it("transforms an MNI volume with the matching deformation field", {
+    dirs <- list(base = withr::local_tempdir())
+    .cap$captured <- NULL
+    .cap$template <- NULL
+    # Separate slots on purpose: transform_mni_to_suit() forces its own
+    # arguments, so the deformation-field call runs partway through the
+    # capture and one shared slot would overwrite the other.
+    local_mocked_bindings(
+      suit_deformation_field = function(template, ...) {
+        .cap$template <- template
+        "xfm.nii"
+      },
+      transform_mni_to_suit = function(...) {
+        .cap$captured <- list(...)
+        invisible(list(...)$output_file)
+      }
+    )
+
+    out <- wholebrain_cerebellar_to_suit(
+      "cer.nii.gz",
+      cer_config("MNI152NLin6AsymC"),
+      dirs
+    )
+
+    expect_identical(.cap$template, "MNI152NLin6AsymC")
+    expect_identical(.cap$captured$deformation_field, "xfm.nii")
+    expect_identical(.cap$captured$input_volume, "cer.nii.gz")
+    expect_identical(out, .cap$captured$output_file)
+    expect_match(out, "cerebellar_volume_suit\\.nii\\.gz$")
+  })
+
+  it("resamples a label volume by nearest neighbour, never by blending", {
+    dirs <- list(base = withr::local_tempdir())
+    .cap$captured <- NULL
+    local_mocked_bindings(
+      suit_deformation_field = function(...) "xfm.nii",
+      transform_mni_to_suit = function(...) {
+        .cap$captured <- list(...)
+        invisible(list(...)$output_file)
+      }
+    )
+
+    wholebrain_cerebellar_to_suit(
+      "cer.nii.gz",
+      cer_config("MNI152NLin2009cSymC"),
+      dirs
+    )
+
+    expect_identical(.cap$captured$interpolation, "nearest")
+  })
+
+  it("says which space it is assuming when verbose", {
+    dirs <- list(base = withr::local_tempdir())
+
+    expect_message(
+      wholebrain_cerebellar_to_suit(
+        "cer.nii.gz",
+        list(verbose = TRUE, cerebellar_space = "suit"),
+        dirs
+      ),
+      "already in SUIT space"
+    )
+  })
+})
+
+testthat::describe("wholebrain_run_cerebellar space handling", {
+  it("hands the transformed volume to create_cerebellar_from_volume", {
+    test_dir <- withr::local_tempdir()
+    dirs <- list(
+      base = test_dir,
+      snapshots = test_dir,
+      processed = test_dir,
+      masks = test_dir
+    )
+    colortable <- data.frame(
+      idx = 2L,
+      label = "lobule_I",
+      R = 128L,
+      G = 200L,
+      B = 50L,
+      A = 0L,
+      stringsAsFactors = FALSE
+    )
+    split <- list(cerebellar_labels = "lobule_I")
+    config <- list(
+      atlas_name = "test",
+      verbose = FALSE,
+      input_volume = "fake.nii.gz",
+      skip_existing = FALSE,
+      cleanup = FALSE,
+      cerebellar_space = "MNI152NLin6AsymC"
+    )
+    .cap$captured <- NULL
+    local_mocked_bindings(
+      wholebrain_prepare_cerebellar_volume = function(...) {
+        invisible("cer_vol.nii.gz")
+      },
+      wholebrain_cerebellar_to_suit = function(...) "cer_vol_suit.nii.gz",
+      create_cerebellar_from_volume = function(...) {
+        .cap$captured <- list(...)
+        structure(list(), class = "ggseg_atlas")
+      }
+    )
+
+    wholebrain_run_cerebellar(config, dirs, split, colortable)
+
+    expect_identical(.cap$captured$input_volume, "cer_vol_suit.nii.gz")
+  })
+})
+
 testthat::describe("wholebrain_prepare_cerebellar_volume orientation", {
   it("reorients non-RAS output to RAS", {
     skip_if_not_installed("RNifti")

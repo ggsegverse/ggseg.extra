@@ -149,6 +149,15 @@
 #'   cerebellar. These go through the cerebellar SUIT flatmap pipeline instead
 #'   of cortical or subcortical. Uses the bundled SUIT surfaces from
 #'   [suit_flatmap_path()] and [suit_3d_path()].
+#' @param cerebellar_space Space `input_volume`'s cerebellar labels are in.
+#'   The flatmap they are drawn on is in SUIT space, so a volume in any other
+#'   space has to be transformed first or the result will not correspond to
+#'   the flatmap. `"suit"` (the default) takes the volume as already
+#'   transformed. `"MNI152NLin6AsymC"` or `"MNI152NLin2009cSymC"` transform it
+#'   with the matching [suit_deformation_field()] before building the atlas.
+#'   Nothing in a NIfTI header records which space a volume is in, so this
+#'   cannot be detected and the default is an assumption: set it if your
+#'   volume is in an MNI space.
 #' @param cortical_opts Named list of extra arguments forwarded to the
 #'   cortical sub-pipeline. Allowed entry: `views`. Unknown entries error.
 #'   Leave empty to use defaults.
@@ -273,6 +282,7 @@ create_wholebrain_from_volume <- function(
   cortical_labels = NULL,
   subcortical_labels = NULL,
   cerebellar_labels = NULL,
+  cerebellar_space = c("suit", "MNI152NLin6AsymC", "MNI152NLin2009cSymC"),
   cortical_opts = list(),
   subcortical_opts = list(),
   cerebellar_opts = list(),
@@ -311,7 +321,8 @@ create_wholebrain_from_volume <- function(
     verbose,
     cleanup,
     skip_existing,
-    steps
+    steps,
+    cerebellar_space
   )
   labels <- list(
     cortical = cortical_labels,
@@ -361,7 +372,8 @@ wholebrain_setup <- function(
   verbose,
   cleanup,
   skip_existing,
-  steps
+  steps,
+  cerebellar_space
 ) {
   config <- validate_wholebrain_config(
     input_volume = input_volume,
@@ -376,7 +388,8 @@ wholebrain_setup <- function(
     verbose = verbose,
     cleanup = cleanup,
     skip_existing = skip_existing,
-    steps = steps
+    steps = steps,
+    cerebellar_space = cerebellar_space
   )
 
   dirs <- setup_atlas_dirs(
@@ -734,7 +747,8 @@ validate_wholebrain_config <- function(
   verbose,
   cleanup,
   skip_existing,
-  steps
+  steps,
+  cerebellar_space = "suit"
 ) {
   config <- resolve_common_config(
     output_dir,
@@ -780,6 +794,10 @@ validate_wholebrain_config <- function(
   config$subject <- subject
   config$registration <- registration
   config$min_vertices <- as.integer(min_vertices)
+  config$cerebellar_space <- match.arg(
+    cerebellar_space,
+    c("suit", "MNI152NLin6AsymC", "MNI152NLin2009cSymC")
+  )
   config
 }
 
@@ -1738,6 +1756,7 @@ wholebrain_run_cerebellar <- function(
     cerebellar_idx = cer_ct$idx,
     output_file = filtered_vol
   )
+  filtered_vol <- wholebrain_cerebellar_to_suit(filtered_vol, config, dirs)
 
   cer_name <- paste0(config$atlas_name, "_cerebellar")
 
@@ -1752,6 +1771,53 @@ wholebrain_run_cerebellar <- function(
   )
   args <- c(managed, opts)
   do.call(create_cerebellar_from_volume, args)
+}
+
+
+#' Put the cerebellar volume in the space its flatmap is drawn in
+#'
+#' Step 5 samples onto the bundled SUIT surfaces, so a volume in any other
+#' space renders onto a flatmap it does not correspond to -- a picture that
+#' looks like an atlas and is not one. Nothing in a NIfTI header says which
+#' space it is, and the two MNI templates need different deformation fields,
+#' so `cerebellar_space` is the only thing that knows.
+#'
+#' Nearest-neighbour is not a quality choice here: this is a label volume, and
+#' interpolating between two label ids gives an id that means nothing.
+#' @noRd
+wholebrain_cerebellar_to_suit <- function(filtered_vol, config, dirs) {
+  # Transform only on an explicit request. Anything else leaves the volume
+  # alone, so a config that never set the field cannot silently resample.
+  if (identical(config$cerebellar_space %||% "suit", "suit")) {
+    if (config$verbose) {
+      cli::cli_alert_info(
+        "Treating the cerebellar volume as already in SUIT space
+        ({.code cerebellar_space = \"suit\"}).",
+        wrap = TRUE
+      )
+    }
+    return(filtered_vol)
+  }
+
+  if (config$verbose) {
+    cli::cli_alert_info(
+      "Transforming the cerebellar volume from
+      {.val {config$cerebellar_space}} into SUIT space."
+    )
+  }
+
+  suit_vol <- as.character(
+    fs::path(dirs$base, "cerebellar_volume_suit.nii.gz")
+  )
+  transform_mni_to_suit(
+    input_volume = filtered_vol,
+    deformation_field = suit_deformation_field(
+      template = config$cerebellar_space
+    ),
+    output_file = suit_vol,
+    interpolation = "nearest"
+  )
+  suit_vol
 }
 
 

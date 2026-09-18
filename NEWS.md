@@ -1,3 +1,23 @@
+# ggseg.extra 1.9.9.9037
+
+- `create_wholebrain_from_volume()` gains `cerebellar_space`, and
+  `cerebellar_labels` now produces a flatmap that matches its volume. Step 5
+  samples onto the bundled SUIT surfaces, but the whole-brain path handed the
+  cerebellar labels straight to `create_cerebellar_from_volume()` without
+  transforming them, so an MNI volume was drawn onto a flatmap it did not
+  correspond to -- something that looks like an atlas and is not one. Every
+  caller that wanted a cerebellar atlas out of a whole-brain build had to
+  know to bypass the argument that exists for exactly that purpose, run
+  `steps = 1:4`, and call `transform_mni_to_suit()` by hand.
+
+  `"MNI152NLin6AsymC"` or `"MNI152NLin2009cSymC"` now transform the volume
+  with the matching `suit_deformation_field()` first. Nothing in a NIfTI
+  header records which space a volume is in, and the two MNI templates need
+  different deformation fields, so this cannot be detected and is not
+  guessed. The default stays `"suit"`, taking the volume as already
+  transformed, which is what the pipeline assumed before; a verbose run now
+  says which space it is assuming rather than leaving it unsaid.
+
 # ggseg.extra 1.9.9.9036
 
 - `project_volume_anatomical()` no longer merges a parcel into a FreeSurfer
