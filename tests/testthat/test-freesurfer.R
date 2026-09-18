@@ -166,6 +166,40 @@ testthat::describe("mni152_register_path", {
 })
 
 
+testthat::describe("registration_from_null", {
+  it("leaves a stated registration alone", {
+    expect_identical(registration_from_null("mni152", "header"), "mni152")
+  })
+
+  it("resolves NULL to the word the calling function meant by it", {
+    withr::local_options(lifecycle_verbosity = "warning")
+
+    # The whole point of the deprecation: NULL meant "mni152" in one exported
+    # function and "header" in another, so the replacement is per caller.
+    expect_warning(
+      expect_identical(registration_from_null(NULL, "header"), "header"),
+      "deprecated"
+    )
+    expect_warning(
+      expect_identical(registration_from_null(NULL, "mni152"), "mni152"),
+      "deprecated"
+    )
+  })
+})
+
+testthat::describe("vol2vol_registration_opt", {
+  it("asks mri_vol2vol to trust the header, or to use a file", {
+    reg_file <- withr::local_tempfile(fileext = ".dat")
+    file.create(reg_file)
+
+    expect_identical(vol2vol_registration_opt("header"), "--regheader")
+    expect_identical(
+      vol2vol_registration_opt(reg_file),
+      paste("--reg", shQuote(reg_file))
+    )
+  })
+})
+
 testthat::describe("resolve_vol2surf_registration", {
   it("maps 'mni152' to FreeSurfer's transform and a source subject", {
     reg_file <- withr::local_tempfile(fileext = ".dat")

@@ -190,6 +190,49 @@ registration_file <- function(registration) {
 }
 
 
+#' Map a deprecated `registration = NULL` onto the word it used to mean
+#'
+#' `NULL` meant "apply the MNI152 transform" in one exported function and
+#' "trust the header" in another -- opposite instructions under one spelling.
+#' Each caller names the word its own `NULL` stood for, so existing code keeps
+#' working while the vocabulary converges.
+#' @noRd
+registration_from_null <- function(registration, meant) {
+  if (!is.null(registration)) {
+    return(registration)
+  }
+
+  lifecycle::deprecate_warn(
+    "1.9.9.9038",
+    I("registration = NULL"),
+    details = paste0("Use registration = \"", meant, "\" instead.")
+  )
+  meant
+}
+
+
+#' Normalise a registration specification into what it actually is
+#'
+#' One vocabulary -- `"mni152"`, `"header"`, or a path to a register.dat or
+#' LTA file -- resolved in one place, so the exported functions cannot drift
+#' into meaning different things by the same word. `"mni152"` is a named
+#' shorthand for a file, so it and a user-supplied path collapse to the same
+#' `"file"` kind here; only `"header"` is a genuinely different instruction.
+#'
+#' @param registration One of `"mni152"`, `"header"`, or a path.
+#' @return `list(kind = "header" | "file", path = NULL | <file>)`.
+#' @noRd
+resolve_registration <- function(registration) {
+  check_registration_spec(registration)
+
+  if (identical(registration, "header")) {
+    return(list(kind = "header", path = NULL))
+  }
+
+  list(kind = "file", path = registration_file(registration))
+}
+
+
 #' Translate a registration specification into `mri_vol2surf` flags
 #'
 #' The flags come as a set because they constrain one another. `--reg`
@@ -204,15 +247,34 @@ registration_file <- function(registration) {
 #' @param subject Subject whose surfaces the volume is sampled onto.
 #' @noRd
 resolve_vol2surf_registration <- function(registration, subject) {
-  if (identical(registration, "header")) {
+  spec <- resolve_registration(registration)
+
+  if (identical(spec$kind, "header")) {
     return(list(reg = NULL, srcsubject = NULL, regheader = subject))
   }
 
   list(
-    reg = registration_file(registration),
+    reg = spec$path,
     srcsubject = subject,
     regheader = NULL
   )
+}
+
+
+#' Translate a registration specification into the `mri_vol2vol` option
+#'
+#' `mri_vol2vol` says the same two things as `mri_vol2surf` with one option
+#' rather than a set: `--regheader` for a volume already on the target's grid,
+#' `--reg <file>` otherwise.
+#' @noRd
+vol2vol_registration_opt <- function(registration) {
+  spec <- resolve_registration(registration)
+
+  if (identical(spec$kind, "header")) {
+    return("--regheader")
+  }
+
+  paste("--reg", shQuote(spec$path))
 }
 
 

@@ -48,8 +48,12 @@ aseg_subcortical_labels <- function() {
 #'   before the parcels are stamped in. Defaults to [aseg_subcortical_labels()].
 #' @param target_subject FreeSurfer subject whose `aseg` supplies the grey-brain
 #'   context. Defaults to `"fsaverage5"`.
-#' @param registration Path to the MNI152 registration `.dat`. Defaults to
-#'   `mni152.register.dat` under `FREESURFER_HOME/average`.
+#' @param registration How the parcels reach the target's grid: `"mni152"`
+#'   (the default) applies FreeSurfer's `mni152.register.dat`, `"header"`
+#'   trusts the volume's own xform, or give a path to a register.dat or LTA
+#'   file. The same vocabulary as [create_wholebrain_from_volume()] and
+#'   [project_volume_anatomical()]. `NULL` is deprecated; it meant
+#'   `"mni152"`.
 #' @param output_file Optional path for the merged volume; defaults to a
 #'   tempfile.
 #' @param subjects_dir FreeSurfer subjects directory.
@@ -79,7 +83,7 @@ prepare_subcortical_mni152 <- function(
   lut = NULL,
   replace_labels = aseg_subcortical_labels(),
   target_subject = "fsaverage5",
-  registration = NULL,
+  registration = "mni152",
   output_file = NULL,
   subjects_dir = freesurfer::fs_subj_dir(),
   verbose = get_verbose() # nolint: object_usage_linter
@@ -88,10 +92,8 @@ prepare_subcortical_mni152 <- function(
   rlang::check_installed("RNifti", reason = "to read NIfTI volumes")
 
   in_path <- resolve_volume_path(input_volume)
-  if (is.null(registration)) {
-    registration <- "mni152"
-  }
-  registration <- registration_file(registration)
+  registration <- registration_from_null(registration, "mni152")
+  registration_opt <- vol2vol_registration_opt(registration)
   aseg_mgz <- as.character(
     fs::path(subjects_dir, target_subject, "mri", "aseg.mgz")
   )
@@ -146,8 +148,7 @@ prepare_subcortical_mni152 <- function(
     opts = paste(
       "--targ",
       shQuote(aseg_mgz),
-      "--reg",
-      shQuote(registration),
+      registration_opt,
       "--interp nearest --o"
     ),
     opts_after_outfile = TRUE,

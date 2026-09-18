@@ -10,7 +10,7 @@ prepare_subcortical_mni152(
   lut = NULL,
   replace_labels = aseg_subcortical_labels(),
   target_subject = "fsaverage5",
-  registration = NULL,
+  registration = "mni152",
   output_file = NULL,
   subjects_dir = freesurfer::fs_subj_dir(),
   verbose = get_verbose()
@@ -35,8 +35,12 @@ before the parcels are stamped in. Defaults to \code{\link[=aseg_subcortical_lab
 \item{target_subject}{FreeSurfer subject whose \code{aseg} supplies the grey-brain
 context. Defaults to \code{"fsaverage5"}.}
 
-\item{registration}{Path to the MNI152 registration \code{.dat}. Defaults to
-\code{mni152.register.dat} under \code{FREESURFER_HOME/average}.}
+\item{registration}{How the parcels reach the target's grid: \code{"mni152"}
+(the default) applies FreeSurfer's \code{mni152.register.dat}, \code{"header"}
+trusts the volume's own xform, or give a path to a register.dat or LTA
+file. The same vocabulary as \code{\link[=create_wholebrain_from_volume]{create_wholebrain_from_volume()}} and
+\code{\link[=project_volume_anatomical]{project_volume_anatomical()}}. \code{NULL} is deprecated; it meant
+\code{"mni152"}.}
 
 \item{output_file}{Optional path for the merged volume; defaults to a
 tempfile.}

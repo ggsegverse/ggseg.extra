@@ -7,7 +7,7 @@
 project_volume_anatomical(
   input_volume,
   lut = NULL,
-  registration = NULL,
+  registration = "header",
   target_subject = "cvs_avg35_inMNI152",
   threshold = 0.3,
   id_offset = 200L,
@@ -27,11 +27,14 @@ to project, and it is returned alongside the volume with \code{idx} shifted
 by \code{id_offset} to match. With no \code{lut}, every non-zero label is
 projected. To project a subset, subset the \code{lut}.}
 
-\item{registration}{Path to an LTA file (typically from
-\code{\link[=coregister_volume]{coregister_volume()}}). If \code{NULL}, \code{mri_vol2vol} falls back to
-\code{--regheader} and trusts the volume's xform. The LTA must be registered
-to a volume on the same subject's conformed grid as \code{aparc+aseg.mgz}
-(true for any \code{recon-all} output); a mismatch is caught and aborted.}
+\item{registration}{How the volume reaches the target's grid: \code{"header"}
+(the default) trusts the volume's own xform (\code{mri_vol2vol --regheader}),
+\code{"mni152"} applies FreeSurfer's \code{mni152.register.dat}, or give a path to
+an LTA file (typically from \code{\link[=coregister_volume]{coregister_volume()}}). The same vocabulary
+as \code{\link[=create_wholebrain_from_volume]{create_wholebrain_from_volume()}} and \code{\link[=prepare_subcortical_mni152]{prepare_subcortical_mni152()}}.
+\code{NULL} is deprecated; it meant \code{"header"}. An LTA must be registered to a
+volume on the same subject's conformed grid as \code{aparc+aseg.mgz} (true for
+any \code{recon-all} output); a mismatch is caught and aborted.}
 
 \item{target_subject}{FreeSurfer subject providing the anatomical grid
 and \code{aparc+aseg.mgz}. Defaults to \code{"cvs_avg35_inMNI152"}.}
@@ -59,7 +62,7 @@ you intentionally want user labels to overwrite the cerebrum.}
 \item{output_file}{Path for the merged volume. Defaults to a temp file.}
 
 \item{subjects_dir}{FreeSurfer \code{SUBJECTS_DIR}. Defaults to
-\code{\link[freesurfer:fs_dir]{freesurfer::fs_subj_dir()}}.}
+\code{\link[freesurfer:fs_subj_dir]{freesurfer::fs_subj_dir()}}.}
 
 \item{verbose}{Verbosity level: \code{0} (silent), \code{1} (standard progress,
 default), or \code{2} (debug, includes FreeSurfer output). Logical values
