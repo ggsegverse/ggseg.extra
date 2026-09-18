@@ -26,6 +26,7 @@ create_wholebrain_from_volume(
   cortical_labels = NULL,
   subcortical_labels = NULL,
   cerebellar_labels = NULL,
+  cerebellar_space = c("suit", "MNI152NLin6AsymC", "MNI152NLin2009cSymC"),
   cortical_opts = list(),
   subcortical_opts = list(),
   cerebellar_opts = list(),
@@ -125,6 +126,19 @@ create_wholebrain_from_volume(
   [`suit_flatmap_path()`](https://ggsegverse.github.io/ggseg.extra/reference/suit_flatmap_path.md)
   and
   [`suit_3d_path()`](https://ggsegverse.github.io/ggseg.extra/reference/suit_3d_path.md).
+
+- cerebellar_space:
+
+  Space `input_volume`'s cerebellar labels are in. The flatmap they are
+  drawn on is in SUIT space, so a volume in any other space has to be
+  transformed first or the result will not correspond to the flatmap.
+  `"suit"` (the default) takes the volume as already transformed.
+  `"MNI152NLin6AsymC"` or `"MNI152NLin2009cSymC"` transform it with the
+  matching
+  [`suit_deformation_field()`](https://ggsegverse.github.io/ggseg.extra/reference/suit_deformation_field.md)
+  before building the atlas. Nothing in a NIfTI header records which
+  space a volume is in, so this cannot be detected and the default is an
+  assumption: set it if your volume is in an MNI space.
 
 - cortical_opts:
 

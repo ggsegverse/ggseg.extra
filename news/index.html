@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9036</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9037</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -63,6 +63,13 @@
       <small>Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.9.9.9037" id="ggsegextra-1999037">ggseg.extra 1.9.9.9037<a class="anchor" aria-label="anchor" href="#ggsegextra-1999037"></a></h2>
+<ul><li>
+<p><code><a href="../reference/create_wholebrain_from_volume.html">create_wholebrain_from_volume()</a></code> gains <code>cerebellar_space</code>, and <code>cerebellar_labels</code> now produces a flatmap that matches its volume. Step 5 samples onto the bundled SUIT surfaces, but the whole-brain path handed the cerebellar labels straight to <code><a href="../reference/create_cerebellar_from_volume.html">create_cerebellar_from_volume()</a></code> without transforming them, so an MNI volume was drawn onto a flatmap it did not correspond to – something that looks like an atlas and is not one. Every caller that wanted a cerebellar atlas out of a whole-brain build had to know to bypass the argument that exists for exactly that purpose, run <code>steps = 1:4</code>, and call <code><a href="../reference/transform_mni_to_suit.html">transform_mni_to_suit()</a></code> by hand.</p>
+<p><code>"MNI152NLin6AsymC"</code> or <code>"MNI152NLin2009cSymC"</code> now transform the volume with the matching <code><a href="../reference/suit_deformation_field.html">suit_deformation_field()</a></code> first. Nothing in a NIfTI header records which space a volume is in, and the two MNI templates need different deformation fields, so this cannot be detected and is not guessed. The default stays <code>"suit"</code>, taking the volume as already transformed, which is what the pipeline assumed before; a verbose run now says which space it is assuming rather than leaving it unsaid.</p>
+</li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9036" id="ggsegextra-1999036">ggseg.extra 1.9.9.9036<a class="anchor" aria-label="anchor" href="#ggsegextra-1999036"></a></h2>
 <ul><li>
