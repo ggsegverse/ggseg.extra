@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9034</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9035</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -63,6 +63,10 @@
       <small>Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.9.9.9035" id="ggsegextra-1999035">ggseg.extra 1.9.9.9035<a class="anchor" aria-label="anchor" href="#ggsegextra-1999035"></a></h2>
+<ul><li>The grey brain outline behind a subcortical atlas no longer paints over its own structures in the sagittal panel. <code>arrange_contour_sf()</code> sorts the outline to the bottom layer by matching its label exactly against <code>cortex_</code> and <code>cortex</code>, but sagittal snapshots are named per hemisphere, so the outline arrives as <code>cortex_left</code> or <code>cortex_right</code>, missed the match and stayed last in the table. In <code>ggsegCraddock::adhd200_400_subcortical()</code> that is a blank grey silhouette with all twenty of its sagittal structures hidden behind it; every subcortical atlas built by this pipeline carries the same two labels. The match is now anchored rather than exact, which still cannot catch <code>Cerebellar_Cortex_*</code> and let cerebellum sort above the outline. Atlases need rebuilding to pick this up.</li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9034" id="ggsegextra-1999034">ggseg.extra 1.9.9.9034<a class="anchor" aria-label="anchor" href="#ggsegextra-1999034"></a></h2>
 <ul><li>

@@ -1,5 +1,20 @@
 # Changelog
 
+## ggseg.extra 1.9.9.9035
+
+- The grey brain outline behind a subcortical atlas no longer paints
+  over its own structures in the sagittal panel. `arrange_contour_sf()`
+  sorts the outline to the bottom layer by matching its label exactly
+  against `cortex_` and `cortex`, but sagittal snapshots are named per
+  hemisphere, so the outline arrives as `cortex_left` or `cortex_right`,
+  missed the match and stayed last in the table. In
+  `ggsegCraddock::adhd200_400_subcortical()` that is a blank grey
+  silhouette with all twenty of its sagittal structures hidden behind
+  it; every subcortical atlas built by this pipeline carries the same
+  two labels. The match is now anchored rather than exact, which still
+  cannot catch `Cerebellar_Cortex_*` and let cerebellum sort above the
+  outline. Atlases need rebuilding to pick this up.
+
 ## ggseg.extra 1.9.9.9034
 
 - [`label_to_region()`](https://ggsegverse.github.io/ggseg.extra/reference/label_to_region.md)
