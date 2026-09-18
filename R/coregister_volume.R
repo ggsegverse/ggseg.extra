@@ -128,11 +128,14 @@ coregister_volume <- function(
 #'   to project, and it is returned alongside the volume with `idx` shifted
 #'   by `id_offset` to match. With no `lut`, every non-zero label is
 #'   projected. To project a subset, subset the `lut`.
-#' @param registration Path to an LTA file (typically from
-#'   [coregister_volume()]). If `NULL`, `mri_vol2vol` falls back to
-#'   `--regheader` and trusts the volume's xform. The LTA must be registered
-#'   to a volume on the same subject's conformed grid as `aparc+aseg.mgz`
-#'   (true for any `recon-all` output); a mismatch is caught and aborted.
+#' @param registration How the volume reaches the target's grid: `"header"`
+#'   (the default) trusts the volume's own xform (`mri_vol2vol --regheader`),
+#'   `"mni152"` applies FreeSurfer's `mni152.register.dat`, or give a path to
+#'   an LTA file (typically from [coregister_volume()]). The same vocabulary
+#'   as [create_wholebrain_from_volume()] and [prepare_subcortical_mni152()].
+#'   `NULL` is deprecated; it meant `"header"`. An LTA must be registered to a
+#'   volume on the same subject's conformed grid as `aparc+aseg.mgz` (true for
+#'   any `recon-all` output); a mismatch is caught and aborted.
 #' @param target_subject FreeSurfer subject providing the anatomical grid
 #'   and `aparc+aseg.mgz`. Defaults to `"cvs_avg35_inMNI152"`.
 #' @param threshold Numeric in `[0, 1]`. Voxels whose argmax probability
@@ -185,7 +188,7 @@ coregister_volume <- function(
 project_volume_anatomical <- function(
   input_volume,
   lut = NULL,
-  registration = NULL,
+  registration = "header",
   target_subject = "cvs_avg35_inMNI152",
   threshold = 0.3,
   id_offset = 200L,
@@ -215,7 +218,9 @@ project_volume_anatomical <- function(
 
   prep <- project_load_volumes(in_path, lut, aparc_mgz, aparc_nii)
 
-  check_registration_grid(registration, dim(prep$arr_aparc), dim(prep$arr))
+  registration <- registration_from_null(registration, "header")
+  reg_file <- resolve_registration(registration)$path
+  check_registration_grid(reg_file, dim(prep$arr_aparc), dim(prep$arr))
 
   # The protected context is knowable now, so the ids it rules out fail here
   # rather than after registration has run. project_merged_labels() repeats
@@ -748,14 +753,7 @@ resample_label_probability <- function(
     shQuote(mov_tmp),
     "--targ",
     shQuote(aparc_mgz),
-    if (is.null(registration)) {
-      "--regheader"
-    } else {
-      paste(
-        "--reg",
-        shQuote(registration)
-      )
-    },
+    vol2vol_registration_opt(registration),
     "--interp",
     "trilin",
     "--o",

@@ -333,7 +333,7 @@ testthat::describe("project_label_argmax", {
       arr = NULL,
       vol = NULL,
       aparc_mgz = NULL,
-      registration = NULL,
+      registration = "header",
       n_voxels = 4L,
       verbose = FALSE
     )
@@ -711,7 +711,7 @@ testthat::describe("project_merged_labels", {
     expect_warning(
       merged <- project_merged_labels(
         prep,
-        registration = NULL,
+        registration = "header",
         threshold = 0.3,
         protect_cortex = TRUE,
         id_offset = 200L,
@@ -750,7 +750,7 @@ testthat::describe("project_merged_labels", {
     expect_error(
       project_merged_labels(
         prep,
-        registration = NULL,
+        registration = "header",
         threshold = 0.3,
         protect_cortex = TRUE,
         id_offset = 200L,
@@ -781,7 +781,7 @@ testthat::describe("project_merged_labels", {
     expect_error(
       project_merged_labels(
         prep,
-        registration = NULL,
+        registration = "header",
         threshold = 0.3,
         protect_cortex = FALSE,
         id_offset = 0L,
@@ -812,7 +812,7 @@ testthat::describe("project_merged_labels", {
     # mislabelled and the shared id is not a collision.
     merged <- project_merged_labels(
       prep,
-      registration = NULL,
+      registration = "header",
       threshold = 0.3,
       protect_cortex = FALSE,
       id_offset = 0L,
@@ -872,7 +872,7 @@ testthat::describe("project_volume_anatomical execution", {
     result <- expect_messages(
       project_volume_anatomical(
         "atlas.nii.gz",
-        registration = NULL,
+        registration = "header",
         subjects_dir = fake_dir,
         id_offset = 200L,
         verbose = TRUE

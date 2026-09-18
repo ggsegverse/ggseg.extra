@@ -71,7 +71,7 @@ temporary file.}
 before coregistration. Set to \code{FALSE} to register on raw intensities.}
 
 \item{subjects_dir}{FreeSurfer \code{SUBJECTS_DIR}. Defaults to
-\code{\link[freesurfer:fs_dir]{freesurfer::fs_subj_dir()}}.}
+\code{\link[freesurfer:fs_subj_dir]{freesurfer::fs_subj_dir()}}.}
 
 \item{skip_existing}{Skip generating output files that already exist,
 allowing interrupted atlas creation to resume. If not specified, uses
