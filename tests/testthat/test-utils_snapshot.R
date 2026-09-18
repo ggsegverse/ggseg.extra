@@ -855,6 +855,8 @@ testthat::describe("projection_raster", {
   }
 
   it("keeps the voxel grid rather than rescaling onto a canvas", {
+    # 40 voxels wide by 20 tall: a non-square region, so this also pins that
+    # the true 2:1 survives rather than being quantised as the PNG path does.
     proj <- matrix(0L, nrow = 60, ncol = 30)
     proj[11:50, 6:25] <- 1L
 
@@ -869,17 +871,6 @@ testthat::describe("projection_raster", {
     proj <- matrix(0L, nrow = 10, ncol = 10)
     proj[, 8:10] <- 1L
 
-    bbox <- region_bbox(proj)
-
-    expect_gt(bbox[3], 5)
-  })
-
-  it("preserves the aspect of a non-square region", {
-    proj <- matrix(0L, nrow = 60, ncol = 30)
-    proj[11:50, 6:25] <- 1L
-
-    bbox <- region_bbox(proj)
-
-    expect_identical((bbox[2] - bbox[1]) / (bbox[4] - bbox[3]), 2)
+    expect_identical(region_bbox(proj)[3:4], c(7, 10))
   })
 })

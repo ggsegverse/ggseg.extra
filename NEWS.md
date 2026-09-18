@@ -9,9 +9,11 @@
   The round-trip it will replace renders a projection onto a fixed 400x400
   canvas, so the anatomy arrives letterboxed, rescaled and quantised -- a
   region whose true width:height is 2 comes back as 1.985, in canvas pixels
-  rather than voxels. Reading the matrix directly is exact, and an extent
-  states which way y runs where a PNG leaves it to whoever reads the file,
-  which is what drew every 2D subcortical and tract atlas upside down.
+  rather than voxels. Reading the matrix directly is exact. The gain is that
+  fidelity rather than orientation: a PNG carries no coordinates, but the
+  mask reader has pinned which way y runs since 1.9.9.9018, so nothing is
+  upside down today. What changes is that the convention is now stated in one
+  place both raster paths read, instead of separately in each.
 
 # ggseg.extra 1.9.9.9038
 

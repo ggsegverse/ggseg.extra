@@ -222,32 +222,39 @@ get_contours <- function(
 
 # Direct polygonisation ----
 
+#' Raster of an image-shaped matrix, with the first row spanning the largest y
+#'
+#' Stated once because two callers need the same answer and must not drift:
+#' `projection_raster()` builds it from a projection, `read_mask_raster()`
+#' from a decoded PNG, and `check_contour_y_axis()` aborts downstream on
+#' anything that disagrees. `terra::rast()` alone would give the same extent
+#' today, but its handling of non-georeferenced input is not stable across
+#' versions, which is the reason the mask reader stated it in the first place.
+#' @noRd
+raster_y_up <- function(values) {
+  terra::rast(
+    values,
+    extent = terra::ext(0, ncol(values), 0, nrow(values))
+  )
+}
+
+
 #' Raster of a projection matrix, in voxel coordinates with y running up
 #'
-#' The PNG round-trip this replaces renders the projection onto a fixed
-#' 400x400 canvas, so the anatomy arrives letterboxed, rescaled and quantised:
-#' a region whose true width:height is 2 comes back as 1.985, and its
-#' coordinates are canvas pixels rather than anything anatomical. Reading the
-#' matrix straight into a raster keeps the voxel grid it already had, which is
-#' exact and needs no scale to interpret.
+#' A projection matrix is indexed (x, y); a raster is stored top row first.
+#' The transpose and reverse are that change of convention, and keeping the
+#' voxel grid means the coordinates need no scale to interpret. Rendering the
+#' projection to a PNG instead puts it on a fixed 400x400 canvas, which
+#' letterboxes and quantises it -- a region whose true width:height is 2 comes
+#' back as 1.985, in canvas pixels.
 #'
-#' A PNG also carries no coordinates, so whoever reads it decides which way y
-#' runs -- that is what drew every 2D subcortical and tract atlas upside down.
-#' Here the extent says it, in the orientation the cerebellar pipeline has
-#' always used, which is why that pipeline never had the bug. Naming it once
-#' is what lets the subcortical and tract pipelines move onto it.
-#'
-#' The extent is stated rather than left to `terra::rast()`'s default for a
-#' matrix, which is the same, so that what the coordinates mean is written
-#' down rather than inherited.
+#' `drop = FALSE` matters: a one-row projection would otherwise subset to a
+#' vector and transpose into a shape that contradicts the extent below.
 #' @noRd
 projection_raster <- function(proj) {
-  rlang::check_installed("terra", reason = "for contour extraction")
+  rlang::check_installed("terra", reason = "to polygonise projections")
 
-  terra::rast(
-    t(proj[, rev(seq_len(ncol(proj))), drop = FALSE]),
-    extent = terra::ext(0, nrow(proj), 0, ncol(proj))
-  )
+  raster_y_up(t(proj[, rev(seq_len(ncol(proj))), drop = FALSE]))
 }
 
 

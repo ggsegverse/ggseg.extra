@@ -413,11 +413,11 @@ extract_contours <- function(
 
 #' Read a snapshot mask PNG as a raster with y increasing upward
 #'
-#' The raster is built from the decoded pixels with an explicit extent, so
-#' the top image row always spans the largest y. `terra::rast()` on the PNG
-#' itself is avoided because terra's orientation of non-georeferenced files
-#' is not stable across versions. Masks are single-channel greyscale, as
-#' written by `extract_alpha_mask()`; any alpha channel is ignored.
+#' `terra::rast()` on the PNG itself is avoided because terra's orientation of
+#' non-georeferenced files is not stable across versions; the decoded pixels
+#' go through `raster_y_up()` instead, which is where that convention lives.
+#' Masks are single-channel greyscale, as written by `extract_alpha_mask()`;
+#' any alpha channel is ignored.
 #'
 #' @param file Path to a PNG mask.
 #' @return Single-layer SpatRaster spanning `0..ncol` by `0..nrow`, with
@@ -431,8 +431,7 @@ read_mask_raster <- function(file) {
   pixels <- magick::image_read(file, defines = c("profile:skip" = "ICC")) |>
     magick::image_data(channels = "gray") |>
     as.integer()
-  values <- matrix(pixels, nrow = nrow(pixels))
-  terra::rast(values, extent = terra::ext(0, ncol(values), 0, nrow(values)))
+  raster_y_up(matrix(pixels, nrow = nrow(pixels)))
 }
 
 
