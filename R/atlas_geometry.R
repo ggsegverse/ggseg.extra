@@ -913,6 +913,22 @@ strip_view_prefix <- function(filenm_base, views) {
 }
 
 
+#' Whether a contour label names the brain silhouette rather than a structure
+#'
+#' The silhouette arrives under several names: `cortex_` from the legacy
+#' single-slice path, `cortex` from the projection path where sanitize_label
+#' strips the trailing underscore, and `cortex_left` / `cortex_right` from
+#' sagittal views, which cortex_slice_file() names per hemisphere.
+#'
+#' Anchoring is what makes this safe. A loose `grepl("cortex", ...)` also
+#' catches `Cerebellar_Cortex_*` and lets cerebellum sort above the outline
+#' (HO2 regression); anchored and case-sensitive, it cannot.
+#' @noRd
+is_cortex_outline <- function(label) {
+  grepl("^cortex", label)
+}
+
+
 #' Select the atlas columns and sort the cortex outline to the bottom layer
 #' @noRd
 #' @importFrom dplyr arrange select
@@ -920,17 +936,10 @@ strip_view_prefix <- function(filenm_base, views) {
 arrange_contour_sf <- function(conts) {
   sf_data <- dplyr::select(conts, label, view, geometry)
   sf_data <- sf::st_as_sf(sf_data)
-  # Ensure the cortex outline is the first row per view so it draws as
-  # the bottom layer; structures get drawn on top. The outline can be
-  # named `cortex_` (legacy single-slice path) or `cortex` (current
-  # projection path, where sanitize_label strips the trailing
-  # underscore). Match both — but exact equality, not a loose
-  # `grepl("cortex", ...)` which would also catch `Cerebellar_Cortex_*`
-  # and let cerebellum sort above the outline (HO2 regression).
   sf_data <- dplyr::arrange(
     sf_data,
     view,
-    !label %in% c("cortex_", "cortex")
+    !is_cortex_outline(label)
   )
 
   sf_data

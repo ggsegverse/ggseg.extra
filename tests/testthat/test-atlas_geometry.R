@@ -309,6 +309,72 @@ testthat::describe("build_contour_sf", {
 })
 
 
+testthat::describe("arrange_contour_sf", {
+  contour_table <- function(labels, view = "sagittal_left") {
+    square <- function(x0) {
+      sf::st_polygon(list(matrix(
+        c(x0, 0, x0 + 1, 0, x0 + 1, 1, x0, 1, x0, 0),
+        ncol = 2,
+        byrow = TRUE
+      )))
+    }
+    sf::st_sf(
+      label = labels,
+      view = view,
+      geometry = sf::st_sfc(lapply(seq_along(labels) - 1, square))
+    )
+  }
+
+  it("sorts the hemisphere-suffixed sagittal outline to the bottom layer", {
+    sorted <- arrange_contour_sf(contour_table(c("thalamus", "cortex_left")))
+
+    expect_identical(sorted$label[1], "cortex_left")
+  })
+
+  it("sorts every spelling of the outline first", {
+    for (outline in c("cortex_", "cortex", "cortex_left", "cortex_right")) {
+      sorted <- arrange_contour_sf(contour_table(c("thalamus", outline)))
+
+      expect_identical(sorted$label[1], outline)
+    }
+  })
+
+  it("leaves Cerebellar_Cortex above the outline", {
+    sorted <- arrange_contour_sf(
+      contour_table(c("Cerebellar_Cortex_left", "cortex_left"))
+    )
+
+    expect_identical(sorted$label, c("cortex_left", "Cerebellar_Cortex_left"))
+  })
+
+  it("sorts an outline to the bottom of each view separately", {
+    conts <- rbind(
+      contour_table(c("thalamus", "cortex_left"), view = "sagittal_left"),
+      contour_table(c("thalamus", "cortex_"), view = "coronal_1")
+    )
+
+    sorted <- arrange_contour_sf(conts)
+    first_of_view <- vapply(
+      split(sorted$label, sorted$view),
+      function(labels) labels[1],
+      character(1)
+    )
+
+    expect_identical(
+      first_of_view,
+      c(coronal_1 = "cortex_", sagittal_left = "cortex_left")
+    )
+  })
+
+  it("keeps only the label, view and geometry columns", {
+    conts <- contour_table(c("thalamus", "cortex_left"))
+    conts$filenm <- c("sagittal_left_thalamus", "sagittal_left_cortex_left")
+
+    expect_named(arrange_contour_sf(conts), c("label", "view", "geometry"))
+  })
+})
+
+
 testthat::describe("extract_contours", {
   it("scans for max value and processes regions", {
     input_dir <- withr::local_tempdir("masks_")
