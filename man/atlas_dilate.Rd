@@ -44,6 +44,7 @@ atlas <- atlas_dilate(atlas, 0.5, exclude = "^cortex")
 geometry steps.
 
 Other atlas geometry:
+\code{\link[=atlas_polish]{atlas_polish()}},
 \code{\link[=atlas_simplify]{atlas_simplify()}},
 \code{\link[=atlas_smooth]{atlas_smooth()}}
 }

@@ -44,6 +44,18 @@
 #'   are smoothed; others are left unchanged.
 #' @param exclude Optional regex pattern. Labels matching this pattern are
 #'   left unchanged; all others are smoothed.
+#' @param vertex_budget What rounding is allowed to cost. Rounding a corner
+#'   replaces it with an arc, and an arc costs vertices: a morphological
+#'   close lays down eight segments per quarter turn, so smoothing an atlas
+#'   can leave it several times larger than it found it and undo any
+#'   simplification that came before.
+#'
+#'   `"preserve"`, the default, simplifies the rounded geometry back to
+#'   roughly the vertex count it started with. It is a real simplification
+#'   pass, so shapes move slightly beyond what the rounding alone did, and it
+#'   stops once a pass buys nothing - geometry already at the floor that
+#'   holds its shape, a raw voxel tracing say, cannot be brought all the way
+#'   back. `"free"` rounds and stops there, and the vertex count grows.
 #' @param close_gaps Whether to hand back the slivers rounding opens between
 #'   neighbouring regions. Every method moves each region's boundary on its
 #'   own, and a boundary shared with the region next door moves the other way
@@ -53,15 +65,15 @@
 #'   closes again. Set `FALSE` for geometry that is not a coverage - separate
 #'   tract tubes, say - where there is nothing to close.
 #'
-#' @return The `ggseg_atlas`, with its geometry rounded off, at close to the
-#'   vertex count it arrived with.
+#' @return The `ggseg_atlas`, with its geometry rounded off. Under the
+#'   default `vertex_budget`, at close to the vertex count it arrived with.
 #' @family atlas geometry
-#' @seealso [atlas_simplify()] to reduce the vertex count, and
-#'   [atlas_dilate()] to grow or shrink regions. Each does one thing: how
-#'   round a shape is, how many vertices it costs, and how big it is, are
-#'   separate questions and get tuned at separate times. Simplify before
-#'   smoothing, not after - dropping vertices from a rounded outline replaces
-#'   its curves with straight chords, putting the stair-step back.
+#' @seealso [atlas_polish()] to simplify and smooth in one call against a
+#'   stated vertex budget, which is what most builds want.
+#'   [atlas_simplify()] to reduce the vertex count, and [atlas_dilate()] to
+#'   grow or shrink regions. Simplify before smoothing, not after - dropping
+#'   vertices from a rounded outline replaces its curves with straight
+#'   chords, putting the stair-step back.
 #' @export
 #' @importFrom sf st_make_valid
 #'
@@ -87,9 +99,11 @@ atlas_smooth <- function(
   labels = NULL,
   exclude = NULL,
   method = c("close", "chaikin", "ksmooth", "spline"),
+  vertex_budget = c("preserve", "free"),
   close_gaps = TRUE
 ) {
   method <- match.arg(method)
+  vertex_budget <- match.arg(vertex_budget)
   check_smoothness(smoothness)
   geom <- ggseg.formats::atlas_geom(atlas)
   if (is.null(geom)) {
@@ -124,16 +138,115 @@ atlas_smooth <- function(
     if (isTRUE(close_gaps)) {
       sf_data <- close_gaps_by_view(sf_data, before)
     }
-    sf_data <- trim_rounded_corners(
-      sf_data,
-      before,
-      labels,
-      exclude,
-      close_gaps
-    )
+    if (identical(vertex_budget, "preserve")) {
+      sf_data <- trim_rounded_corners(
+        sf_data,
+        before,
+        labels,
+        exclude,
+        close_gaps
+      )
+    }
   }
 
   rehydrate_smoothed_atlas(atlas, sf_data, was_polygon)
+}
+
+
+#' Simplify and smooth an atlas against a vertex budget
+#'
+#' @description
+#' `r lifecycle::badge("experimental")`
+#'
+#' The two things a finished atlas usually needs at once: fewer vertices, and
+#' its voxel staircase rounded off. Doing them separately means deciding which
+#' order they go in, and the answer is not obvious - rounding *adds* vertices,
+#' so smoothing after simplifying undoes some of the reduction, while
+#' simplifying after smoothing replaces the new curves with straight chords
+#' and puts the staircase back.
+#'
+#' `atlas_polish()` owns that order so a build does not have to rediscover it.
+#'
+#' @details
+#' `keep` is a budget on the result, not on an intermediate: the atlas is
+#' simplified to `keep` of the vertices it arrived with, then rounded under
+#' [atlas_smooth()]'s `"preserve"` budget, which simplifies the rounding back
+#' towards that same count.
+#'
+#' It is a dial rather than a guarantee, and the low end is the loose end.
+#' Simplification will not take a ring below the handful of vertices that
+#' holds its shape, so an atlas of many small rings lands well above what was
+#' asked. On `ggsegJHU`'s tract atlas (14,667 vertices):
+#'
+#' | `keep` | asked | [atlas_simplify()] alone | `atlas_polish()` |
+#' |---|---|---|---|
+#' | 0.05 | 733 | 2,636 | 3,989 |
+#' | 0.10 | 1,467 | 3,341 | 4,890 |
+#' | 0.20 | 2,933 | 4,729 | 6,437 |
+#' | 0.50 | 7,334 | 8,570 | 10,417 |
+#'
+#' Most of that gap is the floor, not the rounding: [atlas_simplify()] on its
+#' own misses the same target the same way. Rounding then adds roughly a third
+#' more, which the `"preserve"` budget takes back only as far as the floor
+#' allows. Ask for what you want, then look at what you got.
+#'
+#' @param atlas A `ggseg_atlas`.
+#' @param keep Proportion of the original vertices to aim for. See details.
+#' @param smoothness Smoothing strength between 0 and 1, passed to
+#'   [atlas_smooth()].
+#' @param method Smoothing method, passed to [atlas_smooth()]. `"close"`
+#'   rounds solid shapes; the others keep holes open.
+#' @param labels Optional regex. Only matching labels are polished.
+#' @param exclude Optional regex. Matching labels are left alone.
+#' @param close_gaps Whether to hand back the slivers the operations open
+#'   between neighbouring regions. See [atlas_smooth()].
+#'
+#' @return The `ggseg_atlas`, simplified and rounded.
+#' @family atlas geometry
+#' @seealso [atlas_simplify()] and [atlas_smooth()] for the separate steps,
+#'   when a build needs to interleave them differently.
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' # The usual shape of a build: the context silhouette and the structures
+#' # want different budgets, so they get a call each.
+#' atlas <- my_atlas |>
+#'   atlas_polish(
+#'     keep = 0.4,
+#'     smoothness = 0.4,
+#'     method = "chaikin",
+#'     labels = "^cortex"
+#'   ) |>
+#'   atlas_polish(keep = 0.1, smoothness = 0.4, exclude = "^cortex")
+#' }
+atlas_polish <- function(
+  atlas,
+  keep = 0.1,
+  smoothness = 0.4,
+  method = c("close", "chaikin", "ksmooth", "spline"),
+  labels = NULL,
+  exclude = NULL,
+  close_gaps = TRUE
+) {
+  method <- match.arg(method)
+
+  atlas <- atlas_simplify(
+    atlas,
+    keep = keep,
+    labels = labels,
+    exclude = exclude,
+    close_gaps = close_gaps
+  )
+  atlas_smooth(
+    atlas,
+    smoothness = smoothness,
+    labels = labels,
+    exclude = exclude,
+    method = method,
+    vertex_budget = "preserve",
+    close_gaps = close_gaps
+  )
 }
 
 
@@ -211,7 +324,11 @@ atlas_dilate <- function(atlas, amount, labels = NULL, exclude = NULL) {
 #'
 #' @param atlas A `ggseg_atlas` object with 2D geometry.
 #' @param keep Proportion of vertices to retain, between 0 and 1. Lower is
-#'   smaller and blockier; near 1 is an effective no-op.
+#'   smaller and blockier; near 1 is an effective no-op. A target rather than
+#'   a promise: a ring is never taken below the handful of vertices that holds
+#'   its shape, so an atlas of many small rings lands above what was asked -
+#'   `keep = 0.05` on a tract atlas came back at 0.18. [atlas_polish()] has
+#'   measured figures.
 #' @param labels,exclude Regex selecting which labels to simplify, or which
 #'   to leave alone. Give at most one.
 #' @param close_gaps Whether to hand back any sliver the simplification
