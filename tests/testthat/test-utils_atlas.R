@@ -451,3 +451,20 @@ testthat::describe("finalize_atlas", {
     expect_true(ggseg.formats::is_atlas_polygon(result))
   })
 })
+
+
+testthat::describe("context_pattern", {
+  it("matches the silhouette labels the pipelines produce", {
+    expect_true(all(grepl(
+      context_pattern(),
+      c("cortex", "cortex_", "cortex_left", "cortex_right")
+    )))
+  })
+
+  it("does not match structures that merely have cortex in the name", {
+    expect_false(any(grepl(
+      context_pattern(),
+      c("Cerebellar_Cortex_left", "Left-Cerebral-Cortex", "ctx-lh-cuneus")
+    )))
+  })
+})

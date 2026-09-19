@@ -1041,7 +1041,7 @@ strip_view_prefix <- function(filenm_base, views) {
 #' (HO2 regression); anchored and case-sensitive, it cannot.
 #' @noRd
 is_cortex_outline <- function(label) {
-  grepl("^cortex", label)
+  grepl(context_pattern(), label)
 }
 
 

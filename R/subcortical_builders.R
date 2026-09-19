@@ -202,7 +202,7 @@ aseg_context <- function(
   match_on = c("label", "region"),
   remove = aseg_hidden_labels(),
   punch_white_matter = TRUE,
-  cortex = "^cortex",
+  cortex = context_pattern(),
   white_matter = "White-Matter$",
   drop_empty_views = TRUE
 ) {

@@ -10,7 +10,7 @@ aseg_context(
   match_on = c("label", "region"),
   remove = aseg_hidden_labels(),
   punch_white_matter = TRUE,
-  cortex = "^cortex",
+  cortex = context_pattern(),
   white_matter = "White-Matter$",
   drop_empty_views = TRUE
 )
@@ -25,7 +25,7 @@ context.}
 
 \item{match_on}{Column to match \code{focus} against: \code{"label"} or \code{"region"}.}
 
-\item{remove}{Character vector of \code{\link[ggseg.formats:atlas_manipulation]{ggseg.formats::atlas_region_remove()}}
+\item{remove}{Character vector of \code{\link[ggseg.formats:atlas_region_remove]{ggseg.formats::atlas_region_remove()}}
 patterns to strip before demoting context. Defaults to
 \code{\link[=aseg_hidden_labels]{aseg_hidden_labels()}}; pass \code{character(0)} to skip.}
 
@@ -47,7 +47,7 @@ atlases:
 \details{
 \enumerate{
 \item Punch the cerebral white matter out of the brain silhouette
-(\code{\link[ggseg.formats:atlas_manipulation]{ggseg.formats::atlas_region_op()}}) so slices show the cortical ribbon
+(\code{\link[ggseg.formats:atlas_region_op]{ggseg.formats::atlas_region_op()}}) so slices show the cortical ribbon
 with the white-matter interior as a hole rather than a solid blob.
 \item Remove the structures \code{aseg} does not draw (\code{\link[=aseg_hidden_labels]{aseg_hidden_labels()}}).
 \item Demote every remaining structure that is \strong{not} matched by \code{focus} to
@@ -72,5 +72,5 @@ aseg_context(atlas, focus = "Hippocampus")
 }
 }
 \seealso{
-\code{\link[=subcortical_views]{subcortical_views()}}, \code{\link[ggseg.formats:atlas_manipulation]{ggseg.formats::atlas_region_contextual()}}
+\code{\link[=subcortical_views]{subcortical_views()}}, \code{\link[ggseg.formats:atlas_region_contextual]{ggseg.formats::atlas_region_contextual()}}
 }
