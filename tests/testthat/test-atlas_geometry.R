@@ -20,20 +20,18 @@ save_contours_fixture <- function(path, y_axis = "up", contours = NULL) {
   path
 }
 
-write_mask_png <- function(path, rows, cols, size = 20L) {
-  pixels <- matrix("black", size, size)
-  pixels[rows, cols] <- "white"
-  magick::image_write(
-    magick::image_read(as.raster(pixels)),
-    path,
-    format = "png"
-  )
+# A projection is indexed (x, y): low x is left, high y is up.
+write_projection_fixture <- function(path, x, y, size = 20L) {
+  projection <- matrix(0L, size, size)
+  projection[x, y] <- 1L
+  save(projection, file = path)
+  stamp_cache_files(path)
   path
 }
 
-contour_centres <- function(masks) {
+contour_centres <- function(projections) {
   output_dir <- withr::local_tempdir("contours_")
-  extract_contours(masks, output_dir, verbose = FALSE)
+  extract_contours(projections, output_dir, verbose = FALSE)
   views <- data.frame(name = "coronal_1", stringsAsFactors = FALSE)
   contour_sf <- build_contour_sf(file.path(output_dir, "contours.rda"), views)
   lapply(split(contour_sf, contour_sf$label), function(region) {
@@ -293,15 +291,16 @@ testthat::describe("build_contour_sf", {
     expect_error(build_contour_sf(contours_file, slabs), "axial_1")
   })
 
-  it("keeps the top of a mask up and its left side left", {
+  it("keeps the top of a projection up and its left side left", {
     skip_without_mask_io()
-    masks <- withr::local_tempdir("masks_")
-    write_mask_png(file.path(masks, "coronal_1_top.png"), 2:5, 8:12)
-    write_mask_png(file.path(masks, "coronal_1_bottom.png"), 15:18, 8:12)
-    write_mask_png(file.path(masks, "coronal_1_left.png"), 8:12, 2:5)
-    write_mask_png(file.path(masks, "coronal_1_right.png"), 8:12, 15:18)
+    projections <- withr::local_tempdir("projections_")
+    d <- function(n) file.path(projections, paste0("coronal_1_", n, ".rda"))
+    write_projection_fixture(d("top"), 8:12, 15:18)
+    write_projection_fixture(d("bottom"), 8:12, 2:5)
+    write_projection_fixture(d("left"), 2:5, 8:12)
+    write_projection_fixture(d("right"), 15:18, 8:12)
 
-    centres <- contour_centres(masks)
+    centres <- contour_centres(projections)
 
     expect_gt(centres$top[["Y"]], centres$bottom[["Y"]])
     expect_lt(centres$left[["X"]], centres$right[["X"]])
@@ -379,15 +378,15 @@ testthat::describe("extract_contours", {
   it("scans for max value and processes regions", {
     input_dir <- withr::local_tempdir("masks_")
     output_dir <- withr::local_tempdir("output_")
-    file.create(file.path(input_dir, "region1.png"))
-    file.create(file.path(input_dir, "region2.png"))
+    write_projection_fixture(file.path(input_dir, "region1.rda"), 2:5, 2:5)
+    write_projection_fixture(file.path(input_dir, "region2.rda"), 8:12, 8:12)
 
     local_mocked_bindings(
       global = function(r, ...) data.frame(max = 255),
       .package = "terra"
     )
     local_mocked_bindings(
-      get_contours = function(r, max_val, ...) {
+      get_contours = function(r, ...) {
         sf::st_sf(
           geometry = sf::st_sfc(sf::st_polygon(list(matrix(
             c(0, 0, 1, 0, 1, 1, 0, 0),
@@ -396,7 +395,6 @@ testthat::describe("extract_contours", {
           ))))
         )
       },
-      read_mask_raster = function(f) list(file = f),
       progressor = function(...) function(...) NULL
     )
     local_mocked_bindings(
@@ -412,44 +410,10 @@ testthat::describe("extract_contours", {
     expect_identical(saved$contours$y_axis, rep("up", nrow(saved$contours)))
   })
 
-  it("defaults max_val to 1 when all rasters have max 0", {
-    input_dir <- withr::local_tempdir("masks_")
-    output_dir <- withr::local_tempdir("output_")
-    file.create(file.path(input_dir, "region1.png"))
-
-    .cap$captured_max_val <- NULL
-    local_mocked_bindings(
-      global = function(r, ...) data.frame(max = 0),
-      .package = "terra"
-    )
-    local_mocked_bindings(
-      get_contours = function(r, max_val, ...) {
-        .cap$captured_max_val <- max_val
-        sf::st_sf(
-          geometry = sf::st_sfc(sf::st_polygon(list(matrix(
-            c(0, 0, 1, 0, 1, 1, 0, 0),
-            ncol = 2,
-            byrow = TRUE
-          ))))
-        )
-      },
-      read_mask_raster = function(f) list(file = f),
-      progressor = function(...) function(...) NULL
-    )
-    local_mocked_bindings(
-      future_map = function(.x, .f, ...) lapply(.x, .f),
-      .package = "furrr"
-    )
-
-    result <- extract_contours(input_dir, output_dir, verbose = FALSE)
-    expect_s3_class(result, "sf")
-    expect_identical(.cap$captured_max_val, 1)
-  })
-
   it("logs progress when verbose is TRUE", {
     input_dir <- withr::local_tempdir("masks_")
     output_dir <- withr::local_tempdir("output_")
-    file.create(file.path(input_dir, "region1.png"))
+    write_projection_fixture(file.path(input_dir, "region1.rda"), 2:5, 2:5)
 
     local_mocked_bindings(
       global = function(r, ...) data.frame(max = 255),
@@ -465,7 +429,6 @@ testthat::describe("extract_contours", {
           ))))
         )
       },
-      read_mask_raster = function(f) list(file = f),
       progressor = function(...) function(...) NULL
     )
     local_mocked_bindings(
@@ -656,57 +619,6 @@ testthat::describe("combine_region_contours", {
     )
   })
 })
-
-
-testthat::describe("probe_raster_max", {
-  it("falls back to 1 when every mask is empty", {
-    skip_without_mask_io()
-    blank <- withr::local_tempfile(fileext = ".png")
-    write_mask_png(blank, integer(0), integer(0))
-
-    expect_identical(probe_raster_max(blank), 1)
-  })
-
-  it("returns the maximum across masks", {
-    skip_without_mask_io()
-    mask <- withr::local_tempfile(fileext = ".png")
-    write_mask_png(mask, 1:2, 1:2)
-
-    expect_identical(probe_raster_max(mask), 255)
-  })
-})
-
-
-testthat::describe("read_mask_raster", {
-  it("places the top image rows at the largest y", {
-    skip_without_mask_io()
-    mask <- withr::local_tempfile(fileext = ".png")
-    write_mask_png(mask, 1:3, 1:20)
-
-    r <- read_mask_raster(mask)
-    white_y <- terra::xyFromCell(r, which(terra::values(r) > 0))[, "y"]
-
-    expect_identical(
-      as.vector(terra::ext(r)),
-      c(xmin = 0, xmax = 20, ymin = 0, ymax = 20)
-    )
-    expect_identical(range(white_y), c(17.5, 19.5))
-  })
-
-  it("reads masks that carry an RGB colour profile on greyscale pixels", {
-    skip_without_mask_io()
-    legacy <- test_path("testdata", "mask_with_rgb_icc_profile.png")
-    legacy_bytes <- readBin(legacy, "raw", file.size(legacy))
-    expect_gt(length(grepRaw("iCCP", legacy_bytes)), 0)
-
-    r <- read_mask_raster(legacy)
-    white_y <- terra::xyFromCell(r, which(terra::values(r) > 0))[, "y"]
-
-    expect_identical(dim(r), c(400, 400, 1))
-    expect_lt(mean(white_y), 200)
-  })
-})
-
 
 testthat::describe("smooth_contours", {
   it("smooths contour geometry", {

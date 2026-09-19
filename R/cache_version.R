@@ -31,12 +31,7 @@ cache_dir_entry <- "."
 
 contour_rerun_remedy <- paste(
   "Rerun the contour extraction, smoothing and reduction steps;",
-  "cached snapshots and masks are reused."
-)
-
-image_rerun_remedy <- paste(
-  "Rerun the image-processing step to rebuild the masks;",
-  "the snapshots they are made from are reused."
+  "cached projections are reused."
 )
 
 #' @noRd
@@ -107,15 +102,6 @@ stamp_cache_files <- function(files) {
     write_cache_manifest(dir, manifest)
   }
   invisible(files)
-}
-
-#' Stamp a directory whose contents are produced and reused as one unit
-#' @noRd
-stamp_cache_dir <- function(dir) {
-  manifest <- read_cache_manifest(dir)
-  manifest[cache_dir_entry] <- cache_format_version()
-  write_cache_manifest(dir, manifest)
-  invisible(dir)
 }
 
 #' Save pipeline intermediates into a step directory and stamp them
@@ -207,15 +193,6 @@ check_cache_current <- function(files, remedy) {
     return(invisible(files))
   }
   abort_stale_cache(files[stale], versions[stale], remedy)
-}
-
-#' @noRd
-check_cache_dir <- function(dir, remedy) {
-  version <- cache_file_version(as.character(fs::path(dir, cache_dir_entry)))
-  if (!is_stale_version(version)) {
-    return(invisible(dir))
-  }
-  abort_stale_cache(dir, version, remedy)
 }
 
 #' @noRd

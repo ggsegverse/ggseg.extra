@@ -428,7 +428,6 @@ subcort_snapshot_one <- function(
       view_name = view_name,
       label = label_name,
       output_dir = dirs$snapshots,
-      colour = "red",
       hemi = extract_hemi_from_view(view_type, view_name),
       skip_existing = FALSE
     )

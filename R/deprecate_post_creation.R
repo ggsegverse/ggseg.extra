@@ -62,8 +62,8 @@ check_post_creation_dots <- function(fn, ...) {
       what = paste0(fn, "(dilate)"),
       with = "ggseg.extra::atlas_dilate()",
       details = paste(
-        "Apply it to the finished atlas instead, so retuning it does not",
-        "mean rebuilding."
+        "It is no longer applied during the build. Apply it to the finished",
+        "atlas instead, so retuning it does not mean rebuilding."
       )
     )
   }

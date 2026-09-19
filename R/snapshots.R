@@ -134,61 +134,45 @@ orient_slice_2d <- function(slice, view, hemi = NULL) {
 }
 
 
-# Batch snapshot engine ----
+# Projection store ----
 
-#' Snapshot cortex slice for tract atlas
+#' Path of one region's projection, under the name its contour will carry
 #'
-#' Creates a PNG with filename format matching tract projections.
-#'
-#' @param slice_view "axial", "sagittal", or "coronal"
-#' @param view_name Name for this view (used in filename)
-#' @param hemi Hemisphere ("left" or "right")
-#'
-#' @return Invisible path to output file, or NULL if no voxels
-#' @keywords internal
+#' The file name is the region's identity: `extract_contours()` reads the
+#' label and view back off it, so this is the one place that spelling is
+#' decided.
 #' @noRd
-#' @importFrom grDevices png dev.off
-#' @importFrom graphics par image
-render_slice_png <- function(
-  slice_data,
-  outfile,
-  colour = "red",
-  width = 400,
-  height = 400
-) {
-  if (is.null(slice_data)) {
-    return(invisible(NULL))
-  }
+projection_file <- function(output_dir, view_name, label) {
+  as.character(fs::path(output_dir, paste0(view_name, "_", label, ".rda")))
+}
 
-  slice_data[slice_data == 0] <- NA
-  if (!any(is.finite(slice_data))) {
-    return(invisible(NULL))
-  }
 
-  png(outfile, width = width, height = height, bg = "black")
-  on.exit(dev.off(), add = TRUE)
-  par(mar = c(0, 0, 0, 0))
-
-  # x and y are given in voxel indices rather than left to image()'s default.
-  # image(z) with a bare matrix maps it onto the unit square, so `asp = 1`
-  # then forces a square plot whatever the slice's real shape -- an axial cut
-  # of a 182x218x182 template came out ~20% too wide and a sagittal one ~20%
-  # too narrow. Indexing by voxel makes `asp = 1` mean isotropic voxels, which
-  # is what it is here for. Every image of a given view is rendered from the
-  # same volume, so they all get the same extent and stay in register.
-  image(
-    x = seq_len(nrow(slice_data)),
-    y = seq_len(ncol(slice_data)),
-    z = slice_data,
-    col = colour,
-    useRaster = TRUE,
-    axes = FALSE,
-    asp = 1
-  )
-
+#' Write a projection matrix for the contour step to trace
+#'
+#' The matrix is stored as it is, in voxel indices, rather than rendered to a
+#' PNG and read back. A PNG carries no coordinates, so a reader has to decide
+#' which way its rows run and what a pixel is worth; the round-trip also put
+#' the projection on a fixed 400x400 canvas, which quantised it and made every
+#' distance depend on the volume's dimensions.
+#' @noRd
+save_projection <- function(proj, outfile) {
+  projection <- proj
+  save(projection, file = outfile)
+  stamp_cache_files(outfile)
   invisible(outfile)
 }
 
+
+#' Read a projection back, rejecting a cache older than this convention
+#' @noRd
+read_projection <- function(file) {
+  env <- new.env(parent = emptyenv())
+  load_cached_rda(file, contour_rerun_remedy, envir = env)
+  env$projection
+}
+
+
+# Batch snapshot engine ----
 
 snapshot_cortex_slice <- function(
   vol,
@@ -211,17 +195,17 @@ snapshot_cortex_slice <- function(
 
   pos <- switch(slice_view, "axial" = z, "coronal" = y, "sagittal" = x)
   slice <- extract_slice_2d(vol, slice_view, pos, hemi = hemi)
-  render_slice_png(slice, outfile, width = width, height = height)
+  if (is.null(slice) || !any(slice > 0)) {
+    return(invisible(NULL))
+  }
+  save_projection(slice, outfile)
 }
 
 
 #' Path of the cortex reference snapshot for one view
 #' @noRd
 cortex_slice_file <- function(output_dir, view_name, hemi) {
-  as.character(fs::path(
-    output_dir,
-    paste0(view_name, "_cortex_", hemi, ".png")
-  ))
+  projection_file(output_dir, view_name, paste0("cortex_", hemi))
 }
 
 
@@ -245,29 +229,20 @@ snapshot_partial_projection <- function(
   view_name,
   label,
   output_dir,
-  colour = "red",
   hemi = NULL,
-  width = 400,
-  height = 400,
   skip_existing = get_skip_existing()
 ) {
   output_dir <- path.expand(output_dir)
   label <- sanitize_label(label)
-  outfile <- as.character(fs::path(
-    output_dir,
-    paste0(view_name, "_", label, ".png")
-  ))
+  outfile <- projection_file(output_dir, view_name, label)
 
   if (skip_existing && file.exists(outfile)) {
     return(invisible(outfile))
   }
 
   proj <- volume_projection(vol, view, start, end, hemi = hemi)
-  render_slice_png(
-    proj,
-    outfile,
-    colour = colour,
-    width = width,
-    height = height
-  )
+  if (is.null(proj) || !any(proj > 0)) {
+    return(invisible(NULL))
+  }
+  save_projection(proj, outfile)
 }

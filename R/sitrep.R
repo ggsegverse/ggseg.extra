@@ -79,22 +79,6 @@ check_freesurfer <- function(detail = "simple") {
 check_other_system_deps <- function(detail = "simple") {
   results <- list()
 
-  results$imagemagick <- has_magick()
-  if (detail != "minimal") {
-    if (results$imagemagick) {
-      cli::cli_alert_success("ImageMagick")
-    } else {
-      cli::cli_alert_danger("ImageMagick not found")
-      if (detail == "full") {
-        cli::cli_bullets(c(
-          "i" = "Install from
-          {.url https://imagemagick.org/script/download.php}",
-          "i" = "macOS: {.code brew install imagemagick}" # nolint
-        ))
-      }
-    }
-  }
-
   chrome_path <- find_chrome_path()
   results$chrome <- !is.null(chrome_path)
   if (detail != "minimal") {

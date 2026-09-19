@@ -51,27 +51,6 @@ testthat::describe("stamp_cache_files", {
   })
 })
 
-
-testthat::describe("stamp_cache_dir", {
-  it("marks a stamped directory current", {
-    dir <- withr::local_tempdir("cache_")
-
-    stamp_cache_dir(dir)
-
-    expect_identical(check_cache_dir(dir, "Rerun the image step"), dir)
-  })
-
-  it("aborts for a directory no ggseg.extra stamped", {
-    dir <- withr::local_tempdir("cache_")
-
-    expect_error(
-      check_cache_dir(dir, "Rerun the image-processing step"),
-      "Rerun the image-processing step"
-    )
-  })
-})
-
-
 testthat::describe("read_cache_manifest", {
   it("returns an empty manifest when none exists", {
     dir <- withr::local_tempdir("cache_")

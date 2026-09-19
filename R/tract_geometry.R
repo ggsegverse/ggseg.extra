@@ -615,7 +615,6 @@ snapshot_tract_views <- function(
         view_name = view_name,
         label = label,
         output_dir = dirs$snapshots,
-        colour = "red",
         hemi = hemi,
         skip_existing = skip_existing
       )
