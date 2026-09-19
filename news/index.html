@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9040</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9041</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -63,6 +63,15 @@
       <small>Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.9.9.9041" id="ggsegextra-1999041">ggseg.extra 1.9.9.9041<a class="anchor" aria-label="anchor" href="#ggsegextra-1999041"></a></h2>
+<ul><li>
+<p>The atlas manipulation verbs are re-exported, so <code><a href="https://github.com/ggsegverse/ggseg.extra" class="external-link">library(ggseg.extra)</a></code> is enough to build an atlas (<a href="https://github.com/ggsegverse/ggseg.extra/issues/186" class="external-link">#186</a>). <code><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_remove()</a></code>, <code><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_op()</a></code>, <code><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_view_gather()</a></code> and the rest belong to ggseg.formats, because they belong to the atlas format rather than to any one builder, but every build needs both packages. Across the atlas repositories 18 of them are already in use over 149 call sites, 26 of those written as <code>ggseg.formats::</code> – authors reaching past a wall that did not need to be there.</p>
+<p>Only the <code>atlas_*</code> verbs come across. ggseg.formats also ships atlases named <code>dk</code>, <code>aseg</code>, <code>tracula</code> and <code>suit</code>, and so does ggseg; attaching the whole namespace would mask one set with the other depending on load order, which is a silently wrong atlas rather than an error.</p>
+<p>Twenty-four of the twenty-eight. <code>atlas_centerlines()</code>, <code>atlas_plot_palette()</code>, <code>atlas_structure_reorder()</code> and <code>atlas_view_select()</code> exist only in ggseg.formats’ development build, so re-exporting them would stop this package building against the release its DESCRIPTION asks for. They follow when ggseg.formats releases them.</p>
+</li>
+<li><p>New <code><a href="../reference/context_pattern.html">context_pattern()</a></code> is the label pattern matching an atlas’s brain silhouette, in one place instead of retyped into every build. Anchored and case-sensitive on purpose: a loose <code>"cortex"</code> also catches <code>Cerebellar_Cortex_*</code> and <code>Left-Cerebral-Cortex</code>, which are structures rather than the silhouette.</p></li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9040" id="ggsegextra-1999040">ggseg.extra 1.9.9.9040<a class="anchor" aria-label="anchor" href="#ggsegextra-1999040"></a></h2>
 <ul><li>
