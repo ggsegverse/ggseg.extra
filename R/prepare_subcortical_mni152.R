@@ -116,17 +116,8 @@ prepare_subcortical_mni152 <- function(
   aseg_nii <- tempfile(fileext = ".nii.gz")
   on.exit(unlink(aseg_nii), add = TRUE)
   # Convert the .mgz aseg the registration targets to NIfTI so RNifti can read
-  # it below. `validate_inputs = FALSE` skips neurobase::checkimg(), which
-  # cannot parse FreeSurfer .mgz input.
-  freesurfer::fs_cmd(
-    func = "mri_convert",
-    file = aseg_mgz,
-    outfile = aseg_nii,
-    retimg = FALSE,
-    validate_inputs = FALSE,
-    verbose = fs_verbose,
-    intern = TRUE
-  )
+  # it below.
+  freesurfer::mri_convert(file = aseg_mgz, outfile = aseg_nii)
   aseg_img <- RNifti::readNifti(aseg_nii)
   aseg <- as.array(aseg_img)
   validate_labels_clear_of_aseg(labels, aseg, replace_labels)
