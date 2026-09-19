@@ -976,7 +976,7 @@ build_deep_nucleus_sf <- function(vol, idx, label) {
     # nocov end
   }
 
-  r <- terra::rast(t(proj[, rev(seq_len(ncol(proj)))]))
+  r <- projection_raster(proj)
   polys <- tryCatch(
     terra::as.polygons(r, dissolve = TRUE),
     error = function(e) NULL

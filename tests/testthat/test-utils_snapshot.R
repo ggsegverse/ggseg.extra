@@ -845,3 +845,32 @@ testthat::describe("thinnest_cortex_slice", {
     )
   })
 })
+
+
+testthat::describe("projection_raster", {
+  region_bbox <- function(proj) {
+    r <- projection_raster(proj)
+    r[r == 0] <- NA
+    unname(as.vector(terra::ext(terra::as.polygons(r, na.rm = TRUE))))
+  }
+
+  it("keeps the voxel grid rather than rescaling onto a canvas", {
+    # 40 voxels wide by 20 tall: a non-square region, so this also pins that
+    # the true 2:1 survives rather than being quantised as the PNG path does.
+    proj <- matrix(0L, nrow = 60, ncol = 30)
+    proj[11:50, 6:25] <- 1L
+
+    expect_identical(
+      unname(as.vector(terra::ext(projection_raster(proj)))),
+      c(0, 60, 0, 30)
+    )
+    expect_identical(region_bbox(proj), c(10, 50, 5, 25))
+  })
+
+  it("runs y upward, so a region high in the matrix lands high in y", {
+    proj <- matrix(0L, nrow = 10, ncol = 10)
+    proj[, 8:10] <- 1L
+
+    expect_identical(region_bbox(proj)[3:4], c(7, 10))
+  })
+})
