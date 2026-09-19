@@ -339,7 +339,6 @@ testthat::describe("create_tract_from_tractography pipeline flow", {
           list(run = step %in% steps, data = list())
         }
       },
-      process_and_mask_images = function(...) invisible(NULL),
       extract_contours = function(...) invisible(NULL),
       smooth_contours = function(...) invisible(NULL),
       reduce_vertex = function(...) invisible(NULL)

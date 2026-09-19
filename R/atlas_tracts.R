@@ -109,10 +109,8 @@ create_tract_from_tractography <- function(
   ...
 ) {
   dots <- check_post_creation_dots("create_tract_from_tractography", ...)
-  dilate <- dots$dilate
   smoothness <- dots$smoothness
   tolerance <- dots$tolerance
-  dilate <- dots$dilate
   if (lifecycle::is_present(views)) {
     lifecycle::deprecate_warn(
       "1.9.9.9005",
@@ -142,7 +140,7 @@ create_tract_from_tractography <- function(
     n_points
   )
 
-  tract_run_pipeline(setup, start_time, slabs, dilate, vertex_size_limits)
+  tract_run_pipeline(setup, start_time, slabs, vertex_size_limits)
 }
 
 
@@ -202,7 +200,6 @@ tract_run_pipeline <- function(
   setup,
   start_time,
   slabs,
-  dilate,
   vertex_size_limits
 ) {
   config <- setup$config
@@ -231,7 +228,7 @@ tract_run_pipeline <- function(
     slabs
   )
 
-  tract_image_steps(config, dirs, dilate, vertex_size_limits)
+  tract_image_steps(config, dirs, vertex_size_limits)
 
   if (7L %in% config$steps) {
     atlas <- tract_assemble_full(step1, dirs, snaps$slabs, snaps$cortex_slices)
@@ -257,13 +254,12 @@ tract_finalize <- function(atlas, config, dirs, start_time) {
 
 
 #' @noRd
-tract_image_steps <- function(config, dirs, dilate, vertex_size_limits) {
+tract_image_steps <- function(config, dirs, vertex_size_limits) {
   run_image_steps(
     config,
     dirs,
-    step_map = list(process = 3L, extract = 4L, smooth = 5L, reduce = 6L),
-    total_steps = 7L,
-    dilate = dilate,
+    step_map = list(extract = 3L, smooth = 4L, reduce = 5L),
+    total_steps = 6L,
     vertex_size_limits = vertex_size_limits
   )
 }
@@ -293,7 +289,7 @@ validate_tract_config <- function(
     tolerance,
     smoothness,
     steps,
-    max_step = 7L
+    max_step = 6L
   )
   config$output_dir <- normalizePath(config$output_dir, mustWork = FALSE)
 
@@ -493,7 +489,7 @@ tract_resolve_snapshots <- function(config, dirs, step1, input_aseg, slabs) {
 
 
 # nocov start
-# Reads a real aseg volume and renders projection snapshots (magick/native
+# Reads a real aseg volume and caches projections (native
 # geometry): unavailable on CI, so this run path is excluded from coverage.
 #' @noRd
 tract_run_snapshots <- function(config, dirs, step1, input_aseg, slabs, files) {

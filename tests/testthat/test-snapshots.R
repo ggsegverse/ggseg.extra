@@ -80,7 +80,7 @@ testthat::describe("orient_slice_2d", {
 
 
 testthat::describe("snapshot_partial_projection", {
-  it("creates PNG for synthetic volume", {
+  it("caches a projection for a synthetic volume", {
     vol <- array(0L, dim = c(10, 10, 10))
     vol[4:6, 4:6, 4:6] <- 1L
 
@@ -94,18 +94,17 @@ testthat::describe("snapshot_partial_projection", {
       view_name = "axial_1",
       label = "test_region",
       output_dir = outdir,
-      colour = "red",
       skip_existing = FALSE
     )
 
-    files <- list.files(outdir, pattern = "\\.png$")
-    expect_gt(length(files), 0)
+    files <- list.files(outdir, pattern = "\\.rda$")
+    expect_identical(files, "axial_1_test_region.rda")
   })
 })
 
 
 testthat::describe("snapshot_cortex_slice", {
-  it("creates PNG for valid slice", {
+  it("caches a projection for a valid slice", {
     vol <- array(0L, dim = c(10, 10, 10))
     vol[4:6, 4:6, 5] <- 1L
 
@@ -152,7 +151,7 @@ testthat::describe("snapshot_cortex_slice", {
     vol[4:6, 4:6, 5] <- 1L
 
     outdir <- withr::local_tempdir("cortex_slice_")
-    outfile <- as.character(fs::path(outdir, "axial_1_cortex_left.png"))
+    outfile <- as.character(fs::path(outdir, "axial_1_cortex_left.rda"))
     file.create(outfile)
 
     result <- snapshot_cortex_slice(
@@ -272,7 +271,7 @@ testthat::describe("snapshot_cortex_slice when extract_slice_2d returns NULL", {
 testthat::describe("snapshot_partial_projection skip and zero paths", {
   it("returns outfile when skip_existing is TRUE and file exists", {
     outdir <- withr::local_tempdir("partial_skip_")
-    outfile <- as.character(fs::path(outdir, "axial_1_test.png"))
+    outfile <- as.character(fs::path(outdir, "axial_1_test.rda"))
     file.create(outfile)
 
     result <- snapshot_partial_projection(
@@ -306,47 +305,5 @@ testthat::describe("snapshot_partial_projection skip and zero paths", {
     )
 
     expect_null(result)
-  })
-})
-
-
-testthat::describe("render_slice_png aspect ratio", {
-  # Bounding box of the non-black ink in a rendered snapshot, in pixels.
-  ink_bbox <- function(file) {
-    px <- magick::image_read(file) |>
-      magick::image_data(channels = "gray") |>
-      as.integer()
-    # nolint next: commas_linter. air formats empty subscripts unspaced.
-    lit <- which(px[,, 1] > 0, arr.ind = TRUE)
-    c(
-      w = diff(range(lit[, 2])) + 1,
-      h = diff(range(lit[, 1])) + 1
-    )
-  }
-
-  it("draws a non-square slice at its true proportions", {
-    skip_if_not_installed("magick")
-
-    # A blob twice as long in y as in x, in a volume shaped the same way.
-    vol <- array(0L, dim = c(20L, 40L, 5L))
-    vol[6:15, 11:30, 3] <- 1L
-
-    outdir <- withr::local_tempdir("aspect_")
-    out <- snapshot_cortex_slice(
-      vol = vol,
-      x = NA,
-      y = NA,
-      z = 3,
-      slice_view = "axial",
-      view_name = "axial_1",
-      hemi = "cortex",
-      output_dir = outdir,
-      skip_existing = FALSE
-    )
-
-    bbox <- ink_bbox(out)
-    # 10 voxels wide by 20 tall, so half as wide as it is high. Rendered onto
-    # a square canvas without honouring the slice shape this comes out square.
-    expect_equal(unname(bbox[["w"]] / bbox[["h"]]), 0.5, tolerance = 0.05)
   })
 })

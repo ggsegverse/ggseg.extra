@@ -1,3 +1,43 @@
+# ggseg.extra 1.9.9.9043
+
+- Subcortical and tract contours are traced from the projection itself
+  instead of a PNG of it (#139). **Atlases built with this produce different
+  geometry and need rebuilding**, and build scripts need their distance-valued
+  arguments re-tuned -- see below.
+
+  A projection started life as a numeric matrix, went through `image()`, a PNG
+  file, ImageMagick transparency, alpha extraction, a mask PNG, a decode back
+  to pixels and a raster, and only then became polygons. Two bug classes came
+  out of that: a PNG carries no coordinates, so whoever read it decided which
+  way `y` ran, and masks written by the pipeline could carry a colour profile
+  that the image reader refused. Both needed workarounds.
+
+  The round trip also cost fidelity. It rendered onto a fixed 400x400 canvas,
+  so a region whose true width:height is 2 came back as 1.985. Traced
+  directly it is 2.0000, and the coordinates are the voxel indices rather
+  than pixels of a canvas.
+
+- **Distances now mean voxels.** The canvas scaled every atlas by
+  `400 / max(dim)`, so the same `atlas_dilate(0.6)` was a different physical
+  distance on every atlas -- 1.56 pixels per voxel on a 256-cube, 1.84 on a
+  182x218 volume. In voxel space `0.6` is 0.6 voxels everywhere, usually
+  0.6 mm. Values tuned against the old canvas want dividing by that atlas's
+  old scale factor; `atlas_smooth(smoothness =)` is a distance too and moves
+  the same way.
+
+- The build-time `dilate` argument is no longer applied. It has been
+  deprecated since 1.9.9.9016 in favour of `atlas_dilate()` on the finished
+  atlas, which is where it belongs -- retuning it there does not mean
+  rebuilding. Passing it still warns, and now says it is not applied.
+
+- ImageMagick is no longer required. It leaves `SystemRequirements`, `magick`
+  leaves `Suggests`, and `setup_sitrep()` no longer reports it or tells anyone
+  to install it.
+
+- The `processed/` and `masks/` directories are gone, and with them the
+  image-processing step: subcortical builds run 8 steps rather than 9, tract
+  builds 5 rather than 6.
+
 # ggseg.extra 1.9.9.9042
 
 - The `regheader` deprecation test no longer passes or fails according to what

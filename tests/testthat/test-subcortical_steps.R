@@ -652,7 +652,7 @@ testthat::describe("validate_subcort_config", {
       smoothness = NULL
     )
 
-    expect_identical(result$steps, 1L:9L)
+    expect_identical(result$steps, 1L:8L)
   })
 
   it("accepts a data.frame as input_lut", {
@@ -849,7 +849,7 @@ testthat::describe("subcort_resolve_components", {
     )
 
     config <- list(
-      steps = 1L:9L,
+      steps = 1L:8L,
       skip_existing = TRUE,
       verbose = FALSE
     )
@@ -994,139 +994,90 @@ testthat::describe("finalize_atlas (subcort parameters)", {
 
 
 testthat::describe("run_image_steps (subcort step_map)", {
-  subcort_step_map <- list(process = 5L, extract = 6L, smooth = 7L, reduce = 8L)
+  subcort_step_map <- list(extract = 5L, smooth = 6L, reduce = 7L)
 
   it("calls the right functions for the right steps", {
     .cap$step5_called <- FALSE
     .cap$step6_called <- FALSE
     .cap$step7_called <- FALSE
-    .cap$step8_called <- FALSE
 
     local_mocked_bindings(
-      process_and_mask_images = function(...) {
+      extract_contours = function(...) {
         .cap$step5_called <- TRUE
         invisible(NULL)
       },
-      extract_contours = function(...) {
+      smooth_contours = function(...) {
         .cap$step6_called <- TRUE
         invisible(NULL)
       },
-      smooth_contours = function(...) {
-        .cap$step7_called <- TRUE
-        invisible(NULL)
-      },
       reduce_vertex = function(...) {
-        .cap$step8_called <- TRUE
+        .cap$step7_called <- TRUE
         invisible(NULL)
       }
     )
 
     config <- list(
-      steps = 5L:8L,
+      steps = 5L:7L,
       verbose = FALSE,
       skip_existing = FALSE,
       smoothness = 3,
       tolerance = 0.5
     )
     dirs <- mock_dirs()
-    stamp_cache_dir(dirs$masks)
 
-    run_image_steps(config, dirs, subcort_step_map, 9L)
+    run_image_steps(config, dirs, subcort_step_map, 8L)
 
     expect_true(.cap$step5_called)
     expect_true(.cap$step6_called)
     expect_true(.cap$step7_called)
-    expect_true(.cap$step8_called)
   })
 
   it("skips steps not in config$steps", {
     .cap$step5_called <- FALSE
     .cap$step6_called <- FALSE
     .cap$step7_called <- FALSE
-    .cap$step8_called <- FALSE
 
     local_mocked_bindings(
-      process_and_mask_images = function(...) {
+      extract_contours = function(...) {
         .cap$step5_called <- TRUE
         invisible(NULL)
       },
-      extract_contours = function(...) {
+      smooth_contours = function(...) {
         .cap$step6_called <- TRUE
         invisible(NULL)
       },
-      smooth_contours = function(...) {
-        .cap$step7_called <- TRUE
-        invisible(NULL)
-      },
       reduce_vertex = function(...) {
-        .cap$step8_called <- TRUE
+        .cap$step7_called <- TRUE
         invisible(NULL)
       }
     )
 
     config <- list(
-      steps = c(6L, 8L),
+      steps = c(6L, 7L),
       verbose = FALSE,
       skip_existing = FALSE,
       smoothness = 3,
       tolerance = 0.5
     )
     dirs <- mock_dirs()
-    stamp_cache_dir(dirs$masks)
 
-    run_image_steps(config, dirs, subcort_step_map, 9L)
+    run_image_steps(config, dirs, subcort_step_map, 8L)
 
     expect_false(.cap$step5_called)
     expect_true(.cap$step6_called)
-    expect_false(.cap$step7_called)
-    expect_true(.cap$step8_called)
+    expect_true(.cap$step7_called)
   })
 
-  it("stamps the processed and mask directories after processing", {
-    local_mocked_bindings(
-      process_and_mask_images = function(...) invisible(NULL),
-      extract_contours = function(...) invisible(NULL),
-      smooth_contours = function(...) invisible(NULL),
-      reduce_vertex = function(...) invisible(NULL)
-    )
-
-    config <- list(
-      steps = 5L:8L,
-      verbose = FALSE,
-      skip_existing = FALSE,
-      smoothness = 3,
-      tolerance = 0.5
-    )
+  it("refuses a projection an older cache format wrote", {
     dirs <- mock_dirs()
+    outfile <- projection_file(dirs$snapshots, "ax_1", "thalamus")
+    projection <- matrix(1L, 4, 4)
+    save(projection, file = outfile)
+    manifest <- read_cache_manifest(dirs$snapshots)
+    manifest[basename(outfile)] <- "0"
+    write_cache_manifest(dirs$snapshots, manifest)
 
-    run_image_steps(config, dirs, subcort_step_map, 9L)
-
-    expect_identical(
-      read_cache_manifest(dirs$masks)[["."]],
-      cache_format_version()
-    )
-    expect_identical(
-      read_cache_manifest(dirs$processed)[["."]],
-      cache_format_version()
-    )
-  })
-
-  it("aborts before extracting contours from masks another version made", {
-    local_mocked_bindings(extract_contours = function(...) invisible(NULL))
-
-    config <- list(
-      steps = 6L,
-      verbose = FALSE,
-      skip_existing = FALSE,
-      smoothness = 3,
-      tolerance = 0.5
-    )
-    dirs <- mock_dirs()
-
-    expect_error(
-      run_image_steps(config, dirs, subcort_step_map, 9L),
-      "Rerun the image-processing step"
-    )
+    expect_error(read_projection(outfile), "cache format")
   })
 })
 
@@ -1204,7 +1155,7 @@ testthat::describe("subcort_snapshot_names", {
 
     names <- subcort_snapshot_names(colortable, slabs, cortex_slices)
 
-    expect_true("axial_1_cortex_.png" %in% names)
+    expect_true("axial_1_cortex_.rda" %in% names)
   })
 })
 
@@ -1405,10 +1356,10 @@ testthat::describe("cortex silhouette snapshot staleness", {
 
   it("redraws an unrecorded snapshot and drops what was made from it", {
     dirs <- mock_subcort_dirs()
-    outfile <- file.path(dirs$snapshots, "ax_1_cortex_left.png")
+    outfile <- file.path(dirs$snapshots, "ax_1_cortex_left.rda")
     file.create(outfile)
     for (dir in c(dirs$processed, dirs$masks)) {
-      file.create(file.path(dir, "ax_1_cortex_left.png"))
+      file.create(file.path(dir, "ax_1_cortex_left.rda"))
     }
     local_counting_slice()
 
@@ -1422,12 +1373,12 @@ testthat::describe("cortex silhouette snapshot staleness", {
     expect_identical(.cap$drawn, 1L)
     expect_false(file.exists(file.path(dirs$processed, basename(outfile))))
     expect_false(file.exists(file.path(dirs$masks, basename(outfile))))
-    expect_named(signatures, "ax_1_cortex_left.png")
+    expect_named(signatures, "ax_1_cortex_left.rda")
   })
 
   it("reuses a snapshot recorded for this context volume", {
     dirs <- mock_subcort_dirs()
-    outfile <- file.path(dirs$snapshots, "ax_1_cortex_left.png")
+    outfile <- file.path(dirs$snapshots, "ax_1_cortex_left.rda")
     file.create(outfile)
     local_counting_slice()
     cortex_vol <- array(1L, dim = c(4, 4, 4))
@@ -1454,7 +1405,7 @@ testthat::describe("cortex silhouette snapshot staleness", {
 
   it("redraws when the context volume itself changed", {
     dirs <- mock_subcort_dirs()
-    outfile <- file.path(dirs$snapshots, "ax_1_cortex_left.png")
+    outfile <- file.path(dirs$snapshots, "ax_1_cortex_left.rda")
     file.create(outfile)
     local_counting_slice()
 

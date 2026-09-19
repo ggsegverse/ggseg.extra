@@ -58,17 +58,9 @@ skip_render_on_windows <- function() {
   skip_on_os("windows")
 }
 
-# Helper to skip tests that read snapshot masks (magick decode + terra raster)
+# Helper to skip tests that trace projections into contours (terra raster)
 skip_without_mask_io <- function() {
-  skip_if_not_installed("magick")
   skip_if_not_installed("terra")
-}
-
-# Helper to skip tests requiring ImageMagick
-skip_if_no_imagemagick <- function() {
-  if (!has_magick()) {
-    skip("ImageMagick not available")
-  }
 }
 
 # Helper to get test label files
@@ -164,9 +156,7 @@ expect_warnings <- function(expr, regexp) {
 mock_dirs <- function() {
   list(
     base = withr::local_tempdir(.local_envir = parent.frame()),
-    snapshots = withr::local_tempdir(.local_envir = parent.frame()),
-    processed = withr::local_tempdir(.local_envir = parent.frame()),
-    masks = withr::local_tempdir(.local_envir = parent.frame())
+    snapshots = withr::local_tempdir(.local_envir = parent.frame())
   )
 }
 

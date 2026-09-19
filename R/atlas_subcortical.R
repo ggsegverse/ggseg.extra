@@ -116,10 +116,8 @@ create_subcortical_from_volume <- function(
   ...
 ) {
   dots <- check_post_creation_dots("create_subcortical_from_volume", ...)
-  dilate <- dots$dilate
   smoothness <- dots$smoothness
   tolerance <- dots$tolerance
-  dilate <- dots$dilate
   if (lifecycle::is_present(views)) {
     lifecycle::deprecate_warn(
       "1.9.9.9005",
@@ -157,7 +155,6 @@ create_subcortical_from_volume <- function(
     start_time,
     slabs,
     context,
-    dilate,
     vertex_size_limits
   )
 }
@@ -224,7 +221,6 @@ subcort_run_pipeline <- function(
   start_time,
   slabs,
   context,
-  dilate,
   vertex_size_limits
 ) {
   config <- setup$config
@@ -254,7 +250,7 @@ subcort_run_pipeline <- function(
       snaps$cortex_slices
     )
   )
-  subcort_image_steps(config, dirs, dilate, vertex_size_limits)
+  subcort_image_steps(config, dirs, vertex_size_limits)
 
   if (9L %in% config$steps) {
     atlas <- subcort_build_2d_atlas(config, components, dirs, snaps, context)
@@ -280,13 +276,12 @@ subcort_finalize <- function(atlas, config, dirs, start_time) {
 
 
 #' @noRd
-subcort_image_steps <- function(config, dirs, dilate, vertex_size_limits) {
+subcort_image_steps <- function(config, dirs, vertex_size_limits) {
   run_image_steps(
     config,
     dirs,
-    step_map = list(process = 5L, extract = 6L, smooth = 7L, reduce = 8L),
-    total_steps = 9L,
-    dilate = dilate,
+    step_map = list(extract = 5L, smooth = 6L, reduce = 7L),
+    total_steps = 8L,
     vertex_size_limits = vertex_size_limits
   )
 }
@@ -404,7 +399,7 @@ validate_subcort_config <- function(
     tolerance,
     smoothness,
     steps,
-    max_step = 9L
+    max_step = 8L
   )
 
   validate_decimate(decimate)

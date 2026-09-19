@@ -111,9 +111,9 @@ Leave empty to use defaults.}
 \code{\link[=create_subcortical_from_volume]{create_subcortical_from_volume()}}. Any argument of that function may
 be set here except those managed by the wholebrain pipeline
 (\code{input_volume}, \code{input_lut}, \code{atlas_name}, \code{output_dir}, \code{verbose},
-\code{cleanup}, \code{skip_existing}). Use this to tune \code{dilate},
-\code{vertex_size_limits}, \code{decimate}, \code{slabs}. The deprecated
-\code{tolerance}/\code{smoothness} entries trigger a lifecycle warning.}
+\code{cleanup}, \code{skip_existing}). Use this to tune \code{vertex_size_limits},
+\code{decimate}, \code{slabs}. The deprecated \code{dilate}/\code{tolerance}/\code{smoothness}
+entries trigger a lifecycle warning and are no longer applied.}
 
 \item{cerebellar_opts}{Named list of extra arguments forwarded to
 \code{\link[=create_cerebellar_from_volume]{create_cerebellar_from_volume()}}. Allowed entries include \code{decimate}.
@@ -313,7 +313,7 @@ result <- create_wholebrain_from_volume(
   input_volume = "my_atlas.nii.gz",
   input_lut = lut,
   atlas_name = "my_atlas",
-  subcortical_opts = list(dilate = 2)
+  subcortical_opts = list(vertex_size_limits = c(3e6, 3e7))
 )
 result$cortical   # surface-based cortical atlas
 result$subcortical # mesh-based subcortical atlas

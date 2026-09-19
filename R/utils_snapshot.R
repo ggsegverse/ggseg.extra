@@ -1,149 +1,10 @@
 # Image processing ----
 
-#' Process snapshot image for contour extraction
-#'
-#' Applies transparency and optional dilation to prepare image for
-#' contour extraction.
-#'
-#' @param input_file Path to input image
-#' @param output_file Path for output image
-#' @param dilate Optional dilation iterations
-#' @param transparent_color Color to make transparent (default "black")
-#' @param fuzz Fuzz factor for transparency (default 10)
-#' @param skip_existing If TRUE, skip if output file already exists
-#' @noRd
-process_snapshot_image <- function(
-  input_file,
-  output_file,
-  dilate = NULL,
-  transparent_color = "black",
-  fuzz = 10,
-  skip_existing = get_skip_existing()
-) {
-  rlang::check_installed("magick", reason = "for snapshot image processing")
-  if (skip_existing && file.exists(output_file)) {
-    return(invisible(output_file))
-  }
-
-  img <- magick::image_read(input_file) |>
-    magick::image_convert() |>
-    magick::image_transparent(color = transparent_color, fuzz = fuzz)
-
-  if (!is.null(dilate) && dilate > 0) {
-    img <- magick::image_morphology(
-      img,
-      method = "DilateI",
-      kernel = "diamond",
-      iterations = dilate
-    )
-  }
-
-  magick::image_write(image = img, path = output_file)
-  invisible(output_file)
-}
-
-
-#' Extract alpha channel from image using ImageMagick
-#' @noRd
-extract_alpha_mask <- function(
-  input_file,
-  output_file,
-  skip_existing = get_skip_existing()
-) {
-  if (skip_existing && file.exists(output_file)) {
-    return(invisible(output_file))
-  }
-
-  exit_code <- system2(
-    "magick",
-    args = c(
-      shQuote(input_file),
-      "-alpha",
-      "extract",
-      shQuote(output_file)
-    ),
-    stdout = FALSE,
-    stderr = FALSE
-  )
-  if (exit_code != 0) {
-    cli::cli_abort(
-      "ImageMagick failed to extract alpha from {.path {input_file}}"
-    )
-  }
-  invisible(output_file)
-}
-
-
-#' Process snapshots and extract alpha masks
-#'
-#' Runs `process_snapshot_image` on each PNG in `snap_dir`, then
-#' `extract_alpha_mask` on each processed file to produce binary masks.
-#'
-#' @param snap_dir Directory containing raw snapshot PNGs
-#' @param processed_dir Directory for processed (transparency) images
-#' @param mask_dir Directory for alpha mask output
-#' @param dilate Dilation iterations passed to `process_snapshot_image`
-#' @param skip_existing Skip files that already exist
-#' @noRd
-process_and_mask_images <- function(
-  snap_dir,
-  processed_dir,
-  mask_dir,
-  dilate = NULL,
-  skip_existing = get_skip_existing()
-) {
-  files <- list.files(snap_dir, full.names = TRUE, pattern = "\\.png$")
-
-  p <- progressor(steps = length(files))
-  invisible(lapply(files, function(f) {
-    process_snapshot_image(
-      input_file = f,
-      output_file = as.character(fs::path(processed_dir, basename(f))),
-      dilate = dilate,
-      skip_existing = skip_existing
-    )
-    p()
-  }))
-
-  processed_files <- list.files(
-    processed_dir,
-    full.names = TRUE,
-    pattern = "\\.png$"
-  )
-  invisible(lapply(processed_files, function(f) {
-    extract_alpha_mask(
-      f,
-      as.character(fs::path(mask_dir, basename(f))),
-      skip_existing = skip_existing
-    )
-  }))
-
-  invisible(NULL)
-}
-
-
 # Contour loading ----
 
 # Filename parsing ----
 
 # ImageMagick utilities ----
-
-#' @noRd
-has_magick <- function() {
-  k <- magick_version()
-  any(grepl("Version: ImageMagick", k, fixed = TRUE))
-}
-
-
-#' @noRd
-magick_version <- function() {
-  tryCatch(
-    system2("magick", "--version", stdout = TRUE, stderr = FALSE)[1],
-    error = function(e) "",
-    warning = function(w) ""
-  )
-}
-
 
 # Command execution ----
 
@@ -191,13 +52,15 @@ run_cmd <- function(cmd, verbose = get_verbose(), no_ui = FALSE) {
 #' @importFrom sf st_as_sf st_is_empty st_geometry
 get_contours <- function(
   raster_object,
-  max_val = 255,
   vertex_size_limits = c(3 * 10^6, 3 * 10^7)
 ) {
   rlang::check_installed("terra", reason = "for contour extraction")
   mx <- terra::global(raster_object, fun = "max", na.rm = TRUE)[1, 1]
 
-  if (is.na(mx) || mx < max_val) {
+  # A projection holds presence, not brightness: anything above zero is the
+  # region. The old grey-level gate existed to find what value libpng had
+  # handed back for white, which a matrix never needs.
+  if (is.na(mx) || mx <= 0) {
     return(NULL)
   }
 

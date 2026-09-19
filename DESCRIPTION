@@ -1,6 +1,6 @@
 Package: ggseg.extra
 Title: Create Brain Atlases for the 'ggsegverse' Plotting Ecosystem
-Version: 1.9.9.9042
+Version: 1.9.9.9043
 Authors@R: c(
     person(
         given = "Athanasia Mo",
@@ -63,7 +63,6 @@ Suggests:
     hexSticker,
     htmlwidgets,
     knitr,
-    magick,
     neuromapr,
     rgl,
     RNifti,
@@ -88,7 +87,6 @@ Language: en-US
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3
 SystemRequirements: FreeSurfer (subcortical/tract/wholebrain pipelines), 
-    ImageMagick (subcortical/tract pipelines only), 
     Connectome Workbench (optional, for CIFTI resampling),
     GDAL (>= 2.0.1), 
     GEOS (>= 3.4.0), 

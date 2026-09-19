@@ -494,22 +494,16 @@ extract_contours <- function(
   step = "",
   vertex_size_limits = NULL
 ) {
-  rlang::check_installed(
-    c("magick", "terra"),
-    reason = "for contour extraction from snapshot masks"
-  )
+  rlang::check_installed("terra", reason = "for contour extraction")
   if (verbose) {
     cli::cli_progress_step("{step} Extracting contours")
   }
 
-  regions <- list.files(input_dir, full.names = TRUE, pattern = "\\.png$")
+  regions <- list.files(input_dir, full.names = TRUE, pattern = "\\.rda$")
   region_names <- file_path_sans_ext(basename(regions))
-
-  max_val <- probe_raster_max(regions)
 
   contourobjs <- map_region_contours(
     regions = regions,
-    max_val = max_val,
     vertex_size_limits = vertex_size_limits,
     step = step
   )
@@ -525,30 +519,6 @@ extract_contours <- function(
   }
 
   invisible(contours)
-}
-
-
-#' Read a snapshot mask PNG as a raster with y increasing upward
-#'
-#' `terra::rast()` on the PNG itself is avoided because terra's orientation of
-#' non-georeferenced files is not stable across versions; the decoded pixels
-#' go through `raster_y_up()` instead, which is where that convention lives.
-#' Masks are single-channel greyscale, as written by `extract_alpha_mask()`;
-#' any alpha channel is ignored.
-#'
-#' @param file Path to a PNG mask.
-#' @return Single-layer SpatRaster spanning `0..ncol` by `0..nrow`, with
-#'   grey values 0-255.
-#' @keywords internal
-#' @noRd
-read_mask_raster <- function(file) {
-  # Workaround: masks can carry the RGB colour profile of their snapshot on
-  # greyscale pixels; libpng only warns about it, but the magick R package
-  # turns that warning into an error unless the profile is skipped.
-  pixels <- magick::image_read(file, defines = c("profile:skip" = "ICC")) |>
-    magick::image_data(channels = "gray") |>
-    as.integer()
-  raster_y_up(matrix(pixels, nrow = nrow(pixels)))
 }
 
 
@@ -571,30 +541,11 @@ check_contour_y_axis <- function(contours, contourfile) {
 }
 
 
-#' Find the maximum raster value across the first regions with data
-#' @noRd
-probe_raster_max <- function(regions) {
-  max_val <- 0
-  for (f in regions[seq_len(min(10, length(regions)))]) {
-    r <- read_mask_raster(f)
-    m <- terra::global(r, fun = "max", na.rm = TRUE)[1, 1]
-    if (m > max_val) {
-      max_val <- m
-    }
-    if (max_val > 0) break
-  }
-  if (max_val == 0) {
-    max_val <- 1
-  }
-  max_val
-}
-
-
 #' Extract contours from each region raster in parallel
 #' @noRd
 #' @importFrom furrr furrr_options
 #' @importFrom progressr progressor
-map_region_contours <- function(regions, max_val, vertex_size_limits, step) {
+map_region_contours <- function(regions, vertex_size_limits, step) {
   p <- progressor(
     steps = length(regions),
     label = paste(step, "Extracting contours")
@@ -602,18 +553,14 @@ map_region_contours <- function(regions, max_val, vertex_size_limits, step) {
   safe_future_map(
     regions,
     function(region_file) {
-      r <- read_mask_raster(region_file)
-      result <- get_contours(
-        r,
-        max_val = max_val,
-        vertex_size_limits = vertex_size_limits
-      )
+      r <- projection_raster(read_projection(region_file))
+      result <- get_contours(r, vertex_size_limits = vertex_size_limits)
       p()
       result
     },
     .options = furrr::furrr_options(
-      packages = c("magick", "terra", "ggseg.extra"),
-      globals = c("max_val", "vertex_size_limits", "p")
+      packages = c("terra", "ggseg.extra"),
+      globals = c("vertex_size_limits", "p")
     )
   )
 }

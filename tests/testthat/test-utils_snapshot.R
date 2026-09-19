@@ -1,81 +1,5 @@
 .cap <- new.env()
 
-testthat::describe("has_magick", {
-  it("returns logical", {
-    result <- has_magick()
-    expect_type(result, "logical")
-    expect_length(result, 1)
-  })
-})
-
-
-testthat::describe("process_and_mask_images", {
-  it("calls process_snapshot_image for each png then extract_alpha_mask", {
-    snap_dir <- withr::local_tempdir("snap_")
-    processed_dir <- withr::local_tempdir("proc_")
-    mask_dir <- withr::local_tempdir("mask_")
-
-    file.create(file.path(snap_dir, "img1.png"))
-    file.create(file.path(snap_dir, "img2.png"))
-
-    .cap$process_called <- character(0)
-    .cap$mask_called <- character(0)
-
-    local_mocked_bindings(
-      process_snapshot_image = function(input_file, output_file, ...) {
-        .cap$process_called <- c(.cap$process_called, basename(input_file))
-        file.create(output_file)
-      },
-      extract_alpha_mask = function(input_file, output_file, ...) {
-        .cap$mask_called <- c(.cap$mask_called, basename(input_file))
-      },
-      progressor = function(...) function(...) NULL
-    )
-
-    process_and_mask_images(snap_dir, processed_dir, mask_dir)
-
-    expect_identical(sort(.cap$process_called), c("img1.png", "img2.png"))
-    expect_identical(sort(.cap$mask_called), c("img1.png", "img2.png"))
-  })
-
-  it("passes dilate parameter through", {
-    snap_dir <- withr::local_tempdir("snap_")
-    processed_dir <- withr::local_tempdir("proc_")
-    mask_dir <- withr::local_tempdir("mask_")
-
-    file.create(file.path(snap_dir, "img1.png"))
-
-    .cap$captured_dilate <- NULL
-    local_mocked_bindings(
-      process_snapshot_image = function(input_file, output_file, dilate, ...) {
-        .cap$captured_dilate <- dilate
-        file.create(output_file)
-      },
-      extract_alpha_mask = function(...) NULL,
-      progressor = function(...) function(...) NULL
-    )
-
-    process_and_mask_images(snap_dir, processed_dir, mask_dir, dilate = 3L)
-
-    expect_identical(.cap$captured_dilate, 3L)
-  })
-
-  it("handles empty directory", {
-    snap_dir <- withr::local_tempdir("snap_")
-    processed_dir <- withr::local_tempdir("proc_")
-    mask_dir <- withr::local_tempdir("mask_")
-
-    local_mocked_bindings(
-      progressor = function(...) function(...) NULL
-    )
-
-    expect_no_error(
-      process_and_mask_images(snap_dir, processed_dir, mask_dir)
-    )
-  })
-})
-
-
 testthat::describe("make_view_chunks", {
   it("creates correct number of chunks", {
     result <- make_view_chunks(85, 152, 10, "axial")
@@ -379,159 +303,6 @@ testthat::describe("extract_hemi_from_view", {
   })
 })
 
-
-testthat::describe("process_snapshot_image", {
-  it("returns early when skip_existing is TRUE and file exists", {
-    input <- withr::local_tempfile(fileext = ".png")
-    output <- withr::local_tempfile(fileext = ".png")
-    file.create(input)
-    file.create(output)
-
-    .cap$read_called <- FALSE
-    local_mocked_bindings(
-      image_read = function(...) {
-        .cap$read_called <- TRUE
-        NULL
-      },
-      .package = "magick"
-    )
-
-    result <- process_snapshot_image(input, output, skip_existing = TRUE)
-
-    expect_identical(result, output, ignore_attr = TRUE)
-    expect_false(.cap$read_called)
-  })
-
-  it("calls image processing pipeline", {
-    input <- withr::local_tempfile(fileext = ".png")
-    output <- withr::local_tempfile(fileext = ".png")
-    file.create(input)
-
-    .cap$transparent_called <- FALSE
-    .cap$write_called <- FALSE
-    sentinel <- structure(list(), class = "mock_img")
-
-    local_mocked_bindings(
-      image_read = function(...) sentinel,
-      image_convert = function(...) sentinel,
-      image_transparent = function(...) {
-        .cap$transparent_called <- TRUE
-        sentinel
-      },
-      image_write = function(image, path, ...) {
-        .cap$write_called <- TRUE
-        file.create(path)
-      },
-      .package = "magick"
-    )
-
-    result <- process_snapshot_image(input, output, skip_existing = FALSE)
-
-    expect_true(.cap$transparent_called)
-    expect_true(.cap$write_called)
-    expect_true(file.exists(output))
-    expect_identical(result, output, ignore_attr = TRUE)
-  })
-
-  it("applies dilation when dilate > 0", {
-    input <- withr::local_tempfile(fileext = ".png")
-    output <- withr::local_tempfile(fileext = ".png")
-    file.create(input)
-
-    .cap$morphology_called <- FALSE
-    sentinel <- structure(list(), class = "mock_img")
-
-    local_mocked_bindings(
-      image_read = function(...) sentinel,
-      image_convert = function(...) sentinel,
-      image_transparent = function(...) sentinel,
-      image_morphology = function(img, method, kernel, iterations, ...) {
-        .cap$morphology_called <- TRUE
-        expect_identical(method, "DilateI")
-        expect_identical(kernel, "diamond")
-        expect_identical(iterations, 2)
-        sentinel
-      },
-      image_write = function(image, path, ...) {
-        file.create(path)
-      },
-      .package = "magick"
-    )
-
-    process_snapshot_image(input, output, dilate = 2, skip_existing = FALSE)
-
-    expect_true(.cap$morphology_called)
-  })
-
-  it("skips dilation when dilate is NULL", {
-    input <- withr::local_tempfile(fileext = ".png")
-    output <- withr::local_tempfile(fileext = ".png")
-    file.create(input)
-
-    .cap$morphology_called <- FALSE
-    sentinel <- structure(list(), class = "mock_img")
-
-    local_mocked_bindings(
-      image_read = function(...) sentinel,
-      image_convert = function(...) sentinel,
-      image_transparent = function(...) sentinel,
-      image_morphology = function(...) {
-        .cap$morphology_called <- TRUE
-        sentinel
-      },
-      image_write = function(image, path, ...) {
-        file.create(path)
-      },
-      .package = "magick"
-    )
-
-    process_snapshot_image(input, output, dilate = NULL, skip_existing = FALSE)
-
-    expect_false(.cap$morphology_called)
-  })
-})
-
-
-testthat::describe("extract_alpha_mask", {
-  it("returns early when skip_existing is TRUE and file exists", {
-    input <- withr::local_tempfile(fileext = ".png")
-    output <- withr::local_tempfile(fileext = ".png")
-    file.create(input)
-    file.create(output)
-
-    result <- extract_alpha_mask(input, output, skip_existing = TRUE)
-
-    expect_identical(result, output, ignore_attr = TRUE)
-  })
-
-  it("extracts alpha and returns output path when magick is available", {
-    skip_if_not(has_magick(), "ImageMagick not available")
-    tmp <- withr::local_tempdir()
-    input <- file.path(tmp, "test.png")
-    output <- file.path(tmp, "alpha.png")
-    magick::image_write(magick::image_blank(10, 10, "red"), input)
-
-    result <- extract_alpha_mask(input, output, skip_existing = FALSE)
-
-    expect_identical(result, output, ignore_attr = TRUE)
-    expect_true(file.exists(output))
-  })
-
-  it("errors on non-zero exit code", {
-    skip_if_not(has_magick(), "ImageMagick not available")
-
-    expect_error(
-      extract_alpha_mask(
-        "/nonexistent/input.png",
-        "/nonexistent/output.png",
-        skip_existing = FALSE
-      ),
-      "ImageMagick failed"
-    )
-  })
-})
-
-
 testthat::describe("run_cmd", {
   it("runs commands successfully", {
     skip_on_os("windows")
@@ -560,13 +331,13 @@ testthat::describe("run_cmd", {
 
 
 testthat::describe("get_contours", {
-  it("returns NULL when max value < max_val", {
+  it("returns NULL for a projection with nothing in it", {
     local_mocked_bindings(
-      global = function(x, ...) data.frame(max = 100),
+      global = function(x, ...) data.frame(max = 0),
       .package = "terra"
     )
 
-    result <- get_contours("fake_raster", max_val = 255)
+    result <- get_contours("fake_raster")
 
     expect_null(result)
   })
@@ -577,10 +348,10 @@ testthat::describe("get_contours", {
       .package = "terra"
     )
 
-    expect_null(get_contours("fake_raster", max_val = 255))
+    expect_null(get_contours("fake_raster"))
   })
 
-  it("processes raster when max >= max_val", {
+  it("traces a projection that has something in it", {
     .cap$as_polygons_called <- FALSE
 
     local_mocked_bindings(
@@ -616,26 +387,13 @@ testthat::describe("get_contours", {
     environment(`[.mock_rast`) <- globalenv()
 
     result <- tryCatch(
-      get_contours(rast_obj, max_val = 255),
+      get_contours(rast_obj),
       error = function(e) "processing_attempted"
     )
 
     expect_true(.cap$as_polygons_called || result == "processing_attempted")
   })
 })
-
-
-testthat::describe("magick_version", {
-  it("returns a character string", {
-    skip_if_not(has_magick(), "ImageMagick not available")
-
-    result <- magick_version()
-
-    expect_type(result, "character")
-    expect_gt(nchar(result), 0)
-  })
-})
-
 
 testthat::describe("get_contours full processing path", {
   it("returns sf result when contours are non-empty", {
@@ -692,7 +450,7 @@ testthat::describe("get_contours full processing path", {
       coords2sf = function(coords, limits) mock_result_sf
     )
 
-    result <- get_contours(rast_obj, max_val = 255)
+    result <- get_contours(rast_obj)
 
     expect_s3_class(result, "sf")
   })
@@ -743,7 +501,7 @@ testthat::describe("get_contours full processing path", {
       coords2sf = function(coords, limits) mock_result_sf
     )
 
-    result <- get_contours(rast_obj, max_val = 255)
+    result <- get_contours(rast_obj)
 
     expect_s3_class(result, "sf")
     expect_identical(.cap$to_coords_nrow, 1L)
@@ -774,7 +532,7 @@ testthat::describe("get_contours full processing path", {
       .package = "sf"
     )
 
-    result <- get_contours(rast_obj, max_val = 255)
+    result <- get_contours(rast_obj)
 
     expect_null(result)
   })

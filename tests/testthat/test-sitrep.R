@@ -54,16 +54,22 @@ testthat::describe("check_freesurfer", {
 
 
 testthat::describe("check_other_system_deps", {
-  it("returns list with imagemagick and chrome fields", {
+  it("returns the chrome field", {
     expect_messages({
       result <- check_other_system_deps("simple")
     })
 
     expect_type(result, "list")
-    expect_true("imagemagick" %in% names(result))
     expect_true("chrome" %in% names(result))
-    expect_type(result$imagemagick, "logical")
     expect_type(result$chrome, "logical")
+  })
+
+  it("no longer reports ImageMagick, which nothing needs", {
+    expect_messages({
+      result <- check_other_system_deps("simple")
+    })
+
+    expect_false("imagemagick" %in% names(result))
   })
 })
 
@@ -93,19 +99,8 @@ testthat::describe("check_freesurfer", {
 
 
 testthat::describe("check_other_system_deps", {
-  it("shows install URL when ImageMagick missing in full detail", {
-    local_mocked_bindings(
-      has_magick = function() FALSE
-    )
-    local_mocked_bindings(
-      find_chrome_path = function() "/usr/bin/chromium"
-    )
-    expect_messages(check_other_system_deps("full"), "imagemagick.org")
-  })
-
   it("shows help text when Chrome missing in full detail", {
     local_mocked_bindings(
-      has_magick = function() TRUE,
       find_chrome_path = function() NULL
     )
     expect_messages(check_other_system_deps("full"), "Install Chrome")
@@ -138,7 +133,7 @@ testthat::describe("summarize_pipelines", {
   ) {
     list(
       freesurfer = list(available = fs),
-      system = list(imagemagick = TRUE, chrome = TRUE),
+      system = list(chrome = TRUE),
       fsaverage = list(fsaverage5 = fsavg),
       packages = list(
         freesurferformats = fsf,
@@ -414,7 +409,7 @@ testthat::describe("summarize_pipelines additional branches", {
   ) {
     list(
       freesurfer = list(available = fs),
-      system = list(imagemagick = TRUE, chrome = TRUE),
+      system = list(chrome = TRUE),
       fsaverage = list(fsaverage5 = fsavg),
       packages = list(
         freesurferformats = fsf,

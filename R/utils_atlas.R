@@ -236,9 +236,7 @@ setup_atlas_dirs <- function(output_dir, atlas_name = NULL, type = "cortical") {
 
   dirs <- list(
     base = base,
-    snapshots = as.character(fs::path(base, "snapshots")),
-    processed = as.character(fs::path(base, "processed")),
-    masks = as.character(fs::path(base, "masks"))
+    snapshots = as.character(fs::path(base, "snapshots"))
   )
 
   if (type %in% c("subcortical", "cerebellar")) {
@@ -464,32 +462,15 @@ run_image_steps <- function(
   dirs,
   step_map,
   total_steps,
-  dilate = NULL,
   vertex_size_limits = NULL
 ) {
   fmt <- function(step) sprintf("%s/%s", step, total_steps)
 
-  if (step_map$process %in% config$steps) {
-    if (config$verbose) {
-      cli::cli_progress_step("{fmt(step_map$process)} Processing images")
-    }
-    process_and_mask_images(
-      # nolint: object_usage_linter.
-      dirs$snapshots,
-      dirs$processed,
-      dirs$masks,
-      dilate = dilate,
-      skip_existing = config$skip_existing
-    )
-    stamp_cache_dir(dirs$processed)
-    stamp_cache_dir(dirs$masks)
-    if (config$verbose) cli::cli_progress_done()
-  }
-
   if (step_map$extract %in% config$steps) {
-    check_cache_dir(dirs$masks, image_rerun_remedy)
+    # Each projection carries its own cache stamp and read_projection()
+    # rejects a stale one, so there is no directory-level check to make.
     extract_contours(
-      dirs$masks,
+      dirs$snapshots,
       dirs$base,
       step = fmt(step_map$extract),
       verbose = config$verbose,

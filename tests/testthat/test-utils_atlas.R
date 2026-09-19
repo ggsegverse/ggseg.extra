@@ -189,8 +189,9 @@ testthat::describe("setup_atlas_dirs", {
 
     expect_true(dir.exists(dirs$base))
     expect_true(dir.exists(dirs$snapshots))
-    expect_true(dir.exists(dirs$processed))
-    expect_true(dir.exists(dirs$masks))
+    # processed/ and masks/ went with the PNG round-trip
+    expect_null(dirs$processed)
+    expect_null(dirs$masks)
   })
 
   it("creates additional dirs for subcortical type", {

@@ -662,7 +662,7 @@ testthat::describe("validate_tract_config", {
       n_points = 50
     )
 
-    expect_identical(result$steps, 1L:7L)
+    expect_identical(result$steps, 1L:6L)
   })
 
   it("validates centerline_method via match.arg", {
@@ -1033,27 +1033,9 @@ testthat::describe("tract_resolve_snapshots", {
 
 
 testthat::describe("run_image_steps (tract step_map)", {
-  tract_step_map <- list(process = 3L, extract = 4L, smooth = 5L, reduce = 6L)
+  tract_step_map <- list(extract = 3L, smooth = 4L, reduce = 5L)
 
-  it(".cap$calls process_and_mask_images for step 3", {
-    .cap$process_called <- FALSE
-    local_mocked_bindings(
-      process_and_mask_images = function(...) {
-        .cap$process_called <- TRUE
-        invisible(NULL)
-      }
-    )
-
-    config <- list(steps = 3L, verbose = FALSE, skip_existing = FALSE)
-    dirs <- mock_dirs()
-    stamp_cache_dir(dirs$masks)
-
-    run_image_steps(config, dirs, tract_step_map, 7L)
-
-    expect_true(.cap$process_called)
-  })
-
-  it(".cap$calls extract_contours for step 4", {
+  it(".cap$calls extract_contours for step 3", {
     .cap$extract_called <- FALSE
     local_mocked_bindings(
       extract_contours = function(...) {
@@ -1062,16 +1044,15 @@ testthat::describe("run_image_steps (tract step_map)", {
       }
     )
 
-    config <- list(steps = 4L, verbose = FALSE)
+    config <- list(steps = 3L, verbose = FALSE)
     dirs <- mock_dirs()
-    stamp_cache_dir(dirs$masks)
 
-    run_image_steps(config, dirs, tract_step_map, 7L)
+    run_image_steps(config, dirs, tract_step_map, 6L)
 
     expect_true(.cap$extract_called)
   })
 
-  it(".cap$calls smooth_contours for step 5", {
+  it(".cap$calls smooth_contours for step 4", {
     .cap$smooth_called <- FALSE
     local_mocked_bindings(
       smooth_contours = function(...) {
@@ -1080,16 +1061,15 @@ testthat::describe("run_image_steps (tract step_map)", {
       }
     )
 
-    config <- list(steps = 5L, verbose = FALSE, smoothness = 1.0)
+    config <- list(steps = 4L, verbose = FALSE, smoothness = 1.0)
     dirs <- mock_dirs()
-    stamp_cache_dir(dirs$masks)
 
-    run_image_steps(config, dirs, tract_step_map, 7L)
+    run_image_steps(config, dirs, tract_step_map, 6L)
 
     expect_true(.cap$smooth_called)
   })
 
-  it(".cap$calls reduce_vertex for step 6", {
+  it(".cap$calls reduce_vertex for step 5", {
     .cap$reduce_called <- FALSE
     local_mocked_bindings(
       reduce_vertex = function(...) {
@@ -1098,22 +1078,17 @@ testthat::describe("run_image_steps (tract step_map)", {
       }
     )
 
-    config <- list(steps = 6L, verbose = FALSE, tolerance = 0.01)
+    config <- list(steps = 5L, verbose = FALSE, tolerance = 0.01)
     dirs <- mock_dirs()
-    stamp_cache_dir(dirs$masks)
 
-    run_image_steps(config, dirs, tract_step_map, 7L)
+    run_image_steps(config, dirs, tract_step_map, 6L)
 
     expect_true(.cap$reduce_called)
   })
 
-  it(".cap$calls all functions for steps 3-6", {
+  it(".cap$calls all functions for steps 3-5", {
     .cap$calls <- character()
     local_mocked_bindings(
-      process_and_mask_images = function(...) {
-        .cap$calls <- c(.cap$calls, "process")
-        invisible(NULL)
-      },
       extract_contours = function(...) {
         .cap$calls <- c(.cap$calls, "extract")
         invisible(NULL)
@@ -1129,18 +1104,17 @@ testthat::describe("run_image_steps (tract step_map)", {
     )
 
     config <- list(
-      steps = 3L:6L,
+      steps = 3L:5L,
       verbose = FALSE,
       skip_existing = FALSE,
       smoothness = 1.0,
       tolerance = 0.01
     )
     dirs <- mock_dirs()
-    stamp_cache_dir(dirs$masks)
 
-    run_image_steps(config, dirs, tract_step_map, 7L)
+    run_image_steps(config, dirs, tract_step_map, 6L)
 
-    expect_identical(.cap$calls, c("process", "extract", "smooth", "reduce"))
+    expect_identical(.cap$calls, c("extract", "smooth", "reduce"))
   })
 })
 

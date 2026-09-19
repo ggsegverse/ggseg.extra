@@ -500,7 +500,6 @@ testthat::describe("create_subcortical_from_volume pipeline flow", {
           list(run = step %in% steps, data = list())
         }
       },
-      process_and_mask_images = function(...) invisible(NULL),
       extract_contours = function(...) invisible(NULL),
       smooth_contours = function(...) invisible(NULL),
       reduce_vertex = function(...) invisible(NULL)
@@ -580,7 +579,6 @@ testthat::describe("create_subcortical_from_volume pipeline flow", {
           cortex_slices = NULL
         )
       },
-      process_and_mask_images = function(...) invisible(NULL),
       extract_contours = function(...) invisible(NULL),
       smooth_contours = function(...) invisible(NULL),
       reduce_vertex = function(...) invisible(NULL)
@@ -657,7 +655,6 @@ testthat::describe("create_subcortical_from_volume pipeline flow", {
           cortex_slices = NULL
         )
       },
-      process_and_mask_images = function(...) invisible(NULL),
       extract_contours = function(...) invisible(NULL),
       smooth_contours = function(...) invisible(NULL),
       reduce_vertex = function(...) invisible(NULL)
@@ -805,7 +802,6 @@ testthat::describe("create_subcortical_from_volume pipeline flow", {
           )
         )
       },
-      process_and_mask_images = function(...) invisible(NULL),
       extract_contours = function(...) invisible(NULL)
     )
 
@@ -820,7 +816,7 @@ testthat::describe("create_subcortical_from_volume pipeline flow", {
         result <- create_subcortical_from_volume(
           input_volume = vol_file,
           input_lut = lut_file,
-          steps = 5:6,
+          steps = 5L,
           verbose = TRUE
         )
       },
@@ -1137,7 +1133,6 @@ testthat::describe("subcortical pipeline snapshot pruning", {
           )
         )
       },
-      process_and_mask_images = function(...) invisible(NULL),
       extract_contours = function(...) invisible(NULL),
       smooth_contours = function(...) invisible(NULL),
       reduce_vertex = function(...) invisible(NULL)
