@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9041</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9042</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -63,6 +63,10 @@
       <small>Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.9.9.9042" id="ggsegextra-1999042">ggseg.extra 1.9.9.9042<a class="anchor" aria-label="anchor" href="#ggsegextra-1999042"></a></h2>
+<ul><li>The <code>regheader</code> deprecation test no longer passes or fails according to what ran before it (<a href="https://github.com/ggsegverse/ggseg.extra/issues/178" class="external-link">#178</a>). It asserted a warning, and lifecycle throttles an <em>indirect</em> deprecation warning – one raised from inside the package rather than by the caller – to once per session, which <code>lifecycle_verbosity = "warning"</code> does not lift. The direct call in the <code>registration_from_regheader()</code> tests above spent that one warning, so the test passed in the full suite and failed whenever <code>test-atlas_wholebrain.R</code> was run on its own, which is exactly when someone is iterating on that file. It now asserts the deprecation <em>error</em>, which carries no such budget.</li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9041" id="ggsegextra-1999041">ggseg.extra 1.9.9.9041<a class="anchor" aria-label="anchor" href="#ggsegextra-1999041"></a></h2>
 <ul><li>

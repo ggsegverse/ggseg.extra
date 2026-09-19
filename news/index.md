@@ -1,5 +1,19 @@
 # Changelog
 
+## ggseg.extra 1.9.9.9042
+
+- The `regheader` deprecation test no longer passes or fails according
+  to what ran before it
+  ([\#178](https://github.com/ggsegverse/ggseg.extra/issues/178)). It
+  asserted a warning, and lifecycle throttles an *indirect* deprecation
+  warning – one raised from inside the package rather than by the caller
+  – to once per session, which `lifecycle_verbosity = "warning"` does
+  not lift. The direct call in the `registration_from_regheader()` tests
+  above spent that one warning, so the test passed in the full suite and
+  failed whenever `test-atlas_wholebrain.R` was run on its own, which is
+  exactly when someone is iterating on that file. It now asserts the
+  deprecation *error*, which carries no such budget.
+
 ## ggseg.extra 1.9.9.9041
 
 - The atlas manipulation verbs are re-exported, so
