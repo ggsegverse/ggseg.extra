@@ -1690,3 +1690,143 @@ testthat::describe("atlas_smooth vertex budget", {
     )
   })
 })
+
+testthat::describe("atlas_polish", {
+  # A staircase with enough corners that rounding has something to cost.
+  staircase_atlas <- function() {
+    step <- do.call(
+      rbind,
+      lapply(0:9, function(i) {
+        matrix(c(i, i, i + 1, i, i + 1, i + 1), ncol = 2, byrow = TRUE)
+      })
+    )
+    ring <- rbind(step, matrix(c(10, 20, 0, 20, 0, 0), ncol = 2, byrow = TRUE))
+    sf_obj <- sf::st_sf(
+      label = c("region1", "region2"),
+      view = "v1",
+      geometry = sf::st_sfc(
+        sf::st_polygon(list(ring)),
+        sf::st_polygon(list(ring + 40))
+      )
+    )
+    ggseg.formats::ggseg_atlas(
+      atlas = "t",
+      type = "subcortical",
+      palette = c(region1 = "#000000", region2 = "#111111"),
+      core = data.frame(
+        label = c("region1", "region2"),
+        region = c("region1", "region2"),
+        stringsAsFactors = FALSE
+      ),
+      data = ggseg.formats::ggseg_data_subcortical(geom = sf_obj)
+    )
+  }
+  n_vertices <- function(atlas) {
+    sum(vapply(
+      sf::st_geometry(ggseg.formats::atlas_sf(atlas)),
+      function(g) nrow(sf::st_coordinates(g)),
+      integer(1)
+    ))
+  }
+
+  it("rounds the corners a bare simplify would leave square", {
+    atlas <- staircase_atlas()
+
+    simplified <- atlas_simplify(atlas, keep = 0.8, close_gaps = FALSE)
+    polished <- atlas_polish(
+      atlas,
+      keep = 0.8,
+      smoothness = 0.6,
+      close_gaps = FALSE
+    )
+
+    expect_false(identical(
+      sf::st_geometry(ggseg.formats::atlas_sf(polished)),
+      sf::st_geometry(ggseg.formats::atlas_sf(simplified))
+    ))
+  })
+
+  it("spends fewer vertices on a smaller budget", {
+    atlas <- staircase_atlas()
+
+    expect_lt(
+      n_vertices(atlas_polish(atlas, keep = 0.2, close_gaps = FALSE)),
+      n_vertices(atlas_polish(atlas, keep = 0.9, close_gaps = FALSE))
+    )
+  })
+
+  it("leaves the shape of labels the selection excludes alone", {
+    atlas <- staircase_atlas()
+
+    polished <- atlas_polish(
+      atlas,
+      keep = 0.3,
+      exclude = "^region1",
+      close_gaps = FALSE
+    )
+
+    before <- ggseg.formats::atlas_sf(atlas)
+    after <- ggseg.formats::atlas_sf(polished)
+    untouched <- before$label == "region1"
+
+    # Shape, not encoding: geometry_op_subset() runs st_make_valid() over the
+    # whole table, so an excluded row can come back with collinear vertices
+    # dropped. It must not come back a different shape.
+    expect_true(sf::st_equals(
+      sf::st_geometry(after)[untouched],
+      sf::st_geometry(before)[untouched],
+      sparse = FALSE
+    )[1, 1])
+    expect_false(sf::st_equals(
+      sf::st_geometry(after)[!untouched],
+      sf::st_geometry(before)[!untouched],
+      sparse = FALSE
+    )[1, 1])
+  })
+})
+
+
+testthat::describe("atlas_smooth(vertex_budget =)", {
+  it("lets the rounding cost vertices only when told it may", {
+    poly <- sf::st_polygon(list(rbind(
+      do.call(
+        rbind,
+        lapply(0:9, function(i) {
+          matrix(c(i, i, i + 1, i, i + 1, i + 1), ncol = 2, byrow = TRUE)
+        })
+      ),
+      matrix(c(10, 20, 0, 20, 0, 0), ncol = 2, byrow = TRUE)
+    )))
+    sf_obj <- sf::st_sf(label = "a", view = "v1", geometry = sf::st_sfc(poly))
+    atlas <- ggseg.formats::ggseg_atlas(
+      atlas = "t",
+      type = "subcortical",
+      palette = c(a = "#000000"),
+      core = data.frame(label = "a", region = "a", stringsAsFactors = FALSE),
+      data = ggseg.formats::ggseg_data_subcortical(geom = sf_obj)
+    )
+    n <- function(x) {
+      nrow(sf::st_coordinates(ggseg.formats::atlas_sf(x)))
+    }
+
+    preserved <- atlas_smooth(atlas, smoothness = 0.6, close_gaps = FALSE)
+    freed <- atlas_smooth(
+      atlas,
+      smoothness = 0.6,
+      vertex_budget = "free",
+      close_gaps = FALSE
+    )
+
+    expect_gt(n(freed), n(preserved))
+  })
+
+  it("takes only the budgets it offers", {
+    expect_error(
+      atlas_smooth(
+        structure(list(), class = "ggseg_atlas"),
+        vertex_budget = "cheap"
+      ),
+      "should be one of"
+    )
+  })
+})

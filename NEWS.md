@@ -1,3 +1,27 @@
+# ggseg.extra 1.9.9.9040
+
+- New `atlas_polish()` simplifies and smooths in one call against a stated
+  vertex budget (#186). Rounding a corner *adds* vertices, so the two fight:
+  smoothing after simplifying undoes some of the reduction, and simplifying
+  after smoothing replaces the new curves with straight chords and puts the
+  staircase back. Which order to use was left to each caller to work out, and
+  they disagreed -- ggseg.extra#155 advises simplify-then-smooth, while
+  `ggsegBrainnetome`'s build script documents the opposite. `atlas_polish()`
+  owns the order so a build does not have to rediscover it.
+
+  `keep` is a dial rather than a promise, and its help says so with measured
+  figures: a ring is never taken below the handful of vertices that holds its
+  shape, so `keep = 0.05` on a tract atlas comes back nearer 0.27. Most of
+  that gap is `atlas_simplify()`'s own floor, which misses the same target the
+  same way; its help now says that too.
+
+- `atlas_smooth()` gains `vertex_budget`. It has always simplified the
+  rounding back to roughly the vertex count it started with -- without that,
+  smoothing a simplified atlas can leave it larger than the raw one it came
+  from -- but there was no argument for it and no mention of how it was done.
+  `"preserve"` is that existing behaviour, now named; `"free"` rounds and
+  stops there. Nothing changes for existing calls.
+
 # ggseg.extra 1.9.9.9039
 
 - Groundwork for tracing contours without the PNG round-trip (#139). No

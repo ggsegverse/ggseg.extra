@@ -16,7 +16,11 @@ atlas_simplify(
 \item{atlas}{A \code{ggseg_atlas} object with 2D geometry.}
 
 \item{keep}{Proportion of vertices to retain, between 0 and 1. Lower is
-smaller and blockier; near 1 is an effective no-op.}
+smaller and blockier; near 1 is an effective no-op. A target rather than
+a promise: a ring is never taken below the handful of vertices that holds
+its shape, so an atlas of many small rings lands above what was asked -
+\code{keep = 0.05} on a tract atlas came back at 0.18. \code{\link[=atlas_polish]{atlas_polish()}} has
+measured figures.}
 
 \item{labels, exclude}{Regex selecting which labels to simplify, or which
 to leave alone. Give at most one.}
@@ -57,6 +61,7 @@ smoothing has the last word on the outline.
 
 Other atlas geometry:
 \code{\link[=atlas_dilate]{atlas_dilate()}},
+\code{\link[=atlas_polish]{atlas_polish()}},
 \code{\link[=atlas_smooth]{atlas_smooth()}}
 }
 \concept{atlas geometry}

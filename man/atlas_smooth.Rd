@@ -10,6 +10,7 @@ atlas_smooth(
   labels = NULL,
   exclude = NULL,
   method = c("close", "chaikin", "ksmooth", "spline"),
+  vertex_budget = c("preserve", "free"),
   close_gaps = TRUE
 )
 }
@@ -40,6 +41,19 @@ cutting), \code{"ksmooth"} (kernel smoothing) and \code{"spline"}. Choose
 \code{"close"} to round solid shapes such as tract tubes, and one of the
 others when the geometry has holes worth keeping.}
 
+\item{vertex_budget}{What rounding is allowed to cost. Rounding a corner
+replaces it with an arc, and an arc costs vertices: a morphological
+close lays down eight segments per quarter turn, so smoothing an atlas
+can leave it several times larger than it found it and undo any
+simplification that came before.
+
+\code{"preserve"}, the default, simplifies the rounded geometry back to
+roughly the vertex count it started with. It is a real simplification
+pass, so shapes move slightly beyond what the rounding alone did, and it
+stops once a pass buys nothing - geometry already at the floor that
+holds its shape, a raw voxel tracing say, cannot be brought all the way
+back. \code{"free"} rounds and stops there, and the vertex count grows.}
+
 \item{close_gaps}{Whether to hand back the slivers rounding opens between
 neighbouring regions. Every method moves each region's boundary on its
 own, and a boundary shared with the region next door moves the other way
@@ -50,8 +64,8 @@ closes again. Set \code{FALSE} for geometry that is not a coverage - separate
 tract tubes, say - where there is nothing to close.}
 }
 \value{
-The \code{ggseg_atlas}, with its geometry rounded off, and no larger
-than it arrived.
+The \code{ggseg_atlas}, with its geometry rounded off. Under the
+default \code{vertex_budget}, at close to the vertex count it arrived with.
 }
 \description{
 Topology-preserving simplification of atlas sf geometry via
@@ -63,10 +77,13 @@ between adjacent regions are simplified together, preventing gaps.
 Note that the default \code{method = "close"} fills holes narrower than
 \code{smoothness}; see \code{method} for alternatives that preserve them.
 
-Rounding a corner replaces it with an arc, which costs vertices. Those
-the rounding added are dropped again before the atlas is returned, so
-smoothing never leaves an atlas larger than it found it and a preceding
-\code{\link[=atlas_simplify]{atlas_simplify()}} still counts.
+Rounding a corner replaces it with an arc, which costs vertices: a
+morphological close lays down eight segments per quarter turn. Those the
+rounding added are dropped again before the atlas is returned, so a
+preceding \code{\link[=atlas_simplify]{atlas_simplify()}} still counts rather than being undone.
+Geometry that is already as sparse as its shapes allow - a raw voxel
+tracing - keeps a little of the growth, since simplification cannot take
+a ring below the vertices it needs.
 
 By default all labels are smoothed equally. Use \code{labels} to smooth only
 matching labels, or \code{exclude} to smooth everything except matching labels.
@@ -90,15 +107,16 @@ atlas <- atlas_smooth(
 }
 }
 \seealso{
-\code{\link[=atlas_simplify]{atlas_simplify()}} to reduce the vertex count, and
-\code{\link[=atlas_dilate]{atlas_dilate()}} to grow or shrink regions. Each does one thing: how
-round a shape is, how many vertices it costs, and how big it is, are
-separate questions and get tuned at separate times. Simplify before
-smoothing, not after - dropping vertices from a rounded outline replaces
-its curves with straight chords, putting the stair-step back.
+\code{\link[=atlas_polish]{atlas_polish()}} to simplify and smooth in one call against a
+stated vertex budget, which is what most builds want.
+\code{\link[=atlas_simplify]{atlas_simplify()}} to reduce the vertex count, and \code{\link[=atlas_dilate]{atlas_dilate()}} to
+grow or shrink regions. Simplify before smoothing, not after - dropping
+vertices from a rounded outline replaces its curves with straight
+chords, putting the stair-step back.
 
 Other atlas geometry:
 \code{\link[=atlas_dilate]{atlas_dilate()}},
+\code{\link[=atlas_polish]{atlas_polish()}},
 \code{\link[=atlas_simplify]{atlas_simplify()}}
 }
 \concept{atlas geometry}
