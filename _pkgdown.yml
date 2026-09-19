@@ -92,6 +92,7 @@ reference:
     contents:
       - starts_with("atlas_")
       - -atlas_github_actions
+      - context_pattern
 
   - title: Atlas Repository
     desc: Create and manage ggseg atlas packages
