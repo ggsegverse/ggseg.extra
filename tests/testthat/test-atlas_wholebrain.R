@@ -3425,20 +3425,23 @@ testthat::describe("create_wholebrain_from_volume(regheader = )", {
   })
 
   it("is deprecated in favour of registration", {
-    withr::local_options(lifecycle_verbosity = "warning")
+    # Deprecation *errors*, not warnings. lifecycle throttles an indirect
+    # warning - one raised from inside the package rather than by the caller -
+    # to once per session, and `lifecycle_verbosity = "warning"` does not lift
+    # that. The direct call in the registration_from_regheader block above
+    # spends it, so asserting a warning here passes or fails according to what
+    # ran first. Errors carry no such budget.
+    withr::local_options(lifecycle_verbosity = "error")
     local_mocked_bindings(check_fs = function(abort = FALSE) invisible(TRUE))
 
-    expect_warning(
-      expect_error(
-        create_wholebrain_from_volume(
-          input_volume = "missing-volume.nii.gz",
-          output_dir = withr::local_tempdir(),
-          regheader = TRUE,
-          verbose = FALSE
-        ),
-        "Volume file not found"
+    expect_error(
+      create_wholebrain_from_volume(
+        input_volume = "missing-volume.nii.gz",
+        output_dir = withr::local_tempdir(),
+        regheader = TRUE,
+        verbose = FALSE
       ),
-      class = "lifecycle_warning_deprecated"
+      class = "lifecycle_error_deprecated"
     )
   })
 })
