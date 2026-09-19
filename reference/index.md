@@ -42,6 +42,9 @@ Functions to manipulate and manage brain atlases
 
 - [`atlas_dilate()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_dilate.md)
   : Grow or shrink an atlas's regions
+- [`atlas_polish()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_polish.md)
+  **\[experimental\]** : Simplify and smooth an atlas against a vertex
+  budget
 - [`atlas_simplify()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_simplify.md)
   : Reduce an atlas's vertex count
 - [`atlas_smooth()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_smooth.md)

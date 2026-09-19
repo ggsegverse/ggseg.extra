@@ -15,6 +15,7 @@ atlas_smooth(
   labels = NULL,
   exclude = NULL,
   method = c("close", "chaikin", "ksmooth", "spline"),
+  vertex_budget = c("preserve", "free"),
   close_gaps = TRUE
 )
 ```
@@ -59,6 +60,21 @@ atlas_smooth(
   as tract tubes, and one of the others when the geometry has holes
   worth keeping.
 
+- vertex_budget:
+
+  What rounding is allowed to cost. Rounding a corner replaces it with
+  an arc, and an arc costs vertices: a morphological close lays down
+  eight segments per quarter turn, so smoothing an atlas can leave it
+  several times larger than it found it and undo any simplification that
+  came before.
+
+  `"preserve"`, the default, simplifies the rounded geometry back to
+  roughly the vertex count it started with. It is a real simplification
+  pass, so shapes move slightly beyond what the rounding alone did, and
+  it stops once a pass buys nothing - geometry already at the floor that
+  holds its shape, a raw voxel tracing say, cannot be brought all the
+  way back. `"free"` rounds and stops there, and the vertex count grows.
+
 - close_gaps:
 
   Whether to hand back the slivers rounding opens between neighbouring
@@ -72,19 +88,23 @@ atlas_smooth(
 
 ## Value
 
-The `ggseg_atlas`, with its geometry rounded off, and no larger than it
-arrived.
+The `ggseg_atlas`, with its geometry rounded off. Under the default
+`vertex_budget`, at close to the vertex count it arrived with.
 
 ## Details
 
 Note that the default `method = "close"` fills holes narrower than
 `smoothness`; see `method` for alternatives that preserve them.
 
-Rounding a corner replaces it with an arc, which costs vertices. Those
-the rounding added are dropped again before the atlas is returned, so
-smoothing never leaves an atlas larger than it found it and a preceding
+Rounding a corner replaces it with an arc, which costs vertices: a
+morphological close lays down eight segments per quarter turn. Those the
+rounding added are dropped again before the atlas is returned, so a
+preceding
 [`atlas_simplify()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_simplify.md)
-still counts.
+still counts rather than being undone. Geometry that is already as
+sparse as its shapes allow - a raw voxel tracing - keeps a little of the
+growth, since simplification cannot take a ring below the vertices it
+needs.
 
 By default all labels are smoothed equally. Use `labels` to smooth only
 matching labels, or `exclude` to smooth everything except matching
@@ -92,17 +112,19 @@ labels. Only one of `labels` or `exclude` may be specified.
 
 ## See also
 
+[`atlas_polish()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_polish.md)
+to simplify and smooth in one call against a stated vertex budget, which
+is what most builds want.
 [`atlas_simplify()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_simplify.md)
 to reduce the vertex count, and
 [`atlas_dilate()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_dilate.md)
-to grow or shrink regions. Each does one thing: how round a shape is,
-how many vertices it costs, and how big it is, are separate questions
-and get tuned at separate times. Simplify before smoothing, not after -
+to grow or shrink regions. Simplify before smoothing, not after -
 dropping vertices from a rounded outline replaces its curves with
 straight chords, putting the stair-step back.
 
 Other atlas geometry:
 [`atlas_dilate()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_dilate.md),
+[`atlas_polish()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_polish.md),
 [`atlas_simplify()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_simplify.md)
 
 ## Examples

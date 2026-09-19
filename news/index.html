@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9039</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9040</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -63,6 +63,14 @@
       <small>Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.9.9.9040" id="ggsegextra-1999040">ggseg.extra 1.9.9.9040<a class="anchor" aria-label="anchor" href="#ggsegextra-1999040"></a></h2>
+<ul><li>
+<p>New <code><a href="../reference/atlas_polish.html">atlas_polish()</a></code> simplifies and smooths in one call against a stated vertex budget (<a href="https://github.com/ggsegverse/ggseg.extra/issues/186" class="external-link">#186</a>). Rounding a corner <em>adds</em> vertices, so the two fight: smoothing after simplifying undoes some of the reduction, and simplifying after smoothing replaces the new curves with straight chords and puts the staircase back. Which order to use was left to each caller to work out, and they disagreed – ggseg.extra#155 advises simplify-then-smooth, while <code>ggsegBrainnetome</code>’s build script documents the opposite. <code><a href="../reference/atlas_polish.html">atlas_polish()</a></code> owns the order so a build does not have to rediscover it.</p>
+<p><code>keep</code> is a dial rather than a promise, and its help says so with measured figures: a ring is never taken below the handful of vertices that holds its shape, so <code>keep = 0.05</code> on a tract atlas comes back nearer 0.27. Most of that gap is <code><a href="../reference/atlas_simplify.html">atlas_simplify()</a></code>’s own floor, which misses the same target the same way; its help now says that too.</p>
+</li>
+<li><p><code><a href="../reference/atlas_smooth.html">atlas_smooth()</a></code> gains <code>vertex_budget</code>. It has always simplified the rounding back to roughly the vertex count it started with – without that, smoothing a simplified atlas can leave it larger than the raw one it came from – but there was no argument for it and no mention of how it was done. <code>"preserve"</code> is that existing behaviour, now named; <code>"free"</code> rounds and stops there. Nothing changes for existing calls.</p></li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9039" id="ggsegextra-1999039">ggseg.extra 1.9.9.9039<a class="anchor" aria-label="anchor" href="#ggsegextra-1999039"></a></h2>
 <ul><li>

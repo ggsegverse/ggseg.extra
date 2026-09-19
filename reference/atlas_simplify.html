@@ -11,7 +11,7 @@ atlas costs less to store and to draw."><meta property="og:image" content="https
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9039</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9040</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -92,7 +92,11 @@ atlas costs less to store and to draw.</p>
 
 <dt id="arg-keep">keep<a class="anchor" aria-label="anchor" href="#arg-keep"></a></dt>
 <dd><p>Proportion of vertices to retain, between 0 and 1. Lower is
-smaller and blockier; near 1 is an effective no-op.</p></dd>
+smaller and blockier; near 1 is an effective no-op. A target rather than
+a promise: a ring is never taken below the handful of vertices that holds
+its shape, so an atlas of many small rings lands above what was asked -
+<code>keep = 0.05</code> on a tract atlas came back at 0.18. <code><a href="atlas_polish.html">atlas_polish()</a></code> has
+measured figures.</p></dd>
 
 
 <dt id="arg-labels-exclude">labels, exclude<a class="anchor" aria-label="anchor" href="#arg-labels-exclude"></a></dt>
@@ -130,6 +134,7 @@ grow or shrink them. Simplify first and smooth afterwards, so the
 smoothing has the last word on the outline.</p>
 <p>Other atlas geometry:
 <code><a href="atlas_dilate.html">atlas_dilate()</a></code>,
+<code><a href="atlas_polish.html">atlas_polish()</a></code>,
 <code><a href="atlas_smooth.html">atlas_smooth()</a></code></p></div>
     </div>
 

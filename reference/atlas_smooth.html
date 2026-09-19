@@ -15,7 +15,7 @@ between adjacent regions are simplified together, preventing gaps."><meta proper
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9039</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9040</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -85,6 +85,7 @@ between adjacent regions are simplified together, preventing gaps.</p>
 <span>  labels <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  exclude <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"close"</span>, <span class="st">"chaikin"</span>, <span class="st">"ksmooth"</span>, <span class="st">"spline"</span><span class="op">)</span>,</span>
+<span>  vertex_budget <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"preserve"</span>, <span class="st">"free"</span><span class="op">)</span>,</span>
 <span>  close_gaps <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -129,6 +130,20 @@ cutting), <code>"ksmooth"</code> (kernel smoothing) and <code>"spline"</code>. C
 others when the geometry has holes worth keeping.</p></dd>
 
 
+<dt id="arg-vertex-budget">vertex_budget<a class="anchor" aria-label="anchor" href="#arg-vertex-budget"></a></dt>
+<dd><p>What rounding is allowed to cost. Rounding a corner
+replaces it with an arc, and an arc costs vertices: a morphological
+close lays down eight segments per quarter turn, so smoothing an atlas
+can leave it several times larger than it found it and undo any
+simplification that came before.</p>
+<p><code>"preserve"</code>, the default, simplifies the rounded geometry back to
+roughly the vertex count it started with. It is a real simplification
+pass, so shapes move slightly beyond what the rounding alone did, and it
+stops once a pass buys nothing - geometry already at the floor that
+holds its shape, a raw voxel tracing say, cannot be brought all the way
+back. <code>"free"</code> rounds and stops there, and the vertex count grows.</p></dd>
+
+
 <dt id="arg-close-gaps">close_gaps<a class="anchor" aria-label="anchor" href="#arg-close-gaps"></a></dt>
 <dd><p>Whether to hand back the slivers rounding opens between
 neighbouring regions. Every method moves each region's boundary on its
@@ -142,31 +157,35 @@ tract tubes, say - where there is nothing to close.</p></dd>
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>The <code>ggseg_atlas</code>, with its geometry rounded off, and no larger
-than it arrived.</p>
+    <p>The <code>ggseg_atlas</code>, with its geometry rounded off. Under the
+default <code>vertex_budget</code>, at close to the vertex count it arrived with.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>Note that the default <code>method = "close"</code> fills holes narrower than
 <code>smoothness</code>; see <code>method</code> for alternatives that preserve them.</p>
-<p>Rounding a corner replaces it with an arc, which costs vertices. Those
-the rounding added are dropped again before the atlas is returned, so
-smoothing never leaves an atlas larger than it found it and a preceding
-<code><a href="atlas_simplify.html">atlas_simplify()</a></code> still counts.</p>
+<p>Rounding a corner replaces it with an arc, which costs vertices: a
+morphological close lays down eight segments per quarter turn. Those the
+rounding added are dropped again before the atlas is returned, so a
+preceding <code><a href="atlas_simplify.html">atlas_simplify()</a></code> still counts rather than being undone.
+Geometry that is already as sparse as its shapes allow - a raw voxel
+tracing - keeps a little of the growth, since simplification cannot take
+a ring below the vertices it needs.</p>
 <p>By default all labels are smoothed equally. Use <code>labels</code> to smooth only
 matching labels, or <code>exclude</code> to smooth everything except matching labels.
 Only one of <code>labels</code> or <code>exclude</code> may be specified.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p><code><a href="atlas_simplify.html">atlas_simplify()</a></code> to reduce the vertex count, and
-<code><a href="atlas_dilate.html">atlas_dilate()</a></code> to grow or shrink regions. Each does one thing: how
-round a shape is, how many vertices it costs, and how big it is, are
-separate questions and get tuned at separate times. Simplify before
-smoothing, not after - dropping vertices from a rounded outline replaces
-its curves with straight chords, putting the stair-step back.</p>
+    <div class="dont-index"><p><code><a href="atlas_polish.html">atlas_polish()</a></code> to simplify and smooth in one call against a
+stated vertex budget, which is what most builds want.
+<code><a href="atlas_simplify.html">atlas_simplify()</a></code> to reduce the vertex count, and <code><a href="atlas_dilate.html">atlas_dilate()</a></code> to
+grow or shrink regions. Simplify before smoothing, not after - dropping
+vertices from a rounded outline replaces its curves with straight
+chords, putting the stair-step back.</p>
 <p>Other atlas geometry:
 <code><a href="atlas_dilate.html">atlas_dilate()</a></code>,
+<code><a href="atlas_polish.html">atlas_polish()</a></code>,
 <code><a href="atlas_simplify.html">atlas_simplify()</a></code></p></div>
     </div>
 

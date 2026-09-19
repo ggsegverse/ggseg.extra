@@ -24,7 +24,12 @@ atlas_simplify(
 - keep:
 
   Proportion of vertices to retain, between 0 and 1. Lower is smaller
-  and blockier; near 1 is an effective no-op.
+  and blockier; near 1 is an effective no-op. A target rather than a
+  promise: a ring is never taken below the handful of vertices that
+  holds its shape, so an atlas of many small rings lands above what was
+  asked - `keep = 0.05` on a tract atlas came back at 0.18.
+  [`atlas_polish()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_polish.md)
+  has measured figures.
 
 - labels, exclude:
 
@@ -65,6 +70,7 @@ smoothing has the last word on the outline.
 
 Other atlas geometry:
 [`atlas_dilate()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_dilate.md),
+[`atlas_polish()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_polish.md),
 [`atlas_smooth()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_smooth.md)
 
 ## Examples
