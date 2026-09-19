@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9042</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9043</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -63,6 +63,18 @@
       <small>Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.9.9.9043" id="ggsegextra-1999043">ggseg.extra 1.9.9.9043<a class="anchor" aria-label="anchor" href="#ggsegextra-1999043"></a></h2>
+<ul><li>
+<p>Subcortical and tract contours are traced from the projection itself instead of a PNG of it (<a href="https://github.com/ggsegverse/ggseg.extra/issues/139" class="external-link">#139</a>). <strong>Atlases built with this produce different geometry and need rebuilding</strong>, and build scripts need their distance-valued arguments re-tuned – see below.</p>
+<p>A projection started life as a numeric matrix, went through <code><a href="https://rdrr.io/r/graphics/image.html" class="external-link">image()</a></code>, a PNG file, ImageMagick transparency, alpha extraction, a mask PNG, a decode back to pixels and a raster, and only then became polygons. Two bug classes came out of that: a PNG carries no coordinates, so whoever read it decided which way <code>y</code> ran, and masks written by the pipeline could carry a colour profile that the image reader refused. Both needed workarounds.</p>
+<p>The round trip also cost fidelity. It rendered onto a fixed 400x400 canvas, so a region whose true width:height is 2 came back as 1.985. Traced directly it is 2.0000, and the coordinates are the voxel indices rather than pixels of a canvas.</p>
+</li>
+<li><p><strong>Distances now mean voxels.</strong> The canvas scaled every atlas by <code>400 / max(dim)</code>, so the same <code>atlas_dilate(0.6)</code> was a different physical distance on every atlas – 1.56 pixels per voxel on a 256-cube, 1.84 on a 182x218 volume. In voxel space <code>0.6</code> is 0.6 voxels everywhere, usually 0.6 mm. Values tuned against the old canvas want dividing by that atlas’s old scale factor; <code>atlas_smooth(smoothness =)</code> is a distance too and moves the same way.</p></li>
+<li><p>The build-time <code>dilate</code> argument is no longer applied. It has been deprecated since 1.9.9.9016 in favour of <code><a href="../reference/atlas_dilate.html">atlas_dilate()</a></code> on the finished atlas, which is where it belongs – retuning it there does not mean rebuilding. Passing it still warns, and now says it is not applied.</p></li>
+<li><p>ImageMagick is no longer required. It leaves <code>SystemRequirements</code>, <code>magick</code> leaves <code>Suggests</code>, and <code><a href="../reference/setup_sitrep.html">setup_sitrep()</a></code> no longer reports it or tells anyone to install it.</p></li>
+<li><p>The <code>processed/</code> and <code>masks/</code> directories are gone, and with them the image-processing step: subcortical builds run 8 steps rather than 9, tract builds 5 rather than 6.</p></li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9042" id="ggsegextra-1999042">ggseg.extra 1.9.9.9042<a class="anchor" aria-label="anchor" href="#ggsegextra-1999042"></a></h2>
 <ul><li>The <code>regheader</code> deprecation test no longer passes or fails according to what ran before it (<a href="https://github.com/ggsegverse/ggseg.extra/issues/178" class="external-link">#178</a>). It asserted a warning, and lifecycle throttles an <em>indirect</em> deprecation warning – one raised from inside the package rather than by the caller – to once per session, which <code>lifecycle_verbosity = "warning"</code> does not lift. The direct call in the <code>registration_from_regheader()</code> tests above spent that one warning, so the test passed in the full suite and failed whenever <code>test-atlas_wholebrain.R</code> was run on its own, which is exactly when someone is iterating on that file. It now asserts the deprecation <em>error</em>, which carries no such budget.</li>

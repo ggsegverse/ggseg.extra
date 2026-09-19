@@ -153,8 +153,9 @@ create_wholebrain_from_volume(
   Any argument of that function may be set here except those managed by
   the wholebrain pipeline (`input_volume`, `input_lut`, `atlas_name`,
   `output_dir`, `verbose`, `cleanup`, `skip_existing`). Use this to tune
-  `dilate`, `vertex_size_limits`, `decimate`, `slabs`. The deprecated
-  `tolerance`/`smoothness` entries trigger a lifecycle warning.
+  `vertex_size_limits`, `decimate`, `slabs`. The deprecated
+  `dilate`/`tolerance`/`smoothness` entries trigger a lifecycle warning
+  and are no longer applied.
 
 - cerebellar_opts:
 
@@ -361,7 +362,7 @@ result <- create_wholebrain_from_volume(
   input_volume = "my_atlas.nii.gz",
   input_lut = lut,
   atlas_name = "my_atlas",
-  subcortical_opts = list(dilate = 2)
+  subcortical_opts = list(vertex_size_limits = c(3e6, 3e7))
 )
 result$cortical   # surface-based cortical atlas
 result$subcortical # mesh-based subcortical atlas
