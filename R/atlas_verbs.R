@@ -16,9 +16,9 @@
 #'
 #' Four more verbs - `atlas_centerlines()`, `atlas_plot_palette()`,
 #' `atlas_structure_reorder()` and `atlas_view_select()` - exist only in
-#' ggseg.formats' development build, so re-exporting them here would make this
-#' package unbuildable against the release its DESCRIPTION asks for. They can
-#' come across once ggseg.formats releases them and the floor here moves up.
+#' ggseg.formats' development build, so re-exporting them here would stop this
+#' package building against the release its DESCRIPTION asks for. They can come
+#' across once ggseg.formats releases them and the floor here moves up.
 #'
 #' @name atlas-verbs
 #' @keywords internal

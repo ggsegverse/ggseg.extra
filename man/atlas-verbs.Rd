@@ -17,8 +17,8 @@ which is a silently wrong atlas rather than an error.
 
 Four more verbs - \code{atlas_centerlines()}, \code{atlas_plot_palette()},
 \code{atlas_structure_reorder()} and \code{atlas_view_select()} - exist only in
-ggseg.formats' development build, so re-exporting them here would make this
-package unbuildable against the release its DESCRIPTION asks for. They can
-come across once ggseg.formats releases them and the floor here moves up.
+ggseg.formats' development build, so re-exporting them here would stop this
+package building against the release its DESCRIPTION asks for. They can come
+across once ggseg.formats releases them and the floor here moves up.
 }
 \keyword{internal}

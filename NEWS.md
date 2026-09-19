@@ -17,8 +17,8 @@
   Twenty-four of the twenty-eight. `atlas_centerlines()`,
   `atlas_plot_palette()`, `atlas_structure_reorder()` and
   `atlas_view_select()` exist only in ggseg.formats' development build, so
-  re-exporting them would make this package unbuildable against the release
-  its DESCRIPTION asks for. They follow when ggseg.formats releases them.
+  re-exporting them would stop this package building against the release its
+  DESCRIPTION asks for. They follow when ggseg.formats releases them.
 
 - New `context_pattern()` is the label pattern matching an atlas's brain
   silhouette, in one place instead of retyped into every build. Anchored and
