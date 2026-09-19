@@ -14,5 +14,11 @@ Only the \verb{atlas_*} verbs are re-exported. ggseg.formats also ships atlases
 named \code{dk}, \code{aseg}, \code{tracula} and \code{suit}, and so does ggseg; attaching the
 whole namespace would mask one set with the other depending on load order,
 which is a silently wrong atlas rather than an error.
+
+Four more verbs - \code{atlas_centerlines()}, \code{atlas_plot_palette()},
+\code{atlas_structure_reorder()} and \code{atlas_view_select()} - exist only in
+ggseg.formats' development build, so re-exporting them here would make this
+package unbuildable against the release its DESCRIPTION asks for. They can
+come across once ggseg.formats releases them and the floor here moves up.
 }
 \keyword{internal}

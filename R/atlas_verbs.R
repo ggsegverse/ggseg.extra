@@ -14,13 +14,15 @@
 #' whole namespace would mask one set with the other depending on load order,
 #' which is a silently wrong atlas rather than an error.
 #'
+#' Four more verbs - `atlas_centerlines()`, `atlas_plot_palette()`,
+#' `atlas_structure_reorder()` and `atlas_view_select()` - exist only in
+#' ggseg.formats' development build, so re-exporting them here would make this
+#' package unbuildable against the release its DESCRIPTION asks for. They can
+#' come across once ggseg.formats releases them and the floor here moves up.
+#'
 #' @name atlas-verbs
 #' @keywords internal
 NULL
-
-#' @importFrom ggseg.formats atlas_centerlines
-#' @export
-ggseg.formats::atlas_centerlines
 
 #' @importFrom ggseg.formats atlas_context_remove
 #' @export
@@ -49,10 +51,6 @@ ggseg.formats::atlas_meshes
 #' @importFrom ggseg.formats atlas_palette
 #' @export
 ggseg.formats::atlas_palette
-
-#' @importFrom ggseg.formats atlas_plot_palette
-#' @export
-ggseg.formats::atlas_plot_palette
 
 #' @importFrom ggseg.formats atlas_polygons
 #' @export
@@ -86,10 +84,6 @@ ggseg.formats::atlas_regions
 #' @export
 ggseg.formats::atlas_sf
 
-#' @importFrom ggseg.formats atlas_structure_reorder
-#' @export
-ggseg.formats::atlas_structure_reorder
-
 #' @importFrom ggseg.formats atlas_type
 #' @export
 ggseg.formats::atlas_type
@@ -121,10 +115,6 @@ ggseg.formats::atlas_view_remove_small
 #' @importFrom ggseg.formats atlas_view_reorder
 #' @export
 ggseg.formats::atlas_view_reorder
-
-#' @importFrom ggseg.formats atlas_view_select
-#' @export
-ggseg.formats::atlas_view_select
 
 #' @importFrom ggseg.formats atlas_views
 #' @export

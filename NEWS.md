@@ -14,6 +14,12 @@
   namespace would mask one set with the other depending on load order, which
   is a silently wrong atlas rather than an error.
 
+  Twenty-four of the twenty-eight. `atlas_centerlines()`,
+  `atlas_plot_palette()`, `atlas_structure_reorder()` and
+  `atlas_view_select()` exist only in ggseg.formats' development build, so
+  re-exporting them would make this package unbuildable against the release
+  its DESCRIPTION asks for. They follow when ggseg.formats releases them.
+
 - New `context_pattern()` is the label pattern matching an atlas's brain
   silhouette, in one place instead of retyped into every build. Anchored and
   case-sensitive on purpose: a loose `"cortex"` also catches
