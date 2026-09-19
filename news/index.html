@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9038</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9039</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -63,6 +63,13 @@
       <small>Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.9.9.9039" id="ggsegextra-1999039">ggseg.extra 1.9.9.9039<a class="anchor" aria-label="anchor" href="#ggsegextra-1999039"></a></h2>
+<ul><li>
+<p>Groundwork for tracing contours without the PNG round-trip (<a href="https://github.com/ggsegverse/ggseg.extra/issues/139" class="external-link">#139</a>). No behaviour change: the cerebellar pipeline’s way of reading a projection matrix into a raster is now a named <code>projection_raster()</code> rather than an idiom inlined in one function, so the subcortical and tract pipelines have something to move onto.</p>
+<p>The round-trip it will replace renders a projection onto a fixed 400x400 canvas, so the anatomy arrives letterboxed, rescaled and quantised – a region whose true width:height is 2 comes back as 1.985, in canvas pixels rather than voxels. Reading the matrix directly is exact. The gain is that fidelity rather than orientation: a PNG carries no coordinates, but the mask reader has pinned which way y runs since 1.9.9.9018, so nothing is upside down today. What changes is that the convention is now stated in one place both raster paths read, instead of separately in each.</p>
+</li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9038" id="ggsegextra-1999038">ggseg.extra 1.9.9.9038<a class="anchor" aria-label="anchor" href="#ggsegextra-1999038"></a></h2>
 <ul><li>
