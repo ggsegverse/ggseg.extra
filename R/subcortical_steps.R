@@ -300,7 +300,7 @@ subcort_snapshot_structures <- function(
 
   p <- progressor(steps = nrow(snapshot_grid))
 
-  invisible(safe_future_pmap(
+  written <- safe_future_pmap(
     args,
     function(
       label_id,
@@ -311,7 +311,7 @@ subcort_snapshot_structures <- function(
       view_name,
       signature
     ) {
-      subcort_snapshot_one(
+      outfile <- subcort_snapshot_one(
         vol = vol,
         dims = dims,
         dirs = dirs,
@@ -326,13 +326,14 @@ subcort_snapshot_structures <- function(
         manifest = manifest
       )
       p()
-      NULL
+      outfile
     },
     .options = furrr_options(
       packages = "ggseg.extra",
       globals = c("dims", "vol", "dirs", "skip_existing", "manifest", "p")
     )
-  ))
+  )
+  stamp_cache_files(unlist(written))
 
   signatures
 }
@@ -419,20 +420,21 @@ subcort_snapshot_one <- function(
   structure_vol <- array(0L, dim = dims)
   structure_vol[vol == label_id] <- 1L
 
-  if (sum(structure_vol) > 0) {
-    snapshot_partial_projection(
-      vol = structure_vol,
-      view = view_type,
-      start = view_start,
-      end = view_end,
-      view_name = view_name,
-      label = label_name,
-      output_dir = dirs$snapshots,
-      hemi = extract_hemi_from_view(view_type, view_name),
-      skip_existing = FALSE
-    )
+  if (sum(structure_vol) == 0) {
+    return(invisible(NULL))
   }
-  invisible(NULL)
+
+  snapshot_partial_projection(
+    vol = structure_vol,
+    view = view_type,
+    start = view_start,
+    end = view_end,
+    view_name = view_name,
+    label = label_name,
+    output_dir = dirs$snapshots,
+    hemi = extract_hemi_from_view(view_type, view_name),
+    skip_existing = FALSE
+  )
 }
 
 
@@ -522,7 +524,7 @@ subcort_snapshot_cortex <- function(
 
       if (!snapshot_is_current(outfile, signature, manifest, skip_existing)) {
         clear_stale_snapshot(outfile, dirs)
-        snapshot_cortex_slice(
+        stamp_cache_files(snapshot_cortex_slice(
           vol = cortex_vol,
           x = cs$x,
           y = cs$y,
@@ -532,7 +534,7 @@ subcort_snapshot_cortex <- function(
           hemi = hemi,
           output_dir = dirs$snapshots,
           skip_existing = FALSE
-        )
+        ))
       }
       signature
     },

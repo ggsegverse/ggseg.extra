@@ -41,6 +41,14 @@ describe("stamp_cache_files", {
     expect_identical(stale_cache_files(files), character())
   })
 
+  it("does nothing when a step wrote no files", {
+    dir <- withr::local_tempdir("cache_")
+
+    expect_no_error(stamp_cache_files(NULL))
+    expect_no_error(stamp_cache_files(character()))
+    expect_identical(list.files(dir), character())
+  })
+
   it("leaves no staging file behind", {
     file <- local_cache_file()
 

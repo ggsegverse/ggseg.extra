@@ -154,11 +154,16 @@ projection_file <- function(output_dir, view_name, label) {
 #' which way its rows run and what a pixel is worth; the round-trip also put
 #' the projection on a fixed 400x400 canvas, which quantised it and made every
 #' distance depend on the volume's dimensions.
+#'
+#' The file is not stamped here. Snapshots are written from parallel workers,
+#' and stamping is a read-modify-write of one manifest shared by the whole
+#' directory, so concurrent stamps drop each other's rows and leave
+#' projections that the contour step then refuses as unversioned. The caller
+#' collects the paths and stamps them on the main thread instead.
 #' @noRd
 save_projection <- function(proj, outfile) {
   projection <- proj
   save(projection, file = outfile)
-  stamp_cache_files(outfile)
   invisible(outfile)
 }
 

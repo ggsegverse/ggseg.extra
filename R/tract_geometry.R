@@ -595,7 +595,7 @@ snapshot_tract_views <- function(
 
   p <- progressor(steps = nrow(snapshot_grid))
 
-  invisible(safe_future_pmap(
+  written <- safe_future_pmap(
     list(
       view_type = slabs$type[snapshot_grid$view_idx],
       view_start = slabs$start[snapshot_grid$view_idx],
@@ -607,7 +607,7 @@ snapshot_tract_views <- function(
       tract_vol <- tract_volumes[[label]]
       hemi <- extract_hemi_from_view(view_type, view_name)
 
-      snapshot_partial_projection(
+      outfile <- snapshot_partial_projection(
         vol = tract_vol,
         view = view_type,
         start = view_start,
@@ -619,13 +619,14 @@ snapshot_tract_views <- function(
         skip_existing = skip_existing
       )
       p()
-      NULL
+      outfile
     },
     .options = furrr_options(
       packages = "ggseg.extra",
       globals = c("tract_volumes", "dirs", "skip_existing", "p")
     )
-  ))
+  )
+  invisible(stamp_cache_files(unlist(written)))
 }
 
 
@@ -639,7 +640,7 @@ snapshot_cortex_views <- function(
 ) {
   p2 <- progressor(steps = nrow(cortex_slices))
 
-  invisible(safe_future_pmap(
+  written <- safe_future_pmap(
     list(
       x = cortex_slices$x,
       y = cortex_slices$y,
@@ -650,7 +651,7 @@ snapshot_cortex_views <- function(
     function(x, y, z, slice_view, view_name) {
       hemi <- extract_hemi_from_view(slice_view, view_name)
 
-      snapshot_cortex_slice(
+      outfile <- snapshot_cortex_slice(
         vol = cortex_vol,
         x = x,
         y = y,
@@ -662,13 +663,14 @@ snapshot_cortex_views <- function(
         skip_existing = skip_existing
       )
       p2()
-      NULL
+      outfile
     },
     .options = furrr_options(
       packages = "ggseg.extra",
       globals = c("cortex_vol", "dirs", "skip_existing", "p2")
     )
-  ))
+  )
+  invisible(stamp_cache_files(unlist(written)))
 }
 
 

@@ -1491,6 +1491,36 @@ describe("structure snapshot staleness", {
     )
   }
 
+  it("stamps every projection it writes, so the contour step accepts them", {
+    dirs <- mock_subcort_dirs()
+    vol <- array(0L, dim = c(10, 10, 10))
+    vol[2:4, 2:4, 2:4] <- 10L
+    vol[6:8, 6:8, 2:4] <- 11L
+    colortable <- data.frame(
+      idx = c(10L, 11L),
+      label = c("Pallidum_l", "Pallidum_r"),
+      stringsAsFactors = FALSE
+    )
+
+    subcort_snapshot_structures(
+      vol,
+      dim(vol),
+      colortable,
+      slabs_row(),
+      dirs,
+      skip_existing = FALSE
+    )
+
+    written <- list.files(
+      dirs$snapshots,
+      pattern = "\\.rda$",
+      full.names = TRUE
+    )
+    expect_length(written, 2L)
+    expect_identical(stale_cache_files(written), character())
+    expect_no_error(lapply(written, read_projection))
+  })
+
   it("reuses a snapshot whose voxels are unchanged", {
     dirs <- mock_subcort_dirs()
     outfile <- file.path(dirs$snapshots, "ax_1_Pallidum_l.png")

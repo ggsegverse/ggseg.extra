@@ -1,6 +1,6 @@
 Package: ggseg.extra
 Title: Create Brain Atlases for the 'ggsegverse' Plotting Ecosystem
-Version: 1.9.9.9046
+Version: 1.9.9.9047
 Authors@R: c(
     person(
         given = "Athanasia Mo",
@@ -38,7 +38,6 @@ Imports:
     cli,
     dplyr,
     fs,
-    future,
     furrr,
     ggseg,
     ggseg.formats (>= 0.0.3),
@@ -58,6 +57,7 @@ Suggests:
     ciftiTools (>= 0.17.4),
     freesurfer (>= 1.8.1.902),
     freesurferformats,
+    future,
     ggplot2,
     gifti,
     hexSticker,

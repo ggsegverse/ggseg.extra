@@ -1,3 +1,28 @@
+# ggseg.extra 1.9.9.9047
+
+- `plan(multicore)` is no longer downgraded to `multisession`. The downgrade
+  existed because fork corrupts chromote's websockets, and nothing has
+  rendered through a headless browser since contours began being traced from
+  the projection itself. The downgrade was what made parallelism stop paying:
+  a `multisession` worker needs its own copy of the volume, and serialising
+  67 MB of a 256^3 aseg costs more than the projection it was sent to
+  compute. Measured on an 8-core machine against FreeSurfer's `bert`,
+  `create_subcortical_from_volume()` goes from 337s sequential to 171s under
+  `plan(multicore, workers = 4)`; the same run under `multisession` was
+  slower than sequential.
+
+- `plan(multisession)` no longer aborts a subcortical or tract build with
+  "Cached ... was written by cache format none". Snapshots are written from
+  parallel workers, and each worker stamped the cache manifest itself - a
+  read-modify-write of one file shared by the whole directory, so workers
+  dropped each other's rows and left projections the contour step then
+  refused. The steps now collect the paths their workers wrote and stamp them
+  on the main thread, which is where `stamp_cache_files()` always documented
+  that it had to be called.
+
+- `future` moves from Imports to Suggests. The package no longer calls it
+  directly; `furrr` depends on it, so it is still installed.
+
 # ggseg.extra 1.9.9.9046
 
 - Tests call `describe()` bare again instead of qualifying every block as
