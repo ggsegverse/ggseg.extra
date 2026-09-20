@@ -29,16 +29,19 @@ ARG R_VERSION
 ENV DEBIAN_FRONTEND=noninteractive
 # curl, wget, jq, zstd and sudo are what r-lib/actions/setup-r-dependencies
 # shells out to inside a container job; the -dev libraries are what sf, terra
-# and magick compile against when P3M has no binary.
+# and rgl compile against when P3M has no binary. The rule for that list is
+# that some package in the dependency tree names the library in its
+# SystemRequirements, optional or not - which is why libpng and FreeType stay
+# (rgl names both) and ImageMagick, harfbuzz, fribidi, fontconfig, tiff and
+# jpeg are gone with the font and raster packages that used to pull them.
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         git pandoc curl wget jq zstd sudo \
         libgomp1 libopenblas0-openmp libglu1-mesa libgl1 \
         libxt6 libxmu6 libxext6 libxrender1 libxi6 libxss1 \
         libgdal-dev libproj-dev libgeos-dev libudunits2-dev \
-        libmagick++-dev libglpk-dev libharfbuzz-dev libfribidi-dev \
-        libcurl4-openssl-dev libssl-dev libxml2-dev \
-        libfontconfig1-dev libfreetype6-dev libpng-dev libtiff-dev libjpeg-dev \
+        libglpk-dev libcurl4-openssl-dev libssl-dev libxml2-dev \
+        libfreetype6-dev libpng-dev \
     && rm -rf /var/lib/apt/lists/*
 # rocker pins CRAN to the snapshot current at its R release, which strands
 # packages published since; track the rolling snapshot like the other runners.
@@ -50,19 +53,6 @@ RUN GGSEGVERSE="https://ggsegverse.r-universe.dev/bin/linux/noble-x86_64/${R_VER
     && curl -sSf -o /dev/null "${GGSEGVERSE}/src/contrib/PACKAGES" \
     && echo "options(repos = c(ggsegverse = '${GGSEGVERSE}', CRAN = '${CRAN}'))" \
          >> /usr/local/lib/R/etc/Rprofile.site
-# has_magick() probes the ImageMagick 7 `magick` binary; Ubuntu 24.04 ships
-# version 6, so take the official portable build and unpack it without FUSE.
-ARG IMAGEMAGICK_VERSION=7.1.2-31
-ARG IMAGEMAGICK_SHA256=b22dee096a68e7eb6771a6f98c16490ea78d399ffa27f34ca2ec4f02e707fd9c
-RUN curl -sSL -o /tmp/magick.AppImage \
-      "https://github.com/ImageMagick/ImageMagick/releases/download/${IMAGEMAGICK_VERSION}/ImageMagick-${IMAGEMAGICK_VERSION}-gcc-x86_64.AppImage" \
-    && echo "${IMAGEMAGICK_SHA256}  /tmp/magick.AppImage" | sha256sum -c - \
-    && chmod +x /tmp/magick.AppImage \
-    && cd /opt && /tmp/magick.AppImage --appimage-extract > /dev/null \
-    && mv /opt/squashfs-root /opt/imagemagick \
-    && ln -s /opt/imagemagick/AppRun /usr/local/bin/magick \
-    && rm /tmp/magick.AppImage \
-    && magick --version | grep -q "Version: ImageMagick 7"
 COPY --from=freesurfer /opt/freesurfer /opt/freesurfer
 ENV OS=Linux \
     FS_OVERRIDE=0 \

@@ -59,7 +59,6 @@ Suggests:
     future,
     ggplot2,
     gifti,
-    hexSticker,
     knitr,
     neuromapr,
     rgl,

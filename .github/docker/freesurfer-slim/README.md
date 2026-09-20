@@ -24,10 +24,6 @@ so only whitelisted members ever touch disk. `lib/` is extracted whole in the
 first stage purely so `ldd` can pick the needed objects; the rest is dropped
 before the final stage.
 
-The image also carries ImageMagick 7 from the official portable build, since
-`has_magick()` probes the `magick` binary and Ubuntu's apt package is
-version 6. With it, every test in the suite runs in the container.
-
 ## Package repositories
 
 `Rprofile.site` lists two repositories: the ggsegverse r-universe, so ggseg,

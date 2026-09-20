@@ -30,6 +30,18 @@
 - `build_contour_sf()` no longer strips a `.png` extension that
   `extract_contours()` has already removed.
 
+- CI stops installing what the image pipeline needed. The FreeSurfer
+  container no longer downloads and unpacks the pinned ImageMagick 7
+  AppImage, which existed only for a `has_magick()` probe that no longer
+  exists, and the FreeSurfer smoke test no longer asserts on `magick
+  --version`. `hexSticker` leaves Suggests -- nothing in the package,
+  tests, vignettes or build scripts referenced it, and it was the only
+  path to the R `magick` package, so dropping it takes 18 packages out of
+  the CI install tree. With those gone, `libmagick++-dev`,
+  `libharfbuzz-dev`, `libfribidi-dev`, `libfontconfig1-dev`,
+  `libtiff-dev` and `libjpeg-dev` leave the image: nothing left in the
+  dependency tree names them in `SystemRequirements`.
+
 # ggseg.extra 1.9.9.9047
 
 - `plan(multicore)` is no longer downgraded to `multisession`. The downgrade
