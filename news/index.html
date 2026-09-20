@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9046</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9047</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -63,6 +63,12 @@
       <small>Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.9.9.9047" id="ggsegextra-1999047">ggseg.extra 1.9.9.9047<a class="anchor" aria-label="anchor" href="#ggsegextra-1999047"></a></h2>
+<ul><li><p><code>plan(multicore)</code> is no longer downgraded to <code>multisession</code>. The downgrade existed because fork corrupts chromote’s websockets, and nothing has rendered through a headless browser since contours began being traced from the projection itself. The downgrade was what made parallelism stop paying: a <code>multisession</code> worker needs its own copy of the volume, and serialising 67 MB of a 256^3 aseg costs more than the projection it was sent to compute. Measured on an 8-core machine against FreeSurfer’s <code>bert</code>, <code><a href="../reference/create_subcortical_from_volume.html">create_subcortical_from_volume()</a></code> goes from 337s sequential to 171s under <code>plan(multicore, workers = 4)</code>; the same run under <code>multisession</code> was slower than sequential.</p></li>
+<li><p><code>plan(multisession)</code> no longer aborts a subcortical or tract build with “Cached … was written by cache format none”. Snapshots are written from parallel workers, and each worker stamped the cache manifest itself - a read-modify-write of one file shared by the whole directory, so workers dropped each other’s rows and left projections the contour step then refused. The steps now collect the paths their workers wrote and stamp them on the main thread, which is where <code>stamp_cache_files()</code> always documented that it had to be called.</p></li>
+<li><p><code>future</code> moves from Imports to Suggests. The package no longer calls it directly; <code>furrr</code> depends on it, so it is still installed.</p></li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9046" id="ggsegextra-1999046">ggseg.extra 1.9.9.9046<a class="anchor" aria-label="anchor" href="#ggsegextra-1999046"></a></h2>
 <ul><li><p>Tests call <code>describe()</code> bare again instead of qualifying every block as <code><a href="https://testthat.r-lib.org/reference/describe.html" class="external-link">testthat::describe()</a></code>. The masking was real but misattributed: <code>future</code> attaches the packages a global refers to, so the first <code>furrr</code> call over <code>terra</code> code runs <code><a href="https://rspatial.org/" class="external-link">library(terra)</a></code> in the test process and terra’s <code>describe()</code> takes over the search path. A single <code>describe &lt;- testthat::describe</code> in <code>helper.R</code> sits below the search path in the lookup chain and fixes it for every file, whenever terra attaches.</p></li>
