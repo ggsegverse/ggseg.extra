@@ -18,12 +18,18 @@
 
 - The subcortical setup and validation calls name their eleven arguments, as
   the whole-brain path already did. `verbose`, `cleanup` and `skip_existing`
-  sat adjacent and positional, where a transposition would have miswired the
-  pipeline silently.
+  sat adjacent and positional, where a transposition would have wired the
+  pipeline up wrongly with no error anywhere.
 
 - `.Rbuildignore` excluded `*.Rmd.orig`, but the precomputed vignette sources
   are `*.qmd.orig`, so all three shipped in the tarball without the vignettes
   they generate.
+
+- `vignettes/figures/` no longer ships. Every one of its images belongs to a
+  tutorial vignette that `.Rbuildignore` already excludes, and the six
+  vignettes that do ship reference no images at all, so it was 2.9 MB of a
+  4.7 MB tarball that nothing in the tarball could reach. pkgdown renders the
+  tutorials from the repository, so the website is unaffected.
 
 - The test suite stops printing to the console: `use_atlas_github_actions()`
   messages are suppressed where the message is not what is under test, and the
