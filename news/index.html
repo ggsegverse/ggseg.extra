@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9044</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9045</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -63,6 +63,13 @@
       <small>Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.9.9.9045" id="ggsegextra-1999045">ggseg.extra 1.9.9.9045<a class="anchor" aria-label="anchor" href="#ggsegextra-1999045"></a></h2>
+<ul><li>
+<p><code>cortical_finalize()</code> is covered by tests, so both places an atlas can leave the package are (<a href="https://github.com/ggsegverse/ggseg.extra/issues/81" class="external-link">#81</a>). Every <code>create_*()</code> reaches either it or <code>finalize_atlas()</code> – checked by tracing the call graph, not by reading – and only the latter was tested. Between them they decide the thing the lite-atlas work cares about: nothing ships carrying sf.</p>
+<p><code>sf</code> stays in <code>Imports</code>. The builders do real geometry with it, and <code>rmapshaper</code> depends on it; what the milestone wants is sf-free <em>plotting</em>, which the polygon output already gives.</p>
+</li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9044" id="ggsegextra-1999044">ggseg.extra 1.9.9.9044<a class="anchor" aria-label="anchor" href="#ggsegextra-1999044"></a></h2>
 <ul><li>

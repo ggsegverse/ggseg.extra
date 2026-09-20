@@ -1,5 +1,19 @@
 # Changelog
 
+## ggseg.extra 1.9.9.9045
+
+- `cortical_finalize()` is covered by tests, so both places an atlas can
+  leave the package are
+  ([\#81](https://github.com/ggsegverse/ggseg.extra/issues/81)). Every
+  `create_*()` reaches either it or `finalize_atlas()` – checked by
+  tracing the call graph, not by reading – and only the latter was
+  tested. Between them they decide the thing the lite-atlas work cares
+  about: nothing ships carrying sf.
+
+  `sf` stays in `Imports`. The builders do real geometry with it, and
+  `rmapshaper` depends on it; what the milestone wants is sf-free
+  *plotting*, which the polygon output already gives.
+
 ## ggseg.extra 1.9.9.9044
 
 - [`prepare_subcortical_mni152()`](https://ggsegverse.github.io/ggseg.extra/reference/prepare_subcortical_mni152.md)
