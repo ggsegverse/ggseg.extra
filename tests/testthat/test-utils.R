@@ -723,24 +723,14 @@ describe("with_safe_plan", {
     expect_identical(with_safe_plan(1 + 1), 2)
   })
 
-  it("switches a multicore plan to multisession with a message", {
-    local_mocked_bindings(
-      plan = function(...) {
-        if (length(list(...)) == 0) {
-          structure(list(), class = c("multicore", "future", "function"))
-        } else {
-          structure(list(), class = c("sequential", "future", "function"))
-        }
-      }
-    )
+  it("leaves a multicore plan alone", {
+    withr::local_options(future.fork.enable = TRUE)
+    skip_if_not(future::supportsMulticore())
+    old <- future::plan(future::multicore, workers = 2)
+    withr::defer(future::plan(old))
 
-    expect_messages(
-      {
-        result <- with_safe_plan(42)
-      },
-      "Switching from multicore to multisession"
-    )
-    expect_identical(result, 42)
+    expect_no_message(expect_identical(with_safe_plan(42), 42))
+    expect_s3_class(future::plan(), "multicore")
   })
 
   it("muffles the known furrr globals warning", {

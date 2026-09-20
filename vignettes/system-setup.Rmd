@@ -94,20 +94,28 @@ creation functions:
 #| eval: false
 library(future)
 
-plan(multisession, workers = 4)
+plan(multicore, workers = 4)
 ```
 
-**Use `multisession`, not `multicore`.**
-The subcortical pipeline uses
-[chromote](https://rstudio.github.io/chromote/) to take 3D brain screenshots
-via headless Chrome.
-`multicore` relies on process forking, which corrupts chromote's websocket
-connections and causes crashes.
-`multisession` spawns independent R worker processes that each get their own
-clean Chrome instance.
+**Prefer `multicore` where it is available.**
+The pipelines hand each worker a whole volume, which under `multicore` costs
+nothing: forked workers share the parent's memory copy-on-write.
+A `multisession` worker is a fresh R process, so the volume is serialised to
+it over a socket -- for a 256^3 aseg that is 67 MB per worker, which is more
+work than the projection it was sent to compute.
+Measured on an 8-core machine, the projection step runs about 3.4x faster
+under `plan(multicore, workers = 4)` and slightly *slower* under
+`plan(multisession, workers = 4)` than it does sequentially.
 
-If `plan(multicore)` is active when the pipeline runs, it will automatically
-switch to `multisession` and warn you.
+`multicore` is unavailable on Windows, and RStudio disables it by default.
+There `multisession` is the only parallel option, and sequential is often the
+better choice.
+
+```{r}
+#| label: parallel-windows
+#| eval: false
+plan(multisession, workers = 4)
+```
 
 To return to sequential processing:
 

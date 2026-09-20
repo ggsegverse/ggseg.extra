@@ -92,18 +92,15 @@ cross_product <- function(a, b) {
   )
 }
 
-#' @importFrom future plan sequential multisession
+#' Run a furrr map, muffling future's export warning
+#'
+#' `plan(multicore)` is left alone. It used to be downgraded to
+#' `multisession` because fork is incompatible with chromote, but nothing
+#' renders through a headless browser any more, and the downgrade was the
+#' whole reason parallelism stopped paying: a `multisession` worker needs its
+#' own copy of the volume, which costs more than the projection it computes.
 #' @noRd
 with_safe_plan <- function(expr) {
-  if (inherits(plan(), "multicore")) {
-    old_plan <- plan(multisession)
-    on.exit(plan(old_plan), add = TRUE)
-    cli::cli_alert_info(
-      "Switching from multicore to multisession: fork is
-      incompatible with chromote.",
-      wrap = TRUE
-    )
-  }
   withCallingHandlers(
     force(expr),
     warning = function(w) {

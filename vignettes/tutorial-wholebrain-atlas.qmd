@@ -202,7 +202,7 @@ Once the split looks right, run the full pipeline.
 library(progressr)
 library(future)
 
-plan(multisession, workers = 4)
+plan(multicore, workers = 4)
 handlers("cli")
 handlers(global = TRUE)
 
