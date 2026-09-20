@@ -900,16 +900,14 @@ native_smoothness <- function(smoothness, method) {
 build_contour_sf <- function(contours_file, slabs, cortex_slices = NULL) {
   conts <- make_multipolygon(contours_file)
 
-  filenm_base <- conts$filenm
-
   all_view_names <- if (!is.null(cortex_slices)) {
     c(slabs$name, cortex_slices$name)
   } else {
     slabs$name
   }
 
-  conts$view <- match_contour_views(filenm_base, all_view_names)
-  validate_contour_views(conts$view, filenm_base, all_view_names)
+  conts$view <- match_contour_views(conts$filenm, all_view_names)
+  validate_contour_views(conts$view, conts$filenm, all_view_names)
 
   conts <- layout_volumetric_views(conts) # nolint: object_usage_linter.
 

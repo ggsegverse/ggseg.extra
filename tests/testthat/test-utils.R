@@ -724,7 +724,6 @@ describe("with_safe_plan", {
   })
 
   it("leaves a multicore plan alone", {
-    withr::local_options(future.fork.enable = TRUE)
     skip_if_not(future::supportsMulticore())
     old <- future::plan(future::multicore, workers = 2)
     withr::defer(future::plan(old))

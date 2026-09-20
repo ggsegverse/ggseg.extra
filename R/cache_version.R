@@ -95,9 +95,9 @@ write_cache_manifest <- function(dir, manifest) {
 #' other's rows.
 #' @noRd
 stamp_cache_files <- function(files) {
-  files <- as.character(unlist(files))
+  files <- unlist(files, use.names = FALSE)
   if (length(files) == 0L) {
-    return(invisible(files))
+    return(invisible(character()))
   }
   dirs <- dirname(files)
   for (dir in unique(dirs)) {

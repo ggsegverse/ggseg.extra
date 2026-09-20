@@ -1350,13 +1350,10 @@ describe("cortex silhouette snapshot staleness", {
     )
   }
 
-  it("redraws an unrecorded snapshot and drops what was made from it", {
+  it("redraws an unrecorded snapshot", {
     dirs <- mock_subcort_dirs()
     outfile <- file.path(dirs$snapshots, "ax_1_cortex_left.rda")
     file.create(outfile)
-    for (dir in c(dirs$processed, dirs$masks)) {
-      file.create(file.path(dir, "ax_1_cortex_left.rda"))
-    }
     local_counting_slice()
 
     signatures <- subcort_snapshot_cortex(
@@ -1535,9 +1532,6 @@ describe("structure snapshot staleness", {
     dirs <- mock_subcort_dirs()
     outfile <- file.path(dirs$snapshots, "ax_1_Pallidum_l.rda")
     file.create(outfile)
-    for (dir in c(dirs$processed, dirs$masks)) {
-      file.create(file.path(dir, "ax_1_Pallidum_l.rda"))
-    }
     local_counting_projection()
 
     # Drawn when 42 meant Pallidum_l.

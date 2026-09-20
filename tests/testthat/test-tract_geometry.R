@@ -942,3 +942,65 @@ describe("center_meshes offset bookkeeping", {
     expect_identical(uncenter_coords(coords, NULL), coords)
   })
 })
+
+
+describe("snapshot_tract_views", {
+  slabs_row <- function() {
+    data.frame(
+      name = "ax_1",
+      type = "axial",
+      start = 1,
+      end = 4,
+      stringsAsFactors = FALSE
+    )
+  }
+
+  tract_vol <- function() {
+    vol <- array(0L, dim = c(4, 4, 4))
+    vol[2:3, 2:3, 2:3] <- 1L
+    list(t_a = vol)
+  }
+
+  it("stamps the projections it writes", {
+    dirs <- list(snapshots = withr::local_tempdir())
+
+    snapshot_tract_views(
+      tract_vol(),
+      "t_a",
+      slabs_row(),
+      dirs,
+      skip_existing = FALSE
+    )
+
+    written <- list.files(
+      dirs$snapshots,
+      pattern = "\\.rda$",
+      full.names = TRUE
+    )
+    expect_length(written, 1L)
+    expect_identical(stale_cache_files(written), character())
+  })
+
+  # Stamping is how a projection is declared current, so it must follow an
+  # actual write. A projection left by an older cache format and skipped over
+  # has to stay stale, or the contour step reuses it instead of aborting.
+  it("leaves a skipped projection's stale stamp alone", {
+    dirs <- list(snapshots = withr::local_tempdir())
+    stale <- projection_file(dirs$snapshots, "ax_1", "t_a")
+    save(list = character(), file = stale)
+    write_cache_manifest(
+      dirs$snapshots,
+      stats::setNames(cache_format_version() - 1L, basename(stale))
+    )
+
+    snapshot_tract_views(
+      tract_vol(),
+      "t_a",
+      slabs_row(),
+      dirs,
+      skip_existing = TRUE
+    )
+
+    expect_identical(stale_cache_files(stale), stale)
+  })
+})

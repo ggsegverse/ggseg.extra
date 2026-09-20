@@ -208,28 +208,13 @@ subcort_snapshot_names <- function(colortable, slabs, cortex_slices = NULL) {
     view = slabs$name,
     stringsAsFactors = FALSE
   )
-  structures <- basename(structure_snapshot_file(".", grid$view, grid$label))
+  structures <- projection_name(grid$view, sanitize_label(grid$label))
 
   if (is.null(cortex_slices)) {
     return(structures)
   }
 
-  cortex <- vapply(
-    seq_len(nrow(cortex_slices)),
-    function(i) {
-      cs <- cortex_slices[i, ]
-      basename(cortex_slice_file(
-        ".",
-        cs$name,
-        extract_hemi_from_view(
-          cs$view,
-          cs$name
-        )
-      ))
-    },
-    character(1)
-  )
-  c(structures, cortex)
+  c(structures, cortex_snapshot_names(cortex_slices))
 }
 
 
@@ -295,7 +280,7 @@ subcort_snapshot_structures <- function(
   )
   signatures <- stats::setNames(
     args$signature,
-    basename(structure_snapshot_file(".", args$view_name, args$label_name))
+    projection_name(args$view_name, sanitize_label(args$label_name))
   )
 
   p <- progressor(steps = nrow(snapshot_grid))
@@ -333,7 +318,7 @@ subcort_snapshot_structures <- function(
       globals = c("dims", "vol", "dirs", "skip_existing", "manifest", "p")
     )
   )
-  stamp_cache_files(unlist(written))
+  stamp_cache_files(written)
 
   signatures
 }
@@ -464,6 +449,29 @@ structure_snapshot_file <- function(output_dir, view_name, label) {
 }
 
 
+#' The file names the cortex silhouette slices carry
+#'
+#' Stated once because two callers need the same answer and must not drift:
+#' `prune_stale_snapshots()` deletes whatever this does not name, and
+#' `subcort_snapshot_cortex()` keys its signatures by it.
+#' @noRd
+cortex_snapshot_names <- function(cortex_slices) {
+  # Per row: extract_hemi_from_view() branches on a single view type and
+  # returns NULL off the sagittal views, so it cannot take the columns whole.
+  vapply(
+    seq_len(nrow(cortex_slices)),
+    function(i) {
+      cs <- cortex_slices[i, ]
+      projection_name(
+        cs$name,
+        cortex_slice_label(extract_hemi_from_view(cs$view, cs$name))
+      )
+    },
+    character(1)
+  )
+}
+
+
 #' Binary brain-outline volume: cortex plus cerebellum and brainstem
 #' @noRd
 subcort_cortex_volume <- function(vol, dims, cortex_labels) {
@@ -503,7 +511,7 @@ subcort_snapshot_cortex <- function(
 ) {
   voxels <- rlang::hash(which(cortex_vol > 0))
 
-  signatures <- vapply(
+  drawn <- lapply(
     seq_len(nrow(cortex_slices)),
     function(i) {
       cs <- cortex_slices[i, ]
@@ -520,9 +528,10 @@ subcort_snapshot_cortex <- function(
         hemi
       )
 
+      written <- NULL
       if (!snapshot_is_current(outfile, signature, manifest, skip_existing)) {
         clear_stale_snapshot(outfile)
-        stamp_cache_files(snapshot_cortex_slice(
+        written <- snapshot_cortex_slice(
           vol = cortex_vol,
           x = cs$x,
           y = cs$y,
@@ -532,27 +541,20 @@ subcort_snapshot_cortex <- function(
           hemi = hemi,
           output_dir = dirs$snapshots,
           skip_existing = FALSE
-        ))
+        )
       }
-      signature
-    },
-    character(1),
-    USE.NAMES = FALSE
+      list(name = basename(outfile), signature = signature, written = written)
+    }
   )
 
-  names(signatures) <- vapply(
-    seq_len(nrow(cortex_slices)),
-    function(i) {
-      cs <- cortex_slices[i, ]
-      basename(cortex_slice_file(
-        ".",
-        cs$name,
-        extract_hemi_from_view(cs$view, cs$name)
-      ))
-    },
-    character(1)
+  # One stamp for the step, not one per slice: stamping rewrites the whole
+  # directory manifest, which the structure pass has just filled.
+  stamp_cache_files(lapply(drawn, `[[`, "written"))
+
+  stats::setNames(
+    vapply(drawn, `[[`, character(1), "signature"),
+    vapply(drawn, `[[`, character(1), "name")
   )
-  signatures
 }
 
 
