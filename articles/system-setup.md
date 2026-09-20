@@ -9,15 +9,15 @@ atlases may require external software depending on the pipeline.
 |----|----|----|
 | **Cortical** (annotation, labels) | `freesurferformats` | None |
 | **Cortical** (neuromaps volume) | `freesurfer`, `neuromapr` | FreeSurfer |
-| **Subcortical** | `freesurfer`, `magick`, `chromote`, `htmlwidgets`, `terra` | FreeSurfer, ImageMagick |
-| **Whole-brain** | `freesurfer`, `RNifti`, `magick`, `chromote`, `htmlwidgets`, `terra` | FreeSurfer, ImageMagick |
+| **Subcortical** | `freesurfer`, `Rvcg`, `terra` | FreeSurfer |
+| **Whole-brain** | `freesurfer`, `RNifti`, `Rvcg`, `terra` | FreeSurfer |
 | **Tract** | `RNifti`, `Rvcg` | None |
 | **GIFTI / CIFTI** | `gifti` or `ciftiTools` | Connectome Workbench (CIFTI only) |
 
 The cortical mesh-projection pipeline is the lightest — it runs in
 seconds with no system tools and minimal R dependencies. All heavier
-packages (`freesurfer`, `magick`, `chromote`, `terra`, etc.) are in
-Suggests and only loaded when a pipeline actually needs them.
+packages (`freesurfer`, `Rvcg`, `terra`, etc.) are in Suggests and only
+loaded when a pipeline actually needs them.
 
 ## FreeSurfer
 
@@ -38,33 +38,6 @@ Verify your installation:
 
 freesurfer::fs_dir()
 ```
-
-## ImageMagick
-
-[ImageMagick](https://imagemagick.org/) is used by the subcortical and
-whole-brain pipelines for image processing — isolating regions from
-screenshots, tracing contours, and converting them to polygons.
-
-**Not needed for cortical or tract pipelines.**
-
-Install via your package manager:
-
-``` bash
-# macOS
-brew install imagemagick
-
-# Ubuntu/Debian
-sudo apt-get install imagemagick
-```
-
-## Chrome / Chromium
-
-The subcortical and whole-brain pipelines take 3D screenshots using the
-`chromote` package, which needs Google Chrome or Chromium. Chrome is
-typically already installed. If not, `chromote` will attempt to download
-a suitable version automatically.
-
-**Not needed for cortical or tract pipelines.**
 
 ## Parallel processing
 

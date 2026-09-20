@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9047</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9048</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -225,15 +225,15 @@ the pipeline:</p>
 needed; uses the <code>freesurferformats</code> R package to read files
 and projects mesh to 2D directly.</li>
 <li>
-<strong>Subcortical / whole-brain</strong> — <a href="https://surfer.nmr.mgh.harvard.edu/" class="external-link">FreeSurfer</a>, <a href="https://imagemagick.org/" class="external-link">ImageMagick</a>, and Chrome/Chromium for
-screenshot-based 2D extraction.</li>
+<strong>Subcortical / whole-brain</strong> — <a href="https://surfer.nmr.mgh.harvard.edu/" class="external-link">FreeSurfer</a>; contours are
+traced from the projection itself, with no image round-trip.</li>
 <li>
 <strong>Tract</strong> — no system tools; reads tractography files
 with R packages.</li>
 </ul>
-<p>All heavier dependencies (<code>freesurfer</code>,
-<code>magick</code>, <code>chromote</code>, <code>terra</code>, etc.)
-are in Suggests and only loaded when needed.</p>
+<p>All heavier dependencies (<code>freesurfer</code>, <code>Rvcg</code>,
+<code>terra</code>, etc.) are in Suggests and only loaded when
+needed.</p>
 <p>Run <code><a href="../reference/setup_sitrep.html">setup_sitrep()</a></code> to check your setup, or see
 <code><a href="../articles/system-setup.html">vignette("system-setup")</a></code> for details.</p>
 </div>

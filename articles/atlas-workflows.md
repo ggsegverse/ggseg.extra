@@ -253,7 +253,7 @@ Started](https://ggsegverse.github.io/ggseg.extra/articles/ggseg.extra.md)
 guide for installation and basic usage. The cortical pipeline has no
 system dependencies — it only needs the `freesurferformats` R package to
 read annotation files. Subcortical and whole-brain pipelines need
-FreeSurfer and ImageMagick; see [System
+FreeSurfer; see [System
 Setup](https://ggsegverse.github.io/ggseg.extra/articles/system-setup.md)
 for details.
 

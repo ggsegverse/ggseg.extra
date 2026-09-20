@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9047</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9048</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -66,7 +66,7 @@
 
 <div class="section level3">
 <h3 id="quick-orientation--what-this-repo-is">Quick orientation — what this repo is<a class="anchor" aria-label="anchor" href="#quick-orientation--what-this-repo-is"></a></h3>
-<ul><li>This is an R package that provides atlas creation pipelines and datasets for the <code>ggseg</code> / <code>ggseg3d</code> plotting ecosystem. See <code>DESCRIPTION</code> for package dependencies and system requirements (notably: FreeSurfer for annotation reading, ImageMagick for subcortical/tract pipelines). The user-facing documentation and tutorials live in <code>vignettes/</code> and <code>docs/</code>.</li>
+<ul><li>This is an R package that provides atlas creation pipelines and datasets for the <code>ggseg</code> / <code>ggseg3d</code> plotting ecosystem. See <code>DESCRIPTION</code> for package dependencies and system requirements (notably: FreeSurfer, which the subcortical, tract and whole-brain pipelines shell out to). The user-facing documentation and tutorials live in <code>vignettes/</code> and <code>docs/</code>.</li>
 </ul></div>
 <div class="section level3">
 <h3 id="big-picture-architecture">Big-picture architecture<a class="anchor" aria-label="anchor" href="#big-picture-architecture"></a></h3>
@@ -78,7 +78,7 @@
 <h3 id="important-conventions--patterns-an-ai-should-follow">Important conventions &amp; patterns an AI should follow<a class="anchor" aria-label="anchor" href="#important-conventions--patterns-an-ai-should-follow"></a></h3>
 <ul><li>Pipeline steps: subcortical/tract/wholebrain functions accept a <code>steps</code> numeric vector and write files to an <code>output_dir</code>. Cortical functions (<code>create_cortical_from_*()</code>) do NOT have a <code>steps</code> parameter — they always read data and project to 2D in one pass.</li>
 <li>Atlas naming: ggseg3d atlases often use <code>_3d</code> suffixes and palettes are created with <code>make_palette_ggseg()</code> (see <code>R/create-ggseg-atlas.R</code>). When generating atlases, ensure names and palette keys match repository conventions (see usage of <code>brain_atlas()</code> in the R code).</li>
-<li>External binaries: subcortical/tract functions call system tools (ImageMagick, FreeSurfer). Cortical functions only need FreeSurfer to read annotations. Guard changes that call or parse external tool outputs and add clear error messages if binaries are missing.</li>
+<li>External binaries: subcortical/tract functions shell out to FreeSurfer. Cortical functions only need FreeSurfer to read annotations. Guard changes that call or parse external tool outputs and add clear error messages if binaries are missing.</li>
 <li>Reporting/progress: code uses <code>cli</code>, <code>progressr</code> and verbose text output. Preserve this behaviour in edits (use <code>cli::cli_*</code> and <code>progressr::progress()</code> patterns).</li>
 </ul></div>
 <div class="section level3">
@@ -87,7 +87,7 @@
 <li>Local checks / tests:
 <ul><li>Run R CMD check: <code>R CMD check .</code> or via <code>devtools::check()</code>.</li>
 <li>Run tests: <code>devtools::test()</code> or <code>Rscript -e 'testthat::test_dir("tests/testthat")'</code>.</li>
-<li>CI runs on macOS and installs system deps via <code>brew</code> (see <code>.github/workflows/*</code>). If a change touches code depending on GDAL/ImageMagick/FreeSurfer/orca, run tests on macOS or a matching environment.</li>
+<li>CI runs on several platforms (see <code>.github/workflows/*</code>); the FreeSurfer suite runs in the container built from <code>.github/docker/freesurfer-slim</code>. If a change touches code depending on GDAL or FreeSurfer, run tests in a matching environment.</li>
 </ul></li>
 <li>Documentation and pkgdown: docs are published with <code><a href="https://pkgdown.r-lib.org/reference/deploy_to_branch.html" class="external-link">pkgdown::deploy_to_branch()</a></code> in CI (<code>.github/workflows/pkgdown.yaml</code>).</li>
 </ul></div>
@@ -104,8 +104,8 @@
 </ul></div>
 <div class="section level3">
 <h3 id="integration-points--gotchas">Integration points &amp; gotchas<a class="anchor" aria-label="anchor" href="#integration-points--gotchas"></a></h3>
-<ul><li>Heavy dependencies (<code>freesurfer</code>, <code>magick</code>, <code>chromote</code>, <code>terra</code>, <code>RNifti</code>, <code>htmlwidgets</code>) are in Suggests, not Imports. They are loaded at runtime via <code><a href="https://rlang.r-lib.org/reference/is_installed.html" class="external-link">rlang::check_installed()</a></code>. The cortical pipeline needs only base Imports (<code>sf</code>, <code>dplyr</code>, <code>cli</code>, <code>ggseg.formats</code>, <code>furrr</code>). Subcortical/tract pipelines need the full set.</li>
-<li>Subcortical/wholebrain pipelines require FreeSurfer and ImageMagick as system tools — CI installs them via Homebrew on macOS.</li>
+<ul><li>Heavy dependencies (<code>freesurfer</code>, <code>terra</code>, <code>RNifti</code>, <code>Rvcg</code>, <code>rgl</code>) are in Suggests, not Imports. They are loaded at runtime via <code><a href="https://rlang.r-lib.org/reference/is_installed.html" class="external-link">rlang::check_installed()</a></code>. The cortical pipeline needs only base Imports (<code>sf</code>, <code>dplyr</code>, <code>cli</code>, <code>ggseg.formats</code>, <code>furrr</code>). Subcortical/tract pipelines need the full set.</li>
+<li>Subcortical/wholebrain pipelines require FreeSurfer as a system tool; CI provides it through the freesurfer-slim container.</li>
 <li>Code uses <code>terra</code> and <code>sf</code> — watch for platform-specific binary issues and prefer high-level R APIs when possible.</li>
 <li>Intermediate files have expected directory layout (e.g. <code>output_dir/&lt;atlas&gt;/{img,regions,masks}</code>). If you change file naming, update all downstream readers (contour extraction, smoothing, vertex reduction).</li>
 </ul></div>
@@ -116,7 +116,7 @@
 </ul></div>
 <div class="section level3">
 <h3 id="when-to-ask-for-human-help">When to ask for human help<a class="anchor" aria-label="anchor" href="#when-to-ask-for-human-help"></a></h3>
-<ul><li>Any change that modifies on-disk file naming, image formats, or calls to external binaries (ImageMagick, GDAL, FreeSurfer, orca) should get a human review and a short compatibility test on macOS.</li>
+<ul><li>Any change that modifies on-disk file naming, the cache format, or calls to external binaries (GDAL, FreeSurfer) should get a human review and a short compatibility test.</li>
 <li>Any large refactor of atlas-building pipelines that changes function signatures or the atlas object structure.</li>
 </ul></div>
 <div class="section level3">

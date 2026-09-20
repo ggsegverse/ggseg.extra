@@ -15,8 +15,6 @@ This tutorial recreates the aseg atlas — the same pipeline behind
 ## What you need
 
 - FreeSurfer installed with the `fsaverage5` subject
-- ImageMagick for 2D geometry extraction
-- Chrome/Chromium for 3D screenshots
 
 ``` r
 

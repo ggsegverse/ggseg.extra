@@ -5,9 +5,9 @@
 - This is an R package that provides atlas creation pipelines and
   datasets for the `ggseg` / `ggseg3d` plotting ecosystem. See
   `DESCRIPTION` for package dependencies and system requirements
-  (notably: FreeSurfer for annotation reading, ImageMagick for
-  subcortical/tract pipelines). The user-facing documentation and
-  tutorials live in `vignettes/` and `docs/`.
+  (notably: FreeSurfer, which the subcortical, tract and whole-brain
+  pipelines shell out to). The user-facing documentation and tutorials
+  live in `vignettes/` and `docs/`.
 
 ### Big-picture architecture
 
@@ -32,10 +32,10 @@
   `R/create-ggseg-atlas.R`). When generating atlases, ensure names and
   palette keys match repository conventions (see usage of
   `brain_atlas()` in the R code).
-- External binaries: subcortical/tract functions call system tools
-  (ImageMagick, FreeSurfer). Cortical functions only need FreeSurfer to
-  read annotations. Guard changes that call or parse external tool
-  outputs and add clear error messages if binaries are missing.
+- External binaries: subcortical/tract functions shell out to
+  FreeSurfer. Cortical functions only need FreeSurfer to read
+  annotations. Guard changes that call or parse external tool outputs
+  and add clear error messages if binaries are missing.
 - Reporting/progress: code uses `cli`, `progressr` and verbose text
   output. Preserve this behaviour in edits (use `cli::cli_*` and
   `progressr::progress()` patterns).
@@ -50,10 +50,10 @@
   - Run R CMD check: `R CMD check .` or via `devtools::check()`.
   - Run tests: `devtools::test()` or
     `Rscript -e 'testthat::test_dir("tests/testthat")'`.
-  - CI runs on macOS and installs system deps via `brew` (see
-    `.github/workflows/*`). If a change touches code depending on
-    GDAL/ImageMagick/FreeSurfer/orca, run tests on macOS or a matching
-    environment.
+  - CI runs on several platforms (see `.github/workflows/*`); the
+    FreeSurfer suite runs in the container built from
+    `.github/docker/freesurfer-slim`. If a change touches code depending
+    on GDAL or FreeSurfer, run tests in a matching environment.
 - Documentation and pkgdown: docs are published with
   [`pkgdown::deploy_to_branch()`](https://pkgdown.r-lib.org/reference/deploy_to_branch.html)
   in CI (`.github/workflows/pkgdown.yaml`).
@@ -70,15 +70,14 @@
 
 ### Integration points & gotchas
 
-- Heavy dependencies (`freesurfer`, `magick`, `chromote`, `terra`,
-  `RNifti`, `htmlwidgets`) are in Suggests, not Imports. They are loaded
-  at runtime via
+- Heavy dependencies (`freesurfer`, `terra`, `RNifti`, `Rvcg`, `rgl`)
+  are in Suggests, not Imports. They are loaded at runtime via
   [`rlang::check_installed()`](https://rlang.r-lib.org/reference/is_installed.html).
   The cortical pipeline needs only base Imports (`sf`, `dplyr`, `cli`,
   `ggseg.formats`, `furrr`). Subcortical/tract pipelines need the full
   set.
-- Subcortical/wholebrain pipelines require FreeSurfer and ImageMagick as
-  system tools — CI installs them via Homebrew on macOS.
+- Subcortical/wholebrain pipelines require FreeSurfer as a system tool;
+  CI provides it through the freesurfer-slim container.
 - Code uses `terra` and `sf` — watch for platform-specific binary issues
   and prefer high-level R APIs when possible.
 - Intermediate files have expected directory layout (e.g.
@@ -98,9 +97,9 @@
 
 ### When to ask for human help
 
-- Any change that modifies on-disk file naming, image formats, or calls
-  to external binaries (ImageMagick, GDAL, FreeSurfer, orca) should get
-  a human review and a short compatibility test on macOS.
+- Any change that modifies on-disk file naming, the cache format, or
+  calls to external binaries (GDAL, FreeSurfer) should get a human
+  review and a short compatibility test.
 - Any large refactor of atlas-building pipelines that changes function
   signatures or the atlas object structure.
 

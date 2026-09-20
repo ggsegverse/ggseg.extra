@@ -33,7 +33,6 @@ Invisibly returns a list with check results.
 ``` r
 setup_sitrep()
 #> ✖ FreeSurfer not configured
-#> ✔ Chrome/Chromium
 #> ✖ fsaverage5 not found
 #> ✔ R packages: {.pkg freesurferformats}, {.pkg gifti}, {.pkg ciftiTools}, {.pkg RNifti}, {.pkg Rvcg}, {.pkg neuromapr}
 #> ✔ SUIT surfaces (bundled)
@@ -95,7 +94,6 @@ setup_sitrep("full")
 #> ── Testing R and FreeSurfer Communication 
 #> ✖ FreeSurfer installation not detected
 #> • Use `options(freesurfer.home = '/path/to/freesurfer')` to set location
-#> ✔ Chrome/Chromium: /usr/bin/google-chrome
 #> ✖ fsaverage5 not found
 #> ℹ Ships with FreeSurfer in $SUBJECTS_DIR
 #> ✔ R packages: {.pkg freesurferformats}, {.pkg gifti}, {.pkg ciftiTools}, {.pkg RNifti}, {.pkg Rvcg}, {.pkg neuromapr}
@@ -108,7 +106,7 @@ setup_sitrep("full")
 #>   skip_existing: TRUE
 #>   tolerance: 0.05
 #>   smoothness: 5
-#>   output_dir: /tmp/RtmpFWWJtN
+#>   output_dir: /tmp/Rtmp18lp0O
 #> 
 #> ℹ Set via `options(ggseg.extra.<name> = value)` or environment variables
 #>   `GGSEG_EXTRA_<NAME>`

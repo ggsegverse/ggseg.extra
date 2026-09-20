@@ -1,5 +1,60 @@
 # Changelog
 
+## ggseg.extra 1.9.9.9048
+
+- `chromote` is gone. Nothing has rendered through a headless browser
+  since contours began being traced from the projection itself, so it
+  leaves Suggests, `find_chrome_path()` goes, and
+  [`setup_sitrep()`](https://ggsegverse.github.io/ggseg.extra/reference/setup_sitrep.md)
+  no longer reports a missing Chrome as a problem or carries a `system`
+  element.
+
+- Snapshots are named `.rda`, which is what they have been on disk since
+  the PNG round-trip was removed. `structure_snapshot_file()` still
+  spelled them `.png`, and three mechanisms keyed on that name had been
+  quietly doing nothing:
+
+  - **Per-structure snapshot reuse.** The signature manifest is filtered
+    by [`file.exists()`](https://rdrr.io/r/base/files.html) before being
+    written, so every structure signature was dropped and only the
+    cortex silhouettes – already named `.rda` – were recorded. A rebuild
+    redrew all 174 structure projections of an `aseg` every time,
+    however little had changed.
+  - **Stale-slab pruning.** `prune_stale_snapshots()` scanned for `.png`
+    and so found nothing to prune, leaving the failure its comment
+    describes – a contour traced into a view the current configuration
+    has no slab for – unguarded.
+  - **Derived-image clearing.** `drop_derived_images()` cleared the
+    processed and mask directories, which no longer exist. Removed
+    rather than fixed.
+
+  `structure_snapshot_file()` now defers to `projection_file()`, so one
+  place decides the spelling. Snapshot signatures recorded under the old
+  `.png` keys will not match, so the first build after this redraws its
+  snapshots once.
+
+- `build_contour_sf()` no longer strips a `.png` extension that
+  `extract_contours()` has already removed.
+
+- CI stops installing what the image pipeline needed. The FreeSurfer
+  container no longer downloads and unpacks the pinned ImageMagick 7
+  AppImage, which existed only for a `has_magick()` probe that no longer
+  exists. `hexSticker` leaves Suggests – nothing in the package, tests,
+  vignettes or build scripts referenced it, and it was the only path to
+  the R `magick` package, so dropping it takes 18 packages out of the CI
+  install tree. With those gone, `libmagick++-dev`, `libharfbuzz-dev`,
+  `libfribidi-dev`, `libfontconfig1-dev`, `libtiff-dev` and
+  `libjpeg-dev` leave the image: nothing left in the dependency tree
+  names them in `SystemRequirements`.
+
+- A pull request building the FreeSurfer image no longer overwrites the
+  version tags it publishes. `freesurfer-tests` runs in
+  `freesurfer-slim:7.4.1-r4.6` on every branch, and the build pushed
+  that tag from any branch, so removing ImageMagick here replaced the
+  image the other pull requests and `main` are tested against and broke
+  `magick --version` in their smoke test. Only the default branch moves
+  the version tags now; a pull request gets a tag of its own.
+
 ## ggseg.extra 1.9.9.9047
 
 - `plan(multicore)` is no longer downgraded to `multisession`. The

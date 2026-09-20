@@ -15,8 +15,6 @@ This tutorial recreates the TRACULA atlas — the same pipeline behind
 ## What you need
 
 - FreeSurfer installed with TRACULA training data (`trctrain/`)
-- ImageMagick for 2D geometry extraction
-- Chrome/Chromium for 3D screenshots
 
 ``` r
 

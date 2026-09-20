@@ -22,8 +22,6 @@ workflow.
 ## What you need
 
 - FreeSurfer installed with the `fsaverage5` subject
-- ImageMagick for 2D geometry extraction
-- Chrome/Chromium for 3D screenshots
 - The Harvard-Oxford combined atlas volume (available from [NeuroVault
   collection 262](https://neurovault.org/collections/262/))
 

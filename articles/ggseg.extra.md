@@ -77,13 +77,12 @@ the pipeline:
   the `freesurferformats` R package to read files and projects mesh to
   2D directly.
 - **Subcortical / whole-brain** —
-  [FreeSurfer](https://surfer.nmr.mgh.harvard.edu/),
-  [ImageMagick](https://imagemagick.org/), and Chrome/Chromium for
-  screenshot-based 2D extraction.
+  [FreeSurfer](https://surfer.nmr.mgh.harvard.edu/); contours are traced
+  from the projection itself, with no image round-trip.
 - **Tract** — no system tools; reads tractography files with R packages.
 
-All heavier dependencies (`freesurfer`, `magick`, `chromote`, `terra`,
-etc.) are in Suggests and only loaded when needed.
+All heavier dependencies (`freesurfer`, `Rvcg`, `terra`, etc.) are in
+Suggests and only loaded when needed.
 
 Run
 [`setup_sitrep()`](https://ggsegverse.github.io/ggseg.extra/reference/setup_sitrep.md)
