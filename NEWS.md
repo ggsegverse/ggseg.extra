@@ -8,6 +8,11 @@
   testthat::describe` in `helper.R` sits below the search path in the lookup
   chain and fixes it for every file, whenever terra attaches.
 
+- The FreeSurfer smoke test no longer asserts on `magick --version`. The
+  package has not shelled out to ImageMagick since contours began being
+  traced from the projection itself, and the published container has now
+  dropped it, so the assertion fails on a binary nothing needs.
+
 # ggseg.extra 1.9.9.9045
 
 - `cortical_finalize()` is covered by tests, so both places an atlas can
