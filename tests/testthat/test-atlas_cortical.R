@@ -1230,3 +1230,70 @@ testthat::describe("create_cortical_from_annotation unknown context", {
     )
   })
 })
+
+
+testthat::describe("cortical_finalize", {
+  # Every create_*() routes through this or finalize_atlas(), so the pair of
+  # them is where "nothing ships carrying sf" is decided. finalize_atlas()
+  # already has this test; this is the other half.
+  finalize <- function(atlas) {
+    cortical_finalize(
+      atlas,
+      config = list(cleanup = FALSE, verbose = FALSE),
+      dirs = list(base = withr::local_tempdir(.local_envir = parent.frame())),
+      start_time = Sys.time()
+    )
+  }
+
+  it("hands back polygons when given sf geometry", {
+    sf_obj <- sf::st_sf(
+      label = "a",
+      view = "v1",
+      geometry = sf::st_sfc(sf::st_polygon(list(matrix(
+        c(0, 0, 1, 0, 1, 1, 0, 1, 0, 0),
+        ncol = 2,
+        byrow = TRUE
+      ))))
+    )
+    atlas <- ggseg.formats::ggseg_atlas(
+      atlas = "t",
+      type = "cortical",
+      palette = c(a = "#000000"),
+      core = data.frame(label = "a", region = "a", stringsAsFactors = FALSE),
+      data = ggseg.formats::ggseg_data_cortical(geom = sf_obj)
+    )
+    expect_true(ggseg.formats::is_atlas_sf(atlas))
+
+    result <- finalize(atlas)
+
+    expect_true(ggseg.formats::is_atlas_polygon(result))
+    expect_false(ggseg.formats::is_atlas_sf(result))
+  })
+
+  it("leaves an atlas that carries no 2D geometry alone", {
+    # A vertex-only atlas is neither sf nor polygons, and stays that way.
+    # The invariant is that nothing ships *as sf*, not that everything is
+    # polygons -- there is nothing here to convert.
+    atlas <- ggseg.formats::ggseg_atlas(
+      atlas = "t",
+      type = "cortical",
+      palette = c(a = "#000000"),
+      core = data.frame(label = "a", region = "a", stringsAsFactors = FALSE),
+      data = ggseg.formats::ggseg_data_cortical(
+        vertices = data.frame(
+          stringsAsFactors = FALSE,
+          label = "a",
+          vertices = I(list(1:3))
+        )
+      )
+    )
+
+    result <- finalize(atlas)
+
+    expect_false(ggseg.formats::is_atlas_sf(result))
+    expect_identical(
+      ggseg.formats::atlas_vertices(result),
+      ggseg.formats::atlas_vertices(atlas)
+    )
+  })
+})
