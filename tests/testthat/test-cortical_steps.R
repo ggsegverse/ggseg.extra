@@ -1,7 +1,7 @@
 .cap <- new.env()
 
 
-testthat::describe("labels_read_files", {
+describe("labels_read_files", {
   it("reads label files and builds atlas data tibble", {
     labels <- unlist(test_label_files())
     default_colours <- rep(NA_character_, length(labels))
@@ -30,7 +30,7 @@ testthat::describe("labels_read_files", {
 })
 
 
-testthat::describe("labels_read_files hemisphere-less filenames", {
+describe("labels_read_files hemisphere-less filenames", {
   it("assigns region without hemi prefix for unknown hemisphere", {
     tmp <- withr::local_tempdir()
     nohemi_file <- file.path(tmp, "some_region.label")
@@ -60,7 +60,7 @@ testthat::describe("labels_read_files hemisphere-less filenames", {
 })
 
 
-testthat::describe("validate_surface_config", {
+describe("validate_surface_config", {
   it("returns list with all expected fields", {
     local_mocked_bindings(
       is_verbose = function(x) TRUE,
@@ -91,7 +91,7 @@ testthat::describe("validate_surface_config", {
 })
 
 
-testthat::describe("parse_lut_colours", {
+describe("parse_lut_colours", {
   it("returns NULLs when input is NULL", {
     result <- parse_lut_colours(NULL)
 

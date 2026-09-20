@@ -1,6 +1,6 @@
 .cap <- new.env()
 
-testthat::describe("extract_slice_2d", {
+describe("extract_slice_2d", {
   it("extracts axial slice", {
     vol <- array(0, dim = c(10, 10, 10))
     vol[5, 5, 5] <- 1
@@ -36,7 +36,7 @@ testthat::describe("extract_slice_2d", {
 })
 
 
-testthat::describe("extract_slice_2d edge cases", {
+describe("extract_slice_2d edge cases", {
   it("returns NULL for empty slice", {
     vol <- array(0, dim = c(10, 10, 10))
     result <- extract_slice_2d(vol, "axial", 1)
@@ -52,7 +52,7 @@ testthat::describe("extract_slice_2d edge cases", {
 })
 
 
-testthat::describe("orient_slice_2d", {
+describe("orient_slice_2d", {
   it("flips left sagittal horizontally", {
     slice <- matrix(c(1, 2, 3, 4), nrow = 2)
 
@@ -79,7 +79,7 @@ testthat::describe("orient_slice_2d", {
 })
 
 
-testthat::describe("snapshot_partial_projection", {
+describe("snapshot_partial_projection", {
   it("caches a projection for a synthetic volume", {
     vol <- array(0L, dim = c(10, 10, 10))
     vol[4:6, 4:6, 4:6] <- 1L
@@ -103,7 +103,7 @@ testthat::describe("snapshot_partial_projection", {
 })
 
 
-testthat::describe("snapshot_cortex_slice", {
+describe("snapshot_cortex_slice", {
   it("caches a projection for a valid slice", {
     vol <- array(0L, dim = c(10, 10, 10))
     vol[4:6, 4:6, 5] <- 1L
@@ -171,7 +171,7 @@ testthat::describe("snapshot_cortex_slice", {
 })
 
 
-testthat::describe("volume_projection", {
+describe("volume_projection", {
   it("creates axial projection", {
     vol <- array(0, dim = c(10, 10, 10))
     vol[5, 5, 1:10] <- 1:10
@@ -202,7 +202,7 @@ testthat::describe("volume_projection", {
 })
 
 
-testthat::describe("volume_projection with start/end", {
+describe("volume_projection with start/end", {
   it("creates partial axial projection", {
     vol <- array(0, dim = c(10, 10, 10))
     vol[5, 5, 3:7] <- 1
@@ -234,7 +234,7 @@ testthat::describe("volume_projection with start/end", {
 })
 
 
-testthat::describe("extract_slice_2d with invalid view", {
+describe("extract_slice_2d with invalid view", {
   it("returns NULL for unrecognized view name", {
     vol <- array(1, dim = c(10, 10, 10))
     result <- extract_slice_2d(vol, "invalid_view", 5)
@@ -243,7 +243,7 @@ testthat::describe("extract_slice_2d with invalid view", {
 })
 
 
-testthat::describe("snapshot_cortex_slice when extract_slice_2d returns NULL", {
+describe("snapshot_cortex_slice when extract_slice_2d returns NULL", {
   it("returns NULL when slice extraction fails", {
     local_mocked_bindings(
       extract_slice_2d = function(...) NULL
@@ -268,7 +268,7 @@ testthat::describe("snapshot_cortex_slice when extract_slice_2d returns NULL", {
 })
 
 
-testthat::describe("snapshot_partial_projection skip and zero paths", {
+describe("snapshot_partial_projection skip and zero paths", {
   it("returns outfile when skip_existing is TRUE and file exists", {
     outdir <- withr::local_tempdir("partial_skip_")
     outfile <- as.character(fs::path(outdir, "axial_1_test.rda"))

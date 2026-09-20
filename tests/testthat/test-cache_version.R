@@ -1,4 +1,4 @@
-testthat::describe("stamp_cache_files", {
+describe("stamp_cache_files", {
   it("records the current format version for each stamped file", {
     file <- local_cache_file(name = "components.rds")
 
@@ -51,7 +51,7 @@ testthat::describe("stamp_cache_files", {
   })
 })
 
-testthat::describe("read_cache_manifest", {
+describe("read_cache_manifest", {
   it("returns an empty manifest when none exists", {
     dir <- withr::local_tempdir("cache_")
 
@@ -75,7 +75,7 @@ testthat::describe("read_cache_manifest", {
 })
 
 
-testthat::describe("write_cache_manifest", {
+describe("write_cache_manifest", {
   it("warns when the manifest cannot be moved into place", {
     dir <- withr::local_tempdir("cache_")
     local_mocked_bindings(file.rename = function(...) FALSE, .package = "base")
@@ -88,7 +88,7 @@ testthat::describe("write_cache_manifest", {
 })
 
 
-testthat::describe("save_cache_rds", {
+describe("save_cache_rds", {
   it("writes each object to its named file and stamps it", {
     dir <- withr::local_tempdir("cache_")
 
@@ -116,7 +116,7 @@ testthat::describe("save_cache_rds", {
 })
 
 
-testthat::describe("save_cache_rda", {
+describe("save_cache_rda", {
   it("round-trips contours through a stamped cache", {
     dir <- withr::local_tempdir("cache_")
     contours <- mock_sf_polygon()
@@ -130,7 +130,7 @@ testthat::describe("save_cache_rda", {
 })
 
 
-testthat::describe("load_cached_rda", {
+describe("load_cached_rda", {
   it("rejects a stale cache before deserializing it", {
     dir <- withr::local_tempdir("cache_")
     file <- save_cache_rda(mock_sf_polygon(), dir, "contours.rda")
@@ -157,7 +157,7 @@ testthat::describe("load_cached_rda", {
 })
 
 
-testthat::describe("stale_cache_files", {
+describe("stale_cache_files", {
   it("reports unstamped files as stale", {
     file <- local_cache_file(stamped = FALSE)
 
@@ -181,7 +181,7 @@ testthat::describe("stale_cache_files", {
 })
 
 
-testthat::describe("check_cache_current", {
+describe("check_cache_current", {
   it("passes stamped files through unchanged", {
     file <- local_cache_file()
 
@@ -210,7 +210,7 @@ testthat::describe("check_cache_current", {
 })
 
 
-testthat::describe("step_rerun_remedy", {
+describe("step_rerun_remedy", {
   it("names the step to include", {
     expect_match(step_rerun_remedy(3L), "Include step 3")
   })

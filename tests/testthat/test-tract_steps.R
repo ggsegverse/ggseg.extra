@@ -1,6 +1,6 @@
 .cap <- new.env()
 
-testthat::describe("tract_read_input", {
+describe("tract_read_input", {
   it("reads from named list", {
     tracts <- list(
       cst = matrix(1:9, ncol = 3),
@@ -40,7 +40,7 @@ testthat::describe("tract_read_input", {
 })
 
 
-testthat::describe("tract_build_core", {
+describe("tract_build_core", {
   it("builds core, palette, and centerlines", {
     meshes_list <- list(
       cst_left = list(
@@ -124,7 +124,7 @@ testthat::describe("tract_build_core", {
 })
 
 
-testthat::describe("tract_read_input file path branch", {
+describe("tract_read_input file path branch", {
   it("reads from file paths and derives names from filenames", {
     local_mocked_bindings(
       read_tractography = function(f) list(matrix(1:9, ncol = 3)),
@@ -159,7 +159,7 @@ testthat::describe("tract_read_input file path branch", {
 })
 
 
-testthat::describe("tract_create_meshes", {
+describe("tract_create_meshes", {
   it("creates meshes and filters out NULL results", {
     .cap$call_count <- 0L
     local_mocked_bindings(
@@ -259,7 +259,7 @@ testthat::describe("tract_create_meshes", {
 })
 
 
-testthat::describe("tract_create_snapshots", {
+describe("tract_create_snapshots", {
   it("creates snapshots for tracts and cortex slices", {
     .cap$snapshot_calls <- 0L
     .cap$cortex_calls <- 0L
@@ -462,7 +462,7 @@ testthat::describe("tract_create_snapshots", {
 })
 
 
-testthat::describe("resolve_tube_radius", {
+describe("resolve_tube_radius", {
   it("returns uniform radius when given scalar", {
     centerline <- matrix(c(1:10, rep(0, 20)), ncol = 3)
     streamlines <- list(centerline)
@@ -541,7 +541,7 @@ testthat::describe("resolve_tube_radius", {
 })
 
 
-testthat::describe("default_tract_slabs", {
+describe("default_tract_slabs", {
   it("creates slabs for standard 256 brain", {
     dims <- c(256, 256, 256)
     result <- default_tract_slabs(dims)
@@ -608,7 +608,7 @@ testthat::describe("default_tract_slabs", {
 })
 
 
-testthat::describe("validate_tract_config", {
+describe("validate_tract_config", {
   it("returns list with all expected fields", {
     withr::local_options(ggseg.extra.output_dir = tempdir())
 
@@ -725,7 +725,7 @@ testthat::describe("validate_tract_config", {
 })
 
 
-testthat::describe("tract_log_header", {
+describe("tract_log_header", {
   it("prints info when verbose", {
     config <- list(verbose = TRUE)
 
@@ -745,7 +745,7 @@ testthat::describe("tract_log_header", {
 })
 
 
-testthat::describe("tract_resolve_step1", {
+describe("tract_resolve_step1", {
   it("returns cached data when skip_existing", {
     test_dir <- withr::local_tempdir()
     cached_step1 <- list(
@@ -877,7 +877,7 @@ testthat::describe("tract_resolve_step1", {
 })
 
 
-testthat::describe("detect_tract_coord_space", {
+describe("detect_tract_coord_space", {
   it("detects voxel coordinates", {
     local_mocked_bindings(
       detect_coords_are_voxels = function(...) TRUE
@@ -904,7 +904,7 @@ testthat::describe("detect_tract_coord_space", {
 })
 
 
-testthat::describe("tract_check_aseg", {
+describe("tract_check_aseg", {
   it("aborts when aseg is NULL and steps include 2-7", {
     expect_error(
       tract_check_aseg(NULL, 2L:7L),
@@ -926,7 +926,7 @@ testthat::describe("tract_check_aseg", {
 })
 
 
-testthat::describe("tract_resolve_snapshots", {
+describe("tract_resolve_snapshots", {
   it("returns cached data when not running", {
     test_dir <- withr::local_tempdir()
     cached_slabs <- data.frame(
@@ -1032,7 +1032,7 @@ testthat::describe("tract_resolve_snapshots", {
 })
 
 
-testthat::describe("run_image_steps (tract step_map)", {
+describe("run_image_steps (tract step_map)", {
   tract_step_map <- list(extract = 3L, smooth = 4L, reduce = 5L)
 
   it(".cap$calls extract_contours for step 3", {
@@ -1119,7 +1119,7 @@ testthat::describe("run_image_steps (tract step_map)", {
 })
 
 
-testthat::describe("tract_assemble_3d", {
+describe("tract_assemble_3d", {
   it("returns ggseg_atlas", {
     local_mocked_bindings(
       ggseg_atlas = function(...) {
@@ -1159,7 +1159,7 @@ testthat::describe("tract_assemble_3d", {
 })
 
 
-testthat::describe("tract_assemble_full", {
+describe("tract_assemble_full", {
   it("errors when contours_reduced.rda missing", {
     test_dir <- withr::local_tempdir()
     dirs <- list(base = test_dir)
@@ -1185,7 +1185,7 @@ testthat::describe("tract_assemble_full", {
 })
 
 
-testthat::describe("finalize_atlas (tract parameters)", {
+describe("finalize_atlas (tract parameters)", {
   it("deletes dir when cleanup is TRUE", {
     test_dir <- withr::local_tempdir()
     sub_dir <- file.path(test_dir, "atlas_work")

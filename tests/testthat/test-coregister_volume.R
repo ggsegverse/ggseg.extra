@@ -1,6 +1,6 @@
 .cap <- new.env()
 
-testthat::describe("coregister_volume validation", {
+describe("coregister_volume validation", {
   it("errors for invalid dof", {
     local_mocked_bindings(check_fs = function(...) TRUE)
     vol_file <- withr::local_tempfile(fileext = ".nii.gz")
@@ -46,7 +46,7 @@ testthat::describe("coregister_volume validation", {
   })
 })
 
-testthat::describe("project_volume_anatomical validation", {
+describe("project_volume_anatomical validation", {
   it("errors for threshold outside [0, 1]", {
     local_mocked_bindings(check_fs = function(...) TRUE)
     vol_file <- withr::local_tempfile(fileext = ".nii.gz")
@@ -141,7 +141,7 @@ testthat::describe("project_volume_anatomical validation", {
   })
 })
 
-testthat::describe("validate_ids_clear_of_context", {
+describe("validate_ids_clear_of_context", {
   clear_of <- function(...) {
     args <- list(...)
     do.call(
@@ -205,7 +205,7 @@ testthat::describe("validate_ids_clear_of_context", {
   })
 })
 
-testthat::describe("read_lut_arg", {
+describe("read_lut_arg", {
   it("accepts a data frame with idx column", {
     df <- data.frame(
       stringsAsFactors = FALSE,
@@ -246,7 +246,7 @@ testthat::describe("read_lut_arg", {
   })
 })
 
-testthat::describe("resolve_volume_path", {
+describe("resolve_volume_path", {
   it("returns the path for an existing file", {
     f <- withr::local_tempfile(fileext = ".nii.gz")
     file.create(f)
@@ -268,7 +268,7 @@ testthat::describe("resolve_volume_path", {
   })
 })
 
-testthat::describe("prepare_subcortical_anatomical", {
+describe("prepare_subcortical_anatomical", {
   it("threads the registration from coregister into the projection", {
     .cap$seen <- NULL
     result <- list(volume = "merged.nii.gz", lut = NULL, id_offset = 200L)
@@ -290,7 +290,7 @@ testthat::describe("prepare_subcortical_anatomical", {
   })
 })
 
-testthat::describe("resolve_label_ids", {
+describe("resolve_label_ids", {
   arr <- array(c(0L, 11L, 12L, 0L, 17L, 0L, 0L, 99L), dim = c(2, 2, 2))
 
   it("derives labels from the lut, intersected with the volume", {
@@ -317,7 +317,7 @@ testthat::describe("resolve_label_ids", {
   })
 })
 
-testthat::describe("project_label_argmax", {
+describe("project_label_argmax", {
   it("streams a per-voxel argmax with first-label tie-breaking", {
     probs <- list(
       `11` = c(0.1, 0.0, 0.5, 0.0),
@@ -343,7 +343,7 @@ testthat::describe("project_label_argmax", {
   })
 })
 
-testthat::describe("build_merged_volume", {
+describe("build_merged_volume", {
   it("writes shifted ids at kept voxels and keeps aparc elsewhere", {
     arr_aparc <- matrix(c(2L, 17L, 1011L, 0L), 2, 2)
     merged <- build_merged_volume(
@@ -358,7 +358,7 @@ testthat::describe("build_merged_volume", {
   })
 })
 
-testthat::describe("apply_cortex_protection", {
+describe("apply_cortex_protection", {
   # 2/41 cerebral WM, 1011 cortex, 253 corpus callosum -> protected;
   # 17/50 subcortical gray -> overwritable.
   arr_aparc <- c(2L, 17L, 1011L, 41L, 50L, 253L)
@@ -382,7 +382,7 @@ testthat::describe("apply_cortex_protection", {
   })
 })
 
-testthat::describe("lta_dst_dims / lta_src_dims / check_registration_grid", {
+describe("lta_dst_dims / lta_src_dims / check_registration_grid", {
   write_lta <- function(
     dst_volume = "256 256 256",
     with_dst = TRUE,
@@ -470,7 +470,7 @@ testthat::describe("lta_dst_dims / lta_src_dims / check_registration_grid", {
   })
 })
 
-testthat::describe("resolve_user_lut", {
+describe("resolve_user_lut", {
   it("shifts supplied label ids and drops unprojected rows", {
     lut <- data.frame(
       stringsAsFactors = FALSE,
@@ -502,7 +502,7 @@ testthat::describe("resolve_user_lut", {
   })
 })
 
-testthat::describe("build_anatomical_lut", {
+describe("build_anatomical_lut", {
   fs_lut <- function() {
     data.frame(
       stringsAsFactors = FALSE,
@@ -551,7 +551,7 @@ testthat::describe("build_anatomical_lut", {
   })
 })
 
-testthat::describe("unpack_anatomical_input", {
+describe("unpack_anatomical_input", {
   it("unpacks a {volume, lut} list into volume and lut", {
     lut <- data.frame(idx = 1L)
     out <- unpack_anatomical_input(
@@ -580,7 +580,7 @@ testthat::describe("unpack_anatomical_input", {
   })
 })
 
-testthat::describe("coregister_volume execution", {
+describe("coregister_volume execution", {
   make_subject <- function(dir, volume = "brain") {
     mri <- fs::path(dir, "cvs_avg35_inMNI152", "mri")
     fs::dir_create(mri)
@@ -669,7 +669,7 @@ testthat::describe("coregister_volume execution", {
   })
 })
 
-testthat::describe("coreg_reuse_lta", {
+describe("coreg_reuse_lta", {
   it("reports and returns the path invisibly when verbose", {
     expect_messages(
       out <- coreg_reuse_lta("cached.lta", verbose = TRUE),
@@ -679,7 +679,7 @@ testthat::describe("coreg_reuse_lta", {
   })
 })
 
-testthat::describe("project_start_message", {
+describe("project_start_message", {
   it("announces the projection and returns NULL invisibly when verbose", {
     expect_messages(
       out <- project_start_message(c(11L, 12L), "subjX", verbose = TRUE),
@@ -689,7 +689,7 @@ testthat::describe("project_start_message", {
   })
 })
 
-testthat::describe("project_merged_labels", {
+describe("project_merged_labels", {
   it("thresholds, protects cortex, and writes shifted ids", {
     prep <- list(
       label_ids = c(11L, 12L),
@@ -823,7 +823,7 @@ testthat::describe("project_merged_labels", {
   })
 })
 
-testthat::describe("project_volume_anatomical execution", {
+describe("project_volume_anatomical execution", {
   it("projects labels end-to-end with FreeSurfer steps mocked", {
     skip_if_not_installed("RNifti")
     fake_dir <- withr::local_tempdir()
@@ -888,7 +888,7 @@ testthat::describe("project_volume_anatomical execution", {
   })
 })
 
-testthat::describe("resolve_label_ids all-zero volume", {
+describe("resolve_label_ids all-zero volume", {
   it("errors when the volume is all zero and no lut is given", {
     zero <- array(0L, dim = c(2, 2, 2))
     expect_error(
@@ -898,7 +898,7 @@ testthat::describe("resolve_label_ids all-zero volume", {
   })
 })
 
-testthat::describe("lta_block_dims", {
+describe("lta_block_dims", {
   it("returns NULL when the block has no volume line", {
     lines <- c("dst volume info", "valid = 1", "voxelsize = 1 1 1")
     expect_null(lta_block_dims(lines, "dst volume info"))
@@ -915,7 +915,7 @@ testthat::describe("lta_block_dims", {
   })
 })
 
-testthat::describe("apply_cortex_protection verbose", {
+describe("apply_cortex_protection verbose", {
   it("reports the protected voxel counts when verbose", {
     arr_aparc <- c(2L, 17L, 1011L, 41L, 50L, 253L)
     expect_messages(
@@ -930,7 +930,7 @@ testthat::describe("apply_cortex_protection verbose", {
   })
 })
 
-testthat::describe("protected_context_ids", {
+describe("protected_context_ids", {
   it("returns the cortex and cerebral-WM ids present in the aparc", {
     arr_aparc <- array(c(2L, 17L, 1011L, 50L, 253L, 41L), dim = c(3, 2, 1))
 
@@ -966,7 +966,7 @@ testthat::describe("protected_context_ids", {
   })
 })
 
-testthat::describe("project_volume_anatomical early collision check", {
+describe("project_volume_anatomical early collision check", {
   it("aborts before registration when a shifted id hits protected cortex", {
     fake_dir <- withr::local_tempdir()
     subj_dir <- fs::path(fake_dir, "cvs_avg35_inMNI152", "mri")
@@ -1052,7 +1052,7 @@ testthat::describe("project_volume_anatomical early collision check", {
   })
 })
 
-testthat::describe("write_merged_volume", {
+describe("write_merged_volume", {
   it("writes a readable RAS nifti, flipping a non-RAS reference", {
     skip_if_not_installed("RNifti")
     merged <- array(
@@ -1083,7 +1083,7 @@ testthat::describe("write_merged_volume", {
   })
 })
 
-testthat::describe("write_brain_mask", {
+describe("write_brain_mask", {
   it("produces a 0/1 mask nifti from a volume on disk", {
     skip_if_not_installed("RNifti")
     src <- withr::local_tempfile(fileext = ".nii.gz")
@@ -1099,7 +1099,7 @@ testthat::describe("write_brain_mask", {
   })
 })
 
-testthat::describe("resolve_volume_path RNifti object", {
+describe("resolve_volume_path RNifti object", {
   it("writes an RNifti object to a temp nifti path", {
     skip_if_not_installed("RNifti")
     img <- RNifti::asNifti(array(1L, dim = c(2, 2, 2)))
@@ -1110,7 +1110,7 @@ testthat::describe("resolve_volume_path RNifti object", {
   })
 })
 
-testthat::describe("read_fs_color_lut", {
+describe("read_fs_color_lut", {
   it("reads the FreeSurfer colour table and drops the type column", {
     dir <- withr::local_tempdir()
     writeLines(
@@ -1141,7 +1141,7 @@ testthat::describe("read_fs_color_lut", {
 })
 
 
-testthat::describe("warn_labels_lost_to_protection", {
+describe("warn_labels_lost_to_protection", {
   lut <- data.frame(
     idx = c(1L, 2L),
     label = c("lh_slf", "rh_slf"),

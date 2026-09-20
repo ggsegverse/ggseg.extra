@@ -39,7 +39,7 @@ contour_centres <- function(projections) {
   })
 }
 
-testthat::describe("build_contour_sf", {
+describe("build_contour_sf", {
   it("produces sf with label and view columns", {
     contours_file <- withr::local_tempfile(fileext = ".rda")
 
@@ -308,7 +308,7 @@ testthat::describe("build_contour_sf", {
 })
 
 
-testthat::describe("arrange_contour_sf", {
+describe("arrange_contour_sf", {
   contour_table <- function(labels, view = "sagittal_left") {
     square <- function(x0) {
       sf::st_polygon(list(matrix(
@@ -374,7 +374,7 @@ testthat::describe("arrange_contour_sf", {
 })
 
 
-testthat::describe("extract_contours", {
+describe("extract_contours", {
   it("scans for max value and processes regions", {
     input_dir <- withr::local_tempdir("masks_")
     output_dir <- withr::local_tempdir("output_")
@@ -444,7 +444,7 @@ testthat::describe("extract_contours", {
 })
 
 
-testthat::describe("filter_valid_geometries", {
+describe("filter_valid_geometries", {
   it("removes empty geometries", {
     sf_obj <- sf::st_sf(
       id = c("a", "b"),
@@ -611,7 +611,7 @@ testthat::describe("filter_valid_geometries", {
 })
 
 
-testthat::describe("combine_region_contours", {
+describe("combine_region_contours", {
   it("aborts clearly when no region produced contours", {
     expect_error(
       combine_region_contours(list(a = NULL, b = NULL)),
@@ -620,7 +620,7 @@ testthat::describe("combine_region_contours", {
   })
 })
 
-testthat::describe("smooth_contours", {
+describe("smooth_contours", {
   it("smooths contour geometry", {
     outdir <- withr::local_tempdir("smooth_test_")
 
@@ -674,7 +674,7 @@ testthat::describe("smooth_contours", {
 })
 
 
-testthat::describe("reduce_vertex", {
+describe("reduce_vertex", {
   it("passes contour geometry through unchanged", {
     outdir <- withr::local_tempdir("reduce_test_")
 
@@ -741,7 +741,7 @@ testthat::describe("reduce_vertex", {
 })
 
 
-testthat::describe("make_multipolygon", {
+describe("make_multipolygon", {
   it("combines contours into multipolygons", {
     contourfile <- save_contours_fixture(
       withr::local_tempfile(fileext = ".rda")
@@ -777,7 +777,7 @@ testthat::describe("make_multipolygon", {
 })
 
 
-testthat::describe("smooth_contours verbose output", {
+describe("smooth_contours verbose output", {
   it("emits progress message when verbose is TRUE", {
     outdir <- withr::local_tempdir("smooth_verbose_")
 
@@ -803,7 +803,7 @@ testthat::describe("smooth_contours verbose output", {
 })
 
 
-testthat::describe("reduce_vertex verbose output", {
+describe("reduce_vertex verbose output", {
   it("is silent now that simplification has moved post-creation", {
     outdir <- withr::local_tempdir("reduce_verbose_")
 
@@ -829,7 +829,7 @@ testthat::describe("reduce_vertex verbose output", {
 })
 
 
-testthat::describe("simplify_sf_topology", {
+describe("simplify_sf_topology", {
   it("reduces vertices while preserving shared boundaries", {
     angles_a <- seq(0, 2 * pi, length.out = 21)[-21]
     coords_a <- cbind(cos(angles_a), sin(angles_a))
@@ -951,7 +951,7 @@ testthat::describe("simplify_sf_topology", {
 })
 
 
-testthat::describe("smooth_sf_light", {
+describe("smooth_sf_light", {
   it("returns the input unchanged when smoothness is zero or negative", {
     poly <- sf::st_polygon(list(matrix(
       c(0, 0, 1, 0, 1, 1, 0, 0),
@@ -1011,7 +1011,7 @@ two_region_atlas <- function(label_order = c("region_a", "region_b")) {
   )
 }
 
-testthat::describe("atlas_smooth", {
+describe("atlas_smooth", {
   it("warns when atlas has no 2D geometry", {
     atlas <- ggseg.formats::ggseg_atlas(
       atlas = "t",
@@ -1212,7 +1212,7 @@ testthat::describe("atlas_smooth", {
 })
 
 
-testthat::describe("atlas_simplify", {
+describe("atlas_simplify", {
   it("rejects a keep outside 0-1", {
     atlas <- two_region_atlas()
     expect_error(atlas_simplify(atlas, keep = 0), "between 0 and 1")
@@ -1243,7 +1243,7 @@ testthat::describe("atlas_simplify", {
 })
 
 
-testthat::describe("atlas_smooth(method =)", {
+describe("atlas_smooth(method =)", {
   # A square ring: a solid square with a square hole. Morphological closing
   # fills holes narrower than `smoothness`; corner-rounding methods do not.
   ring_atlas <- function() {
@@ -1333,7 +1333,7 @@ testthat::describe("atlas_smooth(method =)", {
 })
 
 
-testthat::describe("smoothness scale", {
+describe("smoothness scale", {
   it("rejects values outside 0-1 with conversion guidance", {
     a <- ggseg.formats::as_sf_atlas(ggseg.formats::aseg())
     expect_error(atlas_smooth(a, smoothness = 3), "between 0 and 1")
@@ -1364,7 +1364,7 @@ testthat::describe("smoothness scale", {
 })
 
 
-testthat::describe("contour stage cache staleness", {
+describe("contour stage cache staleness", {
   it("aborts when smooth_contours reads contours from another version", {
     outdir <- withr::local_tempdir("smooth_stale_")
     save_contours_fixture(file.path(outdir, "contours.rda"))
@@ -1457,7 +1457,7 @@ n_vertices <- function(atlas) {
   sum(count_vertices(ggseg.formats::atlas_sf(atlas)))
 }
 
-testthat::describe("close_gaps", {
+describe("close_gaps", {
   it("closes the slivers smoothing opens", {
     atlas <- grid_atlas()
 
@@ -1513,7 +1513,7 @@ testthat::describe("close_gaps", {
   })
 })
 
-testthat::describe("simplify_sf_topology", {
+describe("simplify_sf_topology", {
   it("hands the rows back in the order they arrived in", {
     squares <- lapply(seq_len(6L), function(i) {
       sf::st_polygon(list(matrix(
@@ -1536,7 +1536,7 @@ testthat::describe("simplify_sf_topology", {
   })
 })
 
-testthat::describe("atlas_smooth vertex budget", {
+describe("atlas_smooth vertex budget", {
   it("does not leave the atlas larger than it found it", {
     atlas <- grid_atlas(n = 4L)
 
@@ -1603,7 +1603,7 @@ testthat::describe("atlas_smooth vertex budget", {
   })
 })
 
-testthat::describe("atlas_polish", {
+describe("atlas_polish", {
   # A staircase with enough corners that rounding has something to cost.
   staircase_atlas <- function() {
     step <- do.call(
@@ -1698,7 +1698,7 @@ testthat::describe("atlas_polish", {
 })
 
 
-testthat::describe("atlas_smooth(vertex_budget =)", {
+describe("atlas_smooth(vertex_budget =)", {
   it("lets the rounding cost vertices only when told it may", {
     poly <- sf::st_polygon(list(rbind(
       do.call(

@@ -1,3 +1,13 @@
+# ggseg.extra 1.9.9.9046
+
+- Tests call `describe()` bare again instead of qualifying every block as
+  `testthat::describe()`. The masking was real but misattributed: `future`
+  attaches the packages a global refers to, so the first `furrr` call over
+  `terra` code runs `library(terra)` in the test process and terra's
+  `describe()` takes over the search path. A single `describe <-
+  testthat::describe` in `helper.R` sits below the search path in the lookup
+  chain and fixes it for every file, whenever terra attaches.
+
 # ggseg.extra 1.9.9.9045
 
 - `cortical_finalize()` is covered by tests, so both places an atlas can

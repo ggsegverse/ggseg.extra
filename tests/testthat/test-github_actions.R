@@ -1,4 +1,4 @@
-testthat::describe("atlas_github_actions", {
+describe("atlas_github_actions", {
   it("lists the workflows shipped with the package", {
     available <- atlas_github_actions()
 
@@ -29,7 +29,7 @@ testthat::describe("atlas_github_actions", {
 })
 
 
-testthat::describe("use_atlas_github_actions", {
+describe("use_atlas_github_actions", {
   local_pkg <- function() {
     tmp <- withr::local_tempdir(.local_envir = parent.frame())
     writeLines("Package: ggsegTest", file.path(tmp, "DESCRIPTION"))

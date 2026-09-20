@@ -1,4 +1,4 @@
-testthat::describe("integration tests", {
+describe("integration tests", {
   it("creates atlas from labels and renders with ggseg3d", {
     skip_render_on_windows()
     skip_if_not_installed("freesurferformats")

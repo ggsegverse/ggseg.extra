@@ -14,7 +14,7 @@ lut_hex <- function(lut) {
   get_lut(lut)$color
 }
 
-testthat::describe("lut_generate_colors()", {
+describe("lut_generate_colors()", {
   it("fills every colour channel and leaves alpha at zero", {
     lut <- lut_generate_colors(colourless_lut(c("A_left", "B_left")))
 

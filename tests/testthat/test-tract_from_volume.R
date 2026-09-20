@@ -1,4 +1,4 @@
-testthat::describe("tract_centerline_from_points", {
+describe("tract_centerline_from_points", {
   it("returns NULL for too few points", {
     expect_null(
       tract_centerline_from_points(matrix(rnorm(30), ncol = 3), n_points = 10)
@@ -41,7 +41,7 @@ testthat::describe("tract_centerline_from_points", {
   })
 })
 
-testthat::describe("create_tract_from_volume", {
+describe("create_tract_from_volume", {
   it("builds a type=tract atlas from a label volume (3D)", {
     skip_if_not_installed("princurve")
     skip_if_not_installed("RNifti")
@@ -82,7 +82,7 @@ testthat::describe("create_tract_from_volume", {
 })
 
 
-testthat::describe("thin_evenly", {
+describe("thin_evenly", {
   it("leaves a vector at or under the cap untouched", {
     expect_identical(thin_evenly(1:10, 10L), 1:10)
     expect_identical(thin_evenly(1:3, 10L), 1:3)
@@ -101,7 +101,7 @@ testthat::describe("thin_evenly", {
 })
 
 
-testthat::describe("voxels_to_world", {
+describe("voxels_to_world", {
   it("applies the affine to linear voxel indices", {
     dims <- c(4L, 5L, 6L)
     xf <- matrix(

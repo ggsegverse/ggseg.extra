@@ -1,4 +1,4 @@
-testthat::describe("subcortical_grey_idx()", {
+describe("subcortical_grey_idx()", {
   it("excludes the ventricles, which are CSF and not grey matter", {
     ventricles <- c(4L, 5L, 14L, 15L, 43L, 44L)
     expect_length(intersect(subcortical_grey_idx(), ventricles), 0L)
@@ -13,7 +13,7 @@ testthat::describe("subcortical_grey_idx()", {
 })
 
 
-testthat::describe("tissue_class()", {
+describe("tissue_class()", {
   it("counts the aparc cortical parcels of both hemispheres as cortex", {
     expect_identical(
       as.character(tissue_class(c(1000L, 1035L, 2000L, 2035L, 3L, 42L))),
@@ -52,7 +52,7 @@ testthat::describe("tissue_class()", {
 })
 
 
-testthat::describe("classify_labels_by_anatomy()", {
+describe("classify_labels_by_anatomy()", {
   it("separates cerebellum before cortex", {
     comp <- data.frame(
       idx = 1:2,
@@ -118,7 +118,7 @@ testthat::describe("classify_labels_by_anatomy()", {
 })
 
 
-testthat::describe("lut_classify_anatomy()", {
+describe("lut_classify_anatomy()", {
   it("types a thin cortical sheet cortical and a deep blob subcortical", {
     volume <- write_test_volume(cortical_sheet_volume())
     local_aseg()
@@ -330,7 +330,7 @@ testthat::describe("lut_classify_anatomy()", {
 })
 
 
-testthat::describe("lut_classify_anatomy() space guards", {
+describe("lut_classify_anatomy() space guards", {
   it("refuses an aseg that lands outside the volume's brain", {
     arr <- array(0L, dim = c(10L, 10L, 10L))
     arr[1:4, 1:4, 1] <- 1L
@@ -391,7 +391,7 @@ testthat::describe("lut_classify_anatomy() space guards", {
 })
 
 
-testthat::describe("aparc_aseg_path()", {
+describe("aparc_aseg_path()", {
   it("errors when FreeSurfer is not available", {
     local_mocked_bindings(have_fs_quietly = function() FALSE)
     expect_error(
@@ -427,7 +427,7 @@ testthat::describe("aparc_aseg_path()", {
 })
 
 
-testthat::describe("resample_volume_to_grid()", {
+describe("resample_volume_to_grid()", {
   it("returns NULL when mri_vol2vol fails", {
     # The resampler is shared with the whole-brain context pipeline, which
     # warns where this one aborts, so the failure is the caller's to report.

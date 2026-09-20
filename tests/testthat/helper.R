@@ -4,14 +4,11 @@ library(ggseg, quietly = TRUE, warn.conflicts = FALSE)
 library(ggseg3d, quietly = TRUE, warn.conflicts = FALSE)
 library(ggplot2, quietly = TRUE, warn.conflicts = FALSE)
 
-
-# Every describe() below is written as testthat::describe(), on purpose.
-# local_mocked_bindings(.package = "terra") attaches terra, and terra exports
-# a describe() of its own which then masks testthat's for the rest of the
-# session - turning later describe() blocks into GDAL calls on filenames that
-# do not exist. The error aborts the file, so its blocks never run at all.
-# Which files are hit depends on run order, so a helper-level pin is not
-# enough; qualifying the call sites is.
+# future attaches the packages a global refers to before evaluating it, so the
+# first furrr call over terra code does library(terra) inside this process.
+# terra exports describe(), which then masks testthat's for the rest of the
+# session. Binding it here shadows the search path for every test file.
+describe <- testthat::describe
 
 options(
   ggseg.extra.verbose = FALSE,

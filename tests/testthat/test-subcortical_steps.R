@@ -1,6 +1,6 @@
 .cap <- new.env()
 
-testthat::describe("subcort_build_components", {
+describe("subcort_build_components", {
   it("builds components from colortable and meshes", {
     meshes_list <- list(
       "Left-Putamen" = list(
@@ -29,7 +29,7 @@ testthat::describe("subcort_build_components", {
 })
 
 
-testthat::describe("subcort_create_meshes", {
+describe("subcort_create_meshes", {
   it("errors when no meshes are created", {
     local_mocked_bindings(
       tessellate_label = function(...) NULL,
@@ -191,7 +191,7 @@ testthat::describe("subcort_create_meshes", {
 })
 
 
-testthat::describe("subcort_decimate_meshes", {
+describe("subcort_decimate_meshes", {
   it("reports NA%, not NaN%, when all meshes have zero faces", {
     empty_meshes <- list(
       a = list(
@@ -212,7 +212,7 @@ testthat::describe("subcort_decimate_meshes", {
 })
 
 
-testthat::describe("subcort_create_snapshots", {
+describe("subcort_create_snapshots", {
   it("creates snapshots for structures and cortex slices", {
     .cap$snapshot_calls <- 0L
     .cap$cortex_calls <- 0L
@@ -416,7 +416,7 @@ testthat::describe("subcort_create_snapshots", {
 })
 
 
-testthat::describe("subcort_snapshot_cortex", {
+describe("subcort_snapshot_cortex", {
   it("takes one slice per view, never a projection", {
     .cap$pp <- 0L
     .cap$cs <- 0L
@@ -454,7 +454,7 @@ testthat::describe("subcort_snapshot_cortex", {
 })
 
 
-testthat::describe("default_subcortical_slabs", {
+describe("default_subcortical_slabs", {
   sub_vol <- function(dims = c(40, 40, 40)) {
     vol <- array(0L, dim = dims)
     vol[10:30, 12:28, 8:24] <- 17L
@@ -564,7 +564,7 @@ testthat::describe("default_subcortical_slabs", {
 
 # Orchestration helper tests ----
 
-testthat::describe("validate_subcort_config", {
+describe("validate_subcort_config", {
   it("returns a list with all expected fields", {
     local_mocked_bindings(check_fs = function(...) TRUE)
     vol_file <- withr::local_tempfile(fileext = ".mgz")
@@ -688,7 +688,7 @@ testthat::describe("validate_subcort_config", {
 })
 
 
-testthat::describe("subcort_log_header", {
+describe("subcort_log_header", {
   it("prints volume path when verbose", {
     config <- list(
       verbose = TRUE,
@@ -715,7 +715,7 @@ testthat::describe("subcort_log_header", {
 })
 
 
-testthat::describe("subcort_resolve_labels", {
+describe("subcort_resolve_labels", {
   it("loads cached labels when skip_existing", {
     cached_ct <- data.frame(
       idx = 10,
@@ -787,7 +787,7 @@ testthat::describe("subcort_resolve_labels", {
 })
 
 
-testthat::describe("subcort_resolve_meshes", {
+describe("subcort_resolve_meshes", {
   it("loads cached meshes when skip_existing", {
     cached_meshes <- list(
       "Left-Putamen" = list(
@@ -826,7 +826,7 @@ testthat::describe("subcort_resolve_meshes", {
 })
 
 
-testthat::describe("subcort_resolve_components", {
+describe("subcort_resolve_components", {
   it("loads cached components when skip_existing", {
     cached_components <- list(
       core = data.frame(
@@ -873,7 +873,7 @@ testthat::describe("subcort_resolve_components", {
 })
 
 
-testthat::describe("subcort_assemble_3d", {
+describe("subcort_assemble_3d", {
   it("returns a ggseg_atlas", {
     mock_atlas <- structure(
       list(type = "subcortical"),
@@ -902,7 +902,7 @@ testthat::describe("subcort_assemble_3d", {
 })
 
 
-testthat::describe("finalize_atlas (subcort parameters)", {
+describe("finalize_atlas (subcort parameters)", {
   it("cleanup deletes directory", {
     test_dir <- withr::local_tempdir()
     sub_dir <- file.path(test_dir, "atlas_work")
@@ -993,7 +993,7 @@ testthat::describe("finalize_atlas (subcort parameters)", {
 })
 
 
-testthat::describe("run_image_steps (subcort step_map)", {
+describe("run_image_steps (subcort step_map)", {
   subcort_step_map <- list(extract = 5L, smooth = 6L, reduce = 7L)
 
   it("calls the right functions for the right steps", {
@@ -1082,7 +1082,7 @@ testthat::describe("run_image_steps (subcort step_map)", {
 })
 
 
-testthat::describe("subcort_create_meshes", {
+describe("subcort_create_meshes", {
   it("logs decimation stats when verbose and decimate < 1", {
     mock_mesh <- list(
       vertices = data.frame(x = 1:10, y = 1:10, z = 1:10),
@@ -1124,7 +1124,7 @@ testthat::describe("subcort_create_meshes", {
 })
 
 
-testthat::describe("subcort_snapshot_names", {
+describe("subcort_snapshot_names", {
   it("names every structure x view combination", {
     colortable <- data.frame(
       idx = c(10, 11),
@@ -1160,7 +1160,7 @@ testthat::describe("subcort_snapshot_names", {
 })
 
 
-testthat::describe("prune_stale_snapshots", {
+describe("prune_stale_snapshots", {
   it("removes images no slab in this run can produce", {
     dirs <- mock_subcort_dirs()
     for (dir in c(dirs$snapshots, dirs$processed, dirs$masks)) {
@@ -1191,7 +1191,7 @@ testthat::describe("prune_stale_snapshots", {
 })
 
 
-testthat::describe("snapshot signatures", {
+describe("snapshot signatures", {
   it("changes when the voxels a label holds change", {
     a <- snapshot_signature(rlang::hash(1:10), c(4L, 4L, 4L), "axial", 1, 4)
     b <- snapshot_signature(rlang::hash(2:11), c(4L, 4L, 4L), "axial", 1, 4)
@@ -1220,7 +1220,7 @@ testthat::describe("snapshot signatures", {
 })
 
 
-testthat::describe("snapshot manifest", {
+describe("snapshot manifest", {
   it("reads as empty when there is none", {
     expect_identical(
       read_snapshot_manifest(withr::local_tempdir()),
@@ -1252,7 +1252,7 @@ testthat::describe("snapshot manifest", {
 })
 
 
-testthat::describe("snapshot_is_current", {
+describe("snapshot_is_current", {
   local_snapshot <- function(signature = NULL, env = parent.frame()) {
     dir <- withr::local_tempdir(.local_envir = env)
     file <- file.path(dir, "ax_1_r.png")
@@ -1329,7 +1329,7 @@ testthat::describe("snapshot_is_current", {
 })
 
 
-testthat::describe("cortex silhouette snapshot staleness", {
+describe("cortex silhouette snapshot staleness", {
   cortex_slice_row <- function() {
     data.frame(
       x = NA,
@@ -1437,7 +1437,7 @@ testthat::describe("cortex silhouette snapshot staleness", {
 })
 
 
-testthat::describe("structure snapshot staleness", {
+describe("structure snapshot staleness", {
   structure_vol <- function(idx_for_left = 42L) {
     vol <- array(0L, dim = c(4, 4, 4))
     vol[1, , ] <- idx_for_left
