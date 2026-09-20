@@ -1,5 +1,13 @@
 # Changelog
 
+## ggseg.extra 1.9.9.9049
+
+- `README.md` is regenerated from `README.Rmd` rather than hand-edited,
+  so the paragraph reflows the way knitr wraps it. The two were edited
+  together when ImageMagick and Chrome left the prose, which left the
+  text correct but the line breaks stale, and `render-readme` had a diff
+  to push on every run.
+
 ## ggseg.extra 1.9.9.9048
 
 - `chromote` is gone. Nothing has rendered through a headless browser

@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9048</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9049</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -63,6 +63,11 @@
       <small>Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.9.9.9049" id="ggsegextra-1999049">ggseg.extra 1.9.9.9049<a class="anchor" aria-label="anchor" href="#ggsegextra-1999049"></a></h2>
+<ul><li>
+<code>README.md</code> is regenerated from <code>README.Rmd</code> rather than hand-edited, so the paragraph reflows the way knitr wraps it. The two were edited together when ImageMagick and Chrome left the prose, which left the text correct but the line breaks stale, and <code>render-readme</code> had a diff to push on every run.</li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9048" id="ggsegextra-1999048">ggseg.extra 1.9.9.9048<a class="anchor" aria-label="anchor" href="#ggsegextra-1999048"></a></h2>
 <ul><li><p><code>chromote</code> is gone. Nothing has rendered through a headless browser since contours began being traced from the projection itself, so it leaves Suggests, <code>find_chrome_path()</code> goes, and <code><a href="../reference/setup_sitrep.html">setup_sitrep()</a></code> no longer reports a missing Chrome as a problem or carries a <code>system</code> element.</p></li>
