@@ -33,14 +33,21 @@
 - CI stops installing what the image pipeline needed. The FreeSurfer
   container no longer downloads and unpacks the pinned ImageMagick 7
   AppImage, which existed only for a `has_magick()` probe that no longer
-  exists, and the FreeSurfer smoke test no longer asserts on `magick
-  --version`. `hexSticker` leaves Suggests -- nothing in the package,
-  tests, vignettes or build scripts referenced it, and it was the only
-  path to the R `magick` package, so dropping it takes 18 packages out of
-  the CI install tree. With those gone, `libmagick++-dev`,
+  exists. `hexSticker` leaves Suggests -- nothing in the package, tests,
+  vignettes or build scripts referenced it, and it was the only path to the
+  R `magick` package, so dropping it takes 18 packages out of the CI
+  install tree. With those gone, `libmagick++-dev`,
   `libharfbuzz-dev`, `libfribidi-dev`, `libfontconfig1-dev`,
   `libtiff-dev` and `libjpeg-dev` leave the image: nothing left in the
   dependency tree names them in `SystemRequirements`.
+
+- A pull request building the FreeSurfer image no longer overwrites the
+  version tags it publishes. `freesurfer-tests` runs in
+  `freesurfer-slim:7.4.1-r4.6` on every branch, and the build pushed that tag
+  from any branch, so removing ImageMagick here replaced the image the other
+  pull requests and `main` are tested against and broke `magick --version` in
+  their smoke test. Only the default branch moves the version tags now; a
+  pull request gets a tag of its own.
 
 # ggseg.extra 1.9.9.9047
 
