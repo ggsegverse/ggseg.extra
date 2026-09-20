@@ -1,4 +1,4 @@
-testthat::describe("create_cortical_from_annotation on fsaverage5", {
+describe("create_cortical_from_annotation on fsaverage5", {
   it("builds the Desikan-Killiany atlas from the shipped aparc annotations", {
     skip_if_no_freesurfer()
     skip_if_not_installed("freesurferformats")
@@ -29,7 +29,7 @@ testthat::describe("create_cortical_from_annotation on fsaverage5", {
   })
 })
 
-testthat::describe("create_subcortical_from_volume on fsaverage5", {
+describe("create_subcortical_from_volume on fsaverage5", {
   it("meshes structures from the shipped aseg", {
     skip_if_no_freesurfer()
 
@@ -70,7 +70,7 @@ testthat::describe("create_subcortical_from_volume on fsaverage5", {
   })
 })
 
-testthat::describe("create_wholebrain_from_volume on fsaverage5", {
+describe("create_wholebrain_from_volume on fsaverage5", {
   it("classifies the shipped aseg into cortical, subcortical, and cerebellar", {
     skip_if_no_freesurfer()
 

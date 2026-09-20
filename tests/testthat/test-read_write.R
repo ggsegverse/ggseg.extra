@@ -1,4 +1,4 @@
-testthat::describe("read_volume", {
+describe("read_volume", {
   it("errors on missing file", {
     expect_error(
       read_volume("/nonexistent/file.mgz"),
@@ -41,7 +41,7 @@ testthat::describe("read_volume", {
 })
 
 
-testthat::describe("read_volume with reorient FALSE", {
+describe("read_volume with reorient FALSE", {
   it("returns niftiImage when reorient is FALSE", {
     skip_if_not_installed("RNifti")
 
@@ -56,7 +56,7 @@ testthat::describe("read_volume with reorient FALSE", {
 })
 
 
-testthat::describe("reorient_volume_to_ras", {
+describe("reorient_volume_to_ras", {
   # LIA vox2ras: axis1 -> Left (-R), axis2 -> Inferior (-S), axis3 -> Anterior
   lia <- rbind(c(-1, 0, 0), c(0, 0, 1), c(0, -1, 0))
 
@@ -97,7 +97,7 @@ testthat::describe("reorient_volume_to_ras", {
 })
 
 
-testthat::describe("read_volume MGZ reorientation", {
+describe("read_volume MGZ reorientation", {
   lia <- rbind(c(-1, 0, 0, 2), c(0, 0, 1, -2), c(0, -1, 0, 2), c(0, 0, 0, 1))
 
   make_lia_mgz <- function() {
@@ -134,7 +134,7 @@ testthat::describe("read_volume MGZ reorientation", {
 })
 
 
-testthat::describe("read_lut", {
+describe("read_lut", {
   it("reads color table from file", {
     lut_file <- test_lut_file()
     skip_if(!file.exists(lut_file), "Test LUT file not found")
@@ -201,7 +201,7 @@ testthat::describe("read_lut", {
 })
 
 
-testthat::describe("read_ctab (deprecated)", {
+describe("read_ctab (deprecated)", {
   it("warns about deprecation and delegates to read_lut", {
     lut_file <- test_lut_file()
     skip_if(!file.exists(lut_file), "Test LUT file not found")
@@ -213,7 +213,7 @@ testthat::describe("read_ctab (deprecated)", {
 })
 
 
-testthat::describe("write_lut", {
+describe("write_lut", {
   it("writes color table to file", {
     ctab <- data.frame(
       stringsAsFactors = FALSE,
@@ -358,7 +358,7 @@ testthat::describe("write_lut", {
 })
 
 
-testthat::describe("write_ctab (deprecated)", {
+describe("write_ctab (deprecated)", {
   it("warns about deprecation and delegates to write_lut", {
     ctab <- data.frame(
       stringsAsFactors = FALSE,
@@ -378,7 +378,7 @@ testthat::describe("write_ctab (deprecated)", {
 })
 
 
-testthat::describe("is_lut", {
+describe("is_lut", {
   it("returns TRUE for valid color table", {
     ctab <- data.frame(
       stringsAsFactors = FALSE,
@@ -411,7 +411,7 @@ testthat::describe("is_lut", {
 })
 
 
-testthat::describe("is_ctab (deprecated)", {
+describe("is_ctab (deprecated)", {
   it("warns about deprecation and delegates to is_lut", {
     ctab <- data.frame(
       stringsAsFactors = FALSE,
@@ -430,7 +430,7 @@ testthat::describe("is_ctab (deprecated)", {
 })
 
 
-testthat::describe("get_lut", {
+describe("get_lut", {
   it("reads and adds hex colors from file path", {
     lut_file <- test_lut_file()
     skip_if(!file.exists(lut_file), "Test LUT file not found")
@@ -467,7 +467,7 @@ testthat::describe("get_lut", {
 })
 
 
-testthat::describe("get_ctab (deprecated)", {
+describe("get_ctab (deprecated)", {
   it("warns about deprecation and delegates to get_lut", {
     ctab <- data.frame(
       stringsAsFactors = FALSE,
@@ -486,7 +486,7 @@ testthat::describe("get_ctab (deprecated)", {
 })
 
 
-testthat::describe("read_label_vertices", {
+describe("read_label_vertices", {
   it("warns and returns empty for malformed file", {
     skip_if_not_installed("freesurferformats")
 
@@ -541,7 +541,7 @@ testthat::describe("read_label_vertices", {
 })
 
 
-testthat::describe("read_dpv", {
+describe("read_dpv", {
   it("reads vertices and 0-indexed faces from a .dpv file", {
     tmp <- withr::local_tempfile(fileext = ".dpv")
     writeLines(
@@ -594,7 +594,7 @@ testthat::describe("read_dpv", {
 })
 
 
-testthat::describe("extract_vertex_regions", {
+describe("extract_vertex_regions", {
   it("merges unlabeled vertices into an existing 'unknown' region", {
     vertex_codes <- c(0L, 0L, 5L, 99L)
     regions <- data.frame(
@@ -615,7 +615,7 @@ testthat::describe("extract_vertex_regions", {
 })
 
 
-testthat::describe("cifti_label_regions", {
+describe("cifti_label_regions", {
   it("warns and uses the first map when several are present", {
     map <- mock_cifti_label_table(
       names = c("a", "b"),
@@ -646,7 +646,7 @@ testthat::describe("cifti_label_regions", {
 })
 
 
-testthat::describe("read_annotation_data", {
+describe("read_annotation_data", {
   it("warns and skips files without hemisphere prefix", {
     skip_if_not_installed("freesurferformats")
 
@@ -707,7 +707,7 @@ testthat::describe("read_annotation_data", {
 })
 
 
-testthat::describe("read_neuromaps_volume", {
+describe("read_neuromaps_volume", {
   it("registers the volume with FreeSurfer's MNI152 transform", {
     skip_if_not_installed("RNifti")
 
@@ -872,7 +872,7 @@ testthat::describe("read_neuromaps_volume", {
 })
 
 
-testthat::describe("read_cifti_annotation", {
+describe("read_cifti_annotation", {
   it("skips label_table entries with zero matching vertices", {
     skip_if_not_installed("ciftiTools")
 
@@ -947,7 +947,7 @@ testthat::describe("read_cifti_annotation", {
 })
 
 
-testthat::describe("parse_parcellation_values", {
+describe("parse_parcellation_values", {
   it("skips parcel_id with zero matching vertices", {
     values <- c(1, 1, 2, 2, 0)
     result <- parse_parcellation_values(values, "left", "lh", NULL)
@@ -958,7 +958,7 @@ testthat::describe("parse_parcellation_values", {
 })
 
 
-testthat::describe("parse_continuous_values", {
+describe("parse_continuous_values", {
   it("skips bins with zero vertices", {
     values <- c(rep(NaN, 10240), 0.5, 9.5)
     result <- parse_continuous_values(values, "left", "lh", n_bins = 10)
@@ -997,7 +997,7 @@ testthat::describe("parse_continuous_values", {
 })
 
 
-testthat::describe("read_neuromaps_volume vertex count mismatch", {
+describe("read_neuromaps_volume vertex count mismatch", {
   it("aborts when projected surface has wrong vertex count", {
     local_mock_mni152_path()
     skip_if_not_installed("RNifti")
@@ -1024,7 +1024,7 @@ testthat::describe("read_neuromaps_volume vertex count mismatch", {
 })
 
 
-testthat::describe("read_neuromaps_annotation", {
+describe("read_neuromaps_annotation", {
   it("skips label_table entries with zero matching vertices", {
     skip_if_not_installed("gifti")
 
@@ -1075,7 +1075,7 @@ testthat::describe("read_neuromaps_annotation", {
 })
 
 
-testthat::describe("read_volume dimensionality and reorientation", {
+describe("read_volume dimensionality and reorientation", {
   it("reorients a non-RAS NIfTI to RAS when reorient is TRUE", {
     skip_if_not_installed("RNifti")
 
@@ -1110,7 +1110,7 @@ testthat::describe("read_volume dimensionality and reorientation", {
 })
 
 
-testthat::describe("lut_combine", {
+describe("lut_combine", {
   it("combines multiple LUTs and drops NULL inputs", {
     a <- data.frame(idx = 0L, label = "Unknown", R = 0L, G = 0L, B = 0L, A = 0L)
     b <- data.frame(idx = 1L, label = "Region1", R = 5L, G = 6L, B = 7L, A = 0L)

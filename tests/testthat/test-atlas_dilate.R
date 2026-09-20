@@ -1,4 +1,4 @@
-testthat::describe("atlas_dilate", {
+describe("atlas_dilate", {
   mk <- function(x, size = 1) {
     sf::st_polygon(list(matrix(
       c(x, 0, x + size, 0, x + size, size, x, size, x, 0),

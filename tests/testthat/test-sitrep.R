@@ -1,6 +1,6 @@
 .cap <- new.env()
 
-testthat::describe("setup_sitrep", {
+describe("setup_sitrep", {
   it("returns list of results invisibly", {
     local_mocked_bindings(
       have_fs = function() TRUE,
@@ -35,7 +35,7 @@ testthat::describe("setup_sitrep", {
 })
 
 
-testthat::describe("check_freesurfer", {
+describe("check_freesurfer", {
   it("returns list with available field", {
     local_mocked_bindings(
       have_fs = function() TRUE,
@@ -53,7 +53,7 @@ testthat::describe("check_freesurfer", {
 })
 
 
-testthat::describe("check_other_system_deps", {
+describe("check_other_system_deps", {
   it("returns the chrome field", {
     expect_messages({
       result <- check_other_system_deps("simple")
@@ -74,7 +74,7 @@ testthat::describe("check_other_system_deps", {
 })
 
 
-testthat::describe("check_fsaverage", {
+describe("check_fsaverage", {
   it("returns list with fsaverage5 field", {
     expect_messages({
       result <- check_fsaverage("simple")
@@ -87,7 +87,7 @@ testthat::describe("check_fsaverage", {
 })
 
 
-testthat::describe("check_freesurfer", {
+describe("check_freesurfer", {
   it("alerts danger when FreeSurfer not configured in simple mode", {
     local_mocked_bindings(
       have_fs = function() FALSE,
@@ -98,7 +98,7 @@ testthat::describe("check_freesurfer", {
 })
 
 
-testthat::describe("check_other_system_deps", {
+describe("check_other_system_deps", {
   it("shows help text when Chrome missing in full detail", {
     local_mocked_bindings(
       find_chrome_path = function() NULL
@@ -108,7 +108,7 @@ testthat::describe("check_other_system_deps", {
 })
 
 
-testthat::describe("check_fsaverage", {
+describe("check_fsaverage", {
   it("alerts when fsaverage5 not found", {
     local_mocked_bindings(
       fs_subj_dir = function() "/nonexistent/path",
@@ -119,7 +119,7 @@ testthat::describe("check_fsaverage", {
 })
 
 
-testthat::describe("summarize_pipelines", {
+describe("summarize_pipelines", {
   make_results <- function(
     fs = TRUE,
     fsavg = TRUE,
@@ -185,7 +185,7 @@ testthat::describe("summarize_pipelines", {
 })
 
 
-testthat::describe("check_freesurfer when freesurfer package absent", {
+describe("check_freesurfer when freesurfer package absent", {
   it("returns available=FALSE in minimal detail silently", {
     local_mocked_bindings(
       is_installed = function(pkg, ...) FALSE,
@@ -244,7 +244,7 @@ testthat::describe("check_freesurfer when freesurfer package absent", {
 })
 
 
-testthat::describe("check_fsaverage additional branches", {
+describe("check_fsaverage additional branches", {
   it("handles missing freesurfer package gracefully", {
     local_mocked_bindings(
       is_installed = function(pkg, ...) FALSE,
@@ -308,7 +308,7 @@ testthat::describe("check_fsaverage additional branches", {
 })
 
 
-testthat::describe("check_optional_packages additional branches", {
+describe("check_optional_packages additional branches", {
   it("returns results silently in minimal detail", {
     .cap$msgs <- character()
     result <- withCallingHandlers(
@@ -335,7 +335,7 @@ testthat::describe("check_optional_packages additional branches", {
 })
 
 
-testthat::describe("check_suit_surfaces additional branches", {
+describe("check_suit_surfaces additional branches", {
   it("runs silently in minimal detail", {
     .cap$msgs <- character()
     withCallingHandlers(
@@ -395,7 +395,7 @@ testthat::describe("check_suit_surfaces additional branches", {
 })
 
 
-testthat::describe("summarize_pipelines additional branches", {
+describe("summarize_pipelines additional branches", {
   make_results <- function(
     fs = TRUE,
     fsavg = TRUE,
@@ -453,7 +453,7 @@ testthat::describe("summarize_pipelines additional branches", {
 })
 
 
-testthat::describe("find_chrome_path", {
+describe("find_chrome_path", {
   it("returns path from Sys.which when chrome is found", {
     local_mocked_bindings(
       Sys.which = function(name) {
@@ -487,7 +487,7 @@ testthat::describe("find_chrome_path", {
 })
 
 
-testthat::describe("check_optional_packages minimum versions", {
+describe("check_optional_packages minimum versions", {
   it("treats a ciftiTools older than the minimum version as missing", {
     local_mocked_bindings(
       is_installed = function(pkg, version = NULL) {

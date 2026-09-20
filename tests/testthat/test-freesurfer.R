@@ -1,4 +1,4 @@
-testthat::describe("check_fs", {
+describe("check_fs", {
   it("returns logical", {
     result <- check_fs()
     expect_type(result, "logical")
@@ -40,7 +40,7 @@ testthat::describe("check_fs", {
   })
 })
 
-testthat::describe("freesurfer_repos", {
+describe("freesurfer_repos", {
   it("puts the ggsegverse r-universe ahead of the configured repos", {
     withr::local_options(repos = c(CRAN = "https://cloud.r-project.org"))
 
@@ -54,7 +54,7 @@ testthat::describe("freesurfer_repos", {
   })
 })
 
-testthat::describe("freesurfer_min_version", {
+describe("freesurfer_min_version", {
   it("matches the Suggests constraint in DESCRIPTION", {
     suggests <- gsub(
       "\\s+",
@@ -71,7 +71,7 @@ testthat::describe("freesurfer_min_version", {
 })
 
 
-testthat::describe("mri_vol2surf", {
+describe("mri_vol2surf", {
   it("constructs correct command", {
     cap <- local_mock_vol2surf()
 
@@ -151,7 +151,7 @@ testthat::describe("mri_vol2surf", {
 })
 
 
-testthat::describe("mni152_register_path", {
+describe("mni152_register_path", {
   it("points at the transform in the FreeSurfer installation", {
     local_mocked_bindings(
       fs_dir = function(...) "/opt/freesurfer",
@@ -166,7 +166,7 @@ testthat::describe("mni152_register_path", {
 })
 
 
-testthat::describe("registration_from_null", {
+describe("registration_from_null", {
   it("leaves a stated registration alone", {
     expect_identical(registration_from_null("mni152", "header"), "mni152")
   })
@@ -187,7 +187,7 @@ testthat::describe("registration_from_null", {
   })
 })
 
-testthat::describe("vol2vol_registration_opt", {
+describe("vol2vol_registration_opt", {
   it("asks mri_vol2vol to trust the header, or to use a file", {
     reg_file <- withr::local_tempfile(fileext = ".dat")
     file.create(reg_file)
@@ -200,7 +200,7 @@ testthat::describe("vol2vol_registration_opt", {
   })
 })
 
-testthat::describe("resolve_vol2surf_registration", {
+describe("resolve_vol2surf_registration", {
   it("maps 'mni152' to FreeSurfer's transform and a source subject", {
     reg_file <- withr::local_tempfile(fileext = ".dat")
     file.create(reg_file)
@@ -269,7 +269,7 @@ testthat::describe("resolve_vol2surf_registration", {
 })
 
 
-testthat::describe("mri_pretess", {
+describe("mri_pretess", {
   it("constructs correct command", {
     cap <- local_mock_vol2surf()
 
@@ -302,7 +302,7 @@ testthat::describe("mri_pretess", {
 })
 
 
-testthat::describe("mri_tessellate", {
+describe("mri_tessellate", {
   it("constructs correct command", {
     cap <- local_mock_vol2surf()
 
@@ -335,7 +335,7 @@ testthat::describe("mri_tessellate", {
 })
 
 
-testthat::describe("mri_smooth", {
+describe("mri_smooth", {
   it("constructs correct command", {
     cap <- local_mock_vol2surf()
 
@@ -364,7 +364,7 @@ testthat::describe("mri_smooth", {
 })
 
 
-testthat::describe("mri_vol2surf with opts", {
+describe("mri_vol2surf with opts", {
   it("appends opts to command", {
     cap <- local_mock_vol2surf()
 
@@ -381,7 +381,7 @@ testthat::describe("mri_vol2surf with opts", {
 })
 
 
-testthat::describe("mri_vol2surf with projfrac_range", {
+describe("mri_vol2surf with projfrac_range", {
   it("uses --projfrac-max for multi-depth projection", {
     cap <- local_mock_vol2surf()
 
@@ -401,7 +401,7 @@ testthat::describe("mri_vol2surf with projfrac_range", {
 })
 
 
-testthat::describe("mri_surf2surf_rereg", {
+describe("mri_surf2surf_rereg", {
   it("constructs correct command", {
     cap <- local_mock_vol2surf()
 
@@ -444,7 +444,7 @@ testthat::describe("mri_surf2surf_rereg", {
 })
 
 
-testthat::describe("surf2asc", {
+describe("surf2asc", {
   it("errors when output_file doesn't end with dpv", {
     local_mocked_bindings(
       check_fs = function(abort = FALSE) invisible(TRUE)
@@ -559,7 +559,7 @@ testthat::describe("surf2asc", {
   })
 })
 
-testthat::describe("check_mni152_subject", {
+describe("check_mni152_subject", {
   it("accepts a subject sharing fsaverage's geometry", {
     local_mocked_bindings(subject_vox2ras = function(...) diag(4))
 
@@ -587,7 +587,7 @@ testthat::describe("check_mni152_subject", {
 })
 
 
-testthat::describe("warn_if_subject_space_volume", {
+describe("warn_if_subject_space_volume", {
   it("warns when the volume sits on the subject's own voxel grid", {
     local_mocked_bindings(
       volume_vox2ras = function(...) diag(4),
@@ -626,7 +626,7 @@ testthat::describe("warn_if_subject_space_volume", {
 })
 
 
-testthat::describe("check_mni152_grid", {
+describe("check_mni152_grid", {
   las_1mm <- diag(c(-1, 1, 1, 1))
   ras_1mm <- diag(c(1, 1, 1, 1))
   las_coarse <- diag(c(-1.5, 1.5, 1.5, 1))
@@ -662,7 +662,7 @@ testthat::describe("check_mni152_grid", {
 })
 
 
-testthat::describe("validate_registration", {
+describe("validate_registration", {
   it("checks subject and volume space for mni152", {
     checked <- new.env()
     local_mocked_bindings(have_fs = function(...) TRUE, .package = "freesurfer")
@@ -710,7 +710,7 @@ testthat::describe("validate_registration", {
 })
 
 
-testthat::describe("mni152_register_path without FreeSurfer", {
+describe("mni152_register_path without FreeSurfer", {
   it("says FreeSurfer is missing instead of building an NA path", {
     local_mocked_bindings(
       fs_dir = function(...) NA_character_,
@@ -739,7 +739,7 @@ testthat::describe("mni152_register_path without FreeSurfer", {
 })
 
 
-testthat::describe("validate_registration without FreeSurfer", {
+describe("validate_registration without FreeSurfer", {
   it("defers FreeSurfer's transform to the projection step", {
     local_mocked_bindings(
       fs_dir = function(...) NA_character_,

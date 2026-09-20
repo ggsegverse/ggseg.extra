@@ -1,6 +1,6 @@
 .cap <- new.env()
 
-testthat::describe("detect_hemi_from_gifti_filename", {
+describe("detect_hemi_from_gifti_filename", {
   it("detects lh from lh. prefix", {
     expect_identical(
       detect_hemi_from_gifti_filename("lh.aparc.label.gii"),
@@ -42,7 +42,7 @@ testthat::describe("detect_hemi_from_gifti_filename", {
 })
 
 
-testthat::describe("read_gifti_annotation", {
+describe("read_gifti_annotation", {
   it("errors when file does not exist", {
     expect_error(
       read_gifti_annotation("nonexistent.label.gii"),
@@ -145,7 +145,7 @@ testthat::describe("read_gifti_annotation", {
 })
 
 
-testthat::describe("read_cifti_annotation", {
+describe("read_cifti_annotation", {
   it("errors when file does not exist", {
     skip_if_not_installed("ciftiTools")
 
@@ -272,7 +272,7 @@ testthat::describe("read_cifti_annotation", {
 })
 
 
-testthat::describe("create_cortical_from_gifti", {
+describe("create_cortical_from_gifti", {
   it("creates ggseg_atlas from GIFTI files", {
     skip_if_not_installed("freesurferformats")
 
@@ -319,7 +319,7 @@ testthat::describe("create_cortical_from_gifti", {
 })
 
 
-testthat::describe("is_integer_valued", {
+describe("is_integer_valued", {
   it("returns TRUE for integer vectors", {
     expect_true(is_integer_valued(c(1, 2, 3, 0)))
   })
@@ -338,7 +338,7 @@ testthat::describe("is_integer_valued", {
 })
 
 
-testthat::describe("parse_continuous_values", {
+describe("parse_continuous_values", {
   it("bins values into quantile groups", {
     values <- c(seq(0, 1, length.out = 100), NaN, NaN)
     result <- parse_continuous_values(values, "left", "lh", n_bins = 5)
@@ -384,7 +384,7 @@ testthat::describe("parse_continuous_values", {
 })
 
 
-testthat::describe("parse_parcellation_values", {
+describe("parse_parcellation_values", {
   it("creates regions from integer IDs", {
     values <- c(1, 1, 2, 2, 0)
     result <- parse_parcellation_values(
@@ -431,7 +431,7 @@ testthat::describe("parse_parcellation_values", {
 })
 
 
-testthat::describe("read_neuromaps_annotation", {
+describe("read_neuromaps_annotation", {
   it("auto-detects continuous data and bins it", {
     skip_if_not_installed("gifti")
 
@@ -520,7 +520,7 @@ testthat::describe("read_neuromaps_annotation", {
 })
 
 
-testthat::describe("create_cortical_from_cifti", {
+describe("create_cortical_from_cifti", {
   it("creates ggseg_atlas from CIFTI file", {
     skip_if_not_installed("ciftiTools")
 
@@ -672,7 +672,7 @@ testthat::describe("create_cortical_from_cifti", {
 })
 
 
-testthat::describe("create_cortical_from_gifti", {
+describe("create_cortical_from_gifti", {
   it("auto-derives atlas_name from filename", {
     skip_if_not_installed("freesurferformats")
 
@@ -757,7 +757,7 @@ testthat::describe("create_cortical_from_gifti", {
 })
 
 
-testthat::describe("read_cifti_annotation with subcortical voxels", {
+describe("read_cifti_annotation with subcortical voxels", {
   it("warns that the subcortical voxels are skipped", {
     skip_if_not_installed("ciftiTools")
     cii <- mock_subcortical_cii()

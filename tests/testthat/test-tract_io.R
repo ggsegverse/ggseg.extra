@@ -1,4 +1,4 @@
-testthat::describe("read_tractography", {
+describe("read_tractography", {
   it("errors on unsupported format", {
     tmp <- withr::local_tempfile(fileext = ".xyz")
     writeLines("dummy", tmp)
@@ -40,7 +40,7 @@ testthat::describe("read_tractography", {
 })
 
 
-testthat::describe("read_trk", {
+describe("read_trk", {
   it("errors on invalid TRK file", {
     tmp <- withr::local_tempfile(fileext = ".trk")
     writeBin(charToRaw("INVALID HEADER DATA"), tmp)
@@ -154,7 +154,7 @@ testthat::describe("read_trk", {
 })
 
 
-testthat::describe("read_tck", {
+describe("read_tck", {
   it("reads valid TCK format with header", {
     tmp <- withr::local_tempfile(fileext = ".tck")
     con <- file(tmp, "wb")
@@ -238,7 +238,7 @@ testthat::describe("read_tck", {
 })
 
 
-testthat::describe("read_trk early break", {
+describe("read_trk early break", {
   it("breaks when n_pts is zero", {
     tmp <- withr::local_tempfile(fileext = ".trk")
     con <- file(tmp, "wb")
@@ -281,7 +281,7 @@ testthat::describe("read_trk early break", {
 })
 
 
-testthat::describe("tck_datatype_byte_size", {
+describe("tck_datatype_byte_size", {
   it("returns 4 bytes for Float32 datatypes", {
     expect_identical(tck_datatype_byte_size("Float32LE"), 4)
     expect_identical(tck_datatype_byte_size("Float32BE"), 4)

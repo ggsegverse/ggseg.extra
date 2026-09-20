@@ -1,6 +1,6 @@
 .cap <- new.env()
 
-testthat::describe("tessellate_label", {
+describe("tessellate_label", {
   it("creates mesh from volume label", {
     skip_if_no_freesurfer()
 
@@ -28,7 +28,7 @@ testthat::describe("tessellate_label", {
 })
 
 
-testthat::describe("decimate_mesh", {
+describe("decimate_mesh", {
   it("reduces face count by specified percent", {
     mesh <- list(
       vertices = data.frame(
@@ -88,7 +88,7 @@ testthat::describe("decimate_mesh", {
 })
 
 
-testthat::describe("generate_colortable_from_volume", {
+describe("generate_colortable_from_volume", {
   it("creates color table with correct structure", {
     skip_if_no_freesurfer()
 
@@ -128,7 +128,7 @@ testthat::describe("generate_colortable_from_volume", {
 })
 
 
-testthat::describe("tessellate_label", {
+describe("tessellate_label", {
   it("returns cached result when smooth file exists", {
     tmp_dir <- withr::local_tempdir()
     smooth_file <- file.path(tmp_dir, "0010_smooth")
@@ -240,7 +240,7 @@ testthat::describe("tessellate_label", {
 })
 
 
-testthat::describe("read_fs_surface", {
+describe("read_fs_surface", {
   it("uses surf2asc and read_dpv when available", {
     local_mocked_bindings(
       surf2asc = function(file, dpv_file, ...) NULL,
@@ -364,7 +364,7 @@ testthat::describe("read_fs_surface", {
 })
 
 
-testthat::describe("generate_colortable_from_volume", {
+describe("generate_colortable_from_volume", {
   it("generates colortable from volume labels", {
     local_mocked_bindings(
       read_volume = function(f, ...) {
@@ -384,7 +384,7 @@ testthat::describe("generate_colortable_from_volume", {
 })
 
 
-testthat::describe("generate_region_palette", {
+describe("generate_region_palette", {
   it("returns no colours for non-positive n", {
     expect_identical(generate_region_palette(0), character(0))
     expect_identical(generate_region_palette(-3), character(0))
@@ -399,7 +399,7 @@ testthat::describe("generate_region_palette", {
 })
 
 
-testthat::describe("ensure_fs_compatible_nifti", {
+describe("ensure_fs_compatible_nifti", {
   it("returns the input unchanged when the header cannot be read", {
     expect_identical(
       ensure_fs_compatible_nifti("/no/such/volume.nii.gz", tempdir()),
@@ -464,7 +464,7 @@ testthat::describe("ensure_fs_compatible_nifti", {
 })
 
 
-testthat::describe("tessellate_remap_label", {
+describe("tessellate_remap_label", {
   it("passes the volume through unchanged for labels <= 255", {
     res <- tessellate_remap_label("vol.nii.gz", 17L, "base", TRUE)
     expect_identical(res$pretess_input, "vol.nii.gz")

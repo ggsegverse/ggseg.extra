@@ -1,4 +1,4 @@
-testthat::describe("cifti_subcortical_volume", {
+describe("cifti_subcortical_volume", {
   it("fills mask voxels in array order and zeroes the rest", {
     volume <- cifti_subcortical_volume(mock_subcortical_cii())
 
@@ -16,7 +16,7 @@ testthat::describe("cifti_subcortical_volume", {
 })
 
 
-testthat::describe("cifti_subcortical_lut", {
+describe("cifti_subcortical_lut", {
   it("keeps the labels present and scales colours to 0-255", {
     lut <- cifti_subcortical_lut(mock_subcortical_cii())
 
@@ -29,7 +29,7 @@ testthat::describe("cifti_subcortical_lut", {
 })
 
 
-testthat::describe("read_cifti_subcortical", {
+describe("read_cifti_subcortical", {
   it("errors when the file does not exist", {
     skip_if_not_installed("ciftiTools")
     skip_if_not_installed("RNifti")
@@ -88,7 +88,7 @@ testthat::describe("read_cifti_subcortical", {
 })
 
 
-testthat::describe("warn_dropped_cifti_subcortex", {
+describe("warn_dropped_cifti_subcortex", {
   it("warns with the number of labelled voxels", {
     expect_warning(
       warn_dropped_cifti_subcortex(mock_subcortical_cii(), "atlas.dlabel.nii"),
@@ -116,7 +116,7 @@ testthat::describe("warn_dropped_cifti_subcortex", {
 })
 
 
-testthat::describe("ciftitools_min_version", {
+describe("ciftitools_min_version", {
   it("matches the Suggests constraint in DESCRIPTION", {
     suggests <- gsub(
       "\\s+",

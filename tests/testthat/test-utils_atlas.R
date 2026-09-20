@@ -1,4 +1,4 @@
-testthat::describe("detect_hemi", {
+describe("detect_hemi", {
   it("returns the default for non-scalar input instead of erroring", {
     expect_identical(
       detect_hemi(c("Left-x", "Right-y")),
@@ -47,7 +47,7 @@ testthat::describe("detect_hemi", {
 })
 
 
-testthat::describe("label_to_region", {
+describe("label_to_region", {
   it("flattens every separator a build script might key on", {
     # A script keying a `name` column on `region` has to key on what the
     # pipeline derives. Handling underscores but not hyphens is how one
@@ -156,7 +156,7 @@ testthat::describe("label_to_region", {
 })
 
 
-testthat::describe("hemi_to_long", {
+describe("hemi_to_long", {
   it("converts short to long form", {
     expect_identical(hemi_to_long("lh"), "left")
     expect_identical(hemi_to_long("rh"), "right")
@@ -169,7 +169,7 @@ testthat::describe("hemi_to_long", {
 })
 
 
-testthat::describe("hemi_to_short", {
+describe("hemi_to_short", {
   it("converts long to short form", {
     expect_identical(hemi_to_short("left"), "lh")
     expect_identical(hemi_to_short("right"), "rh")
@@ -182,7 +182,7 @@ testthat::describe("hemi_to_short", {
 })
 
 
-testthat::describe("setup_atlas_dirs", {
+describe("setup_atlas_dirs", {
   it("creates standard directory structure", {
     tmp <- withr::local_tempdir()
     dirs <- setup_atlas_dirs(tmp, "test_atlas", type = "cortical")
@@ -213,7 +213,7 @@ testthat::describe("setup_atlas_dirs", {
 })
 
 
-testthat::describe("setup_atlas_dirs with NULL atlas_name", {
+describe("setup_atlas_dirs with NULL atlas_name", {
   it("uses output_dir directly as base when atlas_name is NULL", {
     tmp <- withr::local_tempdir()
     dirs <- setup_atlas_dirs(tmp, atlas_name = NULL)
@@ -225,7 +225,7 @@ testthat::describe("setup_atlas_dirs with NULL atlas_name", {
 })
 
 
-testthat::describe("build_atlas_components", {
+describe("build_atlas_components", {
   it("builds core, palette and vertices from atlas data", {
     atlas_data <- data.frame(
       hemi = c("left", "left", "right"),
@@ -332,7 +332,7 @@ testthat::describe("build_atlas_components", {
 })
 
 
-testthat::describe("parse_lut_colours", {
+describe("parse_lut_colours", {
   it("returns NULLs for a NULL lut", {
     result <- parse_lut_colours(NULL)
     expect_null(result$region_names)
@@ -397,7 +397,7 @@ testthat::describe("parse_lut_colours", {
 })
 
 
-testthat::describe("derive_atlas_name", {
+describe("derive_atlas_name", {
   it("strips hemisphere prefixes and single extensions", {
     expect_identical(derive_atlas_name("lh.aparc.annot"), "aparc")
   })
@@ -418,7 +418,7 @@ testthat::describe("derive_atlas_name", {
 })
 
 
-testthat::describe("finalize_atlas", {
+describe("finalize_atlas", {
   it("converts an sf-backed atlas to a polygon atlas", {
     sf_obj <- sf::st_sf(
       label = "test",
@@ -454,7 +454,7 @@ testthat::describe("finalize_atlas", {
 })
 
 
-testthat::describe("context_pattern", {
+describe("context_pattern", {
   it("matches the silhouette labels the pipelines produce", {
     expect_true(all(grepl(
       context_pattern(),

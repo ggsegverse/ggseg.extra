@@ -21,7 +21,7 @@ square_ring <- function(side, offset = c(0, 0)) {
 }
 
 
-testthat::describe("build_vertex_label_vector_cerebellum", {
+describe("build_vertex_label_vector_cerebellum", {
   it("maps 0-indexed vertices onto 1-indexed positions", {
     vertices_df <- data.frame(
       label = "region_a",
@@ -52,7 +52,7 @@ testthat::describe("build_vertex_label_vector_cerebellum", {
 })
 
 
-testthat::describe("drop_small_rings_poly", {
+describe("drop_small_rings_poly", {
   it("keeps the outer ring and drops small internal holes", {
     outer <- square_ring(10)
     small_hole <- square_ring(1, offset = c(2, 2))
@@ -84,7 +84,7 @@ testthat::describe("drop_small_rings_poly", {
 })
 
 
-testthat::describe("remove_small_internal_holes", {
+describe("remove_small_internal_holes", {
   it("removes small holes from polygon geometries", {
     outer <- square_ring(10)
     small_hole <- square_ring(1, offset = c(2, 2))
@@ -118,7 +118,7 @@ testthat::describe("remove_small_internal_holes", {
 })
 
 
-testthat::describe("drop_small_rings", {
+describe("drop_small_rings", {
   it("passes through geometries that are neither POLYGON nor MULTIPOLYGON", {
     pt <- sf::st_point(c(0, 0))
 
@@ -138,7 +138,7 @@ testthat::describe("drop_small_rings", {
 })
 
 
-testthat::describe("read_suit_flatmap invalid surface", {
+describe("read_suit_flatmap invalid surface", {
   it("errors when the GIFTI lacks pointset or triangle arrays", {
     skip_if_not_installed("gifti") # nolint: object_usage_linter.
     local_mocked_bindings(
@@ -154,7 +154,7 @@ testthat::describe("read_suit_flatmap invalid surface", {
 })
 
 
-testthat::describe("fill_inter_region_gaps", {
+describe("fill_inter_region_gaps", {
   it("leaves gaps larger than the threshold unfilled", {
     a <- sf::st_polygon(list(matrix(
       c(0, 0, 4, 0, 4, 4, 0, 4, 0, 0),

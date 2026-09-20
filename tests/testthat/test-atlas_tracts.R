@@ -1,6 +1,6 @@
 .cap <- new.env()
 
-testthat::describe("create_tract_from_tractography", {
+describe("create_tract_from_tractography", {
   it("creates atlas from coordinate matrices", {
     tracts <- list(
       cst_left = matrix(c(1:20, rep(0, 40)), ncol = 3),
@@ -150,7 +150,7 @@ testthat::describe("create_tract_from_tractography", {
 })
 
 
-testthat::describe("create_tract_from_tractography pipeline flow", {
+describe("create_tract_from_tractography pipeline flow", {
   it("passes correct args to tract_read_input and tract_create_meshes", {
     .cap$captured_read_args <- NULL
     .cap$captured_mesh_args <- NULL
@@ -568,7 +568,7 @@ testthat::describe("create_tract_from_tractography pipeline flow", {
 })
 
 
-testthat::describe("extract_centerline", {
+describe("extract_centerline", {
   it("returns NULL when all resampled streamlines are invalid", {
     bad_streamlines <- list(
       matrix(c(0, 0, 0), nrow = 1, ncol = 3),
@@ -590,7 +590,7 @@ testthat::describe("extract_centerline", {
 })
 
 
-testthat::describe("tract_resolve_snapshots early-return NULL", {
+describe("tract_resolve_snapshots early-return NULL", {
   it("returns NULL slabs and cortex_slices when step skipped", {
     local_mocked_bindings(
       load_or_run_step = function(step, steps, ...) {

@@ -1,6 +1,6 @@
 .cap <- new.env()
 
-testthat::describe("wholebrain_classify_labels", {
+describe("wholebrain_classify_labels", {
   make_atlas_data <- function(labels, vertex_counts) {
     rows <- mapply(
       function(lbl, n) {
@@ -273,7 +273,7 @@ testthat::describe("wholebrain_classify_labels", {
 })
 
 
-testthat::describe("create_wholebrain_from_volume validation", {
+describe("create_wholebrain_from_volume validation", {
   it("requires FreeSurfer to be available", {
     local_mocked_bindings(
       check_fs = function(abort = FALSE) {
@@ -384,7 +384,7 @@ testthat::describe("create_wholebrain_from_volume validation", {
 })
 
 
-testthat::describe("create_wholebrain_from_volume pipeline flow", {
+describe("create_wholebrain_from_volume pipeline flow", {
   it("returns split data for steps 1:2", {
     test_dir <- withr::local_tempdir()
     local_mocked_bindings(
@@ -731,7 +731,7 @@ testthat::describe("create_wholebrain_from_volume pipeline flow", {
 })
 
 
-testthat::describe("wholebrain_classify_labels verbose output", {
+describe("wholebrain_classify_labels verbose output", {
   make_atlas_data_v <- function(labels, vertex_counts) {
     rows <- mapply(
       function(lbl, n) {
@@ -778,7 +778,7 @@ testthat::describe("wholebrain_classify_labels verbose output", {
 })
 
 
-testthat::describe("create_wholebrain_from_volume verbose and cleanup", {
+describe("create_wholebrain_from_volume verbose and cleanup", {
   it("logs verbose output, cleans up temp files, and removes directory", {
     test_dir <- withr::local_tempdir()
     sub_dir <- file.path(test_dir, "wb_atlas")
@@ -919,7 +919,7 @@ testthat::describe("create_wholebrain_from_volume verbose and cleanup", {
 })
 
 
-testthat::describe("wholebrain_resolve_projection cached path", {
+describe("wholebrain_resolve_projection cached path", {
   it("returns cached data and logs when verbose", {
     test_dir <- withr::local_tempdir()
     dirs <- list(
@@ -975,7 +975,7 @@ testthat::describe("wholebrain_resolve_projection cached path", {
 })
 
 
-testthat::describe("wholebrain_resolve_split cached path", {
+describe("wholebrain_resolve_split cached path", {
   it("returns cached split and logs when verbose", {
     test_dir <- withr::local_tempdir()
     dirs <- list(
@@ -1023,7 +1023,7 @@ testthat::describe("wholebrain_resolve_split cached path", {
 })
 
 
-testthat::describe("wholebrain_run_cortical verbose logging", {
+describe("wholebrain_run_cortical verbose logging", {
   it("logs progress step and validates cortical config", {
     test_dir <- withr::local_tempdir()
     dirs <- list(
@@ -1093,7 +1093,7 @@ testthat::describe("wholebrain_run_cortical verbose logging", {
 })
 
 
-testthat::describe("wholebrain_run_subcortical verbose logging", {
+describe("wholebrain_run_subcortical verbose logging", {
   it("logs progress step and filters subcortical data", {
     test_dir <- withr::local_tempdir()
     dirs <- list(
@@ -1283,7 +1283,7 @@ testthat::describe("wholebrain_run_subcortical verbose logging", {
 })
 
 
-testthat::describe("create_wholebrain_from_volume integration", {
+describe("create_wholebrain_from_volume integration", {
   it("projects native-space volume and classifies labels", {
     skip_if_no_freesurfer()
 
@@ -1316,7 +1316,7 @@ testthat::describe("create_wholebrain_from_volume integration", {
 })
 
 
-testthat::describe("fill_surface_labels", {
+describe("fill_surface_labels", {
   it("warns and returns overlay when surface file not found", {
     local_mocked_bindings(
       fs_subj_dir = function() "/nonexistent/subjects",
@@ -1351,7 +1351,7 @@ testthat::describe("fill_surface_labels", {
 })
 
 
-testthat::describe("load_cortex_mask", {
+describe("load_cortex_mask", {
   it("returns logical vector from cortex label file", {
     local_fake_fsaverage(
       n_vertices = 6L,
@@ -1379,7 +1379,7 @@ testthat::describe("load_cortex_mask", {
 })
 
 
-testthat::describe("fill_surface_labels with cortex mask", {
+describe("fill_surface_labels with cortex mask", {
   it("does not dilate into medial wall vertices", {
     local_fake_fsaverage(
       n_vertices = 6L,
@@ -1404,7 +1404,7 @@ testthat::describe("fill_surface_labels with cortex mask", {
 })
 
 
-testthat::describe("create_wholebrain_from_volume oversight warning", {
+describe("create_wholebrain_from_volume oversight warning", {
   it("warns about manual validation when verbose", {
     test_dir <- withr::local_tempdir()
     sub_dir <- file.path(test_dir, "wb_warn")
@@ -1467,7 +1467,7 @@ testthat::describe("create_wholebrain_from_volume oversight warning", {
 })
 
 
-testthat::describe("create_wholebrain_from_volume verbose LUT path", {
+describe("create_wholebrain_from_volume verbose LUT path", {
   it("prints LUT path when verbose and input_lut is not NULL", {
     test_dir <- withr::local_tempdir()
     sub_dir <- file.path(test_dir, "wb_lut_verbose")
@@ -1535,7 +1535,7 @@ testthat::describe("create_wholebrain_from_volume verbose LUT path", {
 })
 
 
-testthat::describe("keep_labels_in_volume", {
+describe("keep_labels_in_volume", {
   lut <- data.frame(
     idx = c(10L, 17L, 49L, 2000L),
     label = c("Left-Thalamus", "Left-Hippocampus", "Right-Thalamus", "Absent"),
@@ -1564,7 +1564,7 @@ testthat::describe("keep_labels_in_volume", {
 })
 
 
-testthat::describe("load_volume_colortable", {
+describe("load_volume_colortable", {
   it("reads the volume once and returns its labels with the filtered table", {
     local_mocked_bindings(
       read_volume = function(...) array(c(0L, 49L, 10L, 49L), dim = c(2, 2, 1))
@@ -1601,7 +1601,7 @@ testthat::describe("load_volume_colortable", {
 })
 
 
-testthat::describe("wholebrain_project_to_surface", {
+describe("wholebrain_project_to_surface", {
   it("errors when mri_vol2surf output file does not exist", {
     tmp_dir <- withr::local_tempdir()
     vol_file <- withr::local_tempfile(fileext = ".nii.gz")
@@ -1778,7 +1778,7 @@ testthat::describe("wholebrain_project_to_surface", {
 })
 
 
-testthat::describe("wholebrain_run_cortical verbose progress_done", {
+describe("wholebrain_run_cortical verbose progress_done", {
   it("calls cli_progress_done when verbose", {
     test_dir <- withr::local_tempdir()
     dirs <- list(
@@ -1864,7 +1864,7 @@ testthat::describe("wholebrain_run_cortical verbose progress_done", {
 })
 
 
-testthat::describe("validate_pipeline_opts", {
+describe("validate_pipeline_opts", {
   it("returns empty list for NULL opts", {
     expect_identical(validate_pipeline_opts(NULL, "cortical", "views"), list())
   })
@@ -1934,7 +1934,7 @@ testthat::describe("validate_pipeline_opts", {
 })
 
 
-testthat::describe("validate_wholebrain_opts", {
+describe("validate_wholebrain_opts", {
   it("derives cortical allowed names from create_cortical_from_annotation()", {
     result <- validate_wholebrain_opts(
       cortical_opts = list(views = c("lateral", "medial")),
@@ -1978,7 +1978,7 @@ testthat::describe("validate_wholebrain_opts", {
 })
 
 
-testthat::describe("wholebrain_classify_labels additional verbose branches", {
+describe("wholebrain_classify_labels additional verbose branches", {
   make_atlas_data_v <- function(labels, vertex_counts) {
     rows <- mapply(
       function(lbl, n) {
@@ -2037,7 +2037,7 @@ testthat::describe("wholebrain_classify_labels additional verbose branches", {
 })
 
 
-testthat::describe("wholebrain_refine_cortical_projection", {
+describe("wholebrain_refine_cortical_projection", {
   it("returns projection unchanged when no non-cortical labels", {
     config <- list(verbose = FALSE, subject = "fsaverage5")
     dirs <- list(base = withr::local_tempdir())
@@ -2167,7 +2167,7 @@ testthat::describe("wholebrain_refine_cortical_projection", {
 })
 
 
-testthat::describe("fill_missing_rgb", {
+describe("fill_missing_rgb", {
   it("adds missing R/G/B/A columns and fills them", {
     ct <- data.frame(
       idx = 1:2,
@@ -2221,7 +2221,7 @@ testthat::describe("fill_missing_rgb", {
 })
 
 
-testthat::describe("wholebrain_prepare_cerebellar_volume", {
+describe("wholebrain_prepare_cerebellar_volume", {
   it("keeps only cerebellar indices in output", {
     skip_if_not_installed("RNifti")
     vol <- array(0L, dim = c(5, 5, 5))
@@ -2262,7 +2262,7 @@ testthat::describe("wholebrain_prepare_cerebellar_volume", {
 })
 
 
-testthat::describe("wholebrain_prepare_subcortical_volume", {
+describe("wholebrain_prepare_subcortical_volume", {
   it("zeros non-subcortical non-cortical voxels", {
     skip_if_not_installed("RNifti")
     local_no_aseg_ribbon()
@@ -2312,7 +2312,7 @@ testthat::describe("wholebrain_prepare_subcortical_volume", {
 })
 
 
-testthat::describe("reindex_reserved_subcort_idx", {
+describe("reindex_reserved_subcort_idx", {
   it("leaves a colliding-free colortable untouched", {
     ct <- data.frame(
       idx = c(10L, 20L, 30L),
@@ -2364,7 +2364,7 @@ testthat::describe("reindex_reserved_subcort_idx", {
 })
 
 
-testthat::describe("wholebrain_run_cerebellar", {
+describe("wholebrain_run_cerebellar", {
   it("calls create_cerebellar_from_volume with filtered colortable", {
     test_dir <- withr::local_tempdir()
     dirs <- list(
@@ -2485,7 +2485,7 @@ testthat::describe("wholebrain_run_cerebellar", {
 })
 
 
-testthat::describe("create_wholebrain_from_volume step 5 cerebellar", {
+describe("create_wholebrain_from_volume step 5 cerebellar", {
   it("runs cerebellar pipeline for step 5", {
     test_dir <- withr::local_tempdir()
 
@@ -2569,7 +2569,7 @@ testthat::describe("create_wholebrain_from_volume step 5 cerebellar", {
 })
 
 
-testthat::describe("wholebrain_log_summary", {
+describe("wholebrain_log_summary", {
   it("counts present atlases and reports absent ones as zero", {
     withr::local_options(width = 200)
     subcortical <- structure(
@@ -2602,7 +2602,7 @@ testthat::describe("wholebrain_log_summary", {
 })
 
 
-testthat::describe("wholebrain_refine_cortical_projection verbose", {
+describe("wholebrain_refine_cortical_projection verbose", {
   it("logs progress steps when verbose is enabled", {
     skip_if_not_installed("RNifti")
     tmp <- withr::local_tempdir()
@@ -2661,7 +2661,7 @@ testthat::describe("wholebrain_refine_cortical_projection verbose", {
 })
 
 
-testthat::describe("wholebrain_cerebellar_to_suit", {
+describe("wholebrain_cerebellar_to_suit", {
   cer_config <- function(space) {
     list(verbose = FALSE, cerebellar_space = space)
   }
@@ -2749,7 +2749,7 @@ testthat::describe("wholebrain_cerebellar_to_suit", {
   })
 })
 
-testthat::describe("wholebrain_run_cerebellar space handling", {
+describe("wholebrain_run_cerebellar space handling", {
   it("hands the transformed volume to create_cerebellar_from_volume", {
     test_dir <- withr::local_tempdir()
     dirs <- list(
@@ -2794,7 +2794,7 @@ testthat::describe("wholebrain_run_cerebellar space handling", {
   })
 })
 
-testthat::describe("wholebrain_prepare_cerebellar_volume orientation", {
+describe("wholebrain_prepare_cerebellar_volume orientation", {
   it("reorients non-RAS output to RAS", {
     skip_if_not_installed("RNifti")
     vol <- array(0L, dim = c(5, 5, 5))
@@ -2820,7 +2820,7 @@ testthat::describe("wholebrain_prepare_cerebellar_volume orientation", {
 })
 
 
-testthat::describe("wholebrain_prepare_subcortical_volume left-high", {
+describe("wholebrain_prepare_subcortical_volume left-high", {
   it("handles a negative x-axis xform and reorients output to RAS", {
     skip_if_not_installed("RNifti")
     local_no_aseg_ribbon()
@@ -2881,7 +2881,7 @@ testthat::describe("wholebrain_prepare_subcortical_volume left-high", {
 })
 
 
-testthat::describe("fill_surface_labels stalled dilation", {
+describe("fill_surface_labels stalled dilation", {
   it("breaks when no unlabeled vertex has a labeled neighbor", {
     local_fake_fsaverage(
       n_vertices = 4L,
@@ -2896,7 +2896,7 @@ testthat::describe("fill_surface_labels stalled dilation", {
 })
 
 
-testthat::describe("zero_unlisted_labels", {
+describe("zero_unlisted_labels", {
   it("zeros ids missing from the lookup table and keeps listed ones", {
     expect_identical(
       zero_unlisted_labels(c(0L, 1L, 45L, 2L), 1:2),
@@ -2913,7 +2913,7 @@ testthat::describe("zero_unlisted_labels", {
 })
 
 
-testthat::describe("write_projection_volume", {
+describe("write_projection_volume", {
   labels <- array(c(1L, 45L, 2L, 0L, 45L, 1L, 2L, 2L), dim = c(2, 2, 2))
   expected <- c(1L, 0L, 2L, 0L, 0L, 1L, 2L, 2L)
 
@@ -3028,7 +3028,7 @@ testthat::describe("write_projection_volume", {
 })
 
 
-testthat::describe("mask_to_cortex", {
+describe("mask_to_cortex", {
   it("clears labelled vertices outside the cortex label", {
     local_fake_fsaverage(
       n_vertices = 6L,
@@ -3044,7 +3044,7 @@ testthat::describe("mask_to_cortex", {
 })
 
 
-testthat::describe("wholebrain_project_to_surface unlisted labels", {
+describe("wholebrain_project_to_surface unlisted labels", {
   colortable <- data.frame(
     idx = 1:2,
     label = c("a", "b"),
@@ -3124,7 +3124,7 @@ testthat::describe("wholebrain_project_to_surface unlisted labels", {
 })
 
 
-testthat::describe("refine_cortical_overlays unlisted labels", {
+describe("refine_cortical_overlays unlisted labels", {
   it("zeros ids outside the cortical lookup table before refilling", {
     skip_if_not_installed("RNifti")
     tmp <- withr::local_tempdir()
@@ -3169,7 +3169,7 @@ testthat::describe("refine_cortical_overlays unlisted labels", {
 })
 
 
-testthat::describe("unknown context through the wholebrain split", {
+describe("unknown context through the wholebrain split", {
   atlas_data <- tibble(
     hemi = "left",
     region = c("a", "unknown"),
@@ -3249,7 +3249,7 @@ testthat::describe("unknown context through the wholebrain split", {
 })
 
 
-testthat::describe("wholebrain_vol2surf_overlay", {
+describe("wholebrain_vol2surf_overlay", {
   forward_to_vol2surf <- function(registration_args) {
     caller <- parent.frame()
     cap <- local_mock_mri_vol2surf(env = caller)
@@ -3316,7 +3316,7 @@ testthat::describe("wholebrain_vol2surf_overlay", {
 })
 
 
-testthat::describe("write_registration_record", {
+describe("write_registration_record", {
   it("records the registration the overlays were built with", {
     dir <- withr::local_tempdir()
 
@@ -3356,7 +3356,7 @@ testthat::describe("write_registration_record", {
 })
 
 
-testthat::describe("registration_from_regheader", {
+describe("registration_from_regheader", {
   it("maps TRUE to the header registration", {
     withr::local_options(lifecycle_verbosity = "quiet")
 
@@ -3408,7 +3408,7 @@ testthat::describe("registration_from_regheader", {
 })
 
 
-testthat::describe("create_wholebrain_from_volume(regheader = )", {
+describe("create_wholebrain_from_volume(regheader = )", {
   it("errors when given alongside registration", {
     local_mocked_bindings(check_fs = function(abort = FALSE) invisible(TRUE))
 
@@ -3447,7 +3447,7 @@ testthat::describe("create_wholebrain_from_volume(regheader = )", {
 })
 
 
-testthat::describe("create_wholebrain_from_volume without FreeSurfer", {
+describe("create_wholebrain_from_volume without FreeSurfer", {
   it("does not need FreeSurfer's transform when it never projects", {
     captured <- new.env()
     local_mocked_bindings(
@@ -3500,7 +3500,7 @@ testthat::describe("create_wholebrain_from_volume without FreeSurfer", {
 })
 
 
-testthat::describe("wholebrain cortex context from the aseg ribbon", {
+describe("wholebrain cortex context from the aseg ribbon", {
   it("keeps only the voxels the ribbon covers when the mantle is solid", {
     skip_if_not_installed("RNifti")
     arr <- array(1000L, dim = c(12, 5, 5))
@@ -3612,7 +3612,7 @@ testthat::describe("wholebrain cortex context from the aseg ribbon", {
 })
 
 
-testthat::describe("cortex_mask_is_solid", {
+describe("cortex_mask_is_solid", {
   it("calls a mantle several ribbons thick solid", {
     mask <- array(TRUE, dim = c(4, 4, 4))
     ribbon <- array(0L, dim = c(4, 4, 4))
@@ -3665,7 +3665,7 @@ testthat::describe("cortex_mask_is_solid", {
 })
 
 
-testthat::describe("ribbon_interior_fraction", {
+describe("ribbon_interior_fraction", {
   it("is zero for a ribbon one voxel thick", {
     ribbon <- array(FALSE, dim = c(12, 5, 5))
     ribbon[1, , ] <- TRUE
@@ -3694,7 +3694,7 @@ testthat::describe("ribbon_interior_fraction", {
 })
 
 
-testthat::describe("ribbon_is_resolved", {
+describe("ribbon_is_resolved", {
   it("accepts a ribbon that is a voxel thick through itself", {
     aseg <- array(0L, dim = c(12, 5, 5))
     aseg[1:3, , ] <- 3L
@@ -3739,7 +3739,7 @@ testthat::describe("ribbon_is_resolved", {
 })
 
 
-testthat::describe("wholebrain cortex context on a coarse grid", {
+describe("wholebrain cortex context on a coarse grid", {
   it("keeps the atlas's own labels when the ribbon is a sheet", {
     skip_if_not_installed("RNifti")
     arr <- array(1000L, dim = c(12, 5, 5))
@@ -3770,7 +3770,7 @@ testthat::describe("wholebrain cortex context on a coarse grid", {
 })
 
 
-testthat::describe("aseg_volume_path", {
+describe("aseg_volume_path", {
   it("warns and returns NULL without FreeSurfer", {
     local_mocked_bindings(have_fs_quietly = function() FALSE)
     expect_warning(
@@ -3810,7 +3810,7 @@ testthat::describe("aseg_volume_path", {
 })
 
 
-testthat::describe("aseg_context_volume resampling", {
+describe("aseg_context_volume resampling", {
   it("warns and falls back when the resampling fails", {
     local_mocked_bindings(
       run_cmd = function(cmd, ...) cli::cli_abort("boom")
@@ -3830,7 +3830,7 @@ testthat::describe("aseg_context_volume resampling", {
 })
 
 
-testthat::describe("aseg_context_volume", {
+describe("aseg_context_volume", {
   it("returns NULL when there is no aseg to resample", {
     local_mocked_bindings(aseg_volume_path = function(...) NULL)
     expect_null(
@@ -3921,7 +3921,7 @@ testthat::describe("aseg_context_volume", {
 })
 
 
-testthat::describe("aseg_fossa_idx", {
+describe("aseg_fossa_idx", {
   it("is cerebellar cortex and brain stem, not cerebellar white matter", {
     expect_identical(
       aseg_fossa_idx(),
@@ -3941,7 +3941,7 @@ testthat::describe("aseg_fossa_idx", {
 })
 
 
-testthat::describe("posterior fossa context", {
+describe("posterior fossa context", {
   fossa_volume <- function(structure_slice = NULL) {
     arr <- array(1000L, dim = c(12, 5, 5))
     if (!is.null(structure_slice)) {
@@ -4036,7 +4036,7 @@ testthat::describe("posterior fossa context", {
 })
 
 
-testthat::describe("ribbon_lands_on_volume", {
+describe("ribbon_lands_on_volume", {
   it("rejects an empty ribbon", {
     ribbon <- array(0L, dim = c(2, 2, 2))
     expect_warning(

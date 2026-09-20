@@ -1,4 +1,4 @@
-testthat::describe("compute_view_basis", {
+describe("compute_view_basis", {
   it("returns orthonormal right and up unit vectors", {
     basis <- compute_view_basis(c(10, 0, 0))
 
@@ -24,7 +24,7 @@ testthat::describe("compute_view_basis", {
 })
 
 
-testthat::describe("project_vertices_2d", {
+describe("project_vertices_2d", {
   it("projects vertices onto the view basis axes", {
     basis <- list(right = c(1, 0, 0), up = c(0, 1, 0))
     verts <- matrix(
@@ -52,7 +52,7 @@ testthat::describe("project_vertices_2d", {
 })
 
 
-testthat::describe("cull_backfaces", {
+describe("cull_backfaces", {
   it("marks a triangle facing the camera as visible", {
     verts <- matrix(
       c(
@@ -97,7 +97,7 @@ testthat::describe("cull_backfaces", {
 })
 
 
-testthat::describe("build_vertex_label_vector", {
+describe("build_vertex_label_vector", {
   it("maps 0-indexed vertices onto 1-indexed positions", {
     vertices_df <- data.frame(
       label = "lh_a",
@@ -149,7 +149,7 @@ testthat::describe("build_vertex_label_vector", {
 })
 
 
-testthat::describe("split_boundary_triangle", {
+describe("split_boundary_triangle", {
   it("returns a single closed ring when all labels match", {
     p1 <- c(0, 0)
     p2 <- c(1, 0)
@@ -186,7 +186,7 @@ testthat::describe("split_boundary_triangle", {
 })
 
 
-testthat::describe("triangle_fragments", {
+describe("triangle_fragments", {
   region_sizes <- table(c("a", "a", "a", "b"))
 
   it("returns a single fragment for a uniform, fully-labelled triangle", {
@@ -237,7 +237,7 @@ testthat::describe("triangle_fragments", {
 })
 
 
-testthat::describe("build_view_polygons / assemble_region_sf", {
+describe("build_view_polygons / assemble_region_sf", {
   # Unit square in the y-z plane at x = 0; winding chosen so both triangles
   # face a camera on the -x axis (verified via cull_backfaces()).
   verts_3d <- matrix(
@@ -392,7 +392,7 @@ testthat::describe("build_view_polygons / assemble_region_sf", {
 })
 
 
-testthat::describe("project_mesh_to_polygons", {
+describe("project_mesh_to_polygons", {
   verts_3d <- matrix(
     c(
       0,
