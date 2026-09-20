@@ -24,7 +24,7 @@ _brand.yml
 ^\.lintr$
 ^air\.toml$
 ^vignettes/tutorial-.*\.[qR]md$
-^vignettes/.*\.Rmd\.orig$
+^vignettes/.*\.[qR]md\.orig$
 ^vignettes/\.quarto$
 ^vignettes/atlas-workflows\.qmd$
 ^figure$

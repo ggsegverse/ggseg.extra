@@ -1,3 +1,36 @@
+# ggseg.extra 1.9.9.9050
+
+- `read_volume()` documented a `niftiImage` return for `reorient = FALSE` that
+  it has never produced: the header is consumed inside the function and every
+  path ends at `drop(as.array())`. The roxygen now says so, and the one caller
+  that named its result `template_nii` only ever wanted `dim()`.
+
+- `decimate_mesh()` guarded `Rvcg` and then called `rgl::tmesh3d()` on the next
+  line. `rgl` is the heavier install of the two and is routinely absent where
+  `Rvcg` is present, so the check now covers both.
+
+- `set_sphere_voxels()` fills the sphere with one matrix-indexed assignment
+  instead of a per-voxel loop.
+
+- `subcort_unpack_input()` is gone. It took `tolerance` and `smoothness`,
+  discarded both, and described a deprecation warning that had already been
+  removed; the call site uses `unpack_anatomical_input()` directly.
+
+- The subcortical setup and validation calls name their eleven arguments, as
+  the whole-brain path already did. `verbose`, `cleanup` and `skip_existing`
+  sat adjacent and positional, where a transposition would have miswired the
+  pipeline silently.
+
+- `.Rbuildignore` excluded `*.Rmd.orig`, but the precomputed vignette sources
+  are `*.qmd.orig`, so all three shipped in the tarball without the vignettes
+  they generate.
+
+- The test suite stops printing to the console: `use_atlas_github_actions()`
+  messages are suppressed where the message is not what is under test, and the
+  MNI152 fixture carries a valid sform so FreeSurfer no longer warns that it
+  cannot orient it. `helper.R` no longer attaches `tidyr` and `ggplot2`, which
+  are Suggests packages that no test used.
+
 # ggseg.extra 1.9.9.9049
 
 - `README.md` is regenerated from `README.Rmd` rather than hand-edited, so

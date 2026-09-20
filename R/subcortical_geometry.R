@@ -225,7 +225,7 @@ tessellate_run_tess <- function(remapped, paths, skip_existing, verbose) {
 #' @keywords internal
 #' @noRd
 decimate_mesh <- function(mesh, percent = 0.5) {
-  rlang::check_installed("Rvcg", reason = "for mesh decimation")
+  rlang::check_installed(c("Rvcg", "rgl"), reason = "for mesh decimation")
 
   m3d <- rgl::tmesh3d(
     vertices = t(as.matrix(mesh$vertices)),

@@ -48,7 +48,7 @@ describe("use_atlas_github_actions", {
   it("writes only the requested workflows", {
     tmp <- local_pkg()
 
-    use_atlas_github_actions("pkgdown", path = tmp)
+    suppressMessages(use_atlas_github_actions("pkgdown", path = tmp))
 
     expect_identical(
       list.files(file.path(tmp, ".github", "workflows")),
@@ -59,7 +59,7 @@ describe("use_atlas_github_actions", {
   it("returns the paths it wrote", {
     tmp <- local_pkg()
 
-    written <- use_atlas_github_actions("pkgdown", path = tmp)
+    written <- suppressMessages(use_atlas_github_actions("pkgdown", path = tmp))
 
     expect_length(written, 1)
     expect_true(file.exists(written))
@@ -67,7 +67,7 @@ describe("use_atlas_github_actions", {
 
   it("keeps existing workflows unless overwrite is TRUE", {
     tmp <- local_pkg()
-    use_atlas_github_actions("pkgdown", path = tmp)
+    suppressMessages(use_atlas_github_actions("pkgdown", path = tmp))
     target <- file.path(tmp, ".github", "workflows", "pkgdown.yaml")
     writeLines("edited by hand", target)
 
@@ -77,7 +77,9 @@ describe("use_atlas_github_actions", {
     )
     expect_identical(readLines(target), "edited by hand")
 
-    use_atlas_github_actions("pkgdown", path = tmp, overwrite = TRUE)
+    suppressMessages(
+      use_atlas_github_actions("pkgdown", path = tmp, overwrite = TRUE)
+    )
     expect_false(identical(readLines(target), "edited by hand"))
   })
 
@@ -101,7 +103,7 @@ describe("use_atlas_github_actions", {
 
   it("writes workflows that call the shared ggsegverse workflow", {
     tmp <- local_pkg()
-    use_atlas_github_actions(path = tmp)
+    suppressMessages(use_atlas_github_actions(path = tmp))
 
     for (workflow in atlas_github_actions()) {
       yaml <- readLines(
@@ -116,7 +118,7 @@ describe("use_atlas_github_actions", {
 
   it("renders the README source that atlas packages actually use", {
     tmp <- local_pkg()
-    use_atlas_github_actions("render-readme", path = tmp)
+    suppressMessages(use_atlas_github_actions("render-readme", path = tmp))
 
     yaml <- paste(
       readLines(file.path(tmp, ".github", "workflows", "render-readme.yaml")),

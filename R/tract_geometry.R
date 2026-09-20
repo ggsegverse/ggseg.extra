@@ -383,8 +383,7 @@ streamlines_to_volume <- function(
     cli::cli_abort("Template file not found: {.path {template_file}}")
   }
 
-  template_nii <- read_volume(template_file, reorient = FALSE)
-  dims <- dim(template_nii)
+  dims <- dim(read_volume(template_file, reorient = FALSE))
   # Always resolve the affine: it is needed to reorient the finished volume
   # even when the coordinates are already voxel indices.
   vox2ras <- load_vox2ras_matrix(template_file, coords_are_voxels = FALSE)
@@ -509,9 +508,7 @@ set_sphere_voxels <- function(vol, center, radius, label_value, dims) {
     coords[, 3] <= dims[3]
   coords <- coords[in_bounds, , drop = FALSE]
 
-  for (k in seq_len(nrow(coords))) {
-    vol[coords[k, 1], coords[k, 2], coords[k, 3]] <- label_value
-  }
+  vol[coords] <- label_value
   vol
 }
 

@@ -833,14 +833,14 @@ volume_ext <- function(file) {
 #' dim1 = Left-to-Right, dim2 = Posterior-to-Anterior,
 #' dim3 = Inferior-to-Superior.
 #'
-#' When `reorient = FALSE`, returns an RNifti niftiImage preserving the
-#' file's native orientation and header metadata.
+#' Always returns a bare 3D array: the header is consumed here and does not
+#' travel with the result. Callers that need the affine read it separately,
+#' via `read_vox2ras()`.
 #'
 #' @param file Path to volume file (.mgz, .nii, .nii.gz)
-#' @param reorient If TRUE (default), reorient the volume to RAS+ and
-#'   return a plain array. If FALSE, return an RNifti niftiImage in the
-#'   file's native orientation (preserves header for downstream use).
-#' @return 3D array (reorient=TRUE) or niftiImage (reorient=FALSE)
+#' @param reorient If TRUE (default), reorient the volume to RAS+. If FALSE,
+#'   return the array in the file's native voxel order.
+#' @return 3D array, in RAS+ when `reorient = TRUE`
 #' @keywords internal
 #' @noRd
 read_volume <- function(file, reorient = TRUE) {
