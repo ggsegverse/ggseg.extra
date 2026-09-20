@@ -1,5 +1,25 @@
 # Changelog
 
+## ggseg.extra 1.9.9.9044
+
+- [`prepare_subcortical_mni152()`](https://ggsegverse.github.io/ggseg.extra/reference/prepare_subcortical_mni152.md)
+  converts the aseg with
+  [`freesurfer::mri_convert()`](https://rdrr.io/pkg/freesurfer/man/mri_convert.html)
+  rather than working around it
+  ([\#118](https://github.com/ggsegverse/ggseg.extra/issues/118)). The
+  wrapper used to error on arguments it no longer takes, and
+  `fs_cmd()`’s input check could not parse FreeSurfer’s `.mgz`, so the
+  call went through `fs_cmd(validate_inputs = FALSE)`. The released
+  wrapper now lists `mgz` among the formats it accepts, so the
+  workaround and its explanation both go. Checked against a real
+  `aseg.mgz`: the two produce byte-identical NIfTI.
+
+  The other half of
+  [\#118](https://github.com/ggsegverse/ggseg.extra/issues/118) stays as
+  it is. It wants a flag-based `mri_vol2vol()`, which `freesurfer` still
+  does not export, so that call keeps its `opts_after_outfile = TRUE`
+  arrangement.
+
 ## ggseg.extra 1.9.9.9043
 
 - Subcortical and tract contours are traced from the projection itself

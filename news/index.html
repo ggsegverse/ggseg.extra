@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9043</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9044</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -63,6 +63,13 @@
       <small>Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.9.9.9044" id="ggsegextra-1999044">ggseg.extra 1.9.9.9044<a class="anchor" aria-label="anchor" href="#ggsegextra-1999044"></a></h2>
+<ul><li>
+<p><code><a href="../reference/prepare_subcortical_mni152.html">prepare_subcortical_mni152()</a></code> converts the aseg with <code><a href="https://rdrr.io/pkg/freesurfer/man/mri_convert.html" class="external-link">freesurfer::mri_convert()</a></code> rather than working around it (<a href="https://github.com/ggsegverse/ggseg.extra/issues/118" class="external-link">#118</a>). The wrapper used to error on arguments it no longer takes, and <code>fs_cmd()</code>’s input check could not parse FreeSurfer’s <code>.mgz</code>, so the call went through <code>fs_cmd(validate_inputs = FALSE)</code>. The released wrapper now lists <code>mgz</code> among the formats it accepts, so the workaround and its explanation both go. Checked against a real <code>aseg.mgz</code>: the two produce byte-identical NIfTI.</p>
+<p>The other half of <a href="https://github.com/ggsegverse/ggseg.extra/issues/118" class="external-link">#118</a> stays as it is. It wants a flag-based <code>mri_vol2vol()</code>, which <code>freesurfer</code> still does not export, so that call keeps its <code>opts_after_outfile = TRUE</code> arrangement.</p>
+</li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9043" id="ggsegextra-1999043">ggseg.extra 1.9.9.9043<a class="anchor" aria-label="anchor" href="#ggsegextra-1999043"></a></h2>
 <ul><li>
