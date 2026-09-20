@@ -1,5 +1,4 @@
 
-
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
 # ggseg.extra <img src="man/figures/logo.png" align="right" alt="" width="120" />
@@ -54,9 +53,9 @@ Tutorials are available in the `Articles` of the [package documentation
 page](https://ggsegverse.github.io/ggseg.extra/). The cortical pipeline
 projects inflated mesh triangles directly to 2D polygons — atlas
 creation takes seconds and needs only FreeSurfer to read annotation
-files, with no rendering step. Subcortical and tract
-pipelines are also available. Suggestions for improvement are welcome
-through GH issues or direct Pull requests.
+files, with no rendering step. Subcortical and tract pipelines are also
+available. Suggestions for improvement are welcome through GH issues or
+direct Pull requests.
 
 ## Code of Conduct
 
