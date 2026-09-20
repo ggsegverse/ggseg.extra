@@ -1,11 +1,3 @@
-# Image processing ----
-
-# Contour loading ----
-
-# Filename parsing ----
-
-# ImageMagick utilities ----
-
 # Command execution ----
 
 #' @noRd
@@ -87,12 +79,9 @@ get_contours <- function(
 
 #' Raster of an image-shaped matrix, with the first row spanning the largest y
 #'
-#' Stated once because two callers need the same answer and must not drift:
-#' `projection_raster()` builds it from a projection, `read_mask_raster()`
-#' from a decoded PNG, and `check_contour_y_axis()` aborts downstream on
-#' anything that disagrees. `terra::rast()` alone would give the same extent
-#' today, but its handling of non-georeferenced input is not stable across
-#' versions, which is the reason the mask reader stated it in the first place.
+#' Stated rather than left to `terra::rast()`, whose handling of
+#' non-georeferenced input is not stable across versions.
+#' `check_contour_y_axis()` aborts downstream on anything that disagrees.
 #' @noRd
 raster_y_up <- function(values) {
   terra::rast(

@@ -143,7 +143,17 @@ orient_slice_2d <- function(slice, view, hemi = NULL) {
 #' decided.
 #' @noRd
 projection_file <- function(output_dir, view_name, label) {
-  as.character(fs::path(output_dir, paste0(view_name, "_", label, ".rda")))
+  as.character(fs::path(output_dir, projection_name(view_name, label)))
+}
+
+
+#' The bare file name a projection carries, without a directory
+#'
+#' The manifests key on names rather than paths, so this is separated out to
+#' spare the callers a round-trip through a dummy directory and `basename()`.
+#' @noRd
+projection_name <- function(view_name, label) {
+  paste0(view_name, "_", label, ".rda")
 }
 
 
@@ -179,6 +189,11 @@ read_projection <- function(file) {
 
 # Batch snapshot engine ----
 
+#' Snapshot one cortex reference slice
+#'
+#' Returns what [snapshot_partial_projection()] returns, under the same
+#' contract: the path only when this call wrote it.
+#' @noRd
 snapshot_cortex_slice <- function(
   vol,
   x,
@@ -195,7 +210,7 @@ snapshot_cortex_slice <- function(
   outfile <- cortex_slice_file(path.expand(output_dir), view_name, hemi)
 
   if (skip_existing && file.exists(outfile)) {
-    return(invisible(outfile))
+    return(invisible(NULL))
   }
 
   pos <- switch(slice_view, "axial" = z, "coronal" = y, "sagittal" = x)
@@ -210,20 +225,32 @@ snapshot_cortex_slice <- function(
 #' Path of the cortex reference snapshot for one view
 #' @noRd
 cortex_slice_file <- function(output_dir, view_name, hemi) {
-  projection_file(output_dir, view_name, paste0("cortex_", hemi))
+  projection_file(output_dir, view_name, cortex_slice_label(hemi))
+}
+
+
+#' @noRd
+cortex_slice_label <- function(hemi) {
+  paste0("cortex_", hemi)
 }
 
 
 #' Snapshot a partial volume projection
 #'
-#' Creates a PNG image showing maximum intensity projection of a volume subset.
+#' Writes the maximum intensity projection of a volume subset, as a matrix in
+#' voxel indices.
 #'
 #' @param start First slice index
 #' @param end Last slice index
 #' @param view_name Name for this view (used in filename)
 #' @param hemi Hemisphere for sagittal views: "left" or "right"
 #'
-#' @return Invisible path to output file, or NULL if no voxels
+#' @return Invisible path to the file this call wrote, or `NULL` if it wrote
+#'   nothing -- because the projection was empty, or because `skip_existing`
+#'   let an earlier run's file stand. Callers stamp what they are given, so a
+#'   file this run did not write must not come back: re-stamping one written
+#'   under an older cache format would relabel it as current and defeat
+#'   [check_cache_current()].
 #' @keywords internal
 #' @noRd
 snapshot_partial_projection <- function(
@@ -242,7 +269,7 @@ snapshot_partial_projection <- function(
   outfile <- projection_file(output_dir, view_name, label)
 
   if (skip_existing && file.exists(outfile)) {
-    return(invisible(outfile))
+    return(invisible(NULL))
   }
 
   proj <- volume_projection(vol, view, start, end, hemi = hemi)

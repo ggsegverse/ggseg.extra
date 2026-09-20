@@ -146,13 +146,13 @@ describe("snapshot_cortex_slice", {
     expect_null(result)
   })
 
-  it("skips existing files", {
+  it("leaves an existing file alone and reports writing nothing", {
     vol <- array(0L, dim = c(10, 10, 10))
     vol[4:6, 4:6, 5] <- 1L
 
     outdir <- withr::local_tempdir("cortex_slice_")
     outfile <- as.character(fs::path(outdir, "axial_1_cortex_left.rda"))
-    file.create(outfile)
+    saveRDS("untouched", outfile)
 
     result <- snapshot_cortex_slice(
       vol = vol,
@@ -166,7 +166,8 @@ describe("snapshot_cortex_slice", {
       skip_existing = TRUE
     )
 
-    expect_identical(result, outfile)
+    expect_null(result)
+    expect_identical(readRDS(outfile), "untouched")
   })
 })
 
@@ -269,10 +270,14 @@ describe("snapshot_cortex_slice when extract_slice_2d returns NULL", {
 
 
 describe("snapshot_partial_projection skip and zero paths", {
-  it("returns outfile when skip_existing is TRUE and file exists", {
+  # The caller stamps whatever it is handed back, so letting an earlier run's
+  # file stand must look like "wrote nothing". Returning its path would
+  # re-stamp a projection written under an older cache format as current and
+  # defeat the staleness check that would otherwise abort the build.
+  it("returns NULL, leaving the file alone, when skip_existing finds one", {
     outdir <- withr::local_tempdir("partial_skip_")
     outfile <- as.character(fs::path(outdir, "axial_1_test.rda"))
-    file.create(outfile)
+    saveRDS("untouched", outfile)
 
     result <- snapshot_partial_projection(
       vol = array(1L, dim = c(10, 10, 10)),
@@ -285,7 +290,8 @@ describe("snapshot_partial_projection skip and zero paths", {
       skip_existing = TRUE
     )
 
-    expect_identical(result, outfile, ignore_attr = TRUE)
+    expect_null(result)
+    expect_identical(readRDS(outfile), "untouched")
   })
 
   it("returns NULL when projection is all zeros", {

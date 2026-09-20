@@ -1139,7 +1139,7 @@ describe("subcort_snapshot_names", {
     names <- subcort_snapshot_names(colortable, slabs)
 
     expect_length(names, 4L)
-    expect_true("axial_1_Left_Putamen.png" %in% names)
+    expect_true("axial_1_Left_Putamen.rda" %in% names)
     expect_false(any(grepl("cortex", names, fixed = TRUE)))
   })
 
@@ -1161,31 +1161,27 @@ describe("subcort_snapshot_names", {
 
 
 describe("prune_stale_snapshots", {
-  it("removes images no slab in this run can produce", {
+  it("removes projections no slab in this run can produce", {
     dirs <- mock_subcort_dirs()
-    for (dir in c(dirs$snapshots, dirs$processed, dirs$masks)) {
-      file.create(file.path(dir, c("axial_1_a.png", "axial_9_a.png")))
-      file.create(file.path(dir, "cache_manifest.rds"))
-    }
+    file.create(file.path(dirs$snapshots, c("axial_1_a.rda", "axial_9_a.rda")))
+    file.create(file.path(dirs$snapshots, "cache_manifest.rds"))
 
     expect_message(
-      stale <- prune_stale_snapshots(dirs, "axial_1_a.png"),
+      stale <- prune_stale_snapshots(dirs, "axial_1_a.rda"),
       "earlier slab configuration"
     )
 
-    expect_length(stale, 3L)
-    for (dir in c(dirs$snapshots, dirs$processed, dirs$masks)) {
-      expect_true(file.exists(file.path(dir, "axial_1_a.png")))
-      expect_false(file.exists(file.path(dir, "axial_9_a.png")))
-      expect_true(file.exists(file.path(dir, "cache_manifest.rds")))
-    }
+    expect_length(stale, 1L)
+    expect_true(file.exists(file.path(dirs$snapshots, "axial_1_a.rda")))
+    expect_false(file.exists(file.path(dirs$snapshots, "axial_9_a.rda")))
+    expect_true(file.exists(file.path(dirs$snapshots, "cache_manifest.rds")))
   })
 
   it("says nothing when every image belongs to this run", {
     dirs <- mock_subcort_dirs()
-    file.create(file.path(dirs$snapshots, "axial_1_a.png"))
+    file.create(file.path(dirs$snapshots, "axial_1_a.rda"))
 
-    expect_silent(stale <- prune_stale_snapshots(dirs, "axial_1_a.png"))
+    expect_silent(stale <- prune_stale_snapshots(dirs, "axial_1_a.rda"))
     expect_length(stale, 0L)
   })
 })
@@ -1236,12 +1232,12 @@ describe("snapshot manifest", {
 
   it("merges rather than replacing what a previous pass recorded", {
     dir <- withr::local_tempdir()
-    record_snapshot_signatures(dir, c(a.png = "sig-a"))
-    record_snapshot_signatures(dir, c(b.png = "sig-b"))
+    record_snapshot_signatures(dir, c(a.rda = "sig-a"))
+    record_snapshot_signatures(dir, c(b.rda = "sig-b"))
 
     manifest <- read_snapshot_manifest(dir)
-    expect_identical(manifest[["a.png"]], "sig-a")
-    expect_identical(manifest[["b.png"]], "sig-b")
+    expect_identical(manifest[["a.rda"]], "sig-a")
+    expect_identical(manifest[["b.rda"]], "sig-b")
   })
 
   it("writes nothing when there is nothing to record", {
@@ -1255,7 +1251,7 @@ describe("snapshot manifest", {
 describe("snapshot_is_current", {
   local_snapshot <- function(signature = NULL, env = parent.frame()) {
     dir <- withr::local_tempdir(.local_envir = env)
-    file <- file.path(dir, "ax_1_r.png")
+    file <- file.path(dir, "ax_1_r.rda")
     file.create(file)
     if (!is.null(signature)) {
       record_snapshot_signatures(
@@ -1354,13 +1350,10 @@ describe("cortex silhouette snapshot staleness", {
     )
   }
 
-  it("redraws an unrecorded snapshot and drops what was made from it", {
+  it("redraws an unrecorded snapshot", {
     dirs <- mock_subcort_dirs()
     outfile <- file.path(dirs$snapshots, "ax_1_cortex_left.rda")
     file.create(outfile)
-    for (dir in c(dirs$processed, dirs$masks)) {
-      file.create(file.path(dir, "ax_1_cortex_left.rda"))
-    }
     local_counting_slice()
 
     signatures <- subcort_snapshot_cortex(
@@ -1371,8 +1364,6 @@ describe("cortex silhouette snapshot staleness", {
     )
 
     expect_identical(.cap$drawn, 1L)
-    expect_false(file.exists(file.path(dirs$processed, basename(outfile))))
-    expect_false(file.exists(file.path(dirs$masks, basename(outfile))))
     expect_named(signatures, "ax_1_cortex_left.rda")
   })
 
@@ -1523,7 +1514,7 @@ describe("structure snapshot staleness", {
 
   it("reuses a snapshot whose voxels are unchanged", {
     dirs <- mock_subcort_dirs()
-    outfile <- file.path(dirs$snapshots, "ax_1_Pallidum_l.png")
+    outfile <- file.path(dirs$snapshots, "ax_1_Pallidum_l.rda")
     file.create(outfile)
     local_counting_projection()
     vol <- structure_vol()
@@ -1539,11 +1530,8 @@ describe("structure snapshot staleness", {
 
   it("redraws when reindexing hands the label different voxels", {
     dirs <- mock_subcort_dirs()
-    outfile <- file.path(dirs$snapshots, "ax_1_Pallidum_l.png")
+    outfile <- file.path(dirs$snapshots, "ax_1_Pallidum_l.rda")
     file.create(outfile)
-    for (dir in c(dirs$processed, dirs$masks)) {
-      file.create(file.path(dir, "ax_1_Pallidum_l.png"))
-    }
     local_counting_projection()
 
     # Drawn when 42 meant Pallidum_l.
@@ -1553,7 +1541,7 @@ describe("structure snapshot staleness", {
 
     # Rebuilt volume: 42 is now the right cortical hemisphere and Pallidum_l
     # has been reindexed to 6, holding a different set of voxels. Reusing the
-    # old PNG here is what renders a nucleus as a solid hemisphere.
+    # old projection here is what renders a nucleus as a solid hemisphere.
     moved <- array(0L, dim = c(4, 4, 4))
     moved[2, , ] <- 6L
     draw(
@@ -1564,13 +1552,11 @@ describe("structure snapshot staleness", {
     )
 
     expect_identical(.cap$drawn, 1L)
-    expect_false(file.exists(file.path(dirs$processed, "ax_1_Pallidum_l.png")))
-    expect_false(file.exists(file.path(dirs$masks, "ax_1_Pallidum_l.png")))
   })
 
   it("redraws when the slab framing the structure changes", {
     dirs <- mock_subcort_dirs()
-    file.create(file.path(dirs$snapshots, "ax_1_Pallidum_l.png"))
+    file.create(file.path(dirs$snapshots, "ax_1_Pallidum_l.rda"))
     local_counting_projection()
     vol <- structure_vol()
 
@@ -1601,6 +1587,6 @@ describe("structure snapshot staleness", {
 
     signatures <- draw(structure_vol(), colortable_for(42L), dirs)
 
-    expect_named(signatures, "ax_1_Pallidum_l.png")
+    expect_named(signatures, "ax_1_Pallidum_l.rda")
   })
 })

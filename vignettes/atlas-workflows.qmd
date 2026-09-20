@@ -213,7 +213,7 @@ Use a low step count for fast 3D-only iteration, then run the full pipeline when
 
 If you're new to ggseg.extra, start with the [Getting Started](ggseg.extra.html) guide for installation and basic usage.
 The cortical pipeline has no system dependencies --- it only needs the `freesurferformats` R package to read annotation files.
-Subcortical and whole-brain pipelines need FreeSurfer and ImageMagick; see [System Setup](system-setup.html) for details.
+Subcortical and whole-brain pipelines need FreeSurfer; see [System Setup](system-setup.html) for details.
 
 The [Pipeline Configuration](pipeline-configuration.html) article covers how to customize the creation process, including options for controlling smoothing, contour extraction, and other pipeline parameters.
 When you're ready to build a specific atlas type, the individual tutorials under "Tutorials: Creating Atlases" walk through complete examples with real data.

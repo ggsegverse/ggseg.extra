@@ -208,47 +208,32 @@ subcort_snapshot_names <- function(colortable, slabs, cortex_slices = NULL) {
     view = slabs$name,
     stringsAsFactors = FALSE
   )
-  structures <- paste0(grid$view, "_", sanitize_label(grid$label), ".png")
+  structures <- projection_name(grid$view, sanitize_label(grid$label))
 
   if (is.null(cortex_slices)) {
     return(structures)
   }
 
-  cortex <- vapply(
-    seq_len(nrow(cortex_slices)),
-    function(i) {
-      cs <- cortex_slices[i, ]
-      basename(cortex_slice_file(
-        ".",
-        cs$name,
-        extract_hemi_from_view(
-          cs$view,
-          cs$name
-        )
-      ))
-    },
-    character(1)
-  )
-  c(structures, cortex)
+  c(structures, cortex_snapshot_names(cortex_slices))
 }
 
 
 #' Delete snapshots, and the images made from them, that this run cannot draw
 #'
-#' The snapshot, processed and mask directories are read back whole - contour
-#' extraction traces every mask it finds - so a PNG left behind by a run with
-#' different slabs is silently assembled into the atlas. It carries a view
-#' name the current configuration does not know, which lands in the atlas as a
-#' row with no view and no geometry, and `st_coordinates()` then fails on the
-#' mix of empty and non-empty geometries with "number of columns of matrices
-#' must match". Nothing downstream can tell those files from this run's, so
-#' they are cleared here, where the configuration that names them is known.
+#' The snapshot directory is read back whole - contour extraction traces
+#' every projection it finds - so a file left behind by a run with different
+#' slabs is silently assembled into the atlas. It carries a view name the
+#' current configuration does not know, which lands in the atlas as a row with
+#' no view and no geometry, and `st_coordinates()` then fails on the mix of
+#' empty and non-empty geometries with "number of columns of matrices must
+#' match". Nothing downstream can tell those files from this run's, so they
+#' are cleared here, where the configuration that names them is known.
 #' @noRd
 prune_stale_snapshots <- function(dirs, expected) {
   stale <- unlist(lapply(
-    c(dirs$snapshots, dirs$processed, dirs$masks),
+    dirs$snapshots,
     function(dir) {
-      files <- list.files(dir, pattern = "\\.png$")
+      files <- list.files(dir, pattern = "\\.rda$")
       as.character(fs::path(dir, setdiff(files, expected)))
     }
   ))
@@ -295,7 +280,7 @@ subcort_snapshot_structures <- function(
   )
   signatures <- stats::setNames(
     args$signature,
-    paste0(args$view_name, "_", sanitize_label(args$label_name), ".png")
+    projection_name(args$view_name, sanitize_label(args$label_name))
   )
 
   p <- progressor(steps = nrow(snapshot_grid))
@@ -333,7 +318,7 @@ subcort_snapshot_structures <- function(
       globals = c("dims", "vol", "dirs", "skip_existing", "manifest", "p")
     )
   )
-  stamp_cache_files(unlist(written))
+  stamp_cache_files(written)
 
   signatures
 }
@@ -393,9 +378,9 @@ subcort_snapshot_args <- function(colortable, slabs, snapshot_grid) {
 #' Snapshot a single structure in a single view, skipping empty structures
 #'
 #' An existing snapshot is reused only when its recorded signature matches
-#' what this run would draw. When it does not, it is redrawn and the
-#' processed and mask copies made from it are dropped, so the image step
-#' remakes those from the new picture rather than the old one.
+#' what this run would draw. When it does not, the old projection is deleted
+#' before the redraw, so a structure that renders nothing this time leaves no
+#' file standing in for a picture this run would not draw.
 #' @noRd
 subcort_snapshot_one <- function(
   vol,
@@ -415,7 +400,7 @@ subcort_snapshot_one <- function(
   if (snapshot_is_current(outfile, signature, manifest, skip_existing)) {
     return(invisible(NULL))
   }
-  clear_stale_snapshot(outfile, dirs)
+  clear_stale_snapshot(outfile)
 
   structure_vol <- array(0L, dim = dims)
   structure_vol[vol == label_id] <- 1L
@@ -438,30 +423,52 @@ subcort_snapshot_one <- function(
 }
 
 
-#' Delete a snapshot, and what was made from it, before redrawing it
+#' Delete a snapshot before redrawing it
 #'
 #' A redraw does not always write: a structure with no voxels in the slab
 #' renders nothing, and so does one whose projection is empty. Drawing over
 #' the old file is therefore not enough - it would simply stay, and go on
 #' standing in for a picture this run would not draw at all. That is how a
 #' snapshot of the right cortical hemisphere, drawn when index 42 still meant
-#' one, survived a rebuild as `axial_3_region_0042.png` and put a solid
+#' one, survived a rebuild as `axial_3_region_0042` and put a solid
 #' hemisphere where an amygdala belongs. Clearing first makes an empty
 #' redraw mean an absent snapshot, which is what it is.
 #' @noRd
-clear_stale_snapshot <- function(outfile, dirs) {
+clear_stale_snapshot <- function(outfile) {
   unlink(outfile)
-  drop_derived_images(outfile, dirs)
 }
 
 
 #' Path of a structure's snapshot in one view
+#'
+#' Defers to [projection_file()], which is the one place the spelling of a
+#' projection on disk is decided.
 #' @noRd
 structure_snapshot_file <- function(output_dir, view_name, label) {
-  as.character(fs::path(
-    output_dir,
-    paste0(view_name, "_", sanitize_label(label), ".png")
-  ))
+  projection_file(output_dir, view_name, sanitize_label(label))
+}
+
+
+#' The file names the cortex silhouette slices carry
+#'
+#' Stated once because two callers need the same answer and must not drift:
+#' `prune_stale_snapshots()` deletes whatever this does not name, and
+#' `subcort_snapshot_cortex()` keys its signatures by it.
+#' @noRd
+cortex_snapshot_names <- function(cortex_slices) {
+  # Per row: extract_hemi_from_view() branches on a single view type and
+  # returns NULL off the sagittal views, so it cannot take the columns whole.
+  vapply(
+    seq_len(nrow(cortex_slices)),
+    function(i) {
+      cs <- cortex_slices[i, ]
+      projection_name(
+        cs$name,
+        cortex_slice_label(extract_hemi_from_view(cs$view, cs$name))
+      )
+    },
+    character(1)
+  )
 }
 
 
@@ -491,8 +498,7 @@ subcort_cortex_volume <- function(vol, dims, cortex_labels) {
 #' builds its context volume, so its signature hashes that volume's voxels
 #' along with the slice taken through them. A snapshot whose signature does
 #' not match is redrawn rather than aborted on - a handful of slices is
-#' cheap - and the processed and mask copies made from it are dropped so the
-#' image step remakes those too.
+#' cheap.
 #'
 #' Returns the signatures keyed by file name, for the caller to record.
 #' @noRd
@@ -505,7 +511,7 @@ subcort_snapshot_cortex <- function(
 ) {
   voxels <- rlang::hash(which(cortex_vol > 0))
 
-  signatures <- vapply(
+  drawn <- lapply(
     seq_len(nrow(cortex_slices)),
     function(i) {
       cs <- cortex_slices[i, ]
@@ -522,9 +528,10 @@ subcort_snapshot_cortex <- function(
         hemi
       )
 
+      written <- NULL
       if (!snapshot_is_current(outfile, signature, manifest, skip_existing)) {
-        clear_stale_snapshot(outfile, dirs)
-        stamp_cache_files(snapshot_cortex_slice(
+        clear_stale_snapshot(outfile)
+        written <- snapshot_cortex_slice(
           vol = cortex_vol,
           x = cs$x,
           y = cs$y,
@@ -534,38 +541,20 @@ subcort_snapshot_cortex <- function(
           hemi = hemi,
           output_dir = dirs$snapshots,
           skip_existing = FALSE
-        ))
+        )
       }
-      signature
-    },
-    character(1),
-    USE.NAMES = FALSE
+      list(name = basename(outfile), signature = signature, written = written)
+    }
   )
 
-  names(signatures) <- vapply(
-    seq_len(nrow(cortex_slices)),
-    function(i) {
-      cs <- cortex_slices[i, ]
-      basename(cortex_slice_file(
-        ".",
-        cs$name,
-        extract_hemi_from_view(cs$view, cs$name)
-      ))
-    },
-    character(1)
-  )
-  signatures
-}
+  # One stamp for the step, not one per slice: stamping rewrites the whole
+  # directory manifest, which the structure pass has just filled.
+  stamp_cache_files(lapply(drawn, `[[`, "written"))
 
-
-#' Remove the processed and mask copies derived from a snapshot
-#' @noRd
-drop_derived_images <- function(snapshot_file, dirs) {
-  derived <- fs::path(
-    c(dirs$processed, dirs$masks),
-    basename(snapshot_file)
+  stats::setNames(
+    vapply(drawn, `[[`, character(1), "signature"),
+    vapply(drawn, `[[`, character(1), "name")
   )
-  unlink(as.character(derived))
 }
 
 

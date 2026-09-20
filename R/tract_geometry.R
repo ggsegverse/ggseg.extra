@@ -626,7 +626,7 @@ snapshot_tract_views <- function(
       globals = c("tract_volumes", "dirs", "skip_existing", "p")
     )
   )
-  invisible(stamp_cache_files(unlist(written)))
+  stamp_cache_files(written)
 }
 
 
@@ -670,7 +670,7 @@ snapshot_cortex_views <- function(
       globals = c("cortex_vol", "dirs", "skip_existing", "p2")
     )
   )
-  invisible(stamp_cache_files(unlist(written)))
+  stamp_cache_files(written)
 }
 
 

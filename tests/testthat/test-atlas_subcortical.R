@@ -1138,7 +1138,7 @@ describe("subcortical pipeline snapshot pruning", {
       reduce_vertex = function(...) invisible(NULL)
     )
 
-    file.create(file.path(dirs$masks, c("ax_1_r.png", "ax_9_r.png")))
+    file.create(file.path(dirs$snapshots, c("ax_1_r.rda", "ax_9_r.rda")))
 
     vol_file <- withr::local_tempfile(fileext = ".mgz")
     file.create(vol_file)
@@ -1156,9 +1156,9 @@ describe("subcortical pipeline snapshot pruning", {
       "contours_reduced"
     )
 
-    # The stale mask is what st_coordinates() chokes on at assembly: it
+    # The stale projection is what st_coordinates() chokes on at assembly: it
     # traces into a view this configuration has no slab for.
-    expect_true(file.exists(file.path(dirs$masks, "ax_1_r.png")))
-    expect_false(file.exists(file.path(dirs$masks, "ax_9_r.png")))
+    expect_true(file.exists(file.path(dirs$snapshots, "ax_1_r.rda")))
+    expect_false(file.exists(file.path(dirs$snapshots, "ax_9_r.rda")))
   })
 })

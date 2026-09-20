@@ -6,13 +6,13 @@
 #' intermediates wrong rather than merely old, so a rebuilt atlas cannot
 #' silently reuse output from the pipeline the change fixed.
 #'
-#' Stamped, and so checked before reuse: the `.rds` step caches, the contour
-#' `.rda` files, and the processed-image and mask directories. Not stamped,
-#' and so still reused whenever the file exists: the subcortical mesh
-#' directory (`dirs$meshes`), and the lookup table and volume the wholebrain
-#' pipeline hands to the subcortical one.
+#' Stamped, and so checked before reuse: the `.rds` step caches, and the
+#' projection and contour `.rda` files. Not stamped, and so still reused
+#' whenever the file exists: the subcortical mesh directory (`dirs$meshes`),
+#' and the lookup table and volume the wholebrain pipeline hands to the
+#' subcortical one.
 #'
-#' The subcortical snapshot PNGs are neither: they carry a signature of what
+#' The subcortical snapshots are neither: they carry a signature of what
 #' they were drawn from instead (see [snapshot_signature()]), which catches a
 #' stale one whether the pipeline changed or only its inputs did. This format
 #' version is part of that signature, so a bump invalidates them too. This is
@@ -95,9 +95,9 @@ write_cache_manifest <- function(dir, manifest) {
 #' other's rows.
 #' @noRd
 stamp_cache_files <- function(files) {
-  files <- as.character(unlist(files))
+  files <- unlist(files, use.names = FALSE)
   if (length(files) == 0L) {
-    return(invisible(files))
+    return(invisible(character()))
   }
   dirs <- dirname(files)
   for (dir in unique(dirs)) {
@@ -213,15 +213,15 @@ abort_stale_cache <- function(paths, versions, remedy) {
 
 # Snapshot provenance ----
 
-#' Signature of everything a snapshot PNG was drawn from
+#' Signature of everything a snapshot was drawn from
 #'
 #' The format version alone cannot catch a stale snapshot, because a snapshot
-#' can go stale without the pipeline changing at all. `<view>_<label>.png`
+#' can go stale without the pipeline changing at all. `<view>_<label>.rda`
 #' says which label and which slab, but not *which voxels* that label held,
 #' and both move underneath it: `reindex_reserved_subcort_idx()` can hand a
 #' structure a different index, and a rebuilt volume can hand an index
 #' different voxels. An atlas cache predating the reindexing reuses
-#' `axial_1_Pallidum_l.png` drawn when 42 meant Pallidum and now means the
+#' `axial_1_Pallidum_l.rda` drawn when 42 meant Pallidum and now means the
 #' right cortical hemisphere, and renders a nucleus as a solid hemisphere.
 #'
 #' So the signature hashes the voxels themselves, not the label id: the
@@ -288,7 +288,7 @@ record_snapshot_signatures <- function(dir, signatures) {
 
 #' Can an existing snapshot be reused, or must it be redrawn?
 #'
-#' @param file Path to the snapshot PNG.
+#' @param file Path to the snapshot.
 #' @param signature What this run would draw there.
 #' @param manifest The directory's recorded signatures.
 #' @param skip_existing Whether reuse was asked for at all.

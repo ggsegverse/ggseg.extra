@@ -14,7 +14,6 @@ describe("setup_sitrep", {
 
     expect_type(result, "list")
     expect_true("freesurfer" %in% names(result))
-    expect_true("system" %in% names(result))
     expect_true("fsaverage" %in% names(result))
   })
 
@@ -53,27 +52,6 @@ describe("check_freesurfer", {
 })
 
 
-describe("check_other_system_deps", {
-  it("returns the chrome field", {
-    expect_messages({
-      result <- check_other_system_deps("simple")
-    })
-
-    expect_type(result, "list")
-    expect_true("chrome" %in% names(result))
-    expect_type(result$chrome, "logical")
-  })
-
-  it("no longer reports ImageMagick, which nothing needs", {
-    expect_messages({
-      result <- check_other_system_deps("simple")
-    })
-
-    expect_false("imagemagick" %in% names(result))
-  })
-})
-
-
 describe("check_fsaverage", {
   it("returns list with fsaverage5 field", {
     expect_messages({
@@ -94,16 +72,6 @@ describe("check_freesurfer", {
       .package = "freesurfer"
     )
     expect_messages(check_freesurfer("simple"), "not configured")
-  })
-})
-
-
-describe("check_other_system_deps", {
-  it("shows help text when Chrome missing in full detail", {
-    local_mocked_bindings(
-      find_chrome_path = function() NULL
-    )
-    expect_messages(check_other_system_deps("full"), "Install Chrome")
   })
 })
 
@@ -133,7 +101,6 @@ describe("summarize_pipelines", {
   ) {
     list(
       freesurfer = list(available = fs),
-      system = list(chrome = TRUE),
       fsaverage = list(fsaverage5 = fsavg),
       packages = list(
         freesurferformats = fsf,
@@ -409,7 +376,6 @@ describe("summarize_pipelines additional branches", {
   ) {
     list(
       freesurfer = list(available = fs),
-      system = list(chrome = TRUE),
       fsaverage = list(fsaverage5 = fsavg),
       packages = list(
         freesurferformats = fsf,
@@ -449,40 +415,6 @@ describe("summarize_pipelines additional branches", {
       summarize_pipelines(make_results(gifti = FALSE), "simple"),
       'setup_sitrep\\("full"\\)'
     )
-  })
-})
-
-
-describe("find_chrome_path", {
-  it("returns path from Sys.which when chrome is found", {
-    local_mocked_bindings(
-      Sys.which = function(name) {
-        if (name == "google-chrome") "/usr/bin/google-chrome" else ""
-      },
-      .package = "base"
-    )
-
-    result <- find_chrome_path()
-    expect_identical(result, "/usr/bin/google-chrome")
-  })
-
-  it("returns NULL when no chrome found anywhere", {
-    local_mocked_bindings(
-      Sys.which = function(name) "",
-      .package = "base"
-    )
-    local_mocked_bindings(
-      file.exists = function(path) {
-        if (any(grepl("Chrome|Chromium|chrome", path))) {
-          return(FALSE)
-        }
-        base::file.exists(path)
-      },
-      .package = "base"
-    )
-
-    result <- find_chrome_path()
-    expect_null(result)
   })
 })
 

@@ -916,7 +916,7 @@ describe("simplify_sf_topology", {
     )))
     sf_data <- sf::st_sf(
       label = c("a", "b", "c"),
-      filenm = c("lateral_1.png", "lateral_2.png", "medial_1.png"),
+      filenm = c("lateral_1", "lateral_2", "medial_1"),
       geometry = sf::st_sfc(poly_a, poly_b, poly_c)
     )
 
@@ -940,7 +940,7 @@ describe("simplify_sf_topology", {
     )))
     sf_data <- sf::st_sf(
       label = c("a", "b"),
-      filenm = c("lateral_1.png", "lateral_2.png"),
+      filenm = c("lateral_1", "lateral_2"),
       geometry = sf::st_sfc(poly_a, poly_b)
     )
 
