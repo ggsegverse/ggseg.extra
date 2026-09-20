@@ -223,13 +223,13 @@ mock_cortical_pipeline_bindings <- function(captured = NULL) {
 }
 
 
+# The shape setup_atlas_dirs() builds for a subcortical atlas. The processed
+# and mask directories the PNG pipeline used are gone; nothing creates them.
 mock_subcort_dirs <- function() {
   pf <- parent.frame()
   list(
     base = withr::local_tempdir(.local_envir = pf),
     snapshots = withr::local_tempdir(.local_envir = pf),
-    processed = withr::local_tempdir(.local_envir = pf),
-    masks = withr::local_tempdir(.local_envir = pf),
     meshes = withr::local_tempdir(.local_envir = pf)
   )
 }

@@ -900,7 +900,7 @@ native_smoothness <- function(smoothness, method) {
 build_contour_sf <- function(contours_file, slabs, cortex_slices = NULL) {
   conts <- make_multipolygon(contours_file)
 
-  filenm_base <- sub("\\.png$", "", conts$filenm)
+  filenm_base <- conts$filenm
 
   all_view_names <- if (!is.null(cortex_slices)) {
     c(slabs$name, cortex_slices$name)
@@ -913,8 +913,7 @@ build_contour_sf <- function(contours_file, slabs, cortex_slices = NULL) {
 
   conts <- layout_volumetric_views(conts) # nolint: object_usage_linter.
 
-  filenm_base <- sub("\\.png$", "", conts$filenm)
-  conts$label <- strip_view_prefix(filenm_base, conts$view)
+  conts$label <- strip_view_prefix(conts$filenm, conts$view)
 
   arrange_contour_sf(conts)
 }

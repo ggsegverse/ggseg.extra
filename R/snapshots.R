@@ -216,7 +216,8 @@ cortex_slice_file <- function(output_dir, view_name, hemi) {
 
 #' Snapshot a partial volume projection
 #'
-#' Creates a PNG image showing maximum intensity projection of a volume subset.
+#' Writes the maximum intensity projection of a volume subset, as a matrix in
+#' voxel indices.
 #'
 #' @param start First slice index
 #' @param end Last slice index

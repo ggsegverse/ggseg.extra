@@ -22,7 +22,6 @@ setup_sitrep <- function(detail = c("simple", "minimal", "full")) {
 
   results <- list()
   results$freesurfer <- check_freesurfer(detail)
-  results$system <- check_other_system_deps(detail)
   results$fsaverage <- check_fsaverage(detail)
   results$packages <- check_optional_packages(detail)
   results$suit <- check_suit_surfaces(detail)
@@ -73,32 +72,6 @@ check_freesurfer <- function(detail = "simple") {
   }
 
   list(available = has_fs)
-}
-
-
-check_other_system_deps <- function(detail = "simple") {
-  results <- list()
-
-  chrome_path <- find_chrome_path()
-  results$chrome <- !is.null(chrome_path)
-  if (detail != "minimal") {
-    if (results$chrome) {
-      if (detail == "full") {
-        cli::cli_alert_success("Chrome/Chromium: {.path {chrome_path}}")
-      } else {
-        cli::cli_alert_success("Chrome/Chromium")
-      }
-    } else {
-      cli::cli_alert_danger("Chrome/Chromium not found")
-      if (detail == "full") {
-        cli::cli_bullets(c(
-          "i" = "Install Chrome, Chromium, or Edge for webshot functionality"
-        ))
-      }
-    }
-  }
-
-  results
 }
 
 
@@ -272,25 +245,6 @@ check_pipeline_options <- function(detail = "simple") {
   ))
 
   opts
-}
-
-
-#' @noRd
-find_chrome_path <- function() {
-  for (name in c("google-chrome", "chromium-browser", "chromium", "chrome")) {
-    path <- Sys.which(name)
-    if (nzchar(path)) return(path)
-  }
-  candidates <- c(
-    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
-    "/Applications/Chromium.app/Contents/MacOS/Chromium",
-    "C:/Program Files/Google/Chrome/Application/chrome.exe",
-    "C:/Program Files (x86)/Google/Chrome/Application/chrome.exe"
-  )
-  for (p in candidates) {
-    if (file.exists(p)) return(p)
-  }
-  NULL
 }
 
 
