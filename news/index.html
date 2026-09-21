@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9050</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9051</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -63,6 +63,13 @@
       <small>Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.9.9.9051" id="ggsegextra-1999051">ggseg.extra 1.9.9.9051<a class="anchor" aria-label="anchor" href="#ggsegextra-1999051"></a></h2>
+<ul><li><p><code>read_volume()</code> says so when it cannot orient an MGZ. The affine is the only thing that can place a bare array, and a conformed volume is typically LIA, so returning one in its native voxel order, without saying so, handed the projection code a volume whose axes were transposed – which renders as a plausible brain rather than failing. <code>load_vox2ras_matrix()</code> already reported the same condition; the two now agree.</p></li>
+<li><p>FreeSurfer’s stderr survives a failure. It was discarded at any verbosity below 2, which is the default, so a tool that died three hours into a build reported an exit code and a command string with the line saying why already thrown away. It is now captured whatever the verbosity, echoed at <code>verbose &gt;= 2</code>, and its tail is quoted in the error. Braces in that output are escaped: <code>mri_info</code> prints matrices, and a bare brace turned the report of the failure into a second, unrelated failure.</p></li>
+<li><p><code>freesurferformats</code> is checked before it is used. <code>read_volume()</code> guarded <code>RNifti</code> in one branch of the same <code><a href="https://rdrr.io/r/base/switch.html" class="external-link">switch()</a></code> and not <code>freesurferformats</code> in the other; <code>write_projection_volume()</code> and <code>fill_surface_labels()</code> did not guard it at all.</p></li>
+<li><p>The volumetric test fixture has a header again. <code>aseg.mgz</code> is a crop of fsaverage5’s, and the crop dropped its RAS information, so every test using it exercised the native-voxel-order path that real FreeSurfer output never takes – and one test had come to depend on that, asserting the missing header warning against the shared fixture. The crop offset was recovered by matching against the parent volume, which is bit-identical at (91, 108, 88), so the restored affine is derived rather than assumed. Only the 16 header bytes covering the RAS block changed; voxel data, <code>dof</code>, <code>mr_params</code> and the footer tags are untouched. The test that wanted a volume with no header now writes its own.</p></li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9050" id="ggsegextra-1999050">ggseg.extra 1.9.9.9050<a class="anchor" aria-label="anchor" href="#ggsegextra-1999050"></a></h2>
 <ul><li><p><code>read_volume()</code> documented a <code>niftiImage</code> return for <code>reorient = FALSE</code> that it has never produced: the header is consumed inside the function and every path ends at <code>drop(as.array())</code>. The roxygen now says so, and the one caller that named its result <code>template_nii</code> only ever wanted <code><a href="https://rdrr.io/r/base/dim.html" class="external-link">dim()</a></code>.</p></li>
