@@ -122,6 +122,35 @@ describe("read_volume MGZ reorientation", {
     )
   })
 
+  it("warns rather than silently returning a volume it could not orient", {
+    mgz <- make_lia_mgz()
+    local_mocked_bindings(
+      mghheader.vox2ras = function(...) stop("no valid RAS"),
+      .package = "freesurferformats"
+    )
+
+    expect_warning(
+      out <- read_volume(mgz),
+      "native voxel order"
+    )
+    # the caller still gets the data, in the layout the file had
+    expect_equal(
+      which(out == 7L, arr.ind = TRUE)[1, ],
+      c(1L, 1L, 1L),
+      ignore_attr = TRUE
+    )
+  })
+
+  it("stays quiet when reorient is FALSE and the affine is unreadable", {
+    mgz <- make_lia_mgz()
+    local_mocked_bindings(
+      mghheader.vox2ras = function(...) stop("no valid RAS"),
+      .package = "freesurferformats"
+    )
+
+    expect_no_warning(read_volume(mgz, reorient = FALSE))
+  })
+
   it("preserves native voxel order when reorient is FALSE", {
     out <- read_volume(make_lia_mgz(), reorient = FALSE)
 

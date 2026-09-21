@@ -327,6 +327,48 @@ describe("run_cmd", {
       "FreeSurfer command failed"
     )
   })
+
+  it("reports what FreeSurfer said, at default verbosity", {
+    skip_on_os("windows")
+    local_mocked_bindings(get_fs = function() "", .package = "freesurfer")
+
+    # verbose 1 is the default, and is where stderr used to be discarded
+    expect_error(
+      run_cmd("echo 'ERROR: no such file' >&2; exit 3", verbose = 1L),
+      "ERROR: no such file"
+    )
+  })
+
+  it("does not read braces in FreeSurfer output as cli markup", {
+    skip_on_os("windows")
+    local_mocked_bindings(get_fs = function() "", .package = "freesurfer")
+
+    expect_error(
+      run_cmd("echo 'bad {glue} here' >&2; exit 1", verbose = 1L),
+      "bad {glue} here",
+      fixed = TRUE
+    )
+  })
+
+  it("says so when a failing command produced no error output", {
+    skip_on_os("windows")
+    local_mocked_bindings(get_fs = function() "", .package = "freesurfer")
+
+    expect_error(
+      run_cmd("exit 2", verbose = 1L),
+      "produced no error output"
+    )
+  })
+})
+
+
+describe("fs_stderr_bullets", {
+  it("shows only the tail of a chatty failure", {
+    bullets <- fs_stderr_bullets(paste("line", 1:40), max_lines = 3L)
+
+    expect_length(bullets, 4L)
+    expect_identical(unname(bullets[-1]), c("line 38", "line 39", "line 40"))
+  })
 })
 
 

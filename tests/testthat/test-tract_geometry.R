@@ -648,11 +648,15 @@ describe("compute_streamline_density", {
 describe("load_vox2ras_matrix", {
   it("warns and falls back when the mgz header lacks RAS info", {
     skip_if_not_installed("freesurferformats")
+    # Written without a vox2ras matrix, so ras_good_flag is -1. This used to
+    # borrow the shared aseg fixture, which carried the same defect by
+    # accident; the fixture now has a valid header, and a test about missing
+    # headers should be making its own anyway.
+    headerless <- withr::local_tempfile(fileext = ".mgz")
+    freesurferformats::write.fs.mgh(headerless, array(0L, dim = c(4, 4, 4)))
+
     expect_warning(
-      result <- load_vox2ras_matrix(
-        test_mgz_file(),
-        coords_are_voxels = FALSE
-      ),
+      result <- load_vox2ras_matrix(headerless, coords_are_voxels = FALSE),
       "approximate origin-centering"
     )
     expect_null(result)

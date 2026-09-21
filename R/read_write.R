@@ -815,6 +815,31 @@ reorient_volume_to_ras <- function(vol, vox2ras) {
 }
 
 
+#' Reorient an MGZ array to RAS+, saying so when the affine cannot be read
+#'
+#' The NIfTI path gets its orientation from `RNifti::orientation<-`, which has
+#' the header to work from. An MGZ arrives as a bare array, so the affine is
+#' the only thing that can place it -- and a conformed volume is typically LIA,
+#' not RAS. Returning it unreoriented and unannounced would hand the projection
+#' code a volume whose axes are transposed, which renders as a plausible brain
+#' rather than failing. `load_vox2ras_matrix()` reports the same condition the
+#' same way.
+#' @noRd
+reorient_mgz_to_ras <- function(data, vox2ras, file) {
+  if (is.null(vox2ras)) {
+    cli::cli_warn(c(
+      "Could not read a voxel-to-world affine from {.path {file}}.",
+      "!" = "Returning the volume in its native voxel order; downstream steps \\
+             assume RAS+, so regions may be placed along the wrong axes.",
+      "i" = "Convert the volume with {.code mri_convert}, or pass one whose \\
+             header carries a valid affine."
+    ))
+    return(data)
+  }
+  reorient_volume_to_ras(data, vox2ras)
+}
+
+
 #' Extension of a volume file, seeing through a `.gz` wrapper
 #' @noRd
 volume_ext <- function(file) {
@@ -853,14 +878,18 @@ read_volume <- function(file, reorient = TRUE) {
   vol <- switch(
     ext,
     "mgz" = {
+      rlang::check_installed(
+        "freesurferformats",
+        reason = "to read FreeSurfer MGZ files"
+      )
       mgh <- freesurferformats::read.fs.mgh(file, with_header = TRUE)
       data <- drop(mgh$data)
       vox2ras <- tryCatch(
         freesurferformats::mghheader.vox2ras(mgh$header),
         error = function(e) NULL
       )
-      if (reorient && length(dim(data)) == 3L && !is.null(vox2ras)) {
-        reorient_volume_to_ras(data, vox2ras)
+      if (reorient && length(dim(data)) == 3L) {
+        reorient_mgz_to_ras(data, vox2ras, file)
       } else {
         data
       }
