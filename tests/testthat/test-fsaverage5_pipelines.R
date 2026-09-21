@@ -85,8 +85,8 @@ describe("create_wholebrain_from_volume on fsaverage5", {
         input_lut = file.path(freesurfer::fs_dir(), "FreeSurferColorLUT.txt"),
         atlas_name = "aseg_fsaverage5",
         output_dir = withr::local_tempdir(),
-        registration = "header",
-        cerebellar_labels = cerebellum,
+        projection_opts = list(registration = "header"),
+        labels = list(cerebellar = cerebellum),
         steps = 1:2,
         verbose = FALSE
       ),

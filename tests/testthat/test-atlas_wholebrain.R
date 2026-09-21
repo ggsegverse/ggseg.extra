@@ -1296,7 +1296,7 @@ describe("create_wholebrain_from_volume integration", {
       result <- create_wholebrain_from_volume(
         input_volume = vol_file,
         input_lut = lut_file,
-        registration = "header",
+        projection_opts = list(registration = "header"),
         steps = 1:2,
         verbose = FALSE
       ),
@@ -3416,7 +3416,7 @@ describe("create_wholebrain_from_volume(regheader = )", {
       create_wholebrain_from_volume(
         input_volume = "missing-volume.nii.gz",
         output_dir = withr::local_tempdir(),
-        registration = "header",
+        projection_opts = list(registration = "header"),
         regheader = FALSE,
         verbose = FALSE
       ),
@@ -4067,5 +4067,129 @@ describe("ribbon_lands_on_volume", {
     ribbon <- array(3L, dim = c(4, 1, 1))
     brain <- array(c(TRUE, TRUE, TRUE, FALSE), dim = c(4, 1, 1))
     expect_true(ribbon_lands_on_volume(ribbon, brain))
+  })
+})
+
+
+describe("create_wholebrain_from_volume argument groups", {
+  # The retired arguments are only observable at the point the pipeline is
+  # handed them, so stop there rather than building an atlas.
+  capture_setup <- function(args) {
+    seen <- NULL
+    local_mocked_bindings(
+      wholebrain_setup = function(...) list(config = list(...), dirs = NULL),
+      wholebrain_run_pipeline = function(setup, opts, labels, start_time) {
+        list(config = setup$config, opts = opts, labels = labels)
+      }
+    )
+    do.call(
+      create_wholebrain_from_volume,
+      c(list(input_volume = "v.nii"), args)
+    )
+  }
+
+  it("fills projection_opts out with its defaults", {
+    seen <- capture_setup(list())
+
+    expect_identical(seen$config$subject, "fsaverage5")
+    expect_identical(seen$config$projfrac, 0.5)
+    expect_identical(seen$config$min_vertices, 50L)
+  })
+
+  it("takes projection settings from projection_opts", {
+    seen <- capture_setup(list(
+      projection_opts = list(projfrac = 0.7, subject = "fsaverage6")
+    ))
+
+    expect_identical(seen$config$projfrac, 0.7)
+    expect_identical(seen$config$subject, "fsaverage6")
+    # untouched entries keep their defaults
+    expect_identical(seen$config$min_vertices, 50L)
+  })
+
+  it("routes the labels list to the pipeline", {
+    seen <- capture_setup(list(
+      labels = list(cortical = c("a", "b"), subcortical = "c")
+    ))
+
+    expect_identical(seen$labels$cortical, c("a", "b"))
+    expect_identical(seen$labels$subcortical, "c")
+    expect_null(seen$labels$cerebellar)
+  })
+
+  it("lands the retired flat arguments where the lists now hold them", {
+    old <- suppressWarnings(capture_setup(list(
+      cortical_labels = c("a", "b"),
+      subcortical_labels = "c",
+      projfrac = 0.7,
+      subject = "fsaverage6"
+    )))
+    new <- capture_setup(list(
+      labels = list(cortical = c("a", "b"), subcortical = "c"),
+      projection_opts = list(projfrac = 0.7, subject = "fsaverage6")
+    ))
+
+    expect_identical(old$labels, new$labels)
+    expect_identical(old$config$projfrac, new$config$projfrac)
+    expect_identical(old$config$subject, new$config$subject)
+  })
+
+  it("deprecates each retired argument", {
+    # Errors rather than warnings, for the reason spelled out in the
+    # regheader block below: lifecycle throttles an indirect warning to once
+    # per session, so whether a warning arrives here depends on what ran
+    # first. Errors carry no such budget.
+    withr::local_options(lifecycle_verbosity = "error")
+
+    for (arg in c(
+      "cortical_labels",
+      "subcortical_labels",
+      "cerebellar_labels",
+      "projfrac",
+      "subject",
+      "registration",
+      "min_vertices",
+      "cerebellar_space"
+    )) {
+      expect_error(
+        capture_setup(stats::setNames(list("x"), arg)),
+        class = "lifecycle_error_deprecated",
+        info = arg
+      )
+    }
+  })
+
+  it("refuses a retired argument alongside the list entry replacing it", {
+    expect_error(
+      suppressWarnings(capture_setup(list(
+        cortical_labels = "a",
+        labels = list(cortical = "b")
+      ))),
+      "Cannot use both"
+    )
+  })
+
+  it("rejects an unknown projection_opts entry by name", {
+    expect_error(
+      capture_setup(list(projection_opts = list(nope = 1))),
+      "Unknown projection option"
+    )
+  })
+
+  it("says which list a sub-pipeline option belongs in", {
+    expect_error(
+      capture_setup(list(decimate = 0.5)),
+      "subcortical_opts"
+    )
+  })
+
+  it("carries cerebellar_space through cerebellar_opts", {
+    seen <- capture_setup(list(
+      cerebellar_opts = list(cerebellar_space = "MNI152NLin6AsymC")
+    ))
+
+    expect_identical(seen$config$cerebellar_space, "MNI152NLin6AsymC")
+    # and is not forwarded to the cerebellar builder, which has no such argument
+    expect_false("cerebellar_space" %in% names(seen$opts$cerebellar))
   })
 })
