@@ -6,28 +6,19 @@
 \usage{
 prepare_subcortical_mni152(
   input_volume,
-  labels = NULL,
-  lut = NULL,
   replace_labels = aseg_subcortical_labels(),
   target_subject = "fsaverage5",
   registration = "mni152",
-  output_file = NULL,
   subjects_dir = freesurfer::fs_subj_dir(),
-  verbose = get_verbose()
+  verbose = get_verbose(),
+  labels = NULL,
+  lut = NULL,
+  output_file = NULL
 )
 }
 \arguments{
 \item{input_volume}{Path or \code{RNifti} image of the parcellation in FSL-MNI152
 space. Only voxels whose value is in \code{labels} are embedded.}
-
-\item{labels}{Integer ids of the parcels to embed. Defaults to every non-zero
-id in \code{input_volume}. Ids must not collide with the surviving \code{aseg}
-context ids; remap them upstream (e.g. add a fixed offset) if they do.
-A collision is an error.}
-
-\item{lut}{Optional colour table (\code{data.frame} with \verb{idx, label, R, G, B, A})
-naming the parcels. When \code{NULL}, generic \code{region_XXXX} names and an HCL
-palette are generated.}
 
 \item{replace_labels}{Integer \code{aseg} ids the parcels subdivide, blanked
 before the parcels are stamped in. Defaults to \code{\link[=aseg_subcortical_labels]{aseg_subcortical_labels()}}.}
@@ -42,12 +33,21 @@ file. The same vocabulary as \code{\link[=create_wholebrain_from_volume]{create_
 \code{\link[=project_volume_anatomical]{project_volume_anatomical()}}. \code{NULL} is deprecated; it meant
 \code{"mni152"}.}
 
-\item{output_file}{Optional path for the merged volume; defaults to a
-tempfile.}
-
 \item{subjects_dir}{FreeSurfer subjects directory.}
 
 \item{verbose}{Verbosity, passed to the FreeSurfer command runner.}
+
+\item{labels}{Integer ids of the parcels to embed. Defaults to every non-zero
+id in \code{input_volume}. Ids must not collide with the surviving \code{aseg}
+context ids; remap them upstream (e.g. add a fixed offset) if they do.
+A collision is an error.}
+
+\item{lut}{Optional colour table (\code{data.frame} with \verb{idx, label, R, G, B, A})
+naming the parcels. When \code{NULL}, generic \code{region_XXXX} names and an HCL
+palette are generated.}
+
+\item{output_file}{Optional path for the merged volume; defaults to a
+tempfile.}
 }
 \value{
 Invisibly, \code{list(volume, lut)}: the merged volume path and a matching

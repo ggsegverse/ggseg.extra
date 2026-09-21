@@ -4,19 +4,11 @@
 \alias{lut_generate_colors}
 \title{Generate a palette for a colourless lookup table}
 \usage{
-lut_generate_colors(lut, by = NULL, chroma = 75, luminance = c(45, 65, 82))
+lut_generate_colors(lut, chroma = 75, luminance = c(45, 65, 82), by = NULL)
 }
 \arguments{
 \item{lut}{A lookup table with \code{idx}, \code{label}, \code{R}, \code{G}, \code{B} and \code{A}
 columns, as returned by \code{\link[=read_lut]{read_lut()}}.}
-
-\item{by}{Optional name of a column whose groups are each coloured from
-the full colour circle, rather than from a slice of one shared circle.
-Pass \code{by = "type"} for a whole-brain table, where the cortical and
-subcortical rows become two atlases that are never plotted together: a
-colour then has to be unique within an atlas rather than within the
-table, and each atlas gets the whole circle to spend. The default,
-\code{NULL}, colours the table as one atlas.}
 
 \item{chroma}{Colour intensity, zero or more, passed to
 \code{\link[grDevices:hcl]{grDevices::hcl()}} and held constant across the palette. Asking for more
@@ -25,6 +17,14 @@ this is the usual answer to the error that reports one.}
 
 \item{luminance}{Lightness values, 0 to 100, passed to \code{\link[grDevices:hcl]{grDevices::hcl()}}
 and cycled through in order as the hue advances.}
+
+\item{by}{Optional name of a column whose groups are each coloured from
+the full colour circle, rather than from a slice of one shared circle.
+Pass \code{by = "type"} for a whole-brain table, where the cortical and
+subcortical rows become two atlases that are never plotted together: a
+colour then has to be unique within an atlas rather than within the
+table, and each atlas gets the whole circle to spend. The default,
+\code{NULL}, colours the table as one atlas.}
 }
 \value{
 \code{lut}, with \code{R}, \code{G} and \code{B} filled in and \code{A} set to \code{0} on every

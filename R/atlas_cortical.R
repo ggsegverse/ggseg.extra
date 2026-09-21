@@ -45,15 +45,15 @@
 # nolint next: object_length_linter.
 create_cortical_from_annotation <- function(
   input_annot,
-  atlas_name = NULL,
-  output_dir = NULL,
   hemisphere = c("rh", "lh"),
   views = c("lateral", "medial", "superior", "inferior"),
+  verbose = get_verbose(),
+  ...,
+  atlas_name = NULL,
+  output_dir = NULL,
   smooth_refinements = NULL,
   cleanup = NULL,
-  verbose = get_verbose(),
-  skip_existing = NULL,
-  ...
+  skip_existing = NULL
 ) {
   dots <- check_post_creation_dots("create_cortical_from_annotation", ...)
   tolerance <- dots$tolerance
@@ -126,15 +126,15 @@ create_cortical_from_annotation <- function(
 #' }
 create_cortical_from_labels <- function(
   label_files,
+  views = c("lateral", "medial"),
+  verbose = get_verbose(), # nolint: object_usage_linter
+  ...,
   input_lut = NULL,
   atlas_name = NULL,
   output_dir = NULL,
-  views = c("lateral", "medial"),
   smooth_refinements = NULL,
   cleanup = NULL,
-  verbose = get_verbose(), # nolint: object_usage_linter
-  skip_existing = NULL,
-  ...
+  skip_existing = NULL
 ) {
   dots <- check_post_creation_dots("create_cortical_from_labels", ...)
   tolerance <- dots$tolerance
@@ -195,15 +195,15 @@ create_cortical_from_labels <- function(
 #' }
 create_cortical_from_gifti <- function(
   gifti_files,
-  atlas_name = NULL,
-  output_dir = NULL,
   hemisphere = c("rh", "lh"),
   views = c("lateral", "medial", "superior", "inferior"),
+  verbose = get_verbose(),
+  ...,
+  atlas_name = NULL,
+  output_dir = NULL,
   smooth_refinements = NULL,
   cleanup = NULL,
-  verbose = get_verbose(),
-  skip_existing = NULL,
-  ...
+  skip_existing = NULL
 ) {
   dots <- check_post_creation_dots("create_cortical_from_gifti", ...)
   tolerance <- dots$tolerance
@@ -268,15 +268,15 @@ create_cortical_from_gifti <- function(
 #' }
 create_cortical_from_cifti <- function(
   cifti_file,
-  atlas_name = NULL,
-  output_dir = NULL,
   hemisphere = c("rh", "lh"),
   views = c("lateral", "medial", "superior", "inferior"),
+  verbose = get_verbose(),
+  ...,
+  atlas_name = NULL,
+  output_dir = NULL,
   smooth_refinements = NULL,
   cleanup = NULL,
-  verbose = get_verbose(),
-  skip_existing = NULL,
-  ...
+  skip_existing = NULL
 ) {
   dots <- check_post_creation_dots("create_cortical_from_cifti", ...)
   tolerance <- dots$tolerance
@@ -356,17 +356,17 @@ create_cortical_from_neuromaps <- function(
   desc,
   space = "fsaverage",
   density = "10k",
+  hemisphere = c("rh", "lh"),
+  views = c("lateral", "medial", "superior", "inferior"),
+  verbose = get_verbose(),
+  ...,
   label_table = NULL,
   n_bins = NULL,
   atlas_name = NULL,
   output_dir = NULL,
-  hemisphere = c("rh", "lh"),
-  views = c("lateral", "medial", "superior", "inferior"),
   smooth_refinements = NULL,
   cleanup = NULL,
-  verbose = get_verbose(),
-  skip_existing = NULL,
-  ...
+  skip_existing = NULL
 ) {
   dots <- check_post_creation_dots("create_cortical_from_neuromaps", ...)
   tolerance <- dots$tolerance
@@ -508,7 +508,13 @@ run_neuromaps_creation <- function(
   mkdir(output_base)
 
   read_fn <- if (is_volume) {
-    function() read_neuromaps_volume(gifti_files[1], n_bins, output_base)
+    function() {
+      read_neuromaps_volume(
+        gifti_files[1],
+        n_bins = n_bins,
+        output_dir = output_base
+      )
+    }
   } else {
     function() read_neuromaps_annotation(gifti_files, label_table, n_bins)
   }
@@ -597,11 +603,15 @@ run_cortical_creation <- function(
   header_msg,
   input_files,
   hemisphere = c("rh", "lh"),
-  hemisphere_fn = NULL,
-  views = c("lateral", "medial", "superior", "inferior")
+  views = c("lateral", "medial", "superior", "inferior"),
+  hemisphere_fn = NULL
 ) {
   start_time <- Sys.time()
-  dirs <- setup_atlas_dirs(config$output_dir, atlas_name, type = "cortical")
+  dirs <- setup_atlas_dirs(
+    config$output_dir,
+    atlas_name = atlas_name,
+    type = "cortical"
+  )
 
   if (config$verbose) {
     cli::cli_h1(header_msg)

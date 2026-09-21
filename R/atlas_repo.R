@@ -47,10 +47,10 @@
 #' }
 setup_atlas_repo <- function(
   path,
-  atlas_name = NULL,
   open = rlang::is_interactive(),
   rstudio = TRUE,
-  github_actions = TRUE
+  github_actions = TRUE,
+  atlas_name = NULL
 ) {
   path <- normalizePath(path, mustWork = FALSE)
 

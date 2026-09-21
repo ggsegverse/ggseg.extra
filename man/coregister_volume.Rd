@@ -8,12 +8,12 @@ coregister_volume(
   input_volume,
   target_subject = "cvs_avg35_inMNI152",
   target_volume = "brain",
-  output_lta = NULL,
   dof = 12,
   binarise = TRUE,
   subjects_dir = freesurfer::fs_subj_dir(),
   skip_existing = FALSE,
-  verbose = get_verbose()
+  verbose = get_verbose(),
+  output_lta = NULL
 )
 }
 \arguments{
@@ -27,9 +27,6 @@ to \code{"cvs_avg35_inMNI152"}, which is in MNI152 1mm space.}
 directory used as the registration target. Defaults to \code{"brain"}
 (i.e. \code{brain.mgz}).}
 
-\item{output_lta}{Path to write the resulting LTA file. Defaults to a
-temporary file.}
-
 \item{dof}{Degrees of freedom for \code{mri_coreg} (\code{6}, \code{9}, or \code{12}).
 Defaults to \code{12} (rigid + per-axis scale + shear).}
 
@@ -37,7 +34,7 @@ Defaults to \code{12} (rigid + per-axis scale + shear).}
 before coregistration. Set to \code{FALSE} to register on raw intensities.}
 
 \item{subjects_dir}{FreeSurfer \code{SUBJECTS_DIR}. Defaults to
-\code{\link[freesurfer:fs_dir]{freesurfer::fs_subj_dir()}}.}
+\code{\link[freesurfer:fs_subj_dir]{freesurfer::fs_subj_dir()}}.}
 
 \item{skip_existing}{Skip generating output files that already exist,
 allowing interrupted atlas creation to resume. If not specified, uses
@@ -49,6 +46,9 @@ default), or \code{2} (debug, includes FreeSurfer output). Logical values
 are accepted (\code{TRUE} = 1, \code{FALSE} = 0). If not specified, uses the
 value from \code{options("ggseg.extra.verbose")} or the \code{GGSEG_EXTRA_VERBOSE}
 environment variable.}
+
+\item{output_lta}{Path to write the resulting LTA file. Defaults to a
+temporary file.}
 }
 \value{
 Path to the LTA file (invisibly).

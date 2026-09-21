@@ -6,19 +6,19 @@
 \usage{
 create_subcortical_from_volume(
   input_volume,
+  decimate = 0.5,
+  verbose = get_verbose(),
+  views = lifecycle::deprecated(),
+  ...,
   input_lut = NULL,
   atlas_name = NULL,
   output_dir = NULL,
   slabs = NULL,
   vertex_size_limits = NULL,
-  decimate = 0.5,
   cleanup = NULL,
-  verbose = get_verbose(),
   skip_existing = NULL,
   steps = NULL,
-  context = NULL,
-  views = lifecycle::deprecated(),
-  ...
+  context = NULL
 )
 }
 \arguments{
@@ -29,6 +29,25 @@ segmentation in the same space. May also be the
 \code{\link[=prepare_subcortical_anatomical]{prepare_subcortical_anatomical()}} /
 \code{\link[=project_volume_anatomical]{project_volume_anatomical()}}, in which case its \code{volume} and \code{lut}
 are used (an explicit \code{input_lut} takes precedence over the bundled one).}
+
+\item{decimate}{Mesh decimation factor between 0 and 1. Reduces the number
+of faces in 3D meshes using quadric edge decimation (via
+\code{\link[Rvcg:vcgQEdecim]{Rvcg::vcgQEdecim()}}). A value of 0.5 reduces faces by 50\%. Set to NULL
+to skip decimation. Requires the Rvcg package. Default is 0.5.}
+
+\item{verbose}{Verbosity level: \code{0} (silent), \code{1} (standard progress,
+default), or \code{2} (debug, includes FreeSurfer output). Logical values
+are accepted (\code{TRUE} = 1, \code{FALSE} = 0). If not specified, uses the
+value from \code{options("ggseg.extra.verbose")} or the \code{GGSEG_EXTRA_VERBOSE}
+environment variable.}
+
+\item{views}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} Use \code{slabs} instead.}
+
+\item{...}{Catches the retired \code{dilate}, \code{smoothness} and \code{tolerance}
+arguments, so a call that still passes one keeps working and says so.
+These are post-creation steps now: see \code{\link[=atlas_dilate]{atlas_dilate()}},
+\code{\link[=atlas_smooth]{atlas_smooth()}} and \code{\link[=atlas_simplify]{atlas_simplify()}}. Anything else in \code{...} is an
+error, as an unused argument always was.}
 
 \item{input_lut}{Path to a FreeSurfer-style colour lookup table that maps
 label IDs to region names and colours (e.g., \code{FreeSurferColorLUT.txt}
@@ -59,20 +78,9 @@ indices are computed in the builder's own frame.}
 maximum vertex count for polygons. Polygons outside this range are
 filtered out. Default NULL applies no limits.}
 
-\item{decimate}{Mesh decimation factor between 0 and 1. Reduces the number
-of faces in 3D meshes using quadric edge decimation (via
-\code{\link[Rvcg:vcgQEdecim]{Rvcg::vcgQEdecim()}}). A value of 0.5 reduces faces by 50\%. Set to NULL
-to skip decimation. Requires the Rvcg package. Default is 0.5.}
-
 \item{cleanup}{Remove intermediate files after atlas creation. If not
 specified, uses \code{options("ggseg.extra.cleanup")} or the \code{GGSEG_EXTRA_CLEANUP}
 environment variable. Default is TRUE.}
-
-\item{verbose}{Verbosity level: \code{0} (silent), \code{1} (standard progress,
-default), or \code{2} (debug, includes FreeSurfer output). Logical values
-are accepted (\code{TRUE} = 1, \code{FALSE} = 0). If not specified, uses the
-value from \code{options("ggseg.extra.verbose")} or the \code{GGSEG_EXTRA_VERBOSE}
-environment variable.}
 
 \item{skip_existing}{Skip generating output files that already exist,
 allowing interrupted atlas creation to resume. If not specified, uses
@@ -100,14 +108,6 @@ smoothing and reduction parameters.}
 to keep the focus regions coloured on grey anatomical context. \code{NULL}
 (default) leaves the atlas unchanged. Only applied when the 2D build
 (step 9) runs.}
-
-\item{views}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} Use \code{slabs} instead.}
-
-\item{...}{Catches the retired \code{dilate}, \code{smoothness} and \code{tolerance}
-arguments, so a call that still passes one keeps working and says so.
-These are post-creation steps now: see \code{\link[=atlas_dilate]{atlas_dilate()}},
-\code{\link[=atlas_smooth]{atlas_smooth()}} and \code{\link[=atlas_simplify]{atlas_simplify()}}. Anything else in \code{...} is an
-error, as an unused argument always was.}
 }
 \value{
 A \code{ggseg_atlas} object with region metadata (core), 3D meshes,

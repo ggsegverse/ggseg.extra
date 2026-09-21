@@ -121,8 +121,8 @@ with_safe_plan <- function(expr) {
 safe_future_pmap <- function(
   .l,
   .f,
-  ...,
-  .options = furrr_options(seed = NULL)
+  .options = furrr_options(seed = NULL),
+  ...
 ) {
   with_safe_plan(future_pmap(.l, .f, ..., .options = .options))
 }
@@ -131,8 +131,8 @@ safe_future_pmap <- function(
 safe_future_map <- function(
   .x,
   .f,
-  ...,
-  .options = furrr_options(seed = NULL)
+  .options = furrr_options(seed = NULL),
+  ...
 ) {
   with_safe_plan(future_map(.x, .f, ..., .options = .options))
 }
@@ -142,8 +142,8 @@ safe_future_map2 <- function(
   .x,
   .y,
   .f,
-  ...,
-  .options = furrr_options(seed = NULL)
+  .options = furrr_options(seed = NULL),
+  ...
 ) {
   with_safe_plan(future_map2(.x, .y, .f, ..., .options = .options))
 }

@@ -261,8 +261,8 @@ snapshot_partial_projection <- function(
   view_name,
   label,
   output_dir,
-  hemi = NULL,
-  skip_existing = get_skip_existing()
+  skip_existing = get_skip_existing(),
+  hemi = NULL
 ) {
   output_dir <- path.expand(output_dir)
   label <- sanitize_label(label)

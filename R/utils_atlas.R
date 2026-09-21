@@ -227,7 +227,7 @@ hemi_to_short <- function(hemi_long) {
 #' @param type Type of atlas: "cortical", "subcortical", or "tract"
 #' @return Named list of directory paths
 #' @noRd
-setup_atlas_dirs <- function(output_dir, atlas_name = NULL, type = "cortical") {
+setup_atlas_dirs <- function(output_dir, type = "cortical", atlas_name = NULL) {
   base <- if (is.null(atlas_name)) {
     output_dir
   } else {

@@ -79,14 +79,14 @@ aseg_subcortical_labels <- function() {
 #' }
 prepare_subcortical_mni152 <- function(
   input_volume,
-  labels = NULL,
-  lut = NULL,
   replace_labels = aseg_subcortical_labels(),
   target_subject = "fsaverage5",
   registration = "mni152",
-  output_file = NULL,
   subjects_dir = freesurfer::fs_subj_dir(),
-  verbose = get_verbose() # nolint: object_usage_linter
+  verbose = get_verbose(), # nolint: object_usage_linter
+  labels = NULL,
+  lut = NULL,
+  output_file = NULL
 ) {
   check_fs(abort = TRUE)
   rlang::check_installed("RNifti", reason = "to read NIfTI volumes")

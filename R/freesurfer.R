@@ -487,12 +487,12 @@ mri_vol2surf <- function(
   output_file,
   hemisphere,
   projfrac = 0.5,
+  verbose = get_verbose(), # nolint: object_usage_linter
   projfrac_range = NULL,
   reg = NULL,
   srcsubject = NULL,
   regheader = NULL,
-  opts = NULL,
-  verbose = get_verbose() # nolint: object_usage_linter
+  opts = NULL
 ) {
   check_fs(abort = TRUE)
 

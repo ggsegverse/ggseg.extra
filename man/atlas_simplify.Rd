@@ -7,9 +7,9 @@
 atlas_simplify(
   atlas,
   keep = 0.05,
+  close_gaps = TRUE,
   labels = NULL,
-  exclude = NULL,
-  close_gaps = TRUE
+  exclude = NULL
 )
 }
 \arguments{
@@ -22,9 +22,6 @@ its shape, so an atlas of many small rings lands above what was asked -
 \code{keep = 0.05} on a tract atlas came back at 0.18. \code{\link[=atlas_polish]{atlas_polish()}} has
 measured figures.}
 
-\item{labels, exclude}{Regex selecting which labels to simplify, or which
-to leave alone. Give at most one.}
-
 \item{close_gaps}{Whether to hand back any sliver the simplification
 opens between neighbouring regions. Simplification is topology-aware,
 so on geometry straight out of a pipeline, whose neighbours share their
@@ -34,6 +31,9 @@ earns its keep on geometry that has been reshaped since - rounded off by
 the rings no longer agree and the shared edge comes apart. With \code{TRUE},
 the default, area that no longer belongs to any region but borders two
 of them is given back to one of them.}
+
+\item{labels, exclude}{Regex selecting which labels to simplify, or which
+to leave alone. Give at most one.}
 }
 \value{
 The \code{ggseg_atlas}, in the representation it arrived in.

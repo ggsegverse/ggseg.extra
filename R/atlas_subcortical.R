@@ -101,19 +101,19 @@
 #' }
 create_subcortical_from_volume <- function(
   input_volume,
+  decimate = 0.5,
+  verbose = get_verbose(), # nolint: object_usage_linter
+  views = lifecycle::deprecated(),
+  ...,
   input_lut = NULL,
   atlas_name = NULL,
   output_dir = NULL,
   slabs = NULL,
   vertex_size_limits = NULL,
-  decimate = 0.5,
   cleanup = NULL,
-  verbose = get_verbose(), # nolint: object_usage_linter
   skip_existing = NULL,
   steps = NULL,
-  context = NULL,
-  views = lifecycle::deprecated(),
-  ...
+  context = NULL
 ) {
   dots <- check_post_creation_dots("create_subcortical_from_volume", ...)
   smoothness <- dots$smoothness
@@ -188,7 +188,7 @@ subcort_setup_pipeline <- function(
 
   dirs <- setup_atlas_dirs(
     config$output_dir,
-    config$atlas_name,
+    atlas_name = config$atlas_name,
     type = "subcortical"
   )
   subcort_log_header(config)

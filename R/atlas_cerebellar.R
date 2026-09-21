@@ -146,8 +146,8 @@ suit_deformation_field <- function(
 transform_mni_to_suit <- function(
   input_volume,
   deformation_field,
-  output_file = NULL,
-  interpolation = c("nearest", "linear")
+  interpolation = c("nearest", "linear"),
+  output_file = NULL
 ) {
   rlang::check_installed("RNifti", reason = "to read NIfTI volumes")
   interpolation <- match.arg(interpolation)
@@ -235,15 +235,15 @@ transform_mni_to_suit <- function(
 #' }
 create_cerebellar_from_gifti <- function(
   gifti_files,
+  decimate = 0.5,
+  verbose = get_verbose(),
+  ...,
   volume = NULL,
   atlas_name = NULL,
   output_dir = NULL,
-  decimate = 0.5,
   smooth_refinements = NULL,
   cleanup = NULL,
-  verbose = get_verbose(),
-  skip_existing = NULL,
-  ...
+  skip_existing = NULL
 ) {
   dots <- check_post_creation_dots("create_cerebellar_from_gifti", ...)
   tolerance <- dots$tolerance
@@ -305,15 +305,15 @@ create_cerebellar_from_gifti <- function(
 # nolint next: object_length_linter.
 create_cerebellar_from_annotation <- function(
   input_annot,
+  decimate = 0.5,
+  verbose = get_verbose(),
+  ...,
   volume = NULL,
   atlas_name = NULL,
   output_dir = NULL,
-  decimate = 0.5,
   smooth_refinements = NULL,
   cleanup = NULL,
-  verbose = get_verbose(),
-  skip_existing = NULL,
-  ...
+  skip_existing = NULL
 ) {
   dots <- check_post_creation_dots("create_cerebellar_from_annotation", ...)
   tolerance <- dots$tolerance
@@ -379,17 +379,17 @@ create_cerebellar_from_annotation <- function(
 #' }
 # nolint next: object_length_linter.
 create_cerebellar_from_volume <- function(
+  decimate = 0.5,
+  verbose = get_verbose(),
+  volume = lifecycle::deprecated(),
+  ...,
   input_volume = NULL,
   input_lut = NULL,
   atlas_name = NULL,
   output_dir = NULL,
-  decimate = 0.5,
   smooth_refinements = NULL,
   cleanup = NULL,
-  verbose = get_verbose(),
-  skip_existing = NULL,
-  volume = lifecycle::deprecated(),
-  ...
+  skip_existing = NULL
 ) {
   dots <- check_post_creation_dots("create_cerebellar_from_volume", ...)
   tolerance <- dots$tolerance
@@ -709,7 +709,11 @@ run_cerebellar_creation <- function(
   volume = NULL
 ) {
   start_time <- Sys.time()
-  dirs <- setup_atlas_dirs(config$output_dir, atlas_name, type = "cerebellar")
+  dirs <- setup_atlas_dirs(
+    config$output_dir,
+    atlas_name = atlas_name,
+    type = "cerebellar"
+  )
 
   if (config$verbose) {
     cli::cli_h1("Creating cerebellar atlas {.val {atlas_name}}")
@@ -833,12 +837,12 @@ merge_deep_into_components <- function(components, deep_data, dir) {
 #' @noRd
 cerebellar_project_and_build <- function(
   components,
-  deep_data = NULL,
-  volume = NULL,
   atlas_name,
   config,
   dirs,
-  start_time
+  start_time,
+  deep_data = NULL,
+  volume = NULL
 ) {
   if (config$verbose) {
     cli::cli_progress_step("Projecting parcellation onto SUIT flatmap")

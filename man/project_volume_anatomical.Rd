@@ -6,26 +6,19 @@
 \usage{
 project_volume_anatomical(
   input_volume,
-  lut = NULL,
   registration = "header",
   target_subject = "cvs_avg35_inMNI152",
   threshold = 0.3,
   id_offset = 200L,
   protect_cortex = TRUE,
-  output_file = NULL,
   subjects_dir = freesurfer::fs_subj_dir(),
-  verbose = get_verbose()
+  verbose = get_verbose(),
+  lut = NULL,
+  output_file = NULL
 )
 }
 \arguments{
 \item{input_volume}{Path to the atlas volume, or an \code{RNifti} object.}
-
-\item{lut}{Optional colour LUT (data frame with at least an \code{idx}
-column, or path to a TSV with \verb{idx, label, R, G, B, A}). When
-provided, its \code{idx} (intersected with the volume) selects which labels
-to project, and it is returned alongside the volume with \code{idx} shifted
-by \code{id_offset} to match. With no \code{lut}, every non-zero label is
-projected. To project a subset, subset the \code{lut}.}
 
 \item{registration}{How the volume reaches the target's grid: \code{"header"}
 (the default) trusts the volume's own xform (\code{mri_vol2vol --regheader}),
@@ -59,8 +52,6 @@ pipeline renders as context. Cerebellar structures are not protected
 here (they are handled downstream by \code{\link[=aseg_context]{aseg_context()}}). Disable only if
 you intentionally want user labels to overwrite the cerebrum.}
 
-\item{output_file}{Path for the merged volume. Defaults to a temp file.}
-
 \item{subjects_dir}{FreeSurfer \code{SUBJECTS_DIR}. Defaults to
 \code{\link[freesurfer:fs_subj_dir]{freesurfer::fs_subj_dir()}}.}
 
@@ -69,6 +60,15 @@ default), or \code{2} (debug, includes FreeSurfer output). Logical values
 are accepted (\code{TRUE} = 1, \code{FALSE} = 0). If not specified, uses the
 value from \code{options("ggseg.extra.verbose")} or the \code{GGSEG_EXTRA_VERBOSE}
 environment variable.}
+
+\item{lut}{Optional colour LUT (data frame with at least an \code{idx}
+column, or path to a TSV with \verb{idx, label, R, G, B, A}). When
+provided, its \code{idx} (intersected with the volume) selects which labels
+to project, and it is returned alongside the volume with \code{idx} shifted
+by \code{id_offset} to match. With no \code{lut}, every non-zero label is
+projected. To project a subset, subset the \code{lut}.}
+
+\item{output_file}{Path for the merged volume. Defaults to a temp file.}
 }
 \value{
 Invisibly, a list with three elements ready to feed
