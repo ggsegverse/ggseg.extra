@@ -97,11 +97,11 @@ describe("prepare_subcortical_mni152", {
     in_path <- withr::local_tempfile(fileext = ".nii.gz")
     RNifti::writeNifti(vol, in_path)
 
-    merged <- prepare_subcortical_mni152(
+    merged <- suppressWarnings(prepare_subcortical_mni152(
       input_volume = in_path,
       labels = c(211L, 212L),
       verbose = FALSE
-    )
+    ))
 
     expect_named(merged, c("volume", "lut"))
     expect_true(file.exists(merged$volume))

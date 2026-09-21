@@ -39,7 +39,9 @@ describe("use_atlas_github_actions", {
   it("writes every workflow by default", {
     tmp <- local_pkg()
 
-    expect_message(use_atlas_github_actions(path = tmp), "Added 5 workflows")
+    suppressMessages(
+      expect_message(use_atlas_github_actions(path = tmp), "Added 5 workflows")
+    )
 
     written <- list.files(file.path(tmp, ".github", "workflows"))
     expect_setequal(written, paste0(atlas_github_actions(), ".yaml"))
@@ -71,9 +73,11 @@ describe("use_atlas_github_actions", {
     target <- file.path(tmp, ".github", "workflows", "pkgdown.yaml")
     writeLines("edited by hand", target)
 
-    expect_message(
-      use_atlas_github_actions("pkgdown", path = tmp),
-      "Kept 1 existing workflow"
+    suppressMessages(
+      expect_message(
+        use_atlas_github_actions("pkgdown", path = tmp),
+        "Kept 1 existing workflow"
+      )
     )
     expect_identical(readLines(target), "edited by hand")
 
