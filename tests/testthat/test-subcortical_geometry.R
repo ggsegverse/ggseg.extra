@@ -30,6 +30,9 @@ describe("tessellate_label", {
 
 describe("decimate_mesh", {
   it("reduces face count by specified percent", {
+    skip_if_not_installed("Rvcg")
+    skip_if_not_installed("rgl")
+
     mesh <- list(
       vertices = data.frame(
         x = c(0, 1, 0, 0, 1, 1, 0, 1),
@@ -50,6 +53,9 @@ describe("decimate_mesh", {
   })
 
   it("returns correct data.frame structure", {
+    skip_if_not_installed("Rvcg")
+    skip_if_not_installed("rgl")
+
     mesh <- list(
       vertices = data.frame(
         x = c(0, 1, 0, 0, 1, 1, 0, 1),
@@ -77,6 +83,7 @@ describe("decimate_mesh", {
 
   it("works on real aseg meshes", {
     skip_if_not_installed("Rvcg")
+    skip_if_not_installed("rgl")
 
     mesh <- aseg()$data$meshes$mesh[[1]]
 

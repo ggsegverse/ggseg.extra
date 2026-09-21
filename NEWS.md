@@ -1,3 +1,36 @@
+# ggseg.extra 1.9.9.9051
+
+- `read_volume()` says so when it cannot orient an MGZ. The affine is the only
+  thing that can place a bare array, and a conformed volume is typically LIA,
+  so returning one in its native voxel order, without saying so, handed the
+  projection code a volume whose axes were transposed -- which renders as a
+  plausible brain rather than failing. `load_vox2ras_matrix()` already reported the same
+  condition; the two now agree.
+
+- FreeSurfer's stderr survives a failure. It was discarded at any verbosity
+  below 2, which is the default, so a tool that died three hours into a build
+  reported an exit code and a command string with the line saying why already
+  thrown away. It is now captured whatever the verbosity, echoed at `verbose
+  >= 2`, and its tail is quoted in the error. Braces in that output are
+  escaped: `mri_info` prints matrices, and a bare brace turned the
+  report of the failure into a second, unrelated failure.
+
+- `freesurferformats` is checked before it is used. `read_volume()` guarded
+  `RNifti` in one branch of the same `switch()` and not `freesurferformats` in
+  the other; `write_projection_volume()` and `fill_surface_labels()` did not
+  guard it at all.
+
+- The volumetric test fixture has a header again. `aseg.mgz` is a crop of
+  fsaverage5's, and the crop dropped its RAS information, so every test using
+  it exercised the native-voxel-order path that real FreeSurfer output never
+  takes -- and one test had come to depend on that, asserting the missing
+  header warning against the shared fixture. The crop offset was recovered by
+  matching against the parent volume, which is bit-identical at (91, 108, 88),
+  so the restored affine is derived rather than assumed. Only the 16 header
+  bytes covering the RAS block changed; voxel data, `dof`, `mr_params` and the
+  footer tags are untouched. The test that wanted a volume with no header
+  now writes its own.
+
 # ggseg.extra 1.9.9.9050
 
 - `read_volume()` documented a `niftiImage` return for `reorient = FALSE` that

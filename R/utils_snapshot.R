@@ -25,16 +25,63 @@ run_cmd <- function(cmd, verbose = get_verbose(), no_ui = FALSE) {
   }
   # nocov end
   full_cmd <- paste0(freesurfer::get_fs(), cmd)
-  suppress <- verbose < 2
+  # stderr is captured rather than discarded even when it is not being shown:
+  # it is the only thing that says *why* a FreeSurfer tool failed, and these
+  # builds run for hours before they get the chance to.
+  err_file <- tempfile(pattern = "fs_stderr", fileext = ".log")
+  on.exit(unlink(err_file), add = TRUE)
   exit_code <- system(
-    paste("bash -c", shQuote(full_cmd)),
-    ignore.stdout = suppress,
-    ignore.stderr = suppress
+    paste("bash -c", shQuote(full_cmd), "2>", shQuote(err_file)),
+    ignore.stdout = verbose < 2
   )
+  stderr_lines <- read_stderr_log(err_file)
+  if (verbose >= 2 && length(stderr_lines) > 0) {
+    cat(stderr_lines, sep = "\n")
+  }
   if (exit_code != 0) {
-    cli::cli_abort("FreeSurfer command failed (exit {exit_code}): {cmd}")
+    cli::cli_abort(c(
+      "FreeSurfer command failed (exit {exit_code}).",
+      "x" = "{cmd}",
+      fs_stderr_bullets(stderr_lines)
+    ))
   }
   exit_code
+}
+
+
+#' Read a captured stderr log, tolerating a command that never wrote one
+#' @noRd
+read_stderr_log <- function(err_file) {
+  if (!file.exists(err_file)) {
+    return(character())
+  }
+  lines <- readLines(err_file, warn = FALSE)
+  lines[nzchar(trimws(lines))]
+}
+
+
+#' Render captured stderr as cli bullets for an abort message
+#'
+#' Only the tail is shown: FreeSurfer tools are chatty on the way to failing
+#' and the diagnosis is almost always in the last few lines. Each bullet is a
+#' cli template, so braces in the output are doubled first -- `mri_info` prints
+#' matrices and `mris_*` prints glue-looking text, and an unescaped brace turns
+#' the report of the failure into a second, unrelated failure.
+#' @noRd
+fs_stderr_bullets <- function(stderr_lines, max_lines = 10L) {
+  if (length(stderr_lines) == 0) {
+    return(c("i" = "The command produced no error output."))
+  }
+  shown <- cli_escape_braces(utils::tail(stderr_lines, max_lines))
+  bullets <- stats::setNames(shown, rep(" ", length(shown)))
+  c("i" = "FreeSurfer said:", bullets)
+}
+
+
+#' Escape braces so external text is not read as a cli template
+#' @noRd
+cli_escape_braces <- function(x) {
+  gsub("}", "}}", gsub("{", "{{", x, fixed = TRUE), fixed = TRUE)
 }
 
 

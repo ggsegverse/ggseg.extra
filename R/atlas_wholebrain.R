@@ -1056,6 +1056,10 @@ zero_unlisted_labels <- function(labels, keep_idx) {
 #' @noRd
 write_projection_volume <- function(input_volume, keep_idx, output_dir) {
   if (grepl("\\.mgz$", input_volume, ignore.case = TRUE)) {
+    rlang::check_installed(
+      "freesurferformats",
+      reason = "to rewrite FreeSurfer MGZ volumes"
+    )
     mgh <- freesurferformats::read.fs.mgh(input_volume, with_header = TRUE)
     if (all(mgh$data %in% c(0L, keep_idx))) {
       return(input_volume)
@@ -2469,6 +2473,10 @@ fill_surface_labels <- function(overlay, hemi, subject = "fsaverage5") {
     return(overlay)
   }
 
+  rlang::check_installed(
+    "freesurferformats",
+    reason = "to read FreeSurfer surfaces"
+  )
   surf <- freesurferformats::read.fs.surface(surf_file)
   adj <- build_adjacency(surf$faces, nrow(surf$vertices))
 
