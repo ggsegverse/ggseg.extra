@@ -1,3 +1,41 @@
+# ggseg.extra 1.9.9.9053
+
+- `create_tract_from_tractography()` takes 12 arguments rather than 17.
+  `tube_opts` holds `tube_radius`, `tube_segments`, `n_points` and
+  `centerline_method` -- everything about turning a bundle of streamlines
+  into a 3D tube mesh. The flat arguments still work, through `...`, and
+  deprecate.
+
+  `vertex_size_limits` stays where it was, next to `slabs`, despite the name
+  suggesting it belongs with the mesh: it filters finished 2D polygons by
+  vertex count and never touches the tube.
+
+- Both restructured creators order their arguments the tidyverse way: the
+  one required argument, then the arguments with real defaults, then `...`,
+  then everything defaulting to `NULL` or an empty list. Those last must now
+  be named, which every call site in the ggsegverse atlas repositories
+  already does.
+
+- The grouped lists say which function forwards their entries rather than
+  restating that function's argument documentation, which would have drifted
+  the moment either side changed. `cerebellar_opts` points at
+  [create_cerebellar_from_volume()], and `projection_opts` at the
+  **Registration** section rather than repeating it.
+
+- The grouped-argument helpers moved to `R/arg_groups.R` and are shared, so
+  the creators agree about what a deprecation looks like rather than each
+  spelling it differently. Each creator names the version it was grouped in;
+  the notice used to quote whichever version the helper was written for,
+  which sent people to the wrong NEWS entry.
+
+- An invalid grouped list is reported against the argument that was actually
+  passed. `labels = "x"` said `labels_opts` must be a named list, naming an
+  argument that does not exist.
+
+- `tract_setup_pipeline()` is called with named arguments. Fifteen of them
+  were passed by position, three of which (`verbose`, `cleanup`,
+  `skip_existing`) sit next to each other and take the same kinds of value.
+
 # ggseg.extra 1.9.9.9052
 
 - `create_wholebrain_from_volume()` takes 13 arguments rather than 21. The

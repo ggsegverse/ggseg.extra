@@ -29,10 +29,10 @@ bslib
 buckner
 callosum
 cAsym
-Caudate
 caudate
-Centerline
+Caudate
 centerline
+Centerline
 centerlines
 centre
 centred
@@ -42,12 +42,12 @@ chromote's
 CIFTI
 CIFTI's
 ciftiTools
-cli
 CLI
+cli
 CMD
 codemeta
-Colour
 colour
+Colour
 coloured
 colouring
 colourless
@@ -88,8 +88,8 @@ flatmaps
 folia
 foliated
 Freesurfer
-FreeSurfer
 freesurfer
+FreeSurfer
 FreeSurfer's
 FreeSurferColorLUT
 Frenet
@@ -156,8 +156,8 @@ LUTs
 materialising
 Mcalt
 medoid
-MGZ
 mgz
+MGZ
 Miccai
 midline
 millimetre
@@ -175,8 +175,8 @@ natively
 neighbour
 neighbouring
 neighbours
-Neuroimaging
 neuroimaging
+Neuroimaging
 neuromapr
 Neuromaps
 neuromaps
@@ -210,8 +210,8 @@ Putamen
 qform
 quadric
 quantised
-RAS
 ras
+RAS
 rasterisation
 rasterised
 rasterising
@@ -253,8 +253,8 @@ SPM
 stderr
 Sturges
 subcortex
-Subcortical
 subcortical
+Subcortical
 subregion
 sulcal
 sulci
@@ -270,6 +270,7 @@ terra's
 th
 tibble
 tidyr
+tidyverse
 tkRAS
 tkreg
 tkregister

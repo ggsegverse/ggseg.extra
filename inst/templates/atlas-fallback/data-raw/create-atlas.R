@@ -142,7 +142,7 @@ progressr::handlers(global = TRUE)
 #   input_aseg = here::here("data-raw", "aseg.mgz"),
 #   atlas_name = "ATLASNAME",
 #   output_dir = here::here("data-raw"),
-#   tube_radius = 5,
+#   tube_opts = list(tube_radius = 5),
 #   verbose = TRUE
 # )
 

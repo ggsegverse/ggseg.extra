@@ -6,28 +6,39 @@
 \usage{
 create_tract_from_tractography(
   input_tracts,
+  verbose = get_verbose(),
+  views = lifecycle::deprecated(),
+  ...,
   input_aseg = NULL,
   input_lut = NULL,
   atlas_name = NULL,
   output_dir = NULL,
-  tube_radius = 5,
-  tube_segments = 8,
-  n_points = 50,
-  centerline_method = c("mean", "medoid"),
+  tube_opts = list(),
   slabs = NULL,
   vertex_size_limits = NULL,
-  cleanup = NULL,
-  verbose = get_verbose(),
-  skip_existing = NULL,
   steps = NULL,
-  views = lifecycle::deprecated(),
-  ...
+  cleanup = NULL,
+  skip_existing = NULL
 )
 }
 \arguments{
 \item{input_tracts}{Paths to tractography files (\code{.trk} or \code{.tck}), or a
 named list of coordinate matrices where each matrix has N rows and 3
 columns (x, y, z).}
+
+\item{verbose}{Verbosity level: \code{0} (silent), \code{1} (standard progress,
+default), or \code{2} (debug, includes FreeSurfer output). Logical values
+are accepted (\code{TRUE} = 1, \code{FALSE} = 0). If not specified, uses the
+value from \code{options("ggseg.extra.verbose")} or the \code{GGSEG_EXTRA_VERBOSE}
+environment variable.}
+
+\item{views}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} Use \code{slabs} instead.}
+
+\item{...}{Catches the retired \code{dilate}, \code{smoothness} and \code{tolerance}
+arguments, so a call that still passes one keeps working and says so.
+These are post-creation steps now: see \code{\link[=atlas_dilate]{atlas_dilate()}},
+\code{\link[=atlas_smooth]{atlas_smooth()}} and \code{\link[=atlas_simplify]{atlas_simplify()}}. Anything else in \code{...} is an
+error, as an unused argument always was.}
 
 \item{input_aseg}{Path to a segmentation volume (\code{.mgz}, \code{.nii}) used to
 draw cortex outlines in 2D views. Required for steps 2+.}
@@ -45,20 +56,20 @@ filename.}
 \item{output_dir}{Directory to store intermediate files (screenshots, masks,
 contours). Defaults to \code{\link[=tempdir]{tempdir()}}.}
 
-\item{tube_radius}{Controls the tube thickness. Either a single numeric
-value for uniform radius, or \code{"density"} to scale radius by how many
-streamlines pass through each point.}
-
-\item{tube_segments}{Number of segments around the tube circumference.
-Higher values make smoother tubes but larger meshes. Default 8 is a
-good balance.}
-
-\item{n_points}{Number of points to resample the centerline to. All tracts
-are resampled to this length for consistent tube generation.}
-
-\item{centerline_method}{How to extract the centerline from multiple
-streamlines: \code{"mean"} averages coordinates point-by-point, \code{"medoid"}
-selects the single most representative streamline.}
+\item{tube_opts}{Named list controlling how a bundle of streamlines
+becomes a 3D tube mesh, with these entries and defaults:
+\itemize{
+\item \code{centerline_method} (\code{"mean"}) and \code{n_points} (\code{50}): how one
+centerline is derived from many streamlines, and how many points it
+is resampled to. All tracts are resampled to the same length so the
+tubes are consistent.
+\item \code{tube_radius} (\code{5}) and \code{tube_segments} (\code{8}): the thickness of
+the tube drawn along that centerline, and how many segments go
+around its circumference. \code{tube_radius} also takes \code{"density"}, to
+scale thickness by how many streamlines pass through each point.
+}
+Unknown entries error. Replaces the flat \code{tube_radius},
+\code{tube_segments}, \code{n_points} and \code{centerline_method} arguments.}
 
 \item{slabs}{A data.frame specifying projection slabs. If NULL, a default
 set of tract slabs is derived from the volume dimensions.}
@@ -66,21 +77,6 @@ set of tract slabs is derived from the volume dimensions.}
 \item{vertex_size_limits}{Numeric vector of length 2 setting minimum and
 maximum vertex count for polygons. Polygons outside this range are
 filtered out. Default NULL applies no limits.}
-
-\item{cleanup}{Remove intermediate files after atlas creation. If not
-specified, uses \code{options("ggseg.extra.cleanup")} or the \code{GGSEG_EXTRA_CLEANUP}
-environment variable. Default is TRUE.}
-
-\item{verbose}{Verbosity level: \code{0} (silent), \code{1} (standard progress,
-default), or \code{2} (debug, includes FreeSurfer output). Logical values
-are accepted (\code{TRUE} = 1, \code{FALSE} = 0). If not specified, uses the
-value from \code{options("ggseg.extra.verbose")} or the \code{GGSEG_EXTRA_VERBOSE}
-environment variable.}
-
-\item{skip_existing}{Skip generating output files that already exist,
-allowing interrupted atlas creation to resume. If not specified, uses
-\code{options("ggseg.extra.skip_existing")} or the \code{GGSEG_EXTRA_SKIP_EXISTING}
-environment variable. Default is TRUE.}
 
 \item{steps}{Which pipeline steps to run. Default NULL runs all steps.
 Steps are:
@@ -96,13 +92,14 @@ Steps are:
 Use \code{steps = 1} for 3D-only atlas. Use \code{steps = 5:7} to iterate on
 smoothing and vertex reduction.}
 
-\item{views}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} Use \code{slabs} instead.}
+\item{cleanup}{Remove intermediate files after atlas creation. If not
+specified, uses \code{options("ggseg.extra.cleanup")} or the \code{GGSEG_EXTRA_CLEANUP}
+environment variable. Default is TRUE.}
 
-\item{...}{Catches the retired \code{dilate}, \code{smoothness} and \code{tolerance}
-arguments, so a call that still passes one keeps working and says so.
-These are post-creation steps now: see \code{\link[=atlas_dilate]{atlas_dilate()}},
-\code{\link[=atlas_smooth]{atlas_smooth()}} and \code{\link[=atlas_simplify]{atlas_simplify()}}. Anything else in \code{...} is an
-error, as an unused argument always was.}
+\item{skip_existing}{Skip generating output files that already exist,
+allowing interrupted atlas creation to resume. If not specified, uses
+\code{options("ggseg.extra.skip_existing")} or the \code{GGSEG_EXTRA_SKIP_EXISTING}
+environment variable. Default is TRUE.}
 }
 \value{
 A \code{ggseg_atlas} object with type \code{"tract"}, containing region

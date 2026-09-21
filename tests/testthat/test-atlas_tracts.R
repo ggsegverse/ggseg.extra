@@ -25,7 +25,7 @@ describe("create_tract_from_tractography", {
     expect_error(
       create_tract_from_tractography(
         input_tracts = tracts,
-        tube_segments = 2,
+        tube_opts = list(tube_segments = 2),
         steps = 1,
         verbose = FALSE
       ),
@@ -120,8 +120,7 @@ describe("create_tract_from_tractography", {
 
     atlas <- create_tract_from_tractography(
       tract,
-      tube_radius = 3.5,
-      tube_segments = 12,
+      tube_opts = list(tube_radius = 3.5, tube_segments = 12),
       steps = 1,
       verbose = FALSE
     )
@@ -613,5 +612,104 @@ describe("tract_resolve_snapshots early-return NULL", {
     )
     expect_null(result$slabs)
     expect_null(result$cortex_slices)
+  })
+})
+
+
+describe("create_tract_from_tractography tube_opts", {
+  capture_tube <- function(args) {
+    local_mocked_bindings(
+      tract_setup_pipeline = function(...) list(config = list(...)),
+      tract_run_pipeline = function(
+        setup,
+        start_time,
+        slabs,
+        vertex_size_limits
+      ) {
+        c(setup$config, list(.slabs = slabs, .vsl = vertex_size_limits))
+      }
+    )
+    do.call(
+      create_tract_from_tractography,
+      c(list(input_tracts = "t.trk"), args)
+    )
+  }
+
+  it("fills tube_opts out with its defaults", {
+    seen <- capture_tube(list())
+
+    expect_identical(seen$tube_radius, 5)
+    expect_identical(seen$tube_segments, 8)
+    expect_identical(seen$n_points, 50)
+    expect_identical(seen$centerline_method, c("mean", "medoid"))
+  })
+
+  it("keeps the other defaults when tube_opts sets only one entry", {
+    seen <- capture_tube(list(tube_opts = list(tube_radius = 9)))
+
+    expect_identical(seen$tube_radius, 9)
+    expect_identical(seen$tube_segments, 8)
+  })
+
+  it("lands the retired flat arguments where tube_opts now holds them", {
+    old <- suppressWarnings(capture_tube(list(
+      tube_radius = 3,
+      tube_segments = 16,
+      n_points = 25,
+      centerline_method = "medoid"
+    )))
+    new <- capture_tube(list(
+      tube_opts = list(
+        tube_radius = 3,
+        tube_segments = 16,
+        n_points = 25,
+        centerline_method = "medoid"
+      )
+    ))
+
+    for (entry in names(TRACT_TUBE_DEFAULTS)) {
+      expect_identical(old[[entry]], new[[entry]], info = entry)
+    }
+  })
+
+  it("deprecates each retired argument", {
+    # Errors rather than warnings: lifecycle throttles an indirect warning to
+    # once per session, so a warning assertion would pass or fail according
+    # to what ran first.
+    withr::local_options(lifecycle_verbosity = "error")
+
+    for (arg in names(TRACT_TUBE_DEFAULTS)) {
+      expect_error(
+        capture_tube(stats::setNames(list(1), arg)),
+        class = "lifecycle_error_deprecated",
+        info = arg
+      )
+    }
+  })
+
+  it("refuses a retired argument alongside its tube_opts entry", {
+    expect_error(
+      suppressWarnings(capture_tube(list(
+        tube_radius = 3,
+        tube_opts = list(tube_radius = 9)
+      ))),
+      "Cannot use both"
+    )
+  })
+
+  it("rejects an unknown tube_opts entry by name", {
+    expect_error(
+      capture_tube(list(tube_opts = list(nope = 1))),
+      "Unknown .*tube_opts.* entry"
+    )
+  })
+
+  it("leaves slabs and vertex_size_limits as flat arguments", {
+    # vertex_size_limits filters finished 2D polygons, so it belongs with
+    # slabs rather than inside tube_opts whatever its name suggests.
+    seen <- capture_tube(list(slabs = "SLABS", vertex_size_limits = c(1, 2)))
+
+    expect_identical(seen$.slabs, "SLABS")
+    expect_identical(seen$.vsl, c(1, 2))
   })
 })

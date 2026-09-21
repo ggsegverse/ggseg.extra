@@ -1916,10 +1916,10 @@ describe("validate_pipeline_opts", {
     expect_error(
       validate_pipeline_opts(
         list(unknown_opt = TRUE),
-        "cortical",
+        "cortical_opts",
         c("views", "tolerance")
       ),
-      "Unknown cortical option"
+      "Unknown .*cortical_opts.* entr"
     )
   })
 
@@ -1951,7 +1951,7 @@ describe("validate_wholebrain_opts", {
         subcortical_opts = list(),
         cerebellar_opts = list()
       ),
-      "Unknown cortical option"
+      "Unknown .*cortical_opts.* entr"
     )
   })
 
@@ -1962,7 +1962,7 @@ describe("validate_wholebrain_opts", {
         subcortical_opts = list(),
         cerebellar_opts = list()
       ),
-      "Unknown cortical option"
+      "Unknown .*cortical_opts.* entr"
     )
   })
 
@@ -4172,7 +4172,7 @@ describe("create_wholebrain_from_volume argument groups", {
   it("rejects an unknown projection_opts entry by name", {
     expect_error(
       capture_setup(list(projection_opts = list(nope = 1))),
-      "Unknown projection option"
+      "Unknown .*projection_opts.* entr"
     )
   })
 

@@ -6,6 +6,9 @@
 \usage{
 create_wholebrain_from_volume(
   input_volume,
+  verbose = get_verbose(),
+  regheader = lifecycle::deprecated(),
+  ...,
   input_lut = NULL,
   atlas_name = NULL,
   output_dir = NULL,
@@ -16,15 +19,28 @@ create_wholebrain_from_volume(
   cerebellar_opts = list(),
   steps = NULL,
   cleanup = NULL,
-  verbose = get_verbose(),
-  skip_existing = NULL,
-  regheader = lifecycle::deprecated(),
-  ...
+  skip_existing = NULL
 )
 }
 \arguments{
 \item{input_volume}{Path to volumetric parcellation in MNI152 space
 (.mgz, .nii, .nii.gz).}
+
+\item{verbose}{Verbosity level: \code{0} (silent), \code{1} (standard progress,
+default), or \code{2} (debug, includes FreeSurfer output). Logical values
+are accepted (\code{TRUE} = 1, \code{FALSE} = 0). If not specified, uses the
+value from \code{options("ggseg.extra.verbose")} or the \code{GGSEG_EXTRA_VERBOSE}
+environment variable.}
+
+\item{regheader}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} Use
+\code{projection_opts = list(registration = )} instead. \code{TRUE} maps to
+\code{"header"}, \code{FALSE} to \code{"mni152"}. Supplying both is an error.}
+
+\item{...}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} The flat arguments that
+\code{labels}, \code{projection_opts} and \code{cerebellar_opts} replaced. Each is
+folded into the list that now holds it and raises a deprecation warning;
+supplying both the old argument and the list entry it maps to is an
+error rather than a precedence rule.}
 
 \item{input_lut}{Path to FreeSurfer-style colour lookup table, or a
 data.frame with columns \code{idx}, \code{label}, \code{R}, \code{G}, \code{B}, \code{A}.
@@ -52,31 +68,20 @@ flatmap pipeline, using the bundled surfaces from
 Unnamed or unknown entries error. Replaces the \code{cortical_labels},
 \code{subcortical_labels} and \code{cerebellar_labels} arguments.}
 
-\item{projection_opts}{Named list of volume-to-surface projection settings.
-Entries, with their defaults:
+\item{projection_opts}{Named list of volume-to-surface projection
+settings, with these entries and defaults:
 \itemize{
-\item \code{subject} (\code{"fsaverage5"}): target surface subject.
-\item \code{registration} (\code{"header"}): how to align the volume with the
-subject. Read \strong{Registration} before relying on the default. One of
-\code{"header"} (trusts the volume header, via \code{--regheader}; leaves an
-MNI152 volume roughly 2 mm out, but that error is uniform and small
-and it is how every atlas in the ggsegverse was built), \code{"mni152"}
-(applies FreeSurfer's \code{average/mni152.register.dat}, exact only for
-volumes on the 1 mm LAS grid and refused otherwise), or a path to a
-register.dat or LTA file.
-\item \code{projfrac_range} samples several cortical depths via
-\code{mri_vol2surf --projfrac-max} and takes the maximum label value at
-each vertex, giving better surface coverage than a single depth. Set
-it to \code{NULL} to use \code{projfrac} alone, where \code{0} is the white surface
-and \code{1} the pial.
-\item \code{projfrac} (\code{0.5}) and \code{projfrac_range} (\code{c(0, 1, 0.1)}):
-sampling depth through the cortical ribbon.
-\item \code{min_vertices} (\code{50}): minimum vertex count for the vertex-count
-heuristic to call a label cortical. The count is summed over every
-region sharing a label name, so a lookup table whose labels carry
-\verb{_left} / \verb{_right} suffixes contributes one hemisphere per label
-while an unsuffixed one contributes both. Only reached for labels
-that \code{labels} and a \code{type} column leave unclassified.
+\item \code{subject} (\code{"fsaverage5"}) and \code{registration} (\code{"header"}): the
+target surface subject and how the volume is aligned to it. Read
+\strong{Registration} below before relying on the default.
+\item \code{projfrac} (\code{0.5}) and \code{projfrac_range} (\code{c(0, 1, 0.1)}): how
+deep through the cortical ribbon to sample, passed on to
+\code{mri_vol2surf}. Set \code{projfrac_range} to \code{NULL} to sample the single
+depth \code{projfrac} instead.
+\item \code{min_vertices} (\code{50}): how much surface a label needs before
+the vertex-count heuristic calls it cortical. Only reached for
+labels that \code{labels} and a \code{type} column leave unclassified; see
+\strong{Label classification}.
 }
 Unknown entries error. Replaces the flat \code{subject}, \code{registration},
 \code{projfrac}, \code{projfrac_range} and \code{min_vertices} arguments.}
@@ -93,19 +98,19 @@ be set here except those managed by the wholebrain pipeline
 \code{decimate}, \code{slabs}. The deprecated \code{dilate}/\code{tolerance}/\code{smoothness}
 entries trigger a lifecycle warning and are no longer applied.}
 
-\item{cerebellar_opts}{Named list of extra arguments for the cerebellar
-sub-pipeline. Allowed entries include \code{decimate}, forwarded to
-\code{\link[=create_cerebellar_from_volume]{create_cerebellar_from_volume()}}, and \code{cerebellar_space}, which this
-pipeline consumes itself: the space \code{input_volume}'s cerebellar labels
-are in. The flatmap they are drawn on is in SUIT space, so a volume in
-any other space has to be transformed first or the result will not
-correspond to the flatmap. \code{"suit"} (the default) takes the volume as
-already transformed; \code{"MNI152NLin6AsymC"} or \code{"MNI152NLin2009cSymC"}
-transform it with the matching \code{\link[=suit_deformation_field]{suit_deformation_field()}} first. Nothing
-in a NIfTI header records which space a volume is in, so this cannot be
-detected and the default is an assumption: set it if your volume is in an
-MNI space. The deprecated \code{tolerance}/\code{smooth_refinements} entries
-trigger a lifecycle warning.}
+\item{cerebellar_opts}{Named list of extra arguments forwarded to
+\code{\link[=create_cerebellar_from_volume]{create_cerebellar_from_volume()}}. Any argument of that function may be
+set here except those managed by the wholebrain pipeline
+(\code{input_volume}, \code{input_lut}, \code{atlas_name}, \code{output_dir}, \code{verbose},
+\code{cleanup}, \code{skip_existing}).
+
+One entry is not forwarded: \code{cerebellar_space} is consumed here, and
+names the space \code{input_volume}'s cerebellar labels are in. The flatmap
+they are drawn on is in SUIT space, so anything else is transformed with
+the matching \code{\link[=suit_deformation_field]{suit_deformation_field()}} first. Nothing in a NIfTI header
+records a volume's space, so \code{"suit"} is an assumption rather than a
+detection: set it if your volume is in an MNI space. See
+\code{\link[=suit_deformation_field]{suit_deformation_field()}} for the spaces available.}
 
 \item{steps}{Which pipeline steps to run. Default NULL runs all steps.
 Steps are:
@@ -122,26 +127,10 @@ Use \code{steps = 1:2} to run projection and split only.}
 specified, uses \code{options("ggseg.extra.cleanup")} or the \code{GGSEG_EXTRA_CLEANUP}
 environment variable. Default is TRUE.}
 
-\item{verbose}{Verbosity level: \code{0} (silent), \code{1} (standard progress,
-default), or \code{2} (debug, includes FreeSurfer output). Logical values
-are accepted (\code{TRUE} = 1, \code{FALSE} = 0). If not specified, uses the
-value from \code{options("ggseg.extra.verbose")} or the \code{GGSEG_EXTRA_VERBOSE}
-environment variable.}
-
 \item{skip_existing}{Skip generating output files that already exist,
 allowing interrupted atlas creation to resume. If not specified, uses
 \code{options("ggseg.extra.skip_existing")} or the \code{GGSEG_EXTRA_SKIP_EXISTING}
 environment variable. Default is TRUE.}
-
-\item{regheader}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} Use
-\code{projection_opts = list(registration = )} instead. \code{TRUE} maps to
-\code{"header"}, \code{FALSE} to \code{"mni152"}. Supplying both is an error.}
-
-\item{...}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} The flat arguments that
-\code{labels}, \code{projection_opts} and \code{cerebellar_opts} replaced. Each is
-folded into the list that now holds it and raises a deprecation warning;
-supplying both the old argument and the list entry it maps to is an
-error rather than a precedence rule.}
 }
 \value{
 A named list with elements \code{cortical}, \code{subcortical}, and
