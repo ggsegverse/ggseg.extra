@@ -9,23 +9,17 @@ create_wholebrain_from_volume(
   input_lut = NULL,
   atlas_name = NULL,
   output_dir = NULL,
-  projfrac = 0.5,
-  projfrac_range = c(0, 1, 0.1),
-  subject = "fsaverage5",
-  registration = "header",
-  min_vertices = 50L,
-  cortical_labels = NULL,
-  subcortical_labels = NULL,
-  cerebellar_labels = NULL,
-  cerebellar_space = c("suit", "MNI152NLin6AsymC", "MNI152NLin2009cSymC"),
+  labels = list(),
+  projection_opts = list(),
   cortical_opts = list(),
   subcortical_opts = list(),
   cerebellar_opts = list(),
+  steps = NULL,
   cleanup = NULL,
   verbose = get_verbose(),
   skip_existing = NULL,
-  steps = NULL,
-  regheader = lifecycle::deprecated()
+  regheader = lifecycle::deprecated(),
+  ...
 )
 }
 \arguments{
@@ -46,62 +40,46 @@ filename.}
 \item{output_dir}{Directory to store intermediate files (screenshots, masks,
 contours). Defaults to \code{\link[=tempdir]{tempdir()}}.}
 
-\item{projfrac}{Cortical depth fraction for projection (0 = white surface,
-1 = pial surface). Only used when \code{projfrac_range} is NULL. Default 0.5.}
-
-\item{projfrac_range}{Numeric vector \code{c(min, max, delta)} for multi-depth
-projection via \code{mri_vol2surf --projfrac-max}. Samples at multiple cortical
-depths and takes the maximum label value at each vertex, giving much better
-surface coverage than single-depth projection. Default \code{c(0, 1, 0.1)}.
-Set to NULL to use single-depth \code{projfrac} instead.}
-
-\item{subject}{Target surface subject. Default "fsaverage5".}
-
-\item{registration}{How the volume is registered to the surface subject.
-See the \strong{Registration} section, which you should read before relying
-on the default. One of:
+\item{labels}{Named list routing labels to a sub-pipeline, overriding the
+lookup table's \code{type} column and the vertex-count heuristic. Entries:
 \itemize{
-\item \code{"header"} (default): trusts the volume header and uses
-\code{--regheader}. Leaves an MNI152 volume roughly 2 mm out, because
-\code{fsaverage} lives in MNI305, but that error is uniform and small,
-and it is how every atlas in the ggsegverse was built.
-\item \code{"mni152"}: applies FreeSurfer's \code{average/mni152.register.dat},
-the transform from the FSL/SPM MNI152 (NLin6) 1 mm template to the
-MNI305 space \code{fsaverage} lives in. Exact only for volumes on that
-1 mm LAS grid; anything else is refused rather than silently
-mislocated.
-\item A path to a register.dat or LTA file to apply instead.
-}}
+\item \code{cortical}: label names to force as cortical.
+\item \code{subcortical}: label names to force as subcortical.
+\item \code{cerebellar}: label names to send through the cerebellar SUIT
+flatmap pipeline, using the bundled surfaces from
+\code{\link[=suit_flatmap_path]{suit_flatmap_path()}} and \code{\link[=suit_3d_path]{suit_3d_path()}}.
+}
+Unnamed or unknown entries error. Replaces the \code{cortical_labels},
+\code{subcortical_labels} and \code{cerebellar_labels} arguments.}
 
-\item{min_vertices}{Minimum vertex count on the surface projection for a
-label to be classified as cortical by the vertex-count heuristic (see
-\strong{Label classification}). The count is summed over every region that
-shares a label name, so a lookup table whose labels carry \verb{_left} /
-\verb{_right} suffixes contributes one hemisphere per label while an
-unsuffixed one contributes both. Only reached for labels that a \code{type}
-column and the explicit label vectors leave unclassified. Default 50.}
-
-\item{cortical_labels}{Character vector of label names to force as cortical.
-Highest priority; overrides LUT \code{type} and the vertex-count heuristic.}
-
-\item{subcortical_labels}{Character vector of label names to force as
-subcortical. Highest priority; overrides LUT \code{type} and the vertex-count
-heuristic.}
-
-\item{cerebellar_labels}{Character vector of label names to force as
-cerebellar. These go through the cerebellar SUIT flatmap pipeline instead
-of cortical or subcortical. Uses the bundled SUIT surfaces from
-\code{\link[=suit_flatmap_path]{suit_flatmap_path()}} and \code{\link[=suit_3d_path]{suit_3d_path()}}.}
-
-\item{cerebellar_space}{Space \code{input_volume}'s cerebellar labels are in.
-The flatmap they are drawn on is in SUIT space, so a volume in any other
-space has to be transformed first or the result will not correspond to
-the flatmap. \code{"suit"} (the default) takes the volume as already
-transformed. \code{"MNI152NLin6AsymC"} or \code{"MNI152NLin2009cSymC"} transform it
-with the matching \code{\link[=suit_deformation_field]{suit_deformation_field()}} before building the atlas.
-Nothing in a NIfTI header records which space a volume is in, so this
-cannot be detected and the default is an assumption: set it if your
-volume is in an MNI space.}
+\item{projection_opts}{Named list of volume-to-surface projection settings.
+Entries, with their defaults:
+\itemize{
+\item \code{subject} (\code{"fsaverage5"}): target surface subject.
+\item \code{registration} (\code{"header"}): how to align the volume with the
+subject. Read \strong{Registration} before relying on the default. One of
+\code{"header"} (trusts the volume header, via \code{--regheader}; leaves an
+MNI152 volume roughly 2 mm out, but that error is uniform and small
+and it is how every atlas in the ggsegverse was built), \code{"mni152"}
+(applies FreeSurfer's \code{average/mni152.register.dat}, exact only for
+volumes on the 1 mm LAS grid and refused otherwise), or a path to a
+register.dat or LTA file.
+\item \code{projfrac_range} samples several cortical depths via
+\code{mri_vol2surf --projfrac-max} and takes the maximum label value at
+each vertex, giving better surface coverage than a single depth. Set
+it to \code{NULL} to use \code{projfrac} alone, where \code{0} is the white surface
+and \code{1} the pial.
+\item \code{projfrac} (\code{0.5}) and \code{projfrac_range} (\code{c(0, 1, 0.1)}):
+sampling depth through the cortical ribbon.
+\item \code{min_vertices} (\code{50}): minimum vertex count for the vertex-count
+heuristic to call a label cortical. The count is summed over every
+region sharing a label name, so a lookup table whose labels carry
+\verb{_left} / \verb{_right} suffixes contributes one hemisphere per label
+while an unsuffixed one contributes both. Only reached for labels
+that \code{labels} and a \code{type} column leave unclassified.
+}
+Unknown entries error. Replaces the flat \code{subject}, \code{registration},
+\code{projfrac}, \code{projfrac_range} and \code{min_vertices} arguments.}
 
 \item{cortical_opts}{Named list of extra arguments forwarded to the
 cortical sub-pipeline. Allowed entry: \code{views}. Unknown entries error.
@@ -115,10 +93,30 @@ be set here except those managed by the wholebrain pipeline
 \code{decimate}, \code{slabs}. The deprecated \code{dilate}/\code{tolerance}/\code{smoothness}
 entries trigger a lifecycle warning and are no longer applied.}
 
-\item{cerebellar_opts}{Named list of extra arguments forwarded to
-\code{\link[=create_cerebellar_from_volume]{create_cerebellar_from_volume()}}. Allowed entries include \code{decimate}.
-The deprecated \code{tolerance}/\code{smooth_refinements} entries trigger a
-lifecycle warning.}
+\item{cerebellar_opts}{Named list of extra arguments for the cerebellar
+sub-pipeline. Allowed entries include \code{decimate}, forwarded to
+\code{\link[=create_cerebellar_from_volume]{create_cerebellar_from_volume()}}, and \code{cerebellar_space}, which this
+pipeline consumes itself: the space \code{input_volume}'s cerebellar labels
+are in. The flatmap they are drawn on is in SUIT space, so a volume in
+any other space has to be transformed first or the result will not
+correspond to the flatmap. \code{"suit"} (the default) takes the volume as
+already transformed; \code{"MNI152NLin6AsymC"} or \code{"MNI152NLin2009cSymC"}
+transform it with the matching \code{\link[=suit_deformation_field]{suit_deformation_field()}} first. Nothing
+in a NIfTI header records which space a volume is in, so this cannot be
+detected and the default is an assumption: set it if your volume is in an
+MNI space. The deprecated \code{tolerance}/\code{smooth_refinements} entries
+trigger a lifecycle warning.}
+
+\item{steps}{Which pipeline steps to run. Default NULL runs all steps.
+Steps are:
+\itemize{
+\item 1: Project volume onto surface
+\item 2: Split labels into cortical/subcortical/cerebellar
+\item 3: Run cortical pipeline
+\item 4: Run subcortical pipeline
+\item 5: Run cerebellar pipeline
+}
+Use \code{steps = 1:2} to run projection and split only.}
 
 \item{cleanup}{Remove intermediate files after atlas creation. If not
 specified, uses \code{options("ggseg.extra.cleanup")} or the \code{GGSEG_EXTRA_CLEANUP}
@@ -135,20 +133,15 @@ allowing interrupted atlas creation to resume. If not specified, uses
 \code{options("ggseg.extra.skip_existing")} or the \code{GGSEG_EXTRA_SKIP_EXISTING}
 environment variable. Default is TRUE.}
 
-\item{steps}{Which pipeline steps to run. Default NULL runs all steps.
-Steps are:
-\itemize{
-\item 1: Project volume onto surface
-\item 2: Split labels into cortical/subcortical/cerebellar
-\item 3: Run cortical pipeline
-\item 4: Run subcortical pipeline
-\item 5: Run cerebellar pipeline
-}
-Use \code{steps = 1:2} to run projection and split only.}
+\item{regheader}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} Use
+\code{projection_opts = list(registration = )} instead. \code{TRUE} maps to
+\code{"header"}, \code{FALSE} to \code{"mni152"}. Supplying both is an error.}
 
-\item{regheader}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} Use \code{registration}
-instead. \code{TRUE} maps to \code{registration = "header"}, \code{FALSE} to
-\code{registration = "mni152"}. Supplying both is an error.}
+\item{...}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} The flat arguments that
+\code{labels}, \code{projection_opts} and \code{cerebellar_opts} replaced. Each is
+folded into the list that now holds it and raises a deprecation warning;
+supplying both the old argument and the list entry it maps to is an
+error rather than a precedence rule.}
 }
 \value{
 A named list with elements \code{cortical}, \code{subcortical}, and
@@ -333,5 +326,18 @@ result <- create_wholebrain_from_volume(
 )
 result$cortical_labels
 result$subcortical_labels
+
+# --- Overriding classification and projection ---
+# `labels` forces a label down a particular pipeline; `projection_opts`
+# holds everything about getting the volume onto the surface.
+result <- create_wholebrain_from_volume(
+  input_volume = "atlas.nii.gz",
+  input_lut = "atlas_LUT.txt",
+  labels = list(
+    cerebellar = c("Left-Cerebellum-Cortex", "Right-Cerebellum-Cortex")
+  ),
+  projection_opts = list(registration = "mni152", subject = "fsaverage6"),
+  cerebellar_opts = list(cerebellar_space = "MNI152NLin6AsymC")
+)
 }
 }

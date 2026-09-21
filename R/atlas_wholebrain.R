@@ -107,57 +107,53 @@
 #'   If NULL, generic names and no palette.
 #' @template atlas_name
 #' @template output_dir
-#' @param projfrac Cortical depth fraction for projection (0 = white surface,
-#'   1 = pial surface). Only used when `projfrac_range` is NULL. Default 0.5.
-#' @param projfrac_range Numeric vector `c(min, max, delta)` for multi-depth
-#'   projection via `mri_vol2surf --projfrac-max`. Samples at multiple cortical
-#'   depths and takes the maximum label value at each vertex, giving much better
-#'   surface coverage than single-depth projection. Default `c(0, 1, 0.1)`.
-#'   Set to NULL to use single-depth `projfrac` instead.
-#' @param subject Target surface subject. Default "fsaverage5".
-#' @param registration How the volume is registered to the surface subject.
-#'   See the **Registration** section, which you should read before relying
-#'   on the default. One of:
+#' @param regheader `r lifecycle::badge("deprecated")` Use
+#'   `projection_opts = list(registration = )` instead. `TRUE` maps to
+#'   `"header"`, `FALSE` to `"mni152"`. Supplying both is an error.
+#' @param ... `r lifecycle::badge("deprecated")` The flat arguments that
+#'   `labels`, `projection_opts` and `cerebellar_opts` replaced. Each is
+#'   folded into the list that now holds it and raises a deprecation warning;
+#'   supplying both the old argument and the list entry it maps to is an
+#'   error rather than a precedence rule.
+#' @param labels Named list routing labels to a sub-pipeline, overriding the
+#'   lookup table's `type` column and the vertex-count heuristic. Entries:
 #'   \itemize{
-#'     \item `"header"` (default): trusts the volume header and uses
-#'       `--regheader`. Leaves an MNI152 volume roughly 2 mm out, because
-#'       `fsaverage` lives in MNI305, but that error is uniform and small,
-#'       and it is how every atlas in the ggsegverse was built.
-#'     \item `"mni152"`: applies FreeSurfer's `average/mni152.register.dat`,
-#'       the transform from the FSL/SPM MNI152 (NLin6) 1 mm template to the
-#'       MNI305 space `fsaverage` lives in. Exact only for volumes on that
-#'       1 mm LAS grid; anything else is refused rather than silently
-#'       mislocated.
-#'     \item A path to a register.dat or LTA file to apply instead.
+#'     \item `cortical`: label names to force as cortical.
+#'     \item `subcortical`: label names to force as subcortical.
+#'     \item `cerebellar`: label names to send through the cerebellar SUIT
+#'       flatmap pipeline, using the bundled surfaces from
+#'       [suit_flatmap_path()] and [suit_3d_path()].
 #'   }
-#' @param regheader `r lifecycle::badge("deprecated")` Use `registration`
-#'   instead. `TRUE` maps to `registration = "header"`, `FALSE` to
-#'   `registration = "mni152"`. Supplying both is an error.
-#' @param min_vertices Minimum vertex count on the surface projection for a
-#'   label to be classified as cortical by the vertex-count heuristic (see
-#'   **Label classification**). The count is summed over every region that
-#'   shares a label name, so a lookup table whose labels carry `_left` /
-#'   `_right` suffixes contributes one hemisphere per label while an
-#'   unsuffixed one contributes both. Only reached for labels that a `type`
-#'   column and the explicit label vectors leave unclassified. Default 50.
-#' @param cortical_labels Character vector of label names to force as cortical.
-#'   Highest priority; overrides LUT `type` and the vertex-count heuristic.
-#' @param subcortical_labels Character vector of label names to force as
-#'   subcortical. Highest priority; overrides LUT `type` and the vertex-count
-#'   heuristic.
-#' @param cerebellar_labels Character vector of label names to force as
-#'   cerebellar. These go through the cerebellar SUIT flatmap pipeline instead
-#'   of cortical or subcortical. Uses the bundled SUIT surfaces from
-#'   [suit_flatmap_path()] and [suit_3d_path()].
-#' @param cerebellar_space Space `input_volume`'s cerebellar labels are in.
-#'   The flatmap they are drawn on is in SUIT space, so a volume in any other
-#'   space has to be transformed first or the result will not correspond to
-#'   the flatmap. `"suit"` (the default) takes the volume as already
-#'   transformed. `"MNI152NLin6AsymC"` or `"MNI152NLin2009cSymC"` transform it
-#'   with the matching [suit_deformation_field()] before building the atlas.
-#'   Nothing in a NIfTI header records which space a volume is in, so this
-#'   cannot be detected and the default is an assumption: set it if your
-#'   volume is in an MNI space.
+#'   Unnamed or unknown entries error. Replaces the `cortical_labels`,
+#'   `subcortical_labels` and `cerebellar_labels` arguments.
+#' @param projection_opts Named list of volume-to-surface projection settings.
+#'   Entries, with their defaults:
+#'   \itemize{
+#'     \item `subject` (`"fsaverage5"`): target surface subject.
+#'     \item `registration` (`"header"`): how to align the volume with the
+#'       subject. Read **Registration** before relying on the default. One of
+#'       `"header"` (trusts the volume header, via `--regheader`; leaves an
+#'       MNI152 volume roughly 2 mm out, but that error is uniform and small
+#'       and it is how every atlas in the ggsegverse was built), `"mni152"`
+#'       (applies FreeSurfer's `average/mni152.register.dat`, exact only for
+#'       volumes on the 1 mm LAS grid and refused otherwise), or a path to a
+#'       register.dat or LTA file.
+#'     \item `projfrac_range` samples several cortical depths via
+#'       `mri_vol2surf --projfrac-max` and takes the maximum label value at
+#'       each vertex, giving better surface coverage than a single depth. Set
+#'       it to `NULL` to use `projfrac` alone, where `0` is the white surface
+#'       and `1` the pial.
+#'     \item `projfrac` (`0.5`) and `projfrac_range` (`c(0, 1, 0.1)`):
+#'       sampling depth through the cortical ribbon.
+#'     \item `min_vertices` (`50`): minimum vertex count for the vertex-count
+#'       heuristic to call a label cortical. The count is summed over every
+#'       region sharing a label name, so a lookup table whose labels carry
+#'       `_left` / `_right` suffixes contributes one hemisphere per label
+#'       while an unsuffixed one contributes both. Only reached for labels
+#'       that `labels` and a `type` column leave unclassified.
+#'   }
+#'   Unknown entries error. Replaces the flat `subject`, `registration`,
+#'   `projfrac`, `projfrac_range` and `min_vertices` arguments.
 #' @param cortical_opts Named list of extra arguments forwarded to the
 #'   cortical sub-pipeline. Allowed entry: `views`. Unknown entries error.
 #'   Leave empty to use defaults.
@@ -168,10 +164,19 @@
 #'   `cleanup`, `skip_existing`). Use this to tune `vertex_size_limits`,
 #'   `decimate`, `slabs`. The deprecated `dilate`/`tolerance`/`smoothness`
 #'   entries trigger a lifecycle warning and are no longer applied.
-#' @param cerebellar_opts Named list of extra arguments forwarded to
-#'   [create_cerebellar_from_volume()]. Allowed entries include `decimate`.
-#'   The deprecated `tolerance`/`smooth_refinements` entries trigger a
-#'   lifecycle warning.
+#' @param cerebellar_opts Named list of extra arguments for the cerebellar
+#'   sub-pipeline. Allowed entries include `decimate`, forwarded to
+#'   [create_cerebellar_from_volume()], and `cerebellar_space`, which this
+#'   pipeline consumes itself: the space `input_volume`'s cerebellar labels
+#'   are in. The flatmap they are drawn on is in SUIT space, so a volume in
+#'   any other space has to be transformed first or the result will not
+#'   correspond to the flatmap. `"suit"` (the default) takes the volume as
+#'   already transformed; `"MNI152NLin6AsymC"` or `"MNI152NLin2009cSymC"`
+#'   transform it with the matching [suit_deformation_field()] first. Nothing
+#'   in a NIfTI header records which space a volume is in, so this cannot be
+#'   detected and the default is an assumption: set it if your volume is in an
+#'   MNI space. The deprecated `tolerance`/`smooth_refinements` entries
+#'   trigger a lifecycle warning.
 #' @template cleanup
 #' @template verbose
 #' @template skip_existing
@@ -268,66 +273,82 @@
 #' )
 #' result$cortical_labels
 #' result$subcortical_labels
+#'
+#' # --- Overriding classification and projection ---
+#' # `labels` forces a label down a particular pipeline; `projection_opts`
+#' # holds everything about getting the volume onto the surface.
+#' result <- create_wholebrain_from_volume(
+#'   input_volume = "atlas.nii.gz",
+#'   input_lut = "atlas_LUT.txt",
+#'   labels = list(
+#'     cerebellar = c("Left-Cerebellum-Cortex", "Right-Cerebellum-Cortex")
+#'   ),
+#'   projection_opts = list(registration = "mni152", subject = "fsaverage6"),
+#'   cerebellar_opts = list(cerebellar_space = "MNI152NLin6AsymC")
+#' )
 #' }
 create_wholebrain_from_volume <- function(
   input_volume,
   input_lut = NULL,
   atlas_name = NULL,
   output_dir = NULL,
-  projfrac = 0.5,
-  projfrac_range = c(0, 1, 0.1),
-  subject = "fsaverage5",
-  registration = "header",
-  min_vertices = 50L,
-  cortical_labels = NULL,
-  subcortical_labels = NULL,
-  cerebellar_labels = NULL,
-  cerebellar_space = c("suit", "MNI152NLin6AsymC", "MNI152NLin2009cSymC"),
+  labels = list(),
+  projection_opts = list(),
   cortical_opts = list(),
   subcortical_opts = list(),
   cerebellar_opts = list(),
+  steps = NULL,
   cleanup = NULL,
   verbose = get_verbose(), # nolint: object_usage_linter
   skip_existing = NULL,
-  steps = NULL,
-  regheader = lifecycle::deprecated()
+  regheader = lifecycle::deprecated(),
+  ...
 ) {
+  grouped <- wholebrain_group_dots(
+    labels = labels,
+    projection_opts = projection_opts,
+    cerebellar_opts = cerebellar_opts,
+    dots = list(...)
+  )
+  labels <- resolve_labels(grouped$labels)
+  projection <- resolve_projection_opts(grouped$projection_opts)
+  cerebellar <- take_cerebellar_space(grouped$cerebellar_opts)
+
   if (lifecycle::is_present(regheader)) {
     # match.call() rather than missing(): goodpractice's tidyverse_no_missing
     # check rejects missing(), and registration has a real default to fall
     # back on, so lifecycle::is_present() cannot answer this for it.
-    registration <- registration_from_regheader(
+    projection$registration <- registration_from_regheader(
       regheader,
-      !"registration" %in% names(match.call())
+      !"registration" %in% names(grouped$projection_opts)
     )
   }
 
   start_time <- Sys.time()
+  do.call(
+    check_post_creation_dots,
+    c(list("create_wholebrain_from_volume"), grouped$dots)
+  )
   opts <- validate_wholebrain_opts(
     cortical_opts,
     subcortical_opts,
-    cerebellar_opts
+    cerebellar$opts
   )
   setup <- wholebrain_setup(
-    input_volume,
-    input_lut,
-    atlas_name,
-    output_dir,
-    projfrac,
-    projfrac_range,
-    subject,
-    registration,
-    min_vertices,
-    verbose,
-    cleanup,
-    skip_existing,
-    steps,
-    cerebellar_space
-  )
-  labels <- list(
-    cortical = cortical_labels,
-    subcortical = subcortical_labels,
-    cerebellar = cerebellar_labels
+    input_volume = input_volume,
+    input_lut = input_lut,
+    atlas_name = atlas_name,
+    output_dir = output_dir,
+    projfrac = projection$projfrac,
+    projfrac_range = projection$projfrac_range,
+    subject = projection$subject,
+    registration = projection$registration,
+    min_vertices = projection$min_vertices,
+    verbose = verbose,
+    cleanup = cleanup,
+    skip_existing = skip_existing,
+    steps = steps,
+    cerebellar_space = cerebellar$space
   )
   wholebrain_run_pipeline(setup, opts, labels, start_time)
 }
@@ -354,6 +375,203 @@ registration_from_regheader <- function(regheader, registration_missing) {
   )
 
   if (regheader) "header" else "mni152"
+}
+
+
+# Argument grouping ----
+
+# nolint start: object_name_linter.
+#' Defaults for the grouped `projection_opts` argument
+#' @noRd
+WHOLEBRAIN_PROJECTION_DEFAULTS <- list(
+  projfrac = 0.5,
+  projfrac_range = c(0, 1, 0.1),
+  subject = "fsaverage5",
+  registration = "header",
+  min_vertices = 50L
+)
+
+#' Flat arguments retired into `labels`, and the entry each becomes
+#' @noRd
+WHOLEBRAIN_RETIRED_LABELS <- c(
+  cortical_labels = "cortical",
+  subcortical_labels = "subcortical",
+  cerebellar_labels = "cerebellar"
+)
+
+#' Flat arguments retired into `cerebellar_opts`
+#' @noRd
+WHOLEBRAIN_RETIRED_CEREBELLAR <- c(cerebellar_space = "cerebellar_space")
+# nolint end
+
+#' Fold a retired flat argument into the list that replaced it
+#'
+#' Passing both the old argument and the new list entry is an error rather
+#' than a precedence rule: the two disagree about the same setting, and
+#' silently preferring one is how a build ends up not doing what its script
+#' says.
+#' @noRd
+absorb_retired_arg <- function(target, entry, value, old_name, new_arg) {
+  if (entry %in% names(target)) {
+    cli::cli_abort(c(
+      "Cannot use both {.arg {old_name}} and {.code {new_arg}${entry}}.",
+      "i" = "{.arg {old_name}} is deprecated; keep {.code {new_arg}} alone."
+    ))
+  }
+  lifecycle::deprecate_warn(
+    "1.9.9.9052",
+    paste0("create_wholebrain_from_volume(", old_name, " = )"),
+    paste0("create_wholebrain_from_volume(", new_arg, " = )")
+  )
+  target[[entry]] <- value
+  target
+}
+
+#' Move the retired flat arguments into `labels`, `projection_opts` and
+#' `cerebellar_opts`, leaving the post-creation dots alone
+#'
+#' Every call site found in the ggsegverse atlas repositories names its
+#' arguments, so nothing here has to cope with positional matching.
+#' @noRd
+wholebrain_group_dots <- function(
+  labels,
+  projection_opts,
+  cerebellar_opts,
+  dots
+) {
+  named <- names(dots)
+  if (is.null(named)) {
+    named <- rep("", length(dots))
+  }
+
+  for (nm in intersect(named, names(WHOLEBRAIN_RETIRED_LABELS))) {
+    labels <- absorb_retired_arg(
+      labels,
+      WHOLEBRAIN_RETIRED_LABELS[[nm]],
+      dots[[nm]],
+      nm,
+      "labels"
+    )
+  }
+  for (nm in intersect(named, names(WHOLEBRAIN_PROJECTION_DEFAULTS))) {
+    projection_opts <- absorb_retired_arg(
+      projection_opts,
+      nm,
+      dots[[nm]],
+      nm,
+      "projection_opts"
+    )
+  }
+  for (nm in intersect(named, names(WHOLEBRAIN_RETIRED_CEREBELLAR))) {
+    cerebellar_opts <- absorb_retired_arg(
+      cerebellar_opts,
+      WHOLEBRAIN_RETIRED_CEREBELLAR[[nm]],
+      dots[[nm]],
+      nm,
+      "cerebellar_opts"
+    )
+  }
+
+  retired <- c(
+    names(WHOLEBRAIN_RETIRED_LABELS),
+    names(WHOLEBRAIN_PROJECTION_DEFAULTS),
+    names(WHOLEBRAIN_RETIRED_CEREBELLAR)
+  )
+  rest <- dots[!named %in% retired]
+  redirect_sub_pipeline_args(names(rest))
+  list(
+    labels = labels,
+    projection_opts = projection_opts,
+    cerebellar_opts = cerebellar_opts,
+    dots = rest
+  )
+}
+
+
+#' Point a sub-pipeline option passed at the top level at the list it belongs in
+#'
+#' `decimate` and friends were never arguments of this function, so R used to
+#' answer them with `unused argument`, which does not say where they should
+#' have gone. They are real options of the builders the wholebrain pipeline
+#' drives, so name the list that forwards them.
+#' @noRd
+redirect_sub_pipeline_args <- function(nms) {
+  if (is.null(nms) || !length(nms)) {
+    return(invisible(NULL))
+  }
+  managed <- c(
+    "input_volume",
+    "volume",
+    "input_lut",
+    "atlas_name",
+    "output_dir",
+    "verbose",
+    "cleanup",
+    "skip_existing"
+  )
+  owners <- list(
+    subcortical_opts = setdiff(
+      names(formals(create_subcortical_from_volume)),
+      c(managed, "...")
+    ),
+    cerebellar_opts = setdiff(
+      names(formals(create_cerebellar_from_volume)),
+      c(managed, "...")
+    )
+  )
+  for (nm in nms) {
+    for (list_name in names(owners)) {
+      if (nm %in% owners[[list_name]]) {
+        cli::cli_abort(c(
+          "{.arg {nm}} is not an argument of
+           {.fn create_wholebrain_from_volume}.",
+          "i" = "It is an option of the sub-pipeline: pass
+                 {.code {list_name} = list({nm} = ...)}."
+        ))
+      }
+    }
+  }
+  invisible(NULL)
+}
+
+#' Fill `projection_opts` out with its defaults after validating the names
+#' @noRd
+resolve_projection_opts <- function(projection_opts) {
+  projection_opts <- validate_pipeline_opts(
+    projection_opts,
+    "projection",
+    names(WHOLEBRAIN_PROJECTION_DEFAULTS)
+  )
+  utils::modifyList(WHOLEBRAIN_PROJECTION_DEFAULTS, projection_opts)
+}
+
+#' Validate `labels` and fill the three entries out with NULL
+#' @noRd
+resolve_labels <- function(labels) {
+  labels <- validate_pipeline_opts(
+    labels,
+    "labels",
+    unname(WHOLEBRAIN_RETIRED_LABELS)
+  )
+  utils::modifyList(
+    list(cortical = NULL, subcortical = NULL, cerebellar = NULL),
+    labels
+  )
+}
+
+#' Split `cerebellar_space` back out of `cerebellar_opts`
+#'
+#' It is not a formal of `create_cerebellar_from_volume()`, so it cannot be
+#' forwarded with the rest of the list; it tells the wholebrain pipeline
+#' whether to transform the volume before the cerebellar builder ever runs.
+#' @noRd
+take_cerebellar_space <- function(cerebellar_opts) {
+  space <- cerebellar_opts$cerebellar_space
+  cerebellar_opts$cerebellar_space <- NULL
+  if (is.null(space)) {
+    space <- c("suit", "MNI152NLin6AsymC", "MNI152NLin2009cSymC")
+  }
+  list(space = space, opts = cerebellar_opts)
 }
 
 

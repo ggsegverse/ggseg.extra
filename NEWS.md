@@ -1,3 +1,28 @@
+# ggseg.extra 1.9.9.9052
+
+- `create_wholebrain_from_volume()` takes 13 arguments rather than 21. The
+  ones that describe the same thing are grouped: `labels` holds the
+  `cortical`/`subcortical`/`cerebellar` overrides, `projection_opts` holds
+  `subject`, `registration`, `projfrac`, `projfrac_range` and
+  `min_vertices`, and `cerebellar_space` joins `cerebellar_opts`. The
+  function already built `list(cortical = , subcortical = , cerebellar = )`
+  out of three flat arguments on its way in, so `labels` is the shape it
+  wanted anyway.
+
+  The flat arguments still work, through `...`, and warn. Supplying both an
+  old argument and the list entry that replaced it is an error rather than a
+  precedence rule: the two disagree about one setting, and quietly preferring
+  either is how a build ends up not doing what its script says.
+
+  Every call to this function in the ggsegverse atlas repositories names its
+  arguments, so nothing depends on their order, and each of the ten was
+  checked against the new signature.
+
+- A sub-pipeline option passed at the top level says where it belongs.
+  `decimate = 0.5` used to be met with R's `unused argument`, which does not
+  mention that `subcortical_opts = list(decimate = 0.5)` is the way to say
+  it. Two atlas build scripts pass exactly that and have been failing.
+
 # ggseg.extra 1.9.9.9051
 
 - `read_volume()` says so when it cannot orient an MGZ. The affine is the only
