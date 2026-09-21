@@ -84,6 +84,16 @@ describe("prepare_subcortical_mni152", {
     arr[95:99, 108:112, 90:94] <- 212L
     vol <- RNifti::asNifti(arr)
     RNifti::pixdim(vol) <- c(1, 1, 1)
+    # FreeSurfer refuses to orient a volume with no valid qform or sform and
+    # says so on stderr, so give the fixture the real FSL-MNI152 1mm affine.
+    RNifti::sform(vol) <- structure(
+      matrix(
+        c(-1, 0, 0, 90, 0, 1, 0, -126, 0, 0, 1, -72, 0, 0, 0, 1),
+        nrow = 4,
+        byrow = TRUE
+      ),
+      code = 4L
+    )
     in_path <- withr::local_tempfile(fileext = ".nii.gz")
     RNifti::writeNifti(vol, in_path)
 

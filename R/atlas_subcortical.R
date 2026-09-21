@@ -127,27 +127,22 @@ create_subcortical_from_volume <- function(
     slabs <- views
   }
 
-  unpacked <- subcort_unpack_input(
-    input_volume,
-    input_lut,
-    tolerance,
-    smoothness
-  )
+  unpacked <- unpack_anatomical_input(input_volume, input_lut)
 
   start_time <- Sys.time()
 
   setup <- subcort_setup_pipeline(
-    unpacked,
-    atlas_name,
-    output_dir,
-    verbose,
-    cleanup,
-    skip_existing,
-    decimate,
-    steps,
-    tolerance,
-    smoothness,
-    context
+    unpacked = unpacked,
+    atlas_name = atlas_name,
+    output_dir = output_dir,
+    verbose = verbose,
+    cleanup = cleanup,
+    skip_existing = skip_existing,
+    decimate = decimate,
+    steps = steps,
+    tolerance = tolerance,
+    smoothness = smoothness,
+    context = context
   )
 
   subcort_run_pipeline(
@@ -157,18 +152,6 @@ create_subcortical_from_volume <- function(
     context,
     vertex_size_limits
   )
-}
-
-
-#' Warn about deprecated sf smoothing arguments and unpack the volume input
-#' @noRd
-subcort_unpack_input <- function(
-  input_volume,
-  input_lut,
-  tolerance,
-  smoothness
-) {
-  unpack_anatomical_input(input_volume, input_lut)
 }
 
 
@@ -188,17 +171,17 @@ subcort_setup_pipeline <- function(
   context
 ) {
   config <- validate_subcort_config(
-    unpacked$input_volume,
-    unpacked$input_lut,
-    atlas_name,
-    output_dir,
-    verbose,
-    cleanup,
-    skip_existing,
-    decimate,
-    steps,
-    tolerance,
-    smoothness
+    input_volume = unpacked$input_volume,
+    input_lut = unpacked$input_lut,
+    atlas_name = atlas_name,
+    output_dir = output_dir,
+    verbose = verbose,
+    cleanup = cleanup,
+    skip_existing = skip_existing,
+    decimate = decimate,
+    steps = steps,
+    tolerance = tolerance,
+    smoothness = smoothness
   )
 
   validate_subcort_context_arg(context, config$steps)

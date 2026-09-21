@@ -1,8 +1,6 @@
 library(dplyr, quietly = TRUE, warn.conflicts = FALSE)
-library(tidyr, quietly = TRUE, warn.conflicts = FALSE)
 library(ggseg, quietly = TRUE, warn.conflicts = FALSE)
 library(ggseg3d, quietly = TRUE, warn.conflicts = FALSE)
-library(ggplot2, quietly = TRUE, warn.conflicts = FALSE)
 
 # future attaches the packages a global refers to before evaluating it, so the
 # first furrr call over terra code does library(terra) inside this process.
