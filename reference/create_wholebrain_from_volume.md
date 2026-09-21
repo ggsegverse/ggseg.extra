@@ -18,23 +18,17 @@ create_wholebrain_from_volume(
   input_lut = NULL,
   atlas_name = NULL,
   output_dir = NULL,
-  projfrac = 0.5,
-  projfrac_range = c(0, 1, 0.1),
-  subject = "fsaverage5",
-  registration = "header",
-  min_vertices = 50L,
-  cortical_labels = NULL,
-  subcortical_labels = NULL,
-  cerebellar_labels = NULL,
-  cerebellar_space = c("suit", "MNI152NLin6AsymC", "MNI152NLin2009cSymC"),
+  labels = list(),
+  projection_opts = list(),
   cortical_opts = list(),
   subcortical_opts = list(),
   cerebellar_opts = list(),
+  steps = NULL,
   cleanup = NULL,
   verbose = get_verbose(),
   skip_existing = NULL,
-  steps = NULL,
-  regheader = lifecycle::deprecated()
+  regheader = lifecycle::deprecated(),
+  ...
 )
 ```
 
@@ -62,83 +56,58 @@ create_wholebrain_from_volume(
   Directory to store intermediate files (screenshots, masks, contours).
   Defaults to [`tempdir()`](https://rdrr.io/r/base/tempfile.html).
 
-- projfrac:
+- labels:
 
-  Cortical depth fraction for projection (0 = white surface, 1 = pial
-  surface). Only used when `projfrac_range` is NULL. Default 0.5.
+  Named list routing labels to a sub-pipeline, overriding the lookup
+  table's `type` column and the vertex-count heuristic. Entries:
 
-- projfrac_range:
+  - `cortical`: label names to force as cortical.
 
-  Numeric vector `c(min, max, delta)` for multi-depth projection via
-  `mri_vol2surf --projfrac-max`. Samples at multiple cortical depths and
-  takes the maximum label value at each vertex, giving much better
-  surface coverage than single-depth projection. Default `c(0, 1, 0.1)`.
-  Set to NULL to use single-depth `projfrac` instead.
+  - `subcortical`: label names to force as subcortical.
 
-- subject:
+  - `cerebellar`: label names to send through the cerebellar SUIT
+    flatmap pipeline, using the bundled surfaces from
+    [`suit_flatmap_path()`](https://ggsegverse.github.io/ggseg.extra/reference/suit_flatmap_path.md)
+    and
+    [`suit_3d_path()`](https://ggsegverse.github.io/ggseg.extra/reference/suit_3d_path.md).
 
-  Target surface subject. Default "fsaverage5".
+  Unnamed or unknown entries error. Replaces the `cortical_labels`,
+  `subcortical_labels` and `cerebellar_labels` arguments.
 
-- registration:
+- projection_opts:
 
-  How the volume is registered to the surface subject. See the
-  **Registration** section, which you should read before relying on the
-  default. One of:
+  Named list of volume-to-surface projection settings. Entries, with
+  their defaults:
 
-  - `"header"` (default): trusts the volume header and uses
-    `--regheader`. Leaves an MNI152 volume roughly 2 mm out, because
-    `fsaverage` lives in MNI305, but that error is uniform and small,
-    and it is how every atlas in the ggsegverse was built.
+  - `subject` (`"fsaverage5"`): target surface subject.
 
-  - `"mni152"`: applies FreeSurfer's `average/mni152.register.dat`, the
-    transform from the FSL/SPM MNI152 (NLin6) 1 mm template to the
-    MNI305 space `fsaverage` lives in. Exact only for volumes on that 1
-    mm LAS grid; anything else is refused rather than silently
-    mislocated.
+  - `registration` (`"header"`): how to align the volume with the
+    subject. Read **Registration** before relying on the default. One of
+    `"header"` (trusts the volume header, via `--regheader`; leaves an
+    MNI152 volume roughly 2 mm out, but that error is uniform and small
+    and it is how every atlas in the ggsegverse was built), `"mni152"`
+    (applies FreeSurfer's `average/mni152.register.dat`, exact only for
+    volumes on the 1 mm LAS grid and refused otherwise), or a path to a
+    register.dat or LTA file.
 
-  - A path to a register.dat or LTA file to apply instead.
+  - `projfrac_range` samples several cortical depths via
+    `mri_vol2surf --projfrac-max` and takes the maximum label value at
+    each vertex, giving better surface coverage than a single depth. Set
+    it to `NULL` to use `projfrac` alone, where `0` is the white surface
+    and `1` the pial.
 
-- min_vertices:
+  - `projfrac` (`0.5`) and `projfrac_range` (`c(0, 1, 0.1)`): sampling
+    depth through the cortical ribbon.
 
-  Minimum vertex count on the surface projection for a label to be
-  classified as cortical by the vertex-count heuristic (see **Label
-  classification**). The count is summed over every region that shares a
-  label name, so a lookup table whose labels carry `_left` / `_right`
-  suffixes contributes one hemisphere per label while an unsuffixed one
-  contributes both. Only reached for labels that a `type` column and the
-  explicit label vectors leave unclassified. Default 50.
+  - `min_vertices` (`50`): minimum vertex count for the vertex-count
+    heuristic to call a label cortical. The count is summed over every
+    region sharing a label name, so a lookup table whose labels carry
+    `_left` / `_right` suffixes contributes one hemisphere per label
+    while an unsuffixed one contributes both. Only reached for labels
+    that `labels` and a `type` column leave unclassified.
 
-- cortical_labels:
-
-  Character vector of label names to force as cortical. Highest
-  priority; overrides LUT `type` and the vertex-count heuristic.
-
-- subcortical_labels:
-
-  Character vector of label names to force as subcortical. Highest
-  priority; overrides LUT `type` and the vertex-count heuristic.
-
-- cerebellar_labels:
-
-  Character vector of label names to force as cerebellar. These go
-  through the cerebellar SUIT flatmap pipeline instead of cortical or
-  subcortical. Uses the bundled SUIT surfaces from
-  [`suit_flatmap_path()`](https://ggsegverse.github.io/ggseg.extra/reference/suit_flatmap_path.md)
-  and
-  [`suit_3d_path()`](https://ggsegverse.github.io/ggseg.extra/reference/suit_3d_path.md).
-
-- cerebellar_space:
-
-  Space `input_volume`'s cerebellar labels are in. The flatmap they are
-  drawn on is in SUIT space, so a volume in any other space has to be
-  transformed first or the result will not correspond to the flatmap.
-  `"suit"` (the default) takes the volume as already transformed.
-  `"MNI152NLin6AsymC"` or `"MNI152NLin2009cSymC"` transform it with the
-  matching
-  [`suit_deformation_field()`](https://ggsegverse.github.io/ggseg.extra/reference/suit_deformation_field.md)
-  before building the atlas. Nothing in a NIfTI header records which
-  space a volume is in, so this cannot be detected and the default is an
-  assumption: set it if your volume is in an MNI space.
+  Unknown entries error. Replaces the flat `subject`, `registration`,
+  `projfrac`, `projfrac_range` and `min_vertices` arguments.
 
 - cortical_opts:
 
@@ -159,10 +128,37 @@ create_wholebrain_from_volume(
 
 - cerebellar_opts:
 
-  Named list of extra arguments forwarded to
-  [`create_cerebellar_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_cerebellar_from_volume.md).
-  Allowed entries include `decimate`. The deprecated
+  Named list of extra arguments for the cerebellar sub-pipeline. Allowed
+  entries include `decimate`, forwarded to
+  [`create_cerebellar_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_cerebellar_from_volume.md),
+  and `cerebellar_space`, which this pipeline consumes itself: the space
+  `input_volume`'s cerebellar labels are in. The flatmap they are drawn
+  on is in SUIT space, so a volume in any other space has to be
+  transformed first or the result will not correspond to the flatmap.
+  `"suit"` (the default) takes the volume as already transformed;
+  `"MNI152NLin6AsymC"` or `"MNI152NLin2009cSymC"` transform it with the
+  matching
+  [`suit_deformation_field()`](https://ggsegverse.github.io/ggseg.extra/reference/suit_deformation_field.md)
+  first. Nothing in a NIfTI header records which space a volume is in,
+  so this cannot be detected and the default is an assumption: set it if
+  your volume is in an MNI space. The deprecated
   `tolerance`/`smooth_refinements` entries trigger a lifecycle warning.
+
+- steps:
+
+  Which pipeline steps to run. Default NULL runs all steps. Steps are:
+
+  - 1: Project volume onto surface
+
+  - 2: Split labels into cortical/subcortical/cerebellar
+
+  - 3: Run cortical pipeline
+
+  - 4: Run subcortical pipeline
+
+  - 5: Run cerebellar pipeline
+
+  Use `steps = 1:2` to run projection and split only.
 
 - cleanup:
 
@@ -185,27 +181,19 @@ create_wholebrain_from_volume(
   `options("ggseg.extra.skip_existing")` or the
   `GGSEG_EXTRA_SKIP_EXISTING` environment variable. Default is TRUE.
 
-- steps:
-
-  Which pipeline steps to run. Default NULL runs all steps. Steps are:
-
-  - 1: Project volume onto surface
-
-  - 2: Split labels into cortical/subcortical/cerebellar
-
-  - 3: Run cortical pipeline
-
-  - 4: Run subcortical pipeline
-
-  - 5: Run cerebellar pipeline
-
-  Use `steps = 1:2` to run projection and split only.
-
 - regheader:
 
-  **\[deprecated\]** Use `registration` instead. `TRUE` maps to
-  `registration = "header"`, `FALSE` to `registration = "mni152"`.
-  Supplying both is an error.
+  **\[deprecated\]** Use `projection_opts = list(registration = )`
+  instead. `TRUE` maps to `"header"`, `FALSE` to `"mni152"`. Supplying
+  both is an error.
+
+- ...:
+
+  **\[deprecated\]** The flat arguments that `labels`, `projection_opts`
+  and `cerebellar_opts` replaced. Each is folded into the list that now
+  holds it and raises a deprecation warning; supplying both the old
+  argument and the list entry it maps to is an error rather than a
+  precedence rule.
 
 ## Value
 
@@ -382,5 +370,18 @@ result <- create_wholebrain_from_volume(
 )
 result$cortical_labels
 result$subcortical_labels
+
+# --- Overriding classification and projection ---
+# `labels` forces a label down a particular pipeline; `projection_opts`
+# holds everything about getting the volume onto the surface.
+result <- create_wholebrain_from_volume(
+  input_volume = "atlas.nii.gz",
+  input_lut = "atlas_LUT.txt",
+  labels = list(
+    cerebellar = c("Left-Cerebellum-Cortex", "Right-Cerebellum-Cortex")
+  ),
+  projection_opts = list(registration = "mni152", subject = "fsaverage6"),
+  cerebellar_opts = list(cerebellar_space = "MNI152NLin6AsymC")
+)
 } # }
 ```

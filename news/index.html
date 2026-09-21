@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9051</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9052</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -63,6 +63,15 @@
       <small>Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.9.9.9052" id="ggsegextra-1999052">ggseg.extra 1.9.9.9052<a class="anchor" aria-label="anchor" href="#ggsegextra-1999052"></a></h2>
+<ul><li>
+<p><code><a href="../reference/create_wholebrain_from_volume.html">create_wholebrain_from_volume()</a></code> takes 13 arguments rather than 21. The ones that describe the same thing are grouped: <code>labels</code> holds the <code>cortical</code>/<code>subcortical</code>/<code>cerebellar</code> overrides, <code>projection_opts</code> holds <code>subject</code>, <code>registration</code>, <code>projfrac</code>, <code>projfrac_range</code> and <code>min_vertices</code>, and <code>cerebellar_space</code> joins <code>cerebellar_opts</code>. The function already built <code>list(cortical = , subcortical = , cerebellar = )</code> out of three flat arguments on its way in, so <code>labels</code> is the shape it wanted anyway.</p>
+<p>The flat arguments still work, through <code>...</code>, and warn. Supplying both an old argument and the list entry that replaced it is an error rather than a precedence rule: the two disagree about one setting, and quietly preferring either is how a build ends up not doing what its script says.</p>
+<p>Every call to this function in the ggsegverse atlas repositories names its arguments, so nothing depends on their order, and each of the ten was checked against the new signature.</p>
+</li>
+<li><p>A sub-pipeline option passed at the top level says where it belongs. <code>decimate = 0.5</code> used to be met with R’s <code>unused argument</code>, which does not mention that <code>subcortical_opts = list(decimate = 0.5)</code> is the way to say it. Two atlas build scripts pass exactly that and have been failing.</p></li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9051" id="ggsegextra-1999051">ggseg.extra 1.9.9.9051<a class="anchor" aria-label="anchor" href="#ggsegextra-1999051"></a></h2>
 <ul><li><p><code>read_volume()</code> says so when it cannot orient an MGZ. The affine is the only thing that can place a bare array, and a conformed volume is typically LIA, so returning one in its native voxel order, without saying so, handed the projection code a volume whose axes were transposed – which renders as a plausible brain rather than failing. <code>load_vox2ras_matrix()</code> already reported the same condition; the two now agree.</p></li>

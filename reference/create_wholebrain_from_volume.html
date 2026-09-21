@@ -21,7 +21,7 @@ Requires FreeSurfer."><meta property="og:image" content="https://ggsegverse.gith
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9051</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9052</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -93,23 +93,17 @@ the mesh-based subcortical pipeline.</p>
 <span>  input_lut <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  atlas_name <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  output_dir <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  projfrac <span class="op">=</span> <span class="fl">0.5</span>,</span>
-<span>  projfrac_range <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">1</span>, <span class="fl">0.1</span><span class="op">)</span>,</span>
-<span>  subject <span class="op">=</span> <span class="st">"fsaverage5"</span>,</span>
-<span>  registration <span class="op">=</span> <span class="st">"header"</span>,</span>
-<span>  min_vertices <span class="op">=</span> <span class="fl">50L</span>,</span>
-<span>  cortical_labels <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  subcortical_labels <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  cerebellar_labels <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  cerebellar_space <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"suit"</span>, <span class="st">"MNI152NLin6AsymC"</span>, <span class="st">"MNI152NLin2009cSymC"</span><span class="op">)</span>,</span>
+<span>  labels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  projection_opts <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  cortical_opts <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  subcortical_opts <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  cerebellar_opts <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  steps <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  cleanup <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  verbose <span class="op">=</span> <span class="fu"><a href="get_verbose.html">get_verbose</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  skip_existing <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  steps <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  regheader <span class="op">=</span> <span class="fu">lifecycle</span><span class="fu">::</span><span class="fu"><a href="https://lifecycle.r-lib.org/reference/deprecated.html" class="external-link">deprecated</a></span><span class="op">(</span><span class="op">)</span></span>
+<span>  regheader <span class="op">=</span> <span class="fu">lifecycle</span><span class="fu">::</span><span class="fu"><a href="https://lifecycle.r-lib.org/reference/deprecated.html" class="external-link">deprecated</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -142,77 +136,43 @@ filename.</p></dd>
 contours). Defaults to <code><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir()</a></code>.</p></dd>
 
 
-<dt id="arg-projfrac">projfrac<a class="anchor" aria-label="anchor" href="#arg-projfrac"></a></dt>
-<dd><p>Cortical depth fraction for projection (0 = white surface,
-1 = pial surface). Only used when <code>projfrac_range</code> is NULL. Default 0.5.</p></dd>
+<dt id="arg-labels">labels<a class="anchor" aria-label="anchor" href="#arg-labels"></a></dt>
+<dd><p>Named list routing labels to a sub-pipeline, overriding the
+lookup table's <code>type</code> column and the vertex-count heuristic. Entries:</p><ul><li><p><code>cortical</code>: label names to force as cortical.</p></li>
+<li><p><code>subcortical</code>: label names to force as subcortical.</p></li>
+<li><p><code>cerebellar</code>: label names to send through the cerebellar SUIT
+flatmap pipeline, using the bundled surfaces from
+<code><a href="suit_flatmap_path.html">suit_flatmap_path()</a></code> and <code><a href="suit_3d_path.html">suit_3d_path()</a></code>.</p></li>
+</ul><p>Unnamed or unknown entries error. Replaces the <code>cortical_labels</code>,
+<code>subcortical_labels</code> and <code>cerebellar_labels</code> arguments.</p></dd>
 
 
-<dt id="arg-projfrac-range">projfrac_range<a class="anchor" aria-label="anchor" href="#arg-projfrac-range"></a></dt>
-<dd><p>Numeric vector <code>c(min, max, delta)</code> for multi-depth
-projection via <code>mri_vol2surf --projfrac-max</code>. Samples at multiple cortical
-depths and takes the maximum label value at each vertex, giving much better
-surface coverage than single-depth projection. Default <code>c(0, 1, 0.1)</code>.
-Set to NULL to use single-depth <code>projfrac</code> instead.</p></dd>
-
-
-<dt id="arg-subject">subject<a class="anchor" aria-label="anchor" href="#arg-subject"></a></dt>
-<dd><p>Target surface subject. Default "fsaverage5".</p></dd>
-
-
-<dt id="arg-registration">registration<a class="anchor" aria-label="anchor" href="#arg-registration"></a></dt>
-<dd><p>How the volume is registered to the surface subject.
-See the <strong>Registration</strong> section, which you should read before relying
-on the default. One of:</p><ul><li><p><code>"header"</code> (default): trusts the volume header and uses
-<code>--regheader</code>. Leaves an MNI152 volume roughly 2 mm out, because
-<code>fsaverage</code> lives in MNI305, but that error is uniform and small,
-and it is how every atlas in the ggsegverse was built.</p></li>
-<li><p><code>"mni152"</code>: applies FreeSurfer's <code>average/mni152.register.dat</code>,
-the transform from the FSL/SPM MNI152 (NLin6) 1 mm template to the
-MNI305 space <code>fsaverage</code> lives in. Exact only for volumes on that
-1 mm LAS grid; anything else is refused rather than silently
-mislocated.</p></li>
-<li><p>A path to a register.dat or LTA file to apply instead.</p></li>
-</ul></dd>
-
-
-<dt id="arg-min-vertices">min_vertices<a class="anchor" aria-label="anchor" href="#arg-min-vertices"></a></dt>
-<dd><p>Minimum vertex count on the surface projection for a
-label to be classified as cortical by the vertex-count heuristic (see
-<strong>Label classification</strong>). The count is summed over every region that
-shares a label name, so a lookup table whose labels carry <code>_left</code> /
-<code>_right</code> suffixes contributes one hemisphere per label while an
-unsuffixed one contributes both. Only reached for labels that a <code>type</code>
-column and the explicit label vectors leave unclassified. Default 50.</p></dd>
-
-
-<dt id="arg-cortical-labels">cortical_labels<a class="anchor" aria-label="anchor" href="#arg-cortical-labels"></a></dt>
-<dd><p>Character vector of label names to force as cortical.
-Highest priority; overrides LUT <code>type</code> and the vertex-count heuristic.</p></dd>
-
-
-<dt id="arg-subcortical-labels">subcortical_labels<a class="anchor" aria-label="anchor" href="#arg-subcortical-labels"></a></dt>
-<dd><p>Character vector of label names to force as
-subcortical. Highest priority; overrides LUT <code>type</code> and the vertex-count
-heuristic.</p></dd>
-
-
-<dt id="arg-cerebellar-labels">cerebellar_labels<a class="anchor" aria-label="anchor" href="#arg-cerebellar-labels"></a></dt>
-<dd><p>Character vector of label names to force as
-cerebellar. These go through the cerebellar SUIT flatmap pipeline instead
-of cortical or subcortical. Uses the bundled SUIT surfaces from
-<code><a href="suit_flatmap_path.html">suit_flatmap_path()</a></code> and <code><a href="suit_3d_path.html">suit_3d_path()</a></code>.</p></dd>
-
-
-<dt id="arg-cerebellar-space">cerebellar_space<a class="anchor" aria-label="anchor" href="#arg-cerebellar-space"></a></dt>
-<dd><p>Space <code>input_volume</code>'s cerebellar labels are in.
-The flatmap they are drawn on is in SUIT space, so a volume in any other
-space has to be transformed first or the result will not correspond to
-the flatmap. <code>"suit"</code> (the default) takes the volume as already
-transformed. <code>"MNI152NLin6AsymC"</code> or <code>"MNI152NLin2009cSymC"</code> transform it
-with the matching <code><a href="suit_deformation_field.html">suit_deformation_field()</a></code> before building the atlas.
-Nothing in a NIfTI header records which space a volume is in, so this
-cannot be detected and the default is an assumption: set it if your
-volume is in an MNI space.</p></dd>
+<dt id="arg-projection-opts">projection_opts<a class="anchor" aria-label="anchor" href="#arg-projection-opts"></a></dt>
+<dd><p>Named list of volume-to-surface projection settings.
+Entries, with their defaults:</p><ul><li><p><code>subject</code> (<code>"fsaverage5"</code>): target surface subject.</p></li>
+<li><p><code>registration</code> (<code>"header"</code>): how to align the volume with the
+subject. Read <strong>Registration</strong> before relying on the default. One of
+<code>"header"</code> (trusts the volume header, via <code>--regheader</code>; leaves an
+MNI152 volume roughly 2 mm out, but that error is uniform and small
+and it is how every atlas in the ggsegverse was built), <code>"mni152"</code>
+(applies FreeSurfer's <code>average/mni152.register.dat</code>, exact only for
+volumes on the 1 mm LAS grid and refused otherwise), or a path to a
+register.dat or LTA file.</p></li>
+<li><p><code>projfrac_range</code> samples several cortical depths via
+<code>mri_vol2surf --projfrac-max</code> and takes the maximum label value at
+each vertex, giving better surface coverage than a single depth. Set
+it to <code>NULL</code> to use <code>projfrac</code> alone, where <code>0</code> is the white surface
+and <code>1</code> the pial.</p></li>
+<li><p><code>projfrac</code> (<code>0.5</code>) and <code>projfrac_range</code> (<code>c(0, 1, 0.1)</code>):
+sampling depth through the cortical ribbon.</p></li>
+<li><p><code>min_vertices</code> (<code>50</code>): minimum vertex count for the vertex-count
+heuristic to call a label cortical. The count is summed over every
+region sharing a label name, so a lookup table whose labels carry
+<code>_left</code> / <code>_right</code> suffixes contributes one hemisphere per label
+while an unsuffixed one contributes both. Only reached for labels
+that <code>labels</code> and a <code>type</code> column leave unclassified.</p></li>
+</ul><p>Unknown entries error. Replaces the flat <code>subject</code>, <code>registration</code>,
+<code>projfrac</code>, <code>projfrac_range</code> and <code>min_vertices</code> arguments.</p></dd>
 
 
 <dt id="arg-cortical-opts">cortical_opts<a class="anchor" aria-label="anchor" href="#arg-cortical-opts"></a></dt>
@@ -232,10 +192,29 @@ entries trigger a lifecycle warning and are no longer applied.</p></dd>
 
 
 <dt id="arg-cerebellar-opts">cerebellar_opts<a class="anchor" aria-label="anchor" href="#arg-cerebellar-opts"></a></dt>
-<dd><p>Named list of extra arguments forwarded to
-<code><a href="create_cerebellar_from_volume.html">create_cerebellar_from_volume()</a></code>. Allowed entries include <code>decimate</code>.
-The deprecated <code>tolerance</code>/<code>smooth_refinements</code> entries trigger a
-lifecycle warning.</p></dd>
+<dd><p>Named list of extra arguments for the cerebellar
+sub-pipeline. Allowed entries include <code>decimate</code>, forwarded to
+<code><a href="create_cerebellar_from_volume.html">create_cerebellar_from_volume()</a></code>, and <code>cerebellar_space</code>, which this
+pipeline consumes itself: the space <code>input_volume</code>'s cerebellar labels
+are in. The flatmap they are drawn on is in SUIT space, so a volume in
+any other space has to be transformed first or the result will not
+correspond to the flatmap. <code>"suit"</code> (the default) takes the volume as
+already transformed; <code>"MNI152NLin6AsymC"</code> or <code>"MNI152NLin2009cSymC"</code>
+transform it with the matching <code><a href="suit_deformation_field.html">suit_deformation_field()</a></code> first. Nothing
+in a NIfTI header records which space a volume is in, so this cannot be
+detected and the default is an assumption: set it if your volume is in an
+MNI space. The deprecated <code>tolerance</code>/<code>smooth_refinements</code> entries
+trigger a lifecycle warning.</p></dd>
+
+
+<dt id="arg-steps">steps<a class="anchor" aria-label="anchor" href="#arg-steps"></a></dt>
+<dd><p>Which pipeline steps to run. Default NULL runs all steps.
+Steps are:</p><ul><li><p>1: Project volume onto surface</p></li>
+<li><p>2: Split labels into cortical/subcortical/cerebellar</p></li>
+<li><p>3: Run cortical pipeline</p></li>
+<li><p>4: Run subcortical pipeline</p></li>
+<li><p>5: Run cerebellar pipeline</p></li>
+</ul><p>Use <code>steps = 1:2</code> to run projection and split only.</p></dd>
 
 
 <dt id="arg-cleanup">cleanup<a class="anchor" aria-label="anchor" href="#arg-cleanup"></a></dt>
@@ -259,20 +238,18 @@ allowing interrupted atlas creation to resume. If not specified, uses
 environment variable. Default is TRUE.</p></dd>
 
 
-<dt id="arg-steps">steps<a class="anchor" aria-label="anchor" href="#arg-steps"></a></dt>
-<dd><p>Which pipeline steps to run. Default NULL runs all steps.
-Steps are:</p><ul><li><p>1: Project volume onto surface</p></li>
-<li><p>2: Split labels into cortical/subcortical/cerebellar</p></li>
-<li><p>3: Run cortical pipeline</p></li>
-<li><p>4: Run subcortical pipeline</p></li>
-<li><p>5: Run cerebellar pipeline</p></li>
-</ul><p>Use <code>steps = 1:2</code> to run projection and split only.</p></dd>
-
-
 <dt id="arg-regheader">regheader<a class="anchor" aria-label="anchor" href="#arg-regheader"></a></dt>
-<dd><p><a href="https://lifecycle.r-lib.org/articles/stages.html#deprecated" class="external-link"><img src="figures/lifecycle-deprecated.svg" alt="[Deprecated]"></a> Use <code>registration</code>
-instead. <code>TRUE</code> maps to <code>registration = "header"</code>, <code>FALSE</code> to
-<code>registration = "mni152"</code>. Supplying both is an error.</p></dd>
+<dd><p><a href="https://lifecycle.r-lib.org/articles/stages.html#deprecated" class="external-link"><img src="figures/lifecycle-deprecated.svg" alt="[Deprecated]"></a> Use
+<code>projection_opts = list(registration = )</code> instead. <code>TRUE</code> maps to
+<code>"header"</code>, <code>FALSE</code> to <code>"mni152"</code>. Supplying both is an error.</p></dd>
+
+
+<dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
+<dd><p><a href="https://lifecycle.r-lib.org/articles/stages.html#deprecated" class="external-link"><img src="figures/lifecycle-deprecated.svg" alt="[Deprecated]"></a> The flat arguments that
+<code>labels</code>, <code>projection_opts</code> and <code>cerebellar_opts</code> replaced. Each is
+folded into the list that now holds it and raises a deprecation warning;
+supplying both the old argument and the list entry it maps to is an
+error rather than a precedence rule.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -437,6 +414,19 @@ only visible with <code>verbose = TRUE</code>.</p>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">result</span><span class="op">$</span><span class="va">cortical_labels</span></span></span>
 <span class="r-in"><span><span class="va">result</span><span class="op">$</span><span class="va">subcortical_labels</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># --- Overriding classification and projection ---</span></span></span>
+<span class="r-in"><span><span class="co"># `labels` forces a label down a particular pipeline; `projection_opts`</span></span></span>
+<span class="r-in"><span><span class="co"># holds everything about getting the volume onto the surface.</span></span></span>
+<span class="r-in"><span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu">create_wholebrain_from_volume</span><span class="op">(</span></span></span>
+<span class="r-in"><span>  input_volume <span class="op">=</span> <span class="st">"atlas.nii.gz"</span>,</span></span>
+<span class="r-in"><span>  input_lut <span class="op">=</span> <span class="st">"atlas_LUT.txt"</span>,</span></span>
+<span class="r-in"><span>  labels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>    cerebellar <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Left-Cerebellum-Cortex"</span>, <span class="st">"Right-Cerebellum-Cortex"</span><span class="op">)</span></span></span>
+<span class="r-in"><span>  <span class="op">)</span>,</span></span>
+<span class="r-in"><span>  projection_opts <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>registration <span class="op">=</span> <span class="st">"mni152"</span>, subject <span class="op">=</span> <span class="st">"fsaverage6"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  cerebellar_opts <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>cerebellar_space <span class="op">=</span> <span class="st">"MNI152NLin6AsymC"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
 </code></pre></div>
     </div>
