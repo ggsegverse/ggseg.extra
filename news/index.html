@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9049</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9050</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -63,6 +63,17 @@
       <small>Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.9.9.9050" id="ggsegextra-1999050">ggseg.extra 1.9.9.9050<a class="anchor" aria-label="anchor" href="#ggsegextra-1999050"></a></h2>
+<ul><li><p><code>read_volume()</code> documented a <code>niftiImage</code> return for <code>reorient = FALSE</code> that it has never produced: the header is consumed inside the function and every path ends at <code>drop(as.array())</code>. The roxygen now says so, and the one caller that named its result <code>template_nii</code> only ever wanted <code><a href="https://rdrr.io/r/base/dim.html" class="external-link">dim()</a></code>.</p></li>
+<li><p><code>decimate_mesh()</code> guarded <code>Rvcg</code> and then called <code><a href="https://dmurdoch.github.io/rgl/dev/reference/mesh3d.html" class="external-link">rgl::tmesh3d()</a></code> on the next line. <code>rgl</code> is the heavier install of the two and is routinely absent where <code>Rvcg</code> is present, so the check now covers both.</p></li>
+<li><p><code>set_sphere_voxels()</code> fills the sphere with one matrix-indexed assignment instead of a per-voxel loop.</p></li>
+<li><p><code>subcort_unpack_input()</code> is gone. It took <code>tolerance</code> and <code>smoothness</code>, discarded both, and described a deprecation warning that had already been removed; the call site uses <code>unpack_anatomical_input()</code> directly.</p></li>
+<li><p>The subcortical setup and validation calls name their eleven arguments, as the whole-brain path already did. <code>verbose</code>, <code>cleanup</code> and <code>skip_existing</code> sat adjacent and positional, where a transposition would have wired the pipeline up wrongly with no error anywhere.</p></li>
+<li><p><code>.Rbuildignore</code> excluded <code>*.Rmd.orig</code>, but the precomputed vignette sources are <code>*.qmd.orig</code>, so all three shipped in the tarball without the vignettes they generate.</p></li>
+<li><p><code>vignettes/figures/</code> no longer ships. Every one of its images belongs to a tutorial vignette that <code>.Rbuildignore</code> already excludes, and the six vignettes that do ship reference no images at all, so it was 2.9 MB of a 4.7 MB tarball that nothing in the tarball could reach. pkgdown renders the tutorials from the repository, so the website is unaffected.</p></li>
+<li><p>The test suite stops printing to the console: <code><a href="../reference/use_atlas_github_actions.html">use_atlas_github_actions()</a></code> messages are suppressed where the message is not what is under test, and the MNI152 fixture carries a valid sform so FreeSurfer no longer warns that it cannot orient it. <code>helper.R</code> no longer attaches <code>tidyr</code> and <code>ggplot2</code>, which are Suggests packages that no test used.</p></li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9049" id="ggsegextra-1999049">ggseg.extra 1.9.9.9049<a class="anchor" aria-label="anchor" href="#ggsegextra-1999049"></a></h2>
 <ul><li>
