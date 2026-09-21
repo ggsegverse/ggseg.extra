@@ -31,18 +31,16 @@
 #' @template atlas_name
 #' @template output_dir
 #' @param tube_opts Named list controlling how a bundle of streamlines
-#'   becomes a 3D tube mesh. Entries, with their defaults:
+#'   becomes a 3D tube mesh, with these entries and defaults:
 #'   \itemize{
-#'     \item `tube_radius` (`5`): tube thickness. A single numeric for a
-#'       uniform radius, or `"density"` to scale the radius by how many
-#'       streamlines pass through each point.
-#'     \item `tube_segments` (`8`): segments around the tube circumference.
-#'       Higher is smoother but makes a larger mesh; 8 is a good balance.
-#'     \item `n_points` (`50`): points to resample each centerline to. All
-#'       tracts are resampled to the same length so tubes are consistent.
-#'     \item `centerline_method` (`"mean"`): how to derive one centerline
-#'       from many streamlines. `"mean"` averages coordinates point by point,
-#'       `"medoid"` picks the single most representative streamline.
+#'     \item `centerline_method` (`"mean"`) and `n_points` (`50`): how one
+#'       centerline is derived from many streamlines, and how many points it
+#'       is resampled to. All tracts are resampled to the same length so the
+#'       tubes are consistent.
+#'     \item `tube_radius` (`5`) and `tube_segments` (`8`): the thickness of
+#'       the tube drawn along that centerline, and how many segments go
+#'       around its circumference. `tube_radius` also takes `"density"`, to
+#'       scale thickness by how many streamlines pass through each point.
 #'   }
 #'   Unknown entries error. Replaces the flat `tube_radius`,
 #'   `tube_segments`, `n_points` and `centerline_method` arguments.
@@ -100,6 +98,9 @@
 #' }
 create_tract_from_tractography <- function(
   input_tracts,
+  verbose = get_verbose(), # nolint: object_usage_linter
+  views = lifecycle::deprecated(),
+  ...,
   input_aseg = NULL,
   input_lut = NULL,
   atlas_name = NULL,
@@ -109,10 +110,7 @@ create_tract_from_tractography <- function(
   vertex_size_limits = NULL,
   steps = NULL,
   cleanup = NULL,
-  verbose = get_verbose(), # nolint: object_usage_linter
-  skip_existing = NULL,
-  views = lifecycle::deprecated(),
-  ...
+  skip_existing = NULL
 ) {
   grouped <- group_retired_dots(
     opts = list(tube_opts = tube_opts),

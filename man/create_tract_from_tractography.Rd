@@ -6,6 +6,9 @@
 \usage{
 create_tract_from_tractography(
   input_tracts,
+  verbose = get_verbose(),
+  views = lifecycle::deprecated(),
+  ...,
   input_aseg = NULL,
   input_lut = NULL,
   atlas_name = NULL,
@@ -15,16 +18,27 @@ create_tract_from_tractography(
   vertex_size_limits = NULL,
   steps = NULL,
   cleanup = NULL,
-  verbose = get_verbose(),
-  skip_existing = NULL,
-  views = lifecycle::deprecated(),
-  ...
+  skip_existing = NULL
 )
 }
 \arguments{
 \item{input_tracts}{Paths to tractography files (\code{.trk} or \code{.tck}), or a
 named list of coordinate matrices where each matrix has N rows and 3
 columns (x, y, z).}
+
+\item{verbose}{Verbosity level: \code{0} (silent), \code{1} (standard progress,
+default), or \code{2} (debug, includes FreeSurfer output). Logical values
+are accepted (\code{TRUE} = 1, \code{FALSE} = 0). If not specified, uses the
+value from \code{options("ggseg.extra.verbose")} or the \code{GGSEG_EXTRA_VERBOSE}
+environment variable.}
+
+\item{views}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} Use \code{slabs} instead.}
+
+\item{...}{Catches the retired \code{dilate}, \code{smoothness} and \code{tolerance}
+arguments, so a call that still passes one keeps working and says so.
+These are post-creation steps now: see \code{\link[=atlas_dilate]{atlas_dilate()}},
+\code{\link[=atlas_smooth]{atlas_smooth()}} and \code{\link[=atlas_simplify]{atlas_simplify()}}. Anything else in \code{...} is an
+error, as an unused argument always was.}
 
 \item{input_aseg}{Path to a segmentation volume (\code{.mgz}, \code{.nii}) used to
 draw cortex outlines in 2D views. Required for steps 2+.}
@@ -43,18 +57,16 @@ filename.}
 contours). Defaults to \code{\link[=tempdir]{tempdir()}}.}
 
 \item{tube_opts}{Named list controlling how a bundle of streamlines
-becomes a 3D tube mesh. Entries, with their defaults:
+becomes a 3D tube mesh, with these entries and defaults:
 \itemize{
-\item \code{tube_radius} (\code{5}): tube thickness. A single numeric for a
-uniform radius, or \code{"density"} to scale the radius by how many
-streamlines pass through each point.
-\item \code{tube_segments} (\code{8}): segments around the tube circumference.
-Higher is smoother but makes a larger mesh; 8 is a good balance.
-\item \code{n_points} (\code{50}): points to resample each centerline to. All
-tracts are resampled to the same length so tubes are consistent.
-\item \code{centerline_method} (\code{"mean"}): how to derive one centerline
-from many streamlines. \code{"mean"} averages coordinates point by point,
-\code{"medoid"} picks the single most representative streamline.
+\item \code{centerline_method} (\code{"mean"}) and \code{n_points} (\code{50}): how one
+centerline is derived from many streamlines, and how many points it
+is resampled to. All tracts are resampled to the same length so the
+tubes are consistent.
+\item \code{tube_radius} (\code{5}) and \code{tube_segments} (\code{8}): the thickness of
+the tube drawn along that centerline, and how many segments go
+around its circumference. \code{tube_radius} also takes \code{"density"}, to
+scale thickness by how many streamlines pass through each point.
 }
 Unknown entries error. Replaces the flat \code{tube_radius},
 \code{tube_segments}, \code{n_points} and \code{centerline_method} arguments.}
@@ -84,24 +96,10 @@ smoothing and vertex reduction.}
 specified, uses \code{options("ggseg.extra.cleanup")} or the \code{GGSEG_EXTRA_CLEANUP}
 environment variable. Default is TRUE.}
 
-\item{verbose}{Verbosity level: \code{0} (silent), \code{1} (standard progress,
-default), or \code{2} (debug, includes FreeSurfer output). Logical values
-are accepted (\code{TRUE} = 1, \code{FALSE} = 0). If not specified, uses the
-value from \code{options("ggseg.extra.verbose")} or the \code{GGSEG_EXTRA_VERBOSE}
-environment variable.}
-
 \item{skip_existing}{Skip generating output files that already exist,
 allowing interrupted atlas creation to resume. If not specified, uses
 \code{options("ggseg.extra.skip_existing")} or the \code{GGSEG_EXTRA_SKIP_EXISTING}
 environment variable. Default is TRUE.}
-
-\item{views}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} Use \code{slabs} instead.}
-
-\item{...}{Catches the retired \code{dilate}, \code{smoothness} and \code{tolerance}
-arguments, so a call that still passes one keeps working and says so.
-These are post-creation steps now: see \code{\link[=atlas_dilate]{atlas_dilate()}},
-\code{\link[=atlas_smooth]{atlas_smooth()}} and \code{\link[=atlas_simplify]{atlas_simplify()}}. Anything else in \code{...} is an
-error, as an unused argument always was.}
 }
 \value{
 A \code{ggseg_atlas} object with type \code{"tract"}, containing region

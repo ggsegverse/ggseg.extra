@@ -126,31 +126,20 @@
 #'   }
 #'   Unnamed or unknown entries error. Replaces the `cortical_labels`,
 #'   `subcortical_labels` and `cerebellar_labels` arguments.
-#' @param projection_opts Named list of volume-to-surface projection settings.
-#'   Entries, with their defaults:
+#' @param projection_opts Named list of volume-to-surface projection
+#'   settings, with these entries and defaults:
 #'   \itemize{
-#'     \item `subject` (`"fsaverage5"`): target surface subject.
-#'     \item `registration` (`"header"`): how to align the volume with the
-#'       subject. Read **Registration** before relying on the default. One of
-#'       `"header"` (trusts the volume header, via `--regheader`; leaves an
-#'       MNI152 volume roughly 2 mm out, but that error is uniform and small
-#'       and it is how every atlas in the ggsegverse was built), `"mni152"`
-#'       (applies FreeSurfer's `average/mni152.register.dat`, exact only for
-#'       volumes on the 1 mm LAS grid and refused otherwise), or a path to a
-#'       register.dat or LTA file.
-#'     \item `projfrac_range` samples several cortical depths via
-#'       `mri_vol2surf --projfrac-max` and takes the maximum label value at
-#'       each vertex, giving better surface coverage than a single depth. Set
-#'       it to `NULL` to use `projfrac` alone, where `0` is the white surface
-#'       and `1` the pial.
-#'     \item `projfrac` (`0.5`) and `projfrac_range` (`c(0, 1, 0.1)`):
-#'       sampling depth through the cortical ribbon.
-#'     \item `min_vertices` (`50`): minimum vertex count for the vertex-count
-#'       heuristic to call a label cortical. The count is summed over every
-#'       region sharing a label name, so a lookup table whose labels carry
-#'       `_left` / `_right` suffixes contributes one hemisphere per label
-#'       while an unsuffixed one contributes both. Only reached for labels
-#'       that `labels` and a `type` column leave unclassified.
+#'     \item `subject` (`"fsaverage5"`) and `registration` (`"header"`): the
+#'       target surface subject and how the volume is aligned to it. Read
+#'       **Registration** below before relying on the default.
+#'     \item `projfrac` (`0.5`) and `projfrac_range` (`c(0, 1, 0.1)`): how
+#'       deep through the cortical ribbon to sample, passed on to
+#'       `mri_vol2surf`. Set `projfrac_range` to `NULL` to sample the single
+#'       depth `projfrac` instead.
+#'     \item `min_vertices` (`50`): how much surface a label needs before
+#'       the vertex-count heuristic calls it cortical. Only reached for
+#'       labels that `labels` and a `type` column leave unclassified; see
+#'       **Label classification**.
 #'   }
 #'   Unknown entries error. Replaces the flat `subject`, `registration`,
 #'   `projfrac`, `projfrac_range` and `min_vertices` arguments.
@@ -164,19 +153,19 @@
 #'   `cleanup`, `skip_existing`). Use this to tune `vertex_size_limits`,
 #'   `decimate`, `slabs`. The deprecated `dilate`/`tolerance`/`smoothness`
 #'   entries trigger a lifecycle warning and are no longer applied.
-#' @param cerebellar_opts Named list of extra arguments for the cerebellar
-#'   sub-pipeline. Allowed entries include `decimate`, forwarded to
-#'   [create_cerebellar_from_volume()], and `cerebellar_space`, which this
-#'   pipeline consumes itself: the space `input_volume`'s cerebellar labels
-#'   are in. The flatmap they are drawn on is in SUIT space, so a volume in
-#'   any other space has to be transformed first or the result will not
-#'   correspond to the flatmap. `"suit"` (the default) takes the volume as
-#'   already transformed; `"MNI152NLin6AsymC"` or `"MNI152NLin2009cSymC"`
-#'   transform it with the matching [suit_deformation_field()] first. Nothing
-#'   in a NIfTI header records which space a volume is in, so this cannot be
-#'   detected and the default is an assumption: set it if your volume is in an
-#'   MNI space. The deprecated `tolerance`/`smooth_refinements` entries
-#'   trigger a lifecycle warning.
+#' @param cerebellar_opts Named list of extra arguments forwarded to
+#'   [create_cerebellar_from_volume()]. Any argument of that function may be
+#'   set here except those managed by the wholebrain pipeline
+#'   (`input_volume`, `input_lut`, `atlas_name`, `output_dir`, `verbose`,
+#'   `cleanup`, `skip_existing`).
+#'
+#'   One entry is not forwarded: `cerebellar_space` is consumed here, and
+#'   names the space `input_volume`'s cerebellar labels are in. The flatmap
+#'   they are drawn on is in SUIT space, so anything else is transformed with
+#'   the matching [suit_deformation_field()] first. Nothing in a NIfTI header
+#'   records a volume's space, so `"suit"` is an assumption rather than a
+#'   detection: set it if your volume is in an MNI space. See
+#'   [suit_deformation_field()] for the spaces available.
 #' @template cleanup
 #' @template verbose
 #' @template skip_existing
@@ -289,6 +278,9 @@
 #' }
 create_wholebrain_from_volume <- function(
   input_volume,
+  verbose = get_verbose(), # nolint: object_usage_linter
+  regheader = lifecycle::deprecated(),
+  ...,
   input_lut = NULL,
   atlas_name = NULL,
   output_dir = NULL,
@@ -299,10 +291,7 @@ create_wholebrain_from_volume <- function(
   cerebellar_opts = list(),
   steps = NULL,
   cleanup = NULL,
-  verbose = get_verbose(), # nolint: object_usage_linter
-  skip_existing = NULL,
-  regheader = lifecycle::deprecated(),
-  ...
+  skip_existing = NULL
 ) {
   grouped <- wholebrain_group_dots(
     labels = labels,

@@ -10,6 +10,18 @@
   suggesting it belongs with the mesh: it filters finished 2D polygons by
   vertex count and never touches the tube.
 
+- Both restructured creators order their arguments the tidyverse way: the
+  one required argument, then the arguments with real defaults, then `...`,
+  then everything defaulting to `NULL` or an empty list. Those last must now
+  be named, which every call site in the ggsegverse atlas repositories
+  already does.
+
+- The grouped lists say which function forwards their entries rather than
+  restating that function's argument documentation, which would have drifted
+  the moment either side changed. `cerebellar_opts` points at
+  [create_cerebellar_from_volume()], and `projection_opts` at the
+  **Registration** section rather than repeating it.
+
 - The grouped-argument helpers moved to `R/arg_groups.R` and are shared, so
   the creators agree about what a deprecation looks like rather than each
   spelling it differently. Each creator names the version it was grouped in;
