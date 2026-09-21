@@ -27,7 +27,7 @@ the tube thicker where more streamlines pass through.'><meta property="og:image"
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9052</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9053</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -99,22 +99,19 @@ the tube thicker where more streamlines pass through.</p>
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">create_tract_from_tractography</span><span class="op">(</span></span>
 <span>  <span class="va">input_tracts</span>,</span>
+<span>  verbose <span class="op">=</span> <span class="fu"><a href="get_verbose.html">get_verbose</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  views <span class="op">=</span> <span class="fu">lifecycle</span><span class="fu">::</span><span class="fu"><a href="https://lifecycle.r-lib.org/reference/deprecated.html" class="external-link">deprecated</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  <span class="va">...</span>,</span>
 <span>  input_aseg <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  input_lut <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  atlas_name <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  output_dir <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  tube_radius <span class="op">=</span> <span class="fl">5</span>,</span>
-<span>  tube_segments <span class="op">=</span> <span class="fl">8</span>,</span>
-<span>  n_points <span class="op">=</span> <span class="fl">50</span>,</span>
-<span>  centerline_method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"mean"</span>, <span class="st">"medoid"</span><span class="op">)</span>,</span>
+<span>  tube_opts <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  slabs <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  vertex_size_limits <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  cleanup <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  verbose <span class="op">=</span> <span class="fu"><a href="get_verbose.html">get_verbose</a></span><span class="op">(</span><span class="op">)</span>,</span>
-<span>  skip_existing <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  steps <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  views <span class="op">=</span> <span class="fu">lifecycle</span><span class="fu">::</span><span class="fu"><a href="https://lifecycle.r-lib.org/reference/deprecated.html" class="external-link">deprecated</a></span><span class="op">(</span><span class="op">)</span>,</span>
-<span>  <span class="va">...</span></span>
+<span>  cleanup <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  skip_existing <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -126,6 +123,26 @@ the tube thicker where more streamlines pass through.</p>
 <dd><p>Paths to tractography files (<code>.trk</code> or <code>.tck</code>), or a
 named list of coordinate matrices where each matrix has N rows and 3
 columns (x, y, z).</p></dd>
+
+
+<dt id="arg-verbose">verbose<a class="anchor" aria-label="anchor" href="#arg-verbose"></a></dt>
+<dd><p>Verbosity level: <code>0</code> (silent), <code>1</code> (standard progress,
+default), or <code>2</code> (debug, includes FreeSurfer output). Logical values
+are accepted (<code>TRUE</code> = 1, <code>FALSE</code> = 0). If not specified, uses the
+value from <code>options("ggseg.extra.verbose")</code> or the <code>GGSEG_EXTRA_VERBOSE</code>
+environment variable.</p></dd>
+
+
+<dt id="arg-views">views<a class="anchor" aria-label="anchor" href="#arg-views"></a></dt>
+<dd><p><a href="https://lifecycle.r-lib.org/articles/stages.html#deprecated" class="external-link"><img src="figures/lifecycle-deprecated.svg" alt="[Deprecated]"></a> Use <code>slabs</code> instead.</p></dd>
+
+
+<dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
+<dd><p>Catches the retired <code>dilate</code>, <code>smoothness</code> and <code>tolerance</code>
+arguments, so a call that still passes one keeps working and says so.
+These are post-creation steps now: see <code><a href="atlas_dilate.html">atlas_dilate()</a></code>,
+<code><a href="atlas_smooth.html">atlas_smooth()</a></code> and <code><a href="atlas_simplify.html">atlas_simplify()</a></code>. Anything else in <code>...</code> is an
+error, as an unused argument always was.</p></dd>
 
 
 <dt id="arg-input-aseg">input_aseg<a class="anchor" aria-label="anchor" href="#arg-input-aseg"></a></dt>
@@ -152,27 +169,18 @@ filename.</p></dd>
 contours). Defaults to <code><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir()</a></code>.</p></dd>
 
 
-<dt id="arg-tube-radius">tube_radius<a class="anchor" aria-label="anchor" href="#arg-tube-radius"></a></dt>
-<dd><p>Controls the tube thickness. Either a single numeric
-value for uniform radius, or <code>"density"</code> to scale radius by how many
-streamlines pass through each point.</p></dd>
-
-
-<dt id="arg-tube-segments">tube_segments<a class="anchor" aria-label="anchor" href="#arg-tube-segments"></a></dt>
-<dd><p>Number of segments around the tube circumference.
-Higher values make smoother tubes but larger meshes. Default 8 is a
-good balance.</p></dd>
-
-
-<dt id="arg-n-points">n_points<a class="anchor" aria-label="anchor" href="#arg-n-points"></a></dt>
-<dd><p>Number of points to resample the centerline to. All tracts
-are resampled to this length for consistent tube generation.</p></dd>
-
-
-<dt id="arg-centerline-method">centerline_method<a class="anchor" aria-label="anchor" href="#arg-centerline-method"></a></dt>
-<dd><p>How to extract the centerline from multiple
-streamlines: <code>"mean"</code> averages coordinates point-by-point, <code>"medoid"</code>
-selects the single most representative streamline.</p></dd>
+<dt id="arg-tube-opts">tube_opts<a class="anchor" aria-label="anchor" href="#arg-tube-opts"></a></dt>
+<dd><p>Named list controlling how a bundle of streamlines
+becomes a 3D tube mesh, with these entries and defaults:</p><ul><li><p><code>centerline_method</code> (<code>"mean"</code>) and <code>n_points</code> (<code>50</code>): how one
+centerline is derived from many streamlines, and how many points it
+is resampled to. All tracts are resampled to the same length so the
+tubes are consistent.</p></li>
+<li><p><code>tube_radius</code> (<code>5</code>) and <code>tube_segments</code> (<code>8</code>): the thickness of
+the tube drawn along that centerline, and how many segments go
+around its circumference. <code>tube_radius</code> also takes <code>"density"</code>, to
+scale thickness by how many streamlines pass through each point.</p></li>
+</ul><p>Unknown entries error. Replaces the flat <code>tube_radius</code>,
+<code>tube_segments</code>, <code>n_points</code> and <code>centerline_method</code> arguments.</p></dd>
 
 
 <dt id="arg-slabs">slabs<a class="anchor" aria-label="anchor" href="#arg-slabs"></a></dt>
@@ -184,27 +192,6 @@ set of tract slabs is derived from the volume dimensions.</p></dd>
 <dd><p>Numeric vector of length 2 setting minimum and
 maximum vertex count for polygons. Polygons outside this range are
 filtered out. Default NULL applies no limits.</p></dd>
-
-
-<dt id="arg-cleanup">cleanup<a class="anchor" aria-label="anchor" href="#arg-cleanup"></a></dt>
-<dd><p>Remove intermediate files after atlas creation. If not
-specified, uses <code>options("ggseg.extra.cleanup")</code> or the <code>GGSEG_EXTRA_CLEANUP</code>
-environment variable. Default is TRUE.</p></dd>
-
-
-<dt id="arg-verbose">verbose<a class="anchor" aria-label="anchor" href="#arg-verbose"></a></dt>
-<dd><p>Verbosity level: <code>0</code> (silent), <code>1</code> (standard progress,
-default), or <code>2</code> (debug, includes FreeSurfer output). Logical values
-are accepted (<code>TRUE</code> = 1, <code>FALSE</code> = 0). If not specified, uses the
-value from <code>options("ggseg.extra.verbose")</code> or the <code>GGSEG_EXTRA_VERBOSE</code>
-environment variable.</p></dd>
-
-
-<dt id="arg-skip-existing">skip_existing<a class="anchor" aria-label="anchor" href="#arg-skip-existing"></a></dt>
-<dd><p>Skip generating output files that already exist,
-allowing interrupted atlas creation to resume. If not specified, uses
-<code>options("ggseg.extra.skip_existing")</code> or the <code>GGSEG_EXTRA_SKIP_EXISTING</code>
-environment variable. Default is TRUE.</p></dd>
 
 
 <dt id="arg-steps">steps<a class="anchor" aria-label="anchor" href="#arg-steps"></a></dt>
@@ -220,16 +207,17 @@ Steps are:</p><ul><li><p>1: Read tractography and create tube meshes</p></li>
 smoothing and vertex reduction.</p></dd>
 
 
-<dt id="arg-views">views<a class="anchor" aria-label="anchor" href="#arg-views"></a></dt>
-<dd><p><a href="https://lifecycle.r-lib.org/articles/stages.html#deprecated" class="external-link"><img src="figures/lifecycle-deprecated.svg" alt="[Deprecated]"></a> Use <code>slabs</code> instead.</p></dd>
+<dt id="arg-cleanup">cleanup<a class="anchor" aria-label="anchor" href="#arg-cleanup"></a></dt>
+<dd><p>Remove intermediate files after atlas creation. If not
+specified, uses <code>options("ggseg.extra.cleanup")</code> or the <code>GGSEG_EXTRA_CLEANUP</code>
+environment variable. Default is TRUE.</p></dd>
 
 
-<dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
-<dd><p>Catches the retired <code>dilate</code>, <code>smoothness</code> and <code>tolerance</code>
-arguments, so a call that still passes one keeps working and says so.
-These are post-creation steps now: see <code><a href="atlas_dilate.html">atlas_dilate()</a></code>,
-<code><a href="atlas_smooth.html">atlas_smooth()</a></code> and <code><a href="atlas_simplify.html">atlas_simplify()</a></code>. Anything else in <code>...</code> is an
-error, as an unused argument always was.</p></dd>
+<dt id="arg-skip-existing">skip_existing<a class="anchor" aria-label="anchor" href="#arg-skip-existing"></a></dt>
+<dd><p>Skip generating output files that already exist,
+allowing interrupted atlas creation to resume. If not specified, uses
+<code>options("ggseg.extra.skip_existing")</code> or the <code>GGSEG_EXTRA_SKIP_EXISTING</code>
+environment variable. Default is TRUE.</p></dd>
 
 </dl></div>
     <div class="section level2">

@@ -15,6 +15,9 @@ Requires FreeSurfer.
 ``` r
 create_wholebrain_from_volume(
   input_volume,
+  verbose = get_verbose(),
+  regheader = lifecycle::deprecated(),
+  ...,
   input_lut = NULL,
   atlas_name = NULL,
   output_dir = NULL,
@@ -25,10 +28,7 @@ create_wholebrain_from_volume(
   cerebellar_opts = list(),
   steps = NULL,
   cleanup = NULL,
-  verbose = get_verbose(),
-  skip_existing = NULL,
-  regheader = lifecycle::deprecated(),
-  ...
+  skip_existing = NULL
 )
 ```
 
@@ -37,6 +37,28 @@ create_wholebrain_from_volume(
 - input_volume:
 
   Path to volumetric parcellation in MNI152 space (.mgz, .nii, .nii.gz).
+
+- verbose:
+
+  Verbosity level: `0` (silent), `1` (standard progress, default), or
+  `2` (debug, includes FreeSurfer output). Logical values are accepted
+  (`TRUE` = 1, `FALSE` = 0). If not specified, uses the value from
+  `options("ggseg.extra.verbose")` or the `GGSEG_EXTRA_VERBOSE`
+  environment variable.
+
+- regheader:
+
+  **\[deprecated\]** Use `projection_opts = list(registration = )`
+  instead. `TRUE` maps to `"header"`, `FALSE` to `"mni152"`. Supplying
+  both is an error.
+
+- ...:
+
+  **\[deprecated\]** The flat arguments that `labels`, `projection_opts`
+  and `cerebellar_opts` replaced. Each is folded into the list that now
+  holds it and raises a deprecation warning; supplying both the old
+  argument and the list entry it maps to is an error rather than a
+  precedence rule.
 
 - input_lut:
 
@@ -76,35 +98,22 @@ create_wholebrain_from_volume(
 
 - projection_opts:
 
-  Named list of volume-to-surface projection settings. Entries, with
-  their defaults:
+  Named list of volume-to-surface projection settings, with these
+  entries and defaults:
 
-  - `subject` (`"fsaverage5"`): target surface subject.
+  - `subject` (`"fsaverage5"`) and `registration` (`"header"`): the
+    target surface subject and how the volume is aligned to it. Read
+    **Registration** below before relying on the default.
 
-  - `registration` (`"header"`): how to align the volume with the
-    subject. Read **Registration** before relying on the default. One of
-    `"header"` (trusts the volume header, via `--regheader`; leaves an
-    MNI152 volume roughly 2 mm out, but that error is uniform and small
-    and it is how every atlas in the ggsegverse was built), `"mni152"`
-    (applies FreeSurfer's `average/mni152.register.dat`, exact only for
-    volumes on the 1 mm LAS grid and refused otherwise), or a path to a
-    register.dat or LTA file.
+  - `projfrac` (`0.5`) and `projfrac_range` (`c(0, 1, 0.1)`): how deep
+    through the cortical ribbon to sample, passed on to `mri_vol2surf`.
+    Set `projfrac_range` to `NULL` to sample the single depth `projfrac`
+    instead.
 
-  - `projfrac_range` samples several cortical depths via
-    `mri_vol2surf --projfrac-max` and takes the maximum label value at
-    each vertex, giving better surface coverage than a single depth. Set
-    it to `NULL` to use `projfrac` alone, where `0` is the white surface
-    and `1` the pial.
-
-  - `projfrac` (`0.5`) and `projfrac_range` (`c(0, 1, 0.1)`): sampling
-    depth through the cortical ribbon.
-
-  - `min_vertices` (`50`): minimum vertex count for the vertex-count
-    heuristic to call a label cortical. The count is summed over every
-    region sharing a label name, so a lookup table whose labels carry
-    `_left` / `_right` suffixes contributes one hemisphere per label
-    while an unsuffixed one contributes both. Only reached for labels
-    that `labels` and a `type` column leave unclassified.
+  - `min_vertices` (`50`): how much surface a label needs before the
+    vertex-count heuristic calls it cortical. Only reached for labels
+    that `labels` and a `type` column leave unclassified; see **Label
+    classification**.
 
   Unknown entries error. Replaces the flat `subject`, `registration`,
   `projfrac`, `projfrac_range` and `min_vertices` arguments.
@@ -128,21 +137,22 @@ create_wholebrain_from_volume(
 
 - cerebellar_opts:
 
-  Named list of extra arguments for the cerebellar sub-pipeline. Allowed
-  entries include `decimate`, forwarded to
-  [`create_cerebellar_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_cerebellar_from_volume.md),
-  and `cerebellar_space`, which this pipeline consumes itself: the space
-  `input_volume`'s cerebellar labels are in. The flatmap they are drawn
-  on is in SUIT space, so a volume in any other space has to be
-  transformed first or the result will not correspond to the flatmap.
-  `"suit"` (the default) takes the volume as already transformed;
-  `"MNI152NLin6AsymC"` or `"MNI152NLin2009cSymC"` transform it with the
-  matching
+  Named list of extra arguments forwarded to
+  [`create_cerebellar_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_cerebellar_from_volume.md).
+  Any argument of that function may be set here except those managed by
+  the wholebrain pipeline (`input_volume`, `input_lut`, `atlas_name`,
+  `output_dir`, `verbose`, `cleanup`, `skip_existing`).
+
+  One entry is not forwarded: `cerebellar_space` is consumed here, and
+  names the space `input_volume`'s cerebellar labels are in. The flatmap
+  they are drawn on is in SUIT space, so anything else is transformed
+  with the matching
   [`suit_deformation_field()`](https://ggsegverse.github.io/ggseg.extra/reference/suit_deformation_field.md)
-  first. Nothing in a NIfTI header records which space a volume is in,
-  so this cannot be detected and the default is an assumption: set it if
-  your volume is in an MNI space. The deprecated
-  `tolerance`/`smooth_refinements` entries trigger a lifecycle warning.
+  first. Nothing in a NIfTI header records a volume's space, so `"suit"`
+  is an assumption rather than a detection: set it if your volume is in
+  an MNI space. See
+  [`suit_deformation_field()`](https://ggsegverse.github.io/ggseg.extra/reference/suit_deformation_field.md)
+  for the spaces available.
 
 - steps:
 
@@ -166,34 +176,12 @@ create_wholebrain_from_volume(
   `options("ggseg.extra.cleanup")` or the `GGSEG_EXTRA_CLEANUP`
   environment variable. Default is TRUE.
 
-- verbose:
-
-  Verbosity level: `0` (silent), `1` (standard progress, default), or
-  `2` (debug, includes FreeSurfer output). Logical values are accepted
-  (`TRUE` = 1, `FALSE` = 0). If not specified, uses the value from
-  `options("ggseg.extra.verbose")` or the `GGSEG_EXTRA_VERBOSE`
-  environment variable.
-
 - skip_existing:
 
   Skip generating output files that already exist, allowing interrupted
   atlas creation to resume. If not specified, uses
   `options("ggseg.extra.skip_existing")` or the
   `GGSEG_EXTRA_SKIP_EXISTING` environment variable. Default is TRUE.
-
-- regheader:
-
-  **\[deprecated\]** Use `projection_opts = list(registration = )`
-  instead. `TRUE` maps to `"header"`, `FALSE` to `"mni152"`. Supplying
-  both is an error.
-
-- ...:
-
-  **\[deprecated\]** The flat arguments that `labels`, `projection_opts`
-  and `cerebellar_opts` replaced. Each is folded into the list that now
-  holds it and raises a deprecation warning; supplying both the old
-  argument and the list entry it maps to is an error rather than a
-  precedence rule.
 
 ## Value
 

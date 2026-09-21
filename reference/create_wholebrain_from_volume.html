@@ -21,7 +21,7 @@ Requires FreeSurfer."><meta property="og:image" content="https://ggsegverse.gith
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9052</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9053</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -90,6 +90,9 @@ the mesh-based subcortical pipeline.</p>
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">create_wholebrain_from_volume</span><span class="op">(</span></span>
 <span>  <span class="va">input_volume</span>,</span>
+<span>  verbose <span class="op">=</span> <span class="fu"><a href="get_verbose.html">get_verbose</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  regheader <span class="op">=</span> <span class="fu">lifecycle</span><span class="fu">::</span><span class="fu"><a href="https://lifecycle.r-lib.org/reference/deprecated.html" class="external-link">deprecated</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  <span class="va">...</span>,</span>
 <span>  input_lut <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  atlas_name <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  output_dir <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -100,10 +103,7 @@ the mesh-based subcortical pipeline.</p>
 <span>  cerebellar_opts <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  steps <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  cleanup <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  verbose <span class="op">=</span> <span class="fu"><a href="get_verbose.html">get_verbose</a></span><span class="op">(</span><span class="op">)</span>,</span>
-<span>  skip_existing <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  regheader <span class="op">=</span> <span class="fu">lifecycle</span><span class="fu">::</span><span class="fu"><a href="https://lifecycle.r-lib.org/reference/deprecated.html" class="external-link">deprecated</a></span><span class="op">(</span><span class="op">)</span>,</span>
-<span>  <span class="va">...</span></span>
+<span>  skip_existing <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -114,6 +114,28 @@ the mesh-based subcortical pipeline.</p>
 <dl><dt id="arg-input-volume">input_volume<a class="anchor" aria-label="anchor" href="#arg-input-volume"></a></dt>
 <dd><p>Path to volumetric parcellation in MNI152 space
 (.mgz, .nii, .nii.gz).</p></dd>
+
+
+<dt id="arg-verbose">verbose<a class="anchor" aria-label="anchor" href="#arg-verbose"></a></dt>
+<dd><p>Verbosity level: <code>0</code> (silent), <code>1</code> (standard progress,
+default), or <code>2</code> (debug, includes FreeSurfer output). Logical values
+are accepted (<code>TRUE</code> = 1, <code>FALSE</code> = 0). If not specified, uses the
+value from <code>options("ggseg.extra.verbose")</code> or the <code>GGSEG_EXTRA_VERBOSE</code>
+environment variable.</p></dd>
+
+
+<dt id="arg-regheader">regheader<a class="anchor" aria-label="anchor" href="#arg-regheader"></a></dt>
+<dd><p><a href="https://lifecycle.r-lib.org/articles/stages.html#deprecated" class="external-link"><img src="figures/lifecycle-deprecated.svg" alt="[Deprecated]"></a> Use
+<code>projection_opts = list(registration = )</code> instead. <code>TRUE</code> maps to
+<code>"header"</code>, <code>FALSE</code> to <code>"mni152"</code>. Supplying both is an error.</p></dd>
+
+
+<dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
+<dd><p><a href="https://lifecycle.r-lib.org/articles/stages.html#deprecated" class="external-link"><img src="figures/lifecycle-deprecated.svg" alt="[Deprecated]"></a> The flat arguments that
+<code>labels</code>, <code>projection_opts</code> and <code>cerebellar_opts</code> replaced. Each is
+folded into the list that now holds it and raises a deprecation warning;
+supplying both the old argument and the list entry it maps to is an
+error rather than a precedence rule.</p></dd>
 
 
 <dt id="arg-input-lut">input_lut<a class="anchor" aria-label="anchor" href="#arg-input-lut"></a></dt>
@@ -148,29 +170,18 @@ flatmap pipeline, using the bundled surfaces from
 
 
 <dt id="arg-projection-opts">projection_opts<a class="anchor" aria-label="anchor" href="#arg-projection-opts"></a></dt>
-<dd><p>Named list of volume-to-surface projection settings.
-Entries, with their defaults:</p><ul><li><p><code>subject</code> (<code>"fsaverage5"</code>): target surface subject.</p></li>
-<li><p><code>registration</code> (<code>"header"</code>): how to align the volume with the
-subject. Read <strong>Registration</strong> before relying on the default. One of
-<code>"header"</code> (trusts the volume header, via <code>--regheader</code>; leaves an
-MNI152 volume roughly 2 mm out, but that error is uniform and small
-and it is how every atlas in the ggsegverse was built), <code>"mni152"</code>
-(applies FreeSurfer's <code>average/mni152.register.dat</code>, exact only for
-volumes on the 1 mm LAS grid and refused otherwise), or a path to a
-register.dat or LTA file.</p></li>
-<li><p><code>projfrac_range</code> samples several cortical depths via
-<code>mri_vol2surf --projfrac-max</code> and takes the maximum label value at
-each vertex, giving better surface coverage than a single depth. Set
-it to <code>NULL</code> to use <code>projfrac</code> alone, where <code>0</code> is the white surface
-and <code>1</code> the pial.</p></li>
-<li><p><code>projfrac</code> (<code>0.5</code>) and <code>projfrac_range</code> (<code>c(0, 1, 0.1)</code>):
-sampling depth through the cortical ribbon.</p></li>
-<li><p><code>min_vertices</code> (<code>50</code>): minimum vertex count for the vertex-count
-heuristic to call a label cortical. The count is summed over every
-region sharing a label name, so a lookup table whose labels carry
-<code>_left</code> / <code>_right</code> suffixes contributes one hemisphere per label
-while an unsuffixed one contributes both. Only reached for labels
-that <code>labels</code> and a <code>type</code> column leave unclassified.</p></li>
+<dd><p>Named list of volume-to-surface projection
+settings, with these entries and defaults:</p><ul><li><p><code>subject</code> (<code>"fsaverage5"</code>) and <code>registration</code> (<code>"header"</code>): the
+target surface subject and how the volume is aligned to it. Read
+<strong>Registration</strong> below before relying on the default.</p></li>
+<li><p><code>projfrac</code> (<code>0.5</code>) and <code>projfrac_range</code> (<code>c(0, 1, 0.1)</code>): how
+deep through the cortical ribbon to sample, passed on to
+<code>mri_vol2surf</code>. Set <code>projfrac_range</code> to <code>NULL</code> to sample the single
+depth <code>projfrac</code> instead.</p></li>
+<li><p><code>min_vertices</code> (<code>50</code>): how much surface a label needs before
+the vertex-count heuristic calls it cortical. Only reached for
+labels that <code>labels</code> and a <code>type</code> column leave unclassified; see
+<strong>Label classification</strong>.</p></li>
 </ul><p>Unknown entries error. Replaces the flat <code>subject</code>, <code>registration</code>,
 <code>projfrac</code>, <code>projfrac_range</code> and <code>min_vertices</code> arguments.</p></dd>
 
@@ -192,19 +203,18 @@ entries trigger a lifecycle warning and are no longer applied.</p></dd>
 
 
 <dt id="arg-cerebellar-opts">cerebellar_opts<a class="anchor" aria-label="anchor" href="#arg-cerebellar-opts"></a></dt>
-<dd><p>Named list of extra arguments for the cerebellar
-sub-pipeline. Allowed entries include <code>decimate</code>, forwarded to
-<code><a href="create_cerebellar_from_volume.html">create_cerebellar_from_volume()</a></code>, and <code>cerebellar_space</code>, which this
-pipeline consumes itself: the space <code>input_volume</code>'s cerebellar labels
-are in. The flatmap they are drawn on is in SUIT space, so a volume in
-any other space has to be transformed first or the result will not
-correspond to the flatmap. <code>"suit"</code> (the default) takes the volume as
-already transformed; <code>"MNI152NLin6AsymC"</code> or <code>"MNI152NLin2009cSymC"</code>
-transform it with the matching <code><a href="suit_deformation_field.html">suit_deformation_field()</a></code> first. Nothing
-in a NIfTI header records which space a volume is in, so this cannot be
-detected and the default is an assumption: set it if your volume is in an
-MNI space. The deprecated <code>tolerance</code>/<code>smooth_refinements</code> entries
-trigger a lifecycle warning.</p></dd>
+<dd><p>Named list of extra arguments forwarded to
+<code><a href="create_cerebellar_from_volume.html">create_cerebellar_from_volume()</a></code>. Any argument of that function may be
+set here except those managed by the wholebrain pipeline
+(<code>input_volume</code>, <code>input_lut</code>, <code>atlas_name</code>, <code>output_dir</code>, <code>verbose</code>,
+<code>cleanup</code>, <code>skip_existing</code>).</p>
+<p>One entry is not forwarded: <code>cerebellar_space</code> is consumed here, and
+names the space <code>input_volume</code>'s cerebellar labels are in. The flatmap
+they are drawn on is in SUIT space, so anything else is transformed with
+the matching <code><a href="suit_deformation_field.html">suit_deformation_field()</a></code> first. Nothing in a NIfTI header
+records a volume's space, so <code>"suit"</code> is an assumption rather than a
+detection: set it if your volume is in an MNI space. See
+<code><a href="suit_deformation_field.html">suit_deformation_field()</a></code> for the spaces available.</p></dd>
 
 
 <dt id="arg-steps">steps<a class="anchor" aria-label="anchor" href="#arg-steps"></a></dt>
@@ -223,33 +233,11 @@ specified, uses <code>options("ggseg.extra.cleanup")</code> or the <code>GGSEG_E
 environment variable. Default is TRUE.</p></dd>
 
 
-<dt id="arg-verbose">verbose<a class="anchor" aria-label="anchor" href="#arg-verbose"></a></dt>
-<dd><p>Verbosity level: <code>0</code> (silent), <code>1</code> (standard progress,
-default), or <code>2</code> (debug, includes FreeSurfer output). Logical values
-are accepted (<code>TRUE</code> = 1, <code>FALSE</code> = 0). If not specified, uses the
-value from <code>options("ggseg.extra.verbose")</code> or the <code>GGSEG_EXTRA_VERBOSE</code>
-environment variable.</p></dd>
-
-
 <dt id="arg-skip-existing">skip_existing<a class="anchor" aria-label="anchor" href="#arg-skip-existing"></a></dt>
 <dd><p>Skip generating output files that already exist,
 allowing interrupted atlas creation to resume. If not specified, uses
 <code>options("ggseg.extra.skip_existing")</code> or the <code>GGSEG_EXTRA_SKIP_EXISTING</code>
 environment variable. Default is TRUE.</p></dd>
-
-
-<dt id="arg-regheader">regheader<a class="anchor" aria-label="anchor" href="#arg-regheader"></a></dt>
-<dd><p><a href="https://lifecycle.r-lib.org/articles/stages.html#deprecated" class="external-link"><img src="figures/lifecycle-deprecated.svg" alt="[Deprecated]"></a> Use
-<code>projection_opts = list(registration = )</code> instead. <code>TRUE</code> maps to
-<code>"header"</code>, <code>FALSE</code> to <code>"mni152"</code>. Supplying both is an error.</p></dd>
-
-
-<dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
-<dd><p><a href="https://lifecycle.r-lib.org/articles/stages.html#deprecated" class="external-link"><img src="figures/lifecycle-deprecated.svg" alt="[Deprecated]"></a> The flat arguments that
-<code>labels</code>, <code>projection_opts</code> and <code>cerebellar_opts</code> replaced. Each is
-folded into the list that now holds it and raises a deprecation warning;
-supplying both the old argument and the list entry it maps to is an
-error rather than a precedence rule.</p></dd>
 
 </dl></div>
     <div class="section level2">

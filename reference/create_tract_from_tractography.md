@@ -20,22 +20,19 @@ the tube thicker where more streamlines pass through.
 ``` r
 create_tract_from_tractography(
   input_tracts,
+  verbose = get_verbose(),
+  views = lifecycle::deprecated(),
+  ...,
   input_aseg = NULL,
   input_lut = NULL,
   atlas_name = NULL,
   output_dir = NULL,
-  tube_radius = 5,
-  tube_segments = 8,
-  n_points = 50,
-  centerline_method = c("mean", "medoid"),
+  tube_opts = list(),
   slabs = NULL,
   vertex_size_limits = NULL,
-  cleanup = NULL,
-  verbose = get_verbose(),
-  skip_existing = NULL,
   steps = NULL,
-  views = lifecycle::deprecated(),
-  ...
+  cleanup = NULL,
+  skip_existing = NULL
 )
 ```
 
@@ -46,6 +43,29 @@ create_tract_from_tractography(
   Paths to tractography files (`.trk` or `.tck`), or a named list of
   coordinate matrices where each matrix has N rows and 3 columns (x, y,
   z).
+
+- verbose:
+
+  Verbosity level: `0` (silent), `1` (standard progress, default), or
+  `2` (debug, includes FreeSurfer output). Logical values are accepted
+  (`TRUE` = 1, `FALSE` = 0). If not specified, uses the value from
+  `options("ggseg.extra.verbose")` or the `GGSEG_EXTRA_VERBOSE`
+  environment variable.
+
+- views:
+
+  **\[deprecated\]** Use `slabs` instead.
+
+- ...:
+
+  Catches the retired `dilate`, `smoothness` and `tolerance` arguments,
+  so a call that still passes one keeps working and says so. These are
+  post-creation steps now: see
+  [`atlas_dilate()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_dilate.md),
+  [`atlas_smooth()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_smooth.md)
+  and
+  [`atlas_simplify()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_simplify.md).
+  Anything else in `...` is an error, as an unused argument always was.
 
 - input_aseg:
 
@@ -70,27 +90,23 @@ create_tract_from_tractography(
   Directory to store intermediate files (screenshots, masks, contours).
   Defaults to [`tempdir()`](https://rdrr.io/r/base/tempfile.html).
 
-- tube_radius:
+- tube_opts:
 
-  Controls the tube thickness. Either a single numeric value for uniform
-  radius, or `"density"` to scale radius by how many streamlines pass
-  through each point.
+  Named list controlling how a bundle of streamlines becomes a 3D tube
+  mesh, with these entries and defaults:
 
-- tube_segments:
+  - `centerline_method` (`"mean"`) and `n_points` (`50`): how one
+    centerline is derived from many streamlines, and how many points it
+    is resampled to. All tracts are resampled to the same length so the
+    tubes are consistent.
 
-  Number of segments around the tube circumference. Higher values make
-  smoother tubes but larger meshes. Default 8 is a good balance.
+  - `tube_radius` (`5`) and `tube_segments` (`8`): the thickness of the
+    tube drawn along that centerline, and how many segments go around
+    its circumference. `tube_radius` also takes `"density"`, to scale
+    thickness by how many streamlines pass through each point.
 
-- n_points:
-
-  Number of points to resample the centerline to. All tracts are
-  resampled to this length for consistent tube generation.
-
-- centerline_method:
-
-  How to extract the centerline from multiple streamlines: `"mean"`
-  averages coordinates point-by-point, `"medoid"` selects the single
-  most representative streamline.
+  Unknown entries error. Replaces the flat `tube_radius`,
+  `tube_segments`, `n_points` and `centerline_method` arguments.
 
 - slabs:
 
@@ -102,27 +118,6 @@ create_tract_from_tractography(
   Numeric vector of length 2 setting minimum and maximum vertex count
   for polygons. Polygons outside this range are filtered out. Default
   NULL applies no limits.
-
-- cleanup:
-
-  Remove intermediate files after atlas creation. If not specified, uses
-  `options("ggseg.extra.cleanup")` or the `GGSEG_EXTRA_CLEANUP`
-  environment variable. Default is TRUE.
-
-- verbose:
-
-  Verbosity level: `0` (silent), `1` (standard progress, default), or
-  `2` (debug, includes FreeSurfer output). Logical values are accepted
-  (`TRUE` = 1, `FALSE` = 0). If not specified, uses the value from
-  `options("ggseg.extra.verbose")` or the `GGSEG_EXTRA_VERBOSE`
-  environment variable.
-
-- skip_existing:
-
-  Skip generating output files that already exist, allowing interrupted
-  atlas creation to resume. If not specified, uses
-  `options("ggseg.extra.skip_existing")` or the
-  `GGSEG_EXTRA_SKIP_EXISTING` environment variable. Default is TRUE.
 
 - steps:
 
@@ -145,20 +140,18 @@ create_tract_from_tractography(
   Use `steps = 1` for 3D-only atlas. Use `steps = 5:7` to iterate on
   smoothing and vertex reduction.
 
-- views:
+- cleanup:
 
-  **\[deprecated\]** Use `slabs` instead.
+  Remove intermediate files after atlas creation. If not specified, uses
+  `options("ggseg.extra.cleanup")` or the `GGSEG_EXTRA_CLEANUP`
+  environment variable. Default is TRUE.
 
-- ...:
+- skip_existing:
 
-  Catches the retired `dilate`, `smoothness` and `tolerance` arguments,
-  so a call that still passes one keeps working and says so. These are
-  post-creation steps now: see
-  [`atlas_dilate()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_dilate.md),
-  [`atlas_smooth()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_smooth.md)
-  and
-  [`atlas_simplify()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_simplify.md).
-  Anything else in `...` is an error, as an unused argument always was.
+  Skip generating output files that already exist, allowing interrupted
+  atlas creation to resume. If not specified, uses
+  `options("ggseg.extra.skip_existing")` or the
+  `GGSEG_EXTRA_SKIP_EXISTING` environment variable. Default is TRUE.
 
 ## Value
 

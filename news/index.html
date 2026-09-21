@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9052</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9053</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -63,6 +63,18 @@
       <small>Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.9.9.9053" id="ggsegextra-1999053">ggseg.extra 1.9.9.9053<a class="anchor" aria-label="anchor" href="#ggsegextra-1999053"></a></h2>
+<ul><li>
+<p><code><a href="../reference/create_tract_from_tractography.html">create_tract_from_tractography()</a></code> takes 12 arguments rather than 17. <code>tube_opts</code> holds <code>tube_radius</code>, <code>tube_segments</code>, <code>n_points</code> and <code>centerline_method</code> – everything about turning a bundle of streamlines into a 3D tube mesh. The flat arguments still work, through <code>...</code>, and deprecate.</p>
+<p><code>vertex_size_limits</code> stays where it was, next to <code>slabs</code>, despite the name suggesting it belongs with the mesh: it filters finished 2D polygons by vertex count and never touches the tube.</p>
+</li>
+<li><p>Both restructured creators order their arguments the tidyverse way: the one required argument, then the arguments with real defaults, then <code>...</code>, then everything defaulting to <code>NULL</code> or an empty list. Those last must now be named, which every call site in the ggsegverse atlas repositories already does.</p></li>
+<li><p>The grouped lists say which function forwards their entries rather than restating that function’s argument documentation, which would have drifted the moment either side changed. <code>cerebellar_opts</code> points at [create_cerebellar_from_volume()], and <code>projection_opts</code> at the <strong>Registration</strong> section rather than repeating it.</p></li>
+<li><p>The grouped-argument helpers moved to <code>R/arg_groups.R</code> and are shared, so the creators agree about what a deprecation looks like rather than each spelling it differently. Each creator names the version it was grouped in; the notice used to quote whichever version the helper was written for, which sent people to the wrong NEWS entry.</p></li>
+<li><p>An invalid grouped list is reported against the argument that was actually passed. <code>labels = "x"</code> said <code>labels_opts</code> must be a named list, naming an argument that does not exist.</p></li>
+<li><p><code>tract_setup_pipeline()</code> is called with named arguments. Fifteen of them were passed by position, three of which (<code>verbose</code>, <code>cleanup</code>, <code>skip_existing</code>) sit next to each other and take the same kinds of value.</p></li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9052" id="ggsegextra-1999052">ggseg.extra 1.9.9.9052<a class="anchor" aria-label="anchor" href="#ggsegextra-1999052"></a></h2>
 <ul><li>
