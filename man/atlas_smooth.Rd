@@ -7,11 +7,11 @@
 atlas_smooth(
   atlas,
   smoothness = 0.4,
-  labels = NULL,
-  exclude = NULL,
   method = c("close", "chaikin", "ksmooth", "spline"),
   vertex_budget = c("preserve", "free"),
-  close_gaps = TRUE
+  close_gaps = TRUE,
+  labels = NULL,
+  exclude = NULL
 )
 }
 \arguments{
@@ -23,12 +23,6 @@ whichever one you pick; each method's native parameter is derived from it.
 Around 0.4--0.6, the default, rounds off voxel-edge stair-steps on
 millimetre voxel grids without distorting shapes; 1 is the most smoothing
 a method applies before shapes stop resembling their input.}
-
-\item{labels}{Optional regex pattern. Only labels matching this pattern
-are smoothed; others are left unchanged.}
-
-\item{exclude}{Optional regex pattern. Labels matching this pattern are
-left unchanged; all others are smoothed.}
 
 \item{method}{Smoothing method. \code{"close"} (the default) is a
 morphological closing: a positive then negative \code{\link[sf:st_buffer]{sf::st_buffer()}}.
@@ -62,6 +56,12 @@ for the neighbour, so a hairline gap opens along every shared edge. With
 borders two of them is given back to one of them, and the parcellation
 closes again. Set \code{FALSE} for geometry that is not a coverage - separate
 tract tubes, say - where there is nothing to close.}
+
+\item{labels}{Optional regex pattern. Only labels matching this pattern
+are smoothed; others are left unchanged.}
+
+\item{exclude}{Optional regex pattern. Labels matching this pattern are
+left unchanged; all others are smoothed.}
 }
 \value{
 The \code{ggseg_atlas}, with its geometry rounded off. Under the

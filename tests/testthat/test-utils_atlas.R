@@ -185,7 +185,7 @@ describe("hemi_to_short", {
 describe("setup_atlas_dirs", {
   it("creates standard directory structure", {
     tmp <- withr::local_tempdir()
-    dirs <- setup_atlas_dirs(tmp, "test_atlas", type = "cortical")
+    dirs <- setup_atlas_dirs(tmp, atlas_name = "test_atlas", type = "cortical")
 
     expect_true(dir.exists(dirs$base))
     expect_true(dir.exists(dirs$snapshots))
@@ -196,17 +196,21 @@ describe("setup_atlas_dirs", {
 
   it("creates additional dirs for subcortical type", {
     tmp <- withr::local_tempdir()
-    dirs <- setup_atlas_dirs(tmp, "test_subcort", type = "subcortical")
+    dirs <- setup_atlas_dirs(
+      tmp,
+      atlas_name = "test_subcort",
+      type = "subcortical"
+    )
 
     expect_true(dir.exists(dirs$meshes))
   })
 
   it("handles existing directories without error", {
     tmp <- withr::local_tempdir()
-    dirs1 <- setup_atlas_dirs(tmp, "test_atlas")
+    dirs1 <- setup_atlas_dirs(tmp, atlas_name = "test_atlas")
 
     expect_no_error({
-      dirs2 <- setup_atlas_dirs(tmp, "test_atlas")
+      dirs2 <- setup_atlas_dirs(tmp, atlas_name = "test_atlas")
     })
     expect_identical(dirs1$base, dirs2$base)
   })

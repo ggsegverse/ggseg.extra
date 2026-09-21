@@ -7,15 +7,15 @@
 create_tract_from_volume(
   input_volume,
   input_lut,
-  input_aseg = NULL,
-  exclude = NULL,
   n_points = 50L,
   min_voxels = 30L,
   smoother = "smooth_spline",
-  atlas_name = NULL,
-  output_dir = NULL,
   verbose = get_verbose(),
-  ...
+  ...,
+  input_aseg = NULL,
+  exclude = NULL,
+  atlas_name = NULL,
+  output_dir = NULL
 )
 }
 \arguments{
@@ -25,26 +25,12 @@ create_tract_from_volume(
 \code{label} (or \code{region}) and colour columns (\code{R}, \code{G}, \code{B}). Supplies tract
 names and colours; labels absent from the volume are ignored.}
 
-\item{input_aseg}{Path to a segmentation volume in the same space, used to
-draw the grey-brain cortex outline in the 2D views. Required for the 2D
-projection (see \code{steps}).}
-
-\item{exclude}{Integer label ids to drop (for example aggregate whole-brain
-fibre masks). Labels with fewer than \code{min_voxels} voxels, or for which a
-centerline cannot be fit, are dropped automatically with a message.}
-
 \item{n_points}{Number of points along each tract centerline.}
 
 \item{min_voxels}{Minimum voxel count for a tract to be kept.}
 
 \item{smoother}{Principal-curve smoother, passed to
 \code{\link[princurve:principal_curve]{princurve::principal_curve()}}.}
-
-\item{atlas_name}{Name for the atlas. If NULL, derived from the input
-filename.}
-
-\item{output_dir}{Directory to store intermediate files (screenshots, masks,
-contours). Defaults to \code{\link[=tempdir]{tempdir()}}.}
 
 \item{verbose}{Verbosity level: \code{0} (silent), \code{1} (standard progress,
 default), or \code{2} (debug, includes FreeSurfer output). Logical values
@@ -54,6 +40,20 @@ environment variable.}
 
 \item{...}{Passed to \code{\link[=create_tract_from_tractography]{create_tract_from_tractography()}} (for example
 \code{tube_radius}, \code{tube_segments}, \code{steps}).}
+
+\item{input_aseg}{Path to a segmentation volume in the same space, used to
+draw the grey-brain cortex outline in the 2D views. Required for the 2D
+projection (see \code{steps}).}
+
+\item{exclude}{Integer label ids to drop (for example aggregate whole-brain
+fibre masks). Labels with fewer than \code{min_voxels} voxels, or for which a
+centerline cannot be fit, are dropped automatically with a message.}
+
+\item{atlas_name}{Name for the atlas. If NULL, derived from the input
+filename.}
+
+\item{output_dir}{Directory to store intermediate files (screenshots, masks,
+contours). Defaults to \code{\link[=tempdir]{tempdir()}}.}
 }
 \value{
 A \code{ggseg_atlas} of type \code{"tract"}, as returned by

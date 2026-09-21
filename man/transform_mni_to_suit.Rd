@@ -7,8 +7,8 @@
 transform_mni_to_suit(
   input_volume,
   deformation_field,
-  output_file = NULL,
-  interpolation = c("nearest", "linear")
+  interpolation = c("nearest", "linear"),
+  output_file = NULL
 )
 }
 \arguments{
@@ -17,13 +17,13 @@ transform_mni_to_suit(
 \item{deformation_field}{Path to the SUIT deformation field NIfTI.
 A 5D volume (x, y, z, 1, 3) mapping SUIT voxels to MNI coordinates.}
 
-\item{output_file}{Path for the output SUIT-space volume. If NULL,
-writes to a temporary file.}
-
 \item{interpolation}{Interpolation method: \code{"nearest"} (default, for
 parcellations/labels) or \code{"linear"} (for continuous maps). Note that
 \code{"linear"} uses a pure-R trilinear loop and can be slow for large
 volumes.}
+
+\item{output_file}{Path for the output SUIT-space volume. If NULL,
+writes to a temporary file.}
 }
 \value{
 Path to the output SUIT-space NIfTI file (invisibly).

@@ -5,20 +5,40 @@
 \title{Create cerebellar atlas from volume segmentation}
 \usage{
 create_cerebellar_from_volume(
+  decimate = 0.5,
+  verbose = get_verbose(),
+  volume = lifecycle::deprecated(),
+  ...,
   input_volume = NULL,
   input_lut = NULL,
   atlas_name = NULL,
   output_dir = NULL,
-  decimate = 0.5,
   smooth_refinements = NULL,
   cleanup = NULL,
-  verbose = get_verbose(),
-  skip_existing = NULL,
-  volume = lifecycle::deprecated(),
-  ...
+  skip_existing = NULL
 )
 }
 \arguments{
+\item{decimate}{Mesh decimation factor between 0 and 1. Reduces the number
+of faces in 3D meshes using quadric edge decimation (via
+\code{\link[Rvcg:vcgQEdecim]{Rvcg::vcgQEdecim()}}). A value of 0.5 reduces faces by 50\%. Set to NULL
+to skip decimation. Requires the Rvcg package. Default is 0.5.}
+
+\item{verbose}{Verbosity level: \code{0} (silent), \code{1} (standard progress,
+default), or \code{2} (debug, includes FreeSurfer output). Logical values
+are accepted (\code{TRUE} = 1, \code{FALSE} = 0). If not specified, uses the
+value from \code{options("ggseg.extra.verbose")} or the \code{GGSEG_EXTRA_VERBOSE}
+environment variable.}
+
+\item{volume}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} Use \code{input_volume}
+instead.}
+
+\item{...}{Catches the retired \code{dilate}, \code{smoothness} and \code{tolerance}
+arguments, so a call that still passes one keeps working and says so.
+These are post-creation steps now: see \code{\link[=atlas_dilate]{atlas_dilate()}},
+\code{\link[=atlas_smooth]{atlas_smooth()}} and \code{\link[=atlas_simplify]{atlas_simplify()}}. Anything else in \code{...} is an
+error, as an unused argument always was.}
+
 \item{input_volume}{Path to a cerebellar segmentation volume (NIfTI).}
 
 \item{input_lut}{Optional path to a colour lookup table file, or a
@@ -31,11 +51,6 @@ filename.}
 \item{output_dir}{Directory to store intermediate files (screenshots, masks,
 contours). Defaults to \code{\link[=tempdir]{tempdir()}}.}
 
-\item{decimate}{Mesh decimation factor between 0 and 1. Reduces the number
-of faces in 3D meshes using quadric edge decimation (via
-\code{\link[Rvcg:vcgQEdecim]{Rvcg::vcgQEdecim()}}). A value of 0.5 reduces faces by 50\%. Set to NULL
-to skip decimation. Requires the Rvcg package. Default is 0.5.}
-
 \item{smooth_refinements}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} sf-side
 smoothing is no longer applied during atlas creation. Use
 \code{\link[=atlas_smooth]{atlas_smooth()}} on the returned atlas instead. Supplying a value
@@ -45,25 +60,10 @@ emits a lifecycle warning and is otherwise ignored.}
 specified, uses \code{options("ggseg.extra.cleanup")} or the \code{GGSEG_EXTRA_CLEANUP}
 environment variable. Default is TRUE.}
 
-\item{verbose}{Verbosity level: \code{0} (silent), \code{1} (standard progress,
-default), or \code{2} (debug, includes FreeSurfer output). Logical values
-are accepted (\code{TRUE} = 1, \code{FALSE} = 0). If not specified, uses the
-value from \code{options("ggseg.extra.verbose")} or the \code{GGSEG_EXTRA_VERBOSE}
-environment variable.}
-
 \item{skip_existing}{Skip generating output files that already exist,
 allowing interrupted atlas creation to resume. If not specified, uses
 \code{options("ggseg.extra.skip_existing")} or the \code{GGSEG_EXTRA_SKIP_EXISTING}
 environment variable. Default is TRUE.}
-
-\item{volume}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} Use \code{input_volume}
-instead.}
-
-\item{...}{Catches the retired \code{dilate}, \code{smoothness} and \code{tolerance}
-arguments, so a call that still passes one keeps working and says so.
-These are post-creation steps now: see \code{\link[=atlas_dilate]{atlas_dilate()}},
-\code{\link[=atlas_smooth]{atlas_smooth()}} and \code{\link[=atlas_simplify]{atlas_simplify()}}. Anything else in \code{...} is an
-error, as an unused argument always was.}
 }
 \value{
 A \code{ggseg_atlas} object of type "cerebellar" with both sf geometry

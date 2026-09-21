@@ -4,15 +4,15 @@
 \alias{read_neuromaps_volume}
 \title{Read neuromaps volume annotation via surface projection}
 \usage{
-read_neuromaps_volume(nifti_file, n_bins = NULL, output_dir = tempdir())
+read_neuromaps_volume(nifti_file, output_dir = tempdir(), n_bins = NULL)
 }
 \arguments{
 \item{nifti_file}{Path to a \code{.nii} or \code{.nii.gz} file in MNI152 space.}
 
+\item{output_dir}{Directory for intermediate surface overlay files.}
+
 \item{n_bins}{Number of quantile bins for continuous data. When \code{NULL}
 (default), auto-detected via Sturges' rule. Ignored for integer data.}
-
-\item{output_dir}{Directory for intermediate surface overlay files.}
 }
 \value{
 A tibble with columns: hemi, region, label, colour, vertices

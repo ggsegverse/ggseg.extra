@@ -9,9 +9,9 @@ atlas_polish(
   keep = 0.1,
   smoothness = 0.4,
   method = c("close", "chaikin", "ksmooth", "spline"),
+  close_gaps = TRUE,
   labels = NULL,
-  exclude = NULL,
-  close_gaps = TRUE
+  exclude = NULL
 )
 }
 \arguments{
@@ -25,12 +25,12 @@ atlas_polish(
 \item{method}{Smoothing method, passed to \code{\link[=atlas_smooth]{atlas_smooth()}}. \code{"close"}
 rounds solid shapes; the others keep holes open.}
 
+\item{close_gaps}{Whether to hand back the slivers the operations open
+between neighbouring regions. See \code{\link[=atlas_smooth]{atlas_smooth()}}.}
+
 \item{labels}{Optional regex. Only matching labels are polished.}
 
 \item{exclude}{Optional regex. Matching labels are left alone.}
-
-\item{close_gaps}{Whether to hand back the slivers the operations open
-between neighbouring regions. See \code{\link[=atlas_smooth]{atlas_smooth()}}.}
 }
 \value{
 The \code{ggseg_atlas}, simplified and rounded.

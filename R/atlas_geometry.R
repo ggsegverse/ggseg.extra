@@ -96,11 +96,11 @@
 atlas_smooth <- function(
   atlas,
   smoothness = 0.4,
-  labels = NULL,
-  exclude = NULL,
   method = c("close", "chaikin", "ksmooth", "spline"),
   vertex_budget = c("preserve", "free"),
-  close_gaps = TRUE
+  close_gaps = TRUE,
+  labels = NULL,
+  exclude = NULL
 ) {
   method <- match.arg(method)
   vertex_budget <- match.arg(vertex_budget)
@@ -225,9 +225,9 @@ atlas_polish <- function(
   keep = 0.1,
   smoothness = 0.4,
   method = c("close", "chaikin", "ksmooth", "spline"),
+  close_gaps = TRUE,
   labels = NULL,
-  exclude = NULL,
-  close_gaps = TRUE
+  exclude = NULL
 ) {
   method <- match.arg(method)
 
@@ -355,9 +355,9 @@ atlas_dilate <- function(atlas, amount, labels = NULL, exclude = NULL) {
 atlas_simplify <- function(
   atlas,
   keep = 0.05,
+  close_gaps = TRUE,
   labels = NULL,
-  exclude = NULL,
-  close_gaps = TRUE
+  exclude = NULL
 ) {
   check_simplify_args(keep, labels, exclude)
 
@@ -600,9 +600,9 @@ combine_region_contours <- function(contourobjs) {
 #' @noRd
 smooth_contours <- function(
   dir,
-  smoothness = NULL, # nolint: object_usage_linter.
   step = "",
-  verbose = get_verbose() # nolint: object_usage_linter
+  verbose = get_verbose(), # nolint: object_usage_linter
+  smoothness = NULL # nolint: object_usage_linter.
 ) {
   load_cached_rda(
     as.character(fs::path(dir, "contours.rda")),
@@ -628,10 +628,10 @@ smooth_contours <- function(
 #' @noRd
 reduce_vertex <- function(
   dir,
-  tolerance = NULL,
-  smoothness = NULL,
   step = "",
-  verbose = get_verbose() # nolint: object_usage_linter
+  verbose = get_verbose(), # nolint: object_usage_linter
+  tolerance = NULL,
+  smoothness = NULL
 ) {
   load_cached_rda(
     as.character(fs::path(dir, "contours_smoothed.rda")),

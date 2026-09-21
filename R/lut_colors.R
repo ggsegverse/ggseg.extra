@@ -72,9 +72,9 @@
 #' lut_generate_colors(lut, by = "type")
 lut_generate_colors <- function(
   lut,
-  by = NULL,
   chroma = 75,
-  luminance = c(45, 65, 82)
+  luminance = c(45, 65, 82),
+  by = NULL
 ) {
   if (!is_lut(lut)) {
     cli::cli_abort("{.arg lut} must be a lookup table; see {.fn is_lut}.")

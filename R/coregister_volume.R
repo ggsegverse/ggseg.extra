@@ -50,12 +50,12 @@ coregister_volume <- function(
   input_volume,
   target_subject = "cvs_avg35_inMNI152",
   target_volume = "brain",
-  output_lta = NULL,
   dof = 12,
   binarise = TRUE,
   subjects_dir = freesurfer::fs_subj_dir(),
   skip_existing = FALSE,
-  verbose = get_verbose() # nolint: object_usage_linter
+  verbose = get_verbose(), # nolint: object_usage_linter
+  output_lta = NULL
 ) {
   check_fs(abort = TRUE)
   rlang::check_installed("RNifti", reason = "to read NIfTI volumes")
@@ -187,15 +187,15 @@ coregister_volume <- function(
 #' }
 project_volume_anatomical <- function(
   input_volume,
-  lut = NULL,
   registration = "header",
   target_subject = "cvs_avg35_inMNI152",
   threshold = 0.3,
   id_offset = 200L,
   protect_cortex = TRUE,
-  output_file = NULL,
   subjects_dir = freesurfer::fs_subj_dir(),
-  verbose = get_verbose() # nolint: object_usage_linter
+  verbose = get_verbose(), # nolint: object_usage_linter
+  lut = NULL,
+  output_file = NULL
 ) {
   check_fs(abort = TRUE)
   rlang::check_installed("RNifti", reason = "to read NIfTI volumes")
@@ -276,19 +276,19 @@ project_volume_anatomical <- function(
 #' }
 prepare_subcortical_anatomical <- function(
   input_volume,
-  lut = NULL,
   target_subject = "cvs_avg35_inMNI152",
   target_volume = "brain",
   threshold = 0.3,
   id_offset = 200L,
   protect_cortex = TRUE,
   dof = 12,
-  output_file = NULL,
-  output_lta = NULL,
   binarise = TRUE,
   subjects_dir = freesurfer::fs_subj_dir(),
   skip_existing = FALSE,
-  verbose = get_verbose() # nolint: object_usage_linter
+  verbose = get_verbose(), # nolint: object_usage_linter
+  lut = NULL,
+  output_file = NULL,
+  output_lta = NULL
 ) {
   lta <- coregister_volume(
     input_volume = input_volume,

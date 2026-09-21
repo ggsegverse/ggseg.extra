@@ -6,19 +6,15 @@
 \usage{
 setup_atlas_repo(
   path,
-  atlas_name = NULL,
   open = rlang::is_interactive(),
   rstudio = TRUE,
-  github_actions = TRUE
+  github_actions = TRUE,
+  atlas_name = NULL
 )
 }
 \arguments{
 \item{path}{Where to create the package. If the directory exists, it must
 be empty.}
-
-\item{atlas_name}{Name of the atlas (lowercase, no spaces). The package
-name becomes \verb{ggseg\{AtlasName\}}. If NULL, derived from the directory
-name (e.g., path \code{ggsegDkt} becomes atlas name \code{dkt}).}
 
 \item{open}{If TRUE, opens the new project in RStudio. Default is TRUE
 when running interactively.}
@@ -27,6 +23,10 @@ when running interactively.}
 
 \item{github_actions}{If TRUE (default), adds the shared ggsegverse
 workflows via \code{\link[=use_atlas_github_actions]{use_atlas_github_actions()}}.}
+
+\item{atlas_name}{Name of the atlas (lowercase, no spaces). The package
+name becomes \verb{ggseg\{AtlasName\}}. If NULL, derived from the directory
+name (e.g., path \code{ggsegDkt} becomes atlas name \code{dkt}).}
 }
 \value{
 Invisibly returns the path to the created package.

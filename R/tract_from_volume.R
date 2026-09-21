@@ -51,15 +51,15 @@
 create_tract_from_volume <- function(
   input_volume,
   input_lut,
-  input_aseg = NULL,
-  exclude = NULL,
   n_points = 50L,
   min_voxels = 30L,
   smoother = "smooth_spline",
-  atlas_name = NULL,
-  output_dir = NULL,
   verbose = get_verbose(), # nolint: object_usage_linter
-  ...
+  ...,
+  input_aseg = NULL,
+  exclude = NULL,
+  atlas_name = NULL,
+  output_dir = NULL
 ) {
   rlang::check_installed(
     "princurve",

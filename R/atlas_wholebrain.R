@@ -555,7 +555,7 @@ wholebrain_setup <- function(
 
   dirs <- setup_atlas_dirs(
     config$output_dir,
-    config$atlas_name,
+    atlas_name = config$atlas_name,
     type = "cortical"
   )
 
@@ -1394,12 +1394,12 @@ wholebrain_resolve_split <- function(
 #' @noRd
 wholebrain_classify_labels <- function(
   atlas_data,
-  colortable = NULL,
   min_vertices = 50L,
+  verbose = FALSE,
+  colortable = NULL,
   cortical_labels = NULL,
   subcortical_labels = NULL,
-  cerebellar_labels = NULL,
-  verbose = FALSE
+  cerebellar_labels = NULL
 ) {
   prep <- classify_labels_inputs(atlas_data, colortable)
   vertex_counts <- prep$vertex_counts
@@ -1800,7 +1800,7 @@ wholebrain_cortical_inputs <- function(config, dirs, projection, split, opts) {
   cortical_name <- paste0(config$atlas_name, "_cortical")
   cortical_dirs <- setup_atlas_dirs(
     dirs$base,
-    "cortical",
+    atlas_name = "cortical",
     type = "cortical"
   )
 
@@ -2569,7 +2569,7 @@ warn_solid_cortex_context <- function(reason, .envir = parent.frame()) {
 #' @param n_vertices Total vertex count for the surface.
 #' @return Logical vector of length `n_vertices`.
 #' @noRd
-load_cortex_mask <- function(hemi, subject = "fsaverage5", n_vertices) {
+load_cortex_mask <- function(hemi, n_vertices, subject = "fsaverage5") {
   label_file <- as.character(fs::path(
     freesurfer::fs_subj_dir(),
     subject,
@@ -2598,7 +2598,7 @@ load_cortex_mask <- function(hemi, subject = "fsaverage5", n_vertices) {
 #' Clear overlay values outside the cortex label
 #' @noRd
 mask_to_cortex <- function(overlay, hemi, subject = "fsaverage5") {
-  overlay[!load_cortex_mask(hemi, subject, length(overlay))] <- 0L
+  overlay[!load_cortex_mask(hemi, length(overlay), subject)] <- 0L
   overlay
 }
 
@@ -2641,7 +2641,7 @@ fill_surface_labels <- function(overlay, hemi, subject = "fsaverage5") {
   surf <- freesurferformats::read.fs.surface(surf_file)
   adj <- build_adjacency(surf$faces, nrow(surf$vertices))
 
-  cortex_mask <- load_cortex_mask(hemi, subject, length(overlay))
+  cortex_mask <- load_cortex_mask(hemi, length(overlay), subject)
 
   result <- overlay
   unlabeled <- intersect(which(result == 0L), which(cortex_mask))

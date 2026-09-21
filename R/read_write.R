@@ -553,8 +553,8 @@ read_neuromaps_annotation <- function(
 #' }
 read_neuromaps_volume <- function(
   nifti_file,
-  n_bins = NULL,
-  output_dir = tempdir()
+  output_dir = tempdir(),
+  n_bins = NULL
 ) {
   check_fs(abort = TRUE)
   rlang::check_installed("RNifti", reason = "to read NIfTI volume files")

@@ -393,8 +393,8 @@ subcort_snapshot_one <- function(
   view_start,
   view_end,
   view_name,
-  signature = NULL,
-  manifest = character()
+  manifest = character(),
+  signature = NULL
 ) {
   outfile <- structure_snapshot_file(dirs$snapshots, view_name, label_name)
   if (snapshot_is_current(outfile, signature, manifest, skip_existing)) {

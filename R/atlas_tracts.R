@@ -220,7 +220,11 @@ tract_setup_pipeline <- function(
     atlas_name <- basename(config$output_dir)
   }
 
-  dirs <- setup_atlas_dirs(config$output_dir, atlas_name, type = "tract")
+  dirs <- setup_atlas_dirs(
+    config$output_dir,
+    atlas_name = atlas_name,
+    type = "tract"
+  )
   lut_result <- parse_lut_colours(input_lut)
   tract_log_header(config, input_tracts, input_aseg)
 

@@ -1359,7 +1359,7 @@ describe("load_cortex_mask", {
       cortex = c(0L, 2L, 4L)
     )
 
-    mask <- load_cortex_mask("lh", "fsaverage5", n_vertices = 6L)
+    mask <- load_cortex_mask("lh", n_vertices = 6L, subject = "fsaverage5")
     expect_type(mask, "logical")
     expect_length(mask, 6L)
     expect_identical(mask, c(TRUE, FALSE, TRUE, FALSE, TRUE, FALSE))
@@ -1372,7 +1372,7 @@ describe("load_cortex_mask", {
     )
 
     expect_error(
-      load_cortex_mask("lh", "fsaverage5", n_vertices = 10L),
+      load_cortex_mask("lh", n_vertices = 10L, subject = "fsaverage5"),
       "Cortex label not found"
     )
   })

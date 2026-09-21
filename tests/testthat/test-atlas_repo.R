@@ -20,7 +20,7 @@ describe("setup_atlas_repo", {
 
     expect_messages(
       {
-        result <- setup_atlas_repo(tmp, "dkt", open = FALSE)
+        result <- setup_atlas_repo(tmp, atlas_name = "dkt", open = FALSE)
       },
       "Created atlas package",
       "Next steps"
@@ -70,7 +70,7 @@ describe("setup_atlas_repo", {
     use_fallback()
 
     expect_messages(
-      setup_atlas_repo(tmp, "My-Atlas_123!", open = FALSE),
+      setup_atlas_repo(tmp, atlas_name = "My-Atlas_123!", open = FALSE),
       "Created atlas package",
       "Next steps"
     )
@@ -85,7 +85,11 @@ describe("setup_atlas_repo", {
     tmp <- withr::local_tempdir("atlas_test_")
 
     expect_error(
-      setup_atlas_repo(file.path(tmp, "newpkg"), "---", open = FALSE),
+      setup_atlas_repo(
+        file.path(tmp, "newpkg"),
+        atlas_name = "---",
+        open = FALSE
+      ),
       "must contain at least one letter"
     )
   })
@@ -95,7 +99,7 @@ describe("setup_atlas_repo", {
     writeLines("test", file.path(tmp, "existing.txt"))
 
     expect_error(
-      setup_atlas_repo(tmp, "test", open = FALSE),
+      setup_atlas_repo(tmp, atlas_name = "test", open = FALSE),
       "not empty"
     )
   })
@@ -105,7 +109,7 @@ describe("setup_atlas_repo", {
     use_fallback()
 
     expect_messages(
-      setup_atlas_repo(tmp, "test", open = FALSE, rstudio = TRUE),
+      setup_atlas_repo(tmp, atlas_name = "test", open = FALSE, rstudio = TRUE),
       "Created atlas package",
       "Next steps"
     )
@@ -120,7 +124,7 @@ describe("setup_atlas_repo", {
     use_fallback()
 
     expect_messages(
-      setup_atlas_repo(tmp, "test", open = FALSE, rstudio = FALSE),
+      setup_atlas_repo(tmp, atlas_name = "test", open = FALSE, rstudio = FALSE),
       "Created atlas package",
       "Next steps"
     )
@@ -143,7 +147,7 @@ describe("setup_atlas_repo template files", {
     }
   )
   expect_messages(
-    setup_atlas_repo(tmp, "testatlas", open = FALSE),
+    setup_atlas_repo(tmp, atlas_name = "testatlas", open = FALSE),
     "Created atlas package",
     "Next steps"
   )
@@ -425,7 +429,7 @@ describe("setup_atlas_repo github actions", {
 
     suppressMessages(setup_atlas_repo(
       tmp,
-      "gha",
+      atlas_name = "gha",
       open = FALSE,
       rstudio = FALSE
     ))
@@ -443,7 +447,7 @@ describe("setup_atlas_repo github actions", {
 
     suppressMessages(setup_atlas_repo(
       tmp,
-      "gha",
+      atlas_name = "gha",
       open = FALSE,
       rstudio = FALSE
     ))
@@ -461,7 +465,7 @@ describe("setup_atlas_repo github actions", {
 
     suppressMessages(setup_atlas_repo(
       tmp,
-      "gha",
+      atlas_name = "gha",
       open = FALSE,
       rstudio = FALSE,
       github_actions = FALSE
@@ -507,7 +511,7 @@ describe("setup_atlas_repo .Rproj file", {
     )
 
     expect_messages(
-      setup_atlas_repo(tmp, "test", open = FALSE),
+      setup_atlas_repo(tmp, atlas_name = "test", open = FALSE),
       "Created atlas package",
       "Next steps"
     )
@@ -567,7 +571,7 @@ describe("setup_atlas_repo lowercase ggseg prefix", {
     )
 
     expect_messages(
-      setup_atlas_repo(tmp, "test", open = TRUE, rstudio = TRUE),
+      setup_atlas_repo(tmp, atlas_name = "test", open = TRUE, rstudio = TRUE),
       "Created atlas package",
       "Next steps"
     )
