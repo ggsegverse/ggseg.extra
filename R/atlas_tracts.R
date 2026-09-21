@@ -30,17 +30,26 @@
 #'   auto-generated.
 #' @template atlas_name
 #' @template output_dir
-#' @param tube_radius Controls the tube thickness. Either a single numeric
-#'   value for uniform radius, or `"density"` to scale radius by how many
-#'   streamlines pass through each point.
-#' @param tube_segments Number of segments around the tube circumference.
-#'   Higher values make smoother tubes but larger meshes. Default 8 is a
-#'   good balance.
-#' @param n_points Number of points to resample the centerline to. All tracts
-#'   are resampled to this length for consistent tube generation.
-#' @param centerline_method How to extract the centerline from multiple
-#'   streamlines: `"mean"` averages coordinates point-by-point, `"medoid"`
-#'   selects the single most representative streamline.
+#' @param tube_opts Named list controlling how a bundle of streamlines
+#'   becomes a 3D tube mesh. Entries, with their defaults:
+#'   \itemize{
+#'     \item `tube_radius` (`5`): tube thickness. A single numeric for a
+#'       uniform radius, or `"density"` to scale the radius by how many
+#'       streamlines pass through each point.
+#'     \item `tube_segments` (`8`): segments around the tube circumference.
+#'       Higher is smoother but makes a larger mesh; 8 is a good balance.
+#'     \item `n_points` (`50`): points to resample each centerline to. All
+#'       tracts are resampled to the same length so tubes are consistent.
+#'     \item `centerline_method` (`"mean"`): how to derive one centerline
+#'       from many streamlines. `"mean"` averages coordinates point by point,
+#'       `"medoid"` picks the single most representative streamline.
+#'   }
+#'   Unknown entries error. Replaces the flat `tube_radius`,
+#'   `tube_segments`, `n_points` and `centerline_method` arguments.
+#' @param ... `r lifecycle::badge("deprecated")` The flat arguments that
+#'   `tube_opts` replaced, plus the retired post-creation tweaks. Each is
+#'   folded into the list that now holds it and raises a deprecation warning;
+#'   supplying both the old argument and its list entry is an error.
 #' @param slabs A data.frame specifying projection slabs. If NULL, a default
 #'   set of tract slabs is derived from the volume dimensions.
 #' @template vertex_size_limits
@@ -95,22 +104,29 @@ create_tract_from_tractography <- function(
   input_lut = NULL,
   atlas_name = NULL,
   output_dir = NULL,
-  tube_radius = 5,
-  tube_segments = 8,
-  n_points = 50,
-  centerline_method = c("mean", "medoid"),
+  tube_opts = list(),
   slabs = NULL,
   vertex_size_limits = NULL,
+  steps = NULL,
   cleanup = NULL,
   verbose = get_verbose(), # nolint: object_usage_linter
   skip_existing = NULL,
-  steps = NULL,
   views = lifecycle::deprecated(),
   ...
 ) {
-  dots <- check_post_creation_dots("create_tract_from_tractography", ...)
-  smoothness <- dots$smoothness
-  tolerance <- dots$tolerance
+  grouped <- group_retired_dots(
+    opts = list(tube_opts = tube_opts),
+    mapping = TRACT_RETIRED_TUBE,
+    dots = list(...),
+    fn = "create_tract_from_tractography",
+    when = "1.9.9.9053"
+  )
+  tube <- resolve_opts(grouped$opts$tube_opts, "tube_opts", TRACT_TUBE_DEFAULTS)
+
+  dots <- do.call(
+    check_post_creation_dots,
+    c(list("create_tract_from_tractography"), grouped$dots)
+  )
   if (lifecycle::is_present(views)) {
     lifecycle::deprecate_warn(
       "1.9.9.9005",
@@ -123,26 +139,51 @@ create_tract_from_tractography <- function(
   start_time <- Sys.time()
 
   setup <- tract_setup_pipeline(
-    input_tracts,
-    input_aseg,
-    input_lut,
-    atlas_name,
-    output_dir,
-    verbose,
-    cleanup,
-    skip_existing,
-    tolerance,
-    smoothness,
-    steps,
-    centerline_method,
-    tube_radius,
-    tube_segments,
-    n_points
+    input_tracts = input_tracts,
+    input_aseg = input_aseg,
+    input_lut = input_lut,
+    atlas_name = atlas_name,
+    output_dir = output_dir,
+    verbose = verbose,
+    cleanup = cleanup,
+    skip_existing = skip_existing,
+    tolerance = dots$tolerance,
+    smoothness = dots$smoothness,
+    steps = steps,
+    centerline_method = tube$centerline_method,
+    tube_radius = tube$tube_radius,
+    tube_segments = tube$tube_segments,
+    n_points = tube$n_points
   )
 
   tract_run_pipeline(setup, start_time, slabs, vertex_size_limits)
 }
 
+
+# nolint start: object_name_linter.
+#' Defaults for the grouped `tube_opts` argument
+#'
+#' Everything about turning a bundle of streamlines into a 3D tube mesh.
+#' `vertex_size_limits` is deliberately not here: it filters finished 2D
+#' polygons by vertex count, so it belongs with `slabs` rather than with the
+#' mesh, whatever its name suggests.
+#' @noRd
+TRACT_TUBE_DEFAULTS <- list(
+  tube_radius = 5,
+  tube_segments = 8,
+  n_points = 50,
+  centerline_method = c("mean", "medoid")
+)
+
+#' Flat arguments retired into `tube_opts`
+#' @noRd
+TRACT_RETIRED_TUBE <- c(
+  tube_radius = "tube_opts.tube_radius",
+  tube_segments = "tube_opts.tube_segments",
+  n_points = "tube_opts.n_points",
+  centerline_method = "tube_opts.centerline_method"
+)
+# nolint end
 
 #' Validate arguments, create the output directories and parse the LUT
 #' @noRd

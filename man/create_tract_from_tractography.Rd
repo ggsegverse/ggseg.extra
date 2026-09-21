@@ -10,16 +10,13 @@ create_tract_from_tractography(
   input_lut = NULL,
   atlas_name = NULL,
   output_dir = NULL,
-  tube_radius = 5,
-  tube_segments = 8,
-  n_points = 50,
-  centerline_method = c("mean", "medoid"),
+  tube_opts = list(),
   slabs = NULL,
   vertex_size_limits = NULL,
+  steps = NULL,
   cleanup = NULL,
   verbose = get_verbose(),
   skip_existing = NULL,
-  steps = NULL,
   views = lifecycle::deprecated(),
   ...
 )
@@ -45,20 +42,22 @@ filename.}
 \item{output_dir}{Directory to store intermediate files (screenshots, masks,
 contours). Defaults to \code{\link[=tempdir]{tempdir()}}.}
 
-\item{tube_radius}{Controls the tube thickness. Either a single numeric
-value for uniform radius, or \code{"density"} to scale radius by how many
-streamlines pass through each point.}
-
-\item{tube_segments}{Number of segments around the tube circumference.
-Higher values make smoother tubes but larger meshes. Default 8 is a
-good balance.}
-
-\item{n_points}{Number of points to resample the centerline to. All tracts
-are resampled to this length for consistent tube generation.}
-
-\item{centerline_method}{How to extract the centerline from multiple
-streamlines: \code{"mean"} averages coordinates point-by-point, \code{"medoid"}
-selects the single most representative streamline.}
+\item{tube_opts}{Named list controlling how a bundle of streamlines
+becomes a 3D tube mesh. Entries, with their defaults:
+\itemize{
+\item \code{tube_radius} (\code{5}): tube thickness. A single numeric for a
+uniform radius, or \code{"density"} to scale the radius by how many
+streamlines pass through each point.
+\item \code{tube_segments} (\code{8}): segments around the tube circumference.
+Higher is smoother but makes a larger mesh; 8 is a good balance.
+\item \code{n_points} (\code{50}): points to resample each centerline to. All
+tracts are resampled to the same length so tubes are consistent.
+\item \code{centerline_method} (\code{"mean"}): how to derive one centerline
+from many streamlines. \code{"mean"} averages coordinates point by point,
+\code{"medoid"} picks the single most representative streamline.
+}
+Unknown entries error. Replaces the flat \code{tube_radius},
+\code{tube_segments}, \code{n_points} and \code{centerline_method} arguments.}
 
 \item{slabs}{A data.frame specifying projection slabs. If NULL, a default
 set of tract slabs is derived from the volume dimensions.}
@@ -66,6 +65,20 @@ set of tract slabs is derived from the volume dimensions.}
 \item{vertex_size_limits}{Numeric vector of length 2 setting minimum and
 maximum vertex count for polygons. Polygons outside this range are
 filtered out. Default NULL applies no limits.}
+
+\item{steps}{Which pipeline steps to run. Default NULL runs all steps.
+Steps are:
+\itemize{
+\item 1: Read tractography and create tube meshes
+\item 2: Create projection snapshots
+\item 3: Process images
+\item 4: Extract contours
+\item 5: Smooth contours
+\item 6: Reduce vertices
+\item 7: Build atlas
+}
+Use \code{steps = 1} for 3D-only atlas. Use \code{steps = 5:7} to iterate on
+smoothing and vertex reduction.}
 
 \item{cleanup}{Remove intermediate files after atlas creation. If not
 specified, uses \code{options("ggseg.extra.cleanup")} or the \code{GGSEG_EXTRA_CLEANUP}
@@ -81,20 +94,6 @@ environment variable.}
 allowing interrupted atlas creation to resume. If not specified, uses
 \code{options("ggseg.extra.skip_existing")} or the \code{GGSEG_EXTRA_SKIP_EXISTING}
 environment variable. Default is TRUE.}
-
-\item{steps}{Which pipeline steps to run. Default NULL runs all steps.
-Steps are:
-\itemize{
-\item 1: Read tractography and create tube meshes
-\item 2: Create projection snapshots
-\item 3: Process images
-\item 4: Extract contours
-\item 5: Smooth contours
-\item 6: Reduce vertices
-\item 7: Build atlas
-}
-Use \code{steps = 1} for 3D-only atlas. Use \code{steps = 5:7} to iterate on
-smoothing and vertex reduction.}
 
 \item{views}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} Use \code{slabs} instead.}
 

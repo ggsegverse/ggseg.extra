@@ -399,33 +399,20 @@ WHOLEBRAIN_RETIRED_LABELS <- c(
   cerebellar_labels = "cerebellar"
 )
 
-#' Flat arguments retired into `cerebellar_opts`
+#' Every retired flat argument, and the `<list argument>.<entry>` it becomes
 #' @noRd
-WHOLEBRAIN_RETIRED_CEREBELLAR <- c(cerebellar_space = "cerebellar_space")
+WHOLEBRAIN_RETIRED_ARGS <- c(
+  stats::setNames(
+    paste0("labels.", WHOLEBRAIN_RETIRED_LABELS),
+    names(WHOLEBRAIN_RETIRED_LABELS)
+  ),
+  stats::setNames(
+    paste0("projection_opts.", names(WHOLEBRAIN_PROJECTION_DEFAULTS)),
+    names(WHOLEBRAIN_PROJECTION_DEFAULTS)
+  ),
+  c(cerebellar_space = "cerebellar_opts.cerebellar_space")
+)
 # nolint end
-
-#' Fold a retired flat argument into the list that replaced it
-#'
-#' Passing both the old argument and the new list entry is an error rather
-#' than a precedence rule: the two disagree about the same setting, and
-#' silently preferring one is how a build ends up not doing what its script
-#' says.
-#' @noRd
-absorb_retired_arg <- function(target, entry, value, old_name, new_arg) {
-  if (entry %in% names(target)) {
-    cli::cli_abort(c(
-      "Cannot use both {.arg {old_name}} and {.code {new_arg}${entry}}.",
-      "i" = "{.arg {old_name}} is deprecated; keep {.code {new_arg}} alone."
-    ))
-  }
-  lifecycle::deprecate_warn(
-    "1.9.9.9052",
-    paste0("create_wholebrain_from_volume(", old_name, " = )"),
-    paste0("create_wholebrain_from_volume(", new_arg, " = )")
-  )
-  target[[entry]] <- value
-  target
-}
 
 #' Move the retired flat arguments into `labels`, `projection_opts` and
 #' `cerebellar_opts`, leaving the post-creation dots alone
@@ -439,52 +426,19 @@ wholebrain_group_dots <- function(
   cerebellar_opts,
   dots
 ) {
-  named <- names(dots)
-  if (is.null(named)) {
-    named <- rep("", length(dots))
-  }
-
-  for (nm in intersect(named, names(WHOLEBRAIN_RETIRED_LABELS))) {
-    labels <- absorb_retired_arg(
-      labels,
-      WHOLEBRAIN_RETIRED_LABELS[[nm]],
-      dots[[nm]],
-      nm,
-      "labels"
-    )
-  }
-  for (nm in intersect(named, names(WHOLEBRAIN_PROJECTION_DEFAULTS))) {
-    projection_opts <- absorb_retired_arg(
-      projection_opts,
-      nm,
-      dots[[nm]],
-      nm,
-      "projection_opts"
-    )
-  }
-  for (nm in intersect(named, names(WHOLEBRAIN_RETIRED_CEREBELLAR))) {
-    cerebellar_opts <- absorb_retired_arg(
-      cerebellar_opts,
-      WHOLEBRAIN_RETIRED_CEREBELLAR[[nm]],
-      dots[[nm]],
-      nm,
-      "cerebellar_opts"
-    )
-  }
-
-  retired <- c(
-    names(WHOLEBRAIN_RETIRED_LABELS),
-    names(WHOLEBRAIN_PROJECTION_DEFAULTS),
-    names(WHOLEBRAIN_RETIRED_CEREBELLAR)
+  grouped <- group_retired_dots(
+    opts = list(
+      labels = labels,
+      projection_opts = projection_opts,
+      cerebellar_opts = cerebellar_opts
+    ),
+    mapping = WHOLEBRAIN_RETIRED_ARGS,
+    dots = dots,
+    fn = "create_wholebrain_from_volume",
+    when = "1.9.9.9052"
   )
-  rest <- dots[!named %in% retired]
-  redirect_sub_pipeline_args(names(rest))
-  list(
-    labels = labels,
-    projection_opts = projection_opts,
-    cerebellar_opts = cerebellar_opts,
-    dots = rest
-  )
+  redirect_sub_pipeline_args(names(grouped$dots))
+  c(grouped$opts, list(dots = grouped$dots))
 }
 
 
@@ -539,7 +493,7 @@ redirect_sub_pipeline_args <- function(nms) {
 resolve_projection_opts <- function(projection_opts) {
   projection_opts <- validate_pipeline_opts(
     projection_opts,
-    "projection",
+    "projection_opts",
     names(WHOLEBRAIN_PROJECTION_DEFAULTS)
   )
   utils::modifyList(WHOLEBRAIN_PROJECTION_DEFAULTS, projection_opts)
@@ -779,17 +733,17 @@ validate_wholebrain_opts <- function(
   list(
     cortical = validate_pipeline_opts(
       cortical_opts,
-      "cortical",
+      "cortical_opts",
       allowed(create_cortical_from_annotation, CORTICAL_MANAGED_ARGS)
     ),
     subcortical = validate_pipeline_opts(
       subcortical_opts,
-      "subcortical",
+      "subcortical_opts",
       allowed(create_subcortical_from_volume, SUBCORT_MANAGED_ARGS)
     ),
     cerebellar = validate_pipeline_opts(
       cerebellar_opts,
-      "cerebellar",
+      "cerebellar_opts",
       allowed(create_cerebellar_from_volume, CEREBELLAR_MANAGED_ARGS)
     )
   )
@@ -919,31 +873,31 @@ CORTICAL_MANAGED_ARGS <- c(
 #' @param allowed Character vector of permitted entry names.
 #' @return Validated list (empty list if `opts` was NULL or empty).
 #' @noRd
-validate_pipeline_opts <- function(opts, pipeline, allowed) {
+validate_pipeline_opts <- function(opts, arg_name, allowed) {
   if (is.null(opts)) {
     return(list())
   }
   if (!is.list(opts)) {
     cli::cli_abort(
-      "{.arg {pipeline}_opts} must be a named list, not {.cls {class(opts)}}"
+      "{.arg {arg_name}} must be a named list, not {.cls {class(opts)}}"
     )
   }
   if (length(opts) == 0L) {
     return(list())
   }
   if (is.null(names(opts)) || !all(nzchar(names(opts)))) {
-    cli::cli_abort("All entries in {.arg {pipeline}_opts} must be named")
+    cli::cli_abort("All entries in {.arg {arg_name}} must be named")
   }
   dupes <- names(opts)[duplicated(names(opts))]
   if (length(dupes)) {
     cli::cli_abort(
-      "Duplicate {.arg {pipeline}_opts} name{?s}: {.val {dupes}}"
+      "Duplicate {.arg {arg_name}} name{?s}: {.val {dupes}}"
     )
   }
   invalid <- setdiff(names(opts), allowed)
   if (length(invalid)) {
     cli::cli_abort(c(
-      "Unknown {pipeline} option{?s}: {.val {invalid}}",
+      "Unknown {.arg {arg_name}} entr{?y/ies}: {.val {invalid}}",
       "i" = "Allowed: {.val {allowed}}"
     ))
   }
