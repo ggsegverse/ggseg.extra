@@ -16,19 +16,19 @@ Requires FreeSurfer for mesh generation.
 ``` r
 create_subcortical_from_volume(
   input_volume,
+  decimate = 0.5,
+  verbose = get_verbose(),
+  views = lifecycle::deprecated(),
+  ...,
   input_lut = NULL,
   atlas_name = NULL,
   output_dir = NULL,
   slabs = NULL,
   vertex_size_limits = NULL,
-  decimate = 0.5,
   cleanup = NULL,
-  verbose = get_verbose(),
   skip_existing = NULL,
   steps = NULL,
-  context = NULL,
-  views = lifecycle::deprecated(),
-  ...
+  context = NULL
 )
 ```
 
@@ -45,6 +45,37 @@ create_subcortical_from_volume(
   [`project_volume_anatomical()`](https://ggsegverse.github.io/ggseg.extra/reference/project_volume_anatomical.md),
   in which case its `volume` and `lut` are used (an explicit `input_lut`
   takes precedence over the bundled one).
+
+- decimate:
+
+  Mesh decimation factor between 0 and 1. Reduces the number of faces in
+  3D meshes using quadric edge decimation (via
+  [`Rvcg::vcgQEdecim()`](https://rdrr.io/pkg/Rvcg/man/vcgQEdecim.html)).
+  A value of 0.5 reduces faces by 50%. Set to NULL to skip decimation.
+  Requires the Rvcg package. Default is 0.5.
+
+- verbose:
+
+  Verbosity level: `0` (silent), `1` (standard progress, default), or
+  `2` (debug, includes FreeSurfer output). Logical values are accepted
+  (`TRUE` = 1, `FALSE` = 0). If not specified, uses the value from
+  `options("ggseg.extra.verbose")` or the `GGSEG_EXTRA_VERBOSE`
+  environment variable.
+
+- views:
+
+  **\[deprecated\]** Use `slabs` instead.
+
+- ...:
+
+  Catches the retired `dilate`, `smoothness` and `tolerance` arguments,
+  so a call that still passes one keeps working and says so. These are
+  post-creation steps now: see
+  [`atlas_dilate()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_dilate.md),
+  [`atlas_smooth()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_smooth.md)
+  and
+  [`atlas_simplify()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_simplify.md).
+  Anything else in `...` is an error, as an unused argument always was.
 
 - input_lut:
 
@@ -87,27 +118,11 @@ create_subcortical_from_volume(
   for polygons. Polygons outside this range are filtered out. Default
   NULL applies no limits.
 
-- decimate:
-
-  Mesh decimation factor between 0 and 1. Reduces the number of faces in
-  3D meshes using quadric edge decimation (via
-  [`Rvcg::vcgQEdecim()`](https://rdrr.io/pkg/Rvcg/man/vcgQEdecim.html)).
-  A value of 0.5 reduces faces by 50%. Set to NULL to skip decimation.
-  Requires the Rvcg package. Default is 0.5.
-
 - cleanup:
 
   Remove intermediate files after atlas creation. If not specified, uses
   `options("ggseg.extra.cleanup")` or the `GGSEG_EXTRA_CLEANUP`
   environment variable. Default is TRUE.
-
-- verbose:
-
-  Verbosity level: `0` (silent), `1` (standard progress, default), or
-  `2` (debug, includes FreeSurfer output). Logical values are accepted
-  (`TRUE` = 1, `FALSE` = 0). If not specified, uses the value from
-  `options("ggseg.extra.verbose")` or the `GGSEG_EXTRA_VERBOSE`
-  environment variable.
 
 - skip_existing:
 
@@ -149,21 +164,6 @@ create_subcortical_from_volume(
   the finished 2D atlas to keep the focus regions coloured on grey
   anatomical context. `NULL` (default) leaves the atlas unchanged. Only
   applied when the 2D build (step 9) runs.
-
-- views:
-
-  **\[deprecated\]** Use `slabs` instead.
-
-- ...:
-
-  Catches the retired `dilate`, `smoothness` and `tolerance` arguments,
-  so a call that still passes one keeps working and says so. These are
-  post-creation steps now: see
-  [`atlas_dilate()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_dilate.md),
-  [`atlas_smooth()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_smooth.md)
-  and
-  [`atlas_simplify()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_simplify.md).
-  Anything else in `...` is an error, as an unused argument always was.
 
 ## Value
 

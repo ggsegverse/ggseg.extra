@@ -10,7 +10,7 @@ and sets `A` to `0`.
 ## Usage
 
 ``` r
-lut_generate_colors(lut, by = NULL, chroma = 75, luminance = c(45, 65, 82))
+lut_generate_colors(lut, chroma = 75, luminance = c(45, 65, 82), by = NULL)
 ```
 
 ## Arguments
@@ -20,16 +20,6 @@ lut_generate_colors(lut, by = NULL, chroma = 75, luminance = c(45, 65, 82))
   A lookup table with `idx`, `label`, `R`, `G`, `B` and `A` columns, as
   returned by
   [`read_lut()`](https://ggsegverse.github.io/ggseg.extra/reference/read_lut.md).
-
-- by:
-
-  Optional name of a column whose groups are each coloured from the full
-  colour circle, rather than from a slice of one shared circle. Pass
-  `by = "type"` for a whole-brain table, where the cortical and
-  subcortical rows become two atlases that are never plotted together: a
-  colour then has to be unique within an atlas rather than within the
-  table, and each atlas gets the whole circle to spend. The default,
-  `NULL`, colours the table as one atlas.
 
 - chroma:
 
@@ -44,6 +34,16 @@ lut_generate_colors(lut, by = NULL, chroma = 75, luminance = c(45, 65, 82))
   Lightness values, 0 to 100, passed to
   [`grDevices::hcl()`](https://rdrr.io/r/grDevices/hcl.html) and cycled
   through in order as the hue advances.
+
+- by:
+
+  Optional name of a column whose groups are each coloured from the full
+  colour circle, rather than from a slice of one shared circle. Pass
+  `by = "type"` for a whole-brain table, where the cortical and
+  subcortical rows become two atlases that are never plotted together: a
+  colour then has to be unique within an atlas rather than within the
+  table, and each atlas gets the whole circle to spend. The default,
+  `NULL`, colours the table as one atlas.
 
 ## Value
 

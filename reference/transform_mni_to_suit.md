@@ -19,8 +19,8 @@ available from the Diedrichsen Lab cerebellar atlases repository as
 transform_mni_to_suit(
   input_volume,
   deformation_field,
-  output_file = NULL,
-  interpolation = c("nearest", "linear")
+  interpolation = c("nearest", "linear"),
+  output_file = NULL
 )
 ```
 
@@ -35,16 +35,16 @@ transform_mni_to_suit(
   Path to the SUIT deformation field NIfTI. A 5D volume (x, y, z, 1, 3)
   mapping SUIT voxels to MNI coordinates.
 
-- output_file:
-
-  Path for the output SUIT-space volume. If NULL, writes to a temporary
-  file.
-
 - interpolation:
 
   Interpolation method: `"nearest"` (default, for parcellations/labels)
   or `"linear"` (for continuous maps). Note that `"linear"` uses a
   pure-R trilinear loop and can be slow for large volumes.
+
+- output_file:
+
+  Path for the output SUIT-space volume. If NULL, writes to a temporary
+  file.
 
 ## Value
 

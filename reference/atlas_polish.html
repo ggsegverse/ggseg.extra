@@ -23,7 +23,7 @@ atlas_polish() owns that order so a build does not have to rediscover it."><meta
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9053</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9054</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -96,9 +96,9 @@ and puts the staircase back.</p>
 <span>  keep <span class="op">=</span> <span class="fl">0.1</span>,</span>
 <span>  smoothness <span class="op">=</span> <span class="fl">0.4</span>,</span>
 <span>  method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"close"</span>, <span class="st">"chaikin"</span>, <span class="st">"ksmooth"</span>, <span class="st">"spline"</span><span class="op">)</span>,</span>
+<span>  close_gaps <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  labels <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  exclude <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  close_gaps <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span>  exclude <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -124,17 +124,17 @@ and puts the staircase back.</p>
 rounds solid shapes; the others keep holes open.</p></dd>
 
 
+<dt id="arg-close-gaps">close_gaps<a class="anchor" aria-label="anchor" href="#arg-close-gaps"></a></dt>
+<dd><p>Whether to hand back the slivers the operations open
+between neighbouring regions. See <code><a href="atlas_smooth.html">atlas_smooth()</a></code>.</p></dd>
+
+
 <dt id="arg-labels">labels<a class="anchor" aria-label="anchor" href="#arg-labels"></a></dt>
 <dd><p>Optional regex. Only matching labels are polished.</p></dd>
 
 
 <dt id="arg-exclude">exclude<a class="anchor" aria-label="anchor" href="#arg-exclude"></a></dt>
 <dd><p>Optional regex. Matching labels are left alone.</p></dd>
-
-
-<dt id="arg-close-gaps">close_gaps<a class="anchor" aria-label="anchor" href="#arg-close-gaps"></a></dt>
-<dd><p>Whether to hand back the slivers the operations open
-between neighbouring regions. See <code><a href="atlas_smooth.html">atlas_smooth()</a></code>.</p></dd>
 
 </dl></div>
     <div class="section level2">

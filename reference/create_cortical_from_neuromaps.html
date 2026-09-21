@@ -19,7 +19,7 @@ projected to fsaverage5 via FreeSurfer's mri_vol2surf."><meta property="og:image
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9053</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9054</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -90,17 +90,17 @@ projected to fsaverage5 via FreeSurfer's <code>mri_vol2surf</code>.</p>
 <span>  <span class="va">desc</span>,</span>
 <span>  space <span class="op">=</span> <span class="st">"fsaverage"</span>,</span>
 <span>  density <span class="op">=</span> <span class="st">"10k"</span>,</span>
+<span>  hemisphere <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"rh"</span>, <span class="st">"lh"</span><span class="op">)</span>,</span>
+<span>  views <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"lateral"</span>, <span class="st">"medial"</span>, <span class="st">"superior"</span>, <span class="st">"inferior"</span><span class="op">)</span>,</span>
+<span>  verbose <span class="op">=</span> <span class="fu"><a href="get_verbose.html">get_verbose</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  <span class="va">...</span>,</span>
 <span>  label_table <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  n_bins <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  atlas_name <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  output_dir <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  hemisphere <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"rh"</span>, <span class="st">"lh"</span><span class="op">)</span>,</span>
-<span>  views <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"lateral"</span>, <span class="st">"medial"</span>, <span class="st">"superior"</span>, <span class="st">"inferior"</span><span class="op">)</span>,</span>
 <span>  smooth_refinements <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  cleanup <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  verbose <span class="op">=</span> <span class="fu"><a href="get_verbose.html">get_verbose</a></span><span class="op">(</span><span class="op">)</span>,</span>
-<span>  skip_existing <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  <span class="va">...</span></span>
+<span>  skip_existing <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -124,6 +124,31 @@ projected to fsaverage5 via FreeSurfer's <code>mri_vol2surf</code>.</p>
 <dd><p>Surface vertex density. Defaults to <code>"10k"</code>.</p></dd>
 
 
+<dt id="arg-hemisphere">hemisphere<a class="anchor" aria-label="anchor" href="#arg-hemisphere"></a></dt>
+<dd><p>Which hemispheres to include: "lh", "rh", or both.</p></dd>
+
+
+<dt id="arg-views">views<a class="anchor" aria-label="anchor" href="#arg-views"></a></dt>
+<dd><p>Which views to include: "lateral", "medial",
+"superior", "inferior".</p></dd>
+
+
+<dt id="arg-verbose">verbose<a class="anchor" aria-label="anchor" href="#arg-verbose"></a></dt>
+<dd><p>Verbosity level: <code>0</code> (silent), <code>1</code> (standard progress,
+default), or <code>2</code> (debug, includes FreeSurfer output). Logical values
+are accepted (<code>TRUE</code> = 1, <code>FALSE</code> = 0). If not specified, uses the
+value from <code>options("ggseg.extra.verbose")</code> or the <code>GGSEG_EXTRA_VERBOSE</code>
+environment variable.</p></dd>
+
+
+<dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
+<dd><p>Catches the retired <code>dilate</code>, <code>smoothness</code> and <code>tolerance</code>
+arguments, so a call that still passes one keeps working and says so.
+These are post-creation steps now: see <code><a href="atlas_dilate.html">atlas_dilate()</a></code>,
+<code><a href="atlas_smooth.html">atlas_smooth()</a></code> and <code><a href="atlas_simplify.html">atlas_simplify()</a></code>. Anything else in <code>...</code> is an
+error, as an unused argument always was.</p></dd>
+
+
 <dt id="arg-label-table">label_table<a class="anchor" aria-label="anchor" href="#arg-label-table"></a></dt>
 <dd><p>Optional data.frame mapping parcel IDs to region names.</p></dd>
 
@@ -142,15 +167,6 @@ filename.</p></dd>
 contours). Defaults to <code><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir()</a></code>.</p></dd>
 
 
-<dt id="arg-hemisphere">hemisphere<a class="anchor" aria-label="anchor" href="#arg-hemisphere"></a></dt>
-<dd><p>Which hemispheres to include: "lh", "rh", or both.</p></dd>
-
-
-<dt id="arg-views">views<a class="anchor" aria-label="anchor" href="#arg-views"></a></dt>
-<dd><p>Which views to include: "lateral", "medial",
-"superior", "inferior".</p></dd>
-
-
 <dt id="arg-smooth-refinements">smooth_refinements<a class="anchor" aria-label="anchor" href="#arg-smooth-refinements"></a></dt>
 <dd><p><a href="https://lifecycle.r-lib.org/articles/stages.html#deprecated" class="external-link"><img src="figures/lifecycle-deprecated.svg" alt="[Deprecated]"></a> sf-side
 smoothing is no longer applied during atlas creation. Use
@@ -164,27 +180,11 @@ specified, uses <code>options("ggseg.extra.cleanup")</code> or the <code>GGSEG_E
 environment variable. Default is TRUE.</p></dd>
 
 
-<dt id="arg-verbose">verbose<a class="anchor" aria-label="anchor" href="#arg-verbose"></a></dt>
-<dd><p>Verbosity level: <code>0</code> (silent), <code>1</code> (standard progress,
-default), or <code>2</code> (debug, includes FreeSurfer output). Logical values
-are accepted (<code>TRUE</code> = 1, <code>FALSE</code> = 0). If not specified, uses the
-value from <code>options("ggseg.extra.verbose")</code> or the <code>GGSEG_EXTRA_VERBOSE</code>
-environment variable.</p></dd>
-
-
 <dt id="arg-skip-existing">skip_existing<a class="anchor" aria-label="anchor" href="#arg-skip-existing"></a></dt>
 <dd><p>Skip generating output files that already exist,
 allowing interrupted atlas creation to resume. If not specified, uses
 <code>options("ggseg.extra.skip_existing")</code> or the <code>GGSEG_EXTRA_SKIP_EXISTING</code>
 environment variable. Default is TRUE.</p></dd>
-
-
-<dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
-<dd><p>Catches the retired <code>dilate</code>, <code>smoothness</code> and <code>tolerance</code>
-arguments, so a call that still passes one keeps working and says so.
-These are post-creation steps now: see <code><a href="atlas_dilate.html">atlas_dilate()</a></code>,
-<code><a href="atlas_smooth.html">atlas_smooth()</a></code> and <code><a href="atlas_simplify.html">atlas_simplify()</a></code>. Anything else in <code>...</code> is an
-error, as an unused argument always was.</p></dd>
 
 </dl></div>
     <div class="section level2">

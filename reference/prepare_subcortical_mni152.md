@@ -22,14 +22,14 @@ instead when the registration must be computed from an arbitrary volume
 ``` r
 prepare_subcortical_mni152(
   input_volume,
-  labels = NULL,
-  lut = NULL,
   replace_labels = aseg_subcortical_labels(),
   target_subject = "fsaverage5",
   registration = "mni152",
-  output_file = NULL,
   subjects_dir = freesurfer::fs_subj_dir(),
-  verbose = get_verbose()
+  verbose = get_verbose(),
+  labels = NULL,
+  lut = NULL,
+  output_file = NULL
 )
 ```
 
@@ -39,19 +39,6 @@ prepare_subcortical_mni152(
 
   Path or `RNifti` image of the parcellation in FSL-MNI152 space. Only
   voxels whose value is in `labels` are embedded.
-
-- labels:
-
-  Integer ids of the parcels to embed. Defaults to every non-zero id in
-  `input_volume`. Ids must not collide with the surviving `aseg` context
-  ids; remap them upstream (e.g. add a fixed offset) if they do. A
-  collision is an error.
-
-- lut:
-
-  Optional colour table (`data.frame` with `idx, label, R, G, B, A`)
-  naming the parcels. When `NULL`, generic `region_XXXX` names and an
-  HCL palette are generated.
 
 - replace_labels:
 
@@ -75,10 +62,6 @@ prepare_subcortical_mni152(
   [`project_volume_anatomical()`](https://ggsegverse.github.io/ggseg.extra/reference/project_volume_anatomical.md).
   `NULL` is deprecated; it meant `"mni152"`.
 
-- output_file:
-
-  Optional path for the merged volume; defaults to a tempfile.
-
 - subjects_dir:
 
   FreeSurfer subjects directory.
@@ -86,6 +69,23 @@ prepare_subcortical_mni152(
 - verbose:
 
   Verbosity, passed to the FreeSurfer command runner.
+
+- labels:
+
+  Integer ids of the parcels to embed. Defaults to every non-zero id in
+  `input_volume`. Ids must not collide with the surviving `aseg` context
+  ids; remap them upstream (e.g. add a fixed offset) if they do. A
+  collision is an error.
+
+- lut:
+
+  Optional colour table (`data.frame` with `idx, label, R, G, B, A`)
+  naming the parcels. When `NULL`, generic `region_XXXX` names and an
+  HCL palette are generated.
+
+- output_file:
+
+  Optional path for the merged volume; defaults to a tempfile.
 
 ## Value
 

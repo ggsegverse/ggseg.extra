@@ -1,5 +1,32 @@
 # Changelog
 
+## ggseg.extra 1.9.9.9054
+
+- Every function orders its arguments the same way: the ones without
+  defaults, then the ones with real defaults, then `...`, then
+  everything defaulting to `NULL` or an empty list. Thirty-six did not,
+  so reading two signatures side by side told you nothing about where to
+  expect an argument.
+
+  Nothing about the arguments themselves changed – same functions, same
+  argument names, same defaults, checked mechanically rather than by
+  eye. Only their order moved, and only within a signature.
+
+  Arguments that now sit after `...` have to be named. No call to any of
+  these functions in the ggsegverse atlas repositories passes anything
+  beyond the first argument by position, so none of them is affected.
+
+- `load_cortex_mask()` had a required argument sitting after one with a
+  default, which meant every caller had to pass the defaulted one too.
+
+- [`read_neuromaps_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/read_neuromaps_volume.md)
+  was called internally with three positional arguments, which the
+  reorder would have quietly turned into a bin count handed over as a
+  directory path. It and the other call sites where the second position
+  changed meaning – `setup_atlas_dirs()`,
+  [`setup_atlas_repo()`](https://ggsegverse.github.io/ggseg.extra/reference/setup_atlas_repo.md),
+  `load_cortex_mask()` – now name their arguments.
+
 ## ggseg.extra 1.9.9.9053
 
 - [`create_tract_from_tractography()`](https://ggsegverse.github.io/ggseg.extra/reference/create_tract_from_tractography.md)

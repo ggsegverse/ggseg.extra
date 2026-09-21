@@ -9,9 +9,9 @@ atlas costs less to store and to draw.
 atlas_simplify(
   atlas,
   keep = 0.05,
+  close_gaps = TRUE,
   labels = NULL,
-  exclude = NULL,
-  close_gaps = TRUE
+  exclude = NULL
 )
 ```
 
@@ -31,11 +31,6 @@ atlas_simplify(
   [`atlas_polish()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_polish.md)
   has measured figures.
 
-- labels, exclude:
-
-  Regex selecting which labels to simplify, or which to leave alone.
-  Give at most one.
-
 - close_gaps:
 
   Whether to hand back any sliver the simplification opens between
@@ -48,6 +43,11 @@ atlas_simplify(
   longer agree and the shared edge comes apart. With `TRUE`, the
   default, area that no longer belongs to any region but borders two of
   them is given back to one of them.
+
+- labels, exclude:
+
+  Regex selecting which labels to simplify, or which to leave alone.
+  Give at most one.
 
 ## Value
 

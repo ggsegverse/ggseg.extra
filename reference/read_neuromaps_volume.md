@@ -8,7 +8,7 @@ values using the same binning logic as
 ## Usage
 
 ``` r
-read_neuromaps_volume(nifti_file, n_bins = NULL, output_dir = tempdir())
+read_neuromaps_volume(nifti_file, output_dir = tempdir(), n_bins = NULL)
 ```
 
 ## Arguments
@@ -17,14 +17,14 @@ read_neuromaps_volume(nifti_file, n_bins = NULL, output_dir = tempdir())
 
   Path to a `.nii` or `.nii.gz` file in MNI152 space.
 
+- output_dir:
+
+  Directory for intermediate surface overlay files.
+
 - n_bins:
 
   Number of quantile bins for continuous data. When `NULL` (default),
   auto-detected via Sturges' rule. Ignored for integer data.
-
-- output_dir:
-
-  Directory for intermediate surface overlay files.
 
 ## Value
 

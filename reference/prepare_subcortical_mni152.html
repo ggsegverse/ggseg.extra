@@ -33,7 +33,7 @@ mri_coreg)."><meta property="og:image" content="https://ggsegverse.github.io/ggs
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9053</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9054</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -108,14 +108,14 @@ computed from an arbitrary volume (it targets <code>cvs_avg35_inMNI152</code> vi
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">prepare_subcortical_mni152</span><span class="op">(</span></span>
 <span>  <span class="va">input_volume</span>,</span>
-<span>  labels <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  lut <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  replace_labels <span class="op">=</span> <span class="fu"><a href="aseg_subcortical_labels.html">aseg_subcortical_labels</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  target_subject <span class="op">=</span> <span class="st">"fsaverage5"</span>,</span>
 <span>  registration <span class="op">=</span> <span class="st">"mni152"</span>,</span>
-<span>  output_file <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  subjects_dir <span class="op">=</span> <span class="fu">freesurfer</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/freesurfer/man/fs_dir.html" class="external-link">fs_subj_dir</a></span><span class="op">(</span><span class="op">)</span>,</span>
-<span>  verbose <span class="op">=</span> <span class="fu"><a href="get_verbose.html">get_verbose</a></span><span class="op">(</span><span class="op">)</span></span>
+<span>  verbose <span class="op">=</span> <span class="fu"><a href="get_verbose.html">get_verbose</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  labels <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  lut <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  output_file <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -126,19 +126,6 @@ computed from an arbitrary volume (it targets <code>cvs_avg35_inMNI152</code> vi
 <dl><dt id="arg-input-volume">input_volume<a class="anchor" aria-label="anchor" href="#arg-input-volume"></a></dt>
 <dd><p>Path or <code>RNifti</code> image of the parcellation in FSL-MNI152
 space. Only voxels whose value is in <code>labels</code> are embedded.</p></dd>
-
-
-<dt id="arg-labels">labels<a class="anchor" aria-label="anchor" href="#arg-labels"></a></dt>
-<dd><p>Integer ids of the parcels to embed. Defaults to every non-zero
-id in <code>input_volume</code>. Ids must not collide with the surviving <code>aseg</code>
-context ids; remap them upstream (e.g. add a fixed offset) if they do.
-A collision is an error.</p></dd>
-
-
-<dt id="arg-lut">lut<a class="anchor" aria-label="anchor" href="#arg-lut"></a></dt>
-<dd><p>Optional colour table (<code>data.frame</code> with <code>idx, label, R, G, B, A</code>)
-naming the parcels. When <code>NULL</code>, generic <code>region_XXXX</code> names and an HCL
-palette are generated.</p></dd>
 
 
 <dt id="arg-replace-labels">replace_labels<a class="anchor" aria-label="anchor" href="#arg-replace-labels"></a></dt>
@@ -160,17 +147,30 @@ file. The same vocabulary as <code><a href="create_wholebrain_from_volume.html">
 <code>"mni152"</code>.</p></dd>
 
 
-<dt id="arg-output-file">output_file<a class="anchor" aria-label="anchor" href="#arg-output-file"></a></dt>
-<dd><p>Optional path for the merged volume; defaults to a
-tempfile.</p></dd>
-
-
 <dt id="arg-subjects-dir">subjects_dir<a class="anchor" aria-label="anchor" href="#arg-subjects-dir"></a></dt>
 <dd><p>FreeSurfer subjects directory.</p></dd>
 
 
 <dt id="arg-verbose">verbose<a class="anchor" aria-label="anchor" href="#arg-verbose"></a></dt>
 <dd><p>Verbosity, passed to the FreeSurfer command runner.</p></dd>
+
+
+<dt id="arg-labels">labels<a class="anchor" aria-label="anchor" href="#arg-labels"></a></dt>
+<dd><p>Integer ids of the parcels to embed. Defaults to every non-zero
+id in <code>input_volume</code>. Ids must not collide with the surviving <code>aseg</code>
+context ids; remap them upstream (e.g. add a fixed offset) if they do.
+A collision is an error.</p></dd>
+
+
+<dt id="arg-lut">lut<a class="anchor" aria-label="anchor" href="#arg-lut"></a></dt>
+<dd><p>Optional colour table (<code>data.frame</code> with <code>idx, label, R, G, B, A</code>)
+naming the parcels. When <code>NULL</code>, generic <code>region_XXXX</code> names and an HCL
+palette are generated.</p></dd>
+
+
+<dt id="arg-output-file">output_file<a class="anchor" aria-label="anchor" href="#arg-output-file"></a></dt>
+<dd><p>Optional path for the merged volume; defaults to a
+tempfile.</p></dd>
 
 </dl></div>
     <div class="section level2">

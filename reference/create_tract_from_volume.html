@@ -21,7 +21,7 @@ distributed as NIfTI label volumes (e.g. AtlasTrack)."><meta property="og:image"
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9053</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9054</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -91,15 +91,15 @@ distributed as NIfTI label volumes (e.g. AtlasTrack).</p>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">create_tract_from_volume</span><span class="op">(</span></span>
 <span>  <span class="va">input_volume</span>,</span>
 <span>  <span class="va">input_lut</span>,</span>
-<span>  input_aseg <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  exclude <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  n_points <span class="op">=</span> <span class="fl">50L</span>,</span>
 <span>  min_voxels <span class="op">=</span> <span class="fl">30L</span>,</span>
 <span>  smoother <span class="op">=</span> <span class="st">"smooth_spline"</span>,</span>
-<span>  atlas_name <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  output_dir <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  verbose <span class="op">=</span> <span class="fu"><a href="get_verbose.html">get_verbose</a></span><span class="op">(</span><span class="op">)</span>,</span>
-<span>  <span class="va">...</span></span>
+<span>  <span class="va">...</span>,</span>
+<span>  input_aseg <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  exclude <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  atlas_name <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  output_dir <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -117,18 +117,6 @@ distributed as NIfTI label volumes (e.g. AtlasTrack).</p>
 names and colours; labels absent from the volume are ignored.</p></dd>
 
 
-<dt id="arg-input-aseg">input_aseg<a class="anchor" aria-label="anchor" href="#arg-input-aseg"></a></dt>
-<dd><p>Path to a segmentation volume in the same space, used to
-draw the grey-brain cortex outline in the 2D views. Required for the 2D
-projection (see <code>steps</code>).</p></dd>
-
-
-<dt id="arg-exclude">exclude<a class="anchor" aria-label="anchor" href="#arg-exclude"></a></dt>
-<dd><p>Integer label ids to drop (for example aggregate whole-brain
-fibre masks). Labels with fewer than <code>min_voxels</code> voxels, or for which a
-centerline cannot be fit, are dropped automatically with a message.</p></dd>
-
-
 <dt id="arg-n-points">n_points<a class="anchor" aria-label="anchor" href="#arg-n-points"></a></dt>
 <dd><p>Number of points along each tract centerline.</p></dd>
 
@@ -142,16 +130,6 @@ centerline cannot be fit, are dropped automatically with a message.</p></dd>
 <code><a href="https://rdrr.io/pkg/princurve/man/principal_curve.html" class="external-link">princurve::principal_curve()</a></code>.</p></dd>
 
 
-<dt id="arg-atlas-name">atlas_name<a class="anchor" aria-label="anchor" href="#arg-atlas-name"></a></dt>
-<dd><p>Name for the atlas. If NULL, derived from the input
-filename.</p></dd>
-
-
-<dt id="arg-output-dir">output_dir<a class="anchor" aria-label="anchor" href="#arg-output-dir"></a></dt>
-<dd><p>Directory to store intermediate files (screenshots, masks,
-contours). Defaults to <code><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir()</a></code>.</p></dd>
-
-
 <dt id="arg-verbose">verbose<a class="anchor" aria-label="anchor" href="#arg-verbose"></a></dt>
 <dd><p>Verbosity level: <code>0</code> (silent), <code>1</code> (standard progress,
 default), or <code>2</code> (debug, includes FreeSurfer output). Logical values
@@ -163,6 +141,28 @@ environment variable.</p></dd>
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
 <dd><p>Passed to <code><a href="create_tract_from_tractography.html">create_tract_from_tractography()</a></code> (for example
 <code>tube_radius</code>, <code>tube_segments</code>, <code>steps</code>).</p></dd>
+
+
+<dt id="arg-input-aseg">input_aseg<a class="anchor" aria-label="anchor" href="#arg-input-aseg"></a></dt>
+<dd><p>Path to a segmentation volume in the same space, used to
+draw the grey-brain cortex outline in the 2D views. Required for the 2D
+projection (see <code>steps</code>).</p></dd>
+
+
+<dt id="arg-exclude">exclude<a class="anchor" aria-label="anchor" href="#arg-exclude"></a></dt>
+<dd><p>Integer label ids to drop (for example aggregate whole-brain
+fibre masks). Labels with fewer than <code>min_voxels</code> voxels, or for which a
+centerline cannot be fit, are dropped automatically with a message.</p></dd>
+
+
+<dt id="arg-atlas-name">atlas_name<a class="anchor" aria-label="anchor" href="#arg-atlas-name"></a></dt>
+<dd><p>Name for the atlas. If NULL, derived from the input
+filename.</p></dd>
+
+
+<dt id="arg-output-dir">output_dir<a class="anchor" aria-label="anchor" href="#arg-output-dir"></a></dt>
+<dd><p>Directory to store intermediate files (screenshots, masks,
+contours). Defaults to <code><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir()</a></code>.</p></dd>
 
 </dl></div>
     <div class="section level2">

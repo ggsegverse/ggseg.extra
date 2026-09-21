@@ -11,7 +11,7 @@ atlas costs less to store and to draw."><meta property="og:image" content="https
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9053</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9054</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -76,9 +76,9 @@ atlas costs less to store and to draw.</p>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">atlas_simplify</span><span class="op">(</span></span>
 <span>  <span class="va">atlas</span>,</span>
 <span>  keep <span class="op">=</span> <span class="fl">0.05</span>,</span>
+<span>  close_gaps <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  labels <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  exclude <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  close_gaps <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span>  exclude <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -99,11 +99,6 @@ its shape, so an atlas of many small rings lands above what was asked -
 measured figures.</p></dd>
 
 
-<dt id="arg-labels-exclude">labels, exclude<a class="anchor" aria-label="anchor" href="#arg-labels-exclude"></a></dt>
-<dd><p>Regex selecting which labels to simplify, or which
-to leave alone. Give at most one.</p></dd>
-
-
 <dt id="arg-close-gaps">close_gaps<a class="anchor" aria-label="anchor" href="#arg-close-gaps"></a></dt>
 <dd><p>Whether to hand back any sliver the simplification
 opens between neighbouring regions. Simplification is topology-aware,
@@ -114,6 +109,11 @@ earns its keep on geometry that has been reshaped since - rounded off by
 the rings no longer agree and the shared edge comes apart. With <code>TRUE</code>,
 the default, area that no longer belongs to any region but borders two
 of them is given back to one of them.</p></dd>
+
+
+<dt id="arg-labels-exclude">labels, exclude<a class="anchor" aria-label="anchor" href="#arg-labels-exclude"></a></dt>
+<dd><p>Regex selecting which labels to simplify, or which
+to leave alone. Give at most one.</p></dd>
 
 </dl></div>
     <div class="section level2">

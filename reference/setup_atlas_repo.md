@@ -13,10 +13,10 @@ building your atlas.
 ``` r
 setup_atlas_repo(
   path,
-  atlas_name = NULL,
   open = rlang::is_interactive(),
   rstudio = TRUE,
-  github_actions = TRUE
+  github_actions = TRUE,
+  atlas_name = NULL
 )
 ```
 
@@ -26,12 +26,6 @@ setup_atlas_repo(
 
   Where to create the package. If the directory exists, it must be
   empty.
-
-- atlas_name:
-
-  Name of the atlas (lowercase, no spaces). The package name becomes
-  `ggseg{AtlasName}`. If NULL, derived from the directory name (e.g.,
-  path `ggsegDkt` becomes atlas name `dkt`).
 
 - open:
 
@@ -46,6 +40,12 @@ setup_atlas_repo(
 
   If TRUE (default), adds the shared ggsegverse workflows via
   [`use_atlas_github_actions()`](https://ggsegverse.github.io/ggseg.extra/reference/use_atlas_github_actions.md).
+
+- atlas_name:
+
+  Name of the atlas (lowercase, no spaces). The package name becomes
+  `ggseg{AtlasName}`. If NULL, derived from the directory name (e.g.,
+  path `ggsegDkt` becomes atlas name `dkt`).
 
 ## Value
 

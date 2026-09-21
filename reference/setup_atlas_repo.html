@@ -21,7 +21,7 @@ building your atlas."><meta property="og:image" content="https://ggsegverse.gith
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9053</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9054</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -90,10 +90,10 @@ building your atlas.</p>
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">setup_atlas_repo</span><span class="op">(</span></span>
 <span>  <span class="va">path</span>,</span>
-<span>  atlas_name <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  open <span class="op">=</span> <span class="fu">rlang</span><span class="fu">::</span><span class="fu"><a href="https://rlang.r-lib.org/reference/is_interactive.html" class="external-link">is_interactive</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  rstudio <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  github_actions <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span>  github_actions <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  atlas_name <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -104,12 +104,6 @@ building your atlas.</p>
 <dl><dt id="arg-path">path<a class="anchor" aria-label="anchor" href="#arg-path"></a></dt>
 <dd><p>Where to create the package. If the directory exists, it must
 be empty.</p></dd>
-
-
-<dt id="arg-atlas-name">atlas_name<a class="anchor" aria-label="anchor" href="#arg-atlas-name"></a></dt>
-<dd><p>Name of the atlas (lowercase, no spaces). The package
-name becomes <code>ggseg{AtlasName}</code>. If NULL, derived from the directory
-name (e.g., path <code>ggsegDkt</code> becomes atlas name <code>dkt</code>).</p></dd>
 
 
 <dt id="arg-open">open<a class="anchor" aria-label="anchor" href="#arg-open"></a></dt>
@@ -124,6 +118,12 @@ when running interactively.</p></dd>
 <dt id="arg-github-actions">github_actions<a class="anchor" aria-label="anchor" href="#arg-github-actions"></a></dt>
 <dd><p>If TRUE (default), adds the shared ggsegverse
 workflows via <code><a href="use_atlas_github_actions.html">use_atlas_github_actions()</a></code>.</p></dd>
+
+
+<dt id="arg-atlas-name">atlas_name<a class="anchor" aria-label="anchor" href="#arg-atlas-name"></a></dt>
+<dd><p>Name of the atlas (lowercase, no spaces). The package
+name becomes <code>ggseg{AtlasName}</code>. If NULL, derived from the directory
+name (e.g., path <code>ggsegDkt</code> becomes atlas name <code>dkt</code>).</p></dd>
 
 </dl></div>
     <div class="section level2">

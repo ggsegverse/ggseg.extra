@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9053</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9054</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -63,6 +63,16 @@
       <small>Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.9.9.9054" id="ggsegextra-1999054">ggseg.extra 1.9.9.9054<a class="anchor" aria-label="anchor" href="#ggsegextra-1999054"></a></h2>
+<ul><li>
+<p>Every function orders its arguments the same way: the ones without defaults, then the ones with real defaults, then <code>...</code>, then everything defaulting to <code>NULL</code> or an empty list. Thirty-six did not, so reading two signatures side by side told you nothing about where to expect an argument.</p>
+<p>Nothing about the arguments themselves changed – same functions, same argument names, same defaults, checked mechanically rather than by eye. Only their order moved, and only within a signature.</p>
+<p>Arguments that now sit after <code>...</code> have to be named. No call to any of these functions in the ggsegverse atlas repositories passes anything beyond the first argument by position, so none of them is affected.</p>
+</li>
+<li><p><code>load_cortex_mask()</code> had a required argument sitting after one with a default, which meant every caller had to pass the defaulted one too.</p></li>
+<li><p><code><a href="../reference/read_neuromaps_volume.html">read_neuromaps_volume()</a></code> was called internally with three positional arguments, which the reorder would have quietly turned into a bin count handed over as a directory path. It and the other call sites where the second position changed meaning – <code>setup_atlas_dirs()</code>, <code><a href="../reference/setup_atlas_repo.html">setup_atlas_repo()</a></code>, <code>load_cortex_mask()</code> – now name their arguments.</p></li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9053" id="ggsegextra-1999053">ggseg.extra 1.9.9.9053<a class="anchor" aria-label="anchor" href="#ggsegextra-1999053"></a></h2>
 <ul><li>

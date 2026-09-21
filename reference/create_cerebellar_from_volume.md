@@ -11,21 +11,52 @@ from the volume for 3D rendering.
 
 ``` r
 create_cerebellar_from_volume(
+  decimate = 0.5,
+  verbose = get_verbose(),
+  volume = lifecycle::deprecated(),
+  ...,
   input_volume = NULL,
   input_lut = NULL,
   atlas_name = NULL,
   output_dir = NULL,
-  decimate = 0.5,
   smooth_refinements = NULL,
   cleanup = NULL,
-  verbose = get_verbose(),
-  skip_existing = NULL,
-  volume = lifecycle::deprecated(),
-  ...
+  skip_existing = NULL
 )
 ```
 
 ## Arguments
+
+- decimate:
+
+  Mesh decimation factor between 0 and 1. Reduces the number of faces in
+  3D meshes using quadric edge decimation (via
+  [`Rvcg::vcgQEdecim()`](https://rdrr.io/pkg/Rvcg/man/vcgQEdecim.html)).
+  A value of 0.5 reduces faces by 50%. Set to NULL to skip decimation.
+  Requires the Rvcg package. Default is 0.5.
+
+- verbose:
+
+  Verbosity level: `0` (silent), `1` (standard progress, default), or
+  `2` (debug, includes FreeSurfer output). Logical values are accepted
+  (`TRUE` = 1, `FALSE` = 0). If not specified, uses the value from
+  `options("ggseg.extra.verbose")` or the `GGSEG_EXTRA_VERBOSE`
+  environment variable.
+
+- volume:
+
+  **\[deprecated\]** Use `input_volume` instead.
+
+- ...:
+
+  Catches the retired `dilate`, `smoothness` and `tolerance` arguments,
+  so a call that still passes one keeps working and says so. These are
+  post-creation steps now: see
+  [`atlas_dilate()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_dilate.md),
+  [`atlas_smooth()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_smooth.md)
+  and
+  [`atlas_simplify()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_simplify.md).
+  Anything else in `...` is an error, as an unused argument always was.
 
 - input_volume:
 
@@ -46,14 +77,6 @@ create_cerebellar_from_volume(
   Directory to store intermediate files (screenshots, masks, contours).
   Defaults to [`tempdir()`](https://rdrr.io/r/base/tempfile.html).
 
-- decimate:
-
-  Mesh decimation factor between 0 and 1. Reduces the number of faces in
-  3D meshes using quadric edge decimation (via
-  [`Rvcg::vcgQEdecim()`](https://rdrr.io/pkg/Rvcg/man/vcgQEdecim.html)).
-  A value of 0.5 reduces faces by 50%. Set to NULL to skip decimation.
-  Requires the Rvcg package. Default is 0.5.
-
 - smooth_refinements:
 
   **\[deprecated\]** sf-side smoothing is no longer applied during atlas
@@ -68,35 +91,12 @@ create_cerebellar_from_volume(
   `options("ggseg.extra.cleanup")` or the `GGSEG_EXTRA_CLEANUP`
   environment variable. Default is TRUE.
 
-- verbose:
-
-  Verbosity level: `0` (silent), `1` (standard progress, default), or
-  `2` (debug, includes FreeSurfer output). Logical values are accepted
-  (`TRUE` = 1, `FALSE` = 0). If not specified, uses the value from
-  `options("ggseg.extra.verbose")` or the `GGSEG_EXTRA_VERBOSE`
-  environment variable.
-
 - skip_existing:
 
   Skip generating output files that already exist, allowing interrupted
   atlas creation to resume. If not specified, uses
   `options("ggseg.extra.skip_existing")` or the
   `GGSEG_EXTRA_SKIP_EXISTING` environment variable. Default is TRUE.
-
-- volume:
-
-  **\[deprecated\]** Use `input_volume` instead.
-
-- ...:
-
-  Catches the retired `dilate`, `smoothness` and `tolerance` arguments,
-  so a call that still passes one keeps working and says so. These are
-  post-creation steps now: see
-  [`atlas_dilate()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_dilate.md),
-  [`atlas_smooth()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_smooth.md)
-  and
-  [`atlas_simplify()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_simplify.md).
-  Anything else in `...` is an error, as an unused argument always was.
 
 ## Value
 

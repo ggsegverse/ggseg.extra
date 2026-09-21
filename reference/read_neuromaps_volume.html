@@ -13,7 +13,7 @@ values using the same binning logic as read_neuromaps_annotation()."><meta prope
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9053</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9054</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -76,7 +76,7 @@ values using the same binning logic as <code><a href="read_neuromaps_annotation.
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">read_neuromaps_volume</span><span class="op">(</span><span class="va">nifti_file</span>, n_bins <span class="op">=</span> <span class="cn">NULL</span>, output_dir <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">read_neuromaps_volume</span><span class="op">(</span><span class="va">nifti_file</span>, output_dir <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span>, n_bins <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -87,13 +87,13 @@ values using the same binning logic as <code><a href="read_neuromaps_annotation.
 <dd><p>Path to a <code>.nii</code> or <code>.nii.gz</code> file in MNI152 space.</p></dd>
 
 
+<dt id="arg-output-dir">output_dir<a class="anchor" aria-label="anchor" href="#arg-output-dir"></a></dt>
+<dd><p>Directory for intermediate surface overlay files.</p></dd>
+
+
 <dt id="arg-n-bins">n_bins<a class="anchor" aria-label="anchor" href="#arg-n-bins"></a></dt>
 <dd><p>Number of quantile bins for continuous data. When <code>NULL</code>
 (default), auto-detected via Sturges' rule. Ignored for integer data.</p></dd>
-
-
-<dt id="arg-output-dir">output_dir<a class="anchor" aria-label="anchor" href="#arg-output-dir"></a></dt>
-<dd><p>Directory for intermediate surface overlay files.</p></dd>
 
 </dl></div>
     <div class="section level2">

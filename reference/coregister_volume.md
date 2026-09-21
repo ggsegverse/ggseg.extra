@@ -15,12 +15,12 @@ coregister_volume(
   input_volume,
   target_subject = "cvs_avg35_inMNI152",
   target_volume = "brain",
-  output_lta = NULL,
   dof = 12,
   binarise = TRUE,
   subjects_dir = freesurfer::fs_subj_dir(),
   skip_existing = FALSE,
-  verbose = get_verbose()
+  verbose = get_verbose(),
+  output_lta = NULL
 )
 ```
 
@@ -39,10 +39,6 @@ coregister_volume(
 
   Name of the volume in the subject's `mri/` directory used as the
   registration target. Defaults to `"brain"` (i.e. `brain.mgz`).
-
-- output_lta:
-
-  Path to write the resulting LTA file. Defaults to a temporary file.
 
 - dof:
 
@@ -73,6 +69,10 @@ coregister_volume(
   (`TRUE` = 1, `FALSE` = 0). If not specified, uses the value from
   `options("ggseg.extra.verbose")` or the `GGSEG_EXTRA_VERBOSE`
   environment variable.
+
+- output_lta:
+
+  Path to write the resulting LTA file. Defaults to a temporary file.
 
 ## Value
 

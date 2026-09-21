@@ -12,11 +12,11 @@ regions are simplified together, preventing gaps.
 atlas_smooth(
   atlas,
   smoothness = 0.4,
-  labels = NULL,
-  exclude = NULL,
   method = c("close", "chaikin", "ksmooth", "spline"),
   vertex_budget = c("preserve", "free"),
-  close_gaps = TRUE
+  close_gaps = TRUE,
+  labels = NULL,
+  exclude = NULL
 )
 ```
 
@@ -34,16 +34,6 @@ atlas_smooth(
   it. Around 0.4–0.6, the default, rounds off voxel-edge stair-steps on
   millimetre voxel grids without distorting shapes; 1 is the most
   smoothing a method applies before shapes stop resembling their input.
-
-- labels:
-
-  Optional regex pattern. Only labels matching this pattern are
-  smoothed; others are left unchanged.
-
-- exclude:
-
-  Optional regex pattern. Labels matching this pattern are left
-  unchanged; all others are smoothed.
 
 - method:
 
@@ -85,6 +75,16 @@ atlas_smooth(
   borders two of them is given back to one of them, and the parcellation
   closes again. Set `FALSE` for geometry that is not a coverage -
   separate tract tubes, say - where there is nothing to close.
+
+- labels:
+
+  Optional regex pattern. Only labels matching this pattern are
+  smoothed; others are left unchanged.
+
+- exclude:
+
+  Optional regex pattern. Labels matching this pattern are left
+  unchanged; all others are smoothed.
 
 ## Value
 

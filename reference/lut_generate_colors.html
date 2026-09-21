@@ -19,7 +19,7 @@ sets A to 0."><meta property="og:image" content="https://ggsegverse.github.io/gg
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9053</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9054</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -85,7 +85,7 @@ sets <code>A</code> to <code>0</code>.</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">lut_generate_colors</span><span class="op">(</span><span class="va">lut</span>, by <span class="op">=</span> <span class="cn">NULL</span>, chroma <span class="op">=</span> <span class="fl">75</span>, luminance <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">45</span>, <span class="fl">65</span>, <span class="fl">82</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">lut_generate_colors</span><span class="op">(</span><span class="va">lut</span>, chroma <span class="op">=</span> <span class="fl">75</span>, luminance <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">45</span>, <span class="fl">65</span>, <span class="fl">82</span><span class="op">)</span>, by <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -95,16 +95,6 @@ sets <code>A</code> to <code>0</code>.</p>
 <dl><dt id="arg-lut">lut<a class="anchor" aria-label="anchor" href="#arg-lut"></a></dt>
 <dd><p>A lookup table with <code>idx</code>, <code>label</code>, <code>R</code>, <code>G</code>, <code>B</code> and <code>A</code>
 columns, as returned by <code><a href="read_lut.html">read_lut()</a></code>.</p></dd>
-
-
-<dt id="arg-by">by<a class="anchor" aria-label="anchor" href="#arg-by"></a></dt>
-<dd><p>Optional name of a column whose groups are each coloured from
-the full colour circle, rather than from a slice of one shared circle.
-Pass <code>by = "type"</code> for a whole-brain table, where the cortical and
-subcortical rows become two atlases that are never plotted together: a
-colour then has to be unique within an atlas rather than within the
-table, and each atlas gets the whole circle to spend. The default,
-<code>NULL</code>, colours the table as one atlas.</p></dd>
 
 
 <dt id="arg-chroma">chroma<a class="anchor" aria-label="anchor" href="#arg-chroma"></a></dt>
@@ -117,6 +107,16 @@ this is the usual answer to the error that reports one.</p></dd>
 <dt id="arg-luminance">luminance<a class="anchor" aria-label="anchor" href="#arg-luminance"></a></dt>
 <dd><p>Lightness values, 0 to 100, passed to <code><a href="https://rdrr.io/r/grDevices/hcl.html" class="external-link">grDevices::hcl()</a></code>
 and cycled through in order as the hue advances.</p></dd>
+
+
+<dt id="arg-by">by<a class="anchor" aria-label="anchor" href="#arg-by"></a></dt>
+<dd><p>Optional name of a column whose groups are each coloured from
+the full colour circle, rather than from a slice of one shared circle.
+Pass <code>by = "type"</code> for a whole-brain table, where the cortical and
+subcortical rows become two atlases that are never plotted together: a
+colour then has to be unique within an atlas rather than within the
+table, and each atlas gets the whole circle to spend. The default,
+<code>NULL</code>, colours the table as one atlas.</p></dd>
 
 </dl></div>
     <div class="section level2">

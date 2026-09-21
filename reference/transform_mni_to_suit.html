@@ -27,7 +27,7 @@ as tpl-SUIT_from-MNI152NLin*_mode-image_xfm.nii."><meta property="og:image" cont
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9053</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9054</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -100,8 +100,8 @@ as <code>tpl-SUIT_from-MNI152NLin*_mode-image_xfm.nii</code>.</p>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">transform_mni_to_suit</span><span class="op">(</span></span>
 <span>  <span class="va">input_volume</span>,</span>
 <span>  <span class="va">deformation_field</span>,</span>
-<span>  output_file <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  interpolation <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"nearest"</span>, <span class="st">"linear"</span><span class="op">)</span></span>
+<span>  interpolation <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"nearest"</span>, <span class="st">"linear"</span><span class="op">)</span>,</span>
+<span>  output_file <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -118,16 +118,16 @@ as <code>tpl-SUIT_from-MNI152NLin*_mode-image_xfm.nii</code>.</p>
 A 5D volume (x, y, z, 1, 3) mapping SUIT voxels to MNI coordinates.</p></dd>
 
 
-<dt id="arg-output-file">output_file<a class="anchor" aria-label="anchor" href="#arg-output-file"></a></dt>
-<dd><p>Path for the output SUIT-space volume. If NULL,
-writes to a temporary file.</p></dd>
-
-
 <dt id="arg-interpolation">interpolation<a class="anchor" aria-label="anchor" href="#arg-interpolation"></a></dt>
 <dd><p>Interpolation method: <code>"nearest"</code> (default, for
 parcellations/labels) or <code>"linear"</code> (for continuous maps). Note that
 <code>"linear"</code> uses a pure-R trilinear loop and can be slow for large
 volumes.</p></dd>
+
+
+<dt id="arg-output-file">output_file<a class="anchor" aria-label="anchor" href="#arg-output-file"></a></dt>
+<dd><p>Path for the output SUIT-space volume. If NULL,
+writes to a temporary file.</p></dd>
 
 </dl></div>
     <div class="section level2">

@@ -21,7 +21,7 @@ atlases that show realistic brain-outline anatomical context in their
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9053</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9054</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -92,12 +92,12 @@ atlases that show realistic brain-outline anatomical context in their
 <span>  <span class="va">input_volume</span>,</span>
 <span>  target_subject <span class="op">=</span> <span class="st">"cvs_avg35_inMNI152"</span>,</span>
 <span>  target_volume <span class="op">=</span> <span class="st">"brain"</span>,</span>
-<span>  output_lta <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  dof <span class="op">=</span> <span class="fl">12</span>,</span>
 <span>  binarise <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  subjects_dir <span class="op">=</span> <span class="fu">freesurfer</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/freesurfer/man/fs_dir.html" class="external-link">fs_subj_dir</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  skip_existing <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  verbose <span class="op">=</span> <span class="fu"><a href="get_verbose.html">get_verbose</a></span><span class="op">(</span><span class="op">)</span></span>
+<span>  verbose <span class="op">=</span> <span class="fu"><a href="get_verbose.html">get_verbose</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  output_lta <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -119,11 +119,6 @@ to <code>"cvs_avg35_inMNI152"</code>, which is in MNI152 1mm space.</p></dd>
 <dd><p>Name of the volume in the subject's <code>mri/</code>
 directory used as the registration target. Defaults to <code>"brain"</code>
 (i.e. <code>brain.mgz</code>).</p></dd>
-
-
-<dt id="arg-output-lta">output_lta<a class="anchor" aria-label="anchor" href="#arg-output-lta"></a></dt>
-<dd><p>Path to write the resulting LTA file. Defaults to a
-temporary file.</p></dd>
 
 
 <dt id="arg-dof">dof<a class="anchor" aria-label="anchor" href="#arg-dof"></a></dt>
@@ -154,6 +149,11 @@ default), or <code>2</code> (debug, includes FreeSurfer output). Logical values
 are accepted (<code>TRUE</code> = 1, <code>FALSE</code> = 0). If not specified, uses the
 value from <code>options("ggseg.extra.verbose")</code> or the <code>GGSEG_EXTRA_VERBOSE</code>
 environment variable.</p></dd>
+
+
+<dt id="arg-output-lta">output_lta<a class="anchor" aria-label="anchor" href="#arg-output-lta"></a></dt>
+<dd><p>Path to write the resulting LTA file. Defaults to a
+temporary file.</p></dd>
 
 </dl></div>
     <div class="section level2">

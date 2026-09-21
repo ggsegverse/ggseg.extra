@@ -20,9 +20,9 @@ atlas_polish(
   keep = 0.1,
   smoothness = 0.4,
   method = c("close", "chaikin", "ksmooth", "spline"),
+  close_gaps = TRUE,
   labels = NULL,
-  exclude = NULL,
-  close_gaps = TRUE
+  exclude = NULL
 )
 ```
 
@@ -47,6 +47,12 @@ atlas_polish(
   [`atlas_smooth()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_smooth.md).
   `"close"` rounds solid shapes; the others keep holes open.
 
+- close_gaps:
+
+  Whether to hand back the slivers the operations open between
+  neighbouring regions. See
+  [`atlas_smooth()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_smooth.md).
+
 - labels:
 
   Optional regex. Only matching labels are polished.
@@ -54,12 +60,6 @@ atlas_polish(
 - exclude:
 
   Optional regex. Matching labels are left alone.
-
-- close_gaps:
-
-  Whether to hand back the slivers the operations open between
-  neighbouring regions. See
-  [`atlas_smooth()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_smooth.md).
 
 ## Value
 

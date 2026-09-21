@@ -21,7 +21,7 @@ threshold)."><meta property="og:image" content="https://ggsegverse.github.io/ggs
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9053</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9054</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -90,15 +90,15 @@ labels (replacing <code>aparc+aseg</code> voxels wherever a label wins above
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">project_volume_anatomical</span><span class="op">(</span></span>
 <span>  <span class="va">input_volume</span>,</span>
-<span>  lut <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  registration <span class="op">=</span> <span class="st">"header"</span>,</span>
 <span>  target_subject <span class="op">=</span> <span class="st">"cvs_avg35_inMNI152"</span>,</span>
 <span>  threshold <span class="op">=</span> <span class="fl">0.3</span>,</span>
 <span>  id_offset <span class="op">=</span> <span class="fl">200L</span>,</span>
 <span>  protect_cortex <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  output_file <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  subjects_dir <span class="op">=</span> <span class="fu">freesurfer</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/freesurfer/man/fs_dir.html" class="external-link">fs_subj_dir</a></span><span class="op">(</span><span class="op">)</span>,</span>
-<span>  verbose <span class="op">=</span> <span class="fu"><a href="get_verbose.html">get_verbose</a></span><span class="op">(</span><span class="op">)</span></span>
+<span>  verbose <span class="op">=</span> <span class="fu"><a href="get_verbose.html">get_verbose</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  lut <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  output_file <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -108,15 +108,6 @@ labels (replacing <code>aparc+aseg</code> voxels wherever a label wins above
 
 <dl><dt id="arg-input-volume">input_volume<a class="anchor" aria-label="anchor" href="#arg-input-volume"></a></dt>
 <dd><p>Path to the atlas volume, or an <code>RNifti</code> object.</p></dd>
-
-
-<dt id="arg-lut">lut<a class="anchor" aria-label="anchor" href="#arg-lut"></a></dt>
-<dd><p>Optional colour LUT (data frame with at least an <code>idx</code>
-column, or path to a TSV with <code>idx, label, R, G, B, A</code>). When
-provided, its <code>idx</code> (intersected with the volume) selects which labels
-to project, and it is returned alongside the volume with <code>idx</code> shifted
-by <code>id_offset</code> to match. With no <code>lut</code>, every non-zero label is
-projected. To project a subset, subset the <code>lut</code>.</p></dd>
 
 
 <dt id="arg-registration">registration<a class="anchor" aria-label="anchor" href="#arg-registration"></a></dt>
@@ -161,10 +152,6 @@ here (they are handled downstream by <code><a href="aseg_context.html">aseg_cont
 you intentionally want user labels to overwrite the cerebrum.</p></dd>
 
 
-<dt id="arg-output-file">output_file<a class="anchor" aria-label="anchor" href="#arg-output-file"></a></dt>
-<dd><p>Path for the merged volume. Defaults to a temp file.</p></dd>
-
-
 <dt id="arg-subjects-dir">subjects_dir<a class="anchor" aria-label="anchor" href="#arg-subjects-dir"></a></dt>
 <dd><p>FreeSurfer <code>SUBJECTS_DIR</code>. Defaults to
 <code><a href="https://rdrr.io/pkg/freesurfer/man/fs_dir.html" class="external-link">freesurfer::fs_subj_dir()</a></code>.</p></dd>
@@ -176,6 +163,19 @@ default), or <code>2</code> (debug, includes FreeSurfer output). Logical values
 are accepted (<code>TRUE</code> = 1, <code>FALSE</code> = 0). If not specified, uses the
 value from <code>options("ggseg.extra.verbose")</code> or the <code>GGSEG_EXTRA_VERBOSE</code>
 environment variable.</p></dd>
+
+
+<dt id="arg-lut">lut<a class="anchor" aria-label="anchor" href="#arg-lut"></a></dt>
+<dd><p>Optional colour LUT (data frame with at least an <code>idx</code>
+column, or path to a TSV with <code>idx, label, R, G, B, A</code>). When
+provided, its <code>idx</code> (intersected with the volume) selects which labels
+to project, and it is returned alongside the volume with <code>idx</code> shifted
+by <code>id_offset</code> to match. With no <code>lut</code>, every non-zero label is
+projected. To project a subset, subset the <code>lut</code>.</p></dd>
+
+
+<dt id="arg-output-file">output_file<a class="anchor" aria-label="anchor" href="#arg-output-file"></a></dt>
+<dd><p>Path for the merged volume. Defaults to a temp file.</p></dd>
 
 </dl></div>
     <div class="section level2">

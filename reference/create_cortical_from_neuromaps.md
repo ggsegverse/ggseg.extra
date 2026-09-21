@@ -19,17 +19,17 @@ create_cortical_from_neuromaps(
   desc,
   space = "fsaverage",
   density = "10k",
+  hemisphere = c("rh", "lh"),
+  views = c("lateral", "medial", "superior", "inferior"),
+  verbose = get_verbose(),
+  ...,
   label_table = NULL,
   n_bins = NULL,
   atlas_name = NULL,
   output_dir = NULL,
-  hemisphere = c("rh", "lh"),
-  views = c("lateral", "medial", "superior", "inferior"),
   smooth_refinements = NULL,
   cleanup = NULL,
-  verbose = get_verbose(),
-  skip_existing = NULL,
-  ...
+  skip_existing = NULL
 )
 ```
 
@@ -51,6 +51,33 @@ create_cortical_from_neuromaps(
 
   Surface vertex density. Defaults to `"10k"`.
 
+- hemisphere:
+
+  Which hemispheres to include: "lh", "rh", or both.
+
+- views:
+
+  Which views to include: "lateral", "medial", "superior", "inferior".
+
+- verbose:
+
+  Verbosity level: `0` (silent), `1` (standard progress, default), or
+  `2` (debug, includes FreeSurfer output). Logical values are accepted
+  (`TRUE` = 1, `FALSE` = 0). If not specified, uses the value from
+  `options("ggseg.extra.verbose")` or the `GGSEG_EXTRA_VERBOSE`
+  environment variable.
+
+- ...:
+
+  Catches the retired `dilate`, `smoothness` and `tolerance` arguments,
+  so a call that still passes one keeps working and says so. These are
+  post-creation steps now: see
+  [`atlas_dilate()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_dilate.md),
+  [`atlas_smooth()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_smooth.md)
+  and
+  [`atlas_simplify()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_simplify.md).
+  Anything else in `...` is an error, as an unused argument always was.
+
 - label_table:
 
   Optional data.frame mapping parcel IDs to region names.
@@ -68,14 +95,6 @@ create_cortical_from_neuromaps(
   Directory to store intermediate files (screenshots, masks, contours).
   Defaults to [`tempdir()`](https://rdrr.io/r/base/tempfile.html).
 
-- hemisphere:
-
-  Which hemispheres to include: "lh", "rh", or both.
-
-- views:
-
-  Which views to include: "lateral", "medial", "superior", "inferior".
-
 - smooth_refinements:
 
   **\[deprecated\]** sf-side smoothing is no longer applied during atlas
@@ -90,31 +109,12 @@ create_cortical_from_neuromaps(
   `options("ggseg.extra.cleanup")` or the `GGSEG_EXTRA_CLEANUP`
   environment variable. Default is TRUE.
 
-- verbose:
-
-  Verbosity level: `0` (silent), `1` (standard progress, default), or
-  `2` (debug, includes FreeSurfer output). Logical values are accepted
-  (`TRUE` = 1, `FALSE` = 0). If not specified, uses the value from
-  `options("ggseg.extra.verbose")` or the `GGSEG_EXTRA_VERBOSE`
-  environment variable.
-
 - skip_existing:
 
   Skip generating output files that already exist, allowing interrupted
   atlas creation to resume. If not specified, uses
   `options("ggseg.extra.skip_existing")` or the
   `GGSEG_EXTRA_SKIP_EXISTING` environment variable. Default is TRUE.
-
-- ...:
-
-  Catches the retired `dilate`, `smoothness` and `tolerance` arguments,
-  so a call that still passes one keeps working and says so. These are
-  post-creation steps now: see
-  [`atlas_dilate()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_dilate.md),
-  [`atlas_smooth()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_smooth.md)
-  and
-  [`atlas_simplify()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_simplify.md).
-  Anything else in `...` is an error, as an unused argument always was.
 
 ## Value
 

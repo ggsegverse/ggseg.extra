@@ -13,19 +13,19 @@ in one call, producing a merged volume on a FreeSurfer subject's
 ``` r
 prepare_subcortical_anatomical(
   input_volume,
-  lut = NULL,
   target_subject = "cvs_avg35_inMNI152",
   target_volume = "brain",
   threshold = 0.3,
   id_offset = 200L,
   protect_cortex = TRUE,
   dof = 12,
-  output_file = NULL,
-  output_lta = NULL,
   binarise = TRUE,
   subjects_dir = freesurfer::fs_subj_dir(),
   skip_existing = FALSE,
-  verbose = get_verbose()
+  verbose = get_verbose(),
+  lut = NULL,
+  output_file = NULL,
+  output_lta = NULL
 )
 ```
 
@@ -34,15 +34,6 @@ prepare_subcortical_anatomical(
 - input_volume:
 
   Path to the atlas volume to coregister, or an `RNifti` object.
-
-- lut:
-
-  Optional colour LUT (data frame with at least an `idx` column, or path
-  to a TSV with `idx, label, R, G, B, A`). When provided, its `idx`
-  (intersected with the volume) selects which labels to project, and it
-  is returned alongside the volume with `idx` shifted by `id_offset` to
-  match. With no `lut`, every non-zero label is projected. To project a
-  subset, subset the `lut`.
 
 - target_subject:
 
@@ -86,14 +77,6 @@ prepare_subcortical_anatomical(
   Degrees of freedom for `mri_coreg` (`6`, `9`, or `12`). Defaults to
   `12` (rigid + per-axis scale + shear).
 
-- output_file:
-
-  Path for the merged volume. Defaults to a temp file.
-
-- output_lta:
-
-  Path to write the resulting LTA file. Defaults to a temporary file.
-
 - binarise:
 
   Logical. If `TRUE` (default), binarise both volumes before
@@ -118,6 +101,23 @@ prepare_subcortical_anatomical(
   (`TRUE` = 1, `FALSE` = 0). If not specified, uses the value from
   `options("ggseg.extra.verbose")` or the `GGSEG_EXTRA_VERBOSE`
   environment variable.
+
+- lut:
+
+  Optional colour LUT (data frame with at least an `idx` column, or path
+  to a TSV with `idx, label, R, G, B, A`). When provided, its `idx`
+  (intersected with the volume) selects which labels to project, and it
+  is returned alongside the volume with `idx` shifted by `id_offset` to
+  match. With no `lut`, every non-zero label is projected. To project a
+  subset, subset the `lut`.
+
+- output_file:
+
+  Path for the merged volume. Defaults to a temp file.
+
+- output_lta:
+
+  Path to write the resulting LTA file. Defaults to a temporary file.
 
 ## Value
 

@@ -16,15 +16,15 @@ tract atlases distributed as NIfTI label volumes (e.g. AtlasTrack).
 create_tract_from_volume(
   input_volume,
   input_lut,
-  input_aseg = NULL,
-  exclude = NULL,
   n_points = 50L,
   min_voxels = 30L,
   smoother = "smooth_spline",
-  atlas_name = NULL,
-  output_dir = NULL,
   verbose = get_verbose(),
-  ...
+  ...,
+  input_aseg = NULL,
+  exclude = NULL,
+  atlas_name = NULL,
+  output_dir = NULL
 )
 ```
 
@@ -40,18 +40,6 @@ create_tract_from_volume(
   `region`) and colour columns (`R`, `G`, `B`). Supplies tract names and
   colours; labels absent from the volume are ignored.
 
-- input_aseg:
-
-  Path to a segmentation volume in the same space, used to draw the
-  grey-brain cortex outline in the 2D views. Required for the 2D
-  projection (see `steps`).
-
-- exclude:
-
-  Integer label ids to drop (for example aggregate whole-brain fibre
-  masks). Labels with fewer than `min_voxels` voxels, or for which a
-  centerline cannot be fit, are dropped automatically with a message.
-
 - n_points:
 
   Number of points along each tract centerline.
@@ -64,15 +52,6 @@ create_tract_from_volume(
 
   Principal-curve smoother, passed to
   [`princurve::principal_curve()`](https://rdrr.io/pkg/princurve/man/principal_curve.html).
-
-- atlas_name:
-
-  Name for the atlas. If NULL, derived from the input filename.
-
-- output_dir:
-
-  Directory to store intermediate files (screenshots, masks, contours).
-  Defaults to [`tempdir()`](https://rdrr.io/r/base/tempfile.html).
 
 - verbose:
 
@@ -87,6 +66,27 @@ create_tract_from_volume(
   Passed to
   [`create_tract_from_tractography()`](https://ggsegverse.github.io/ggseg.extra/reference/create_tract_from_tractography.md)
   (for example `tube_radius`, `tube_segments`, `steps`).
+
+- input_aseg:
+
+  Path to a segmentation volume in the same space, used to draw the
+  grey-brain cortex outline in the 2D views. Required for the 2D
+  projection (see `steps`).
+
+- exclude:
+
+  Integer label ids to drop (for example aggregate whole-brain fibre
+  masks). Labels with fewer than `min_voxels` voxels, or for which a
+  centerline cannot be fit, are dropped automatically with a message.
+
+- atlas_name:
+
+  Name for the atlas. If NULL, derived from the input filename.
+
+- output_dir:
+
+  Directory to store intermediate files (screenshots, masks, contours).
+  Defaults to [`tempdir()`](https://rdrr.io/r/base/tempfile.html).
 
 ## Value
 

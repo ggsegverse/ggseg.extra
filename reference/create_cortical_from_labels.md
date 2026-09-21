@@ -14,15 +14,15 @@ and derives region names from the rest of the filename.
 ``` r
 create_cortical_from_labels(
   label_files,
+  views = c("lateral", "medial"),
+  verbose = get_verbose(),
+  ...,
   input_lut = NULL,
   atlas_name = NULL,
   output_dir = NULL,
-  views = c("lateral", "medial"),
   smooth_refinements = NULL,
   cleanup = NULL,
-  verbose = get_verbose(),
-  skip_existing = NULL,
-  ...
+  skip_existing = NULL
 )
 ```
 
@@ -32,6 +32,29 @@ create_cortical_from_labels(
 
   Paths to `.label` files. Each file should follow FreeSurfer naming:
   `{hemi}.{regionname}.label` (e.g., `lh.motor.label`).
+
+- views:
+
+  Which views to include: "lateral", "medial", "superior", "inferior".
+
+- verbose:
+
+  Verbosity level: `0` (silent), `1` (standard progress, default), or
+  `2` (debug, includes FreeSurfer output). Logical values are accepted
+  (`TRUE` = 1, `FALSE` = 0). If not specified, uses the value from
+  `options("ggseg.extra.verbose")` or the `GGSEG_EXTRA_VERBOSE`
+  environment variable.
+
+- ...:
+
+  Catches the retired `dilate`, `smoothness` and `tolerance` arguments,
+  so a call that still passes one keeps working and says so. These are
+  post-creation steps now: see
+  [`atlas_dilate()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_dilate.md),
+  [`atlas_smooth()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_smooth.md)
+  and
+  [`atlas_simplify()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_simplify.md).
+  Anything else in `...` is an error, as an unused argument always was.
 
 - input_lut:
 
@@ -49,10 +72,6 @@ create_cortical_from_labels(
   Directory to store intermediate files (screenshots, masks, contours).
   Defaults to [`tempdir()`](https://rdrr.io/r/base/tempfile.html).
 
-- views:
-
-  Which views to include: "lateral", "medial", "superior", "inferior".
-
 - smooth_refinements:
 
   **\[deprecated\]** sf-side smoothing is no longer applied during atlas
@@ -67,31 +86,12 @@ create_cortical_from_labels(
   `options("ggseg.extra.cleanup")` or the `GGSEG_EXTRA_CLEANUP`
   environment variable. Default is TRUE.
 
-- verbose:
-
-  Verbosity level: `0` (silent), `1` (standard progress, default), or
-  `2` (debug, includes FreeSurfer output). Logical values are accepted
-  (`TRUE` = 1, `FALSE` = 0). If not specified, uses the value from
-  `options("ggseg.extra.verbose")` or the `GGSEG_EXTRA_VERBOSE`
-  environment variable.
-
 - skip_existing:
 
   Skip generating output files that already exist, allowing interrupted
   atlas creation to resume. If not specified, uses
   `options("ggseg.extra.skip_existing")` or the
   `GGSEG_EXTRA_SKIP_EXISTING` environment variable. Default is TRUE.
-
-- ...:
-
-  Catches the retired `dilate`, `smoothness` and `tolerance` arguments,
-  so a call that still passes one keeps working and says so. These are
-  post-creation steps now: see
-  [`atlas_dilate()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_dilate.md),
-  [`atlas_smooth()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_smooth.md)
-  and
-  [`atlas_simplify()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_simplify.md).
-  Anything else in `...` is an error, as an unused argument always was.
 
 ## Value
 

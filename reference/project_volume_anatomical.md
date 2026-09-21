@@ -12,15 +12,15 @@ anatomical brain-outline context) with the user's atlas labels
 ``` r
 project_volume_anatomical(
   input_volume,
-  lut = NULL,
   registration = "header",
   target_subject = "cvs_avg35_inMNI152",
   threshold = 0.3,
   id_offset = 200L,
   protect_cortex = TRUE,
-  output_file = NULL,
   subjects_dir = freesurfer::fs_subj_dir(),
-  verbose = get_verbose()
+  verbose = get_verbose(),
+  lut = NULL,
+  output_file = NULL
 )
 ```
 
@@ -29,15 +29,6 @@ project_volume_anatomical(
 - input_volume:
 
   Path to the atlas volume, or an `RNifti` object.
-
-- lut:
-
-  Optional colour LUT (data frame with at least an `idx` column, or path
-  to a TSV with `idx, label, R, G, B, A`). When provided, its `idx`
-  (intersected with the volume) selects which labels to project, and it
-  is returned alongside the volume with `idx` shifted by `id_offset` to
-  match. With no `lut`, every non-zero label is projected. To project a
-  subset, subset the `lut`.
 
 - registration:
 
@@ -86,10 +77,6 @@ project_volume_anatomical(
   Disable only if you intentionally want user labels to overwrite the
   cerebrum.
 
-- output_file:
-
-  Path for the merged volume. Defaults to a temp file.
-
 - subjects_dir:
 
   FreeSurfer `SUBJECTS_DIR`. Defaults to
@@ -102,6 +89,19 @@ project_volume_anatomical(
   (`TRUE` = 1, `FALSE` = 0). If not specified, uses the value from
   `options("ggseg.extra.verbose")` or the `GGSEG_EXTRA_VERBOSE`
   environment variable.
+
+- lut:
+
+  Optional colour LUT (data frame with at least an `idx` column, or path
+  to a TSV with `idx, label, R, G, B, A`). When provided, its `idx`
+  (intersected with the volume) selects which labels to project, and it
+  is returned alongside the volume with `idx` shifted by `id_offset` to
+  match. With no `lut`, every non-zero label is projected. To project a
+  subset, subset the `lut`.
+
+- output_file:
+
+  Path for the merged volume. Defaults to a temp file.
 
 ## Value
 
