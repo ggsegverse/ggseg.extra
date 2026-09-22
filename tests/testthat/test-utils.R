@@ -316,8 +316,8 @@ describe("load_or_run_step", {
   it("recomputes a stale cache when its step was requested", {
     tmp <- local_cache_file(list(a = 1), stamped = FALSE)
 
-    result <- expect_messages(
-      load_or_run_step(
+    expect_message(
+      result <- load_or_run_step(
         1L,
         1L:3L,
         files = tmp,
@@ -481,7 +481,7 @@ describe("preview_atlas", {
     atlas <- list(data = list(sf = NULL, vertices = NULL, meshes = NULL))
     local_mocked_bindings(is_interactive = function() TRUE)
 
-    expect_messages(preview_atlas(atlas), "malformed")
+    expect_message(preview_atlas(atlas), "malformed")
   })
 
   it("shows 3D cortical preview for both hemispheres", {
@@ -519,9 +519,7 @@ describe("preview_atlas", {
       .package = "ggseg3d"
     )
 
-    invisible(capture.output({
-      result <- preview_atlas(atlas)
-    }))
+    expect_output(result <- preview_atlas(atlas), "mock_3d")
     expect_identical(result, atlas)
     expect_length(.cap$prompts, 2)
     expect_match(.cap$prompts[1], "left")
@@ -548,9 +546,7 @@ describe("preview_atlas", {
       .package = "ggseg3d"
     )
 
-    invisible(capture.output({
-      result <- preview_atlas(atlas)
-    }))
+    expect_output(result <- preview_atlas(atlas), "mock_3d")
     expect_identical(result, atlas)
     expect_length(.cap$prompts, 1)
     expect_match(.cap$prompts[1], "3D preview")
@@ -594,21 +590,45 @@ describe("preview_atlas", {
 
     local_mocked_bindings(is_interactive = function() TRUE)
 
-    expect_messages(
-      {
-        result <- preview_atlas(atlas)
-      },
-      "malformed"
-    )
+    expect_message(result <- preview_atlas(atlas), "malformed")
     expect_identical(result, atlas)
   })
 })
 
 
 describe("log_elapsed", {
-  it("logs elapsed time as cli message", {
-    start <- Sys.time() - 60
-    expect_messages(log_elapsed(start), "Pipeline completed in")
+  it("reports the elapsed time in cli's duration format", {
+    expect_message(log_elapsed(Sys.time() - 75), "Pipeline completed")
+  })
+})
+
+
+describe("absolute_path", {
+  it("makes a relative path that does not exist yet absolute", {
+    local_test_workdir()
+    expect_identical(
+      absolute_path("not_yet"),
+      as.character(fs::path(fs::path_abs("."), "not_yet"))
+    )
+  })
+
+  it("expands a leading tilde", {
+    expect_false(startsWith(absolute_path("~/x"), "~"))
+  })
+})
+
+
+describe("format_duration", {
+  it("matches cli's progress step timings", {
+    expect_identical(format_duration(0.04), "40ms")
+    expect_identical(format_duration(2.5), "2.5s")
+    expect_identical(format_duration(75), "1m 15s")
+    expect_identical(format_duration(3725), "1h 2m 5s")
+  })
+
+  it("leaves out units that are zero", {
+    expect_identical(format_duration(90000), "1d 1h")
+    expect_identical(format_duration(120), "2m")
   })
 })
 
@@ -668,24 +688,21 @@ describe("warn_deprecated_sf_smoothing", {
   })
 
   it("warns when tolerance is supplied", {
-    withr::local_options(lifecycle_verbosity = "warning")
-    expect_warnings(
+    lifecycle::expect_deprecated(
       warn_deprecated_sf_smoothing(tolerance = 0.1),
       "tolerance"
     )
   })
 
   it("warns when smoothness is supplied", {
-    withr::local_options(lifecycle_verbosity = "warning")
-    expect_warnings(
+    lifecycle::expect_deprecated(
       warn_deprecated_sf_smoothing(smoothness = 2),
       "smoothness"
     )
   })
 
   it("warns when smooth_refinements is supplied", {
-    withr::local_options(lifecycle_verbosity = "warning")
-    expect_warnings(
+    lifecycle::expect_deprecated(
       warn_deprecated_sf_smoothing(smooth_refinements = 3),
       "smooth_refinements"
     )
@@ -693,21 +710,13 @@ describe("warn_deprecated_sf_smoothing", {
 
   it("warns once per supplied argument when several are passed together", {
     withr::local_options(lifecycle_verbosity = "warning")
-    counter <- new.env(parent = emptyenv())
-    counter$n <- 0L
-    withCallingHandlers(
-      warn_deprecated_sf_smoothing(tolerance = 0.1, smoothness = 2),
-      warning = function(w) {
-        counter$n <- counter$n + 1L
-        invokeRestart("muffleWarning")
-      }
+    expect_snapshot(
+      warn_deprecated_sf_smoothing(tolerance = 0.1, smoothness = 2)
     )
-    expect_identical(counter$n, 2L)
   })
 
   it("includes the calling function name in the message when supplied", {
-    withr::local_options(lifecycle_verbosity = "warning")
-    expect_warnings(
+    lifecycle::expect_deprecated(
       warn_deprecated_sf_smoothing(
         tolerance = 0.1,
         fn = "create_cortical_from_gifti"

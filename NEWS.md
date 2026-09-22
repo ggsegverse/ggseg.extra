@@ -1,3 +1,26 @@
+# ggseg.extra 1.9.9.9055
+
+- Extracting contours no longer attaches terra to your search path, where
+  it masked functions such as `describe()` and `extract()`.
+
+- `setup_sitrep()` lists optional packages by name; it printed raw
+  `{.pkg ...}` markup instead.
+
+- Building a subcortical atlas with `verbose = FALSE` no longer reports the
+  stale slab images it removes.
+
+- A relative `output_dir` for a subcortical, tract or whole-brain atlas is
+  now made absolute on every platform. Before, it stayed relative unless the
+  directory already existed, except on Windows.
+
+- Pipelines report their total run time the way cli reports each step
+  (`Pipeline completed [1m 15s]`), instead of in minutes rounded to one
+  decimal, which showed anything under three seconds as "0 minutes".
+
+- Internal: the test suite no longer hides messages or warnings. Calls that
+  report several things are checked against snapshots, and the shared test
+  helpers are split by topic.
+
 # ggseg.extra 1.9.9.9054
 
 - Every function orders its arguments the same way: the ones without

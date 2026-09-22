@@ -226,12 +226,51 @@ preview_atlas <- function(atlas) {
 #' @return Invisible NULL, called for side effect
 #' @noRd
 log_elapsed <- function(start_time) {
-  # fmt: skip
-  elapsed <- round(# nolint: object_usage_linter.
-    difftime(Sys.time(), start_time, units = "mins"),
-    1
+  seconds <- as.numeric(difftime(Sys.time(), start_time, units = "secs"))
+  duration <- format_duration(seconds) # nolint: object_usage_linter.
+  cli::cli_alert_info("Pipeline completed {.timestamp {duration}}")
+}
+
+
+#' Make a path absolute the same way on every platform
+#'
+#' normalizePath() leaves a path that does not exist yet untouched on Unix
+#' but makes it absolute on Windows, so a new relative output directory used
+#' to stay relative everywhere but Windows.
+#'
+#' @param path Path, possibly relative or starting with `~`
+#' @return Absolute path as a character string
+#' @noRd
+absolute_path <- function(path) {
+  as.character(fs::path_abs(path.expand(path)))
+}
+
+
+#' Format a duration the way cli formats progress step timings
+#'
+#' cli keeps its own formatter internal, so this mirrors it: milliseconds
+#' under a second, one decimal under a minute, then whole units with zero
+#' units left out.
+#'
+#' @param seconds Non-negative number of seconds
+#' @return Character duration such as "40ms", "2.5s" or "1h 2m 5s"
+#' @noRd
+format_duration <- function(seconds) {
+  if (seconds < 1) {
+    return(paste0(round(seconds * 1000), "ms"))
+  }
+  if (seconds < 60) {
+    return(paste0(round(seconds, 1), "s"))
+  }
+  seconds <- round(seconds)
+  units <- c(
+    d = seconds %/% 86400,
+    h = seconds %% 86400 %/% 3600,
+    m = seconds %% 3600 %/% 60,
+    s = seconds %% 60
   )
-  cli::cli_alert_info("Pipeline completed in {elapsed} minutes")
+  units <- units[units > 0]
+  paste0(units, names(units), collapse = " ")
 }
 
 

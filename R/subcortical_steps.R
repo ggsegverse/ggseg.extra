@@ -229,7 +229,7 @@ subcort_snapshot_names <- function(colortable, slabs, cortex_slices = NULL) {
 #' match". Nothing downstream can tell those files from this run's, so they
 #' are cleared here, where the configuration that names them is known.
 #' @noRd
-prune_stale_snapshots <- function(dirs, expected) {
+prune_stale_snapshots <- function(dirs, expected, verbose = TRUE) {
   stale <- unlist(lapply(
     dirs$snapshots,
     function(dir) {
@@ -243,9 +243,11 @@ prune_stale_snapshots <- function(dirs, expected) {
   }
 
   unlink(stale)
-  cli::cli_alert_info(
-    "Removed {length(stale)} image{?s} left by an earlier slab configuration"
-  )
+  if (verbose) {
+    cli::cli_alert_info(
+      "Removed {length(stale)} image{?s} left by an earlier slab configuration"
+    )
+  }
   invisible(stale)
 }
 

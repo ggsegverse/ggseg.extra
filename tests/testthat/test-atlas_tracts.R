@@ -299,6 +299,7 @@ describe("create_tract_from_tractography pipeline flow", {
   })
 
   it("loads cached data for skipped steps and proceeds", {
+    local_test_workdir()
     dirs <- mock_dirs()
     cached <- list(
       streamlines_data = list(t1 = matrix(1:30, ncol = 3)),
@@ -343,14 +344,13 @@ describe("create_tract_from_tractography pipeline flow", {
       reduce_vertex = function(...) invisible(NULL)
     )
 
-    withr::local_options(ggseg.extra.output_dir = withr::local_tempdir())
-    tract_file <- withr::local_tempfile(fileext = ".trk")
+    tract_file <- "tract.trk"
     file.create(tract_file)
-    aseg_file <- withr::local_tempfile(fileext = ".mgz")
+    aseg_file <- "aseg.mgz"
     file.create(aseg_file)
 
-    result <- expect_messages(
-      create_tract_from_tractography(
+    expect_snapshot(
+      result <- create_tract_from_tractography(
         input_tracts = tract_file,
         input_aseg = aseg_file,
         steps = 3:6,
@@ -362,8 +362,9 @@ describe("create_tract_from_tractography pipeline flow", {
   })
 
   it("step 1 returns 3D-only atlas with verbose and cleanup", {
+    local_test_workdir()
     dirs <- mock_dirs()
-    tract_file <- withr::local_tempfile(fileext = ".trk")
+    tract_file <- "tract.trk"
     file.create(tract_file)
 
     local_mocked_bindings(
@@ -410,10 +411,8 @@ describe("create_tract_from_tractography pipeline flow", {
       }
     )
 
-    withr::local_options(ggseg.extra.output_dir = withr::local_tempdir())
-
-    atlas <- expect_messages(
-      create_tract_from_tractography(
+    expect_snapshot(
+      atlas <- create_tract_from_tractography(
         input_tracts = tract_file,
         steps = 1,
         verbose = TRUE,
@@ -425,8 +424,9 @@ describe("create_tract_from_tractography pipeline flow", {
   })
 
   it("step 7 builds final atlas with cleanup", {
+    local_test_workdir()
     dirs <- mock_dirs()
-    tract_file <- withr::local_tempfile(fileext = ".trk")
+    tract_file <- "tract.trk"
     file.create(tract_file)
 
     cached <- list(
@@ -488,21 +488,17 @@ describe("create_tract_from_tractography pipeline flow", {
       preview_atlas = function(...) invisible(NULL)
     )
 
-    withr::local_options(ggseg.extra.output_dir = withr::local_tempdir())
-    aseg_file <- withr::local_tempfile(fileext = ".mgz")
+    aseg_file <- "aseg.mgz"
     file.create(aseg_file)
 
-    atlas <- expect_warnings(
-      expect_messages(
-        create_tract_from_tractography(
-          input_tracts = tract_file,
-          input_aseg = aseg_file,
-          steps = 7,
-          verbose = TRUE,
-          cleanup = TRUE
-        )
-      ),
-      "no 2D geometry"
+    expect_snapshot(
+      atlas <- create_tract_from_tractography(
+        input_tracts = tract_file,
+        input_aseg = aseg_file,
+        steps = 7,
+        verbose = TRUE,
+        cleanup = TRUE
+      )
     )
 
     expect_s3_class(atlas, "ggseg_atlas")
@@ -652,12 +648,16 @@ describe("create_tract_from_tractography tube_opts", {
   })
 
   it("lands the retired flat arguments where tube_opts now holds them", {
-    old <- suppressWarnings(capture_tube(list(
-      tube_radius = 3,
-      tube_segments = 16,
-      n_points = 25,
-      centerline_method = "medoid"
-    )))
+    withr::local_options(lifecycle_verbosity = "warning")
+
+    expect_snapshot(
+      old <- capture_tube(list(
+        tube_radius = 3,
+        tube_segments = 16,
+        n_points = 25,
+        centerline_method = "medoid"
+      ))
+    )
     new <- capture_tube(list(
       tube_opts = list(
         tube_radius = 3,
@@ -689,10 +689,10 @@ describe("create_tract_from_tractography tube_opts", {
 
   it("refuses a retired argument alongside its tube_opts entry", {
     expect_error(
-      suppressWarnings(capture_tube(list(
+      capture_tube(list(
         tube_radius = 3,
         tube_opts = list(tube_radius = 9)
-      ))),
+      )),
       "Cannot use both"
     )
   })

@@ -231,7 +231,8 @@ subcort_run_pipeline <- function(
       labels$colortable,
       snaps$slabs,
       snaps$cortex_slices
-    )
+    ),
+    verbose = config$verbose
   )
   subcort_image_steps(config, dirs, vertex_size_limits)
 
@@ -391,7 +392,7 @@ validate_subcort_config <- function(
 
   validate_subcort_inputs(input_volume, input_lut)
 
-  config$output_dir <- normalizePath(config$output_dir, mustWork = FALSE)
+  config$output_dir <- absolute_path(config$output_dir)
 
   if (is.null(atlas_name)) {
     atlas_name <- default_atlas_name_from_volume(input_volume)

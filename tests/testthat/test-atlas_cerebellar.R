@@ -3,8 +3,8 @@
 # Test fixture helpers ----
 
 create_mock_suit_surface <- function() {
-  skip_if_not_installed("gifti") # nolint: object_usage_linter.
-  skip_if_not_installed("base64enc") # nolint: object_usage_linter.
+  skip_if_not_installed("gifti")
+  skip_if_not_installed("base64enc")
 
   dir <- withr::local_tempdir(.local_envir = parent.frame())
   surf_file <- file.path(dir, "SUIT.flat.surf.gii")
@@ -46,8 +46,8 @@ create_mock_suit_surface <- function() {
 
 
 create_mock_suit_labels <- function(n_vertices = 4) {
-  skip_if_not_installed("gifti") # nolint: object_usage_linter.
-  skip_if_not_installed("base64enc") # nolint: object_usage_linter.
+  skip_if_not_installed("gifti")
+  skip_if_not_installed("base64enc")
 
   dir <- withr::local_tempdir(.local_envir = parent.frame())
   label_file <- file.path(dir, "Lobules-SUIT.label.gii")
@@ -108,7 +108,7 @@ describe("suit_3d_path", {
 
 describe("read_suit_flatmap", {
   it("extracts 2D coordinates and faces from GIFTI surface", {
-    skip_if_not_installed("gifti") # nolint: object_usage_linter.
+    skip_if_not_installed("gifti")
 
     surf <- create_mock_suit_surface()
     result <- read_suit_flatmap(surf)
@@ -128,7 +128,7 @@ describe("read_suit_flatmap", {
   })
 
   it("reads bundled SUIT flatmap correctly", {
-    skip_if_not_installed("gifti") # nolint: object_usage_linter.
+    skip_if_not_installed("gifti")
 
     result <- read_suit_flatmap(suit_flatmap_path())
 
@@ -138,7 +138,7 @@ describe("read_suit_flatmap", {
   })
 
   it("errors on invalid GIFTI file", {
-    skip_if_not_installed("gifti") # nolint: object_usage_linter.
+    skip_if_not_installed("gifti")
 
     tmp <- withr::local_tempfile(fileext = ".surf.gii")
     writeLines(
@@ -154,7 +154,7 @@ describe("read_suit_flatmap", {
 
 describe("cerebellar_build_sf_flatmap", {
   it("errors when no vertices match the flatmap", {
-    skip_if_not_installed("gifti") # nolint: object_usage_linter.
+    skip_if_not_installed("gifti")
 
     components <- list(
       vertices_df = data.frame(
@@ -350,7 +350,7 @@ describe("read_suit_parcellation", {
   })
 
   it("parses mock GIFTI label file", {
-    skip_if_not_installed("gifti") # nolint: object_usage_linter.
+    skip_if_not_installed("gifti")
 
     label_file <- create_mock_suit_labels()
     result <- read_suit_parcellation(label_file)
@@ -414,8 +414,8 @@ describe("create_cerebellar_from_gifti", {
   })
 
   it("runs full pipeline with bundled flatmap", {
-    skip_if_not_installed("gifti") # nolint: object_usage_linter.
-    skip_if_not_installed("base64enc") # nolint: object_usage_linter.
+    skip_if_not_installed("gifti")
+    skip_if_not_installed("base64enc")
 
     label_file <- create_mock_suit_labels(n_vertices = 28935)
 
@@ -614,8 +614,8 @@ describe("resolve_cerebellar_lut", {
 
 describe("read_suit_parcellation edge cases", {
   it("handles labels without LUT entry", {
-    skip_if_not_installed("gifti") # nolint: object_usage_linter.
-    skip_if_not_installed("base64enc") # nolint: object_usage_linter.
+    skip_if_not_installed("gifti")
+    skip_if_not_installed("base64enc")
 
     label_file <- create_mock_suit_labels(n_vertices = 4)
 
@@ -637,8 +637,8 @@ describe("read_suit_parcellation edge cases", {
   })
 
   it("warns and skips GIFTI files with empty data arrays", {
-    skip_if_not_installed("gifti") # nolint: object_usage_linter.
-    skip_if_not_installed("base64enc") # nolint: object_usage_linter.
+    skip_if_not_installed("gifti")
+    skip_if_not_installed("base64enc")
 
     label_file <- create_mock_suit_labels(n_vertices = 4)
 
@@ -657,8 +657,8 @@ describe("read_suit_parcellation edge cases", {
   })
 
   it("handles matrix-format data arrays", {
-    skip_if_not_installed("gifti") # nolint: object_usage_linter.
-    skip_if_not_installed("base64enc") # nolint: object_usage_linter.
+    skip_if_not_installed("gifti")
+    skip_if_not_installed("base64enc")
 
     label_file <- create_mock_suit_labels(n_vertices = 4)
 
@@ -677,8 +677,8 @@ describe("read_suit_parcellation edge cases", {
   })
 
   it("returns empty tibble when all labels are zero", {
-    skip_if_not_installed("gifti") # nolint: object_usage_linter.
-    skip_if_not_installed("base64enc") # nolint: object_usage_linter.
+    skip_if_not_installed("gifti")
+    skip_if_not_installed("base64enc")
 
     label_file <- create_mock_suit_labels(n_vertices = 4)
 
@@ -694,8 +694,8 @@ describe("read_suit_parcellation edge cases", {
   })
 
   it("skips regions with zero vertices after filtering", {
-    skip_if_not_installed("gifti") # nolint: object_usage_linter.
-    skip_if_not_installed("base64enc") # nolint: object_usage_linter.
+    skip_if_not_installed("gifti")
+    skip_if_not_installed("base64enc")
 
     lt <- matrix(
       c(
@@ -848,7 +848,7 @@ describe("read_cerebellar_volume", {
 describe("sample_volume_at_surface", {
   it("maps surface vertices to volume voxels", {
     skip_if_not_installed("RNifti")
-    skip_if_not_installed("gifti") # nolint: object_usage_linter.
+    skip_if_not_installed("gifti")
 
     vol <- array(0L, dim = c(5, 5, 5))
     vol[2, 2, 2] <- 1L
@@ -866,7 +866,7 @@ describe("sample_volume_at_surface", {
 
   it("handles a double-typed (float) label volume without erroring", {
     skip_if_not_installed("RNifti")
-    skip_if_not_installed("gifti") # nolint: object_usage_linter.
+    skip_if_not_installed("gifti")
 
     vol <- array(0, dim = c(5, 5, 5))
     vol[2, 2, 2] <- 1
@@ -886,8 +886,8 @@ describe("sample_volume_at_surface", {
 
 describe("cerebellar pipeline orchestration", {
   it("create_cerebellar_from_gifti derives atlas_name from file", {
-    skip_if_not_installed("gifti") # nolint: object_usage_linter.
-    skip_if_not_installed("base64enc") # nolint: object_usage_linter.
+    skip_if_not_installed("gifti")
+    skip_if_not_installed("base64enc")
 
     label_file <- create_mock_suit_labels(n_vertices = 28935)
 
@@ -959,7 +959,7 @@ describe("cerebellar pipeline orchestration", {
 
 describe("cerebellar_build_sf_flatmap smoothing and simplification", {
   it("applies topology-preserving simplification", {
-    skip_if_not_installed("gifti") # nolint: object_usage_linter.
+    skip_if_not_installed("gifti")
 
     components <- list(
       vertices_df = data.frame(
@@ -982,7 +982,7 @@ describe("cerebellar_build_sf_flatmap smoothing and simplification", {
   })
 
   it("applies simplification when tolerance > 0", {
-    skip_if_not_installed("gifti") # nolint: object_usage_linter.
+    skip_if_not_installed("gifti")
 
     components <- list(
       vertices_df = data.frame(
@@ -1004,7 +1004,7 @@ describe("cerebellar_build_sf_flatmap smoothing and simplification", {
   })
 
   it("verbose mode prints progress messages", {
-    skip_if_not_installed("gifti") # nolint: object_usage_linter.
+    skip_if_not_installed("gifti")
 
     components <- list(
       vertices_df = data.frame(
@@ -1014,16 +1014,17 @@ describe("cerebellar_build_sf_flatmap smoothing and simplification", {
     )
     components$vertices_df$vertices <- list(0:999)
 
-    expect_messages(
-      cerebellar_build_sf_flatmap(
+    expect_snapshot(
+      result <- cerebellar_build_sf_flatmap(
         components,
         suit_flatmap_path(),
         tolerance = 0,
         smooth_refinements = 0,
         verbose = TRUE
       ),
-      "Reading SUIT flatmap|Building polygons"
+      transform = scrub_geometry_counts
     )
+    expect_s3_class(result, "sf")
   })
 })
 
@@ -1123,10 +1124,13 @@ describe("transform_mni_to_suit", {
     xfm_file <- withr::local_tempfile(fileext = ".nii")
     RNifti::writeNifti(RNifti::asNifti(xfm, reference = mni_nii), xfm_file)
 
-    result_file <- transform_mni_to_suit(
-      mni_file,
-      xfm_file,
-      interpolation = "linear"
+    expect_message(
+      result_file <- transform_mni_to_suit(
+        mni_file,
+        xfm_file,
+        interpolation = "linear"
+      ),
+      "Trilinear interpolation"
     )
     result <- drop(as.array(RNifti::readNifti(result_file)))
 
@@ -1189,15 +1193,23 @@ describe("download_suit_xfm", {
     local_mocked_bindings(can_reach_github = function() TRUE)
     local_mocked_bindings(
       download.file = function(url, destfile, ...) {
-        writeBin(as.raw(sample(0:255, 2e6, replace = TRUE)), destfile)
+        writeBin(raw(2e6), destfile)
         0L
       },
       .package = "utils"
     )
+    # niftilib reports a malformed header on stderr from C before RNifti
+    # errors, which no R condition handler can capture.
+    local_mocked_bindings(
+      niftiHeader = function(...) {
+        stop("File is not in NIfTI-1 or NIfTI-2 format")
+      },
+      .package = "RNifti"
+    )
 
-    expect_error(
+    expect_snapshot(
       download_suit_xfm("xfm.nii", cached),
-      "not a valid NIfTI image"
+      error = TRUE
     )
     expect_false(file.exists(cached))
     expect_identical(list.files(tmp), character(0))
@@ -1215,16 +1227,18 @@ describe("download_suit_xfm", {
       .package = "utils"
     )
 
-    expect_error(
+    expect_snapshot(
       download_suit_xfm("xfm.nii", cached),
-      "incomplete"
+      error = TRUE
     )
     expect_false(file.exists(cached))
     expect_identical(list.files(tmp), character(0))
   })
 
   it("atomically caches a valid downloaded NIfTI file", {
-    tmp <- withr::local_tempdir()
+    local_test_workdir()
+    tmp <- "cache"
+    dir.create(tmp)
     cached <- as.character(fs::path(tmp, "xfm.nii"))
     valid_nii_path <- withr::local_tempfile(fileext = ".nii")
     RNifti::writeNifti(
@@ -1240,7 +1254,9 @@ describe("download_suit_xfm", {
       .package = "utils"
     )
 
-    result <- download_suit_xfm("xfm.nii", cached)
+    expect_snapshot(
+      result <- download_suit_xfm("xfm.nii", cached)
+    )
     expect_identical(result, cached)
     expect_true(file.exists(cached))
     expect_identical(list.files(tmp), basename(cached))
@@ -1389,7 +1405,7 @@ describe("fill_unlabelled_from_mesh_neighbors", {
 describe("rescue_orphaned_region", {
   it("finds nearest unassigned vertices to orphaned voxel centroid", {
     skip_if_not_installed("RNifti")
-    skip_if_not_installed("gifti") # nolint: object_usage_linter.
+    skip_if_not_installed("gifti")
 
     vol <- array(0L, dim = c(10, 10, 10))
     vol[5, 5, 5] <- 7L
@@ -1457,7 +1473,7 @@ describe("rescue_orphaned_region", {
 
   it("falls back to nearest vertices when all are assigned", {
     skip_if_not_installed("RNifti")
-    skip_if_not_installed("gifti") # nolint: object_usage_linter.
+    skip_if_not_installed("gifti")
 
     vol <- array(0L, dim = c(5, 5, 5))
     vol[3, 3, 3] <- 1L
@@ -2004,11 +2020,14 @@ describe("cerebellar_process_deep_nuclei", {
 
     dirs <- mock_dirs()
 
-    result <- cerebellar_process_deep_nuclei(
-      volume = vol_file,
-      deep_data = deep_data,
-      dirs = dirs,
-      verbose = TRUE
+    expect_message(
+      result <- cerebellar_process_deep_nuclei(
+        volume = vol_file,
+        deep_data = deep_data,
+        dirs = dirs,
+        verbose = TRUE
+      ),
+      "Created 1 meshes"
     )
 
     expect_s3_class(result$sf, "sf")
@@ -2167,23 +2186,23 @@ describe("run_cerebellar_creation verbose output", {
       smooth_refinements = 0
     )
 
-    expect_messages(
-      run_cerebellar_creation(
+    expect_snapshot(
+      result <- run_cerebellar_creation(
         atlas_name = "test_verbose",
         config = config,
         read_fn = function() tibble(),
         input_files = c("file1.gii", "file2.gii")
-      ),
-      "Creating cerebellar atlas"
+      )
     )
+    expect_s3_class(result, "ggseg_atlas")
   })
 })
 
 
 describe("read_suit_parcellation vertex overlap warning", {
   it("warns when vertices assigned to multiple regions across files", {
-    skip_if_not_installed("gifti") # nolint: object_usage_linter.
-    skip_if_not_installed("base64enc") # nolint: object_usage_linter.
+    skip_if_not_installed("gifti")
+    skip_if_not_installed("base64enc")
 
     make_label_gii <- function(values, lt = NULL) {
       dir <- withr::local_tempdir(.local_envir = parent.frame(2))
@@ -2267,7 +2286,7 @@ describe("read_suit_parcellation vertex overlap warning", {
 describe("create_cerebellar_from_volume integration", {
   it("runs the full pipeline with a real NIfTI volume", {
     skip_if_not_installed("RNifti")
-    skip_if_not_installed("gifti") # nolint: object_usage_linter.
+    skip_if_not_installed("gifti")
     skip_on_cran()
 
     vol <- array(0L, dim = c(112, 93, 66))
@@ -2333,9 +2352,9 @@ describe("download_suit_xfm download failure", {
       download.file = function(url, destfile, ...) stop("connection reset"),
       .package = "utils"
     )
-    expect_error(
+    expect_snapshot(
       download_suit_xfm("xfm.nii", cached),
-      "Failed to download"
+      error = TRUE
     )
     expect_false(file.exists(cached))
   })
@@ -2404,7 +2423,7 @@ describe("cerebellar_read_data verbose and error branches", {
       }
     )
     config <- list(steps = 1L, skip_existing = TRUE, verbose = TRUE)
-    expect_messages(
+    expect_message(
       cerebellar_read_data(config, dirs, read_fn = function() stop("no")),
       "Loaded cached"
     )
@@ -2429,8 +2448,12 @@ describe("cerebellar_read_data verbose and error branches", {
       tolerance = 0,
       smooth_refinements = 0
     )
-    result <- suppressMessages(
-      cerebellar_read_data(config, dirs, read_fn = function() atlas_data)
+    expect_snapshot(
+      result <- cerebellar_read_data(
+        config,
+        dirs,
+        read_fn = function() atlas_data
+      )
     )
     expect_true("left_I-IV" %in% result$components$core$label)
     expect_null(result$deep_data)
@@ -2471,7 +2494,7 @@ describe("split_cerebellar_surface_deep", {
       label = c("left_I-IV", "midline_Dentate"),
       deep = c(FALSE, TRUE)
     )
-    expect_messages(
+    expect_message(
       split_cerebellar_surface_deep(atlas_data, list(verbose = TRUE)),
       "deep cerebellar"
     )
@@ -2492,7 +2515,7 @@ describe("split_cerebellar_surface_deep", {
 
 describe("cerebellar_project_and_build with deep nuclei", {
   it("processes deep nuclei, merges views, and gathers when present", {
-    skip_if_not_installed("gifti") # nolint: object_usage_linter.
+    skip_if_not_installed("gifti")
 
     components <- list(
       core = data.frame(
@@ -2554,15 +2577,18 @@ describe("cerebellar_project_and_build with deep nuclei", {
       skip_existing = FALSE
     )
 
-    atlas <- suppressMessages(cerebellar_project_and_build(
-      components = components,
-      deep_data = deep_data,
-      volume = "unused.nii.gz",
-      atlas_name = "test_deep",
-      config = config,
-      dirs = dirs,
-      start_time = Sys.time()
-    ))
+    expect_snapshot(
+      atlas <- cerebellar_project_and_build(
+        components = components,
+        deep_data = deep_data,
+        volume = "unused.nii.gz",
+        atlas_name = "test_deep",
+        config = config,
+        dirs = dirs,
+        start_time = Sys.time()
+      ),
+      transform = scrub_geometry_counts
+    )
 
     expect_s3_class(atlas, "cerebellar_atlas")
     sf_data <- ggseg.formats::atlas_sf(atlas)
@@ -2668,8 +2694,8 @@ describe("build_deep_nuclei_meshes without FreeSurfer", {
 
 describe("read_suit_parcellation empty data array", {
   it("warns and skips a GIFTI whose first data array is empty", {
-    skip_if_not_installed("gifti") # nolint: object_usage_linter.
-    skip_if_not_installed("base64enc") # nolint: object_usage_linter.
+    skip_if_not_installed("gifti")
+    skip_if_not_installed("base64enc")
     label_file <- create_mock_suit_labels(n_vertices = 4)
     local_mocked_bindings(
       readgii = function(file) list(data = list(integer(0)), label = NULL),
@@ -2747,7 +2773,7 @@ describe("build_cerebellar_volume_row missing region", {
 
 describe("sample_volume_at_surface invalid surface", {
   it("errors when the GIFTI surface has no pointset", {
-    skip_if_not_installed("gifti") # nolint: object_usage_linter.
+    skip_if_not_installed("gifti")
     local_mocked_bindings(
       readgii = function(file) list(data = list(pointset = NULL)),
       .package = "gifti"

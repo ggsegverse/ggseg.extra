@@ -935,7 +935,7 @@ validate_wholebrain_config <- function(
 
   validate_registration(registration, subject, input_volume)
 
-  config$output_dir <- normalizePath(config$output_dir, mustWork = FALSE)
+  config$output_dir <- absolute_path(config$output_dir)
 
   if (is.null(atlas_name)) {
     atlas_name <- basename(input_volume)
@@ -1999,9 +1999,10 @@ fill_missing_rgb <- function(ct, label = "structures") {
   missing_rows <- is.na(ct$R) & is.na(ct$G) & is.na(ct$B)
   n_missing <- sum(missing_rows)
   if (n_missing > 0L) {
-    cli::cli_alert_info(
-      "Auto-generating colours for {n_missing} {label} region{?s}"
-    )
+    cli::cli_alert_info(c(
+      "Auto-generating colours for {n_missing} {label} ",
+      "{cli::qty(n_missing)}region{?s}"
+    ))
     hex <- generate_region_palette(n_missing)
     rgb_mat <- grDevices::col2rgb(hex)
     ct$R[missing_rows] <- as.integer(rgb_mat["red", ])

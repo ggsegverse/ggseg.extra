@@ -152,22 +152,10 @@ check_optional_packages <- function(detail = "simple") {
 report_optional_packages <- function(installed, missing, detail) {
   # nolint start: object_usage_linter.
   if (length(installed) > 0) {
-    installed_str <- paste0(
-      "{.pkg ",
-      installed,
-      "}",
-      collapse = ", "
-    )
-    cli::cli_alert_success("R packages: {installed_str}")
+    cli::cli_alert_success("R packages: {.pkg {installed}}")
   }
   if (length(missing) > 0) {
-    missing_str <- paste0(
-      "{.pkg ",
-      missing,
-      "}",
-      collapse = ", "
-    )
-    cli::cli_alert_danger("Missing R packages: {missing_str}")
+    cli::cli_alert_danger("Missing R packages: {.pkg {missing}}")
     if (detail == "full") {
       install_cmd <- paste0(
         'install.packages(c("',

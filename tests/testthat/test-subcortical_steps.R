@@ -72,17 +72,9 @@ describe("subcort_create_meshes", {
     )
     dirs <- list(meshes = withr::local_tempdir())
 
-    expect_error(
-      expect_warning(
-        expect_warning(
-          expect_messages(
-            subcort_create_meshes("fake.mgz", colortable, dirs, FALSE, TRUE)
-          ),
-          "Failed to create mesh"
-        ),
-        "Failed to create mesh"
-      ),
-      "No meshes"
+    expect_snapshot(
+      subcort_create_meshes("fake.mgz", colortable, dirs, FALSE, TRUE),
+      error = TRUE
     )
   })
 
@@ -106,15 +98,16 @@ describe("subcort_create_meshes", {
     )
     dirs <- list(meshes = withr::local_tempdir())
 
-    result <- expect_messages(
-      subcort_create_meshes(
+    expect_message(
+      result <- subcort_create_meshes(
         "fake.mgz",
         colortable,
         dirs,
         FALSE,
         TRUE,
         decimate = NULL
-      )
+      ),
+      "Created 1 meshes"
     )
 
     expect_length(result, 1)
@@ -204,10 +197,14 @@ describe("subcort_decimate_meshes", {
     )
     local_mocked_bindings(decimate_mesh = function(m, percent) m)
 
-    expect_messages(
-      subcort_decimate_meshes(empty_meshes, decimate = 0.5, verbose = TRUE),
-      "\\(NA%\\)"
+    expect_snapshot(
+      result <- subcort_decimate_meshes(
+        empty_meshes,
+        decimate = 0.5,
+        verbose = TRUE
+      )
     )
+    expect_named(result, "a")
   })
 })
 
@@ -698,7 +695,7 @@ describe("subcort_log_header", {
       output_dir = "/tmp/output"
     )
 
-    expect_messages(subcort_log_header(config), "volume.mgz")
+    expect_snapshot(subcort_log_header(config))
   })
 
   it("is silent when verbose is FALSE", {
@@ -952,7 +949,7 @@ describe("finalize_atlas (subcort parameters)", {
       class = "ggseg_atlas"
     )
 
-    expect_messages(
+    expect_message(
       finalize_atlas(
         mock_atlas,
         config,
@@ -1109,17 +1106,17 @@ describe("subcort_create_meshes", {
     )
     dirs <- list(meshes = withr::local_tempdir())
 
-    expect_messages(
-      subcort_create_meshes(
+    expect_snapshot(
+      result <- subcort_create_meshes(
         "fake.mgz",
         colortable,
         dirs,
         skip_existing = FALSE,
         verbose = TRUE,
         decimate = 0.5
-      ),
-      "Decimating"
+      )
     )
+    expect_named(result, "Left-Putamen")
   })
 })
 
@@ -1183,6 +1180,17 @@ describe("prune_stale_snapshots", {
 
     expect_silent(stale <- prune_stale_snapshots(dirs, "axial_1_a.rda"))
     expect_length(stale, 0L)
+  })
+
+  it("prunes quietly when verbose is FALSE", {
+    dirs <- mock_subcort_dirs()
+    file.create(file.path(dirs$snapshots, c("axial_1_a.rda", "axial_9_a.rda")))
+
+    expect_silent(
+      stale <- prune_stale_snapshots(dirs, "axial_1_a.rda", verbose = FALSE)
+    )
+    expect_length(stale, 1L)
+    expect_false(file.exists(file.path(dirs$snapshots, "axial_9_a.rda")))
   })
 })
 

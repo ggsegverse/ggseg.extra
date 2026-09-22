@@ -671,7 +671,7 @@ describe("coregister_volume execution", {
 
 describe("coreg_reuse_lta", {
   it("reports and returns the path invisibly when verbose", {
-    expect_messages(
+    expect_message(
       out <- coreg_reuse_lta("cached.lta", verbose = TRUE),
       "Reusing existing registration"
     )
@@ -681,7 +681,7 @@ describe("coreg_reuse_lta", {
 
 describe("project_start_message", {
   it("announces the projection and returns NULL invisibly when verbose", {
-    expect_messages(
+    expect_message(
       out <- project_start_message(c(11L, 12L), "subjX", verbose = TRUE),
       "Projecting 2 labels"
     )
@@ -826,8 +826,8 @@ describe("project_merged_labels", {
 describe("project_volume_anatomical execution", {
   it("projects labels end-to-end with FreeSurfer steps mocked", {
     skip_if_not_installed("RNifti")
-    fake_dir <- withr::local_tempdir()
-    subj_dir <- fs::path(fake_dir, "cvs_avg35_inMNI152", "mri")
+    local_test_workdir()
+    subj_dir <- fs::path("subjects", "cvs_avg35_inMNI152", "mri")
     fs::dir_create(subj_dir)
     file.create(fs::path(subj_dir, "aparc+aseg.mgz"))
 
@@ -869,16 +869,15 @@ describe("project_volume_anatomical execution", {
       }
     )
 
-    result <- expect_messages(
-      project_volume_anatomical(
+    expect_snapshot(
+      result <- project_volume_anatomical(
         "atlas.nii.gz",
         registration = "header",
-        subjects_dir = fake_dir,
+        subjects_dir = "subjects",
+        output_file = "merged.nii.gz",
         id_offset = 200L,
         verbose = TRUE
-      ),
-      "Projecting",
-      "anatomical-context volume"
+      )
     )
 
     expect_true(file.exists(result$volume))
@@ -918,7 +917,7 @@ describe("lta_block_dims", {
 describe("apply_cortex_protection verbose", {
   it("reports the protected voxel counts when verbose", {
     arr_aparc <- c(2L, 17L, 1011L, 41L, 50L, 253L)
-    expect_messages(
+    expect_message(
       apply_cortex_protection(
         rep(TRUE, 6),
         arr_aparc,

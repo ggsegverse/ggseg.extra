@@ -1,5 +1,20 @@
 .cap <- new.env()
 
+# Minimal mesh list in the shape tract_build_core() consumes
+tract_mesh_list <- function(names) {
+  stats::setNames(
+    lapply(seq_along(names), function(i) {
+      pts <- matrix(
+        seq_len(9) + (i - 1) * 9,
+        ncol = 3,
+        dimnames = list(NULL, c("x", "y", "z"))
+      )
+      list(metadata = list(centerline = pts, tangents = pts))
+    }),
+    names
+  )
+}
+
 describe("tract_read_input", {
   it("reads from named list", {
     tracts <- list(
@@ -317,19 +332,17 @@ describe("tract_create_snapshots", {
     centerlines_df$points <- list(matrix(1:9, ncol = 3))
     dirs <- list(snapshots = withr::local_tempdir())
 
-    expect_messages(
-      {
-        result <- tract_create_snapshots(
-          centerlines_df,
-          "fake_aseg.mgz",
-          NULL,
-          dirs,
-          TRUE,
-          FALSE,
-          3,
-          TRUE
-        )
-      },
+    expect_message(
+      result <- tract_create_snapshots(
+        centerlines_df,
+        "fake_aseg.mgz",
+        NULL,
+        dirs,
+        TRUE,
+        FALSE,
+        3,
+        TRUE
+      ),
       "Creating cortex reference slices"
     )
 
@@ -729,10 +742,7 @@ describe("tract_log_header", {
   it("prints info when verbose", {
     config <- list(verbose = TRUE)
 
-    expect_messages(
-      tract_log_header(config, "tract.trk", "aseg.mgz"),
-      "tractography"
-    )
+    expect_snapshot(tract_log_header(config, "tract.trk", "aseg.mgz"))
   })
 
   it("is silent when verbose is FALSE", {
@@ -1217,7 +1227,7 @@ describe("finalize_atlas (tract parameters)", {
       log_elapsed = function(...) invisible(NULL)
     )
 
-    expect_messages(
+    expect_message(
       finalize_atlas(
         NULL,
         config,

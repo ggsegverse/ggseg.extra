@@ -1,5 +1,17 @@
 .cap <- new.env()
 
+# nolint next: object_length_linter.
+mock_cortical_pipeline_bindings <- function() {
+  list(
+    cortical_build_sf_projected = function(...) mock_sf_polygon(),
+    ggseg_atlas = function(...) structure(list(...), class = "ggseg_atlas"),
+    ggseg_data_cortical = function(...) list(...),
+    warn_if_large_atlas = function(...) NULL,
+    preview_atlas = function(...) NULL,
+    log_elapsed = function(...) NULL
+  )
+}
+
 describe("create_cortical_from_annotation", {
   it("validates annotation files exist", {
     expect_error(
@@ -17,8 +29,8 @@ describe("create_cortical_from_annotation", {
     annots <- test_annot_files()
     annot_files <- c(annots$lh, annots$rh)
 
-    atlas <- expect_warnings(
-      create_cortical_from_annotation(
+    expect_warning(
+      atlas <- create_cortical_from_annotation(
         input_annot = annot_files,
         verbose = FALSE
       ),
@@ -36,8 +48,8 @@ describe("create_cortical_from_annotation", {
     annots <- test_annot_files()
     annot_files <- c(annots$lh, annots$rh)
 
-    atlas <- expect_warnings(
-      create_cortical_from_annotation(
+    expect_warning(
+      atlas <- create_cortical_from_annotation(
         input_annot = annot_files,
         verbose = FALSE
       ),
@@ -56,8 +68,8 @@ describe("create_cortical_from_annotation", {
     annots <- test_annot_files()
     annot_files <- c(annots$lh, annots$rh)
 
-    atlas <- expect_warnings(
-      create_cortical_from_annotation(
+    expect_warning(
+      atlas <- create_cortical_from_annotation(
         input_annot = annot_files,
         verbose = FALSE
       ),
@@ -304,11 +316,9 @@ describe("create_cortical_from_labels", {
 
     labels <- unlist(test_label_files())
     expect_no_error(
-      suppressWarnings(
-        create_cortical_from_labels(
-          labels,
-          verbose = FALSE
-        )
+      create_cortical_from_labels(
+        labels,
+        verbose = FALSE
       )
     )
   })
@@ -401,19 +411,17 @@ describe("cortical_finalize", {
     )
     dirs <- list(base = withr::local_tempdir())
 
-    expect_messages(
-      {
-        result <- cortical_finalize(
-          mock_atlas,
-          config = list(
-            steps = 1:2,
-            cleanup = FALSE,
-            verbose = TRUE
-          ),
-          dirs = dirs,
-          start_time = Sys.time()
-        )
-      },
+    expect_message(
+      result <- cortical_finalize(
+        mock_atlas,
+        config = list(
+          steps = 1:2,
+          cleanup = FALSE,
+          verbose = TRUE
+        ),
+        dirs = dirs,
+        start_time = Sys.time()
+      ),
       "1 regions"
     )
 
@@ -460,11 +468,6 @@ describe("cortical_project_and_build verbose and cleanup paths", {
   it("logs verbose messages for each step", {
     do.call(local_mocked_bindings, mock_cortical_pipeline_bindings())
 
-    scrub <- function(x) {
-      x <- gsub("\\[\\d+\\.?\\d*[ms]s?\\]", "[<TIME>]", x)
-      x <- gsub("/tmp/Rtmp[^ ']*|/var/folders[^ ']*", "<TMPDIR>", x)
-      gsub("[A-Za-z]:[^ ']*Rtmp[^ ']*", "<TMPDIR>", x)
-    }
     expect_snapshot(
       invisible(cortical_project_and_build(
         components = mock_components(),
@@ -480,8 +483,7 @@ describe("cortical_project_and_build verbose and cleanup paths", {
         ),
         dirs = mock_dirs(),
         start_time = Sys.time()
-      )),
-      transform = scrub
+      ))
     )
   })
 
@@ -492,8 +494,8 @@ describe("cortical_project_and_build verbose and cleanup paths", {
     actual_base <- file.path(base_dir, "atlas_work")
     dir.create(actual_base)
 
-    expect_messages(
-      cortical_project_and_build(
+    expect_snapshot(
+      invisible(cortical_project_and_build(
         components = mock_components(),
         atlas_name = "test",
         hemisphere = "lh",
@@ -512,8 +514,7 @@ describe("cortical_project_and_build verbose and cleanup paths", {
           masks = tempdir()
         ),
         start_time = Sys.time()
-      ),
-      "Temporary files removed"
+      ))
     )
 
     expect_false(dir.exists(actual_base))
@@ -556,17 +557,11 @@ describe("create_cortical_from_annotation verbose output", {
 
     withr::local_options(ggseg.extra.output_dir = withr::local_tempdir())
 
-    scrub <- function(x) {
-      x <- gsub("\\[\\d+\\.?\\d*[ms]s?\\]", "[<TIME>]", x)
-      x <- gsub("/tmp/Rtmp[^ ']*|/var/folders[^ ']*", "<TMPDIR>", x)
-      gsub("[A-Za-z]:[^ ']*Rtmp[^ ']*", "<TMPDIR>", x)
-    }
     expect_snapshot(
       invisible(create_cortical_from_annotation(
         input_annot = "lh.test.annot",
         verbose = TRUE
-      )),
-      transform = scrub
+      ))
     )
   })
 })
@@ -645,16 +640,15 @@ describe("cortical_read_data verbose paths", {
       )
     }
 
-    expect_messages(
-      cortical_read_data(
+    expect_snapshot(
+      invisible(cortical_read_data(
         config = list(steps = 1:2, skip_existing = FALSE, verbose = TRUE),
         dirs = list(base = tmp_dir),
         atlas_name = "test",
         read_fn = read_fn,
         step_label = "Reading annotation files",
         cache_label = "Read annotations"
-      ),
-      "Reading"
+      ))
     )
   })
 
@@ -706,7 +700,7 @@ describe("cortical_read_data verbose paths", {
       components.rds = mock_components
     )
 
-    expect_messages(
+    expect_message(
       cortical_read_data(
         config = list(steps = 1:2, skip_existing = TRUE, verbose = TRUE),
         dirs = list(base = tmp_dir),
@@ -731,18 +725,12 @@ describe("create_cortical_from_labels verbose and LUT paths", {
 
     labels <- unlist(test_label_files())
 
-    scrub <- function(x) {
-      x <- gsub("\\[\\d+\\.?\\d*[ms]s?\\]", "[<TIME>]", x)
-      x <- gsub("/tmp/Rtmp[^ ']*|/var/folders[^ ']*", "<TMPDIR>", x)
-      gsub("[A-Za-z]:[^ ']*Rtmp[^ ']*", "<TMPDIR>", x)
-    }
     expect_snapshot(
       invisible(create_cortical_from_labels(
         labels,
         atlas_name = "test_atlas",
         verbose = TRUE
-      )),
-      transform = scrub
+      ))
     )
   })
 
@@ -920,17 +908,16 @@ describe("create_cortical_from_gifti verbose", {
       }
     )
 
-    tmp <- withr::local_tempfile(pattern = "lh.test", fileext = ".label.gii")
+    local_test_workdir()
+    tmp <- "lh.test.label.gii"
     writeLines("mock", tmp)
-    withr::local_options(ggseg.extra.output_dir = withr::local_tempdir())
 
-    expect_messages(
-      create_cortical_from_gifti(
+    expect_snapshot(
+      invisible(create_cortical_from_gifti(
         gifti_files = tmp,
         atlas_name = "test_gifti",
         verbose = TRUE
-      ),
-      "from GIFTI"
+      ))
     )
   })
 })
@@ -972,17 +959,16 @@ describe("create_cortical_from_cifti verbose", {
       }
     )
 
-    tmp <- withr::local_tempfile(fileext = ".dlabel.nii")
+    local_test_workdir()
+    tmp <- "test.dlabel.nii"
     writeLines("mock", tmp)
-    withr::local_options(ggseg.extra.output_dir = withr::local_tempdir())
 
-    expect_messages(
-      create_cortical_from_cifti(
+    expect_snapshot(
+      invisible(create_cortical_from_cifti(
         cifti_file = tmp,
         atlas_name = "test_cifti",
         verbose = TRUE
-      ),
-      "from CIFTI"
+      ))
     )
   })
 })
@@ -1000,14 +986,9 @@ describe("create_cortical_from_neuromaps verbose", {
     n <- 10242L
     mock_gii <- list(data = list(c(rep(1, 5000), rep(2, 5242))))
 
-    lh <- withr::local_tempfile(
-      pattern = "source-test_hemi-L_feature",
-      fileext = ".func.gii"
-    )
-    rh <- withr::local_tempfile(
-      pattern = "source-test_hemi-R_feature",
-      fileext = ".func.gii"
-    )
+    local_test_workdir()
+    lh <- "source-test_hemi-L_feature.func.gii"
+    rh <- "source-test_hemi-R_feature.func.gii"
     writeLines("mock", lh)
     writeLines("mock", rh)
 
@@ -1026,17 +1007,13 @@ describe("create_cortical_from_neuromaps verbose", {
       }
     )
 
-    withr::local_options(ggseg.extra.output_dir = withr::local_tempdir())
-
-    expect_messages(
-      create_cortical_from_neuromaps(
+    expect_snapshot(
+      invisible(create_cortical_from_neuromaps(
         source = "test",
         desc = "testdesc",
         atlas_name = "test_neuromaps",
         verbose = TRUE
-      ),
-      "Fetching neuromaps",
-      "from neuromaps"
+      ))
     )
   })
 
@@ -1071,14 +1048,13 @@ describe("create_cortical_from_neuromaps verbose", {
 
     withr::local_options(ggseg.extra.output_dir = withr::local_tempdir())
 
-    expect_messages(
-      create_cortical_from_neuromaps(
+    expect_snapshot(
+      invisible(create_cortical_from_neuromaps(
         source = "test",
         desc = "vol",
         atlas_name = "test_vol",
         verbose = TRUE
-      ),
-      "Volume annotation detected"
+      ))
     )
   })
 })

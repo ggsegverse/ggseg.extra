@@ -292,7 +292,7 @@ describe("build_contour_sf", {
   })
 
   it("keeps the top of a projection up and its left side left", {
-    skip_without_mask_io()
+    skip_if_not_installed("terra")
     projections <- withr::local_tempdir("projections_")
     d <- function(n) file.path(projections, paste0("coronal_1_", n, ".rda"))
     write_projection_fixture(d("top"), 8:12, 15:18)
@@ -436,9 +436,8 @@ describe("extract_contours", {
       .package = "furrr"
     )
 
-    expect_messages(
-      extract_contours(input_dir, output_dir, verbose = TRUE),
-      "contour"
+    expect_snapshot(
+      invisible(extract_contours(input_dir, output_dir, verbose = TRUE))
     )
   })
 })
