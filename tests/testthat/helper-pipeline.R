@@ -93,3 +93,9 @@ local_test_workdir <- function(env = parent.frame()) {
   withr::local_options(ggseg.extra.output_dir = "out", .local_envir = env)
   invisible(dir)
 }
+
+# Pipelines report their output directory as an absolute path, which under
+# local_test_workdir() starts with the test's own working directory.
+scrub_workdir <- function(lines) {
+  gsub(as.character(fs::path_abs(".")), "<workdir>", lines, fixed = TRUE)
+}

@@ -952,7 +952,8 @@ describe("create_wholebrain_from_volume verbose and cleanup", {
         steps = 1:4,
         verbose = TRUE,
         cleanup = TRUE
-      ))
+      )),
+      transform = scrub_workdir
     )
 
     expect_false(dir.exists(sub_dir))
@@ -1016,7 +1017,8 @@ describe("create_wholebrain_from_volume verbose and cleanup", {
         steps = 1:2,
         verbose = TRUE,
         cleanup = FALSE
-      ))
+      )),
+      transform = scrub_workdir
     )
 
     expect_true(.cap$elapsed_called)
@@ -1557,7 +1559,8 @@ describe("create_wholebrain_from_volume oversight warning", {
         input_volume = vol_file,
         steps = 1:2,
         verbose = TRUE
-      ))
+      )),
+      transform = scrub_workdir
     )
   })
 })
@@ -1621,7 +1624,8 @@ describe("create_wholebrain_from_volume verbose LUT path", {
         input_lut = lut_file,
         steps = 1:2,
         verbose = TRUE
-      ))
+      )),
+      transform = scrub_workdir
     )
   })
 })

@@ -8,7 +8,7 @@
       -- Creating subcortical atlas "aseg" -------------------------------------------
       i Volume: 'aseg.mgz'
       i Color LUT: 'lut.txt'
-      i Setting output directory to 'out'
+      i Setting output directory to '<workdir>/out'
       i 1/9 Extracting labels from volume
       v Found 2 subcortical structures
       i 1/9 Extracting labels from volume
@@ -34,7 +34,7 @@
       -- Creating subcortical atlas "aseg" -------------------------------------------
       i Volume: 'aseg.mgz'
       i Color LUT: 'lut.txt'
-      i Setting output directory to 'out'
+      i Setting output directory to '<workdir>/out'
       v 1/9 Loaded existing labels
       v 2/9 Loaded existing meshes
       v 3/9 Loaded existing components
@@ -53,7 +53,7 @@
       -- Creating subcortical atlas "aseg" -------------------------------------------
       i Volume: 'aseg.mgz'
       i Color LUT: 'lut.txt'
-      i Setting output directory to 'out'
+      i Setting output directory to '<workdir>/out'
       v 1/9 Loaded existing labels
       v 2/9 Loaded existing meshes
       v 3/9 Loaded existing components
@@ -76,7 +76,7 @@
       -- Creating subcortical atlas "aseg" -------------------------------------------
       i Volume: 'aseg.mgz'
       i Color LUT: 'lut.txt'
-      i Setting output directory to 'out'
+      i Setting output directory to '<workdir>/out'
       v 1/9 Loaded existing labels
       v 2/9 Loaded existing meshes
       v 3/9 Loaded existing components

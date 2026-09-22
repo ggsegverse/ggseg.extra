@@ -91,7 +91,7 @@
       manual validation. Run with `steps = 1:2` first to inspect the label split
       before committing to the full pipeline.
       i Volume: 'wb.nii.gz'
-      i Setting output directory to 'out'
+      i Setting output directory to '<workdir>/out'
       
       -- Surface projection --
       
@@ -134,7 +134,7 @@
       manual validation. Run with `steps = 1:2` first to inspect the label split
       before committing to the full pipeline.
       i Volume: 'wb.nii.gz'
-      i Setting output directory to 'out'
+      i Setting output directory to '<workdir>/out'
       
       -- Surface projection --
       
@@ -216,7 +216,7 @@
       manual validation. Run with `steps = 1:2` first to inspect the label split
       before committing to the full pipeline.
       i Volume: 'wb.nii.gz'
-      i Setting output directory to 'out'
+      i Setting output directory to '<workdir>/out'
       
       -- Surface projection --
       
@@ -262,7 +262,7 @@
       before committing to the full pipeline.
       i Volume: 'wb.nii.gz'
       i Color LUT: 'lut.txt'
-      i Setting output directory to 'out'
+      i Setting output directory to '<workdir>/out'
       
       -- Surface projection --
       

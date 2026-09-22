@@ -232,6 +232,20 @@ log_elapsed <- function(start_time) {
 }
 
 
+#' Make a path absolute the same way on every platform
+#'
+#' normalizePath() leaves a path that does not exist yet untouched on Unix
+#' but makes it absolute on Windows, so a new relative output directory used
+#' to stay relative everywhere but Windows.
+#'
+#' @param path Path, possibly relative or starting with `~`
+#' @return Absolute path as a character string
+#' @noRd
+absolute_path <- function(path) {
+  as.character(fs::path_abs(path.expand(path)))
+}
+
+
 #' Format a duration the way cli formats progress step timings
 #'
 #' cli keeps its own formatter internal, so this mirrors it: milliseconds

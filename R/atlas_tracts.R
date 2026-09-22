@@ -334,7 +334,7 @@ validate_tract_config <- function(
     steps,
     max_step = 6L
   )
-  config$output_dir <- normalizePath(config$output_dir, mustWork = FALSE)
+  config$output_dir <- absolute_path(config$output_dir)
 
   config$centerline_method <- match.arg(
     centerline_method,

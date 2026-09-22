@@ -388,7 +388,8 @@ describe("create_subcortical_from_volume pipeline flow", {
         input_lut = lut_file,
         steps = 1:3,
         verbose = TRUE
-      )
+      ),
+      transform = scrub_workdir
     )
 
     expect_s3_class(atlas, "ggseg_atlas")
@@ -512,7 +513,8 @@ describe("create_subcortical_from_volume pipeline flow", {
         input_lut = lut_file,
         steps = 5:8,
         verbose = TRUE
-      )
+      ),
+      transform = scrub_workdir
     )
 
     expect_null(result)
@@ -745,7 +747,8 @@ describe("create_subcortical_from_volume pipeline flow", {
         steps = 9,
         verbose = TRUE,
         cleanup = TRUE
-      )
+      ),
+      transform = scrub_workdir
     )
 
     expect_s3_class(atlas, "ggseg_atlas")
@@ -803,7 +806,8 @@ describe("create_subcortical_from_volume pipeline flow", {
         input_lut = lut_file,
         steps = 5L,
         verbose = TRUE
-      )
+      ),
+      transform = scrub_workdir
     )
 
     expect_null(result)

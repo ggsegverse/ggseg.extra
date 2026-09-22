@@ -603,6 +603,21 @@ describe("log_elapsed", {
 })
 
 
+describe("absolute_path", {
+  it("makes a relative path that does not exist yet absolute", {
+    local_test_workdir()
+    expect_identical(
+      absolute_path("not_yet"),
+      as.character(fs::path(fs::path_abs("."), "not_yet"))
+    )
+  })
+
+  it("expands a leading tilde", {
+    expect_false(startsWith(absolute_path("~/x"), "~"))
+  })
+})
+
+
 describe("format_duration", {
   it("matches cli's progress step timings", {
     expect_identical(format_duration(0.04), "40ms")

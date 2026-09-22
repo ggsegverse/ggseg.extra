@@ -935,7 +935,7 @@ validate_wholebrain_config <- function(
 
   validate_registration(registration, subject, input_volume)
 
-  config$output_dir <- normalizePath(config$output_dir, mustWork = FALSE)
+  config$output_dir <- absolute_path(config$output_dir)
 
   if (is.null(atlas_name)) {
     atlas_name <- basename(input_volume)
