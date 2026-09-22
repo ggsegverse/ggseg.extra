@@ -1,5 +1,3 @@
-.cap <- new.env()
-
 describe("extract_slice_2d", {
   it("extracts axial slice", {
     vol <- array(0, dim = c(10, 10, 10))

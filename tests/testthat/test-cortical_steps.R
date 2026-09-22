@@ -1,6 +1,3 @@
-.cap <- new.env()
-
-
 describe("labels_read_files", {
   it("reads label files and builds atlas data tibble", {
     labels <- unlist(test_label_files())

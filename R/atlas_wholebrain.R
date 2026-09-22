@@ -1999,9 +1999,10 @@ fill_missing_rgb <- function(ct, label = "structures") {
   missing_rows <- is.na(ct$R) & is.na(ct$G) & is.na(ct$B)
   n_missing <- sum(missing_rows)
   if (n_missing > 0L) {
-    cli::cli_alert_info(
-      "Auto-generating colours for {n_missing} {label} region{?s}"
-    )
+    cli::cli_alert_info(c(
+      "Auto-generating colours for {n_missing} {label} ",
+      "{cli::qty(n_missing)}region{?s}"
+    ))
     hex <- generate_region_palette(n_missing)
     rgb_mat <- grDevices::col2rgb(hex)
     ct$R[missing_rows] <- as.integer(rgb_mat["red", ])

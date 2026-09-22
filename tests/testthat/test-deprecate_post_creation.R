@@ -18,8 +18,11 @@ describe("post-creation tweaks passed to a pipeline", {
   })
 
   it("hands the values back so a caller can still honour them", {
-    dots <- suppressWarnings(
-      check_post_creation_dots("create_subcortical_from_volume", dilate = 2L)
+    lifecycle::expect_deprecated(
+      dots <- check_post_creation_dots(
+        "create_subcortical_from_volume",
+        dilate = 2L
+      )
     )
     expect_identical(dots$dilate, 2L)
   })

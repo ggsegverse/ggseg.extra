@@ -1,5 +1,3 @@
-.cap <- new.env()
-
 describe("tessellate_label", {
   it("creates mesh from volume label", {
     skip_if_no_freesurfer()
@@ -46,7 +44,7 @@ describe("decimate_mesh", {
       )
     )
 
-    result <- suppressWarnings(decimate_mesh(mesh, percent = 0.5))
+    result <- decimate_mesh(mesh, percent = 0.5)
 
     expect_lte(nrow(result$faces), nrow(mesh$faces))
     expect_lte(nrow(result$vertices), nrow(mesh$vertices))
@@ -230,15 +228,13 @@ describe("tessellate_label", {
       }
     )
 
-    expect_warnings(
-      {
-        result <- tessellate_label(
-          "vol.mgz",
-          10,
-          tmp_dir,
-          skip_existing = FALSE
-        )
-      },
+    expect_warning(
+      result <- tessellate_label(
+        "vol.mgz",
+        10,
+        tmp_dir,
+        skip_existing = FALSE
+      ),
       "Smoothing failed.*using unsmoothed"
     )
     expect_type(result, "list")
@@ -419,9 +415,7 @@ describe("ensure_fs_compatible_nifti", {
     arr <- array(0L, dim = c(6, 6, 6))
     arr[2:4, 2:4, 2:4] <- 5L
     f <- withr::local_tempfile(fileext = ".nii.gz")
-    suppressWarnings(
-      RNifti::writeNifti(RNifti::asNifti(arr), f, datatype = "int16")
-    )
+    RNifti::writeNifti(RNifti::asNifti(arr), f, datatype = "int16")
 
     expect_identical(
       ensure_fs_compatible_nifti(f, withr::local_tempdir()),
@@ -434,9 +428,7 @@ describe("ensure_fs_compatible_nifti", {
     arr <- array(0L, dim = c(6, 6, 6))
     arr[2:4, 2:4, 2:4] <- 1000L
     f <- withr::local_tempfile(fileext = ".nii.gz")
-    suppressWarnings(
-      RNifti::writeNifti(RNifti::asNifti(arr), f, datatype = "uint16")
-    )
+    RNifti::writeNifti(RNifti::asNifti(arr), f, datatype = "uint16")
 
     out_dir <- withr::local_tempdir()
     converted <- ensure_fs_compatible_nifti(f, out_dir)
@@ -446,7 +438,7 @@ describe("ensure_fs_compatible_nifti", {
     expect_match(basename(converted), "^_fs_compat_")
     # datatype 8 == NIfTI INT32, the FreeSurfer-compatible target
     expect_identical(
-      suppressWarnings(as.integer(RNifti::niftiHeader(converted)$datatype)),
+      as.integer(RNifti::niftiHeader(converted)$datatype),
       8L
     )
   })
@@ -456,9 +448,7 @@ describe("ensure_fs_compatible_nifti", {
     arr <- array(0L, dim = c(6, 6, 6))
     arr[2:4, 2:4, 2:4] <- 1000L
     f <- withr::local_tempfile(fileext = ".nii.gz")
-    suppressWarnings(
-      RNifti::writeNifti(RNifti::asNifti(arr), f, datatype = "uint16")
-    )
+    RNifti::writeNifti(RNifti::asNifti(arr), f, datatype = "uint16")
 
     out_dir <- withr::local_tempdir()
     first <- ensure_fs_compatible_nifti(f, out_dir)
@@ -484,7 +474,7 @@ describe("tessellate_remap_label", {
     arr[2:4, 2:4, 2:4] <- 1000L
     arr[1, 1, 1] <- 5L
     f <- withr::local_tempfile(fileext = ".nii.gz")
-    suppressWarnings(RNifti::writeNifti(RNifti::asNifti(arr), f))
+    RNifti::writeNifti(RNifti::asNifti(arr), f)
 
     res <- tessellate_remap_label(f, 1000L, withr::local_tempfile(), FALSE)
 
@@ -501,7 +491,7 @@ describe("tessellate_remap_label", {
     arr <- array(0L, dim = c(6, 6, 6))
     arr[2:4, 2:4, 2:4] <- 1000L
     f <- withr::local_tempfile(fileext = ".nii.gz")
-    suppressWarnings(RNifti::writeNifti(RNifti::asNifti(arr), f))
+    RNifti::writeNifti(RNifti::asNifti(arr), f)
 
     base <- withr::local_tempfile()
     remap_file <- paste0(base, "_remap.nii.gz")

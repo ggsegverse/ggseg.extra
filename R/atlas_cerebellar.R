@@ -531,14 +531,18 @@ download_suit_xfm <- function(filename, cached_path) {
   )
   on.exit(unlink(tmp_path), add = TRUE)
 
+  download_env <- environment()
   tryCatch(
     utils::download.file(url, tmp_path, mode = "wb", quiet = TRUE),
     error = function(e) {
-      cli::cli_abort(c(
-        "Failed to download deformation field",
-        "i" = "URL: {.url {url}}",
-        "x" = "{conditionMessage(e)}"
-      ))
+      cli::cli_abort(
+        c(
+          "Failed to download deformation field",
+          "i" = "URL: {.url {url}}",
+          "x" = "{conditionMessage(e)}"
+        ),
+        call = download_env
+      )
     }
   )
   validate_suit_xfm_download(tmp_path)

@@ -25,8 +25,8 @@ describe("integration tests", {
     annots <- test_annot_files()
     annot_files <- c(annots$lh, annots$rh)
 
-    atlas <- expect_warnings(
-      create_cortical_from_annotation(
+    expect_warning(
+      atlas <- create_cortical_from_annotation(
         input_annot = annot_files,
         verbose = FALSE
       ),

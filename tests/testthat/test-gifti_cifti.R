@@ -611,8 +611,8 @@ describe("create_cortical_from_cifti", {
     tmp <- withr::local_tempfile(pattern = "my.atlas", fileext = ".dlabel.nii")
     writeLines("mock", tmp)
 
-    result <- expect_warnings(
-      create_cortical_from_cifti(
+    expect_warning(
+      result <- create_cortical_from_cifti(
         cifti_file = tmp,
         verbose = FALSE,
         cleanup = FALSE

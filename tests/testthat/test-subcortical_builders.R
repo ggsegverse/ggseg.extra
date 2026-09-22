@@ -110,13 +110,11 @@ describe("subcortical_slabs", {
     f <- withr::local_tempfile(fileext = ".nii.gz")
     # Non-RAS on disk so read_volume() must reorient; subcortical_slabs() owns
     # that read, so a path must agree with the same volume already in the
-    # builder's frame rather than the raw on-disk array. The RNifti
-    # orientation/IO setup emits incidental warnings unrelated to the contract.
-    suppressWarnings({
-      img <- RNifti::asNifti(arr)
-      RNifti::orientation(img) <- "LAS"
-      RNifti::writeNifti(img, f)
-    })
+    # builder's frame rather than the raw on-disk array.
+    img <- RNifti::asNifti(arr)
+    RNifti::sform(img) <- structure(diag(4), code = 2L)
+    RNifti::orientation(img) <- "LAS"
+    RNifti::writeNifti(img, f)
 
     from_path <- subcortical_slabs(f, labels = 17, coronal = 2, axial = 2)
     from_frame <- subcortical_slabs(
@@ -273,10 +271,13 @@ describe("aseg_context input validation and white-matter punch", {
     ))
     atlas$data$geom <- geom
 
-    a <- aseg_context(
-      atlas,
-      focus = "hypothalamus",
-      punch_white_matter = TRUE
+    expect_message(
+      a <- aseg_context(
+        atlas,
+        focus = "hypothalamus",
+        punch_white_matter = TRUE
+      ),
+      "already hollow"
     )
 
     expect_true(
@@ -288,8 +289,8 @@ describe("aseg_context input validation and white-matter punch", {
 describe("aseg_punch_white_matter", {
   it("skips with an info message when cortex/white matter not both present", {
     atlas <- make_test_atlas()
-    out <- expect_messages(
-      aseg_punch_white_matter(
+    expect_message(
+      out <- aseg_punch_white_matter(
         atlas,
         cortex = "^cortex",
         white_matter = "White-Matter$",

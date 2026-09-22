@@ -1,3 +1,19 @@
+# Capture the command mri_vol2surf (and friends) would run, without a
+# FreeSurfer install. Returns an environment whose `cmd` holds the last
+# command built.
+local_mock_vol2surf <- function(env = parent.frame()) {
+  cap <- new.env()
+  local_mocked_bindings(
+    check_fs = function(abort = FALSE) invisible(TRUE),
+    run_cmd = function(cmd, verbose = FALSE) {
+      cap$cmd <- cmd
+      invisible(NULL)
+    },
+    .env = env
+  )
+  cap
+}
+
 describe("check_fs", {
   it("returns logical", {
     result <- check_fs()
@@ -19,12 +35,7 @@ describe("check_fs", {
       .package = "freesurfer"
     )
 
-    expect_messages(
-      {
-        result <- check_fs(abort = FALSE)
-      },
-      "Freesurfer"
-    )
+    expect_message(result <- check_fs(abort = FALSE), "Freesurfer")
     expect_false(result)
   })
 
@@ -202,9 +213,7 @@ describe("vol2vol_registration_opt", {
 
 describe("resolve_vol2surf_registration", {
   it("maps 'mni152' to FreeSurfer's transform and a source subject", {
-    reg_file <- withr::local_tempfile(fileext = ".dat")
-    file.create(reg_file)
-    local_mocked_bindings(mni152_register_path = function() reg_file)
+    reg_file <- local_mock_mni152_path()
 
     expect_identical(
       resolve_vol2surf_registration("mni152", "fsaverage5"),
@@ -553,7 +562,10 @@ describe("surf2asc", {
     )
 
     expect_error(
-      suppressWarnings(surf2asc(input, output, verbose = FALSE)),
+      expect_warning(
+        surf2asc(input, output, verbose = FALSE),
+        "cannot rename file"
+      ),
       "Failed to rename"
     )
   })

@@ -36,48 +36,49 @@ describe("use_atlas_github_actions", {
     tmp
   }
 
-  it("writes every workflow by default", {
+  it("writes every workflow by default, each calling the shared workflow", {
     tmp <- local_pkg()
 
-    expect_message(use_atlas_github_actions(path = tmp), "Added 5 workflows")
+    expect_snapshot(use_atlas_github_actions(path = tmp))
 
     written <- list.files(file.path(tmp, ".github", "workflows"))
     expect_setequal(written, paste0(atlas_github_actions(), ".yaml"))
+    for (workflow in atlas_github_actions()) {
+      yaml <- readLines(
+        file.path(tmp, ".github", "workflows", paste0(workflow, ".yaml"))
+      )
+      expect_true(
+        any(grepl("ggsegverse/.github/.github/workflows/", yaml, fixed = TRUE)),
+        info = workflow
+      )
+    }
   })
 
-  it("writes only the requested workflows", {
+  it("writes only the requested workflows and returns their paths", {
     tmp <- local_pkg()
 
-    suppressMessages(use_atlas_github_actions("pkgdown", path = tmp))
+    expect_snapshot(
+      written <- use_atlas_github_actions("pkgdown", path = tmp)
+    )
 
     expect_identical(
       list.files(file.path(tmp, ".github", "workflows")),
       "pkgdown.yaml"
     )
-  })
-
-  it("returns the paths it wrote", {
-    tmp <- local_pkg()
-
-    written <- suppressMessages(use_atlas_github_actions("pkgdown", path = tmp))
-
     expect_length(written, 1)
     expect_true(file.exists(written))
   })
 
   it("keeps existing workflows unless overwrite is TRUE", {
     tmp <- local_pkg()
-    suppressMessages(use_atlas_github_actions("pkgdown", path = tmp))
     target <- file.path(tmp, ".github", "workflows", "pkgdown.yaml")
+    dir.create(dirname(target), recursive = TRUE)
     writeLines("edited by hand", target)
 
-    expect_message(
-      use_atlas_github_actions("pkgdown", path = tmp),
-      "Kept 1 existing workflow"
-    )
+    expect_snapshot(use_atlas_github_actions("pkgdown", path = tmp))
     expect_identical(readLines(target), "edited by hand")
 
-    suppressMessages(
+    expect_snapshot(
       use_atlas_github_actions("pkgdown", path = tmp, overwrite = TRUE)
     )
     expect_false(identical(readLines(target), "edited by hand"))
@@ -101,24 +102,9 @@ describe("use_atlas_github_actions", {
     )
   })
 
-  it("writes workflows that call the shared ggsegverse workflow", {
-    tmp <- local_pkg()
-    suppressMessages(use_atlas_github_actions(path = tmp))
-
-    for (workflow in atlas_github_actions()) {
-      yaml <- readLines(
-        file.path(tmp, ".github", "workflows", paste0(workflow, ".yaml"))
-      )
-      expect_true(
-        any(grepl("ggsegverse/.github/.github/workflows/", yaml, fixed = TRUE)),
-        info = workflow
-      )
-    }
-  })
-
   it("renders the README source that atlas packages actually use", {
     tmp <- local_pkg()
-    suppressMessages(use_atlas_github_actions("render-readme", path = tmp))
+    expect_snapshot(use_atlas_github_actions("render-readme", path = tmp))
 
     yaml <- paste(
       readLines(file.path(tmp, ".github", "workflows", "render-readme.yaml")),

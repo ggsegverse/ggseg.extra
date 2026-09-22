@@ -176,15 +176,13 @@ describe("create_subcortical_from_volume", {
     vol_file <- test_mgz_file()
     skip_if(!file.exists(vol_file), "Test volume file not found")
 
-    expect_warnings(
-      {
-        atlas <- create_subcortical_from_volume(
-          input_volume = vol_file,
-          input_lut = NULL,
-          steps = 1:3,
-          verbose = FALSE
-        )
-      },
+    expect_warning(
+      atlas <- create_subcortical_from_volume(
+        input_volume = vol_file,
+        input_lut = NULL,
+        steps = 1:3,
+        verbose = FALSE
+      ),
       "No color lookup table"
     )
 
@@ -205,12 +203,12 @@ describe("create_subcortical_from_volume with meshes", {
   lut_file <- test_lut_file()
   skip_if(!file.exists(lut_file), "Test LUT file not found")
 
-  atlas <- suppressWarnings(create_subcortical_from_volume(
+  atlas <- create_subcortical_from_volume(
     input_volume = vol_file,
     input_lut = lut_file,
     steps = 1:3,
     verbose = FALSE
-  ))
+  )
 
   it("creates atlas with meshes component", {
     expect_s3_class(atlas, "ggseg_atlas")
@@ -378,22 +376,20 @@ describe("create_subcortical_from_volume pipeline flow", {
       ggseg_data_subcortical = function(...) list(...)
     )
 
-    vol_file <- withr::local_tempfile(fileext = ".mgz")
+    vol_file <- file.path(withr::local_tempdir(), "aseg.mgz")
     file.create(vol_file)
     lut_file <- withr::local_tempfile(fileext = ".txt")
     file.create(lut_file)
     withr::local_options(ggseg.extra.output_dir = withr::local_tempdir())
 
-    expect_messages(
-      {
-        atlas <- create_subcortical_from_volume(
-          input_volume = vol_file,
-          input_lut = lut_file,
-          steps = 1:3,
-          verbose = TRUE
-        )
-      },
-      "Creating subcortical atlas"
+    expect_snapshot(
+      atlas <- create_subcortical_from_volume(
+        input_volume = vol_file,
+        input_lut = lut_file,
+        steps = 1:3,
+        verbose = TRUE
+      ),
+      transform = scrub_volatile
     )
 
     expect_s3_class(atlas, "ggseg_atlas")
@@ -505,22 +501,20 @@ describe("create_subcortical_from_volume pipeline flow", {
       reduce_vertex = function(...) invisible(NULL)
     )
 
-    vol_file <- withr::local_tempfile(fileext = ".mgz")
+    vol_file <- file.path(withr::local_tempdir(), "aseg.mgz")
     file.create(vol_file)
     lut_file <- withr::local_tempfile(fileext = ".txt")
     file.create(lut_file)
     withr::local_options(ggseg.extra.output_dir = withr::local_tempdir())
 
-    expect_messages(
-      {
-        result <- create_subcortical_from_volume(
-          input_volume = vol_file,
-          input_lut = lut_file,
-          steps = 5:8,
-          verbose = TRUE
-        )
-      },
-      "Creating subcortical atlas"
+    expect_snapshot(
+      result <- create_subcortical_from_volume(
+        input_volume = vol_file,
+        input_lut = lut_file,
+        steps = 5:8,
+        verbose = TRUE
+      ),
+      transform = scrub_volatile
     )
 
     expect_null(result)
@@ -740,26 +734,21 @@ describe("create_subcortical_from_volume pipeline flow", {
       preview_atlas = function(...) invisible(NULL)
     )
 
-    vol_file <- withr::local_tempfile(fileext = ".mgz")
+    vol_file <- file.path(withr::local_tempdir(), "aseg.mgz")
     file.create(vol_file)
     lut_file <- withr::local_tempfile(fileext = ".txt")
     file.create(lut_file)
     withr::local_options(ggseg.extra.output_dir = withr::local_tempdir())
 
-    expect_warnings(
-      expect_messages(
-        {
-          atlas <- create_subcortical_from_volume(
-            input_volume = vol_file,
-            input_lut = lut_file,
-            steps = 9,
-            verbose = TRUE,
-            cleanup = TRUE
-          )
-        },
-        "Creating subcortical atlas"
+    expect_snapshot(
+      atlas <- create_subcortical_from_volume(
+        input_volume = vol_file,
+        input_lut = lut_file,
+        steps = 9,
+        verbose = TRUE,
+        cleanup = TRUE
       ),
-      "no 2D geometry"
+      transform = scrub_volatile
     )
 
     expect_s3_class(atlas, "ggseg_atlas")
@@ -805,22 +794,20 @@ describe("create_subcortical_from_volume pipeline flow", {
       extract_contours = function(...) invisible(NULL)
     )
 
-    vol_file <- withr::local_tempfile(fileext = ".mgz")
+    vol_file <- file.path(withr::local_tempdir(), "aseg.mgz")
     file.create(vol_file)
     lut_file <- withr::local_tempfile(fileext = ".txt")
     file.create(lut_file)
     withr::local_options(ggseg.extra.output_dir = withr::local_tempdir())
 
-    expect_messages(
-      {
-        result <- create_subcortical_from_volume(
-          input_volume = vol_file,
-          input_lut = lut_file,
-          steps = 5L,
-          verbose = TRUE
-        )
-      },
-      "Creating subcortical atlas"
+    expect_snapshot(
+      result <- create_subcortical_from_volume(
+        input_volume = vol_file,
+        input_lut = lut_file,
+        steps = 5L,
+        verbose = TRUE
+      ),
+      transform = scrub_volatile
     )
 
     expect_null(result)
@@ -908,8 +895,8 @@ describe("subcort_assemble_full sf_data as data.frame", {
       meshes_df = dplyr::tibble(label = "lh_region1", mesh = list(NULL))
     )
 
-    result <- expect_warnings(
-      subcort_assemble_full(
+    expect_warning(
+      result <- subcort_assemble_full(
         "test",
         components,
         list(base = test_dir),
@@ -976,8 +963,8 @@ describe("subcort_resolve_snapshots early-return NULL", {
     dirs <- list(base = withr::local_tempdir())
     colortable <- data.frame(stringsAsFactors = FALSE, idx = 10, label = "r")
 
-    result <- expect_messages(
-      subcort_resolve_snapshots(config, dirs, colortable, NULL),
+    expect_message(
+      result <- subcort_resolve_snapshots(config, dirs, colortable, NULL),
       "Loaded existing slabs"
     )
     expect_identical(result$slabs, cached_slabs)
@@ -1012,9 +999,9 @@ describe("subcort_resolve_snapshots early-return NULL", {
     dirs <- list(base = withr::local_tempdir())
     colortable <- data.frame(stringsAsFactors = FALSE, idx = 10, label = "r")
 
-    result <- expect_messages(
-      subcort_resolve_snapshots(config, dirs, colortable, NULL),
-      "Creating projection snapshots"
+    expect_snapshot(
+      result <- subcort_resolve_snapshots(config, dirs, colortable, NULL),
+      transform = scrub_volatile
     )
     expect_identical(result$slabs$name, "ax_1")
   })
@@ -1065,8 +1052,8 @@ describe("subcort_drop_missing_labels", {
   }
 
   it("drops labels absent from the contour geometry and warns", {
-    result <- expect_warnings(
-      subcort_drop_missing_labels(
+    expect_warning(
+      result <- subcort_drop_missing_labels(
         make_components(),
         data.frame(stringsAsFactors = FALSE, label = c("region_a", NA))
       ),
@@ -1088,9 +1075,9 @@ describe("subcort_drop_missing_labels", {
   })
 
   it("treats non-data.frame sf_data as having no labels and aborts", {
-    expect_error(
-      suppressWarnings(subcort_drop_missing_labels(make_components(), NULL)),
-      "No labels with valid contour data"
+    expect_snapshot(
+      subcort_drop_missing_labels(make_components(), NULL),
+      error = TRUE
     )
   })
 })
@@ -1153,7 +1140,7 @@ describe("subcortical pipeline snapshot pruning", {
         steps = 9,
         verbose = FALSE
       ),
-      "contours_reduced"
+      "contours_reduced.rda"
     )
 
     # The stale projection is what st_coordinates() chokes on at assembly: it

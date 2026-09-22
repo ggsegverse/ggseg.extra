@@ -671,7 +671,7 @@ describe("coregister_volume execution", {
 
 describe("coreg_reuse_lta", {
   it("reports and returns the path invisibly when verbose", {
-    expect_messages(
+    expect_message(
       out <- coreg_reuse_lta("cached.lta", verbose = TRUE),
       "Reusing existing registration"
     )
@@ -681,7 +681,7 @@ describe("coreg_reuse_lta", {
 
 describe("project_start_message", {
   it("announces the projection and returns NULL invisibly when verbose", {
-    expect_messages(
+    expect_message(
       out <- project_start_message(c(11L, 12L), "subjX", verbose = TRUE),
       "Projecting 2 labels"
     )
@@ -869,16 +869,15 @@ describe("project_volume_anatomical execution", {
       }
     )
 
-    result <- expect_messages(
-      project_volume_anatomical(
+    expect_snapshot(
+      result <- project_volume_anatomical(
         "atlas.nii.gz",
         registration = "header",
         subjects_dir = fake_dir,
         id_offset = 200L,
         verbose = TRUE
       ),
-      "Projecting",
-      "anatomical-context volume"
+      transform = scrub_volatile
     )
 
     expect_true(file.exists(result$volume))
@@ -918,7 +917,7 @@ describe("lta_block_dims", {
 describe("apply_cortex_protection verbose", {
   it("reports the protected voxel counts when verbose", {
     arr_aparc <- c(2L, 17L, 1011L, 41L, 50L, 253L)
-    expect_messages(
+    expect_message(
       apply_cortex_protection(
         rep(TRUE, 6),
         arr_aparc,

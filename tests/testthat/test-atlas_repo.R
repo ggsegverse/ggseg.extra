@@ -1,84 +1,54 @@
 .cap <- new.env()
 
-describe("setup_atlas_repo", {
-  # Mock download to always use fallback for consistent testing
-  use_fallback <- function() {
-    local_mocked_bindings(
-      download_atlas_template = function(url = NULL) {
-        system.file(
-          "templates",
-          "atlas-fallback",
-          package = "ggseg.extra"
-        )
+# Extract the atlas-creation calls from a generated data-raw/create-atlas.R.
+# The scaffold ships every pipeline commented out, so the comment prefix is
+# stripped and lines are accumulated until they parse as a complete call.
+scaffold_pipeline_calls <- function(path) {
+  lines <- readLines(path, warn = FALSE)
+  code <- sub("^#[[:blank:]]?", "", lines[startsWith(lines, "#")])
+  starts <- grep("create_[a-z_]+\\(", code)
+
+  calls <- lapply(starts, function(start) {
+    for (end in seq(start, length(code))) {
+      expr <- tryCatch(
+        parse(text = paste(code[start:end], collapse = "\n")),
+        error = function(e) NULL
+      )
+      if (!is.null(expr) && length(expr) == 1) {
+        expr <- expr[[1]]
+        if (identical(as.character(expr[[1]]), "<-")) {
+          expr <- expr[[3]]
+        }
+        return(expr)
       }
-    )
-  }
-
-  it("creates package with explicit atlas name", {
-    tmp <- withr::local_tempdir("atlas_test_")
-    use_fallback()
-
-    expect_messages(
-      {
-        result <- setup_atlas_repo(tmp, atlas_name = "dkt", open = FALSE)
-      },
-      "Created atlas package",
-      "Next steps"
-    )
-
-    expect_true(dir.exists(result))
-    expect_true(dir.exists(tmp))
-    expect_true(file.exists(file.path(tmp, "DESCRIPTION")))
+    }
+    NULL
   })
 
-  it("derives atlas name from ggsegXxx path format", {
-    parent <- withr::local_tempdir()
-    tmp <- file.path(parent, paste0("ggsegSchaefer", Sys.getpid()))
-    use_fallback()
+  Filter(Negate(is.null), calls)
+}
 
-    expect_messages(
+local_bundled_template <- function(env = parent.frame()) {
+  local_mocked_bindings(
+    download_atlas_template = function(url = NULL) {
+      system.file("templates", "atlas-fallback", package = "ggseg.extra")
+    },
+    .env = env
+  )
+}
+
+describe("setup_atlas_repo", {
+  it("derives the package name from a ggsegXxx path", {
+    tmp <- file.path(withr::local_tempdir(), "ggsegSchaefer")
+    local_bundled_template()
+
+    expect_snapshot(
       setup_atlas_repo(tmp, open = FALSE),
-      "Created atlas package",
-      "Next steps"
+      transform = scrub_volatile
     )
 
     desc <- readLines(file.path(tmp, "DESCRIPTION"))
-    pkg_line <- desc[grep("^Package:", desc)]
-
-    expect_match(pkg_line, "ggsegSchaefer")
-  })
-
-  it("derives atlas name from plain directory name", {
-    parent <- withr::local_tempdir()
-    tmp <- file.path(parent, paste0("myatlas", Sys.getpid()))
-    use_fallback()
-
-    expect_messages(
-      setup_atlas_repo(tmp, open = FALSE),
-      "Created atlas package",
-      "Next steps"
-    )
-
-    desc <- readLines(file.path(tmp, "DESCRIPTION"))
-    pkg_line <- desc[grep("^Package:", desc)]
-
-    expect_match(pkg_line, "ggsegMyatlas")
-  })
-
-  it("cleans atlas name (lowercase, alphanumeric only)", {
-    tmp <- withr::local_tempdir("atlas_test_")
-    use_fallback()
-
-    expect_messages(
-      setup_atlas_repo(tmp, atlas_name = "My-Atlas_123!", open = FALSE),
-      "Created atlas package",
-      "Next steps"
-    )
-
-    desc <- readLines(file.path(tmp, "DESCRIPTION"))
-    pkg_line <- desc[grep("^Package:", desc)]
-
-    expect_match(pkg_line, "ggsegMyatlas123")
+    expect_match(desc[grep("^Package:", desc)], "ggsegSchaefer")
   })
 
   it("errors on empty atlas name", {
@@ -104,53 +74,76 @@ describe("setup_atlas_repo", {
     )
   })
 
-  it("creates .Rproj file when rstudio = TRUE", {
-    tmp <- withr::local_tempdir("atlas_test_")
-    use_fallback()
-
-    expect_messages(
-      setup_atlas_repo(tmp, atlas_name = "test", open = FALSE, rstudio = TRUE),
-      "Created atlas package",
-      "Next steps"
-    )
-
-    rproj_files <- list.files(tmp, pattern = "\\.Rproj$")
-    expect_length(rproj_files, 1)
-    expect_identical(rproj_files, "ggsegTest.Rproj")
-  })
-
   it("skips .Rproj file when rstudio = FALSE", {
     tmp <- withr::local_tempdir("atlas_test_")
-    use_fallback()
+    local_bundled_template()
 
-    expect_messages(
+    expect_snapshot(
       setup_atlas_repo(tmp, atlas_name = "test", open = FALSE, rstudio = FALSE),
-      "Created atlas package",
-      "Next steps"
+      transform = scrub_volatile
     )
 
-    rproj_files <- list.files(tmp, pattern = "\\.Rproj$")
-    expect_length(rproj_files, 0)
+    expect_length(list.files(tmp, pattern = "\\.Rproj$"), 0)
+  })
+})
+
+
+describe("atlas_name_from_path", {
+  it("strips the ggseg prefix from a ggsegXxx directory", {
+    expect_identical(atlas_name_from_path("/x/ggsegSchaefer", NULL), "schaefer")
+  })
+
+  it("strips a lowercase ggseg prefix", {
+    expect_identical(atlas_name_from_path("/x/ggsegfoo", NULL), "foo")
+  })
+
+  it("uses a plain directory name as is", {
+    expect_identical(atlas_name_from_path("/x/myatlas", NULL), "myatlas")
+  })
+
+  it("cleans an explicit name to lowercase alphanumerics", {
+    expect_identical(
+      atlas_name_from_path("/x/ignored", "My-Atlas_123!"),
+      "myatlas123"
+    )
   })
 })
 
 
 describe("setup_atlas_repo template files", {
   tmp <- withr::local_tempdir("atlas_template_test_")
+  .cap$opened <- NULL
+  local_bundled_template()
   local_mocked_bindings(
-    download_atlas_template = function(url = NULL) {
-      system.file(
-        "templates",
-        "atlas-fallback",
-        package = "ggseg.extra"
-      )
+    open_rstudio_project = function(path) {
+      .cap$opened <- path
+      invisible(TRUE)
     }
   )
-  expect_messages(
-    setup_atlas_repo(tmp, atlas_name = "testatlas", open = FALSE),
-    "Created atlas package",
-    "Next steps"
+  expect_snapshot(
+    result <- setup_atlas_repo(tmp, atlas_name = "testatlas", open = TRUE),
+    transform = scrub_volatile
   )
+
+  it("returns the package path", {
+    expect_identical(result, normalizePath(tmp))
+  })
+
+  it("opens the RStudio project when open and rstudio are TRUE", {
+    expect_identical(.cap$opened, normalizePath(tmp))
+  })
+
+  it("creates an .Rproj file with package build settings", {
+    expect_identical(
+      list.files(tmp, pattern = "\\.Rproj$"),
+      "ggsegTestatlas.Rproj"
+    )
+
+    rproj <- readLines(file.path(tmp, "ggsegTestatlas.Rproj"))
+    expect_true(any(grepl("BuildType: Package", rproj, fixed = TRUE)))
+    expect_true(any(grepl("PackageUseDevtools: Yes", rproj, fixed = TRUE)))
+    expect_true(any(grepl("PackageRoxygenize:", rproj, fixed = TRUE)))
+  })
 
   it("creates all required directories", {
     expect_true(dir.exists(file.path(tmp, "R")))
@@ -422,40 +415,30 @@ describe("setup_atlas_repo github actions", {
     src
   }
 
-  it("does not copy the template's own .github infrastructure", {
+  describe("with the shared workflows", {
     src <- fake_template()
     tmp <- withr::local_tempdir()
     local_mocked_bindings(download_atlas_template = function(url = NULL) src)
-
-    suppressMessages(setup_atlas_repo(
-      tmp,
-      atlas_name = "gha",
-      open = FALSE,
-      rstudio = FALSE
-    ))
-
-    expect_false(dir.exists(file.path(tmp, ".github", "scripts")))
-    expect_false(
-      file.exists(file.path(tmp, ".github", "workflows", "template-check.yaml"))
+    expect_snapshot(
+      setup_atlas_repo(tmp, atlas_name = "gha", open = FALSE, rstudio = FALSE),
+      transform = scrub_volatile
     )
-  })
 
-  it("still writes the shared workflows from bundled templates", {
-    src <- fake_template()
-    tmp <- withr::local_tempdir()
-    local_mocked_bindings(download_atlas_template = function(url = NULL) src)
+    it("does not copy the template's own .github infrastructure", {
+      expect_false(dir.exists(file.path(tmp, ".github", "scripts")))
+      expect_false(
+        file.exists(
+          file.path(tmp, ".github", "workflows", "template-check.yaml")
+        )
+      )
+    })
 
-    suppressMessages(setup_atlas_repo(
-      tmp,
-      atlas_name = "gha",
-      open = FALSE,
-      rstudio = FALSE
-    ))
-
-    expect_setequal(
-      list.files(file.path(tmp, ".github", "workflows")),
-      paste0(atlas_github_actions(), ".yaml")
-    )
+    it("writes the shared workflows from bundled templates", {
+      expect_setequal(
+        list.files(file.path(tmp, ".github", "workflows")),
+        paste0(atlas_github_actions(), ".yaml")
+      )
+    })
   })
 
   it("skips workflows when github_actions is FALSE", {
@@ -463,13 +446,16 @@ describe("setup_atlas_repo github actions", {
     tmp <- withr::local_tempdir()
     local_mocked_bindings(download_atlas_template = function(url = NULL) src)
 
-    suppressMessages(setup_atlas_repo(
-      tmp,
-      atlas_name = "gha",
-      open = FALSE,
-      rstudio = FALSE,
-      github_actions = FALSE
-    ))
+    expect_snapshot(
+      setup_atlas_repo(
+        tmp,
+        atlas_name = "gha",
+        open = FALSE,
+        rstudio = FALSE,
+        github_actions = FALSE
+      ),
+      transform = scrub_volatile
+    )
 
     expect_false(dir.exists(file.path(tmp, ".github")))
   })
@@ -478,105 +464,15 @@ describe("setup_atlas_repo github actions", {
 
 describe("download_atlas_template", {
   it("falls back to bundled template on download failure", {
-    local_mocked_bindings(
-      template_url = function() "https://invalid.example.com/nonexistent.tar.gz"
-    )
+    local_mocked_bindings(try_download_template = function(url) NULL)
 
-    expect_messages(
-      {
-        result <- download_atlas_template()
-      },
-      "Download failed",
-      "fallback"
+    expect_message(
+      result <- download_atlas_template(),
+      "Download failed, using bundled fallback template"
     )
 
     expect_true(dir.exists(result))
     expect_true(file.exists(file.path(result, "DESCRIPTION")))
-  })
-})
-
-
-describe("setup_atlas_repo .Rproj file", {
-  it("contains correct package build settings", {
-    tmp <- withr::local_tempdir("atlas_rproj_test_")
-
-    local_mocked_bindings(
-      download_atlas_template = function(url = NULL) {
-        system.file(
-          "templates",
-          "atlas-fallback",
-          package = "ggseg.extra"
-        )
-      }
-    )
-
-    expect_messages(
-      setup_atlas_repo(tmp, atlas_name = "test", open = FALSE),
-      "Created atlas package",
-      "Next steps"
-    )
-
-    rproj <- readLines(file.path(tmp, "ggsegTest.Rproj"))
-
-    expect_true(any(grepl("BuildType: Package", rproj, fixed = TRUE)))
-    expect_true(any(grepl("PackageUseDevtools: Yes", rproj, fixed = TRUE)))
-    expect_true(any(grepl("PackageRoxygenize:", rproj, fixed = TRUE)))
-  })
-})
-
-
-describe("setup_atlas_repo lowercase ggseg prefix", {
-  it("derives atlas name from lowercase ggseg prefix path", {
-    parent <- withr::local_tempdir()
-    tmp <- file.path(parent, paste0("ggsegfoo", Sys.getpid()))
-
-    local_mocked_bindings(
-      download_atlas_template = function(url = NULL) {
-        system.file(
-          "templates",
-          "atlas-fallback",
-          package = "ggseg.extra"
-        )
-      }
-    )
-
-    expect_messages(
-      setup_atlas_repo(tmp, open = FALSE),
-      "Created atlas package",
-      "Next steps"
-    )
-
-    desc <- readLines(file.path(tmp, "DESCRIPTION"))
-    pkg_line <- desc[grep("^Package:", desc)]
-
-    expect_match(pkg_line, "ggsegFoo")
-  })
-
-  it("calls open_rstudio_project when open and rstudio are TRUE", {
-    tmp <- withr::local_tempdir("atlas_open_test_")
-    .cap$opened <- FALSE
-
-    local_mocked_bindings(
-      download_atlas_template = function(url = NULL) {
-        system.file(
-          "templates",
-          "atlas-fallback",
-          package = "ggseg.extra"
-        )
-      },
-      open_rstudio_project = function(path) {
-        .cap$opened <- TRUE
-        invisible(TRUE)
-      }
-    )
-
-    expect_messages(
-      setup_atlas_repo(tmp, atlas_name = "test", open = TRUE, rstudio = TRUE),
-      "Created atlas package",
-      "Next steps"
-    )
-
-    expect_true(.cap$opened)
   })
 })
 
@@ -689,9 +585,8 @@ describe("rename_package_doc", {
 
 describe("template_replace error handling", {
   it("returns NULL and warns for unreadable files", {
-    result <- expect_warnings(
-      template_replace("/nonexistent/path/file.txt", "test"),
-      "cannot open file|Failed to process template"
+    expect_snapshot(
+      result <- template_replace("/nonexistent/path/file.txt", "test")
     )
 
     expect_null(result)

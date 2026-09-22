@@ -231,7 +231,8 @@ subcort_run_pipeline <- function(
       labels$colortable,
       snaps$slabs,
       snaps$cortex_slices
-    )
+    ),
+    verbose = config$verbose
   )
   subcort_image_steps(config, dirs, vertex_size_limits)
 

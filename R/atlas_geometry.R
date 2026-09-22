@@ -559,7 +559,7 @@ map_region_contours <- function(regions, vertex_size_limits, step) {
       result
     },
     .options = furrr::furrr_options(
-      packages = c("terra", "ggseg.extra"),
+      packages = "ggseg.extra",
       globals = c("vertex_size_limits", "p")
     )
   )

@@ -349,13 +349,14 @@ describe("create_tract_from_tractography pipeline flow", {
     aseg_file <- withr::local_tempfile(fileext = ".mgz")
     file.create(aseg_file)
 
-    result <- expect_messages(
-      create_tract_from_tractography(
+    expect_snapshot(
+      result <- create_tract_from_tractography(
         input_tracts = tract_file,
         input_aseg = aseg_file,
         steps = 3:6,
         verbose = TRUE
-      )
+      ),
+      transform = scrub_volatile
     )
 
     expect_null(result)
@@ -412,13 +413,14 @@ describe("create_tract_from_tractography pipeline flow", {
 
     withr::local_options(ggseg.extra.output_dir = withr::local_tempdir())
 
-    atlas <- expect_messages(
-      create_tract_from_tractography(
+    expect_snapshot(
+      atlas <- create_tract_from_tractography(
         input_tracts = tract_file,
         steps = 1,
         verbose = TRUE,
         cleanup = TRUE
-      )
+      ),
+      transform = scrub_volatile
     )
 
     expect_s3_class(atlas, "ggseg_atlas")
@@ -492,17 +494,15 @@ describe("create_tract_from_tractography pipeline flow", {
     aseg_file <- withr::local_tempfile(fileext = ".mgz")
     file.create(aseg_file)
 
-    atlas <- expect_warnings(
-      expect_messages(
-        create_tract_from_tractography(
-          input_tracts = tract_file,
-          input_aseg = aseg_file,
-          steps = 7,
-          verbose = TRUE,
-          cleanup = TRUE
-        )
+    expect_snapshot(
+      atlas <- create_tract_from_tractography(
+        input_tracts = tract_file,
+        input_aseg = aseg_file,
+        steps = 7,
+        verbose = TRUE,
+        cleanup = TRUE
       ),
-      "no 2D geometry"
+      transform = scrub_volatile
     )
 
     expect_s3_class(atlas, "ggseg_atlas")
@@ -652,12 +652,16 @@ describe("create_tract_from_tractography tube_opts", {
   })
 
   it("lands the retired flat arguments where tube_opts now holds them", {
-    old <- suppressWarnings(capture_tube(list(
-      tube_radius = 3,
-      tube_segments = 16,
-      n_points = 25,
-      centerline_method = "medoid"
-    )))
+    withr::local_options(lifecycle_verbosity = "warning")
+
+    expect_snapshot(
+      old <- capture_tube(list(
+        tube_radius = 3,
+        tube_segments = 16,
+        n_points = 25,
+        centerline_method = "medoid"
+      ))
+    )
     new <- capture_tube(list(
       tube_opts = list(
         tube_radius = 3,
@@ -689,10 +693,10 @@ describe("create_tract_from_tractography tube_opts", {
 
   it("refuses a retired argument alongside its tube_opts entry", {
     expect_error(
-      suppressWarnings(capture_tube(list(
+      capture_tube(list(
         tube_radius = 3,
         tube_opts = list(tube_radius = 9)
-      ))),
+      )),
       "Cannot use both"
     )
   })

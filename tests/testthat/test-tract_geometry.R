@@ -1,5 +1,3 @@
-.cap <- new.env()
-
 # A valid tract atlas carrying the given centerline labels. The volumetric
 # geometry code only reads `centerlines$label` (coordinates come from the
 # separate `streamlines` argument), but ggseg.formats requires real point and
