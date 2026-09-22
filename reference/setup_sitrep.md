@@ -34,7 +34,7 @@ Invisibly returns a list with check results.
 setup_sitrep()
 #> ✖ FreeSurfer not configured
 #> ✖ fsaverage5 not found
-#> ✔ R packages: {.pkg freesurferformats}, {.pkg gifti}, {.pkg ciftiTools}, {.pkg RNifti}, {.pkg Rvcg}, {.pkg neuromapr}
+#> ✔ R packages: freesurferformats, gifti, ciftiTools, RNifti, Rvcg, and neuromapr
 #> ✔ SUIT surfaces (bundled)
 #> 
 #> 
@@ -96,7 +96,7 @@ setup_sitrep("full")
 #> • Use `options(freesurfer.home = '/path/to/freesurfer')` to set location
 #> ✖ fsaverage5 not found
 #> ℹ Ships with FreeSurfer in $SUBJECTS_DIR
-#> ✔ R packages: {.pkg freesurferformats}, {.pkg gifti}, {.pkg ciftiTools}, {.pkg RNifti}, {.pkg Rvcg}, {.pkg neuromapr}
+#> ✔ R packages: freesurferformats, gifti, ciftiTools, RNifti, Rvcg, and neuromapr
 #> ✔ SUIT surfaces (bundled)
 #> 
 #> 
@@ -106,7 +106,7 @@ setup_sitrep("full")
 #>   skip_existing: TRUE
 #>   tolerance: 0.05
 #>   smoothness: 5
-#>   output_dir: /tmp/RtmpgOiPzo
+#>   output_dir: /tmp/RtmpbE3wtg
 #> 
 #> ℹ Set via `options(ggseg.extra.<name> = value)` or environment variables
 #>   `GGSEG_EXTRA_<NAME>`

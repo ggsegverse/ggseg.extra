@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9054</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9055</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -63,6 +63,15 @@
       <small>Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.9.9.9055" id="ggsegextra-1999055">ggseg.extra 1.9.9.9055<a class="anchor" aria-label="anchor" href="#ggsegextra-1999055"></a></h2>
+<ul><li><p>Extracting contours no longer attaches terra to your search path, where it masked functions such as <code>describe()</code> and <code>extract()</code>.</p></li>
+<li><p><code><a href="../reference/setup_sitrep.html">setup_sitrep()</a></code> lists optional packages by name; it printed raw <code>{.pkg ...}</code> markup instead.</p></li>
+<li><p>Building a subcortical atlas with <code>verbose = FALSE</code> no longer reports the stale slab images it removes.</p></li>
+<li><p>A relative <code>output_dir</code> for a subcortical, tract or whole-brain atlas is now made absolute on every platform. Before, it stayed relative unless the directory already existed, except on Windows.</p></li>
+<li><p>Pipelines report their total run time the way cli reports each step (<code>Pipeline completed [1m 15s]</code>), instead of in minutes rounded to one decimal, which showed anything under three seconds as “0 minutes”.</p></li>
+<li><p>Internal: the test suite no longer hides messages or warnings. Calls that report several things are checked against snapshots, and the shared test helpers are split by topic.</p></li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9054" id="ggsegextra-1999054">ggseg.extra 1.9.9.9054<a class="anchor" aria-label="anchor" href="#ggsegextra-1999054"></a></h2>
 <ul><li>
