@@ -6,9 +6,9 @@
     Message
       
       -- Creating subcortical atlas "aseg" -------------------------------------------
-      i Volume: '<tempfile>'
-      i Color LUT: '<tempfile>'
-      i Setting output directory to '<tempfile>'
+      i Volume: 'aseg.mgz'
+      i Color LUT: 'lut.txt'
+      i Setting output directory to 'out'
       i 1/9 Extracting labels from volume
       v Found 2 subcortical structures
       i 1/9 Extracting labels from volume
@@ -22,7 +22,7 @@
       
       v Temporary files removed
       v 3D atlas created with 2 structures
-      i Pipeline completed in <n> minutes
+      i Pipeline completed [<time>]
 
 # create_subcortical_from_volume pipeline flow / loads cached data for skipped steps and proceeds
 
@@ -32,16 +32,16 @@
     Message
       
       -- Creating subcortical atlas "aseg" -------------------------------------------
-      i Volume: '<tempfile>'
-      i Color LUT: '<tempfile>'
-      i Setting output directory to '<tempfile>'
+      i Volume: 'aseg.mgz'
+      i Color LUT: 'lut.txt'
+      i Setting output directory to 'out'
       v 1/9 Loaded existing labels
       v 2/9 Loaded existing meshes
       v 3/9 Loaded existing components
       v 4/9 Loaded existing slabs
       v Temporary files removed
       v Completed steps 5, 6, 7, and 8
-      i Pipeline completed in <n> minutes
+      i Pipeline completed [<time>]
 
 # create_subcortical_from_volume pipeline flow / step 9 builds final atlas with cleanup
 
@@ -51,9 +51,9 @@
     Message
       
       -- Creating subcortical atlas "aseg" -------------------------------------------
-      i Volume: '<tempfile>'
-      i Color LUT: '<tempfile>'
-      i Setting output directory to '<tempfile>'
+      i Volume: 'aseg.mgz'
+      i Color LUT: 'lut.txt'
+      i Setting output directory to 'out'
       v 1/9 Loaded existing labels
       v 2/9 Loaded existing meshes
       v 3/9 Loaded existing components
@@ -64,7 +64,7 @@
     Message
       v Temporary files removed
       v Subcortical atlas created with 1 structures
-      i Pipeline completed in <n> minutes
+      i Pipeline completed [<time>]
 
 # create_subcortical_from_volume pipeline flow / returns invisible NULL for partial steps
 
@@ -74,16 +74,16 @@
     Message
       
       -- Creating subcortical atlas "aseg" -------------------------------------------
-      i Volume: '<tempfile>'
-      i Color LUT: '<tempfile>'
-      i Setting output directory to '<tempfile>'
+      i Volume: 'aseg.mgz'
+      i Color LUT: 'lut.txt'
+      i Setting output directory to 'out'
       v 1/9 Loaded existing labels
       v 2/9 Loaded existing meshes
       v 3/9 Loaded existing components
       v 4/9 Loaded existing slabs
       v Temporary files removed
       v Completed steps 5
-      i Pipeline completed in <n> minutes
+      i Pipeline completed [<time>]
 
 # subcort_resolve_snapshots early-return NULL / runs snapshots and logs progress when the step executes with verbose
 

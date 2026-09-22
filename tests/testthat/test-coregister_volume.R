@@ -826,8 +826,8 @@ describe("project_merged_labels", {
 describe("project_volume_anatomical execution", {
   it("projects labels end-to-end with FreeSurfer steps mocked", {
     skip_if_not_installed("RNifti")
-    fake_dir <- withr::local_tempdir()
-    subj_dir <- fs::path(fake_dir, "cvs_avg35_inMNI152", "mri")
+    local_test_workdir()
+    subj_dir <- fs::path("subjects", "cvs_avg35_inMNI152", "mri")
     fs::dir_create(subj_dir)
     file.create(fs::path(subj_dir, "aparc+aseg.mgz"))
 
@@ -873,11 +873,11 @@ describe("project_volume_anatomical execution", {
       result <- project_volume_anatomical(
         "atlas.nii.gz",
         registration = "header",
-        subjects_dir = fake_dir,
+        subjects_dir = "subjects",
+        output_file = "merged.nii.gz",
         id_offset = 200L,
         verbose = TRUE
-      ),
-      transform = scrub_volatile
+      )
     )
 
     expect_true(file.exists(result$volume))

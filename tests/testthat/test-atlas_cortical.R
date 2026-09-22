@@ -483,8 +483,7 @@ describe("cortical_project_and_build verbose and cleanup paths", {
         ),
         dirs = mock_dirs(),
         start_time = Sys.time()
-      )),
-      transform = scrub_volatile
+      ))
     )
   })
 
@@ -515,8 +514,7 @@ describe("cortical_project_and_build verbose and cleanup paths", {
           masks = tempdir()
         ),
         start_time = Sys.time()
-      )),
-      transform = scrub_volatile
+      ))
     )
 
     expect_false(dir.exists(actual_base))
@@ -563,8 +561,7 @@ describe("create_cortical_from_annotation verbose output", {
       invisible(create_cortical_from_annotation(
         input_annot = "lh.test.annot",
         verbose = TRUE
-      )),
-      transform = scrub_volatile
+      ))
     )
   })
 })
@@ -651,8 +648,7 @@ describe("cortical_read_data verbose paths", {
         read_fn = read_fn,
         step_label = "Reading annotation files",
         cache_label = "Read annotations"
-      )),
-      transform = scrub_volatile
+      ))
     )
   })
 
@@ -734,8 +730,7 @@ describe("create_cortical_from_labels verbose and LUT paths", {
         labels,
         atlas_name = "test_atlas",
         verbose = TRUE
-      )),
-      transform = scrub_volatile
+      ))
     )
   })
 
@@ -913,17 +908,16 @@ describe("create_cortical_from_gifti verbose", {
       }
     )
 
-    tmp <- withr::local_tempfile(pattern = "lh.test", fileext = ".label.gii")
+    local_test_workdir()
+    tmp <- "lh.test.label.gii"
     writeLines("mock", tmp)
-    withr::local_options(ggseg.extra.output_dir = withr::local_tempdir())
 
     expect_snapshot(
       invisible(create_cortical_from_gifti(
         gifti_files = tmp,
         atlas_name = "test_gifti",
         verbose = TRUE
-      )),
-      transform = scrub_volatile
+      ))
     )
   })
 })
@@ -965,17 +959,16 @@ describe("create_cortical_from_cifti verbose", {
       }
     )
 
-    tmp <- withr::local_tempfile(fileext = ".dlabel.nii")
+    local_test_workdir()
+    tmp <- "test.dlabel.nii"
     writeLines("mock", tmp)
-    withr::local_options(ggseg.extra.output_dir = withr::local_tempdir())
 
     expect_snapshot(
       invisible(create_cortical_from_cifti(
         cifti_file = tmp,
         atlas_name = "test_cifti",
         verbose = TRUE
-      )),
-      transform = scrub_volatile
+      ))
     )
   })
 })
@@ -993,14 +986,9 @@ describe("create_cortical_from_neuromaps verbose", {
     n <- 10242L
     mock_gii <- list(data = list(c(rep(1, 5000), rep(2, 5242))))
 
-    lh <- withr::local_tempfile(
-      pattern = "source-test_hemi-L_feature",
-      fileext = ".func.gii"
-    )
-    rh <- withr::local_tempfile(
-      pattern = "source-test_hemi-R_feature",
-      fileext = ".func.gii"
-    )
+    local_test_workdir()
+    lh <- "source-test_hemi-L_feature.func.gii"
+    rh <- "source-test_hemi-R_feature.func.gii"
     writeLines("mock", lh)
     writeLines("mock", rh)
 
@@ -1019,16 +1007,13 @@ describe("create_cortical_from_neuromaps verbose", {
       }
     )
 
-    withr::local_options(ggseg.extra.output_dir = withr::local_tempdir())
-
     expect_snapshot(
       invisible(create_cortical_from_neuromaps(
         source = "test",
         desc = "testdesc",
         atlas_name = "test_neuromaps",
         verbose = TRUE
-      )),
-      transform = scrub_volatile
+      ))
     )
   })
 
@@ -1069,8 +1054,7 @@ describe("create_cortical_from_neuromaps verbose", {
         desc = "vol",
         atlas_name = "test_vol",
         verbose = TRUE
-      )),
-      transform = scrub_volatile
+      ))
     )
   })
 })

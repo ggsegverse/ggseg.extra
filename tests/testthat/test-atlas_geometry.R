@@ -437,8 +437,7 @@ describe("extract_contours", {
     )
 
     expect_snapshot(
-      invisible(extract_contours(input_dir, output_dir, verbose = TRUE)),
-      transform = scrub_volatile
+      invisible(extract_contours(input_dir, output_dir, verbose = TRUE))
     )
   })
 })

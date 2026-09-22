@@ -81,3 +81,15 @@ local_cache_file <- function(
   }
   file
 }
+
+# Runs the calling test from a fresh temp directory, with pipeline output
+# going to a relative "out" directory. Inputs created there by relative name
+# are reported by that name, so pipeline messages read the same on every run
+# and machine. Resolve test_path() fixtures before calling this: they are
+# relative to tests/testthat.
+local_test_workdir <- function(env = parent.frame()) {
+  dir <- withr::local_tempdir(.local_envir = env)
+  withr::local_dir(dir, .local_envir = env)
+  withr::local_options(ggseg.extra.output_dir = "out", .local_envir = env)
+  invisible(dir)
+}

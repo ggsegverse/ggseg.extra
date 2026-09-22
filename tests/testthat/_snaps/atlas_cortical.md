@@ -105,7 +105,7 @@
     Message
       
       -- Creating brain atlas "test_gifti" from GIFTI --------------------------------
-      i Input files: '<tempfile>'
+      i Input files: 'lh.test.label.gii'
       i Reading GIFTI annotation files
       v Reading GIFTI annotation files [<time>]
       
@@ -118,7 +118,7 @@
     Message
       
       -- Creating brain atlas "test_cifti" from CIFTI --------------------------------
-      i Input files: '<tempfile>'
+      i Input files: 'test.dlabel.nii'
       i Reading CIFTI file
       v Reading CIFTI file [<time>]
       
@@ -132,7 +132,7 @@
       i Fetching neuromaps: source="test", desc="testdesc"
       
       -- Creating brain atlas "test_neuromaps" from neuromaps ------------------------
-      i Input files: '<tempfile>' and '<tempfile>'
+      i Input files: 'source-test_hemi-L_feature.func.gii' and 'source-test_hemi-R_feature.func.gii'
       i Reading neuromaps annotation
       v Reading neuromaps annotation [<time>]
       

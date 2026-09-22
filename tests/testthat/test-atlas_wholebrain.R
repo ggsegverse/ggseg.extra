@@ -886,8 +886,8 @@ describe("wholebrain_classify_labels verbose output", {
 
 describe("create_wholebrain_from_volume verbose and cleanup", {
   it("logs verbose output, cleans up temp files, and removes directory", {
-    test_dir <- withr::local_tempdir()
-    sub_dir <- file.path(test_dir, "wb_atlas")
+    local_test_workdir()
+    sub_dir <- "wb_atlas"
     dir.create(sub_dir)
 
     local_mocked_bindings(
@@ -943,7 +943,7 @@ describe("create_wholebrain_from_volume verbose and cleanup", {
       log_elapsed = function(...) NULL
     )
 
-    vol_file <- file.path(test_dir, "wb.nii.gz")
+    vol_file <- "wb.nii.gz"
     file.create(vol_file)
 
     expect_snapshot(
@@ -952,16 +952,15 @@ describe("create_wholebrain_from_volume verbose and cleanup", {
         steps = 1:4,
         verbose = TRUE,
         cleanup = TRUE
-      )),
-      transform = scrub_volatile
+      ))
     )
 
     expect_false(dir.exists(sub_dir))
   })
 
   it("logs elapsed time for early return at step 2", {
-    test_dir <- withr::local_tempdir()
-    sub_dir <- file.path(test_dir, "wb_early")
+    local_test_workdir()
+    sub_dir <- "wb_early"
     dir.create(sub_dir)
 
     .cap$elapsed_called <- FALSE
@@ -1008,7 +1007,7 @@ describe("create_wholebrain_from_volume verbose and cleanup", {
       }
     )
 
-    vol_file <- file.path(test_dir, "wb.nii.gz")
+    vol_file <- "wb.nii.gz"
     file.create(vol_file)
 
     expect_snapshot(
@@ -1017,8 +1016,7 @@ describe("create_wholebrain_from_volume verbose and cleanup", {
         steps = 1:2,
         verbose = TRUE,
         cleanup = FALSE
-      )),
-      transform = scrub_volatile
+      ))
     )
 
     expect_true(.cap$elapsed_called)
@@ -1507,8 +1505,8 @@ describe("fill_surface_labels with cortex mask", {
 
 describe("create_wholebrain_from_volume oversight warning", {
   it("warns about manual validation when verbose", {
-    test_dir <- withr::local_tempdir()
-    sub_dir <- file.path(test_dir, "wb_warn")
+    local_test_workdir()
+    sub_dir <- "wb_warn"
     dir.create(sub_dir)
 
     local_mocked_bindings(
@@ -1551,7 +1549,7 @@ describe("create_wholebrain_from_volume oversight warning", {
       log_elapsed = function(...) NULL
     )
 
-    vol_file <- file.path(test_dir, "wb.nii.gz")
+    vol_file <- "wb.nii.gz"
     file.create(vol_file)
 
     expect_snapshot(
@@ -1559,8 +1557,7 @@ describe("create_wholebrain_from_volume oversight warning", {
         input_volume = vol_file,
         steps = 1:2,
         verbose = TRUE
-      )),
-      transform = scrub_volatile
+      ))
     )
   })
 })
@@ -1568,13 +1565,13 @@ describe("create_wholebrain_from_volume oversight warning", {
 
 describe("create_wholebrain_from_volume verbose LUT path", {
   it("prints LUT path when verbose and input_lut is not NULL", {
-    test_dir <- withr::local_tempdir()
-    sub_dir <- file.path(test_dir, "wb_lut_verbose")
+    local_test_workdir()
+    sub_dir <- "wb_lut_verbose"
     dir.create(sub_dir)
 
-    vol_file <- file.path(test_dir, "wb.nii.gz")
+    vol_file <- "wb.nii.gz"
     file.create(vol_file)
-    lut_file <- file.path(test_dir, "lut.txt")
+    lut_file <- "lut.txt"
     file.create(lut_file)
 
     local_mocked_bindings(
@@ -1624,8 +1621,7 @@ describe("create_wholebrain_from_volume verbose LUT path", {
         input_lut = lut_file,
         steps = 1:2,
         verbose = TRUE
-      )),
-      transform = scrub_volatile
+      ))
     )
   })
 })
@@ -2682,8 +2678,7 @@ describe("wholebrain_log_summary", {
         subcortical_atlas = subcortical,
         cerebellar_atlas = cerebellar,
         start_time = Sys.time()
-      ),
-      transform = scrub_volatile
+      )
     )
     expect_null(result)
   })
@@ -2739,8 +2734,7 @@ describe("wholebrain_refine_cortical_projection verbose", {
         dirs,
         projection,
         split
-      ),
-      transform = scrub_volatile
+      )
     )
     expect_true(all(result$atlas_data$source_label == "cortex"))
   })

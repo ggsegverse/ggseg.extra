@@ -597,9 +597,23 @@ describe("preview_atlas", {
 
 
 describe("log_elapsed", {
-  it("logs elapsed time as cli message", {
-    start <- Sys.time() - 60
-    expect_message(log_elapsed(start), "Pipeline completed in")
+  it("reports the elapsed time in cli's duration format", {
+    expect_message(log_elapsed(Sys.time() - 75), "Pipeline completed")
+  })
+})
+
+
+describe("format_duration", {
+  it("matches cli's progress step timings", {
+    expect_identical(format_duration(0.04), "40ms")
+    expect_identical(format_duration(2.5), "2.5s")
+    expect_identical(format_duration(75), "1m 15s")
+    expect_identical(format_duration(3725), "1h 2m 5s")
+  })
+
+  it("leaves out units that are zero", {
+    expect_identical(format_duration(90000), "1d 1h")
+    expect_identical(format_duration(120), "2m")
   })
 })
 

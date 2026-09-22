@@ -6,13 +6,13 @@
     Message
       
       -- Creating tractography atlas -------------------------------------------------
-      i Tract files: '<tempfile>'
-      i Anatomical reference: '<tempfile>'
+      i Tract files: 'tract.trk'
+      i Anatomical reference: 'aseg.mgz'
       v 1/7 Loaded existing tract data
       v 2/7 Loaded existing snapshots
       v Temporary files removed
       v Completed steps 3, 4, 5, and 6
-      i Pipeline completed in <n> minutes
+      i Pipeline completed [<time>]
 
 # create_tract_from_tractography pipeline flow / step 1 returns 3D-only atlas with verbose and cleanup
 
@@ -22,14 +22,14 @@
     Message
       
       -- Creating tractography atlas -------------------------------------------------
-      i Tract files: '<tempfile>'
+      i Tract files: 'tract.trk'
       i Auto-detected coordinate space: "voxel"
       i 1/7 Creating tube meshes for 1 tracts
       v 1/7 Creating tube meshes for 1 tracts [<time>]
       
       v Temporary files removed
       v 3D atlas created with 1 tracts
-      i Pipeline completed in <n> minutes
+      i Pipeline completed [<time>]
 
 # create_tract_from_tractography pipeline flow / step 7 builds final atlas with cleanup
 
@@ -39,8 +39,8 @@
     Message
       
       -- Creating tractography atlas -------------------------------------------------
-      i Tract files: '<tempfile>'
-      i Anatomical reference: '<tempfile>'
+      i Tract files: 'tract.trk'
+      i Anatomical reference: 'aseg.mgz'
       v 1/7 Loaded existing tract data
       v 2/7 Loaded existing snapshots
     Condition
@@ -49,7 +49,7 @@
     Message
       v Temporary files removed
       v Tract atlas created with 1 tracts
-      i Pipeline completed in <n> minutes
+      i Pipeline completed [<time>]
 
 # create_tract_from_tractography tube_opts / lands the retired flat arguments where tube_opts now holds them
 

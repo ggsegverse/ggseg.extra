@@ -90,8 +90,8 @@
       cortical/subcortical classification. Both steps are heuristic and require
       manual validation. Run with `steps = 1:2` first to inspect the label split
       before committing to the full pipeline.
-      i Volume: '<tempfile>'
-      i Setting output directory to '<tempfile>'
+      i Volume: 'wb.nii.gz'
+      i Setting output directory to 'out'
       
       -- Surface projection --
       
@@ -133,8 +133,8 @@
       cortical/subcortical classification. Both steps are heuristic and require
       manual validation. Run with `steps = 1:2` first to inspect the label split
       before committing to the full pipeline.
-      i Volume: '<tempfile>'
-      i Setting output directory to '<tempfile>'
+      i Volume: 'wb.nii.gz'
+      i Setting output directory to 'out'
       
       -- Surface projection --
       
@@ -215,8 +215,8 @@
       cortical/subcortical classification. Both steps are heuristic and require
       manual validation. Run with `steps = 1:2` first to inspect the label split
       before committing to the full pipeline.
-      i Volume: '<tempfile>'
-      i Setting output directory to '<tempfile>'
+      i Volume: 'wb.nii.gz'
+      i Setting output directory to 'out'
       
       -- Surface projection --
       
@@ -260,9 +260,9 @@
       cortical/subcortical classification. Both steps are heuristic and require
       manual validation. Run with `steps = 1:2` first to inspect the label split
       before committing to the full pipeline.
-      i Volume: '<tempfile>'
-      i Color LUT: '<tempfile>'
-      i Setting output directory to '<tempfile>'
+      i Volume: 'wb.nii.gz'
+      i Color LUT: 'lut.txt'
+      i Setting output directory to 'out'
       
       -- Surface projection --
       
@@ -352,7 +352,7 @@
       result <- wholebrain_log_summary(cortical_atlas = NULL, subcortical_atlas = subcortical, cerebellar_atlas = cerebellar, start_time = Sys.time())
     Message
       v Whole-brain atlas created: 0 cortical, 2 subcortical, 1 cerebellar
-      i Pipeline completed in <n> minutes
+      i Pipeline completed [<time>]
 
 # wholebrain_refine_cortical_projection verbose / logs progress steps when verbose is enabled
 
@@ -360,7 +360,7 @@
       result <- wholebrain_refine_cortical_projection(config, dirs, projection, split)
     Message
       i Refining cortical projection (keeping 1 cortical labels on the surface)
-      v Refining cortical projection (keeping 1 cortical labels on the surface) [<time>]
+      v Refining cortical projection (keeping 1 cortical labels on the surface) [<t...
       
 
 # create_wholebrain_from_volume argument groups / lands the retired flat arguments where the lists now hold them

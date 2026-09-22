@@ -17,7 +17,7 @@
       v Created 'ggsegSchaefer.Rproj'
       --------------------------------------------------------------------------------
       v Created atlas package ggsegSchaefer
-      i Location: '<tempfile>'
+      i Location: '<repo>'
       
       -- Next steps 
       Edit 'data-raw/create-atlas.R' to create your atlas
@@ -44,7 +44,7 @@
       * update-codemeta.yaml
       --------------------------------------------------------------------------------
       v Created atlas package ggsegTest
-      i Location: '<tempfile>'
+      i Location: '<repo>'
       
       -- Next steps 
       Edit 'data-raw/create-atlas.R' to create your atlas
@@ -72,7 +72,7 @@
       v Created 'ggsegTestatlas.Rproj'
       --------------------------------------------------------------------------------
       v Created atlas package ggsegTestatlas
-      i Location: '<tempfile>'
+      i Location: '<repo>'
       
       -- Next steps 
       Edit 'data-raw/create-atlas.R' to create your atlas
@@ -99,7 +99,7 @@
       * update-codemeta.yaml
       --------------------------------------------------------------------------------
       v Created atlas package ggsegGha
-      i Location: '<tempfile>'
+      i Location: '<repo>'
       
       -- Next steps 
       Edit 'data-raw/create-atlas.R' to create your atlas
@@ -121,7 +121,7 @@
       v Replaced template placeholders
       --------------------------------------------------------------------------------
       v Created atlas package ggsegGha
-      i Location: '<tempfile>'
+      i Location: '<repo>'
       
       -- Next steps 
       Edit 'data-raw/create-atlas.R' to create your atlas

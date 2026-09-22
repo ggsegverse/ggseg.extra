@@ -35,7 +35,7 @@
     Code
       setup_sitrep("full")
     Message
-      v fsaverage5: '<tempfile>'
+      v fsaverage5: 'subjects/fsaverage5'
       v R packages: freesurferformats, gifti, ciftiTools, RNifti, Rvcg, and neuromapr
       v SUIT surfaces (bundled)
       

@@ -28,6 +28,12 @@ scaffold_pipeline_calls <- function(path) {
   Filter(Negate(is.null), calls)
 }
 
+# setup_atlas_repo() prints its path after normalizePath(), which resolves
+# the macOS /var -> /private/var symlink, so match the normalized form.
+scrub_repo_path <- function(path) {
+  function(x) gsub(normalizePath(path), "<repo>", x, fixed = TRUE)
+}
+
 local_bundled_template <- function(env = parent.frame()) {
   local_mocked_bindings(
     download_atlas_template = function(url = NULL) {
@@ -39,12 +45,12 @@ local_bundled_template <- function(env = parent.frame()) {
 
 describe("setup_atlas_repo", {
   it("derives the package name from a ggsegXxx path", {
-    tmp <- file.path(withr::local_tempdir(), "ggsegSchaefer")
+    tmp <- file.path(normalizePath(withr::local_tempdir()), "ggsegSchaefer")
     local_bundled_template()
 
     expect_snapshot(
       setup_atlas_repo(tmp, open = FALSE),
-      transform = scrub_volatile
+      transform = scrub_repo_path(tmp)
     )
 
     desc <- readLines(file.path(tmp, "DESCRIPTION"))
@@ -80,7 +86,7 @@ describe("setup_atlas_repo", {
 
     expect_snapshot(
       setup_atlas_repo(tmp, atlas_name = "test", open = FALSE, rstudio = FALSE),
-      transform = scrub_volatile
+      transform = scrub_repo_path(tmp)
     )
 
     expect_length(list.files(tmp, pattern = "\\.Rproj$"), 0)
@@ -122,7 +128,7 @@ describe("setup_atlas_repo template files", {
   )
   expect_snapshot(
     result <- setup_atlas_repo(tmp, atlas_name = "testatlas", open = TRUE),
-    transform = scrub_volatile
+    transform = scrub_repo_path(tmp)
   )
 
   it("returns the package path", {
@@ -421,7 +427,7 @@ describe("setup_atlas_repo github actions", {
     local_mocked_bindings(download_atlas_template = function(url = NULL) src)
     expect_snapshot(
       setup_atlas_repo(tmp, atlas_name = "gha", open = FALSE, rstudio = FALSE),
-      transform = scrub_volatile
+      transform = scrub_repo_path(tmp)
     )
 
     it("does not copy the template's own .github infrastructure", {
@@ -454,7 +460,7 @@ describe("setup_atlas_repo github actions", {
         rstudio = FALSE,
         github_actions = FALSE
       ),
-      transform = scrub_volatile
+      transform = scrub_repo_path(tmp)
     )
 
     expect_false(dir.exists(file.path(tmp, ".github")))

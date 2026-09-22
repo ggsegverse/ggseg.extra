@@ -3,8 +3,9 @@
 # setup_sitrep() reports on whatever is installed on the machine. Pin every
 # environment-dependent input so its output is the same everywhere.
 local_ready_environment <- function(env = parent.frame()) {
-  subjects_dir <- withr::local_tempdir(.local_envir = env)
-  dir.create(file.path(subjects_dir, "fsaverage5"))
+  local_test_workdir(env)
+  subjects_dir <- "subjects"
+  dir.create(file.path(subjects_dir, "fsaverage5"), recursive = TRUE)
   local_mocked_bindings(
     is_installed = function(pkg, ...) TRUE,
     .package = "rlang",
@@ -33,8 +34,7 @@ describe("setup_sitrep", {
     local_ready_environment()
 
     expect_snapshot(
-      result <- setup_sitrep("simple"),
-      transform = scrub_volatile
+      result <- setup_sitrep("simple")
     )
 
     expect_type(result, "list")
@@ -45,7 +45,7 @@ describe("setup_sitrep", {
   it("reports paths and options in full detail", {
     local_ready_environment()
 
-    expect_snapshot(setup_sitrep("full"), transform = scrub_volatile)
+    expect_snapshot(setup_sitrep("full"))
   })
 
   it("validates detail argument", {

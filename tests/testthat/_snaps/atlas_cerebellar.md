@@ -34,7 +34,7 @@
       result <- download_suit_xfm("xfm.nii", cached)
     Message
       i Downloading 'xfm.nii' (~13 MB)
-      v Cached at '<tempfile>'
+      v Cached at 'cache/xfm.nii'
 
 # run_cerebellar_creation verbose output / prints header and input files when verbose
 
@@ -84,5 +84,5 @@
       v Projecting parcellation onto SUIT flatmap [<time>]
       
       v Brain atlas created with 1 regions
-      i Pipeline completed in <n> minutes
+      i Pipeline completed [<time>]
 

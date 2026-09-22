@@ -324,6 +324,7 @@ describe("create_subcortical_from_volume pipeline flow", {
   })
 
   it("returns 3D-only atlas with correct structure count", {
+    local_test_workdir()
     dirs <- mock_subcort_dirs()
     local_mocked_bindings(
       check_fs = function(...) TRUE,
@@ -376,11 +377,10 @@ describe("create_subcortical_from_volume pipeline flow", {
       ggseg_data_subcortical = function(...) list(...)
     )
 
-    vol_file <- file.path(withr::local_tempdir(), "aseg.mgz")
+    vol_file <- "aseg.mgz"
     file.create(vol_file)
-    lut_file <- withr::local_tempfile(fileext = ".txt")
+    lut_file <- "lut.txt"
     file.create(lut_file)
-    withr::local_options(ggseg.extra.output_dir = withr::local_tempdir())
 
     expect_snapshot(
       atlas <- create_subcortical_from_volume(
@@ -388,8 +388,7 @@ describe("create_subcortical_from_volume pipeline flow", {
         input_lut = lut_file,
         steps = 1:3,
         verbose = TRUE
-      ),
-      transform = scrub_volatile
+      )
     )
 
     expect_s3_class(atlas, "ggseg_atlas")
@@ -437,6 +436,7 @@ describe("create_subcortical_from_volume pipeline flow", {
   })
 
   it("loads cached data for skipped steps and proceeds", {
+    local_test_workdir()
     dirs <- mock_subcort_dirs()
     cached_colortable <- data.frame(
       idx = 10,
@@ -501,11 +501,10 @@ describe("create_subcortical_from_volume pipeline flow", {
       reduce_vertex = function(...) invisible(NULL)
     )
 
-    vol_file <- file.path(withr::local_tempdir(), "aseg.mgz")
+    vol_file <- "aseg.mgz"
     file.create(vol_file)
-    lut_file <- withr::local_tempfile(fileext = ".txt")
+    lut_file <- "lut.txt"
     file.create(lut_file)
-    withr::local_options(ggseg.extra.output_dir = withr::local_tempdir())
 
     expect_snapshot(
       result <- create_subcortical_from_volume(
@@ -513,8 +512,7 @@ describe("create_subcortical_from_volume pipeline flow", {
         input_lut = lut_file,
         steps = 5:8,
         verbose = TRUE
-      ),
-      transform = scrub_volatile
+      )
     )
 
     expect_null(result)
@@ -672,6 +670,7 @@ describe("create_subcortical_from_volume pipeline flow", {
   })
 
   it("step 9 builds final atlas with cleanup", {
+    local_test_workdir()
     dirs <- mock_subcort_dirs()
     cached_components <- list(
       core = data.frame(
@@ -734,11 +733,10 @@ describe("create_subcortical_from_volume pipeline flow", {
       preview_atlas = function(...) invisible(NULL)
     )
 
-    vol_file <- file.path(withr::local_tempdir(), "aseg.mgz")
+    vol_file <- "aseg.mgz"
     file.create(vol_file)
-    lut_file <- withr::local_tempfile(fileext = ".txt")
+    lut_file <- "lut.txt"
     file.create(lut_file)
-    withr::local_options(ggseg.extra.output_dir = withr::local_tempdir())
 
     expect_snapshot(
       atlas <- create_subcortical_from_volume(
@@ -747,14 +745,14 @@ describe("create_subcortical_from_volume pipeline flow", {
         steps = 9,
         verbose = TRUE,
         cleanup = TRUE
-      ),
-      transform = scrub_volatile
+      )
     )
 
     expect_s3_class(atlas, "ggseg_atlas")
   })
 
   it("returns invisible NULL for partial steps", {
+    local_test_workdir()
     dirs <- mock_subcort_dirs()
     local_mocked_bindings(
       check_fs = function(...) TRUE,
@@ -794,11 +792,10 @@ describe("create_subcortical_from_volume pipeline flow", {
       extract_contours = function(...) invisible(NULL)
     )
 
-    vol_file <- file.path(withr::local_tempdir(), "aseg.mgz")
+    vol_file <- "aseg.mgz"
     file.create(vol_file)
-    lut_file <- withr::local_tempfile(fileext = ".txt")
+    lut_file <- "lut.txt"
     file.create(lut_file)
-    withr::local_options(ggseg.extra.output_dir = withr::local_tempdir())
 
     expect_snapshot(
       result <- create_subcortical_from_volume(
@@ -806,8 +803,7 @@ describe("create_subcortical_from_volume pipeline flow", {
         input_lut = lut_file,
         steps = 5L,
         verbose = TRUE
-      ),
-      transform = scrub_volatile
+      )
     )
 
     expect_null(result)
@@ -1000,8 +996,7 @@ describe("subcort_resolve_snapshots early-return NULL", {
     colortable <- data.frame(stringsAsFactors = FALSE, idx = 10, label = "r")
 
     expect_snapshot(
-      result <- subcort_resolve_snapshots(config, dirs, colortable, NULL),
-      transform = scrub_volatile
+      result <- subcort_resolve_snapshots(config, dirs, colortable, NULL)
     )
     expect_identical(result$slabs$name, "ax_1")
   })

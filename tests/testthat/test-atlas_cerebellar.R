@@ -1236,7 +1236,9 @@ describe("download_suit_xfm", {
   })
 
   it("atomically caches a valid downloaded NIfTI file", {
-    tmp <- withr::local_tempdir()
+    local_test_workdir()
+    tmp <- "cache"
+    dir.create(tmp)
     cached <- as.character(fs::path(tmp, "xfm.nii"))
     valid_nii_path <- withr::local_tempfile(fileext = ".nii")
     RNifti::writeNifti(
@@ -1253,8 +1255,7 @@ describe("download_suit_xfm", {
     )
 
     expect_snapshot(
-      result <- download_suit_xfm("xfm.nii", cached),
-      transform = scrub_volatile
+      result <- download_suit_xfm("xfm.nii", cached)
     )
     expect_identical(result, cached)
     expect_true(file.exists(cached))
@@ -2191,8 +2192,7 @@ describe("run_cerebellar_creation verbose output", {
         config = config,
         read_fn = function() tibble(),
         input_files = c("file1.gii", "file2.gii")
-      ),
-      transform = scrub_volatile
+      )
     )
     expect_s3_class(result, "ggseg_atlas")
   })
@@ -2453,8 +2453,7 @@ describe("cerebellar_read_data verbose and error branches", {
         config,
         dirs,
         read_fn = function() atlas_data
-      ),
-      transform = scrub_volatile
+      )
     )
     expect_true("left_I-IV" %in% result$components$core$label)
     expect_null(result$deep_data)
