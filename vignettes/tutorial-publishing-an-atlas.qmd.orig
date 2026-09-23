@@ -16,9 +16,12 @@ can_run <- set_tutorial_options()
 You have built an atlas. It plots, the regions are named, the colours are sensible.
 It exists as an object in your R session, which means it exists until you close R.
 
-The ggseg ecosystem distributes atlases as one-atlas packages — `ggsegDK`, `ggsegJHU`, `ggsegYeo2011`.
+The ggseg ecosystem distributes atlases as packages, one package per parcellation family rather than per atlas.
+`ggsegTian` ships eight — four scales, each at 3T and 7T — and `ggsegJulich` ships a cortical and a subcortical atlas from the same source.
+Atlases that share a source, a citation and a build script belong together; a package that holds exactly one, like `ggsegCIT168`, is just a family of one.
+
 That is not ceremony for its own sake.
-A package gives the atlas a version, a citation, a documentation site, and a check suite that fails when a dependency changes the geometry underneath you.
+A package gives the atlases a version, a citation, a documentation site, and a check suite that fails when a dependency changes the geometry underneath you.
 
 This tutorial takes an atlas from your session to a repository that builds itself.
 
@@ -32,7 +35,7 @@ library(ggseg.extra)
 `setup_atlas_repo()` writes the whole skeleton.
 It takes a path, and it derives the package name from the directory name — so the directory is the decision you are actually making.
 
-Convention is `ggseg` plus the atlas name, capitalised as the atlas is usually written: `ggsegJHU`, `ggsegDesterieux`.
+Convention is `ggseg` plus the name of the parcellation family, capitalised as the source usually writes it: `ggsegJHU`, `ggsegDesterieux`.
 
 It fetches the current template from [ggseg-atlas-template](https://github.com/ggsegverse/ggseg-atlas-template) and falls back to a bundled copy when there is no network, so the scaffold you get offline is a little older than the one you get online.
 
@@ -65,6 +68,8 @@ cat(readLines(file.path(repo, "DESCRIPTION")), sep = "\n")
 ```
 
 Replace the `Authors@R` block with your own name, email and ORCID.
+The scaffold writes the same placeholder for everyone; it does not read usethis's `usethis.description` option, so setting that up will not save you this step.
+
 Check `Title` too — it is derived from the directory name, so the capitalisation is a guess rather than a decision.
 
 If you want the package named something other than the directory, pass `atlas_name`.
@@ -110,6 +115,46 @@ That indirection is what lets the package document and version the atlas properl
 
 `compress = "xz"` is not optional in practice.
 Atlas geometry is large, and CRAN-style checks complain about packages over 5 MB.
+
+### Shipping more than one atlas
+
+The scaffold sets up one atlas because that is the smallest thing that works, not because a package should hold only one.
+Most don't. `ggsegTian` ships eight, `ggsegJulich` a cortical and a subcortical atlas, `ggsegAicha` a cortical one and its subcortical companion.
+
+Group by source, not by count: atlases that come from one parcellation, cite one paper and are built by one script belong in one package.
+Splitting them means maintaining the same citation and the same build pipeline in several repositories.
+
+Adding a second atlas means one more internal object, one more accessor and one more `@describeIn`:
+
+```{r}
+#| label: multi-atlas
+#| eval: false
+demo_fine <- function() .demo_fine
+```
+
+Document them as a family rather than one Rd page each — a shared block under `@name`, with `@describeIn` on each accessor, so the citation and the shared caveats are written once:
+
+```{r}
+#| label: multi-atlas-docs
+#| eval: false
+#' Demo Atlas
+#'
+#' @family ggseg_atlases
+#' @name demo
+#' @references Author A et al. (Year). Title. \doi{10.xxxx/xxxxx}
+NULL
+
+#' @describeIn demo Coarse parcellation, 8 structures per hemisphere.
+#' @export
+demo <- function() .demo
+
+#' @describeIn demo Fine parcellation, 27 structures per hemisphere.
+#' @export
+demo_fine <- function() .demo_fine
+```
+
+One more thing worth copying from `ggsegTian`: it saves to `R/sysdata.rda` after each atlas finishes rather than once at the end, so a pipeline that fails on the fourth atlas does not throw away the three before it.
+With `usethis::use_data()` that means passing every object at once, so a loop that builds them incrementally reaches for `save()` directly instead.
 
 ### Keep the script runnable
 
