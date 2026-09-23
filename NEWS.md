@@ -1,3 +1,15 @@
+# ggseg.extra 1.9.9.9057
+
+- The existing vignettes and tutorials now call the current API. They still
+  showed `atlas_smooth(keep = )` from before simplification and smoothing were
+  split, so the documented post-processing step errored; `keep` belongs to
+  `atlas_simplify()`. `post-processing.Rmd` also called
+  `atlas_view_remove_region_small()`, which is `atlas_view_remove_small()`, and
+  passed `match_on` to `atlas_region_rename()`, which does not take it.
+
+- The bundled atlas repository template no longer scaffolds a build script
+  whose smoothing step errors, for the same reason.
+
 # ggseg.extra 1.9.9.9056
 
 - Two new tutorials. *Lookup tables and colours* covers the `lut_*` family --
