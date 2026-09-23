@@ -45,6 +45,12 @@ navbar:
         - text: Label Atlas
           href: articles/tutorial-label-atlas.html
         - text: -------
+        - text: "Tutorials: Working with Atlases"
+        - text: Lookup Tables and Colours
+          href: articles/tutorial-lookup-tables.html
+        - text: Publishing an Atlas
+          href: articles/tutorial-publishing-an-atlas.html
+        - text: -------
         - text: Legacy & Contributing
         - text: Legacy Conversion
           href: articles/legacy-conversion.html
@@ -75,6 +81,12 @@ articles:
       - tutorial-cerebellar-atlas
       - tutorial-tract-atlas
       - tutorial-label-atlas
+
+  - title: "Tutorials: Working with Atlases"
+    desc: Preparing the inputs an atlas needs, and shipping the result
+    contents:
+      - tutorial-lookup-tables
+      - tutorial-publishing-an-atlas
 
   - title: Legacy & Contributing
     contents:
