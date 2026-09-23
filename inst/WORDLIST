@@ -1,3 +1,5 @@
+’
+’s
 abagen
 accumbens
 ADHD
@@ -28,6 +30,8 @@ Brodmann
 bslib
 buckner
 callosum
+capitalisation
+capitalised
 cAsym
 caudate
 Caudate
@@ -42,6 +46,7 @@ chromote's
 CIFTI
 CIFTI's
 ciftiTools
+citable
 CLI
 cli
 CMD
@@ -64,6 +69,7 @@ Craddock
 Crus
 CSF
 ctab
+customised
 customises
 dat
 Dentate
@@ -133,6 +139,7 @@ idx
 ImageMagick
 inferiorly
 Infratentorial
+initialise
 inlined
 interhemispheric
 json
@@ -191,6 +198,7 @@ normalisation
 Nx
 occipital
 ORCID
+organisation
 pallidum
 parcellation
 parcellation's
@@ -218,7 +226,9 @@ rasterising
 rda
 readme
 README
+README's
 recognisable
+recognise
 recognises
 reflows
 reindexing
@@ -237,6 +247,8 @@ roi
 ROIs
 roxygen
 RStudio
+RStudio's
+runnable
 Rvcg
 Sagittal
 sagittal
@@ -281,6 +293,7 @@ TRACULA
 trilinear
 TRK
 TSV
+uncomment
 uncommented
 unlabelled
 unsmoothed
@@ -299,5 +312,3 @@ Xcode
 xform
 XQuartz
 Yeo
-’
-’s
