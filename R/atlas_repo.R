@@ -307,46 +307,60 @@ atlas_derived_desc_fields <- function() {
 #' @keywords internal
 #' @noRd
 apply_usethis_description <- function(path) {
-  defaults <- getOption("usethis.description")
-  if (!is.list(defaults) || length(defaults) == 0) {
-    return(invisible(character()))
-  }
-
   desc_path <- as.character(fs::path(path, "DESCRIPTION"))
-  if (!file.exists(desc_path)) {
+  defaults <- getOption("usethis.description")
+  fields <- usethis_description_fields(defaults)
+
+  if (length(fields) == 0 || !file.exists(desc_path)) {
     return(invisible(character()))
   }
 
+  result <- apply_description_fields(
+    readLines(desc_path, warn = FALSE),
+    defaults,
+    fields
+  )
+  if (length(result$applied) == 0) {
+    return(invisible(character()))
+  }
+
+  writeLines(result$lines, desc_path)
+  cli::cli_alert_success(
+    "Set {.field {result$applied}} in {.file DESCRIPTION} from
+     {.code usethis.description}"
+  )
+  invisible(result$applied)
+}
+
+
+#' Names in `usethis.description` that may be written to the scaffold
+#' @keywords internal
+#' @noRd
+usethis_description_fields <- function(defaults) {
+  if (!is.list(defaults) || length(defaults) == 0) {
+    return(character())
+  }
   fields <- setdiff(names(defaults), atlas_derived_desc_fields())
-  fields <- fields[nzchar(fields)]
-  if (length(fields) == 0) {
-    return(invisible(character()))
-  }
+  fields[!is.na(fields) & nzchar(fields)]
+}
 
-  lines <- readLines(desc_path, warn = FALSE)
+
+#' Fold each stored field into the DESCRIPTION lines
+#'
+#' Returns the updated lines and the names actually written, so the caller
+#' can stay quiet when a stored default turned out to be empty.
+#' @keywords internal
+#' @noRd
+apply_description_fields <- function(lines, defaults, fields) {
   applied <- character()
   for (field in fields) {
     value <- format_description_value(defaults[[field]])
-    if (length(value) == 0) {
-      next
-    }
-    updated <- set_description_field(lines, field, value)
-    if (!is.null(updated)) {
-      lines <- updated
+    if (length(value) > 0) {
+      lines <- set_description_field(lines, field, value)
       applied <- c(applied, field)
     }
   }
-
-  if (length(applied) == 0) {
-    return(invisible(character()))
-  }
-
-  writeLines(lines, desc_path)
-  cli::cli_alert_success(
-    "Set {.field {applied}} in {.file DESCRIPTION} from
-     {.code usethis.description}"
-  )
-  invisible(applied)
+  list(lines = lines, applied = applied)
 }
 
 
