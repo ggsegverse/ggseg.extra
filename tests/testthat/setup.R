@@ -8,3 +8,11 @@ withr::local_options(
   .local_envir = teardown_env()
 )
 cli::start_app(.envir = teardown_env())
+
+# setup_atlas_repo() fills DESCRIPTION from `usethis.description` when the
+# developer has one set. Clearing it keeps the scaffold snapshots the same
+# here as on a runner, where nobody has a profile.
+withr::local_options(
+  usethis.description = NULL,
+  .local_envir = teardown_env()
+)

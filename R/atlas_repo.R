@@ -17,6 +17,30 @@
 #' workflows, which are written by [use_atlas_github_actions()] from templates
 #' bundled in this package rather than copied from the atlas template.
 #'
+#' @section DESCRIPTION defaults:
+#'
+#' The template carries a placeholder author, down to an ORCID of
+#' `0000-0000-0000-0000` that roxygen warns about on every render. If you have
+#' set the `usethis.description` option, those fields are written into the new
+#' package instead, so you do not retype what R already knows:
+#'
+#' ```r
+#' options(usethis.description = list(
+#'   "Authors@R" = person(
+#'     "Jane", "Doe",
+#'     email = "jane@example.com",
+#'     role = c("aut", "cre"),
+#'     comment = c(ORCID = "0000-0002-1825-0097")
+#'   ),
+#'   Language = "en-GB"
+#' ))
+#' ```
+#'
+#' A field the template already declares is replaced; one it does not is
+#' added. `Package`, `Title`, `Description`, `URL` and `BugReports` are the
+#' exceptions -- the scaffold derives those from the atlas name, and a stored
+#' default would rename the package out from under you.
+#'
 #' @param path Where to create the package. If the directory exists, it must
 #'   be empty.
 #' @param atlas_name Name of the atlas (lowercase, no spaces). The package
@@ -256,8 +280,141 @@ populate_from_template <- function(path, template_dir, atlas_name, repo_name) {
 
   rename_package_doc(path, repo_name)
   replace_template_placeholders(path, atlas_name)
+  apply_usethis_description(path)
 
   invisible(path)
+}
+
+
+#' Fields the scaffold derives from the atlas, which defaults must not touch
+#' @keywords internal
+#' @noRd
+atlas_derived_desc_fields <- function() {
+  c("Package", "Title", "Description", "URL", "BugReports")
+}
+
+
+#' Overwrite template DESCRIPTION fields from `usethis.description`
+#'
+#' The template ships a placeholder author, down to an ORCID of
+#' `0000-0000-0000-0000` that roxygen warns about on every render. Anyone who
+#' has set `usethis.description` has already told R who they are, so the
+#' scaffold honours it rather than making them retype it.
+#'
+#' Fields the scaffold derives from the atlas name are never overwritten: a
+#' stored `Package` or `Title` would rename the package out from under the
+#' caller.
+#' @keywords internal
+#' @noRd
+apply_usethis_description <- function(path) {
+  defaults <- getOption("usethis.description")
+  if (!is.list(defaults) || length(defaults) == 0) {
+    return(invisible(character()))
+  }
+
+  desc_path <- as.character(fs::path(path, "DESCRIPTION"))
+  if (!file.exists(desc_path)) {
+    return(invisible(character()))
+  }
+
+  fields <- setdiff(names(defaults), atlas_derived_desc_fields())
+  fields <- fields[nzchar(fields)]
+  if (length(fields) == 0) {
+    return(invisible(character()))
+  }
+
+  lines <- readLines(desc_path, warn = FALSE)
+  applied <- character()
+  for (field in fields) {
+    value <- format_description_value(defaults[[field]])
+    if (length(value) == 0) {
+      next
+    }
+    updated <- set_description_field(lines, field, value)
+    if (!is.null(updated)) {
+      lines <- updated
+      applied <- c(applied, field)
+    }
+  }
+
+  if (length(applied) == 0) {
+    return(invisible(character()))
+  }
+
+  writeLines(lines, desc_path)
+  cli::cli_alert_success(
+    "Set {.field {applied}} in {.file DESCRIPTION} from
+     {.code usethis.description}"
+  )
+  invisible(applied)
+}
+
+
+#' Render a `usethis.description` value as DESCRIPTION field text
+#'
+#' usethis accepts either a `person` object or the source text of a
+#' `person()` call, so both are turned into lines here. `person` objects go
+#' through `format(style = "R")`, which produces the `person(...)` call a
+#' hand-written DESCRIPTION would carry rather than the `structure()` dump
+#' `deparse()` gives.
+#' @keywords internal
+#' @noRd
+format_description_value <- function(value) {
+  if (inherits(value, "person")) {
+    return(format(value, style = "R"))
+  }
+  value <- as.character(value)
+  if (length(value) == 0 || anyNA(value)) {
+    return(character())
+  }
+  value <- unlist(strsplit(value, "\n", fixed = TRUE))
+  value <- trimws(value)
+  value[nzchar(value)]
+}
+
+
+#' Replace one field in DESCRIPTION lines, continuation lines included
+#'
+#' A field the template does not declare is appended rather than dropped, so
+#' a stored `Language` still reaches the generated package. DESCRIPTION does
+#' not care about field order.
+#' @keywords internal
+#' @noRd
+set_description_field <- function(lines, field, value) {
+  replacement <- format_description_field(field, value)
+
+  starts <- startsWith(lines, paste0(field, ":"))
+  if (!any(starts)) {
+    return(c(lines, replacement))
+  }
+
+  first <- which(starts)[1]
+  continues <- grepl("^[[:space:]]", lines)
+  last <- first
+  while (last < length(lines) && continues[last + 1]) {
+    last <- last + 1
+  }
+
+  c(
+    if (first > 1) lines[seq_len(first - 1)],
+    replacement,
+    if (last < length(lines)) lines[seq(last + 1, length(lines))]
+  )
+}
+
+
+#' Lay a field out as DESCRIPTION expects
+#'
+#' A short single-line value stays on the field line. Anything longer, or
+#' anything already spanning lines, moves below the field name with the
+#' four-space indent that marks a continuation.
+#' @keywords internal
+#' @noRd
+format_description_field <- function(field, value) {
+  if (length(value) == 1 && nchar(field) + nchar(value) + 2 <= 80) {
+    return(paste0(field, ": ", value))
+  }
+  c(paste0(field, ":"), paste0("    ", value))
 }
 
 

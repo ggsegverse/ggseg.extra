@@ -703,3 +703,84 @@ describe("template_replace", {
     expect_identical(result, "No placeholders here")
   })
 })
+
+
+describe("apply_usethis_description", {
+  local_scaffold <- function(defaults, env = parent.frame()) {
+    tmp <- file.path(
+      normalizePath(withr::local_tempdir(.local_envir = env)),
+      "ggsegDemo"
+    )
+    local_bundled_template(env = env)
+    withr::local_options(usethis.description = defaults, .local_envir = env)
+    suppressMessages(setup_atlas_repo(
+      tmp,
+      open = FALSE,
+      rstudio = FALSE,
+      github_actions = FALSE
+    ))
+    read.dcf(file.path(tmp, "DESCRIPTION"))
+  }
+
+  it("takes the author from usethis.description", {
+    desc <- local_scaffold(list(
+      "Authors@R" = person(
+        "Jane",
+        "Doe",
+        email = "jane@example.com",
+        role = c("aut", "cre"),
+        comment = c(ORCID = "0000-0002-5756-0223")
+      )
+    ))
+
+    author <- eval(parse(text = desc[1, "Authors@R"]))
+    expect_s3_class(author, "person")
+    expect_identical(format(author$email), "jane@example.com")
+    expect_false(grepl("your.email@example.com", desc[1, "Authors@R"]))
+  })
+
+  it("writes a person() call rather than a structure() dump", {
+    desc <- local_scaffold(list(
+      "Authors@R" = person("Jane", "Doe", role = c("aut", "cre"))
+    ))
+
+    expect_match(desc[1, "Authors@R"], "^person\\(")
+  })
+
+  it("accepts the source text of a person() call", {
+    desc <- local_scaffold(list(
+      "Authors@R" = 'person("Jane", "Doe", role = c("aut", "cre"))'
+    ))
+
+    expect_s3_class(eval(parse(text = desc[1, "Authors@R"])), "person")
+  })
+
+  it("replaces a field the template already declares", {
+    desc <- local_scaffold(list(License = "GPL-3"))
+    expect_identical(unname(desc[1, "License"]), "GPL-3")
+  })
+
+  it("appends a field the template does not declare", {
+    desc <- local_scaffold(list(Language = "en-GB"))
+    expect_identical(unname(desc[1, "Language"]), "en-GB")
+  })
+
+  it("never lets a stored default rename the package", {
+    desc <- local_scaffold(list(Package = "somethingElse"))
+    expect_identical(unname(desc[1, "Package"]), "ggsegDemo")
+  })
+
+  it("leaves the placeholder alone when the option is unset", {
+    desc <- local_scaffold(NULL)
+    expect_match(desc[1, "Authors@R"], "your.email@example.com", fixed = TRUE)
+  })
+
+  it("keeps the DESCRIPTION parseable", {
+    desc <- local_scaffold(list(
+      "Authors@R" = person("Jane", "Doe", role = c("aut", "cre")),
+      Language = "en-GB"
+    ))
+
+    expect_true(all(c("Package", "Authors@R", "Language") %in% colnames(desc)))
+  })
+})

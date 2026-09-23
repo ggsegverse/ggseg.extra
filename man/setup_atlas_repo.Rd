@@ -50,6 +50,31 @@ fallback is used instead. Both paths produce the same GitHub Actions
 workflows, which are written by \code{\link[=use_atlas_github_actions]{use_atlas_github_actions()}} from templates
 bundled in this package rather than copied from the atlas template.
 }
+\section{DESCRIPTION defaults}{
+
+
+The template carries a placeholder author, down to an ORCID of
+\code{0000-0000-0000-0000} that roxygen warns about on every render. If you have
+set the \code{usethis.description} option, those fields are written into the new
+package instead, so you do not retype what R already knows:
+
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{options(usethis.description = list(
+  "Authors@R" = person(
+    "Jane", "Doe",
+    email = "jane@example.com",
+    role = c("aut", "cre"),
+    comment = c(ORCID = "0000-0002-1825-0097")
+  ),
+  Language = "en-GB"
+))
+}\if{html}{\out{</div>}}
+
+A field the template already declares is replaced; one it does not is
+added. \code{Package}, \code{Title}, \code{Description}, \code{URL} and \code{BugReports} are the
+exceptions -- the scaffold derives those from the atlas name, and a stored
+default would rename the package out from under you.
+}
+
 \examples{
 \dontrun{
 # Create atlas package in a new directory
