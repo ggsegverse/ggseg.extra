@@ -55,7 +55,7 @@ setup_atlas_repo(repo, open = FALSE, rstudio = FALSE)
 #> • update-codemeta.yaml
 #> ────────────────────────────────────────────────────────────────────────────────
 #> ✔ Created atlas package ggsegDemo
-#> ℹ Location: '/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T//RtmpXHjXTZ/ggsegDemo'
+#> ℹ Location: '<tempdir>/ggsegDemo'
 #> 
 #> ── Next steps
 #> Edit 'data-raw/create-atlas.R' to create your atlas

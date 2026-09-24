@@ -10,6 +10,10 @@ COPY include.txt /tmp/include.txt
 # Streaming extraction: only the whitelisted members ever touch disk, so the
 # 16 GB full install never exists on the builder. Members in the tarball are
 # prefixed (./freesurfer/...), hence the leading wildcard in include.txt.
+# That file is read by `tar -T`, which has no comment syntax -- every line is
+# a pattern -- so notes about its contents belong here. The one that is not
+# obvious is trctrain/hcp/mgh_1017/mni: the single training subject the tract
+# tutorial builds from, 42 MB of a 1.3 GB tree.
 RUN curl -sSL "https://surfer.nmr.mgh.harvard.edu/pub/dist/freesurfer/${FS_VERSION}/freesurfer-linux-ubuntu22_amd64-${FS_VERSION}.tar.gz" \
     | tar -xz --no-same-owner --wildcards -C /opt -T /tmp/include.txt
 # lib/ is pulled in whole only so ldd can tell us which shared objects the

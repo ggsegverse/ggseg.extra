@@ -16,10 +16,18 @@
 #               for real inside the FreeSurfer image. Catches what static
 #               analysis cannot: a call that resolves but errors.
 #
-# Deliberately not built: cerebellar (SUIT template), wholebrain
-# (Harvard-Oxford volume), neuromaps (downloads) and cortical have no `.orig`
-# source at all, and tract needs `trctrain/`, which the slim image does not
-# carry. The audit is the only cover those have.
+# Cortical, label and subcortical build from fsaverage5, which the image
+# already carries; cerebellar fetches a 12 KB SUIT parcellation from the same
+# Diedrichsen Lab repository the package already pulls its deformation field
+# from. Deliberately not built: wholebrain needs a Harvard-Oxford volume that
+# only ships with FSL, and neuromaps downloads its annotation at run time.
+#
+# Tract is next: `trctrain/hcp/mgh_1017/mni` has been added to the image
+# whitelist in this change, but the published tag only gains it once that
+# merges and the image rebuilds on main, so the tutorial joins the list after
+# that rather than failing here in the meantime.
+#
+# The audit is the only cover the rest have.
 #
 # The lookup-table tutorial is absent from both jobs on purpose: it renders
 # live, so the pkgdown workflow already executes it on every PR.
@@ -103,7 +111,17 @@ jobs:
             )
           }
 
+          # The cerebellar tutorial degrades to its unevaluated form when the
+          # SUIT parcellation cannot be fetched, which would let this job pass
+          # on a page with no output in it. Fetch it up front and fail here
+          # instead.
+          if (is.null(tutorial_suit_parcellation())) {
+            stop("could not fetch the SUIT parcellation the cerebellar tutorial needs")
+          }
+
           tutorials <- c(
+            "vignettes/tutorial-cerebellar-atlas.qmd.orig",
+            "vignettes/tutorial-cortical-atlas.qmd.orig",
             "vignettes/tutorial-label-atlas.qmd.orig",
             "vignettes/tutorial-subcortical-atlas.qmd.orig"
           )
@@ -121,7 +139,9 @@ jobs:
         run: |
           set -euo pipefail
           status=0
-          for f in vignettes/tutorial-label-atlas.qmd \
+          for f in vignettes/tutorial-cerebellar-atlas.qmd \
+                   vignettes/tutorial-cortical-atlas.qmd \
+                   vignettes/tutorial-label-atlas.qmd \
                    vignettes/tutorial-subcortical-atlas.qmd; do
             if grep -nE '^#> (Error|Quitting)' "$f"; then
               echo "::error file=$f::the tutorial rendered an error"
