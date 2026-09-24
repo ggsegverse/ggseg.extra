@@ -649,7 +649,7 @@ describe("validate_subcort_config", {
       smoothness = NULL
     )
 
-    expect_identical(result$steps, 1L:8L)
+    expect_identical(result$steps, seq_len(subcort_total_steps()))
   })
 
   it("accepts a data.frame as input_lut", {
@@ -1596,5 +1596,41 @@ describe("structure snapshot staleness", {
     signatures <- draw(structure_vol(), colortable_for(42L), dirs)
 
     expect_named(signatures, "ax_1_Pallidum_l.rda")
+  })
+})
+
+
+describe("pipeline step ceilings", {
+  # Removing a stage once lowered a pipeline's ceiling without lowering the
+  # step its atlas assembly was gated on. Every step then ran, the run
+  # reported success, and the function returned NULL.
+  it("leaves the subcortical assembly step reachable by default", {
+    config <- resolve_common_config(
+      output_dir = withr::local_tempdir(),
+      verbose = FALSE,
+      cleanup = NULL,
+      skip_existing = NULL,
+      tolerance = NULL,
+      smoothness = NULL,
+      steps = NULL,
+      max_step = subcort_total_steps()
+    )
+
+    expect_true(subcort_total_steps() %in% config$steps)
+  })
+
+  it("leaves the tract assembly step reachable by default", {
+    config <- resolve_common_config(
+      output_dir = withr::local_tempdir(),
+      verbose = FALSE,
+      cleanup = NULL,
+      skip_existing = NULL,
+      tolerance = NULL,
+      smoothness = NULL,
+      steps = NULL,
+      max_step = tract_total_steps()
+    )
+
+    expect_true(tract_total_steps() %in% config$steps)
   })
 })
