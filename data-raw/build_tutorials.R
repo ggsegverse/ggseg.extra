@@ -37,7 +37,10 @@ set_tutorial_options <- function() {
     freesurfer.verbose = FALSE,
     progressr.enabled = TRUE
   )
-  rlang::is_installed("freesurfer") &&
-    freesurfer::have_fs() &&
-    nzchar(Sys.which("magick"))
+  # ImageMagick used to be required because the cortical pipeline built
+  # polygons by screenshotting a 3D scene. mesh_projection.R replaced that
+  # with direct geometry, so the only thing the check still did was disable
+  # every tutorial on machines without ImageMagick -- the CI image among
+  # them, since the slim build drops it.
+  rlang::is_installed("freesurfer") && freesurfer::have_fs()
 }

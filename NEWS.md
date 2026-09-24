@@ -1,3 +1,16 @@
+# ggseg.extra 1.9.9.9058
+
+- Internal: a `tutorials` workflow now checks the tutorials on every pull
+  request. It audits every vignette's code against the package API, and knits
+  the two whose inputs a runner has. Pre-compiled tutorials were text nobody
+  re-ran, which is how nine of them came to recommend an argument that had
+  moved.
+
+- Internal: the tutorial build no longer requires ImageMagick. It was needed
+  when cortical polygons came from screenshots of a 3D scene; direct mesh
+  projection replaced that, and the check only served to skip every tutorial
+  on machines without it, the CI image included.
+
 # ggseg.extra 1.9.9.9057
 
 - The existing vignettes and tutorials now call the current API. They still
