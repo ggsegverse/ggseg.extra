@@ -1,4 +1,4 @@
-# ggseg.extra 1.9.9.9059
+# ggseg.extra 1.9.9.9060
 
 - Internal: the cortical and cerebellar tutorials build in CI too. Cortical
   gained the reproducible source it never had -- its data was in the image all
@@ -11,7 +11,7 @@
   `$FREESURFER_HOME` and `<tempdir>`, so a laptop and a runner produce the same
   output and a diff means the output actually changed.
 
-# ggseg.extra 1.9.9.9058
+# ggseg.extra 1.9.9.9059
 
 - Internal: a `tutorials` workflow now checks the tutorials on every pull
   request. It audits every vignette's code against the package API, and knits
@@ -24,25 +24,38 @@
   projection replaced that, and the check only served to skip every tutorial
   on machines without it, the CI image included.
 
-# ggseg.extra 1.9.9.9057
+# ggseg.extra 1.9.9.9058
 
 - The existing vignettes and tutorials now call the current API. They still
   showed `atlas_smooth(keep = )` from before simplification and smoothing were
   split, so the documented post-processing step errored; `keep` belongs to
   `atlas_simplify()`. `post-processing.Rmd` also called
   `atlas_view_remove_region_small()`, which is `atlas_view_remove_small()`, and
-  passed `match_on` to `atlas_region_rename()`, which does not take it.
+  passed `match_on` to `atlas_region_rename()`, which did not accept it at the
+  time and did not need it either, since `"region"` is what it matches on by
+  default.
 
 - The bundled atlas repository template no longer scaffolds a build script
   whose smoothing step errors, for the same reason.
 
-# ggseg.extra 1.9.9.9056
+# ggseg.extra 1.9.9.9057
 
 - Two new tutorials. *Lookup tables and colours* covers the `lut_*` family --
   building, reading, combining and colouring the table every volumetric
   pipeline asks for. *Publishing an atlas as a package* covers
   `setup_atlas_repo()`, `use_atlas_github_actions()` and the steps between a
   finished atlas and a repository that builds itself.
+
+# ggseg.extra 1.9.9.9056
+
+- `create_subcortical_from_volume()`, `create_tract_from_tractography()` and
+  `create_tract_from_volume()` return the atlas they built again. They ran
+  every step, reported the pipeline as completed and then returned `NULL`:
+  when a stage was removed the ceiling on `steps` dropped, but the step the
+  atlas assembly was gated on did not, so that step was never in the set. Each
+  pipeline's step count is now one value used everywhere it is needed, rather
+  than the same number written in three places, and the progress labels count
+  to it too (`5/9`, not `5/8`).
 
 # ggseg.extra 1.9.9.9055
 

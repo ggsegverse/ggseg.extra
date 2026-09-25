@@ -1,4 +1,25 @@
 describe("integration tests", {
+  # The pipeline used to run all eight steps, report success and hand back
+  # NULL: its ceiling dropped to 8 when a stage was removed, while the atlas
+  # assembly stayed gated on step 9. Only the `steps = 1:3` path was ever
+  # asserted to return anything, so nothing caught it. This runs the default
+  # steps, which is what the tutorials and every user actually call.
+  it("returns an atlas from the full default subcortical pipeline", {
+    skip_if_no_freesurfer()
+
+    atlas <- create_subcortical_from_volume(
+      input_volume = test_path("testdata", "volumetric", "aseg.mgz"),
+      input_lut = test_path("testdata", "volumetric", "lut.txt"),
+      atlas_name = "defaultsteps",
+      output_dir = withr::local_tempdir(),
+      verbose = FALSE
+    )
+
+    expect_s3_class(atlas, "ggseg_atlas")
+    expect_true(ggseg.formats::is_ggseg_atlas(atlas))
+    expect_gt(nrow(atlas$core), 0L)
+  })
+
   it("creates atlas from labels and renders with ggseg3d", {
     skip_render_on_windows()
     skip_if_not_installed("freesurferformats")

@@ -675,7 +675,7 @@ describe("validate_tract_config", {
       n_points = 50
     )
 
-    expect_identical(result$steps, 1L:6L)
+    expect_identical(result$steps, seq_len(tract_total_steps()))
   })
 
   it("validates centerline_method via match.arg", {
