@@ -1,0 +1,384 @@
+# Tutorial: Publishing an atlas as a package
+
+You have built an atlas. It plots, the regions are named, the colours
+are sensible. It exists as an object in your R session, which means it
+exists until you close R.
+
+The ggseg ecosystem distributes atlases as packages, one package per
+parcellation family rather than per atlas. `ggsegTian` ships eight —
+four scales, each at 3T and 7T — and `ggsegJulich` ships a cortical and
+a subcortical atlas from the same source. Atlases that share a source, a
+citation and a build script belong together; a package that holds
+exactly one, like `ggsegCIT168`, is just a family of one.
+
+That is not ceremony for its own sake. A package gives the atlases a
+version, a citation, a documentation site, and a check suite that fails
+when a dependency changes the geometry underneath you.
+
+This tutorial takes an atlas from your session to a repository that
+builds itself.
+
+``` r
+
+library(ggseg.extra)
+```
+
+## Scaffolding the repository
+
+[`setup_atlas_repo()`](https://ggsegverse.github.io/ggseg.extra/reference/setup_atlas_repo.md)
+writes the whole skeleton. It takes a path, and it derives the package
+name from the directory name — so the directory is the decision you are
+actually making.
+
+Convention is `ggseg` plus the name of the parcellation family,
+capitalised as the source usually writes it: `ggsegJHU`,
+`ggsegDesterieux`.
+
+It fetches the current template from
+[ggseg-atlas-template](https://github.com/ggsegverse/ggseg-atlas-template)
+and falls back to a bundled copy when there is no network, so the
+scaffold you get offline is a little older than the one you get online.
+
+``` r
+
+repo <- file.path(tempdir(), "ggsegDemo")
+
+setup_atlas_repo(repo, open = FALSE, rstudio = FALSE)
+#> 
+#> ── Creating ggsegDemo ──
+#> 
+#> ℹ Downloading atlas template from GitHub...
+#> ✔ Downloaded template
+#> ✔ Created 'R/', 'tests/', 'data-raw/'
+#> ✔ Replaced template placeholders
+#> ✔ Added 5 workflows to '.github/workflows/'
+#> • R-CMD-check.yaml
+#> • code-quality.yaml
+#> • pkgdown.yaml
+#> • render-readme.yaml
+#> • update-codemeta.yaml
+#> ────────────────────────────────────────────────────────────────────────────────
+#> ✔ Created atlas package ggsegDemo
+#> ℹ Location: '/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T//RtmpXHjXTZ/ggsegDemo'
+#> 
+#> ── Next steps
+#> Edit 'data-raw/create-atlas.R' to create your atlas
+#> Update 'R/data.R' with documentation and citation
+#> Add atlas citation to 'README.qmd'
+#> Run `devtools::document()` to generate documentation
+#> Run `devtools::check()` to verify the package
+```
+
+Here is what you get:
+
+``` r
+
+list.files(repo, recursive = TRUE, all.files = TRUE, no.. = TRUE)
+#>  [1] "_pkgdown.yml"                          
+#>  [2] ".github/workflows/code-quality.yaml"   
+#>  [3] ".github/workflows/pkgdown.yaml"        
+#>  [4] ".github/workflows/R-CMD-check.yaml"    
+#>  [5] ".github/workflows/render-readme.yaml"  
+#>  [6] ".github/workflows/update-codemeta.yaml"
+#>  [7] ".gitignore"                            
+#>  [8] ".lintr"                                
+#>  [9] ".Rbuildignore"                         
+#> [10] "data-raw/create-atlas.R"               
+#> [11] "DESCRIPTION"                           
+#> [12] "LICENSE"                               
+#> [13] "NAMESPACE"                             
+#> [14] "NEWS.md"                               
+#> [15] "R/data.R"                              
+#> [16] "R/ggsegDemo-package.R"                 
+#> [17] "README.qmd"                            
+#> [18] "tests/testthat.R"                      
+#> [19] "tests/testthat/test-data.R"
+```
+
+Three of those files matter to you right now. `data-raw/create-atlas.R`
+is where the build script goes, `R/data.R` documents the atlas object,
+and `DESCRIPTION` needs your name in it.
+
+The rest — the workflows, `.lintr`, `_pkgdown.yml`, the test file — are
+infrastructure you inherit rather than write.
+
+## Filling in DESCRIPTION
+
+The scaffold writes a placeholder author, and it is the one thing that
+will embarrass you if you forget it:
+
+``` r
+
+cat(readLines(file.path(repo, "DESCRIPTION")), sep = "\n")
+#> Package: ggsegDemo
+#> Title: demo Brain Atlas for the 'ggseg' Ecosystem
+#> Version: 1.0.0
+#> Authors@R: c(
+#>     person("First", "Last", , "your.email@example.com", role = c("aut", "cre"),
+#>            comment = c(ORCID = "0000-0000-0000-0000"))
+#>   )
+#> Description: Brain atlas data for the 'ggseg' ecosystem. Provides a unified
+#>     'ggseg_atlas' object with both 2D polygon geometry and 3D vertex indices,
+#>     for use with 'ggseg' and 'ggseg3d'.
+#> License: MIT + file LICENSE
+#> Encoding: UTF-8
+#> Depends:
+#>     R (>= 3.5)
+#> Imports:
+#>     ggseg.formats
+#> Suggests:
+#>     ggseg,
+#>     ggseg3d,
+#>     ggplot2,
+#>     knitr,
+#>     rmarkdown,
+#>     testthat (>= 3.0.0),
+#>     vdiffr
+#> Remotes:
+#>     ggsegverse/ggseg
+#> URL: https://github.com/ggsegverse/ggsegDemo
+#> BugReports: https://github.com/ggsegverse/ggsegDemo/issues
+#> Roxygen: list(markdown = TRUE)
+#> RoxygenNote: 7.3.3
+#> Config/testthat/edition: 3
+#> Config/Needs/website: ggsegverse/ggseg.docs
+```
+
+Replace the `Authors@R` block with your own name, email and ORCID. The
+scaffold writes the same placeholder for everyone; it does not read
+usethis’s `usethis.description` option, so setting that up will not save
+you this step.
+
+Check `Title` too — it is derived from the directory name, so the
+capitalisation is a guess rather than a decision.
+
+If you want the package named something other than the directory, pass
+`atlas_name`. Be aware that it renames the *package* and leaves the
+directory alone, so
+`setup_atlas_repo("ggsegFoo", atlas_name = "custom")` gives you a
+directory called `ggsegFoo` holding a package called `ggsegCustom`.
+Matching the two is less confusing later.
+
+`Imports: ggseg.formats` is deliberate and should stay. An atlas package
+depends on the format, not on the builder: users installing `ggsegDemo`
+need to *read* a `ggseg_atlas`, not build one, so ggseg.extra is not a
+dependency of the thing you publish.
+
+## The build script
+
+`data-raw/create-atlas.R` ships as a menu. It has a commented-out
+section for every pipeline in this package — annotation, GIFTI, CIFTI,
+labels, neuromaps, subcortical, cerebellar, tract, whole-brain. Delete
+the sections you don’t need and uncomment the one you do.
+
+The script ends with the step that actually matters:
+
+``` r
+
+.demo <- demo
+usethis::use_data(
+  .demo,
+  internal = TRUE,
+  overwrite = TRUE,
+  compress = "xz"
+)
+```
+
+Note the name. The package is `ggsegDemo`, but the atlas is `demo` — the
+`ggseg` prefix is dropped and the rest lower-cased, which is why
+`ggsegDK` gives you `dk` and not `ggsegDK`. The scaffold has already
+substituted the right name throughout, so follow what the template wrote
+rather than reasoning it out each time.
+
+The leading dot and `internal = TRUE` are the ecosystem’s convention.
+The atlas is stored as internal data and exposed through a function in
+`R/data.R`:
+
+``` r
+
+demo <- function() .demo
+```
+
+Users call [`demo()`](https://rdrr.io/r/utils/demo.html), with the
+parentheses. That indirection is what lets the package document and
+version the atlas properly instead of shipping a bare `.rda`.
+
+`compress = "xz"` is not optional in practice. Atlas geometry is large,
+and CRAN-style checks complain about packages over 5 MB.
+
+### Shipping more than one atlas
+
+The scaffold sets up one atlas because that is the smallest thing that
+works, not because a package should hold only one. Most don’t.
+`ggsegTian` ships eight, `ggsegJulich` a cortical and a subcortical
+atlas, `ggsegAicha` a cortical one and its subcortical companion.
+
+Group by source, not by count: atlases that come from one parcellation,
+cite one paper and are built by one script belong in one package.
+Splitting them means maintaining the same citation and the same build
+pipeline in several repositories.
+
+Adding a second atlas means one more internal object, one more accessor
+and one more `@describeIn`:
+
+``` r
+
+demo_fine <- function() .demo_fine
+```
+
+Document them as a family rather than one Rd page each — a shared block
+under `@name`, with `@describeIn` on each accessor, so the citation and
+the shared caveats are written once:
+
+``` r
+
+#' Demo Atlas
+#'
+#' @family ggseg_atlases
+#' @name demo
+#' @references Author A et al. (Year). Title. \doi{10.xxxx/xxxxx}
+NULL
+
+#' @describeIn demo Coarse parcellation, 8 structures per hemisphere.
+#' @export
+demo <- function() .demo
+
+#' @describeIn demo Fine parcellation, 27 structures per hemisphere.
+#' @export
+demo_fine <- function() .demo_fine
+```
+
+One more thing worth copying from `ggsegTian`: it saves to
+`R/sysdata.rda` after each atlas finishes rather than once at the end,
+so a pipeline that fails on the fourth atlas does not throw away the
+three before it. With `usethis::use_data()` that means passing every
+object at once, so a loop that builds them incrementally reaches for
+[`save()`](https://rdrr.io/r/base/save.html) directly instead.
+
+### Keep the script runnable
+
+`data-raw/` is in `.Rbuildignore`, so this script never runs for your
+users and never runs in check. That is convenient and it is also how
+build scripts rot.
+
+Run it end to end before every release. The script is the only record of
+how the atlas was made, and an atlas nobody can rebuild is an atlas
+nobody can fix.
+
+## Continuous integration
+
+The scaffold installs five workflows:
+
+``` r
+
+atlas_github_actions()
+#> [1] "R-CMD-check"     "code-quality"    "pkgdown"         "render-readme"  
+#> [5] "update-codemeta"
+```
+
+`R-CMD-check` and `code-quality` are the gates. `pkgdown` builds the
+documentation site, `render-readme` keeps the README’s plots current,
+and `update-codemeta` maintains the machine-readable metadata that makes
+the package citable.
+
+If you are adding CI to a repository that already exists,
+[`use_atlas_github_actions()`](https://ggsegverse.github.io/ggseg.extra/reference/use_atlas_github_actions.md)
+installs them without touching anything else:
+
+``` r
+
+use_atlas_github_actions()
+```
+
+It refuses to overwrite existing workflows unless you pass
+`overwrite = TRUE`, so it is safe to run on a repository you have
+already customised. You can also install a subset:
+
+``` r
+
+use_atlas_github_actions(workflows = c("R-CMD-check", "pkgdown"))
+```
+
+## Getting it onto GitHub
+
+[`setup_atlas_repo()`](https://ggsegverse.github.io/ggseg.extra/reference/setup_atlas_repo.md)
+writes files. It does not initialise git, create a remote, or push — the
+scaffold is deliberately inert, so you can inspect it before committing
+to anything.
+
+That means the next steps are yours:
+
+``` r
+
+usethis::use_git()
+usethis::use_github(organisation = "ggsegverse")
+```
+
+Two settings need a visit to the repository’s web interface, and both
+are easy to miss because nothing fails loudly without them.
+
+GitHub Pages has to be enabled and pointed at the `gh-pages` branch,
+using the legacy branch-based build rather than Actions. The `pkgdown`
+workflow will run happily and go green while the site 404s.
+
+The `update-codemeta` workflow needs organisation secrets to push its
+commit back. Inside `ggsegverse` those exist already, but their
+visibility is set per-repository, so a new repository has to be added to
+the list.
+
+## Verifying before you tag
+
+Before the first release, check the three things that are specific to
+atlas packages rather than to R packages in general.
+
+The atlas loads from the installed package, not from your session:
+
+``` r
+
+pkgload::load_all(repo)
+ggsegDemo::demo()
+```
+
+It plots in both dimensions, since 2D and 3D geometry can break
+independently:
+
+``` r
+
+plot(ggsegDemo::demo())
+ggseg3d::ggseg3d(atlas = ggsegDemo::demo(), hemisphere = "left")
+```
+
+And the installed size is sane:
+
+``` r
+
+file.size(file.path(repo, "R", "sysdata.rda")) / 1024^2
+```
+
+If that number is over a few megabytes, go back and simplify.
+`atlas_simplify(atlas, keep = 0.2)` followed by `atlas_smooth(atlas)`
+usually takes an order of magnitude off the vertex count without a
+visible difference in the plot.
+
+## An easier starting point
+
+If you are starting from nothing rather than adding to an existing
+project,
+[`new_project_setup_atlas_repo()`](https://ggsegverse.github.io/ggseg.extra/reference/new_project_setup_atlas_repo.md)
+is the same scaffold wired into RStudio’s *New Project* dialogue. Pick
+*Create ggseg brain atlas* from the template list, type the atlas name
+into the one field it offers, and you get the skeleton in a fresh
+project — which saves you from getting the directory name wrong and
+having to rename the package afterwards.
+
+## Where to go next
+
+The atlas is the easy part to redo and the hard part to get right. Once
+it is published, the geometry is what other people’s figures depend on,
+so it is worth spending time in [Post-processing
+atlases](https://ggsegverse.github.io/ggseg.extra/articles/post-processing.md)
+before the first tag rather than after it.
+
+[Contributing](https://ggsegverse.github.io/ggseg.extra/articles/contributing.md)
+covers getting an atlas adopted into the ggsegverse organisation, if you
+would rather it live there than in your own account.

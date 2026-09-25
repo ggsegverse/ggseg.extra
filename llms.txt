@@ -332,6 +332,15 @@ Step-by-step atlas creation with full pipelines
 - [Tutorial: Creating an atlas from label
   files](https://ggsegverse.github.io/ggseg.extra/articles/tutorial-label-atlas.md):
 
+### Tutorials: Working with Atlases
+
+Preparing the inputs an atlas needs, and shipping the result
+
+- [Tutorial: Lookup tables and
+  colours](https://ggsegverse.github.io/ggseg.extra/articles/tutorial-lookup-tables.md):
+- [Tutorial: Publishing an atlas as a
+  package](https://ggsegverse.github.io/ggseg.extra/articles/tutorial-publishing-an-atlas.md):
+
 ### Legacy & Contributing
 
 - [Converting legacy
