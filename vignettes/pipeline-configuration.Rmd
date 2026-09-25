@@ -36,7 +36,7 @@ This lets you set project-wide defaults while still overriding them for specific
 | `skip_existing` | `ggseg.extra.skip_existing` | `GGSEG_EXTRA_SKIP_EXISTING` | `TRUE` |
 
 The `tolerance`, `smoothness` and `smooth_refinements` parameters are deprecated.
-sf simplification has moved out of atlas creation entirely — call `atlas_smooth()` on the returned atlas instead.
+sf simplification has moved out of atlas creation entirely — call `atlas_simplify()` on the returned atlas instead.
 
 ## Setting options in R
 
@@ -98,7 +98,7 @@ options(ggseg.extra.skip_existing = TRUE)
 ### Geometry parameters
 
 sf geometry simplification is no longer applied during atlas creation.
-Use `atlas_smooth()` on the returned atlas to control the trade-off between detail and file size.
+Use `atlas_simplify()` on the returned atlas to control the trade-off between detail and file size.
 See `vignette("post-processing")` for the full workflow.
 
 ## Environment variables

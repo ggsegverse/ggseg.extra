@@ -83,7 +83,7 @@ flowchart LR
 
 The projection uses orthographic cameras placed at standard viewpoints (lateral, medial, superior, inferior), culls back-facing triangles, and unions the front-facing triangles per region into sf polygons.
 Boundary faces are assigned to the smallest neighbouring region so small parcels stay visible.
-The pipeline returns the raw polygons; call `atlas_smooth(keep = ...)` afterwards to balance fidelity against file size.
+The pipeline returns the raw polygons; call `atlas_simplify(keep = ...)` afterwards to balance fidelity against file size.
 
 ## Subcortical and volumetric atlases work differently
 
@@ -204,7 +204,7 @@ flowchart LR
 ## Performance
 
 Cortical atlas creation is fast — the full pipeline (read + project) completes in seconds because the mesh projection is pure geometry with no external rendering.
-The pipeline now returns raw, unsmoothed polygons — `atlas_smooth(keep = ...)` is the tuning knob for the detail-versus-file-size trade-off and can be re-applied cheaply on the cached atlas.
+The pipeline now returns raw, unsmoothed polygons — `atlas_simplify(keep = ...)` is the tuning knob for the detail-versus-file-size trade-off and can be re-applied cheaply on the cached atlas.
 
 For subcortical and tract pipelines, the `steps` parameter lets you control how much of the pipeline runs.
 Use a low step count for fast 3D-only iteration, then run the full pipeline when you need 2D geometry.
