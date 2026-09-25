@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9057</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9058</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -67,6 +67,11 @@
       <small>Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.9.9.9058" id="ggsegextra-1999058">ggseg.extra 1.9.9.9058<a class="anchor" aria-label="anchor" href="#ggsegextra-1999058"></a></h2>
+<ul><li><p>The existing vignettes and tutorials now call the current API. They still showed <code>atlas_smooth(keep = )</code> from before simplification and smoothing were split, so the documented post-processing step errored; <code>keep</code> belongs to <code><a href="../reference/atlas_simplify.html">atlas_simplify()</a></code>. <code>post-processing.Rmd</code> also called <code>atlas_view_remove_region_small()</code>, which is <code><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_view_remove_small()</a></code>, and passed <code>match_on</code> to <code><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_rename()</a></code>, which did not accept it at the time and did not need it either, since <code>"region"</code> is what it matches on by default.</p></li>
+<li><p>The bundled atlas repository template no longer scaffolds a build script whose smoothing step errors, for the same reason.</p></li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9057" id="ggsegextra-1999057">ggseg.extra 1.9.9.9057<a class="anchor" aria-label="anchor" href="#ggsegextra-1999057"></a></h2>
 <ul><li>Two new tutorials. <em>Lookup tables and colours</em> covers the <code>lut_*</code> family – building, reading, combining and colouring the table every volumetric pipeline asks for. <em>Publishing an atlas as a package</em> covers <code><a href="../reference/setup_atlas_repo.html">setup_atlas_repo()</a></code>, <code><a href="../reference/use_atlas_github_actions.html">use_atlas_github_actions()</a></code> and the steps between a finished atlas and a repository that builds itself.</li>

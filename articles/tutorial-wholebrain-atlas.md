@@ -400,10 +400,10 @@ plotting using topology-preserving simplification:
 ``` r
 
 ho_cort <- ho$cortical |>
-  atlas_smooth(keep = 0.05)
+  atlas_simplify(keep = 0.05)
 
 ho_sub <- ho$subcortical |>
-  atlas_smooth(keep = 0.05)
+  atlas_simplify(keep = 0.05)
 ```
 
 Lower `keep` values produce simpler polygons with fewer vertices —
@@ -436,8 +436,8 @@ The Harvard-Oxford atlas is a good example of both:
 ``` r
 
 ho_cort <- ho_cort |>
-  atlas_region_rename("Left |Right ", "", match_on = "region") |>
-  atlas_region_rename("-", " ", match_on = "region")
+  atlas_region_rename("Left |Right ", "") |>
+  atlas_region_rename("-", " ")
 
 subcort_metadata <- data.frame(
   region = c("thalamus", "caudate", "putamen", "pallidum",

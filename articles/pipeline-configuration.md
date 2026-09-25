@@ -29,7 +29,7 @@ specific calls.
 The `tolerance`, `smoothness` and `smooth_refinements` parameters are
 deprecated. sf simplification has moved out of atlas creation entirely —
 call
-[`atlas_smooth()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_smooth.md)
+[`atlas_simplify()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_simplify.md)
 on the returned atlas instead.
 
 ## Setting options in R
@@ -92,7 +92,7 @@ options(ggseg.extra.skip_existing = TRUE)
 
 sf geometry simplification is no longer applied during atlas creation.
 Use
-[`atlas_smooth()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_smooth.md)
+[`atlas_simplify()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_simplify.md)
 on the returned atlas to control the trade-off between detail and file
 size. See
 [`vignette("post-processing")`](https://ggsegverse.github.io/ggseg.extra/articles/post-processing.md)

@@ -299,6 +299,8 @@ gradients.](figures/tutorial-neuromaps-atlas-compare-3d-20-1.png)
 ## Tuning simplification
 
 The pipeline returns raw polygons; call
+[`atlas_simplify()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_simplify.md)
+and
 [`atlas_smooth()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_smooth.md)
 afterwards to balance clarity and file size. We start with 7 bins and
 then simplify to roughly 20% of vertices:
@@ -312,7 +314,9 @@ atlas_full <- create_cortical_from_neuromaps(
   verbose = TRUE
 )
 
-atlas_full <- atlas_full |> atlas_smooth(keep = 0.2, exclude = "cortex_")
+atlas_full <- atlas_full |>
+  atlas_simplify(keep = 0.2, exclude = "cortex_") |>
+  atlas_smooth(exclude = "cortex_")
 #>
 #> ── Creating brain atlas "abagen_genepc1" ──
 #> ℹ Reading neuromaps annotation

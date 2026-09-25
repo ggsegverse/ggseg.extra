@@ -28,7 +28,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9057</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9058</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -323,10 +323,10 @@
 <p>The raw atlas usually needs cleanup. Simplify the contours for faster plotting using topology-preserving simplification:</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">ho_cort</span> <span class="op">&lt;-</span> <span class="va">ho</span><span class="op">$</span><span class="va">cortical</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="../reference/atlas_smooth.html">atlas_smooth</a></span><span class="op">(</span>keep <span class="op">=</span> <span class="fl">0.05</span><span class="op">)</span></span>
+<span>  <span class="fu"><a href="../reference/atlas_simplify.html">atlas_simplify</a></span><span class="op">(</span>keep <span class="op">=</span> <span class="fl">0.05</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">ho_sub</span> <span class="op">&lt;-</span> <span class="va">ho</span><span class="op">$</span><span class="va">subcortical</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="../reference/atlas_smooth.html">atlas_smooth</a></span><span class="op">(</span>keep <span class="op">=</span> <span class="fl">0.05</span><span class="op">)</span></span></code></pre></div>
+<span>  <span class="fu"><a href="../reference/atlas_simplify.html">atlas_simplify</a></span><span class="op">(</span>keep <span class="op">=</span> <span class="fl">0.05</span><span class="op">)</span></span></code></pre></div>
 <p>Lower <code>keep</code> values produce simpler polygons with fewer vertices — important for keeping atlas file sizes manageable. The right value depends on your atlas: parcellations with many small regions need higher <code>keep</code> values than those with a few large ones.</p>
 <p>You can also remove unwanted regions from the subcortical atlas (ventricles, white matter) and set context regions, just like in the <a href="tutorial-subcortical-atlas.html">subcortical tutorial</a>:</p>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
@@ -338,8 +338,8 @@
 <p>The Harvard-Oxford atlas is a good example of both:</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">ho_cort</span> <span class="op">&lt;-</span> <span class="va">ho_cort</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_rename</a></span><span class="op">(</span><span class="st">"Left |Right "</span>, <span class="st">""</span>, match_on <span class="op">=</span> <span class="st">"region"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_rename</a></span><span class="op">(</span><span class="st">"-"</span>, <span class="st">" "</span>, match_on <span class="op">=</span> <span class="st">"region"</span><span class="op">)</span></span>
+<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_rename</a></span><span class="op">(</span><span class="st">"Left |Right "</span>, <span class="st">""</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_rename</a></span><span class="op">(</span><span class="st">"-"</span>, <span class="st">" "</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">subcort_metadata</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
 <span>  region <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"thalamus"</span>, <span class="st">"caudate"</span>, <span class="st">"putamen"</span>, <span class="st">"pallidum"</span>,</span>

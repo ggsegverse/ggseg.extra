@@ -54,8 +54,9 @@ aseg_raw <- create_subcortical_from_volume(
 #> 10000)
 #> ℹ Large atlases may be slow to plot and
 #>   increase package size
-#> ℹ Call `atlas_smooth(atlas, keep = 0.2,
-#>   exclude = "cortex_")` to reduce vertices
+#> ℹ Call `atlas_simplify(atlas, keep =
+#>   0.2)`, then `atlas_smooth(atlas)`, to
+#>   tidy it and reduce vertices
 
 aseg_raw
 #> 

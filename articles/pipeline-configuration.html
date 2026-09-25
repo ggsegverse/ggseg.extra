@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9057</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9058</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -165,7 +165,7 @@ for specific calls.</p>
 <p>The <code>tolerance</code>, <code>smoothness</code> and
 <code>smooth_refinements</code> parameters are deprecated. sf
 simplification has moved out of atlas creation entirely — call
-<code><a href="../reference/atlas_smooth.html">atlas_smooth()</a></code> on the returned atlas instead.</p>
+<code><a href="../reference/atlas_simplify.html">atlas_simplify()</a></code> on the returned atlas instead.</p>
 </div>
 <div class="section level2">
 <h2 id="setting-options-in-r">Setting options in R<a class="anchor" aria-label="anchor" href="#setting-options-in-r"></a>
@@ -218,7 +218,7 @@ pipeline runs by reusing existing intermediate files:</p>
 <h3 id="geometry-parameters">Geometry parameters<a class="anchor" aria-label="anchor" href="#geometry-parameters"></a>
 </h3>
 <p>sf geometry simplification is no longer applied during atlas
-creation. Use <code><a href="../reference/atlas_smooth.html">atlas_smooth()</a></code> on the returned atlas to
+creation. Use <code><a href="../reference/atlas_simplify.html">atlas_simplify()</a></code> on the returned atlas to
 control the trade-off between detail and file size. See
 <code><a href="../articles/post-processing.html">vignette("post-processing")</a></code> for the full workflow.</p>
 </div>

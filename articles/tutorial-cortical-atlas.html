@@ -28,7 +28,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9057</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9058</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -194,10 +194,11 @@
 <li>
 <strong><code>skip_existing = TRUE</code></strong> reuses existing intermediate files when resuming an interrupted run.</li>
 </ul>
-<p>The pipeline returns raw, unsmoothed polygons — smoothing is now a separate post-processing step via <code><a href="../reference/atlas_smooth.html">atlas_smooth()</a></code>. Apply it once and tune <code>keep</code> freely; you no longer have to re-run the full pipeline to try a different simplification level:</p>
+<p>The pipeline returns raw, unsmoothed polygons. Tidying them is a separate post-processing step in two parts: <code><a href="../reference/atlas_simplify.html">atlas_simplify()</a></code> drops vertices, <code><a href="../reference/atlas_smooth.html">atlas_smooth()</a></code> rounds off what is left. Tune either freely; you no longer have to re-run the full pipeline to try a different level:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">yeo7_smooth</span> <span class="op">&lt;-</span> <span class="va">yeo7_raw</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="../reference/atlas_smooth.html">atlas_smooth</a></span><span class="op">(</span>keep <span class="op">=</span> <span class="fl">0.2</span>, exclude <span class="op">=</span> <span class="st">"cortex_"</span><span class="op">)</span></span></code></pre></div>
+<span>  <span class="fu"><a href="../reference/atlas_simplify.html">atlas_simplify</a></span><span class="op">(</span>keep <span class="op">=</span> <span class="fl">0.2</span>, exclude <span class="op">=</span> <span class="st">"cortex_"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/atlas_smooth.html">atlas_smooth</a></span><span class="op">(</span>exclude <span class="op">=</span> <span class="st">"cortex_"</span><span class="op">)</span></span></code></pre></div>
 <p><code>exclude = "cortex_"</code> leaves the brain-outline geometry crisp while simplifying the labelled regions.</p>
 </section><section class="level2"><h2 id="step-3-post-processing">Step 3: Post-processing<a class="anchor" aria-label="anchor" href="#step-3-post-processing"></a>
 </h2>

@@ -114,16 +114,19 @@ A few things to note about the parameters:
 - **`skip_existing = TRUE`** reuses existing intermediate files when
   resuming an interrupted run.
 
-The pipeline returns raw, unsmoothed polygons — smoothing is now a
-separate post-processing step via
-[`atlas_smooth()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_smooth.md).
-Apply it once and tune `keep` freely; you no longer have to re-run the
-full pipeline to try a different simplification level:
+The pipeline returns raw, unsmoothed polygons. Tidying them is a
+separate post-processing step in two parts:
+[`atlas_simplify()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_simplify.md)
+drops vertices,
+[`atlas_smooth()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_smooth.md)
+rounds off what is left. Tune either freely; you no longer have to
+re-run the full pipeline to try a different level:
 
 ``` r
 
 yeo7_smooth <- yeo7_raw |>
-  atlas_smooth(keep = 0.2, exclude = "cortex_")
+  atlas_simplify(keep = 0.2, exclude = "cortex_") |>
+  atlas_smooth(exclude = "cortex_")
 ```
 
 `exclude = "cortex_"` leaves the brain-outline geometry crisp while

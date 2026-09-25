@@ -29,7 +29,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9057</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9058</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -180,7 +180,7 @@ Figure 2: Cortical atlas creation pipeline
 </div>
 </div>
 </div>
-<p>The projection uses orthographic cameras placed at standard viewpoints (lateral, medial, superior, inferior), culls back-facing triangles, and unions the front-facing triangles per region into sf polygons. Boundary faces are assigned to the smallest neighbouring region so small parcels stay visible. The pipeline returns the raw polygons; call <code>atlas_smooth(keep = ...)</code> afterwards to balance fidelity against file size.</p>
+<p>The projection uses orthographic cameras placed at standard viewpoints (lateral, medial, superior, inferior), culls back-facing triangles, and unions the front-facing triangles per region into sf polygons. Boundary faces are assigned to the smallest neighbouring region so small parcels stay visible. The pipeline returns the raw polygons; call <code>atlas_simplify(keep = ...)</code> afterwards to balance fidelity against file size.</p>
 </section><section class="level2"><h2 id="subcortical-and-volumetric-atlases-work-differently">Subcortical and volumetric atlases work differently<a class="anchor" aria-label="anchor" href="#subcortical-and-volumetric-atlases-work-differently"></a>
 </h2>
 <p>Cortical atlases are all about surface vertices — mapping regions to points on the brain’s outer layer. Subcortical structures live inside the brain, so the approach changes. Instead of vertex indices, you’re extracting 3D meshes directly from volumetric segmentations.</p>
@@ -304,7 +304,7 @@ Figure 6: Atlas compatibility with ggseg plotting packages
 </div>
 </section><section class="level2"><h2 id="performance">Performance<a class="anchor" aria-label="anchor" href="#performance"></a>
 </h2>
-<p>Cortical atlas creation is fast — the full pipeline (read + project) completes in seconds because the mesh projection is pure geometry with no external rendering. The pipeline now returns raw, unsmoothed polygons — <code>atlas_smooth(keep = ...)</code> is the tuning knob for the detail-versus-file-size trade-off and can be re-applied cheaply on the cached atlas.</p>
+<p>Cortical atlas creation is fast — the full pipeline (read + project) completes in seconds because the mesh projection is pure geometry with no external rendering. The pipeline now returns raw, unsmoothed polygons — <code>atlas_simplify(keep = ...)</code> is the tuning knob for the detail-versus-file-size trade-off and can be re-applied cheaply on the cached atlas.</p>
 <p>For subcortical and tract pipelines, the <code>steps</code> parameter lets you control how much of the pipeline runs. Use a low step count for fast 3D-only iteration, then run the full pipeline when you need 2D geometry.</p>
 </section><section class="level2"><h2 id="where-to-go-from-here">Where to go from here<a class="anchor" aria-label="anchor" href="#where-to-go-from-here"></a>
 </h2>

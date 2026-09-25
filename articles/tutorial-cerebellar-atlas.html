@@ -28,7 +28,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9057</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9058</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -187,7 +187,7 @@
 <p>After the transform, pass the SUIT-space volume to <code><a href="../reference/create_cerebellar_from_volume.html">create_cerebellar_from_volume()</a></code> as usual.</p>
 </section><section class="level2"><h2 id="tuning-the-output">Tuning the output<a class="anchor" aria-label="anchor" href="#tuning-the-output"></a>
 </h2>
-<p>The cerebellar pipeline now returns raw, unsmoothed flatmap polygons. Smoothing is a separate post-processing step via <code><a href="../reference/atlas_smooth.html">atlas_smooth()</a></code> — apply it once and tune <code>keep</code> freely without re-running the pipeline:</p>
+<p>The cerebellar pipeline now returns raw, unsmoothed flatmap polygons. Tidying them is a separate post-processing step in two parts — <code><a href="../reference/atlas_simplify.html">atlas_simplify()</a></code> drops vertices, <code><a href="../reference/atlas_smooth.html">atlas_smooth()</a></code> rounds off what is left — so you can tune either without re-running the pipeline:</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">atlas</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/create_cerebellar_from_gifti.html">create_cerebellar_from_gifti</a></span><span class="op">(</span></span>
 <span>  gifti_files <span class="op">=</span> <span class="st">"Lobules-SUIT.label.gii"</span>,</span>
@@ -195,7 +195,8 @@
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">atlas</span> <span class="op">&lt;-</span> <span class="va">atlas</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="../reference/atlas_smooth.html">atlas_smooth</a></span><span class="op">(</span>keep <span class="op">=</span> <span class="fl">0.2</span>, exclude <span class="op">=</span> <span class="st">"cortex_"</span><span class="op">)</span></span></code></pre></div>
+<span>  <span class="fu"><a href="../reference/atlas_simplify.html">atlas_simplify</a></span><span class="op">(</span>keep <span class="op">=</span> <span class="fl">0.2</span>, exclude <span class="op">=</span> <span class="st">"cortex_"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/atlas_smooth.html">atlas_smooth</a></span><span class="op">(</span>exclude <span class="op">=</span> <span class="st">"cortex_"</span><span class="op">)</span></span></code></pre></div>
 <p>For 3D meshes, <code>decimate</code> controls quadric edge decimation (0–1, default 0.5). A value of 0.5 reduces the mesh to roughly half its original vertex count.</p>
 <p>The <code>tolerance</code>, <code>smoothness</code> and <code>smooth_refinements</code> arguments on the <code>create_*()</code> functions are deprecated. Supplying them emits a lifecycle warning and they are otherwise ignored.</p>
 </section><section class="level2"><h2 id="post-processing">Post-processing<a class="anchor" aria-label="anchor" href="#post-processing"></a>

@@ -85,7 +85,7 @@ The projection uses orthographic cameras placed at standard viewpoints
 unions the front-facing triangles per region into sf polygons. Boundary
 faces are assigned to the smallest neighbouring region so small parcels
 stay visible. The pipeline returns the raw polygons; call
-`atlas_smooth(keep = ...)` afterwards to balance fidelity against file
+`atlas_simplify(keep = ...)` afterwards to balance fidelity against file
 size.
 
 ## Subcortical and volumetric atlases work differently
@@ -238,7 +238,7 @@ Figure 6: Atlas compatibility with ggseg plotting packages
 Cortical atlas creation is fast — the full pipeline (read + project)
 completes in seconds because the mesh projection is pure geometry with
 no external rendering. The pipeline now returns raw, unsmoothed polygons
-— `atlas_smooth(keep = ...)` is the tuning knob for the
+— `atlas_simplify(keep = ...)` is the tuning knob for the
 detail-versus-file-size trade-off and can be re-applied cheaply on the
 cached atlas.
 

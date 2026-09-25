@@ -162,9 +162,12 @@ as usual.
 ## Tuning the output
 
 The cerebellar pipeline now returns raw, unsmoothed flatmap polygons.
-Smoothing is a separate post-processing step via
+Tidying them is a separate post-processing step in two parts —
+[`atlas_simplify()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_simplify.md)
+drops vertices,
 [`atlas_smooth()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_smooth.md)
-— apply it once and tune `keep` freely without re-running the pipeline:
+rounds off what is left — so you can tune either without re-running the
+pipeline:
 
 ``` r
 
@@ -174,7 +177,8 @@ atlas <- create_cerebellar_from_gifti(
 )
 
 atlas <- atlas |>
-  atlas_smooth(keep = 0.2, exclude = "cortex_")
+  atlas_simplify(keep = 0.2, exclude = "cortex_") |>
+  atlas_smooth(exclude = "cortex_")
 ```
 
 For 3D meshes, `decimate` controls quadric edge decimation (0–1, default
