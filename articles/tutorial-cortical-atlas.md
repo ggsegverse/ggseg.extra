@@ -53,7 +53,6 @@ minutes) and requires no external dependencies beyond FreeSurfer for
 reading the annotation:
 
 ``` r
-
 output_dir <- file.path(tempdir(), "yeo7_tutorial")
 
 yeo7_raw <- create_cortical_from_annotation(
@@ -64,47 +63,61 @@ yeo7_raw <- create_cortical_from_annotation(
   cleanup = FALSE,
   verbose = TRUE
 )
-#>
-#> ── Creating brain atlas "yeo7" ───────────
-#> ℹ Input files: …
-#> ℹ Setting output directory to …
-#> ✔ 1/2 Loaded existing atlas data
-#> ℹ 2/2 Projecting mesh to 2D polygons
-#> ✔ 2/2 Projecting mesh to 2D polygons
-#> ✔ Brain atlas created with 16 regions
-#> ℹ Pipeline completed in 4.2 seconds
+#> 
+#> ── Creating brain atlas "yeo7" ─────────────────────────────────────────────────
+#> ℹ Input files: '$FREESURFER_HOME/subjects/fsaverage5/label/lh.Yeo2011_7Networks_N1000.annot' and '$FREESURFER_HOME/subjects/fsaverage5/label/rh.Yeo2011_7Networks_N1000.annot'
+#> ℹ Reading annotation files
+#> ✔ Reading annotation files [136ms]
+#> 
+#> ℹ Projecting mesh to 2D polygons
+#> ℹ Projecting "rh" "lateral"
+#> ℹ Projecting mesh to 2D polygons
+ℹ Projecting "rh" "medial"
+#> ℹ Projecting mesh to 2D polygons
+ℹ Projecting "rh" "superior"
+#> ℹ Projecting mesh to 2D polygons
+ℹ Projecting "rh" "inferior"
+#> ℹ Projecting mesh to 2D polygons
+ℹ Projecting "lh" "lateral"
+#> ℹ Projecting mesh to 2D polygons
+ℹ Projecting "lh" "medial"
+#> ℹ Projecting mesh to 2D polygons
+ℹ Projecting "lh" "superior"
+#> ℹ Projecting mesh to 2D polygons
+ℹ Projecting "lh" "inferior"
+#> ℹ Projecting mesh to 2D polygons
+✔ Projecting mesh to 2D polygons [6s]
+#> 
+#> ✔ Brain atlas created with 14 regions
+#> ℹ Pipeline completed [6.3s]
+#> Warning: Atlas has 21514 vertices (threshold: 10000)
+#> ℹ Large atlases may be slow to plot and increase package size
+#> ℹ Call `atlas_simplify(atlas, keep = 0.2)`, then `atlas_smooth(atlas)`, to tidy
+#>   it and reduce vertices
 
 yeo7_raw
-#>
-#> ── yeo7 ggseg atlas ──────────────────────
+#> 
+#> ── yeo7 ggseg atlas ────────────────────────────────────────────────────────────
 #> Type: cortical
-#> Regions: 8
+#> Regions: 7
 #> Hemispheres: left, right
-#> Views: inferior, lateral, medial,
-#> superior
+#> Views: inferior, lateral, medial, superior
 #> Palette: ✔
 #> Rendering: ✔ ggseg
 #> ✔ ggseg3d (vertices)
-#> ──────────────────────────────────────────
-#> # A tibble: 16 × 3
-#>    hemi  region                      label
-#>    <chr> <chr>                       <chr>
-#>  1 left  FreeSurfer_Defined_Medial_… lh_F…
-#>  2 left  7Networks_1                 lh_7…
-#>  3 left  7Networks_2                 lh_7…
-#>  4 left  7Networks_3                 lh_7…
-#>  5 left  7Networks_4                 lh_7…
-#>  6 left  7Networks_5                 lh_7…
-#>  7 left  7Networks_6                 lh_7…
-#>  8 left  7Networks_7                 lh_7…
-#>  9 right FreeSurfer_Defined_Medial_… rh_F…
-#> 10 right 7Networks_1                 rh_7…
-#> 11 right 7Networks_2                 rh_7…
-#> 12 right 7Networks_3                 rh_7…
-#> 13 right 7Networks_4                 rh_7…
-#> 14 right 7Networks_5                 rh_7…
-#> 15 right 7Networks_6                 rh_7…
-#> 16 right 7Networks_7                 rh_7…
+#> ────────────────────────────────────────────────────────────────────────────────
+#>     hemi      region          label
+#> 1   left 7Networks_1 lh_7Networks_1
+#> 2   left 7Networks_2 lh_7Networks_2
+#> 3   left 7Networks_3 lh_7Networks_3
+#> 4   left 7Networks_4 lh_7Networks_4
+#> 5   left 7Networks_5 lh_7Networks_5
+#> 6   left 7Networks_6 lh_7Networks_6
+#> 7   left 7Networks_7 lh_7Networks_7
+#> 8  right 7Networks_1 rh_7Networks_1
+#> 9  right 7Networks_2 rh_7Networks_2
+#> 10 right 7Networks_3 rh_7Networks_3
+#> ... with 4 more rows
 ```
 
 A few things to note about the parameters:
@@ -191,43 +204,35 @@ yeo7 <- ggseg_atlas(
 )
 
 yeo7
-#>
-#> ── yeo7 ggseg atlas ──────────────────────
+#> 
+#> ── yeo7 ggseg atlas ────────────────────────────────────────────────────────────
 #> Type: cortical
 #> Regions: 7
 #> Hemispheres: left, right
-#> Views: inferior, lateral, medial,
-#> superior
+#> Views: inferior, lateral, medial, superior
 #> Palette: ✔
 #> Rendering: ✔ ggseg
 #> ✔ ggseg3d (vertices)
-#> ──────────────────────────────────────────
-#> # A tibble: 14 × 3
-#>    hemi  region      label
-#>    <chr> <chr>       <chr>
-#>  1 left  7Networks_1 lh_7Networks_1
-#>  2 left  7Networks_2 lh_7Networks_2
-#>  3 left  7Networks_3 lh_7Networks_3
-#>  4 left  7Networks_4 lh_7Networks_4
-#>  5 left  7Networks_5 lh_7Networks_5
-#>  6 left  7Networks_6 lh_7Networks_6
-#>  7 left  7Networks_7 lh_7Networks_7
-#>  8 right 7Networks_1 rh_7Networks_1
-#>  9 right 7Networks_2 rh_7Networks_2
+#> ────────────────────────────────────────────────────────────────────────────────
+#>     hemi      region          label
+#> 1   left 7Networks_1 lh_7Networks_1
+#> 2   left 7Networks_2 lh_7Networks_2
+#> 3   left 7Networks_3 lh_7Networks_3
+#> 4   left 7Networks_4 lh_7Networks_4
+#> 5   left 7Networks_5 lh_7Networks_5
+#> 6   left 7Networks_6 lh_7Networks_6
+#> 7   left 7Networks_7 lh_7Networks_7
+#> 8  right 7Networks_1 rh_7Networks_1
+#> 9  right 7Networks_2 rh_7Networks_2
 #> 10 right 7Networks_3 rh_7Networks_3
-#> 11 right 7Networks_4 rh_7Networks_4
-#> 12 right 7Networks_5 rh_7Networks_5
-#> 13 right 7Networks_6 rh_7Networks_6
-#> 14 right 7Networks_7 rh_7Networks_7
+#> ... with 4 more rows
 ```
 
 ``` r
 
 atlas_regions(yeo7) |> sort()
-#> [1] "7Networks_1" "7Networks_2"
-#> [3] "7Networks_3" "7Networks_4"
-#> [5] "7Networks_5" "7Networks_6"
-#> [7] "7Networks_7"
+#> [1] "7Networks_1" "7Networks_2" "7Networks_3" "7Networks_4" "7Networks_5"
+#> [6] "7Networks_6" "7Networks_7"
 ```
 
 ``` r
@@ -263,13 +268,3 @@ dk <- create_cortical_from_annotation(
 ```
 
 ## Saving
-
-Once you’re satisfied with the atlas, save it as package data:
-
-``` r
-
-usethis::use_data(yeo7, overwrite = TRUE, compress = "xz")
-```
-
-The `compress = "xz"` flag gives the best compression for sf geometry
-data.

@@ -306,6 +306,7 @@ afterwards to balance clarity and file size. We start with 7 bins and
 then simplify to roughly 20% of vertices:
 
 ``` r
+
 atlas_full <- create_cortical_from_neuromaps(
   source = "abagen",
   desc = "genepc1",
@@ -324,14 +325,16 @@ atlas_full <- atlas_full |>
 #> ℹ Projecting mesh to 2D polygons
 #> ✔ Projecting mesh to 2D polygons
 #> ✔ Brain atlas created with 16 regions
+```
 
 ## Post-processing
 
-The "unknown" region (medial wall) renders as a filled region by default.
-Convert it to a background outline with `atlas_region_contextual()`:
-
+The “unknown” region (medial wall) renders as a filled region by
+default. Convert it to a background outline with
+[`atlas_region_contextual()`](https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html):
 
 ``` r
+
 atlas_clean <- atlas_full |>
   atlas_region_contextual("unknown", match_on = "label")
 ```

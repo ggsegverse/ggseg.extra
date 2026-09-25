@@ -28,7 +28,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9058</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9060</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -130,25 +130,55 @@
 </section><section class="level2"><h2 id="creating-from-gifti-labels">Creating from GIFTI labels<a class="anchor" aria-label="anchor" href="#creating-from-gifti-labels"></a>
 </h2>
 <p>SUIT-space GIFTI label files are the standard output from the Diedrichsen Lab cerebellar atlases. Each file maps every vertex on the SUIT surface to a region label.</p>
+<p>The lobular parcellation that ships with SUIT lives in the Diedrichsen Lab’s <a href="https://github.com/DiedrichsenLab/cerebellar_atlases" class="external-link">cerebellar_atlases</a> repository, as <code>atl-Anatom_dseg.label.gii</code>. It is 12 KB, so fetching it is quick:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">url</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span></span>
+<span>  <span class="st">"https://raw.githubusercontent.com/DiedrichsenLab/cerebellar_atlases/"</span>,</span>
+<span>  <span class="st">"master/Diedrichsen_2009/atl-Anatom_dseg.label.gii"</span></span>
+<span><span class="op">)</span></span>
+<span><span class="va">suit_labels</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span>, <span class="st">"atl-Anatom_dseg.label.gii"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/download.file.html" class="external-link">download.file</a></span><span class="op">(</span><span class="va">url</span>, <span class="va">suit_labels</span>, mode <span class="op">=</span> <span class="st">"wb"</span><span class="op">)</span></span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">atlas</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/create_cerebellar_from_gifti.html">create_cerebellar_from_gifti</a></span><span class="op">(</span></span>
-<span>  gifti_files <span class="op">=</span> <span class="st">"Lobules-SUIT.label.gii"</span>,</span>
+<span>  gifti_files <span class="op">=</span> <span class="va">suit_labels</span>,</span>
 <span>  atlas_name <span class="op">=</span> <span class="st">"suit_lobules"</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">atlas</span></span></code></pre></div>
+<span><span class="va">atlas</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; ── suit_lobules ggseg atlas ────────────────────────────────────────────────────</span></span>
+<span><span class="co">#&gt; Type: cerebellar</span></span>
+<span><span class="co">#&gt; Regions: 11</span></span>
+<span><span class="co">#&gt; Hemispheres: left, right, vermis, midline</span></span>
+<span><span class="co">#&gt; Views: flatmap</span></span>
+<span><span class="co">#&gt; Palette: ✔</span></span>
+<span><span class="co">#&gt; Rendering: ✔ ggseg</span></span>
+<span><span class="co">#&gt; ✔ ggseg3d (vertices)</span></span>
+<span><span class="co">#&gt; ────────────────────────────────────────────────────────────────────────────────</span></span>
+<span><span class="co">#&gt;      hemi region       label</span></span>
+<span><span class="co">#&gt; 1    left   I_IV   left_I_IV</span></span>
+<span><span class="co">#&gt; 2   right   I_IV  right_I_IV</span></span>
+<span><span class="co">#&gt; 3    left      V      left_V</span></span>
+<span><span class="co">#&gt; 4   right      V     right_V</span></span>
+<span><span class="co">#&gt; 5    left     VI     left_VI</span></span>
+<span><span class="co">#&gt; 6  vermis     VI   vermis_VI</span></span>
+<span><span class="co">#&gt; 7   right     VI    right_VI</span></span>
+<span><span class="co">#&gt; 8    left  CrusI  left_CrusI</span></span>
+<span><span class="co">#&gt; 9   right  CrusI right_CrusI</span></span>
+<span><span class="co">#&gt; 10   left CrusII left_CrusII</span></span>
+<span><span class="co">#&gt; ... with 17 more rows</span></span></code></pre></div>
 <p>The pipeline reads the GIFTI label table for region names and colours, maps labels onto the SUIT flatmap vertices, builds per-region sf polygons from the mesh triangles, and applies topology-preserving simplification via <code>rmapshaper</code> to clean up jagged triangle boundaries while keeping shared edges aligned.</p>
 <p>If you also have a matching NIfTI volume and want 3D meshes:</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">atlas</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/create_cerebellar_from_gifti.html">create_cerebellar_from_gifti</a></span><span class="op">(</span></span>
-<span>  gifti_files <span class="op">=</span> <span class="st">"Lobules-SUIT.label.gii"</span>,</span>
-<span>  volume <span class="op">=</span> <span class="st">"Lobules-SUIT.nii.gz"</span>,</span>
+<span>  gifti_files <span class="op">=</span> <span class="st">"atl-Anatom_dseg.label.gii"</span>,</span>
+<span>  volume <span class="op">=</span> <span class="st">"atl-Anatom_space-SUIT_dseg.nii"</span>,</span>
 <span>  atlas_name <span class="op">=</span> <span class="st">"suit_lobules"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 </section><section class="level2"><h2 id="creating-from-annotation-files">Creating from annotation files<a class="anchor" aria-label="anchor" href="#creating-from-annotation-files"></a>
 </h2>
 <p>Some cerebellar parcellations exist as FreeSurfer <code>.annot</code> files painted on the SUIT surface rather than GIFTI labels. The interface is the same:</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">atlas</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/create_cerebellar_from_annotation.html">create_cerebellar_from_annotation</a></span><span class="op">(</span></span>
 <span>  input_annot <span class="op">=</span> <span class="st">"cerebellum.annot"</span>,</span>
 <span>  atlas_name <span class="op">=</span> <span class="st">"cerebellar_annot"</span></span>
@@ -157,7 +187,7 @@
 </section><section class="level2"><h2 id="creating-from-a-volume">Creating from a volume<a class="anchor" aria-label="anchor" href="#creating-from-a-volume"></a>
 </h2>
 <p>When your parcellation is a NIfTI volume — either natively in SUIT space or transformed there — the volume pathway handles both 2D flatmap projection <em>and</em> 3D mesh tessellation in one call:</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">atlas</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/create_cerebellar_from_volume.html">create_cerebellar_from_volume</a></span><span class="op">(</span></span>
 <span>  input_volume <span class="op">=</span> <span class="st">"cerebellar_parcellation.nii.gz"</span>,</span>
 <span>  input_lut <span class="op">=</span> <span class="st">"cerebellar_lut.txt"</span>,</span>
@@ -168,7 +198,7 @@
 </section><section class="level2"><h2 id="transforming-mni-volumes-to-suit-space">Transforming MNI volumes to SUIT space<a class="anchor" aria-label="anchor" href="#transforming-mni-volumes-to-suit-space"></a>
 </h2>
 <p>Many cerebellar parcellations ship in MNI152 space rather than SUIT space. The package provides helpers to handle the transform before you run the pipeline:</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">xfm</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/suit_deformation_field.html">suit_deformation_field</a></span><span class="op">(</span>template <span class="op">=</span> <span class="st">"MNI152NLin6AsymC"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">suit_volume</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/transform_mni_to_suit.html">transform_mni_to_suit</a></span><span class="op">(</span></span>
@@ -188,13 +218,8 @@
 </section><section class="level2"><h2 id="tuning-the-output">Tuning the output<a class="anchor" aria-label="anchor" href="#tuning-the-output"></a>
 </h2>
 <p>The cerebellar pipeline now returns raw, unsmoothed flatmap polygons. Tidying them is a separate post-processing step in two parts — <code><a href="../reference/atlas_simplify.html">atlas_simplify()</a></code> drops vertices, <code><a href="../reference/atlas_smooth.html">atlas_smooth()</a></code> rounds off what is left — so you can tune either without re-running the pipeline:</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">atlas</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/create_cerebellar_from_gifti.html">create_cerebellar_from_gifti</a></span><span class="op">(</span></span>
-<span>  gifti_files <span class="op">=</span> <span class="st">"Lobules-SUIT.label.gii"</span>,</span>
-<span>  decimate <span class="op">=</span> <span class="fl">0.3</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">atlas</span> <span class="op">&lt;-</span> <span class="va">atlas</span> <span class="op">|&gt;</span></span>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">atlas</span> <span class="op">&lt;-</span> <span class="va">atlas</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/atlas_simplify.html">atlas_simplify</a></span><span class="op">(</span>keep <span class="op">=</span> <span class="fl">0.2</span>, exclude <span class="op">=</span> <span class="st">"cortex_"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/atlas_smooth.html">atlas_smooth</a></span><span class="op">(</span>exclude <span class="op">=</span> <span class="st">"cortex_"</span><span class="op">)</span></span></code></pre></div>
 <p>For 3D meshes, <code>decimate</code> controls quadric edge decimation (0–1, default 0.5). A value of 0.5 reduces the mesh to roughly half its original vertex count.</p>
@@ -202,23 +227,28 @@
 </section><section class="level2"><h2 id="post-processing">Post-processing<a class="anchor" aria-label="anchor" href="#post-processing"></a>
 </h2>
 <p>The same post-processing tools from the other tutorials work here. Remove unwanted regions, mark context regions, rename labels:</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">atlas</span> <span class="op">&lt;-</span> <span class="va">atlas</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_remove</a></span><span class="op">(</span><span class="st">"unknown"</span>, match_on <span class="op">=</span> <span class="st">"label"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_remove</a></span><span class="op">(</span><span class="st">"corpuscallosum"</span>, match_on <span class="op">=</span> <span class="st">"label"</span><span class="op">)</span></span></code></pre></div>
 <p>Cerebellar atlases use hemisphere values <code>"left"</code>, <code>"right"</code>, and <code>"vermis"</code> — the pipeline detects these from region name prefixes like “Left I-IV”, “Right Crus I”, or “Vermis VI”. The <code>region</code> column has the hemisphere prefix stripped, so you get clean names like “I-IV” and “Crus I”.</p>
 </section><section class="level2"><h2 id="visualization">Visualization<a class="anchor" aria-label="anchor" href="#visualization"></a>
 </h2>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">atlas</span><span class="op">)</span></span></code></pre></div>
+<div class="figure">
+<img src="figures/tutorial-cerebellar-atlas-plot-1.png" alt="SUIT flatmap of the cerebellum with the lobular parcellation in colour, vermis down the centre and the two hemispheres either side." width="768"><p class="caption">
+The SUIT anatomical parcellation on the cerebellar flatmap.
+</p>
+</div>
 <p>The 2D plot shows the SUIT flatmap — the cerebellum unfolded with the vermis in the centre, left hemisphere on the left, right on the right.</p>
 <p>If your atlas includes 3D meshes:</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">ggseg3d</span><span class="fu">::</span><span class="fu"><a href="https://ggsegverse.github.io/ggseg3d/reference/ggseg3d.html" class="external-link">ggseg3d</a></span><span class="op">(</span>atlas <span class="op">=</span> <span class="va">atlas</span><span class="op">)</span></span></code></pre></div>
 </section><section class="level2"><h2 id="saving">Saving<a class="anchor" aria-label="anchor" href="#saving"></a>
 </h2>
 <p>Follow the same convention as other atlas packages:</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">usethis</span><span class="fu">::</span><span class="fu">use_data</span><span class="op">(</span><span class="va">atlas</span>, compress <span class="op">=</span> <span class="st">"xz"</span>, overwrite <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
 <p>For atlas packages with both 2D and 3D data, see <code><a href="../reference/setup_atlas_repo.html">setup_atlas_repo()</a></code> for the standard scaffolding.</p>
 </section><section class="level2"><h2 id="cerebellar-regions-in-whole-brain-atlases">Cerebellar regions in whole-brain atlases<a class="anchor" aria-label="anchor" href="#cerebellar-regions-in-whole-brain-atlases"></a>

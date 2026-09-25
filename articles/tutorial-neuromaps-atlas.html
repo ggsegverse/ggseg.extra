@@ -28,7 +28,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9058</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9060</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -324,37 +324,34 @@
 </section><section class="level2"><h2 id="tuning-simplification">Tuning simplification<a class="anchor" aria-label="anchor" href="#tuning-simplification"></a>
 </h2>
 <p>The pipeline returns raw polygons; call <code><a href="../reference/atlas_simplify.html">atlas_simplify()</a></code> and <code><a href="../reference/atlas_smooth.html">atlas_smooth()</a></code> afterwards to balance clarity and file size. We start with 7 bins and then simplify to roughly 20% of vertices:</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>atlas_full <span class="ot">&lt;-</span> <span class="fu">create_cortical_from_neuromaps</span>(</span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">source =</span> <span class="st">"abagen"</span>,</span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">desc =</span> <span class="st">"genepc1"</span>,</span>
-<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">n_bins =</span> <span class="dv">7</span>,</span>
-<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">atlas_name =</span> <span class="st">"abagen_genepc1"</span>,</span>
-<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">verbose =</span> <span class="cn">TRUE</span></span>
-<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>atlas_full <span class="ot">&lt;-</span> atlas_full <span class="sc">|&gt;</span></span>
-<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">atlas_simplify</span>(<span class="at">keep =</span> <span class="fl">0.2</span>, <span class="at">exclude =</span> <span class="st">"cortex_"</span>) <span class="sc">|&gt;</span></span>
-<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">atlas_smooth</span>(<span class="at">exclude =</span> <span class="st">"cortex_"</span>)</span>
-<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;</span></span>
-<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ── Creating brain atlas "abagen_genepc1" ──</span></span>
-<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ Reading neuromaps annotation</span></span>
-<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ✔ Reading neuromaps annotation</span></span>
-<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ Projecting mesh to 2D polygons</span></span>
-<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ✔ Projecting mesh to 2D polygons</span></span>
-<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ✔ Brain atlas created with 16 regions</span></span>
-<span id="cb10-19"><a href="#cb10-19" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-20"><a href="#cb10-20" aria-hidden="true" tabindex="-1"></a><span class="do">## Post-processing</span></span>
-<span id="cb10-21"><a href="#cb10-21" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-22"><a href="#cb10-22" aria-hidden="true" tabindex="-1"></a>The <span class="st">"unknown"</span> <span class="fu">region</span> (medial wall) renders as a filled region by default.</span>
-<span id="cb10-23"><a href="#cb10-23" aria-hidden="true" tabindex="-1"></a>Convert it to a background outline with <span class="st">`</span><span class="at">atlas_region_contextual()</span><span class="st">`</span><span class="sc">:</span></span>
-<span id="cb10-24"><a href="#cb10-24" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-25"><a href="#cb10-25" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-26"><a href="#cb10-26" aria-hidden="true" tabindex="-1"></a><span class="st">```</span><span class="at"> r</span></span>
-<span id="cb10-27"><a href="#cb10-27" aria-hidden="true" tabindex="-1"></a><span class="at">atlas_clean &lt;- atlas_full |&gt;</span></span>
-<span id="cb10-28"><a href="#cb10-28" aria-hidden="true" tabindex="-1"></a><span class="at">  atlas_region_contextual("unknown", match_on = "label")</span></span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">atlas_full</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/create_cortical_from_neuromaps.html">create_cortical_from_neuromaps</a></span><span class="op">(</span></span>
+<span>  source <span class="op">=</span> <span class="st">"abagen"</span>,</span>
+<span>  desc <span class="op">=</span> <span class="st">"genepc1"</span>,</span>
+<span>  n_bins <span class="op">=</span> <span class="fl">7</span>,</span>
+<span>  atlas_name <span class="op">=</span> <span class="st">"abagen_genepc1"</span>,</span>
+<span>  verbose <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">atlas_full</span> <span class="op">&lt;-</span> <span class="va">atlas_full</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/atlas_simplify.html">atlas_simplify</a></span><span class="op">(</span>keep <span class="op">=</span> <span class="fl">0.2</span>, exclude <span class="op">=</span> <span class="st">"cortex_"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/atlas_smooth.html">atlas_smooth</a></span><span class="op">(</span>exclude <span class="op">=</span> <span class="st">"cortex_"</span><span class="op">)</span></span>
+<span><span class="co">#&gt;</span></span>
+<span><span class="co">#&gt; ── Creating brain atlas "abagen_genepc1" ──</span></span>
+<span><span class="co">#&gt; ℹ Reading neuromaps annotation</span></span>
+<span><span class="co">#&gt; ✔ Reading neuromaps annotation</span></span>
+<span><span class="co">#&gt; ℹ Projecting mesh to 2D polygons</span></span>
+<span><span class="co">#&gt; ✔ Projecting mesh to 2D polygons</span></span>
+<span><span class="co">#&gt; ✔ Brain atlas created with 16 regions</span></span></code></pre></div>
+</section><section class="level2"><h2 id="post-processing">Post-processing<a class="anchor" aria-label="anchor" href="#post-processing"></a>
+</h2>
+<p>The “unknown” region (medial wall) renders as a filled region by default. Convert it to a background outline with <code><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_contextual()</a></code>:</p>
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">atlas_clean</span> <span class="op">&lt;-</span> <span class="va">atlas_full</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_contextual</a></span><span class="op">(</span><span class="st">"unknown"</span>, match_on <span class="op">=</span> <span class="st">"label"</span><span class="op">)</span></span></code></pre></div>
 </section><section class="level2"><h2 id="rendering-the-final-atlas">Rendering the final atlas<a class="anchor" aria-label="anchor" href="#rendering-the-final-atlas"></a>
 </h2>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">atlas_clean</span>, show.legend <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_void</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <div class="figure">
@@ -362,7 +359,7 @@
 2D gene expression atlas plotted with ggseg.
 </p>
 </div>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">ggseg3d</span><span class="fu">::</span><span class="fu"><a href="https://ggsegverse.github.io/ggseg3d/reference/ggseg3d.html" class="external-link">ggseg3d</a></span><span class="op">(</span>atlas <span class="op">=</span> <span class="va">atlas_clean</span>, hemisphere <span class="op">=</span> <span class="st">"left"</span><span class="op">)</span></span></code></pre></div>
 <div class="figure">
 <img src="figures/tutorial-neuromaps-atlas-plot-3d-1.png" alt="3D rendering of the left hemisphere showing the final gene expression atlas with 7 quantile bins coloured along a spectral gradient." width="672"><p class="caption">
@@ -373,7 +370,7 @@
 </h2>
 <p>Not all neuromaps annotations are continuous. Some contain integer vertex labels where each value maps to a brain region. The pipeline detects this automatically and skips binning entirely.</p>
 <p>For parcellations, you can provide a <code>label_table</code> to map the numeric IDs to human-readable region names and custom colors:</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">labels</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
 <span>  id <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span>, <span class="fl">3</span><span class="op">)</span>,</span>
 <span>  region <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"visual"</span>, <span class="st">"somatomotor"</span>, <span class="st">"dorsal_attention"</span><span class="op">)</span>,</span>
@@ -389,7 +386,7 @@
 </section><section class="level2"><h2 id="volume-annotations">Volume annotations<a class="anchor" aria-label="anchor" href="#volume-annotations"></a>
 </h2>
 <p>Some neuromaps annotations are volumetric NIfTI files in MNI152 space rather than surface GIFTI files. The pipeline detects this from the file extension (<code>.nii</code> or <code>.nii.gz</code>) and projects the volume onto the fsaverage5 surface using FreeSurfer’s <code>mri_vol2surf</code>.</p>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">atlas_vol</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/create_cortical_from_neuromaps.html">create_cortical_from_neuromaps</a></span><span class="op">(</span></span>
 <span>  source <span class="op">=</span> <span class="st">"pet"</span>,</span>
 <span>  desc <span class="op">=</span> <span class="st">"5HT1a"</span>,</span>
@@ -400,7 +397,7 @@
 </section><section class="level2"><h2 id="reading-annotation-files-directly">Reading annotation files directly<a class="anchor" aria-label="anchor" href="#reading-annotation-files-directly"></a>
 </h2>
 <p>If you already have GIFTI files on disk — from neuromaps, Connectome Workbench, or another source — you can bypass the fetching step and read them directly with <code><a href="../reference/read_neuromaps_annotation.html">read_neuromaps_annotation()</a></code>:</p>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">files</span> <span class="op">&lt;-</span> <span class="fu">neuromapr</span><span class="fu">::</span><span class="fu"><a href="https://lcbc-uio.github.io/neuromapr/reference/fetch_neuromaps_annotation.html" class="external-link">fetch_neuromaps_annotation</a></span><span class="op">(</span></span>
 <span>  source <span class="op">=</span> <span class="st">"abagen"</span>,</span>
 <span>  desc <span class="op">=</span> <span class="st">"genepc1"</span>,</span>
@@ -465,7 +462,7 @@
 </section><section class="level2"><h2 id="saving">Saving<a class="anchor" aria-label="anchor" href="#saving"></a>
 </h2>
 <p>Once you’re happy with the atlas, save it as package data:</p>
-<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">usethis</span><span class="fu">::</span><span class="fu">use_data</span><span class="op">(</span><span class="va">abagen_genepc1</span>, overwrite <span class="op">=</span> <span class="cn">TRUE</span>, compress <span class="op">=</span> <span class="st">"xz"</span><span class="op">)</span></span></code></pre></div>
 <p>The <code>compress = "xz"</code> flag gives the best compression for sf geometry data.</p>
 </section><script id="quarto-html-after-body" type="application/javascript">

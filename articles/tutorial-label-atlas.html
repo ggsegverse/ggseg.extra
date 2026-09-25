@@ -28,7 +28,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9058</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9060</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -137,61 +137,17 @@
 <span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">ba_labels</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] 18</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/basename.html" class="external-link">basename</a></span><span class="op">(</span><span class="va">ba_labels</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] "lh.BA1_exvivo.label" </span></span>
-<span><span class="co">#&gt; [2] "lh.BA2_exvivo.label" </span></span>
-<span><span class="co">#&gt; [3] "lh.BA3a_exvivo.label"</span></span>
-<span><span class="co">#&gt; [4] "lh.BA3b_exvivo.label"</span></span>
-<span><span class="co">#&gt; [5] "lh.BA44_exvivo.label"</span></span>
-<span><span class="co">#&gt; [6] "lh.BA45_exvivo.label"</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] "lh.BA1_exvivo.label"  "lh.BA2_exvivo.label"  "lh.BA3a_exvivo.label"</span></span>
+<span><span class="co">#&gt; [4] "lh.BA3b_exvivo.label" "lh.BA44_exvivo.label" "lh.BA45_exvivo.label"</span></span></code></pre></div>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">ba_atlas</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/create_cortical_from_labels.html">create_cortical_from_labels</a></span><span class="op">(</span></span>
 <span>  label_files <span class="op">=</span> <span class="va">ba_labels</span>,</span>
 <span>  atlas_name <span class="op">=</span> <span class="st">"brodmann"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/RtmpTTP4iV/filef86163473491.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/RtmpTTP4iV/filef861263665d6.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/RtmpTTP4iV/filef86152331bbb.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/RtmpTTP4iV/filef8615f876fce.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/RtmpTTP4iV/filef86199bd54.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/RtmpTTP4iV/filef86169ec7d0d.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/RtmpTTP4iV/filef86132c38306.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/RtmpTTP4iV/filef86136f1b46.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/RtmpTTP4iV/filef86114be2ba5.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/RtmpTTP4iV/filef8616b92f547.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/RtmpTTP4iV/filef861186b67bb.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/RtmpTTP4iV/filef8613c2550d2.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/RtmpTTP4iV/filef8614ae5fde1.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/RtmpTTP4iV/filef86171f9158e.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/RtmpTTP4iV/filef8612e115a4b.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/RtmpTTP4iV/filef8617d8c441d.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/RtmpTTP4iV/filef861493c5a22.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/RtmpTTP4iV/filef861204aabe6.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/RtmpTTP4iV/filef86167c150b8.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/RtmpTTP4iV/filef861bc7e49.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/RtmpTTP4iV/filef86172e37fc.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/RtmpTTP4iV/filef86148cb97cf.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/RtmpTTP4iV/filef8618ac18c0.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/RtmpTTP4iV/filef8615942d38f.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/RtmpTTP4iV/filef86111f4ee5.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/RtmpTTP4iV/filef86169ecf24d.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/RtmpTTP4iV/filef861514273b2.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/RtmpTTP4iV/filef8616f418d8c.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/RtmpTTP4iV/filef86138725f51.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/RtmpTTP4iV/filef8615266da60.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/RtmpTTP4iV/filef86177641992.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/RtmpTTP4iV/filef86122c77bf9.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/RtmpTTP4iV/filef861269b446f.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/RtmpTTP4iV/filef8612f8a986a.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/RtmpTTP4iV/filef86136de6472.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/RtmpTTP4iV/filef86128a204f4.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/RtmpTTP4iV/filef8615ef633e8.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/RtmpTTP4iV/filef8611df7233e.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/RtmpTTP4iV/filef861d6944c1.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/RtmpTTP4iV/filef8614c70e75.html screenshot completed</span></span>
 <span></span>
 <span><span class="va">ba_atlas</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; ── brodmann ggseg atlas ──────────────────</span></span>
+<span><span class="co">#&gt; ── brodmann ggseg atlas ────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; Type: cortical</span></span>
 <span><span class="co">#&gt; Regions: 9</span></span>
 <span><span class="co">#&gt; Hemispheres: left, right</span></span>
@@ -199,28 +155,19 @@
 <span><span class="co">#&gt; Palette: ✖</span></span>
 <span><span class="co">#&gt; Rendering: ✔ ggseg</span></span>
 <span><span class="co">#&gt; ✔ ggseg3d (vertices)</span></span>
-<span><span class="co">#&gt; ──────────────────────────────────────────</span></span>
-<span><span class="co">#&gt; # A tibble: 18 × 3</span></span>
-<span><span class="co">#&gt;    hemi  region      label         </span></span>
-<span><span class="co">#&gt;    &lt;chr&gt; &lt;chr&gt;       &lt;chr&gt;         </span></span>
-<span><span class="co">#&gt;  1 left  BA1_exvivo  lh_BA1_exvivo </span></span>
-<span><span class="co">#&gt;  2 left  BA2_exvivo  lh_BA2_exvivo </span></span>
-<span><span class="co">#&gt;  3 left  BA3a_exvivo lh_BA3a_exvivo</span></span>
-<span><span class="co">#&gt;  4 left  BA3b_exvivo lh_BA3b_exvivo</span></span>
-<span><span class="co">#&gt;  5 left  BA44_exvivo lh_BA44_exvivo</span></span>
-<span><span class="co">#&gt;  6 left  BA45_exvivo lh_BA45_exvivo</span></span>
-<span><span class="co">#&gt;  7 left  BA4a_exvivo lh_BA4a_exvivo</span></span>
-<span><span class="co">#&gt;  8 left  BA4p_exvivo lh_BA4p_exvivo</span></span>
-<span><span class="co">#&gt;  9 left  BA6_exvivo  lh_BA6_exvivo </span></span>
-<span><span class="co">#&gt; 10 right BA1_exvivo  rh_BA1_exvivo </span></span>
-<span><span class="co">#&gt; 11 right BA2_exvivo  rh_BA2_exvivo </span></span>
-<span><span class="co">#&gt; 12 right BA3a_exvivo rh_BA3a_exvivo</span></span>
-<span><span class="co">#&gt; 13 right BA3b_exvivo rh_BA3b_exvivo</span></span>
-<span><span class="co">#&gt; 14 right BA44_exvivo rh_BA44_exvivo</span></span>
-<span><span class="co">#&gt; 15 right BA45_exvivo rh_BA45_exvivo</span></span>
-<span><span class="co">#&gt; 16 right BA4a_exvivo rh_BA4a_exvivo</span></span>
-<span><span class="co">#&gt; 17 right BA4p_exvivo rh_BA4p_exvivo</span></span>
-<span><span class="co">#&gt; 18 right BA6_exvivo  rh_BA6_exvivo</span></span></code></pre></div>
+<span><span class="co">#&gt; ────────────────────────────────────────────────────────────────────────────────</span></span>
+<span><span class="co">#&gt;     hemi      region          label</span></span>
+<span><span class="co">#&gt; 1   left  BA1_exvivo  lh_BA1_exvivo</span></span>
+<span><span class="co">#&gt; 2   left  BA2_exvivo  lh_BA2_exvivo</span></span>
+<span><span class="co">#&gt; 3   left BA3a_exvivo lh_BA3a_exvivo</span></span>
+<span><span class="co">#&gt; 4   left BA3b_exvivo lh_BA3b_exvivo</span></span>
+<span><span class="co">#&gt; 5   left BA44_exvivo lh_BA44_exvivo</span></span>
+<span><span class="co">#&gt; 6   left BA45_exvivo lh_BA45_exvivo</span></span>
+<span><span class="co">#&gt; 7   left BA4a_exvivo lh_BA4a_exvivo</span></span>
+<span><span class="co">#&gt; 8   left BA4p_exvivo lh_BA4p_exvivo</span></span>
+<span><span class="co">#&gt; 9   left  BA6_exvivo  lh_BA6_exvivo</span></span>
+<span><span class="co">#&gt; 10 right  BA1_exvivo  rh_BA1_exvivo</span></span>
+<span><span class="co">#&gt; ... with 8 more rows</span></span></code></pre></div>
 <p>The function detects hemisphere from filename prefixes (<code>lh.</code> or <code>rh.</code>) and derives region names from the rest of the filename.</p>
 </section><section class="level2"><h2 id="custom-names-and-colours">Custom names and colours<a class="anchor" aria-label="anchor" href="#custom-names-and-colours"></a>
 </h2>
@@ -246,50 +193,10 @@
 <span>  label_files <span class="op">=</span> <span class="va">ba_labels</span>,</span>
 <span>  atlas_name <span class="op">=</span> <span class="st">"custom"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/RtmpTTP4iV/filef86110f02b1a.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/RtmpTTP4iV/filef8615d2d632.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/RtmpTTP4iV/filef8616e931304.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/RtmpTTP4iV/filef8611ea741f3.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/RtmpTTP4iV/filef861159059c1.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/RtmpTTP4iV/filef8611b665b2d.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/RtmpTTP4iV/filef86173cae81.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/RtmpTTP4iV/filef86173340a.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/RtmpTTP4iV/filef86126a968bb.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/RtmpTTP4iV/filef86189dd82b.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/RtmpTTP4iV/filef86144a6655d.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/RtmpTTP4iV/filef86168623106.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/RtmpTTP4iV/filef8616c4a7d01.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/RtmpTTP4iV/filef8616f8675f7.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/RtmpTTP4iV/filef861f747a6e.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/RtmpTTP4iV/filef8612a609ab6.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/RtmpTTP4iV/filef8611b5e1b3.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/RtmpTTP4iV/filef8612d37a098.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/RtmpTTP4iV/filef86170c340fd.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/RtmpTTP4iV/filef86116dca2aa.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/RtmpTTP4iV/filef8611fad7dc6.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/RtmpTTP4iV/filef8612880f7c3.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/RtmpTTP4iV/filef8612be155d0.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/RtmpTTP4iV/filef8611e38847a.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/RtmpTTP4iV/filef861232dffd1.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/RtmpTTP4iV/filef8617799ced5.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/RtmpTTP4iV/filef86136715e98.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/RtmpTTP4iV/filef861a61c787.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/RtmpTTP4iV/filef86129790549.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/RtmpTTP4iV/filef861769b0dcf.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/RtmpTTP4iV/filef86153bcc971.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/RtmpTTP4iV/filef86119d6fcbf.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/RtmpTTP4iV/filef86143b754bb.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/RtmpTTP4iV/filef86156036252.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/RtmpTTP4iV/filef861195284c0.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/RtmpTTP4iV/filef8614972af7.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/RtmpTTP4iV/filef8616d1ffcbe.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/RtmpTTP4iV/filef8612f8e9e30.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/RtmpTTP4iV/filef861577b374c.html screenshot completed</span></span>
-<span><span class="co">#&gt; file:////private/var/folders/y5/zlbbcqn56gx1tcg6xfb425100000gp/T/RtmpTTP4iV/filef8614a9017be.html screenshot completed</span></span>
 <span></span>
 <span><span class="va">ba_atlas</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; ── custom ggseg atlas ────────────────────</span></span>
+<span><span class="co">#&gt; ── custom ggseg atlas ──────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; Type: cortical</span></span>
 <span><span class="co">#&gt; Regions: 9</span></span>
 <span><span class="co">#&gt; Hemispheres: left, right</span></span>
@@ -297,37 +204,27 @@
 <span><span class="co">#&gt; Palette: ✖</span></span>
 <span><span class="co">#&gt; Rendering: ✔ ggseg</span></span>
 <span><span class="co">#&gt; ✔ ggseg3d (vertices)</span></span>
-<span><span class="co">#&gt; ──────────────────────────────────────────</span></span>
-<span><span class="co">#&gt; # A tibble: 18 × 3</span></span>
-<span><span class="co">#&gt;    hemi  region      label         </span></span>
-<span><span class="co">#&gt;    &lt;chr&gt; &lt;chr&gt;       &lt;chr&gt;         </span></span>
-<span><span class="co">#&gt;  1 left  BA1_exvivo  lh_BA1_exvivo </span></span>
-<span><span class="co">#&gt;  2 left  BA2_exvivo  lh_BA2_exvivo </span></span>
-<span><span class="co">#&gt;  3 left  BA3a_exvivo lh_BA3a_exvivo</span></span>
-<span><span class="co">#&gt;  4 left  BA3b_exvivo lh_BA3b_exvivo</span></span>
-<span><span class="co">#&gt;  5 left  BA44_exvivo lh_BA44_exvivo</span></span>
-<span><span class="co">#&gt;  6 left  BA45_exvivo lh_BA45_exvivo</span></span>
-<span><span class="co">#&gt;  7 left  BA4a_exvivo lh_BA4a_exvivo</span></span>
-<span><span class="co">#&gt;  8 left  BA4p_exvivo lh_BA4p_exvivo</span></span>
-<span><span class="co">#&gt;  9 left  BA6_exvivo  lh_BA6_exvivo </span></span>
-<span><span class="co">#&gt; 10 right BA1_exvivo  rh_BA1_exvivo </span></span>
-<span><span class="co">#&gt; 11 right BA2_exvivo  rh_BA2_exvivo </span></span>
-<span><span class="co">#&gt; 12 right BA3a_exvivo rh_BA3a_exvivo</span></span>
-<span><span class="co">#&gt; 13 right BA3b_exvivo rh_BA3b_exvivo</span></span>
-<span><span class="co">#&gt; 14 right BA44_exvivo rh_BA44_exvivo</span></span>
-<span><span class="co">#&gt; 15 right BA45_exvivo rh_BA45_exvivo</span></span>
-<span><span class="co">#&gt; 16 right BA4a_exvivo rh_BA4a_exvivo</span></span>
-<span><span class="co">#&gt; 17 right BA4p_exvivo rh_BA4p_exvivo</span></span>
-<span><span class="co">#&gt; 18 right BA6_exvivo  rh_BA6_exvivo</span></span></code></pre></div>
-<p>This runs the same screenshot pipeline as <code><a href="../reference/create_cortical_from_annotation.html">create_cortical_from_annotation()</a></code> — it takes screenshots of each region from multiple angles, extracts contours, and converts them to sf polygons.</p>
+<span><span class="co">#&gt; ────────────────────────────────────────────────────────────────────────────────</span></span>
+<span><span class="co">#&gt;     hemi      region          label</span></span>
+<span><span class="co">#&gt; 1   left  BA1_exvivo  lh_BA1_exvivo</span></span>
+<span><span class="co">#&gt; 2   left  BA2_exvivo  lh_BA2_exvivo</span></span>
+<span><span class="co">#&gt; 3   left BA3a_exvivo lh_BA3a_exvivo</span></span>
+<span><span class="co">#&gt; 4   left BA3b_exvivo lh_BA3b_exvivo</span></span>
+<span><span class="co">#&gt; 5   left BA44_exvivo lh_BA44_exvivo</span></span>
+<span><span class="co">#&gt; 6   left BA45_exvivo lh_BA45_exvivo</span></span>
+<span><span class="co">#&gt; 7   left BA4a_exvivo lh_BA4a_exvivo</span></span>
+<span><span class="co">#&gt; 8   left BA4p_exvivo lh_BA4p_exvivo</span></span>
+<span><span class="co">#&gt; 9   left  BA6_exvivo  lh_BA6_exvivo</span></span>
+<span><span class="co">#&gt; 10 right  BA1_exvivo  rh_BA1_exvivo</span></span>
+<span><span class="co">#&gt; ... with 8 more rows</span></span></code></pre></div>
+<p>This runs the same pipeline as <code><a href="../reference/create_cortical_from_annotation.html">create_cortical_from_annotation()</a></code> — it projects the inflated mesh triangles straight to 2D and converts them to sf polygons.</p>
 </section><section class="level2"><h2 id="post-processing">Post-processing<a class="anchor" aria-label="anchor" href="#post-processing"></a>
 </h2>
 <p>Clean up region names:</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">ba_atlas</span> <span class="op">&lt;-</span> <span class="va">ba_atlas</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_contextual</a></span><span class="op">(</span><span class="st">"cortex"</span>, match_on <span class="op">=</span> <span class="st">"label"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_contextual</a></span><span class="op">(</span><span class="st">"unknown"</span>, match_on <span class="op">=</span> <span class="st">"label"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_view_gather</a></span><span class="op">(</span><span class="op">)</span></span>
+<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_contextual</a></span><span class="op">(</span><span class="st">"unknown"</span>, match_on <span class="op">=</span> <span class="st">"label"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">core_clean</span> <span class="op">&lt;-</span> <span class="va">ba_atlas</span><span class="op">$</span><span class="va">core</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span></span>
@@ -344,19 +241,17 @@
 <span><span class="op">)</span></span></code></pre></div>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">ba_atlas</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/scale_viridis.html" class="external-link">scale_fill_viridis_d</a></span><span class="op">(</span>na.value <span class="op">=</span> <span class="st">"grey80"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Scale for fill is already present.</span></span>
-<span><span class="co">#&gt; Adding another scale for fill, which will</span></span>
-<span><span class="co">#&gt; replace the existing scale.</span></span></code></pre></div>
+<span>  <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/scale_viridis.html" class="external-link">scale_fill_viridis_d</a></span><span class="op">(</span>na.value <span class="op">=</span> <span class="st">"grey80"</span><span class="op">)</span></span></code></pre></div>
 <div class="figure">
 <img src="figures/tutorial-label-atlas-plot-1.png" alt="2D brain atlas plot showing Brodmann area regions across lateral and medial views of both hemispheres." width="960"><p class="caption">
 Brodmann area atlas plotted with ggseg.
 </p>
 </div>
+<pre><code><span><span class="co">#&gt; NULL</span></span></code></pre>
 </section><section class="level2"><h2 id="finding-label-files">Finding label files<a class="anchor" aria-label="anchor" href="#finding-label-files"></a>
 </h2>
 <p>FreeSurfer ships with several sets of label files. Brodmann areas are the most common:</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">label_dir</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span></span>
 <span>  <span class="fu">freesurfer</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/freesurfer/man/fs_dir.html" class="external-link">fs_dir</a></span><span class="op">(</span><span class="op">)</span>, <span class="st">"subjects"</span>, <span class="st">"fsaverage5"</span>, <span class="st">"label"</span></span>
 <span><span class="op">)</span></span>
@@ -368,7 +263,7 @@ Brodmann area atlas plotted with ggseg.
 </section><section class="level2"><h2 id="combining-regions-from-different-sources">Combining regions from different sources<a class="anchor" aria-label="anchor" href="#combining-regions-from-different-sources"></a>
 </h2>
 <p>Label-based atlases are useful when you want to mix regions from different analyses or atlases. Each label file is independent, so you can combine freely:</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">my_labels</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
 <span>  <span class="st">"lh.BA1_exvivo.label"</span>,</span>
 <span>  <span class="st">"lh.BA2_exvivo.label"</span>,</span>

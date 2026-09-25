@@ -58,14 +58,52 @@ SUIT-space GIFTI label files are the standard output from the
 Diedrichsen Lab cerebellar atlases. Each file maps every vertex on the
 SUIT surface to a region label.
 
+The lobular parcellation that ships with SUIT lives in the Diedrichsen
+Lab’s
+[cerebellar_atlases](https://github.com/DiedrichsenLab/cerebellar_atlases)
+repository, as `atl-Anatom_dseg.label.gii`. It is 12 KB, so fetching it
+is quick:
+
+``` r
+
+url <- paste0(
+  "https://raw.githubusercontent.com/DiedrichsenLab/cerebellar_atlases/",
+  "master/Diedrichsen_2009/atl-Anatom_dseg.label.gii"
+)
+suit_labels <- file.path(tempdir(), "atl-Anatom_dseg.label.gii")
+download.file(url, suit_labels, mode = "wb")
+```
+
 ``` r
 
 atlas <- create_cerebellar_from_gifti(
-  gifti_files = "Lobules-SUIT.label.gii",
+  gifti_files = suit_labels,
   atlas_name = "suit_lobules"
 )
 
 atlas
+#> 
+#> ── suit_lobules ggseg atlas ────────────────────────────────────────────────────
+#> Type: cerebellar
+#> Regions: 11
+#> Hemispheres: left, right, vermis, midline
+#> Views: flatmap
+#> Palette: ✔
+#> Rendering: ✔ ggseg
+#> ✔ ggseg3d (vertices)
+#> ────────────────────────────────────────────────────────────────────────────────
+#>      hemi region       label
+#> 1    left   I_IV   left_I_IV
+#> 2   right   I_IV  right_I_IV
+#> 3    left      V      left_V
+#> 4   right      V     right_V
+#> 5    left     VI     left_VI
+#> 6  vermis     VI   vermis_VI
+#> 7   right     VI    right_VI
+#> 8    left  CrusI  left_CrusI
+#> 9   right  CrusI right_CrusI
+#> 10   left CrusII left_CrusII
+#> ... with 17 more rows
 ```
 
 The pipeline reads the GIFTI label table for region names and colours,
@@ -79,8 +117,8 @@ If you also have a matching NIfTI volume and want 3D meshes:
 ``` r
 
 atlas <- create_cerebellar_from_gifti(
-  gifti_files = "Lobules-SUIT.label.gii",
-  volume = "Lobules-SUIT.nii.gz",
+  gifti_files = "atl-Anatom_dseg.label.gii",
+  volume = "atl-Anatom_space-SUIT_dseg.nii",
   atlas_name = "suit_lobules"
 )
 ```
@@ -171,11 +209,6 @@ pipeline:
 
 ``` r
 
-atlas <- create_cerebellar_from_gifti(
-  gifti_files = "Lobules-SUIT.label.gii",
-  decimate = 0.3
-)
-
 atlas <- atlas |>
   atlas_simplify(keep = 0.2, exclude = "cortex_") |>
   atlas_smooth(exclude = "cortex_")
@@ -213,6 +246,12 @@ I”.
 
 plot(atlas)
 ```
+
+![SUIT flatmap of the cerebellum with the lobular parcellation in
+colour, vermis down the centre and the two hemispheres either
+side.](figures/tutorial-cerebellar-atlas-plot-1.png)
+
+The SUIT anatomical parcellation on the cerebellar flatmap.
 
 The 2D plot shows the SUIT flatmap — the cerebellum unfolded with the
 vermis in the centre, left hemisphere on the left, right on the right.
