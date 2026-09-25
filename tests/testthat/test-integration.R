@@ -1,5 +1,4 @@
 describe("integration tests", {
-
   # The whole-brain and neuromaps tutorials cannot be built in CI -- one needs
   # a Harvard-Oxford volume that ships only with FSL, the other downloads its
   # annotation at run time -- so the pipelines behind them are exercised here
