@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9055</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9056</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -63,6 +63,11 @@
       <small>Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.9.9.9056" id="ggsegextra-1999056">ggseg.extra 1.9.9.9056<a class="anchor" aria-label="anchor" href="#ggsegextra-1999056"></a></h2>
+<ul><li>
+<code><a href="../reference/create_subcortical_from_volume.html">create_subcortical_from_volume()</a></code>, <code><a href="../reference/create_tract_from_tractography.html">create_tract_from_tractography()</a></code> and <code><a href="../reference/create_tract_from_volume.html">create_tract_from_volume()</a></code> return the atlas they built again. They ran every step, reported the pipeline as completed and then returned <code>NULL</code>: when a stage was removed the ceiling on <code>steps</code> dropped, but the step the atlas assembly was gated on did not, so that step was never in the set. Each pipeline’s step count is now one value used everywhere it is needed, rather than the same number written in three places, and the progress labels count to it too (<code>5/9</code>, not <code>5/8</code>).</li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9055" id="ggsegextra-1999055">ggseg.extra 1.9.9.9055<a class="anchor" aria-label="anchor" href="#ggsegextra-1999055"></a></h2>
 <ul><li><p>Extracting contours no longer attaches terra to your search path, where it masked functions such as <code>describe()</code> and <code>extract()</code>.</p></li>
