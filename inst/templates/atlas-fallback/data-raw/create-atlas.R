@@ -175,15 +175,15 @@ progressr::handlers(global = TRUE)
 # =============================================================================
 # SMOOTH AND SIMPLIFY (optional)
 # =============================================================================
-# The pipelines return raw, unsmoothed polygons. Smoothing is a separate
-# post-processing step, so you can tune `keep` without re-running the
-# pipeline. `exclude = "cortex_"` keeps the brain outline crisp.
+# The pipelines return raw, unsmoothed polygons. Tidying them is a separate
+# post-processing step in two parts: atlas_simplify() drops vertices and
+# atlas_smooth() rounds off what is left, so you can tune either without
+# re-running the pipeline. `exclude = "cortex_"` keeps the brain outline
+# crisp.
 
-# ATLASNAME <- atlas_smooth(
-#   ATLASNAME,
-#   keep = 0.2,
-#   exclude = "cortex_"
-# )
+# ATLASNAME <- ATLASNAME |>
+#   atlas_simplify(keep = 0.2, exclude = "cortex_") |>
+#   atlas_smooth(exclude = "cortex_")
 
 # =============================================================================
 # CLEAN UP REGION NAMES (optional)

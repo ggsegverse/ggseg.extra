@@ -116,9 +116,9 @@ The pipeline generates both from the source annotation, but the defaults are rar
 #| label: rename
 #| eval: false
 atlas <- atlas |>
-  atlas_region_rename("Left-", "", match_on = "region") |>
-  atlas_region_rename("Right-", "", match_on = "region") |>
-  atlas_region_rename("-", " ", match_on = "region")
+  atlas_region_rename("Left-", "") |>
+  atlas_region_rename("Right-", "") |>
+  atlas_region_rename("-", " ")
 ```
 
 ## Adding metadata columns
@@ -194,11 +194,11 @@ Remove them by minimum area:
 #| label: remove-small
 #| eval: false
 atlas <- atlas |>
-  atlas_view_remove_region_small(
+  atlas_view_remove_small(
     min_area = 500,
     views = c("axial", "coronal")
   ) |>
-  atlas_view_remove_region_small(min_area = 50)
+  atlas_view_remove_small(min_area = 50)
 ```
 
 The first call targets specific view types with a higher threshold.
@@ -368,7 +368,7 @@ atlas <- atlas_raw |>
   atlas_region_remove("CSF", match_on = "label") |>
   atlas_region_contextual("Cortex", match_on = "label") |>
   atlas_view_keep("axial_3|axial_5|coronal_3|sagittal") |>
-  atlas_view_remove_region_small(min_area = 100) |>
+  atlas_view_remove_small(min_area = 100) |>
   atlas_view_gather() |>
   atlas_dilate(0.6, exclude = "^cortex") |>
   atlas_simplify(keep = 0.5, labels = "^cortex") |>

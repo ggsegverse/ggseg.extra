@@ -199,6 +199,18 @@ subcort_setup_pipeline <- function(
 
 #' Run the subcortical pipeline steps and assemble the atlas
 #' @noRd
+#' Number of steps in the subcortical pipeline
+#'
+#' Step 9 assembles the 2D atlas, so this is both the ceiling `steps` is
+#' validated against and the step that assembly is gated on. It is one value
+#' because it was three: removing the PNG stage lowered the ceiling and the
+#' progress total to 8 but left the gate, the progress labels and the
+#' assembly's own error message on 9. Step 9 was then never in the default
+#' set, so the pipeline ran everything, reported success and returned `NULL`.
+#' @noRd
+subcort_total_steps <- function() 9L
+
+
 subcort_run_pipeline <- function(
   setup,
   start_time,
@@ -236,7 +248,7 @@ subcort_run_pipeline <- function(
   )
   subcort_image_steps(config, dirs, vertex_size_limits)
 
-  if (9L %in% config$steps) {
+  if (subcort_total_steps() %in% config$steps) {
     atlas <- subcort_build_2d_atlas(config, components, dirs, snaps, context)
     return(subcort_finalize(atlas, config, dirs, start_time))
   }
@@ -265,7 +277,7 @@ subcort_image_steps <- function(config, dirs, vertex_size_limits) {
     config,
     dirs,
     step_map = list(extract = 5L, smooth = 6L, reduce = 7L),
-    total_steps = 8L,
+    total_steps = subcort_total_steps(),
     vertex_size_limits = vertex_size_limits
   )
 }
@@ -383,7 +395,7 @@ validate_subcort_config <- function(
     tolerance,
     smoothness,
     steps,
-    max_step = 8L
+    max_step = subcort_total_steps()
   )
 
   validate_decimate(decimate)
