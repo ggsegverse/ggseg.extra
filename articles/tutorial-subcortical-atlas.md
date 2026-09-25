@@ -50,74 +50,35 @@ aseg_raw <- create_subcortical_from_volume(
   input_lut = color_lut,
   atlas_name = "aseg"
 )
-#> Warning: Atlas has 11943 vertices (threshold:
-#> 10000)
-#> ℹ Large atlases may be slow to plot and
-#>   increase package size
-#> ℹ Call `atlas_simplify(atlas, keep =
-#>   0.2)`, then `atlas_smooth(atlas)`, to
-#>   tidy it and reduce vertices
+#> Warning: Atlas has 31614 vertices (threshold: 10000)
+#> ℹ Large atlases may be slow to plot and increase package size
+#> ℹ Call `atlas_simplify(atlas, keep = 0.2)`, then `atlas_smooth(atlas)`, to tidy
+#>   it and reduce vertices
 
 aseg_raw
 #> 
-#> ── aseg ggseg atlas ──────────────────────
+#> ── aseg ggseg atlas ────────────────────────────────────────────────────────────
 #> Type: subcortical
 #> Regions: 27
 #> Hemispheres: left, NA, right
-#> Views: axial_1, axial_2, axial_3,
-#> axial_4, axial_5, axial_6, axial_7,
-#> coronal_1, coronal_2, coronal_3,
-#> coronal_4, coronal_5, sagittal
+#> Views: axial_1, axial_2, axial_3, coronal_1, coronal_2, coronal_3,
+#> sagittal_left
 #> Palette: ✔
 #> Rendering: ✔ ggseg
 #> ✔ ggseg3d (meshes)
-#> ──────────────────────────────────────────
-#> # A tibble: 43 × 3
-#>    hemi  region                  label    
-#>    <chr> <chr>                   <chr>    
-#>  1 left  cerebral white matter   Left-Cer…
-#>  2 left  cerebral cortex         Left-Cer…
-#>  3 left  lateral ventricle       Left-Lat…
-#>  4 left  inf lat vent            Left-Inf…
-#>  5 left  cerebellum white matter Left-Cer…
-#>  6 left  cerebellum cortex       Left-Cer…
-#>  7 left  thalamus                Left-Tha…
-#>  8 left  caudate                 Left-Cau…
-#>  9 left  putamen                 Left-Put…
-#> 10 left  pallidum                Left-Pal…
-#> 11 <NA>  3rd ventricle           3rd-Vent…
-#> 12 <NA>  4th ventricle           4th-Vent…
-#> 13 <NA>  brain stem              Brain-St…
-#> 14 left  hippocampus             Left-Hip…
-#> 15 left  amygdala                Left-Amy…
-#> 16 <NA>  csf                     CSF      
-#> 17 left  accumbens area          Left-Acc…
-#> 18 left  ventraldc               Left-Ven…
-#> 19 left  vessel                  Left-ves…
-#> 20 left  choroid plexus          Left-cho…
-#> 21 right cerebral white matter   Right-Ce…
-#> 22 right cerebral cortex         Right-Ce…
-#> 23 right lateral ventricle       Right-La…
-#> 24 right inf lat vent            Right-In…
-#> 25 right cerebellum white matter Right-Ce…
-#> 26 right cerebellum cortex       Right-Ce…
-#> 27 right thalamus                Right-Th…
-#> 28 right caudate                 Right-Ca…
-#> 29 right putamen                 Right-Pu…
-#> 30 right pallidum                Right-Pa…
-#> 31 right hippocampus             Right-Hi…
-#> 32 right amygdala                Right-Am…
-#> 33 right accumbens area          Right-Ac…
-#> 34 right ventraldc               Right-Ve…
-#> 35 right vessel                  Right-ve…
-#> 36 right choroid plexus          Right-ch…
-#> 37 <NA>  wm hypointensities      WM-hypoi…
-#> 38 <NA>  optic chiasm            Optic-Ch…
-#> 39 <NA>  cc posterior            CC_Poste…
-#> 40 <NA>  cc mid posterior        CC_Mid_P…
-#> 41 <NA>  cc central              CC_Centr…
-#> 42 <NA>  cc mid anterior         CC_Mid_A…
-#> 43 <NA>  cc anterior             CC_Anter…
+#> ────────────────────────────────────────────────────────────────────────────────
+#>    hemi                  region                        label
+#> 1  left   cerebral white matter   Left-Cerebral-White-Matter
+#> 2  left         cerebral cortex         Left-Cerebral-Cortex
+#> 3  left       lateral ventricle       Left-Lateral-Ventricle
+#> 4  left            inf lat vent            Left-Inf-Lat-Vent
+#> 5  left cerebellum white matter Left-Cerebellum-White-Matter
+#> 6  left       cerebellum cortex       Left-Cerebellum-Cortex
+#> 7  left                thalamus                Left-Thalamus
+#> 8  left                 caudate                 Left-Caudate
+#> 9  left                 putamen                 Left-Putamen
+#> 10 left                pallidum                Left-Pallidum
+#> ... with 33 more rows
 ```
 
 The default pipeline creates six projection views focused on the
@@ -178,63 +139,6 @@ Gather views into a compact arrangement:
 aseg_raw <- aseg_raw |>
   atlas_view_gather()
 ```
-
-## The shortcut: `aseg_context()`
-
-The remove → contextualise → view-keep → gather recipe above is the same
-for every subcortical atlas, so
-[`aseg_context()`](https://ggsegverse.github.io/ggseg.extra/reference/aseg_context.md)
-collapses it into one call. It punches the cortical white matter out of
-the brain silhouette, strips the structures `aseg` does not draw
-([`aseg_hidden_labels()`](https://ggsegverse.github.io/ggseg.extra/reference/aseg_hidden_labels.md)),
-demotes everything outside `focus` to grey context, and drops views with
-no focus region:
-
-``` r
-
-aseg_raw <- create_subcortical_from_volume(
-  input_volume = aseg_volume,
-  input_lut = color_lut,
-  atlas_name = "aseg"
-) |>
-  aseg_context(
-    focus = "Thalamus|Caudate|Putamen|Pallidum|Hippocampus|Amygdala|Accumbens|VentralDC|Brain-Stem"
-  )
-```
-
-`focus` is matched with a loose, case-insensitive
-[`grepl()`](https://rdrr.io/r/base/grep.html), so you don’t have to
-spell out FreeSurfer’s exact `Left-`/`Right-` label casing. The labels
-that don’t match become *context*, and demoting them uses a separate,
-exact, case-sensitive `^(...)$` match against their own resolved label
-strings — not `focus` re-applied — so a context label that happens to
-contain a focus label as a substring (the classic `Thalamus` inside
-`hypothalamus`) can never swallow it. That substring collision used to
-demote the whole focus set to context, silently producing 0-region
-atlases, before this exact-match step was added.
-
-[`subcortical_slabs()`](https://ggsegverse.github.io/ggseg.extra/reference/subcortical_slabs.md)
-derives the projection slabs from the bounding box of a set of labels,
-reading the volume in the **same** frame the builder uses, so the slabs
-always land on the right slices. You can pass its arguments as a list to
-`slabs`, and run
-[`aseg_context()`](https://ggsegverse.github.io/ggseg.extra/reference/aseg_context.md)
-in the same call via `context`:
-
-``` r
-
-aseg <- create_subcortical_from_volume(
-  input_volume = aseg_volume,
-  input_lut = color_lut,
-  atlas_name = "aseg",
-  slabs = list(labels = c(10:13, 17:18, 26, 49:54, 58), coronal = 3, axial = 2),
-  context = list(focus = "Thalamus|Caudate|Putamen|Pallidum|Hippocampus|Amygdala")
-)
-```
-
-[`create_wholebrain_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_wholebrain_from_volume.md)
-forwards both `slabs` and `context` through its `subcortical_opts`, so a
-whole-brain build gets the same treatment for free.
 
 ## Adding metadata
 
@@ -302,85 +206,46 @@ aseg <- ggseg_atlas(
 
 aseg
 #> 
-#> ── aseg ggseg atlas ──────────────────────
+#> ── aseg ggseg atlas ────────────────────────────────────────────────────────────
 #> Type: subcortical
 #> Regions: 17
 #> Hemispheres: left, NA, right
-#> Views: axial_3, axial_5, coronal_2,
-#> coronal_3, coronal_4, sagittal
+#> Views: axial_3, coronal_2, coronal_3, sagittal_left
 #> Palette: ✔
 #> Rendering: ✔ ggseg
 #> ✔ ggseg3d (meshes)
-#> ──────────────────────────────────────────
-#> # A tibble: 27 × 4
-#>    hemi  region            label structure
-#>    <chr> <chr>             <chr> <chr>    
-#>  1 left  thalamus          Left… <NA>     
-#>  2 left  caudate           Left… basal ga…
-#>  3 left  putamen           Left… basal ga…
-#>  4 left  pallidum          Left… basal ga…
-#>  5 <NA>  brain stem        Brai… brainstem
-#>  6 left  hippocampus       Left… limbic   
-#>  7 left  amygdala          Left… limbic   
-#>  8 left  nucleus accumbens Left… basal ga…
-#>  9 left  ventral DC        Left… dienceph…
-#> 10 left  vessel            Left… <NA>     
-#> 11 left  choroid plexus    Left… <NA>     
-#> 12 right thalamus          Righ… <NA>     
-#> 13 right caudate           Righ… basal ga…
-#> 14 right putamen           Righ… basal ga…
-#> 15 right pallidum          Righ… basal ga…
-#> 16 right hippocampus       Righ… limbic   
-#> 17 right amygdala          Righ… limbic   
-#> 18 right nucleus accumbens Righ… basal ga…
-#> 19 right ventral DC        Righ… dienceph…
-#> 20 right vessel            Righ… <NA>     
-#> 21 right choroid plexus    Righ… <NA>     
-#> 22 <NA>  optic chiasm      Opti… <NA>     
-#> 23 <NA>  cc posterior      CC_P… <NA>     
-#> 24 <NA>  cc mid posterior  CC_M… <NA>     
-#> 25 <NA>  cc central        CC_C… <NA>     
-#> 26 <NA>  cc mid anterior   CC_M… <NA>     
-#> 27 <NA>  cc anterior       CC_A… <NA>
+#> ────────────────────────────────────────────────────────────────────────────────
+#>    hemi            region               label     structure
+#> 1  left          thalamus       Left-Thalamus          <NA>
+#> 2  left           caudate        Left-Caudate basal ganglia
+#> 3  left           putamen        Left-Putamen basal ganglia
+#> 4  left          pallidum       Left-Pallidum basal ganglia
+#> 5  <NA>        brain stem          Brain-Stem     brainstem
+#> 6  left       hippocampus    Left-Hippocampus        limbic
+#> 7  left          amygdala       Left-Amygdala        limbic
+#> 8  left nucleus accumbens Left-Accumbens-area basal ganglia
+#> 9  left        ventral DC      Left-VentralDC  diencephalon
+#> 10 left            vessel         Left-vessel          <NA>
+#> ... with 17 more rows
 ```
 
 ``` r
 
 atlas_labels(aseg)
-#>  [1] "Brain-Stem"          
-#>  [2] "CC_Anterior"         
-#>  [3] "CC_Central"          
-#>  [4] "CC_Mid_Anterior"     
-#>  [5] "CC_Mid_Posterior"    
-#>  [6] "CC_Posterior"        
-#>  [7] "Left-Accumbens-area" 
-#>  [8] "Left-Amygdala"       
-#>  [9] "Left-Caudate"        
-#> [10] "Left-choroid-plexus" 
-#> [11] "Left-Hippocampus"    
-#> [12] "Left-Pallidum"       
-#> [13] "Left-Putamen"        
-#> [14] "Left-Thalamus"       
-#> [15] "Left-VentralDC"      
-#> [16] "Left-vessel"         
-#> [17] "Optic-Chiasm"        
-#> [18] "Right-Accumbens-area"
-#> [19] "Right-Amygdala"      
-#> [20] "Right-Caudate"       
-#> [21] "Right-choroid-plexus"
-#> [22] "Right-Hippocampus"   
-#> [23] "Right-Pallidum"      
-#> [24] "Right-Putamen"       
-#> [25] "Right-Thalamus"      
-#> [26] "Right-VentralDC"     
-#> [27] "Right-vessel"
+#>  [1] "Brain-Stem"           "CC_Anterior"          "CC_Central"          
+#>  [4] "CC_Mid_Anterior"      "CC_Mid_Posterior"     "CC_Posterior"        
+#>  [7] "Left-Accumbens-area"  "Left-Amygdala"        "Left-Caudate"        
+#> [10] "Left-choroid-plexus"  "Left-Hippocampus"     "Left-Pallidum"       
+#> [13] "Left-Putamen"         "Left-Thalamus"        "Left-VentralDC"      
+#> [16] "Left-vessel"          "Optic-Chiasm"         "Right-Accumbens-area"
+#> [19] "Right-Amygdala"       "Right-Caudate"        "Right-choroid-plexus"
+#> [22] "Right-Hippocampus"    "Right-Pallidum"       "Right-Putamen"       
+#> [25] "Right-Thalamus"       "Right-VentralDC"      "Right-vessel"
 
 table(aseg$core$structure)
 #> 
-#> basal ganglia     brainstem  diencephalon 
-#>             8             1             2 
-#>        limbic 
-#>             4
+#> basal ganglia     brainstem  diencephalon        limbic 
+#>             8             1             2             4
 ```
 
 ``` r
@@ -394,64 +259,3 @@ sagittal projection
 views.](figures/tutorial-subcortical-atlas-plot-1.png)
 
 Subcortical aseg atlas plotted with ggseg.
-
-## Atlases not in FreeSurfer space
-
-`aseg` is already on the FreeSurfer grid, so its structures sit in
-anatomical context for free. An atlas that ships as a standalone
-parcellation volume (in MNI space, say) has no surrounding brain to
-draw.
-[`prepare_subcortical_anatomical()`](https://ggsegverse.github.io/ggseg.extra/reference/prepare_subcortical_anatomical.md)
-coregisters such a parcellation to a FreeSurfer subject and merges it
-with that subject’s `aparc+aseg`, so the pipeline can draw the cortical
-ribbon and white-matter interior as context:
-
-``` r
-
-merged <- prepare_subcortical_anatomical(
-  input_volume = "my_parcellation_2mm.nii.gz",
-  lut = my_lut, # its idx selects + names the labels to keep
-  target_subject = "cvs_avg35_inMNI152" # subject to borrow context from
-)
-
-atlas <- create_subcortical_from_volume(
-  input_volume = merged, # carries both volume and matching colour table
-  context = list(focus = "my-structures")
-)
-```
-
-It chains
-[`coregister_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/coregister_volume.md)
-(wrapping `mri_coreg` to produce a reusable LTA transform) and
-[`project_volume_anatomical()`](https://ggsegverse.github.io/ggseg.extra/reference/project_volume_anatomical.md)
-(which resamples each label, takes the per-voxel argmax, shifts the
-atlas ids clear of the FreeSurfer ones, and protects the cortex). The
-result is a `list(volume, lut, id_offset)`: the merged volume *and* a
-colour table aligned to it — FreeSurfer names for the `aparc+aseg`
-context labels plus your atlas labels at their shifted ids.
-[`create_subcortical_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_subcortical_from_volume.md)
-unpacks both, so the context regions render with names
-[`aseg_context()`](https://ggsegverse.github.io/ggseg.extra/reference/aseg_context.md)
-recognises. Call the two steps separately to reuse one transform across
-several parcellations.
-
-### Custom colour tables
-
-When an atlas adds labels FreeSurfer doesn’t know about,
-[`lut_add()`](https://ggsegverse.github.io/ggseg.extra/reference/lut_add.md)
-appends them to a colour table;
-[`lut_combine()`](https://ggsegverse.github.io/ggseg.extra/reference/lut_combine.md)
-merges several tables and warns on clashing indices. Build `my_lut` from
-your parcellation’s own labels before passing it as `lut` above —
-[`prepare_subcortical_anatomical()`](https://ggsegverse.github.io/ggseg.extra/reference/prepare_subcortical_anatomical.md)
-shifts it and folds in the FreeSurfer context names for you:
-
-``` r
-
-my_lut <- read_lut(color_lut) |>
-  lut_add(
-    idx = c(20001, 20002),
-    label = c("Left-Hippocampus-ant", "Left-Hippocampus-post"),
-    R = c(220, 60), G = c(190, 140), B = c(30, 200)
-  )
-```

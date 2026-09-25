@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9061</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9062</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -67,6 +67,12 @@
       <small>Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.9.9.9062" id="ggsegextra-1999062">ggseg.extra 1.9.9.9062<a class="anchor" aria-label="anchor" href="#ggsegextra-1999062"></a></h2>
+<ul><li><p>Internal: the tract tutorial builds in CI, now that the image carries the one <code>trctrain</code> subject it uses. Five of the nine tutorials are executed on every pull request. Re-knitting it showed the committed page was stale in a way worth noting: it reported the atlas as <code>tracts</code> rather than <code>tracula</code>.</p></li>
+<li><p>Internal: tutorials knit at a pinned console width, so a narrow terminal and a runner no longer produce different line breaks throughout. Together with the path rewriting, a re-knit now differs only where the output does.</p></li>
+<li><p>Internal: the whole-brain pipeline gained an end-to-end test. Its tutorial cannot be built here – Harvard-Oxford ships only with FSL – so the pipeline is covered directly instead, asserting the default step set reaches the end and returns the three-way split rather than running everything and handing back nothing.</p></li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9061" id="ggsegextra-1999061">ggseg.extra 1.9.9.9061<a class="anchor" aria-label="anchor" href="#ggsegextra-1999061"></a></h2>
 <ul><li>

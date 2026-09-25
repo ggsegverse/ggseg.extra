@@ -28,7 +28,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9061</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9062</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -139,74 +139,36 @@
 <span>  input_aseg <span class="op">=</span> <span class="va">aseg_file</span>,</span>
 <span>  atlas_name <span class="op">=</span> <span class="st">"tracula"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; Warning: Atlas has 11230 vertices (threshold:</span></span>
-<span><span class="co">#&gt; 10000)</span></span>
-<span><span class="co">#&gt; ℹ Large atlases may be slow to plot and</span></span>
-<span><span class="co">#&gt;   increase package size</span></span>
-<span><span class="co">#&gt; ℹ Call `atlas_simplify(atlas, keep =</span></span>
-<span><span class="co">#&gt;   0.2)`, then `atlas_smooth(atlas)`, to</span></span>
-<span><span class="co">#&gt;   tidy it and reduce vertices</span></span>
+<span><span class="co">#&gt; Warning: Atlas has 58862 vertices (threshold: 10000)</span></span>
+<span><span class="co">#&gt; ℹ Large atlases may be slow to plot and increase package size</span></span>
+<span><span class="co">#&gt; ℹ Call `atlas_simplify(atlas, keep = 0.2)`, then `atlas_smooth(atlas)`, to tidy</span></span>
+<span><span class="co">#&gt;   it and reduce vertices</span></span>
 <span></span>
 <span><span class="va">tracula_raw</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; ── tracts ggseg atlas ────────────────────</span></span>
+<span><span class="co">#&gt; ── tracula ggseg atlas ─────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; Type: tract</span></span>
 <span><span class="co">#&gt; Regions: 26</span></span>
 <span><span class="co">#&gt; Hemispheres: midline, left, right</span></span>
-<span><span class="co">#&gt; Views: axial_1, axial_2, axial_3,</span></span>
-<span><span class="co">#&gt; axial_4, axial_5, coronal_1, coronal_2,</span></span>
-<span><span class="co">#&gt; coronal_3, coronal_4, coronal_5,</span></span>
-<span><span class="co">#&gt; coronal_6, sagittal_left,</span></span>
-<span><span class="co">#&gt; sagittal_midline, sagittal_right</span></span>
+<span><span class="co">#&gt; Views: axial_1, axial_2, axial_3, axial_4, axial_5, coronal_1, coronal_2,</span></span>
+<span><span class="co">#&gt; coronal_3, coronal_4, coronal_5, coronal_6, sagittal_midline, sagittal_left,</span></span>
+<span><span class="co">#&gt; sagittal_right</span></span>
 <span><span class="co">#&gt; Palette: ✖</span></span>
 <span><span class="co">#&gt; Rendering: ✔ ggseg</span></span>
 <span><span class="co">#&gt; ✔ ggseg3d (centerlines)</span></span>
-<span><span class="co">#&gt; ──────────────────────────────────────────</span></span>
-<span><span class="co">#&gt; # A tibble: 42 × 3</span></span>
-<span><span class="co">#&gt;    hemi    region               label     </span></span>
-<span><span class="co">#&gt;    &lt;chr&gt;   &lt;chr&gt;                &lt;chr&gt;     </span></span>
-<span><span class="co">#&gt;  1 midline acomm.bbr.prep       acomm.bbr…</span></span>
-<span><span class="co">#&gt;  2 midline cc.bodyc.bbr.prep    cc.bodyc.…</span></span>
-<span><span class="co">#&gt;  3 midline cc.bodyp.bbr.prep    cc.bodyp.…</span></span>
-<span><span class="co">#&gt;  4 midline cc.bodypf.bbr.prep   cc.bodypf…</span></span>
-<span><span class="co">#&gt;  5 midline cc.bodypm.bbr.prep   cc.bodypm…</span></span>
-<span><span class="co">#&gt;  6 midline cc.bodyt.bbr.prep    cc.bodyt.…</span></span>
-<span><span class="co">#&gt;  7 midline cc.genu.bbr.prep     cc.genu.b…</span></span>
-<span><span class="co">#&gt;  8 midline cc.rostrum.bbr.prep  cc.rostru…</span></span>
-<span><span class="co">#&gt;  9 midline cc.splenium.bbr.prep cc.spleni…</span></span>
-<span><span class="co">#&gt; 10 left    af.bbr.prep          lh.af.bbr…</span></span>
-<span><span class="co">#&gt; 11 left    ar.bbr.prep          lh.ar.bbr…</span></span>
-<span><span class="co">#&gt; 12 left    atr.bbr.prep         lh.atr.bb…</span></span>
-<span><span class="co">#&gt; 13 left    cbd.bbr.prep         lh.cbd.bb…</span></span>
-<span><span class="co">#&gt; 14 left    cbv.bbr.prep         lh.cbv.bb…</span></span>
-<span><span class="co">#&gt; 15 left    cst.bbr.prep         lh.cst.bb…</span></span>
-<span><span class="co">#&gt; 16 left    emc.bbr.prep         lh.emc.bb…</span></span>
-<span><span class="co">#&gt; 17 left    fat.bbr.prep         lh.fat.bb…</span></span>
-<span><span class="co">#&gt; 18 left    fx.bbr.prep          lh.fx.bbr…</span></span>
-<span><span class="co">#&gt; 19 left    ilf.bbr.prep         lh.ilf.bb…</span></span>
-<span><span class="co">#&gt; 20 left    mlf.bbr.prep         lh.mlf.bb…</span></span>
-<span><span class="co">#&gt; 21 left    or.bbr.prep          lh.or.bbr…</span></span>
-<span><span class="co">#&gt; 22 left    slf1.bbr.prep        lh.slf1.b…</span></span>
-<span><span class="co">#&gt; 23 left    slf2.bbr.prep        lh.slf2.b…</span></span>
-<span><span class="co">#&gt; 24 left    slf3.bbr.prep        lh.slf3.b…</span></span>
-<span><span class="co">#&gt; 25 left    uf.bbr.prep          lh.uf.bbr…</span></span>
-<span><span class="co">#&gt; 26 midline mcp.bbr.prep         mcp.bbr.p…</span></span>
-<span><span class="co">#&gt; 27 right   af.bbr.prep          rh.af.bbr…</span></span>
-<span><span class="co">#&gt; 28 right   ar.bbr.prep          rh.ar.bbr…</span></span>
-<span><span class="co">#&gt; 29 right   atr.bbr.prep         rh.atr.bb…</span></span>
-<span><span class="co">#&gt; 30 right   cbd.bbr.prep         rh.cbd.bb…</span></span>
-<span><span class="co">#&gt; 31 right   cbv.bbr.prep         rh.cbv.bb…</span></span>
-<span><span class="co">#&gt; 32 right   cst.bbr.prep         rh.cst.bb…</span></span>
-<span><span class="co">#&gt; 33 right   emc.bbr.prep         rh.emc.bb…</span></span>
-<span><span class="co">#&gt; 34 right   fat.bbr.prep         rh.fat.bb…</span></span>
-<span><span class="co">#&gt; 35 right   fx.bbr.prep          rh.fx.bbr…</span></span>
-<span><span class="co">#&gt; 36 right   ilf.bbr.prep         rh.ilf.bb…</span></span>
-<span><span class="co">#&gt; 37 right   mlf.bbr.prep         rh.mlf.bb…</span></span>
-<span><span class="co">#&gt; 38 right   or.bbr.prep          rh.or.bbr…</span></span>
-<span><span class="co">#&gt; 39 right   slf1.bbr.prep        rh.slf1.b…</span></span>
-<span><span class="co">#&gt; 40 right   slf2.bbr.prep        rh.slf2.b…</span></span>
-<span><span class="co">#&gt; 41 right   slf3.bbr.prep        rh.slf3.b…</span></span>
-<span><span class="co">#&gt; 42 right   uf.bbr.prep          rh.uf.bbr…</span></span></code></pre></div>
+<span><span class="co">#&gt; ────────────────────────────────────────────────────────────────────────────────</span></span>
+<span><span class="co">#&gt;       hemi               region                label</span></span>
+<span><span class="co">#&gt; 1  midline       acomm.bbr.prep       acomm.bbr.prep</span></span>
+<span><span class="co">#&gt; 2  midline    cc.bodyc.bbr.prep    cc.bodyc.bbr.prep</span></span>
+<span><span class="co">#&gt; 3  midline    cc.bodyp.bbr.prep    cc.bodyp.bbr.prep</span></span>
+<span><span class="co">#&gt; 4  midline   cc.bodypf.bbr.prep   cc.bodypf.bbr.prep</span></span>
+<span><span class="co">#&gt; 5  midline   cc.bodypm.bbr.prep   cc.bodypm.bbr.prep</span></span>
+<span><span class="co">#&gt; 6  midline    cc.bodyt.bbr.prep    cc.bodyt.bbr.prep</span></span>
+<span><span class="co">#&gt; 7  midline     cc.genu.bbr.prep     cc.genu.bbr.prep</span></span>
+<span><span class="co">#&gt; 8  midline  cc.rostrum.bbr.prep  cc.rostrum.bbr.prep</span></span>
+<span><span class="co">#&gt; 9  midline cc.splenium.bbr.prep cc.splenium.bbr.prep</span></span>
+<span><span class="co">#&gt; 10    left          af.bbr.prep       lh.af.bbr.prep</span></span>
+<span><span class="co">#&gt; ... with 32 more rows</span></span></code></pre></div>
 <p>Key parameters:</p>
 <ul>
 <li>
@@ -245,8 +207,8 @@
 <span>    views <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"axial"</span>, <span class="st">"coronal"</span><span class="op">)</span></span>
 <span>  <span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_view_remove_small</a></span><span class="op">(</span>min_area <span class="op">=</span> <span class="fl">50</span><span class="op">)</span></span>
-<span><span class="co">#&gt; ℹ Removed 49 geometries below area 500</span></span>
-<span><span class="co">#&gt; ℹ Removed 10 geometries below area 50</span></span></code></pre></div>
+<span><span class="co">#&gt; ℹ Removed 98 geometries below area 500</span></span>
+<span><span class="co">#&gt; ℹ Removed 12 geometries below area 50</span></span></code></pre></div>
 <p>The first call applies a higher threshold to axial and coronal views (where tracts appear in cross-section and produce small dots). The second call applies a lower threshold everywhere to catch remaining slivers.</p>
 </section></section><section class="level2"><h2 id="adding-metadata">Adding metadata<a class="anchor" aria-label="anchor" href="#adding-metadata"></a>
 </h2>
@@ -315,106 +277,44 @@
 <span></span>
 <span><span class="va">tracula</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; ── tracula ggseg atlas ───────────────────</span></span>
+<span><span class="co">#&gt; ── tracula ggseg atlas ─────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; Type: tract</span></span>
 <span><span class="co">#&gt; Regions: 26</span></span>
 <span><span class="co">#&gt; Hemispheres: midline, left, right</span></span>
-<span><span class="co">#&gt; Views: axial_2, axial_4, coronal_3,</span></span>
-<span><span class="co">#&gt; coronal_4, sagittal_left,</span></span>
-<span><span class="co">#&gt; sagittal_midline, sagittal_right</span></span>
+<span><span class="co">#&gt; Views: axial_2, axial_4, coronal_3, coronal_4, sagittal_midline, sagittal_left,</span></span>
+<span><span class="co">#&gt; sagittal_right</span></span>
 <span><span class="co">#&gt; Palette: ✖</span></span>
 <span><span class="co">#&gt; Rendering: ✔ ggseg</span></span>
 <span><span class="co">#&gt; ✔ ggseg3d (centerlines)</span></span>
-<span><span class="co">#&gt; ──────────────────────────────────────────</span></span>
-<span><span class="co">#&gt; # A tibble: 42 × 4</span></span>
-<span><span class="co">#&gt;    hemi    region              label group</span></span>
-<span><span class="co">#&gt;    &lt;chr&gt;   &lt;chr&gt;               &lt;chr&gt; &lt;chr&gt;</span></span>
-<span><span class="co">#&gt;  1 midline acomm.bbr.prep      acom… &lt;NA&gt; </span></span>
-<span><span class="co">#&gt;  2 midline cc.bodyc.bbr.prep   cc.b… &lt;NA&gt; </span></span>
-<span><span class="co">#&gt;  3 midline cc.bodyp.bbr.prep   cc.b… &lt;NA&gt; </span></span>
-<span><span class="co">#&gt;  4 midline cc.bodypf.bbr.prep  cc.b… &lt;NA&gt; </span></span>
-<span><span class="co">#&gt;  5 midline cc.bodypm.bbr.prep  cc.b… &lt;NA&gt; </span></span>
-<span><span class="co">#&gt;  6 midline cc.bodyt.bbr.prep   cc.b… &lt;NA&gt; </span></span>
-<span><span class="co">#&gt;  7 midline cc.genu.bbr.prep    cc.g… &lt;NA&gt; </span></span>
-<span><span class="co">#&gt;  8 midline cc.rostrum.bbr.prep cc.r… &lt;NA&gt; </span></span>
-<span><span class="co">#&gt;  9 midline cc.splenium.bbr.pr… cc.s… &lt;NA&gt; </span></span>
-<span><span class="co">#&gt; 10 left    af.bbr.prep         lh.a… &lt;NA&gt; </span></span>
-<span><span class="co">#&gt; 11 left    ar.bbr.prep         lh.a… &lt;NA&gt; </span></span>
-<span><span class="co">#&gt; 12 left    atr.bbr.prep        lh.a… &lt;NA&gt; </span></span>
-<span><span class="co">#&gt; 13 left    cbd.bbr.prep        lh.c… &lt;NA&gt; </span></span>
-<span><span class="co">#&gt; 14 left    cbv.bbr.prep        lh.c… &lt;NA&gt; </span></span>
-<span><span class="co">#&gt; 15 left    cst.bbr.prep        lh.c… &lt;NA&gt; </span></span>
-<span><span class="co">#&gt; 16 left    emc.bbr.prep        lh.e… &lt;NA&gt; </span></span>
-<span><span class="co">#&gt; 17 left    fat.bbr.prep        lh.f… &lt;NA&gt; </span></span>
-<span><span class="co">#&gt; 18 left    fx.bbr.prep         lh.f… &lt;NA&gt; </span></span>
-<span><span class="co">#&gt; 19 left    ilf.bbr.prep        lh.i… &lt;NA&gt; </span></span>
-<span><span class="co">#&gt; 20 left    mlf.bbr.prep        lh.m… &lt;NA&gt; </span></span>
-<span><span class="co">#&gt; 21 left    or.bbr.prep         lh.o… &lt;NA&gt; </span></span>
-<span><span class="co">#&gt; 22 left    slf1.bbr.prep       lh.s… &lt;NA&gt; </span></span>
-<span><span class="co">#&gt; 23 left    slf2.bbr.prep       lh.s… &lt;NA&gt; </span></span>
-<span><span class="co">#&gt; 24 left    slf3.bbr.prep       lh.s… &lt;NA&gt; </span></span>
-<span><span class="co">#&gt; 25 left    uf.bbr.prep         lh.u… &lt;NA&gt; </span></span>
-<span><span class="co">#&gt; 26 midline mcp.bbr.prep        mcp.… &lt;NA&gt; </span></span>
-<span><span class="co">#&gt; 27 right   af.bbr.prep         rh.a… &lt;NA&gt; </span></span>
-<span><span class="co">#&gt; 28 right   ar.bbr.prep         rh.a… &lt;NA&gt; </span></span>
-<span><span class="co">#&gt; 29 right   atr.bbr.prep        rh.a… &lt;NA&gt; </span></span>
-<span><span class="co">#&gt; 30 right   cbd.bbr.prep        rh.c… &lt;NA&gt; </span></span>
-<span><span class="co">#&gt; 31 right   cbv.bbr.prep        rh.c… &lt;NA&gt; </span></span>
-<span><span class="co">#&gt; 32 right   cst.bbr.prep        rh.c… &lt;NA&gt; </span></span>
-<span><span class="co">#&gt; 33 right   emc.bbr.prep        rh.e… &lt;NA&gt; </span></span>
-<span><span class="co">#&gt; 34 right   fat.bbr.prep        rh.f… &lt;NA&gt; </span></span>
-<span><span class="co">#&gt; 35 right   fx.bbr.prep         rh.f… &lt;NA&gt; </span></span>
-<span><span class="co">#&gt; 36 right   ilf.bbr.prep        rh.i… &lt;NA&gt; </span></span>
-<span><span class="co">#&gt; 37 right   mlf.bbr.prep        rh.m… &lt;NA&gt; </span></span>
-<span><span class="co">#&gt; 38 right   or.bbr.prep         rh.o… &lt;NA&gt; </span></span>
-<span><span class="co">#&gt; 39 right   slf1.bbr.prep       rh.s… &lt;NA&gt; </span></span>
-<span><span class="co">#&gt; 40 right   slf2.bbr.prep       rh.s… &lt;NA&gt; </span></span>
-<span><span class="co">#&gt; 41 right   slf3.bbr.prep       rh.s… &lt;NA&gt; </span></span>
-<span><span class="co">#&gt; 42 right   uf.bbr.prep         rh.u… &lt;NA&gt;</span></span></code></pre></div>
+<span><span class="co">#&gt; ────────────────────────────────────────────────────────────────────────────────</span></span>
+<span><span class="co">#&gt;       hemi               region                label group</span></span>
+<span><span class="co">#&gt; 1  midline       acomm.bbr.prep       acomm.bbr.prep  &lt;NA&gt;</span></span>
+<span><span class="co">#&gt; 2  midline    cc.bodyc.bbr.prep    cc.bodyc.bbr.prep  &lt;NA&gt;</span></span>
+<span><span class="co">#&gt; 3  midline    cc.bodyp.bbr.prep    cc.bodyp.bbr.prep  &lt;NA&gt;</span></span>
+<span><span class="co">#&gt; 4  midline   cc.bodypf.bbr.prep   cc.bodypf.bbr.prep  &lt;NA&gt;</span></span>
+<span><span class="co">#&gt; 5  midline   cc.bodypm.bbr.prep   cc.bodypm.bbr.prep  &lt;NA&gt;</span></span>
+<span><span class="co">#&gt; 6  midline    cc.bodyt.bbr.prep    cc.bodyt.bbr.prep  &lt;NA&gt;</span></span>
+<span><span class="co">#&gt; 7  midline     cc.genu.bbr.prep     cc.genu.bbr.prep  &lt;NA&gt;</span></span>
+<span><span class="co">#&gt; 8  midline  cc.rostrum.bbr.prep  cc.rostrum.bbr.prep  &lt;NA&gt;</span></span>
+<span><span class="co">#&gt; 9  midline cc.splenium.bbr.prep cc.splenium.bbr.prep  &lt;NA&gt;</span></span>
+<span><span class="co">#&gt; 10    left          af.bbr.prep       lh.af.bbr.prep  &lt;NA&gt;</span></span>
+<span><span class="co">#&gt; ... with 32 more rows</span></span></code></pre></div>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_labels.html" class="external-link">atlas_labels</a></span><span class="op">(</span><span class="va">tracula</span><span class="op">)</span></span>
-<span><span class="co">#&gt;  [1] "acomm.bbr.prep"      </span></span>
-<span><span class="co">#&gt;  [2] "cc.bodyc.bbr.prep"   </span></span>
-<span><span class="co">#&gt;  [3] "cc.bodyp.bbr.prep"   </span></span>
-<span><span class="co">#&gt;  [4] "cc.bodypf.bbr.prep"  </span></span>
-<span><span class="co">#&gt;  [5] "cc.bodypm.bbr.prep"  </span></span>
-<span><span class="co">#&gt;  [6] "cc.bodyt.bbr.prep"   </span></span>
-<span><span class="co">#&gt;  [7] "cc.genu.bbr.prep"    </span></span>
-<span><span class="co">#&gt;  [8] "cc.rostrum.bbr.prep" </span></span>
-<span><span class="co">#&gt;  [9] "cc.splenium.bbr.prep"</span></span>
-<span><span class="co">#&gt; [10] "lh.af.bbr.prep"      </span></span>
-<span><span class="co">#&gt; [11] "lh.ar.bbr.prep"      </span></span>
-<span><span class="co">#&gt; [12] "lh.atr.bbr.prep"     </span></span>
-<span><span class="co">#&gt; [13] "lh.cbd.bbr.prep"     </span></span>
-<span><span class="co">#&gt; [14] "lh.cbv.bbr.prep"     </span></span>
-<span><span class="co">#&gt; [15] "lh.cst.bbr.prep"     </span></span>
-<span><span class="co">#&gt; [16] "lh.emc.bbr.prep"     </span></span>
-<span><span class="co">#&gt; [17] "lh.fat.bbr.prep"     </span></span>
-<span><span class="co">#&gt; [18] "lh.fx.bbr.prep"      </span></span>
-<span><span class="co">#&gt; [19] "lh.ilf.bbr.prep"     </span></span>
-<span><span class="co">#&gt; [20] "lh.mlf.bbr.prep"     </span></span>
-<span><span class="co">#&gt; [21] "lh.or.bbr.prep"      </span></span>
-<span><span class="co">#&gt; [22] "lh.slf1.bbr.prep"    </span></span>
-<span><span class="co">#&gt; [23] "lh.slf2.bbr.prep"    </span></span>
-<span><span class="co">#&gt; [24] "lh.slf3.bbr.prep"    </span></span>
-<span><span class="co">#&gt; [25] "lh.uf.bbr.prep"      </span></span>
-<span><span class="co">#&gt; [26] "mcp.bbr.prep"        </span></span>
-<span><span class="co">#&gt; [27] "rh.af.bbr.prep"      </span></span>
-<span><span class="co">#&gt; [28] "rh.ar.bbr.prep"      </span></span>
-<span><span class="co">#&gt; [29] "rh.atr.bbr.prep"     </span></span>
-<span><span class="co">#&gt; [30] "rh.cbd.bbr.prep"     </span></span>
-<span><span class="co">#&gt; [31] "rh.cbv.bbr.prep"     </span></span>
-<span><span class="co">#&gt; [32] "rh.cst.bbr.prep"     </span></span>
-<span><span class="co">#&gt; [33] "rh.emc.bbr.prep"     </span></span>
-<span><span class="co">#&gt; [34] "rh.fat.bbr.prep"     </span></span>
-<span><span class="co">#&gt; [35] "rh.fx.bbr.prep"      </span></span>
-<span><span class="co">#&gt; [36] "rh.ilf.bbr.prep"     </span></span>
-<span><span class="co">#&gt; [37] "rh.mlf.bbr.prep"     </span></span>
-<span><span class="co">#&gt; [38] "rh.or.bbr.prep"      </span></span>
-<span><span class="co">#&gt; [39] "rh.slf1.bbr.prep"    </span></span>
-<span><span class="co">#&gt; [40] "rh.slf2.bbr.prep"    </span></span>
-<span><span class="co">#&gt; [41] "rh.slf3.bbr.prep"    </span></span>
-<span><span class="co">#&gt; [42] "rh.uf.bbr.prep"</span></span>
+<span><span class="co">#&gt;  [1] "acomm.bbr.prep"       "cc.bodyc.bbr.prep"    "cc.bodyp.bbr.prep"   </span></span>
+<span><span class="co">#&gt;  [4] "cc.bodypf.bbr.prep"   "cc.bodypm.bbr.prep"   "cc.bodyt.bbr.prep"   </span></span>
+<span><span class="co">#&gt;  [7] "cc.genu.bbr.prep"     "cc.rostrum.bbr.prep"  "cc.splenium.bbr.prep"</span></span>
+<span><span class="co">#&gt; [10] "lh.af.bbr.prep"       "lh.ar.bbr.prep"       "lh.atr.bbr.prep"     </span></span>
+<span><span class="co">#&gt; [13] "lh.cbd.bbr.prep"      "lh.cbv.bbr.prep"      "lh.cst.bbr.prep"     </span></span>
+<span><span class="co">#&gt; [16] "lh.emc.bbr.prep"      "lh.fat.bbr.prep"      "lh.fx.bbr.prep"      </span></span>
+<span><span class="co">#&gt; [19] "lh.ilf.bbr.prep"      "lh.mlf.bbr.prep"      "lh.or.bbr.prep"      </span></span>
+<span><span class="co">#&gt; [22] "lh.slf1.bbr.prep"     "lh.slf2.bbr.prep"     "lh.slf3.bbr.prep"    </span></span>
+<span><span class="co">#&gt; [25] "lh.uf.bbr.prep"       "mcp.bbr.prep"         "rh.af.bbr.prep"      </span></span>
+<span><span class="co">#&gt; [28] "rh.ar.bbr.prep"       "rh.atr.bbr.prep"      "rh.cbd.bbr.prep"     </span></span>
+<span><span class="co">#&gt; [31] "rh.cbv.bbr.prep"      "rh.cst.bbr.prep"      "rh.emc.bbr.prep"     </span></span>
+<span><span class="co">#&gt; [34] "rh.fat.bbr.prep"      "rh.fx.bbr.prep"       "rh.ilf.bbr.prep"     </span></span>
+<span><span class="co">#&gt; [37] "rh.mlf.bbr.prep"      "rh.or.bbr.prep"       "rh.slf1.bbr.prep"    </span></span>
+<span><span class="co">#&gt; [40] "rh.slf2.bbr.prep"     "rh.slf3.bbr.prep"     "rh.uf.bbr.prep"</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/table.html" class="external-link">table</a></span><span class="op">(</span><span class="va">tracula</span><span class="op">$</span><span class="va">core</span><span class="op">$</span><span class="va">group</span>, useNA <span class="op">=</span> <span class="st">"ifany"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; </span></span>
@@ -422,15 +322,13 @@
 <span><span class="co">#&gt;   42</span></span></code></pre></div>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">tracula</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/scale_viridis.html" class="external-link">scale_fill_viridis_d</a></span><span class="op">(</span>na.value <span class="op">=</span> <span class="st">"grey80"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Scale for fill is already present.</span></span>
-<span><span class="co">#&gt; Adding another scale for fill, which will</span></span>
-<span><span class="co">#&gt; replace the existing scale.</span></span></code></pre></div>
+<span>  <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/scale_viridis.html" class="external-link">scale_fill_viridis_d</a></span><span class="op">(</span>na.value <span class="op">=</span> <span class="st">"grey80"</span><span class="op">)</span></span></code></pre></div>
 <div class="figure">
 <img src="figures/tutorial-tract-atlas-plot-1.png" alt="2D brain atlas plot showing white matter tracts including corticospinal tract, uncinate fasciculus, and cingulum across axial, coronal, and sagittal projection views." width="960"><p class="caption">
 TRACULA white matter tract atlas plotted with ggseg.
 </p>
 </div>
+<pre><code><span><span class="co">#&gt; NULL</span></span></code></pre>
 </section><script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
