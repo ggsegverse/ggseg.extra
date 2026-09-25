@@ -1,10 +1,21 @@
-# ggseg.extra 1.9.9.9056
+# ggseg.extra 1.9.9.9057
 
 - Two new tutorials. *Lookup tables and colours* covers the `lut_*` family --
   building, reading, combining and colouring the table every volumetric
   pipeline asks for. *Publishing an atlas as a package* covers
   `setup_atlas_repo()`, `use_atlas_github_actions()` and the steps between a
   finished atlas and a repository that builds itself.
+
+# ggseg.extra 1.9.9.9056
+
+- `create_subcortical_from_volume()`, `create_tract_from_tractography()` and
+  `create_tract_from_volume()` return the atlas they built again. They ran
+  every step, reported the pipeline as completed and then returned `NULL`:
+  when a stage was removed the ceiling on `steps` dropped, but the step the
+  atlas assembly was gated on did not, so that step was never in the set. Each
+  pipeline's step count is now one value used everywhere it is needed, rather
+  than the same number written in three places, and the progress labels count
+  to it too (`5/9`, not `5/8`).
 
 # ggseg.extra 1.9.9.9055
 

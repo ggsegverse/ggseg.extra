@@ -273,7 +273,7 @@ tract_run_pipeline <- function(
 
   tract_image_steps(config, dirs, vertex_size_limits)
 
-  if (7L %in% config$steps) {
+  if (tract_total_steps() %in% config$steps) {
     atlas <- tract_assemble_full(step1, dirs, snaps$slabs, snaps$cortex_slices)
     return(tract_finalize(atlas, config, dirs, start_time))
   }
@@ -297,12 +297,21 @@ tract_finalize <- function(atlas, config, dirs, start_time) {
 
 
 #' @noRd
+#' Number of steps in the tract pipeline
+#'
+#' Step 7 assembles the atlas. Same story as `subcort_total_steps()`: the
+#' ceiling and the progress total dropped to 6 while everything else stayed
+#' on 7, so the last step could never run.
+#' @noRd
+tract_total_steps <- function() 7L
+
+
 tract_image_steps <- function(config, dirs, vertex_size_limits) {
   run_image_steps(
     config,
     dirs,
     step_map = list(extract = 3L, smooth = 4L, reduce = 5L),
-    total_steps = 6L,
+    total_steps = tract_total_steps(),
     vertex_size_limits = vertex_size_limits
   )
 }
@@ -332,7 +341,7 @@ validate_tract_config <- function(
     tolerance,
     smoothness,
     steps,
-    max_step = 6L
+    max_step = tract_total_steps()
   )
   config$output_dir <- absolute_path(config$output_dir)
 
