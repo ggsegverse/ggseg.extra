@@ -1,4 +1,34 @@
 describe("integration tests", {
+  # The whole-brain and neuromaps tutorials cannot be built in CI -- one needs
+  # a Harvard-Oxford volume that ships only with FSL, the other downloads its
+  # annotation at run time -- so the pipelines behind them are exercised here
+  # instead. This is the same check the subcortical case above makes: that the
+  # default step set actually reaches the end and hands back what it built,
+  # rather than running everything and returning NULL.
+  it("returns the three-way split from the full whole-brain pipeline", {
+    skip_if_no_freesurfer()
+
+    lut <- read_lut(test_path("testdata", "volumetric", "lut.txt"))
+    lut$type <- c("unknown", rep("subcortical", nrow(lut) - 1))
+
+    result <- create_wholebrain_from_volume(
+      input_volume = test_path("testdata", "volumetric", "aseg.mgz"),
+      input_lut = lut,
+      atlas_name = "wholebrainsmoke",
+      output_dir = withr::local_tempdir(),
+      verbose = FALSE
+    )
+
+    expect_named(result, c("cortical", "subcortical", "cerebellar"))
+    expect_s3_class(result$subcortical, "ggseg_atlas")
+    expect_gt(nrow(result$subcortical$core), 0L)
+
+    # The fixture carries only subcortical labels, so the other two routes
+    # stay empty rather than returning an atlas with nothing in it.
+    expect_null(result$cortical)
+    expect_null(result$cerebellar)
+  })
+
   # The pipeline used to run all eight steps, report success and hand back
   # NULL: its ceiling dropped to 8 when a stage was removed, while the atlas
   # assembly stayed gated on step 9. Only the `steps = 1:3` path was ever

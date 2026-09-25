@@ -51,7 +51,12 @@ set_tutorial_options <- function() {
   )
   options(
     freesurfer.verbose = FALSE,
-    progressr.enabled = TRUE
+    progressr.enabled = TRUE,
+    # cli and print() wrap to the console, so a narrow terminal and a runner
+    # produce different line breaks throughout. Pinning the width makes a
+    # re-knit differ only where the output itself differs.
+    width = 80,
+    cli.width = 80
   )
   scrub_machine_paths()
   # ImageMagick used to be required because the cortical pipeline built
