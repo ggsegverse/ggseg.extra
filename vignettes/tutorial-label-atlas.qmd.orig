@@ -1,6 +1,10 @@
 ---
 title: "Tutorial: Creating an atlas from label files"
 format: html
+vignette: >
+  %\VignetteIndexEntry{Tutorial: Creating an atlas from label files}
+  %\VignetteEngine{quarto::html}
+  %\VignetteEncoding{UTF-8}
 ---
 
 ```{r}
@@ -109,7 +113,7 @@ ba_atlas <- create_cortical_from_labels(
 ba_atlas
 ```
 
-This runs the same screenshot pipeline as `create_cortical_from_annotation()` --- it takes screenshots of each region from multiple angles, extracts contours, and converts them to sf polygons.
+This runs the same pipeline as `create_cortical_from_annotation()` --- it projects the inflated mesh triangles straight to 2D and converts them to sf polygons.
 
 ## Post-processing
 

@@ -14,4 +14,5 @@
 *freesurfer/bin/mris_convert
 *freesurfer/average/mni152.register.dat
 *freesurfer/subjects/fsaverage5
+*freesurfer/trctrain/hcp/mgh_1017/mni
 *freesurfer/lib

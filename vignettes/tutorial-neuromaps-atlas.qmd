@@ -304,6 +304,7 @@ atlas_full <- atlas_full |>
 #> ℹ Projecting mesh to 2D polygons
 #> ✔ Projecting mesh to 2D polygons
 #> ✔ Brain atlas created with 16 regions
+```
 
 ## Post-processing
 

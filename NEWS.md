@@ -1,4 +1,4 @@
-# ggseg.extra 1.9.9.9059
+# ggseg.extra 1.9.9.9061
 
 - `setup_atlas_repo()` fills the new package's DESCRIPTION from the
   `usethis.description` option when you have one set, instead of always
@@ -6,6 +6,32 @@
   `0000-0000-0000-0000` ORCID. A field the template declares is replaced and
   one it does not is added; `Package`, `Title`, `Description`, `URL` and
   `BugReports` stay as the scaffold derived them.
+
+# ggseg.extra 1.9.9.9060
+
+- Internal: the cortical and cerebellar tutorials build in CI too. Cortical
+  gained the reproducible source it never had -- its data was in the image all
+  along -- and cerebellar fetches the 12 KB SUIT parcellation from the
+  Diedrichsen Lab repository the deformation field already comes from. Four of
+  the nine tutorials are now executed on every pull request rather than two.
+
+- Internal: re-knitting a tutorial no longer bakes in the machine that did it.
+  FreeSurfer's location and the session temp directory are rewritten to
+  `$FREESURFER_HOME` and `<tempdir>`, so a laptop and a runner produce the same
+  output and a diff means the output actually changed.
+
+# ggseg.extra 1.9.9.9059
+
+- Internal: a `tutorials` workflow now checks the tutorials on every pull
+  request. It audits every vignette's code against the package API, and knits
+  the two whose inputs a runner has. Pre-compiled tutorials were text nobody
+  re-ran, which is how nine of them came to recommend an argument that had
+  moved.
+
+- Internal: the tutorial build no longer requires ImageMagick. It was needed
+  when cortical polygons came from screenshots of a 3D scene; direct mesh
+  projection replaced that, and the check only served to skip every tutorial
+  on machines without it, the CI image included.
 
 # ggseg.extra 1.9.9.9058
 
