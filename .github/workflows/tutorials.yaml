@@ -16,18 +16,15 @@
 #               for real inside the FreeSurfer image. Catches what static
 #               analysis cannot: a call that resolves but errors.
 #
-# Cortical, label and subcortical build from fsaverage5, which the image
-# already carries; cerebellar fetches a 12 KB SUIT parcellation from the same
-# Diedrichsen Lab repository the package already pulls its deformation field
-# from. Deliberately not built: wholebrain needs a Harvard-Oxford volume that
-# only ships with FSL, and neuromaps downloads its annotation at run time.
+# Cortical, label, subcortical and tract build from what the image carries --
+# fsaverage5, and the one trctrain subject the tract tutorial uses; cerebellar
+# fetches a 12 KB SUIT parcellation from the same Diedrichsen Lab repository
+# the package already pulls its deformation field from.
 #
-# Tract is next: `trctrain/hcp/mgh_1017/mni` has been added to the image
-# whitelist in this change, but the published tag only gains it once that
-# merges and the image rebuilds on main, so the tutorial joins the list after
-# that rather than failing here in the meantime.
-#
-# The audit is the only cover the rest have.
+# Deliberately not built: wholebrain needs a Harvard-Oxford volume that only
+# ships with FSL, and neuromaps downloads its annotation at run time. The
+# audit is the only cover those two have, plus the synthetic pipeline tests in
+# tests/testthat/.
 #
 # The lookup-table tutorial is absent from both jobs on purpose: it renders
 # live, so the pkgdown workflow already executes it on every PR.
@@ -123,7 +120,8 @@ jobs:
             "vignettes/tutorial-cerebellar-atlas.qmd.orig",
             "vignettes/tutorial-cortical-atlas.qmd.orig",
             "vignettes/tutorial-label-atlas.qmd.orig",
-            "vignettes/tutorial-subcortical-atlas.qmd.orig"
+            "vignettes/tutorial-subcortical-atlas.qmd.orig",
+            "vignettes/tutorial-tract-atlas.qmd.orig"
           )
 
           # Knitting writes the .qmd next to its source. The rendered output
@@ -142,7 +140,8 @@ jobs:
           for f in vignettes/tutorial-cerebellar-atlas.qmd \
                    vignettes/tutorial-cortical-atlas.qmd \
                    vignettes/tutorial-label-atlas.qmd \
-                   vignettes/tutorial-subcortical-atlas.qmd; do
+                   vignettes/tutorial-subcortical-atlas.qmd \
+                   vignettes/tutorial-tract-atlas.qmd; do
             if grep -nE '^#> (Error|Quitting)' "$f"; then
               echo "::error file=$f::the tutorial rendered an error"
               status=1

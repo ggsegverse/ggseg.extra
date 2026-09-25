@@ -1,3 +1,20 @@
+# ggseg.extra 1.9.9.9062
+
+- Internal: the tract tutorial builds in CI, now that the image carries the
+  one `trctrain` subject it uses. Five of the nine tutorials are executed on
+  every pull request. Re-knitting it showed the committed page was stale in a
+  way worth noting: it reported the atlas as `tracts` rather than `tracula`.
+
+- Internal: tutorials knit at a pinned console width, so a narrow terminal and
+  a runner no longer produce different line breaks throughout. Together with
+  the path rewriting, a re-knit now differs only where the output does.
+
+- Internal: the whole-brain pipeline gained an end-to-end test. Its tutorial
+  cannot be built here -- Harvard-Oxford ships only with FSL -- so the
+  pipeline is covered directly instead, asserting the default step set reaches
+  the end and returns the three-way split rather than running everything and
+  handing back nothing.
+
 # ggseg.extra 1.9.9.9061
 
 - `setup_atlas_repo()` fills the new package's DESCRIPTION from the
