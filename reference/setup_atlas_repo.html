@@ -21,7 +21,7 @@ building your atlas."><meta property="og:image" content="https://ggsegverse.gith
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9060</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9061</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -143,6 +143,29 @@ to build your atlas, then run <code>devtools::document()</code> and <code>devtoo
 fallback is used instead. Both paths produce the same GitHub Actions
 workflows, which are written by <code><a href="use_atlas_github_actions.html">use_atlas_github_actions()</a></code> from templates
 bundled in this package rather than copied from the atlas template.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="description-defaults">DESCRIPTION defaults<a class="anchor" aria-label="anchor" href="#description-defaults"></a></h2>
+
+
+
+<p>The template carries a placeholder author, down to an ORCID of
+<code>0000-0000-0000-0000</code> that roxygen warns about on every render. If you have
+set the <code>usethis.description</code> option, those fields are written into the new
+package instead, so you do not retype what R already knows:</p>
+<p></p><div class="sourceCode r"><pre><code><span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>usethis.description <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
+<span>  <span class="st">"Authors@R"</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/utils/person.html" class="external-link">person</a></span><span class="op">(</span></span>
+<span>    <span class="st">"Jane"</span>, <span class="st">"Doe"</span>,</span>
+<span>    email <span class="op">=</span> <span class="st">"jane@example.com"</span>,</span>
+<span>    role <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"aut"</span>, <span class="st">"cre"</span><span class="op">)</span>,</span>
+<span>    comment <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>ORCID <span class="op">=</span> <span class="st">"0000-0002-1825-0097"</span><span class="op">)</span></span>
+<span>  <span class="op">)</span>,</span>
+<span>  Language <span class="op">=</span> <span class="st">"en-GB"</span></span>
+<span><span class="op">)</span><span class="op">)</span></span></code></pre><p></p></div>
+<p>A field the template already declares is replaced; one it does not is
+added. <code>Package</code>, <code>Title</code>, <code>Description</code>, <code>URL</code> and <code>BugReports</code> are the
+exceptions – the scaffold derives those from the atlas name, and a stored
+default would rename the package out from under you.</p>
     </div>
 
     <div class="section level2">

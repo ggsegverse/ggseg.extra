@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9060</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9061</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -67,6 +67,11 @@
       <small>Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.9.9.9061" id="ggsegextra-1999061">ggseg.extra 1.9.9.9061<a class="anchor" aria-label="anchor" href="#ggsegextra-1999061"></a></h2>
+<ul><li>
+<code><a href="../reference/setup_atlas_repo.html">setup_atlas_repo()</a></code> fills the new package’s DESCRIPTION from the <code>usethis.description</code> option when you have one set, instead of always writing the template’s placeholder author and its invalid <code>0000-0000-0000-0000</code> ORCID. A field the template declares is replaced and one it does not is added; <code>Package</code>, <code>Title</code>, <code>Description</code>, <code>URL</code> and <code>BugReports</code> stay as the scaffold derived them.</li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9060" id="ggsegextra-1999060">ggseg.extra 1.9.9.9060<a class="anchor" aria-label="anchor" href="#ggsegextra-1999060"></a></h2>
 <ul><li><p>Internal: the cortical and cerebellar tutorials build in CI too. Cortical gained the reproducible source it never had – its data was in the image all along – and cerebellar fetches the 12 KB SUIT parcellation from the Diedrichsen Lab repository the deformation field already comes from. Four of the nine tutorials are now executed on every pull request rather than two.</p></li>

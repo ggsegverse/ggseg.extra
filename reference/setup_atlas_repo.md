@@ -65,6 +65,28 @@ Actions workflows, which are written by
 from templates bundled in this package rather than copied from the atlas
 template.
 
+## DESCRIPTION defaults
+
+The template carries a placeholder author, down to an ORCID of
+`0000-0000-0000-0000` that roxygen warns about on every render. If you
+have set the `usethis.description` option, those fields are written into
+the new package instead, so you do not retype what R already knows:
+
+    options(usethis.description = list(
+      "Authors@R" = person(
+        "Jane", "Doe",
+        email = "jane@example.com",
+        role = c("aut", "cre"),
+        comment = c(ORCID = "0000-0002-1825-0097")
+      ),
+      Language = "en-GB"
+    ))
+
+A field the template already declares is replaced; one it does not is
+added. `Package`, `Title`, `Description`, `URL` and `BugReports` are the
+exceptions – the scaffold derives those from the atlas name, and a
+stored default would rename the package out from under you.
+
 ## Examples
 
 ``` r

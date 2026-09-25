@@ -1,5 +1,15 @@
 # Changelog
 
+## ggseg.extra 1.9.9.9061
+
+- [`setup_atlas_repo()`](https://ggsegverse.github.io/ggseg.extra/reference/setup_atlas_repo.md)
+  fills the new package’s DESCRIPTION from the `usethis.description`
+  option when you have one set, instead of always writing the template’s
+  placeholder author and its invalid `0000-0000-0000-0000` ORCID. A
+  field the template declares is replaced and one it does not is added;
+  `Package`, `Title`, `Description`, `URL` and `BugReports` stay as the
+  scaffold derived them.
+
 ## ggseg.extra 1.9.9.9060
 
 - Internal: the cortical and cerebellar tutorials build in CI too.
