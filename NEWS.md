@@ -1,3 +1,11 @@
+# ggseg.extra 1.9.9.9057
+
+- Two new tutorials. *Lookup tables and colours* covers the `lut_*` family --
+  building, reading, combining and colouring the table every volumetric
+  pipeline asks for. *Publishing an atlas as a package* covers
+  `setup_atlas_repo()`, `use_atlas_github_actions()` and the steps between a
+  finished atlas and a repository that builds itself.
+
 # ggseg.extra 1.9.9.9056
 
 - `create_subcortical_from_volume()`, `create_tract_from_tractography()` and
