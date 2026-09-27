@@ -47,6 +47,8 @@ setup_atlas_repo(repo, open = FALSE, rstudio = FALSE)
 #> ✔ Downloaded template
 #> ✔ Created 'R/', 'tests/', 'data-raw/'
 #> ✔ Replaced template placeholders
+#> ✔ Set Authors@R and Version in 'DESCRIPTION' from
+#> `usethis.description`
 #> ✔ Added 5 workflows to '.github/workflows/'
 #> • R-CMD-check.yaml
 #> • code-quality.yaml
@@ -105,11 +107,13 @@ The scaffold writes a placeholder author, and it is the one thing that will emba
 cat(readLines(file.path(repo, "DESCRIPTION")), sep = "\n")
 #> Package: ggsegDemo
 #> Title: demo Brain Atlas for the 'ggseg' Ecosystem
-#> Version: 1.0.0
-#> Authors@R: c(
-#>     person("First", "Last", , "your.email@example.com", role = c("aut", "cre"),
-#>            comment = c(ORCID = "0000-0000-0000-0000"))
-#>   )
+#> Version: 0.0.0.9000
+#> Authors@R:
+#>     person(given = "Athanasia Mo",
+#>            family = "Mowinckel",
+#>            role = c("aut", "cre"),
+#>            email = "a.m.mowinckel@psykologi.uio.no",
+#>            comment = c(ORCID = "0000-0002-5756-0223", GitHub = "drmowinckels"))
 #> Description: Brain atlas data for the 'ggseg' ecosystem. Provides a unified
 #>     'ggseg_atlas' object with both 2D polygon geometry and 3D vertex indices,
 #>     for use with 'ggseg' and 'ggseg3d'.
@@ -135,6 +139,11 @@ cat(readLines(file.path(repo, "DESCRIPTION")), sep = "\n")
 #> RoxygenNote: 7.3.3
 #> Config/testthat/edition: 3
 #> Config/Needs/website: ggsegverse/ggseg.docs
+#> Config/Needs/lint:
+#>     dplyr,
+#>     future,
+#>     progressr,
+#>     ggsegverse/ggseg.extra
 ```
 
 Replace the `Authors@R` block with your own name, email and ORCID.
@@ -307,7 +316,14 @@ file.size(file.path(repo, "R", "sysdata.rda")) / 1024^2
 ```
 
 If that number is over a few megabytes, go back and simplify.
-`atlas_simplify(atlas, keep = 0.2)` followed by `atlas_smooth(atlas)` usually takes an order of magnitude off the vertex count without a visible difference in the plot.
+`atlas_simplify(atlas, keep = 0.2)` followed by `atlas_smooth(atlas)` takes roughly two thirds off the vertex count, and the plot comes back looking better rather than worse --- the tidying is what removes the staircases the mesh leaves behind. `count_vertices()` reports where you are:
+
+
+``` r
+sum(count_vertices(ggsegDemo::demo()))
+```
+
+The cortical, label and cerebellar tutorials each walk through that step and show the figure before and after.
 
 ## An easier starting point
 

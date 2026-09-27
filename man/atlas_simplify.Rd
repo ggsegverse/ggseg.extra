@@ -62,6 +62,7 @@ smoothing has the last word on the outline.
 Other atlas geometry:
 \code{\link[=atlas_dilate]{atlas_dilate()}},
 \code{\link[=atlas_polish]{atlas_polish()}},
-\code{\link[=atlas_smooth]{atlas_smooth()}}
+\code{\link[=atlas_smooth]{atlas_smooth()}},
+\code{\link[=count_vertices]{count_vertices()}}
 }
 \concept{atlas geometry}

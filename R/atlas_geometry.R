@@ -310,6 +310,47 @@ atlas_dilate <- function(atlas, amount, labels = NULL, exclude = NULL) {
 }
 
 
+#' Count the vertices an atlas carries
+#'
+#' Reports how many polygon vertices each region is drawn from. The total is
+#' the figure the `create_*()` pipelines warn about when an atlas is large,
+#' and the one [atlas_simplify()] brings down, so it is the number to watch
+#' when tuning an atlas for size.
+#'
+#' Counts are summed across views, so a region that appears on the lateral
+#' and medial views is reported once.
+#'
+#' @param atlas A `ggseg_atlas`.
+#' @return A named integer vector, one element per label, in the order the
+#'   labels appear in the atlas. Take `sum()` of it for the atlas total.
+#' @family atlas geometry
+#' @seealso [atlas_simplify()] to bring the count down, and [atlas_smooth()],
+#'   which raises it again -- rounding a corner off means inserting points.
+#' @export
+#' @examples
+#' \dontrun{
+#' # The total is what the large-atlas warning reports.
+#' sum(count_vertices(my_atlas))
+#'
+#' # Which regions are the expensive ones?
+#' sort(count_vertices(my_atlas), decreasing = TRUE) |> head()
+#' }
+count_vertices <- function(atlas) {
+  sf_data <- ggseg.formats::atlas_sf(atlas)
+  counts <- vertices_per_row(sf_data)
+
+  labels <- sf_data$label
+  if (is.null(labels)) {
+    return(counts)
+  }
+  vapply(
+    split(counts, factor(labels, levels = unique(labels))),
+    sum,
+    integer(1)
+  )
+}
+
+
 #' Reduce an atlas's vertex count
 #'
 #' @description
@@ -410,12 +451,12 @@ trim_rounded_corners <- function(
   passes = 4L
 ) {
   rows <- dilate_mask(before$label, labels, exclude)
-  target <- sum(count_vertices(before[rows, , drop = FALSE]))
+  target <- sum(vertices_per_row(before[rows, , drop = FALSE]))
   if (target == 0) {
     return(sf_data)
   }
 
-  grown <- sum(count_vertices(sf_data[rows, , drop = FALSE]))
+  grown <- sum(vertices_per_row(sf_data[rows, , drop = FALSE]))
   for (pass in seq_len(passes)) {
     if (grown <= target * 1.1) {
       break
@@ -433,7 +474,7 @@ trim_rounded_corners <- function(
     }
     # Closing the gaps the simplification opened can cost more vertices than
     # the simplification saved, so a pass is kept only if it came out ahead.
-    trimmed <- sum(count_vertices(sf_data[rows, , drop = FALSE]))
+    trimmed <- sum(vertices_per_row(sf_data[rows, , drop = FALSE]))
     if (trimmed >= grown) {
       return(previous)
     }

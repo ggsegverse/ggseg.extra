@@ -70,6 +70,16 @@ tracula_raw <- create_tract_from_tractography(
 tracula_raw
 ```
 
+```{r}
+#| label: plot-raw
+#| eval: !expr can_run
+#| fig-width: 10
+#| fig-height: 8
+#| fig-alt: "All reconstructed tracts on every projection view the pipeline produced, crowded and overlapping."
+#| fig-cap: "Stage 1 --- every tract on every view the pipeline made."
+plot(tracula_raw)
+```
+
 Key parameters:
 
 - **`tube_radius`** controls tube thickness. Larger values make tracts more visible at the cost of anatomical precision.
@@ -93,6 +103,16 @@ tracula_raw <- tracula_raw |>
     "coronal_4",
     "sagittal"
   ))
+```
+
+```{r}
+#| label: plot-views
+#| eval: !expr can_run
+#| fig-width: 10
+#| fig-height: 8
+#| fig-alt: "The tracts on the five retained projection views."
+#| fig-cap: "Stage 2 --- down to the five views that show the tracts."
+plot(tracula_raw)
 ```
 
 ### Setting context regions
@@ -120,6 +140,16 @@ tracula_raw <- tracula_raw |>
     views = c("axial", "coronal")
   ) |>
   atlas_view_remove_small(min_area = 50)
+```
+
+```{r}
+#| label: plot-despeckled
+#| eval: !expr can_run
+#| fig-width: 10
+#| fig-height: 8
+#| fig-alt: "The same views with the small cross-sectional fragments removed, leaving the coherent tract bodies."
+#| fig-cap: "Stage 3 --- the specks are gone."
+plot(tracula_raw)
 ```
 
 The first call applies a higher threshold to axial and coronal views (where tracts appear in cross-section and produce small dots).
@@ -211,11 +241,15 @@ table(tracula$core$group, useNA = "ifany")
 ```{r}
 #| label: plot
 #| eval: !expr can_run
-#| fig-cap: "TRACULA white matter tract atlas plotted with ggseg."
-#| fig-alt: "2D brain atlas plot showing white matter tracts including corticospinal tract, uncinate fasciculus, and cingulum across axial, coronal, and sagittal projection views."
+#| fig-cap: "Stage 4 --- the finished atlas, drawn through ggplot2 with a viridis fill."
+#| fig-alt: "2D brain atlas plot showing white matter tracts including corticospinal tract, uncinate fasciculus, and cingulum across axial, coronal, and sagittal projection views, filled with a viridis colour scale."
 #| fig-width: 10
 #| fig-height: 8
 
-plot(tracula) +
-  ggplot2::scale_fill_viridis_d(na.value = "grey80")
+ggplot2::ggplot() +
+  ggseg::geom_brain(atlas = tracula, ggplot2::aes(fill = region)) +
+  ggplot2::scale_fill_viridis_d(na.value = "grey80") +
+  ggplot2::theme_void()
 ```
+
+`plot()` is the quick look, using the atlas's own palette. `geom_brain()` is the route when you want to control the colours --- map something to `fill`, or a fill scale has nothing to colour and every region comes back as `na.value`.

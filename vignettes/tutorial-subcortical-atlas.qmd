@@ -83,6 +83,18 @@ aseg_raw
 #> ... with 33 more rows
 ```
 
+
+``` r
+plot(aseg_raw)
+```
+
+<div class="figure">
+<img src="figures/tutorial-subcortical-atlas-plot-raw-1.png" alt="The full aseg segmentation across six projection views, every label filled, including cortex, white matter and ventricles." width="960" />
+<p class="caption">Stage 1 --- everything aseg labels, on every view the pipeline made.</p>
+</div>
+
+That is the whole segmentation, and it is not yet an atlas anyone would want: cortex and white matter dominate the picture, and half the views say the same thing twice. The rest of this tutorial is subtraction.
+
 The default pipeline creates six projection views focused on the subcortical range:
 axial inferior, axial superior, coronal posterior, coronal anterior, sagittal left, and sagittal right.
 Each view collapses a slab of the volume onto a single plane, giving you spatial context without the complexity of individual slices.
@@ -106,6 +118,16 @@ aseg_raw <- aseg_raw |>
 
 Patterns are regular expressions, so `-Vent$` matches "3rd-Vent" and "4th-Vent" without catching "Ventral-DC."
 
+
+``` r
+plot(aseg_raw)
+```
+
+<div class="figure">
+<img src="figures/tutorial-subcortical-atlas-plot-removed-1.png" alt="The same views with cortex, white matter, ventricles and CSF gone, leaving the deep grey structures." width="960" />
+<p class="caption">Stage 2 --- the structures we actually want, once the bulk tissue is gone.</p>
+</div>
+
 ## Setting context regions
 
 The cortex works well as a background outline --- it shows where subcortical structures sit relative to the brain surface without competing for colour:
@@ -127,6 +149,16 @@ aseg_raw <- aseg_raw |>
   atlas_view_keep("axial_3|axial_5|coronal_2|coronal_3|coronal_4|sagittal")
 ```
 
+
+``` r
+plot(aseg_raw)
+```
+
+<div class="figure">
+<img src="figures/tutorial-subcortical-atlas-plot-views-1.png" alt="The retained projection views only, with the less informative ones dropped." width="960" />
+<p class="caption">Stage 3 --- only the views that show the structures well.</p>
+</div>
+
 ## Cleaning up the layout
 
 Gather views into a compact arrangement:
@@ -136,6 +168,16 @@ Gather views into a compact arrangement:
 aseg_raw <- aseg_raw |>
   atlas_view_gather()
 ```
+
+
+``` r
+plot(aseg_raw)
+```
+
+<div class="figure">
+<img src="figures/tutorial-subcortical-atlas-plot-gathered-1.png" alt="The retained views packed into a compact arrangement with less empty space between them." width="960" />
+<p class="caption">Stage 4 --- gathered. Same geometry, less white space.</p>
+</div>
 
 ## Adding metadata
 
@@ -252,5 +294,5 @@ plot(aseg)
 
 <div class="figure">
 <img src="figures/tutorial-subcortical-atlas-plot-1.png" alt="2D brain atlas plot showing subcortical structures including thalamus, caudate, putamen, hippocampus, and amygdala across axial, coronal, and sagittal projection views." width="960" />
-<p class="caption">Subcortical aseg atlas plotted with ggseg.</p>
+<p class="caption">Stage 5 --- the finished atlas, with structures under readable names.</p>
 </div>

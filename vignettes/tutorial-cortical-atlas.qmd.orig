@@ -83,37 +83,102 @@ A few things to note about the parameters:
 - **`cleanup = FALSE`** keeps intermediate files (cached step 1 data) so you can re-run without re-reading annotations.
 - **`skip_existing = TRUE`** reuses existing intermediate files when resuming an interrupted run.
 
-The pipeline returns raw, unsmoothed polygons. Tidying them is a separate post-processing step in two parts: `atlas_simplify()` drops vertices, `atlas_smooth()` rounds off what is left. Tune either freely; you no longer have to re-run the full pipeline to try a different level:
+This is the atlas at its roughest, and it is worth looking at before tidying anything:
 
 ```{r}
-#| label: smooth
+#| label: plot-raw
 #| eval: !expr can_run
-yeo7_smooth <- yeo7_raw |>
-  atlas_simplify(keep = 0.2, exclude = "cortex_") |>
-  atlas_smooth(exclude = "cortex_")
+#| fig.width: 10
+#| fig.height: 6
+#| fig.alt: "Yeo 7-network parcellation straight from the pipeline, with visibly stepped region boundaries and the medial wall filled in grey."
+#| fig.cap: "Stage 1 --- straight out of the pipeline. The boundaries still follow the mesh triangles."
+plot(yeo7_raw)
+```
+
+Every boundary is a staircase. The pipeline traces the edges of mesh triangles, so each region's outline is made of the vertices it inherited rather than a line anyone would draw by hand. `count_vertices()` gives the price of that:
+
+```{r}
+#| label: count-raw
+#| eval: !expr can_run
+sum(count_vertices(yeo7_raw))
+```
+
+The `create_*()` functions warn above ten thousand, because an atlas that heavy is slow to plot and bulky to ship.
+
+## Tidying the geometry
+
+Tidying is a separate post-processing step in two parts: `atlas_simplify()` drops vertices, `atlas_smooth()` rounds off what is left. Tune either freely; you no longer have to re-run the full pipeline to try a different level.
+
+Take them one at a time, so you can see what each does. Simplification first:
+
+```{r}
+#| label: simplify
+#| eval: !expr can_run
+yeo7_simple <- atlas_simplify(yeo7_raw, keep = 0.2, exclude = "cortex_")
+
+sum(count_vertices(yeo7_simple))
+```
+
+```{r}
+#| label: plot-simple
+#| eval: !expr can_run
+#| fig.width: 10
+#| fig.height: 6
+#| fig.alt: "The same parcellation after simplification, with fewer vertices and straighter but still angular boundaries."
+#| fig.cap: "Stage 2 --- simplified. Most of the vertices are gone; the corners they left behind are not."
+plot(yeo7_simple)
 ```
 
 `exclude = "cortex_"` leaves the brain-outline geometry crisp while simplifying the labelled regions.
 
-## Step 3: Post-processing
+Simplification is topology-aware, so neighbouring regions lose the same vertices and no gaps open between them. What it does not do is make anything look smooth --- it removes points from a jagged line and leaves a jagged line with fewer points. That is what `atlas_smooth()` is for:
 
-The raw atlas contains every region from the annotation, including labels like "unknown" and "corpuscallosum" that you typically want as background outlines rather than filled regions.
+```{r}
+#| label: smooth
+#| eval: !expr can_run
+yeo7_smooth <- atlas_smooth(yeo7_simple, exclude = "cortex_")
 
-`atlas_region_contextual()` keeps the geometry for spatial reference but removes the region from `$core`, so it renders as an outline:
+sum(count_vertices(yeo7_smooth))
+```
+
+```{r}
+#| label: plot-smooth
+#| eval: !expr can_run
+#| fig.width: 10
+#| fig.height: 6
+#| fig.alt: "The same parcellation after smoothing, with rounded region boundaries and no visible stepping."
+#| fig.cap: "Stage 3 --- smoothed. The staircases are gone."
+plot(yeo7_smooth)
+```
+
+Notice the count went **up**. Rounding a corner means inserting points, so smoothing gives some of the budget back --- and it is still a large cut on where we started. Simplify first and smooth afterwards, so the smoothing has the last word on the outline.
+
+## Background regions
+
+That grey mass on the medial views is the medial wall --- the part of the surface with no cortex to parcellate. It is drawn, because leaving a hole there would be worse, but it is not one of the atlas's regions. The pipeline already sorted that out:
+
+```{r}
+#| label: context-already
+#| eval: !expr can_run
+length(unique(atlas_sf(yeo7_smooth)$label))
+length(atlas_regions(yeo7_smooth))
+```
+
+Sixteen labels carry geometry; seven are regions you can fill with data. The medial wall is *context*: `create_cortical_from_annotation()` recognises regions named `unknown`, `???`, or anything ending in "medial wall", and sets them aside for you.
+
+Which is fine until a parcellation names its leftovers something else. FreeSurfer's own `aparc` labels the callosal region `corpuscallosum`, and that matches none of the above --- so it would arrive as an ordinary region, coloured and listed alongside the real ones. `atlas_region_contextual()` is how you set one aside by hand. It keeps the geometry for spatial reference and drops the region from `$core`:
 
 ```{r}
 #| label: contextual
-#| eval: !expr can_run
-yeo7_raw <- yeo7_raw |>
-  atlas_region_contextual("cortex", match_on = "label") |>
-  atlas_region_contextual("unknown", match_on = "label") |>
-  atlas_region_contextual("corpuscallosum", match_on = "label") |>
-  atlas_region_contextual("FreeSurfer_Defined_Medial_Wall", match_on = "label")
+#| eval: false
+dk <- atlas_region_contextual(dk, "corpuscallosum", match_on = "region")
 ```
 
-## Step 4: Adding metadata
+Check `atlas_regions()` after a pipeline run; anything in that list you would not want to colour by data belongs in a call like this one.
 
-The raw atlas has region names derived from the annotation file.
+## Adding metadata
+
+The atlas has region names derived from the annotation file.
 For the Yeo atlas, the annotation labels are numeric network IDs.
 We can map them to descriptive network names:
 
@@ -131,13 +196,13 @@ yeo7_metadata <- data.frame(
   )
 )
 
-core_with_meta <- yeo7_raw$core |>
+core_with_meta <- yeo7_smooth$core |>
   left_join(yeo7_metadata, by = "label") |>
   mutate(region = coalesce(region_pretty, region)) |>
   select(hemi, region, label)
 ```
 
-## Step 5: Rebuilding the atlas
+## Rebuilding the atlas
 
 Construct the final atlas from the modified core:
 
@@ -145,11 +210,11 @@ Construct the final atlas from the modified core:
 #| label: rebuild
 #| eval: !expr can_run
 yeo7 <- ggseg_atlas(
-  atlas = yeo7_raw$atlas,
-  type = yeo7_raw$type,
-  palette = yeo7_raw$palette,
+  atlas = yeo7_smooth$atlas,
+  type = yeo7_smooth$type,
+  palette = yeo7_smooth$palette,
   core = core_with_meta,
-  data = yeo7_raw$data
+  data = yeo7_smooth$data
 )
 
 yeo7
@@ -167,8 +232,16 @@ atlas_regions(yeo7) |> sort()
 #| fig.width: 10
 #| fig.height: 6
 #| fig.alt: "2D brain atlas plot showing the Yeo 7-network cortical parcellation with seven coloured regions across lateral, medial, inferior, and superior views."
-#| fig.cap: "Yeo 7-network cortical parcellation plotted with ggseg."
+#| fig.cap: "Stage 5 --- the finished atlas, with the networks under their own names."
 plot(yeo7)
+```
+
+Side by side with stage 1, that is the whole job: the same parcellation, a fraction of the vertices, and boundaries that look drawn rather than sampled.
+
+```{r}
+#| label: count-final
+#| eval: !expr can_run
+sum(count_vertices(yeo7))
 ```
 
 ## Applying the same pattern to larger atlases

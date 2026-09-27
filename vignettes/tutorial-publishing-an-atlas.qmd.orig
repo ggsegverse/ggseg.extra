@@ -245,7 +245,15 @@ file.size(file.path(repo, "R", "sysdata.rda")) / 1024^2
 ```
 
 If that number is over a few megabytes, go back and simplify.
-`atlas_simplify(atlas, keep = 0.2)` followed by `atlas_smooth(atlas)` usually takes an order of magnitude off the vertex count without a visible difference in the plot.
+`atlas_simplify(atlas, keep = 0.2)` followed by `atlas_smooth(atlas)` takes roughly two thirds off the vertex count, and the plot comes back looking better rather than worse --- the tidying is what removes the staircases the mesh leaves behind. `count_vertices()` reports where you are:
+
+```{r}
+#| label: verify-vertices
+#| eval: false
+sum(count_vertices(ggsegDemo::demo()))
+```
+
+The cortical, label and cerebellar tutorials each walk through that step and show the figure before and after.
 
 ## An easier starting point
 

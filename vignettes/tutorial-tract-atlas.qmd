@@ -91,6 +91,16 @@ tracula_raw
 #> ... with 32 more rows
 ```
 
+
+``` r
+plot(tracula_raw)
+```
+
+<div class="figure">
+<img src="figures/tutorial-tract-atlas-plot-raw-1.png" alt="All reconstructed tracts on every projection view the pipeline produced, crowded and overlapping." width="960" />
+<p class="caption">Stage 1 --- every tract on every view the pipeline made.</p>
+</div>
+
 Key parameters:
 
 - **`tube_radius`** controls tube thickness. Larger values make tracts more visible at the cost of anatomical precision.
@@ -114,6 +124,16 @@ tracula_raw <- tracula_raw |>
     "sagittal"
   ))
 ```
+
+
+``` r
+plot(tracula_raw)
+```
+
+<div class="figure">
+<img src="figures/tutorial-tract-atlas-plot-views-1.png" alt="The tracts on the five retained projection views." width="960" />
+<p class="caption">Stage 2 --- down to the five views that show the tracts.</p>
+</div>
 
 ### Setting context regions
 
@@ -141,6 +161,16 @@ tracula_raw <- tracula_raw |>
 #> ℹ Removed 98 geometries below area 500
 #> ℹ Removed 12 geometries below area 50
 ```
+
+
+``` r
+plot(tracula_raw)
+```
+
+<div class="figure">
+<img src="figures/tutorial-tract-atlas-plot-despeckled-1.png" alt="The same views with the small cross-sectional fragments removed, leaving the coherent tract bodies." width="960" />
+<p class="caption">Stage 3 --- the specks are gone.</p>
+</div>
 
 The first call applies a higher threshold to axial and coronal views (where tracts appear in cross-section and produce small dots).
 The second call applies a lower threshold everywhere to catch remaining slivers.
@@ -267,15 +297,15 @@ table(tracula$core$group, useNA = "ifany")
 
 
 ``` r
-plot(tracula) +
-  ggplot2::scale_fill_viridis_d(na.value = "grey80")
+ggplot2::ggplot() +
+  ggseg::geom_brain(atlas = tracula, ggplot2::aes(fill = region)) +
+  ggplot2::scale_fill_viridis_d(na.value = "grey80") +
+  ggplot2::theme_void()
 ```
 
 <div class="figure">
-<img src="figures/tutorial-tract-atlas-plot-1.png" alt="2D brain atlas plot showing white matter tracts including corticospinal tract, uncinate fasciculus, and cingulum across axial, coronal, and sagittal projection views." width="960" />
-<p class="caption">TRACULA white matter tract atlas plotted with ggseg.</p>
+<img src="figures/tutorial-tract-atlas-plot-1.png" alt="2D brain atlas plot showing white matter tracts including corticospinal tract, uncinate fasciculus, and cingulum across axial, coronal, and sagittal projection views, filled with a viridis colour scale." width="960" />
+<p class="caption">Stage 4 --- the finished atlas, drawn through ggplot2 with a viridis fill.</p>
 </div>
 
-```
-#> NULL
-```
+`plot()` is the quick look, using the atlas's own palette. `geom_brain()` is the route when you want to control the colours --- map something to `fill`, or a fill scale has nothing to colour and every region comes back as `na.value`.

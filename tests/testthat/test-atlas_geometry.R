@@ -1211,6 +1211,47 @@ describe("atlas_smooth", {
 })
 
 
+describe("count_vertices", {
+  it("reports one count per label, named, in the atlas's order", {
+    counts <- count_vertices(two_region_atlas())
+
+    # The jagged polygon is a 7-row ring, the square a 5-row one.
+    expect_identical(counts, c(region_a = 7L, region_b = 5L))
+  })
+
+  it("sums a label that is drawn on more than one view", {
+    square <- sf::st_polygon(list(matrix(
+      c(0, 0, 1, 0, 1, 1, 0, 1, 0, 0),
+      ncol = 2,
+      byrow = TRUE
+    )))
+    sf_obj <- sf::st_sf(
+      label = c("region_a", "region_a"),
+      view = c("lateral", "medial"),
+      geometry = sf::st_sfc(square, square)
+    )
+    atlas <- ggseg.formats::ggseg_atlas(
+      atlas = "t",
+      type = "subcortical",
+      palette = c(region_a = "#000000"),
+      core = data.frame(label = "region_a", region = "region_a"),
+      data = ggseg.formats::ggseg_data_subcortical(geom = sf_obj)
+    )
+
+    expect_identical(count_vertices(atlas), c(region_a = 10L))
+  })
+
+  it("falls with the geometry simplification drops", {
+    atlas <- two_region_atlas()
+    before <- sum(count_vertices(atlas))
+
+    after <- sum(count_vertices(atlas_simplify(atlas, keep = 0.5)))
+
+    expect_lt(after, before)
+  })
+})
+
+
 describe("atlas_simplify", {
   it("rejects a keep outside 0-1", {
     atlas <- two_region_atlas()
@@ -1453,7 +1494,7 @@ gap_area <- function(atlas) {
 }
 
 n_vertices <- function(atlas) {
-  sum(count_vertices(ggseg.formats::atlas_sf(atlas)))
+  sum(vertices_per_row(ggseg.formats::atlas_sf(atlas)))
 }
 
 describe("close_gaps", {
@@ -1559,8 +1600,14 @@ describe("atlas_smooth vertex budget", {
       close_gaps = TRUE
     )
 
-    expect_gt(sum(count_vertices(untrimmed)), sum(count_vertices(simplified)))
-    expect_lte(sum(count_vertices(trimmed)), sum(count_vertices(untrimmed)))
+    expect_gt(
+      sum(vertices_per_row(untrimmed)),
+      sum(vertices_per_row(simplified))
+    )
+    expect_lte(
+      sum(vertices_per_row(trimmed)),
+      sum(vertices_per_row(untrimmed))
+    )
   })
 
   it("rounds the corners it was asked to round", {
@@ -1596,8 +1643,8 @@ describe("atlas_smooth vertex budget", {
 
     others <- geom$label != "r1"
     expect_identical(
-      count_vertices(geom[others, , drop = FALSE]),
-      count_vertices(untouched[others, , drop = FALSE])
+      vertices_per_row(geom[others, , drop = FALSE]),
+      vertices_per_row(untouched[others, , drop = FALSE])
     )
   })
 })
