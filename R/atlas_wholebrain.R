@@ -2457,11 +2457,12 @@ aseg_context_volume <- function(
     return(NULL)
   }
 
-  resampled <- resample_volume_to_grid(aseg, input_volume, verbose)
-  if (is.null(resampled)) {
-    warn_solid_cortex_context("{.code mri_vol2vol} failed")
+  resampling <- resample_volume_to_grid(aseg, input_volume, verbose)
+  if (is.null(resampling$file)) {
+    warn_solid_cortex_context(resample_failure_reason(resampling$reason))
     return(NULL)
   }
+  resampled <- resampling$file
   on.exit(unlink(resampled), add = TRUE)
 
   context <- as.array(read_volume(resampled, reorient = FALSE))

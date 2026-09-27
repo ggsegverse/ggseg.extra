@@ -78,6 +78,25 @@ fs_stderr_bullets <- function(stderr_lines, max_lines = 10L) {
 }
 
 
+#' Describe a failed resampling for a caller's warning or abort
+#'
+#' The reason arrives as the text of a condition, so it is escaped before it
+#' travels back through cli as part of a template.
+#' @noRd
+resample_failure_reason <- function(reason) {
+  prefix <- "{.code mri_vol2vol} failed"
+  if (is.null(reason)) {
+    return(prefix)
+  }
+  lines <- trimws(unlist(strsplit(reason, "\n", fixed = TRUE)))
+  paste0(
+    prefix,
+    ": ",
+    cli_escape_braces(paste(lines[nzchar(lines)], collapse = " "))
+  )
+}
+
+
 #' Escape braces so external text is not read as a cli template
 #' @noRd
 cli_escape_braces <- function(x) {

@@ -36,7 +36,7 @@ cortical_sheet_lut <- function() {
 mocked_resample <- function(source_file, target, verbose) {
   copy <- tempfile(fileext = ".nii.gz")
   file.copy(source_file, copy)
-  copy
+  list(file = copy, reason = NULL)
 }
 
 # Stands in for the FreeSurfer subject: writes the aseg array to a file and
@@ -481,18 +481,47 @@ describe("aparc_aseg_path()", {
 
 
 describe("resample_volume_to_grid()", {
-  it("returns NULL when mri_vol2vol fails", {
+  it("hands the caller no file and what went wrong", {
     # The resampler is shared with the whole-brain context pipeline, which
     # warns where this one aborts, so the failure is the caller's to report.
     local_mocked_bindings(run_cmd = function(...) stop("no freesurfer"))
-    expect_null(
-      resample_volume_to_grid("aseg.mgz", "target.nii.gz", verbose = 0L)
+    failed <- resample_volume_to_grid(
+      "aseg.mgz",
+      "target.nii.gz",
+      verbose = 0L
     )
+    expect_null(failed$file)
+    expect_match(failed$reason, "no freesurfer")
+  })
+
+  it("says so when the command succeeds but writes nothing", {
+    local_mocked_bindings(run_cmd = function(...) 0L)
+    failed <- resample_volume_to_grid(
+      "aseg.mgz",
+      "target.nii.gz",
+      verbose = 0L
+    )
+    expect_null(failed$file)
+    expect_match(failed$reason, "no output")
+  })
+
+  it("asks for the verbosity it was given, rather than one less", {
+    asked <- NULL
+    local_mocked_bindings(
+      run_cmd = function(cmd, verbose = NULL, ...) {
+        asked <<- verbose
+        stop("no freesurfer")
+      }
+    )
+    resample_volume_to_grid("aseg.mgz", "target.nii.gz", verbose = 2L)
+    expect_identical(asked, 2L)
   })
 
   it("is reported as an anatomy failure by the caller", {
     local_mocked_bindings(aparc_aseg_path = function(subject) "aseg.mgz")
-    local_mocked_bindings(run_cmd = function(...) stop("no freesurfer"))
+    local_mocked_bindings(
+      run_cmd = function(...) stop("mri_vol2vol: bad header")
+    )
     expect_error(
       aparc_aseg_on_grid(
         "aseg.mgz",
@@ -501,7 +530,7 @@ describe("resample_volume_to_grid()", {
         array(TRUE, c(10, 10, 10)),
         verbose = 0L
       ),
-      "mri_vol2vol.*failed"
+      "mri_vol2vol.*failed.*bad header"
     )
   })
 })

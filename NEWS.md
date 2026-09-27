@@ -1,3 +1,13 @@
+# ggseg.extra 1.9.9.9063
+
+- Internal: a failed `mri_vol2vol` resampling now reports what FreeSurfer
+  said. `resample_volume_to_grid()` was decrementing the verbosity it was
+  given -- so the error output was suppressed even when the caller asked for
+  everything -- and then discarding the error itself, leaving both callers to
+  report a bare "`mri_vol2vol` failed". It now hands the caller the reason
+  alongside the path, and the two callers pass it into their warning and their
+  abort.
+
 # ggseg.extra 1.9.9.9062
 
 - Internal: the tract tutorial builds in CI, now that the image carries the

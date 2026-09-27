@@ -448,10 +448,11 @@ aparc_aseg_on_grid <- function(
   brain_mask,
   verbose
 ) {
-  resampled <- resample_volume_to_grid(source_file, volume, verbose)
-  if (is.null(resampled)) {
-    abort_anatomy_unavailable("{.code mri_vol2vol} failed")
+  resampling <- resample_volume_to_grid(source_file, volume, verbose)
+  if (is.null(resampling$file)) {
+    abort_anatomy_unavailable(resample_failure_reason(resampling$reason))
   }
+  resampled <- resampling$file
   on.exit(unlink(resampled), add = TRUE)
 
   aseg <- read_label_volume(resampled)
@@ -529,9 +530,12 @@ have_fs_quietly <- function() {
 
 #' Run `mri_vol2vol --regheader --nearest`
 #'
-#' Returns the output path, or `NULL` when the command fails. Shared with the
-#' whole-brain context pipeline, which warns and carries on where this
-#' caller aborts, so the failure is reported by the caller rather than here.
+#' Returns a list of `file` -- the output path, or `NULL` when the command
+#' failed -- and `reason`, what went wrong. Shared with the whole-brain
+#' context pipeline, which warns and carries on where this caller aborts, so
+#' the failure is reported by the caller rather than here; `reason` is what
+#' FreeSurfer said, which is the only thing that distinguishes a missing
+#' binary from a volume whose header lies.
 #' @noRd
 resample_volume_to_grid <- function(source_file, target, verbose) {
   out_file <- tempfile(fileext = paste0(".", volume_ext(target)))
@@ -546,18 +550,18 @@ resample_volume_to_grid <- function(source_file, target, verbose) {
     "--o",
     shQuote(out_file)
   )
-  ok <- tryCatch(
+  reason <- tryCatch(
     {
-      run_cmd(cmd, verbose = max(0L, as.integer(verbose) - 1L))
-      file.exists(out_file)
+      run_cmd(cmd, verbose = verbose)
+      if (file.exists(out_file)) NULL else "it wrote no output"
     },
-    error = function(e) FALSE
+    error = function(e) conditionMessage(e)
   )
-  if (!ok) {
+  if (!is.null(reason)) {
     unlink(out_file)
-    return(NULL)
+    return(list(file = NULL, reason = reason))
   }
-  out_file
+  list(file = out_file, reason = NULL)
 }
 
 
