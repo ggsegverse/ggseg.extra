@@ -34,16 +34,23 @@ run_cmd <- function(cmd, verbose = get_verbose(), no_ui = FALSE) {
     paste("bash -c", shQuote(full_cmd), "2>", shQuote(err_file)),
     ignore.stdout = verbose < 2
   )
-  stderr_lines <- read_stderr_log(err_file)
+  stderr_lines <- if (verbose >= 2 || exit_code != 0) {
+    read_stderr_log(err_file)
+  } else {
+    character()
+  }
   if (verbose >= 2 && length(stderr_lines) > 0) {
     cat(stderr_lines, sep = "\n")
   }
   if (exit_code != 0) {
-    cli::cli_abort(c(
-      "FreeSurfer command failed (exit {exit_code}).",
-      "x" = "{cmd}",
-      fs_stderr_bullets(stderr_lines)
-    ))
+    cli::cli_abort(
+      c(
+        "FreeSurfer command failed (exit {exit_code}).",
+        "x" = "{cmd}",
+        fs_stderr_bullets(stderr_lines)
+      ),
+      class = "ggseg_extra_fs_command_error"
+    )
   }
   exit_code
 }

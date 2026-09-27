@@ -3906,18 +3906,23 @@ describe("aseg_volume_path", {
 describe("aseg_context_volume resampling", {
   it("warns and falls back when the resampling fails", {
     local_mocked_bindings(
-      run_cmd = function(cmd, ...) cli::cli_abort("boom")
+      run_cmd = function(cmd, ...) {
+        cli::cli_abort(c(
+          "FreeSurfer command failed (exit 1).",
+          "i" = "FreeSurfer said:",
+          " " = "ERROR: bad header"
+        ))
+      }
     )
     local_mocked_bindings(aseg_volume_path = function(...) "aseg.mgz")
 
-    expect_warning(
+    expect_snapshot(
       expect_null(aseg_context_volume(
         "a.nii.gz",
         "subj",
         c(2L, 2L, 2L),
         array(TRUE, c(2, 2, 2))
-      )),
-      "mri_vol2vol"
+      ))
     )
   })
 })
@@ -3941,7 +3946,9 @@ describe("aseg_context_volume", {
     resampled <- withr::local_tempfile(fileext = ".nii.gz")
     RNifti::writeNifti(RNifti::asNifti(array(3L, dim = c(2, 2, 2))), resampled)
     local_mocked_bindings(aseg_volume_path = function(...) "aseg.mgz")
-    local_mocked_bindings(resample_volume_to_grid = function(...) resampled)
+    local_mocked_bindings(
+      resample_volume_to_grid = function(...) list(file = resampled)
+    )
 
     expect_warning(
       expect_null(aseg_context_volume(
@@ -3967,7 +3974,9 @@ describe("aseg_context_volume", {
     resampled <- withr::local_tempfile(fileext = ".nii.gz")
     RNifti::writeNifti(RNifti::asNifti(aseg), resampled)
     local_mocked_bindings(aseg_volume_path = function(...) "aseg.mgz")
-    local_mocked_bindings(resample_volume_to_grid = function(...) resampled)
+    local_mocked_bindings(
+      resample_volume_to_grid = function(...) list(file = resampled)
+    )
 
     context <- aseg_context_volume(
       "a.nii.gz",
@@ -3999,7 +4008,9 @@ describe("aseg_context_volume", {
     resampled <- withr::local_tempfile(fileext = ".nii.gz")
     RNifti::writeNifti(RNifti::asNifti(aseg), resampled)
     local_mocked_bindings(aseg_volume_path = function(...) "aseg.mgz")
-    local_mocked_bindings(resample_volume_to_grid = function(...) resampled)
+    local_mocked_bindings(
+      resample_volume_to_grid = function(...) list(file = resampled)
+    )
 
     context <- aseg_context_volume(
       "a.nii.gz",

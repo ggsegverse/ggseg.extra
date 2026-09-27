@@ -335,7 +335,8 @@ describe("run_cmd", {
     # verbose 1 is the default, and is where stderr used to be discarded
     expect_error(
       run_cmd("echo 'ERROR: no such file' >&2; exit 3", verbose = 1L),
-      "ERROR: no such file"
+      "ERROR: no such file",
+      class = "ggseg_extra_fs_command_error"
     )
   })
 

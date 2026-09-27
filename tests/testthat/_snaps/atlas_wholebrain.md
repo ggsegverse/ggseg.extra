@@ -363,6 +363,20 @@
       v Refining cortical projection (keeping 1 cortical labels on the surface) [<t...
       
 
+# aseg_context_volume resampling / warns and falls back when the resampling fails
+
+    Code
+      expect_null(aseg_context_volume("a.nii.gz", "subj", c(2L, 2L, 2L), array(TRUE,
+        c(2, 2, 2))))
+    Condition
+      Warning:
+      Drawing the cortical context as a solid silhouette: `mri_vol2vol` failed.
+      i With a FreeSurfer aseg the context keeps its sulci and gyri instead.
+      Caused by error in `run_cmd()`:
+      ! FreeSurfer command failed (exit 1).
+      i FreeSurfer said:
+        ERROR: bad header
+
 # create_wholebrain_from_volume argument groups / lands the retired flat arguments where the lists now hold them
 
     Code

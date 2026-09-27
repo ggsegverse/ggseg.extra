@@ -2457,11 +2457,12 @@ aseg_context_volume <- function(
     return(NULL)
   }
 
-  resampled <- resample_volume_to_grid(aseg, input_volume, verbose)
-  if (is.null(resampled)) {
-    warn_solid_cortex_context("{.code mri_vol2vol} failed")
+  resampling <- resample_volume_to_grid(aseg, input_volume, verbose)
+  if (is.null(resampling$file)) {
+    warn_solid_cortex_context(resampling$reason, parent = resampling$cnd)
     return(NULL)
   }
+  resampled <- resampling$file
   on.exit(unlink(resampled), add = TRUE)
 
   context <- as.array(read_volume(resampled, reorient = FALSE))
@@ -2543,7 +2544,11 @@ ribbon_lands_on_volume <- function(ribbon, brain_mask, min_overlap = 0.5) {
 
 #' Warn that the context silhouette falls back to the solid cortical mask
 #' @noRd
-warn_solid_cortex_context <- function(reason, .envir = parent.frame()) {
+warn_solid_cortex_context <- function(
+  reason,
+  parent = NULL,
+  .envir = parent.frame()
+) {
   reason <- cli::format_inline(reason, .envir = .envir)
   cli::cli_warn(
     c(
@@ -2551,6 +2556,7 @@ warn_solid_cortex_context <- function(reason, .envir = parent.frame()) {
       "i" = "With a FreeSurfer {.field aseg} the context keeps its sulci
       and gyri instead."
     ),
+    parent = parent,
     wrap = TRUE
   )
 }
