@@ -34,16 +34,23 @@ run_cmd <- function(cmd, verbose = get_verbose(), no_ui = FALSE) {
     paste("bash -c", shQuote(full_cmd), "2>", shQuote(err_file)),
     ignore.stdout = verbose < 2
   )
-  stderr_lines <- read_stderr_log(err_file)
+  stderr_lines <- if (verbose >= 2 || exit_code != 0) {
+    read_stderr_log(err_file)
+  } else {
+    character()
+  }
   if (verbose >= 2 && length(stderr_lines) > 0) {
     cat(stderr_lines, sep = "\n")
   }
   if (exit_code != 0) {
-    cli::cli_abort(c(
-      "FreeSurfer command failed (exit {exit_code}).",
-      "x" = "{cmd}",
-      fs_stderr_bullets(stderr_lines)
-    ))
+    cli::cli_abort(
+      c(
+        "FreeSurfer command failed (exit {exit_code}).",
+        "x" = "{cmd}",
+        fs_stderr_bullets(stderr_lines)
+      ),
+      class = "ggseg_extra_fs_command_error"
+    )
   }
   exit_code
 }
@@ -75,25 +82,6 @@ fs_stderr_bullets <- function(stderr_lines, max_lines = 10L) {
   shown <- cli_escape_braces(utils::tail(stderr_lines, max_lines))
   bullets <- stats::setNames(shown, rep(" ", length(shown)))
   c("i" = "FreeSurfer said:", bullets)
-}
-
-
-#' Describe a failed resampling for a caller's warning or abort
-#'
-#' The reason arrives as the text of a condition, so it is escaped before it
-#' travels back through cli as part of a template.
-#' @noRd
-resample_failure_reason <- function(reason) {
-  prefix <- "{.code mri_vol2vol} failed"
-  if (is.null(reason)) {
-    return(prefix)
-  }
-  lines <- trimws(unlist(strsplit(reason, "\n", fixed = TRUE)))
-  paste0(
-    prefix,
-    ": ",
-    cli_escape_braces(paste(lines[nzchar(lines)], collapse = " "))
-  )
 }
 
 

@@ -3,10 +3,15 @@
 - Internal: a failed `mri_vol2vol` resampling now reports what FreeSurfer
   said. `resample_volume_to_grid()` was lowering the verbosity it was given --
   so the error output was suppressed even when the caller asked for everything
-  -- and then discarding the error itself, leaving both callers to
-  report a bare "`mri_vol2vol` failed". It now hands the caller the reason
-  alongside the path, and the two callers pass it into their warning and their
-  abort.
+  -- and then discarding the error itself, leaving both callers to report a
+  bare "`mri_vol2vol` failed". It now passes the verbosity through and returns
+  the condition that failed, which its two callers chain as the parent of
+  their own warning and abort, so FreeSurfer's own message travels with them.
+
+- Internal: a failing FreeSurfer command aborts with the condition class
+  `ggseg_extra_fs_command_error`, so a caller can tell one from any other
+  error. `run_cmd()` also stops reading the captured error log back on the
+  success path, where nothing looked at it.
 
 # ggseg.extra 1.9.9.9062
 

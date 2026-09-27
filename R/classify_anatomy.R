@@ -450,7 +450,7 @@ aparc_aseg_on_grid <- function(
 ) {
   resampling <- resample_volume_to_grid(source_file, volume, verbose)
   if (is.null(resampling$file)) {
-    abort_anatomy_unavailable(resample_failure_reason(resampling$reason))
+    abort_anatomy_unavailable(resampling$reason, parent = resampling$cnd)
   }
   resampled <- resampling$file
   on.exit(unlink(resampled), add = TRUE)
@@ -531,11 +531,12 @@ have_fs_quietly <- function() {
 #' Run `mri_vol2vol --regheader --nearest`
 #'
 #' Returns a list of `file` -- the output path, or `NULL` when the command
-#' failed -- and `reason`, what went wrong. Shared with the whole-brain
-#' context pipeline, which warns and carries on where this caller aborts, so
-#' the failure is reported by the caller rather than here; `reason` is what
-#' FreeSurfer said, which is the only thing that distinguishes a missing
-#' binary from a volume whose header lies.
+#' failed -- `reason`, a short phrase naming the failure, and `cnd`, the
+#' condition that failed, or `NULL`. Shared with the whole-brain context
+#' pipeline, which warns and carries on where this caller aborts, so the
+#' failure is reported by the caller rather than here; both chain `cnd` as the
+#' parent of their own message, which is what distinguishes a missing binary
+#' from a volume whose header lies.
 #' @noRd
 resample_volume_to_grid <- function(source_file, target, verbose) {
   out_file <- tempfile(fileext = paste0(".", volume_ext(target)))
@@ -550,18 +551,24 @@ resample_volume_to_grid <- function(source_file, target, verbose) {
     "--o",
     shQuote(out_file)
   )
-  reason <- tryCatch(
+  failure <- tryCatch(
     {
       run_cmd(cmd, verbose = verbose)
-      if (file.exists(out_file)) NULL else "it wrote no output"
+      if (file.exists(out_file)) {
+        NULL
+      } else {
+        list(file = NULL, reason = "{.code mri_vol2vol} wrote no output")
+      }
     },
-    error = function(e) conditionMessage(e)
+    error = function(cnd) {
+      list(file = NULL, reason = "{.code mri_vol2vol} failed", cnd = cnd)
+    }
   )
-  if (!is.null(reason)) {
+  if (!is.null(failure)) {
     unlink(out_file)
-    return(list(file = NULL, reason = reason))
+    return(failure)
   }
-  list(file = out_file, reason = NULL)
+  list(file = out_file)
 }
 
 
@@ -611,13 +618,18 @@ resampled_overlap <- function(inside, brain_mask) {
 
 #' Abort because the labels cannot be classified by anatomy
 #' @noRd
-abort_anatomy_unavailable <- function(reason, .envir = parent.frame()) {
+abort_anatomy_unavailable <- function(
+  reason,
+  parent = NULL,
+  .envir = parent.frame()
+) {
   cli::cli_abort(
     c(
       paste0("Cannot classify labels by anatomy: ", reason, "."),
       "i" = "Classifying by anatomy needs FreeSurfer and a volume in the
       space its header claims."
     ),
+    parent = parent,
     .envir = .envir,
     wrap = TRUE
   )
