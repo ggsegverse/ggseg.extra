@@ -1,5 +1,22 @@
 # Changelog
 
+## ggseg.extra 1.9.9.9064
+
+### Deprecations
+
+- [`is_verbose()`](https://ggsegverse.github.io/ggseg.extra/reference/get_verbose.md)
+  is deprecated in favour of
+  [`get_verbose()`](https://ggsegverse.github.io/ggseg.extra/reference/get_verbose.md).
+  An `is_` prefix on a function that returns `0L`, `1L` or `2L` invites
+  `if (is_verbose())`, which is true at every level but silence – it
+  worked by coercion, which is worse than failing.
+  [`get_verbose()`](https://ggsegverse.github.io/ggseg.extra/reference/get_verbose.md)
+  now takes the same optional argument, so it resolves an explicit level
+  or falls back to the option and the environment variable, exactly as
+  `get_cleanup()` and `get_output_dir()` do.
+  [`as_verbosity()`](https://ggsegverse.github.io/ggseg.extra/reference/as_verbosity.md)
+  remains the way to coerce a value without consulting the option.
+
 ## ggseg.extra 1.9.9.9063
 
 - Internal: a failed `mri_vol2vol` resampling now reports what

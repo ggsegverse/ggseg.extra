@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9063</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9064</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -67,6 +67,14 @@
       <small>Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.9.9.9064" id="ggsegextra-1999064">ggseg.extra 1.9.9.9064<a class="anchor" aria-label="anchor" href="#ggsegextra-1999064"></a></h2>
+<div class="section level3">
+<h3 id="deprecations-1-9-9-9064">Deprecations<a class="anchor" aria-label="anchor" href="#deprecations-1-9-9-9064"></a></h3>
+<ul><li>
+<code><a href="../reference/get_verbose.html">is_verbose()</a></code> is deprecated in favour of <code><a href="../reference/get_verbose.html">get_verbose()</a></code>. An <code>is_</code> prefix on a function that returns <code>0L</code>, <code>1L</code> or <code>2L</code> invites <code>if (is_verbose())</code>, which is true at every level but silence – it worked by coercion, which is worse than failing. <code><a href="../reference/get_verbose.html">get_verbose()</a></code> now takes the same optional argument, so it resolves an explicit level or falls back to the option and the environment variable, exactly as <code>get_cleanup()</code> and <code>get_output_dir()</code> do. <code><a href="../reference/as_verbosity.html">as_verbosity()</a></code> remains the way to coerce a value without consulting the option.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9063" id="ggsegextra-1999063">ggseg.extra 1.9.9.9063<a class="anchor" aria-label="anchor" href="#ggsegextra-1999063"></a></h2>
 <ul><li><p>Internal: a failed <code>mri_vol2vol</code> resampling now reports what FreeSurfer said. <code>resample_volume_to_grid()</code> was lowering the verbosity it was given – so the error output was suppressed even when the caller asked for everything – and then discarding the error itself, leaving both callers to report a bare “<code>mri_vol2vol</code> failed”. It now passes the verbosity through and returns the condition that failed, which its two callers chain as the parent of their own warning and abort, so FreeSurfer’s own message travels with them.</p></li>

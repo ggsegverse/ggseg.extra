@@ -208,10 +208,8 @@ General package utilities
   Derive an atlas `region` from a label
 
 - [`get_verbose()`](https://ggsegverse.github.io/ggseg.extra/reference/get_verbose.md)
-  : Get verbose setting
-
-- [`is_verbose()`](https://ggsegverse.github.io/ggseg.extra/reference/is_verbose.md)
-  : Get verbosity level
+  [`is_verbose()`](https://ggsegverse.github.io/ggseg.extra/reference/get_verbose.md)
+  **\[deprecated\]** : Get verbose setting
 
 - [`as_verbosity()`](https://ggsegverse.github.io/ggseg.extra/reference/as_verbosity.md)
   : Coerce a value to a verbosity level
