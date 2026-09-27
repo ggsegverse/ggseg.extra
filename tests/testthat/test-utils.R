@@ -93,27 +93,25 @@ describe("get_verbose", {
     withr::local_envvar(GGSEG_EXTRA_VERBOSE = "0")
     expect_identical(get_verbose(), 1L)
   })
+
+  it("takes an explicit level over the option and the envvar", {
+    withr::local_options(ggseg.extra.verbose = 0)
+    withr::local_envvar(GGSEG_EXTRA_VERBOSE = "0")
+    expect_identical(get_verbose(2), 2L)
+    expect_identical(get_verbose(FALSE), 0L)
+  })
 })
 
 
 describe("is_verbose", {
-  it("returns integer levels", {
+  it("is deprecated in favour of get_verbose", {
+    expect_snapshot(is_verbose(2))
+  })
+
+  it("still resolves the level it is deprecated for", {
+    withr::local_options(lifecycle_verbosity = "quiet")
     expect_identical(is_verbose(1), 1L)
-    expect_identical(is_verbose(TRUE), 1L)
-    expect_identical(is_verbose(2), 2L)
-  })
-
-  it("returns 0 for silent", {
-    expect_identical(is_verbose(0), 0L)
     expect_identical(is_verbose(FALSE), 0L)
-  })
-
-  it("delegates to get_verbose when NULL", {
-    withr::local_options(ggseg.extra.verbose = FALSE)
-    expect_identical(is_verbose(), 0L)
-
-    withr::local_options(ggseg.extra.verbose = TRUE)
-    expect_identical(is_verbose(), 1L)
 
     withr::local_options(ggseg.extra.verbose = 2)
     expect_identical(is_verbose(), 2L)

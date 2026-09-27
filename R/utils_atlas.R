@@ -403,7 +403,7 @@ resolve_common_config <- function(
 ) {
   list(
     output_dir = get_output_dir(output_dir),
-    verbose = is_verbose(verbose),
+    verbose = get_verbose(verbose),
     cleanup = get_cleanup(cleanup),
     skip_existing = get_skip_existing(skip_existing),
     tolerance = get_tolerance(tolerance),

@@ -46,14 +46,20 @@ as_verbosity <- function(x) {
 #' Logical values are accepted for backward compatibility
 #' (`FALSE` = 0, `TRUE` = 1).
 #'
+#' @param verbose Optional explicit level, which wins over the option and the
+#'   environment variable. `NULL`, the default, consults those instead.
 #' @return Integer `0L`, `1L`, or `2L`
 #' @export
 #' @examples
 #' get_verbose()
+#' get_verbose(2)
 #' options(ggseg.extra.verbose = 0)
 #' get_verbose()
 #' options(ggseg.extra.verbose = NULL)
-get_verbose <- function() {
+get_verbose <- function(verbose = NULL) {
+  if (!is.null(verbose)) {
+    return(as_verbosity(verbose))
+  }
   val <- getOption("ggseg.extra.verbose")
   if (!is.null(val)) {
     return(as_verbosity(val))
@@ -65,21 +71,23 @@ get_verbose <- function() {
   1L
 }
 
-#' Get verbosity level
+#' @description
+#' `r lifecycle::badge("deprecated")`
 #'
-#' @param verbose Optional explicit value. If NULL, reads from
-#'   option/env via [get_verbose()]. Accepts logical or integer (0/1/2).
-#' @return Integer `0L`, `1L`, or `2L`
+#' An `is_` prefix on a function returning `0L`, `1L` or `2L` invites
+#' `if (is_verbose())`, which is true at every level but silence.
+#' `is_verbose()` was renamed to [get_verbose()], which takes the same
+#' optional argument and sits with `get_cleanup()` and `get_output_dir()`. To
+#' coerce a value without consulting the option, use [as_verbosity()].
+#' @rdname get_verbose
 #' @export
-#' @examples
-#' is_verbose()
-#' is_verbose(FALSE)
-#' is_verbose(2)
 is_verbose <- function(verbose = NULL) {
-  if (is.null(verbose)) {
-    return(get_verbose())
-  }
-  as_verbosity(verbose)
+  lifecycle::deprecate_warn(
+    "1.9.9.9064",
+    "is_verbose()",
+    "get_verbose()"
+  )
+  get_verbose(verbose)
 }
 
 #' Cross product of two 3D vectors

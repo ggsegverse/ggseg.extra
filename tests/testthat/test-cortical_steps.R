@@ -60,7 +60,7 @@ describe("labels_read_files hemisphere-less filenames", {
 describe("validate_surface_config", {
   it("returns list with all expected fields", {
     local_mocked_bindings(
-      is_verbose = function(x) TRUE,
+      get_verbose = function(x) TRUE,
       get_cleanup = function(x) FALSE,
       get_skip_existing = function(x) FALSE,
       get_tolerance = function(x) 0.5,

@@ -1,3 +1,14 @@
+# is_verbose / is deprecated in favour of get_verbose
+
+    Code
+      is_verbose(2)
+    Condition
+      Warning:
+      `is_verbose()` was deprecated in ggseg.extra 1.9.9.9064.
+      i Please use `get_verbose()` instead.
+    Output
+      [1] 2
+
 # warn_deprecated_sf_smoothing / warns once per supplied argument when several are passed together
 
     Code
