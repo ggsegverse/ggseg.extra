@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9062</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9063</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -67,6 +67,11 @@
       <small>Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.9.9.9063" id="ggsegextra-1999063">ggseg.extra 1.9.9.9063<a class="anchor" aria-label="anchor" href="#ggsegextra-1999063"></a></h2>
+<ul><li><p>Internal: a failed <code>mri_vol2vol</code> resampling now reports what FreeSurfer said. <code>resample_volume_to_grid()</code> was lowering the verbosity it was given – so the error output was suppressed even when the caller asked for everything – and then discarding the error itself, leaving both callers to report a bare “<code>mri_vol2vol</code> failed”. It now passes the verbosity through and returns the condition that failed, which its two callers chain as the parent of their own warning and abort, so FreeSurfer’s own message travels with them.</p></li>
+<li><p>Internal: a failing FreeSurfer command aborts with the condition class <code>ggseg_extra_fs_command_error</code>, so a caller can tell one from any other error. <code>run_cmd()</code> also stops reading the captured error log back on the success path, where nothing looked at it.</p></li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9062" id="ggsegextra-1999062">ggseg.extra 1.9.9.9062<a class="anchor" aria-label="anchor" href="#ggsegextra-1999062"></a></h2>
 <ul><li><p>Internal: the tract tutorial builds in CI, now that the image carries the one <code>trctrain</code> subject it uses. Five of the nine tutorials are executed on every pull request. Re-knitting it showed the committed page was stale in a way worth noting: it reported the atlas as <code>tracts</code> rather than <code>tracula</code>.</p></li>
