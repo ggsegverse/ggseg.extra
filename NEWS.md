@@ -1,3 +1,16 @@
+# ggseg.extra 1.9.9.9064
+
+## Deprecations
+
+- `is_verbose()` is deprecated in favour of `get_verbose()`. An `is_` prefix
+  on a function that returns `0L`, `1L` or `2L` invites `if (is_verbose())`,
+  which is true at every level but silence -- it worked by coercion, which is
+  worse than failing. `get_verbose()` now takes the same optional argument, so
+  it resolves an explicit level or falls back to the option and the
+  environment variable, exactly as `get_cleanup()` and `get_output_dir()` do.
+  `as_verbosity()` remains the way to coerce a value without consulting the
+  option.
+
 # ggseg.extra 1.9.9.9063
 
 - Internal: a failed `mri_vol2vol` resampling now reports what FreeSurfer
