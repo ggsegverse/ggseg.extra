@@ -131,7 +131,7 @@ Keep the ones that show your structures best:
 #| label: select-views
 #| eval: !expr can_run
 aseg_raw <- aseg_raw |>
-  atlas_view_keep("axial_3|coronal_2|coronal_3|sagittal")
+  atlas_view_keep("axial_3|coronal_2|coronal_3|sagittal_left")
 ```
 
 ```{r}
