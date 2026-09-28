@@ -92,9 +92,13 @@ layout_volumetric_views <- function(atlas_df) {
 }
 
 
+#' Vertices in each row of an atlas's `sf` table
+#'
+#' One row per label and view, which is the granularity the geometry steps
+#' work at. [count_vertices()] totals these per label for the user.
 #' @noRd
 #' @importFrom sf st_coordinates
-count_vertices <- function(x) {
+vertices_per_row <- function(x) {
   vapply(x$geometry, function(i) nrow(st_coordinates(i)), integer(1))
 }
 

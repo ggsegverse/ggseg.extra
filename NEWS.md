@@ -6,6 +6,64 @@
   ggseg.formats reporting a pattern that matches nothing, calling them one at
   a time would have produced a warning per miss. Behaviour is unchanged.
 
+# ggseg.extra 1.9.9.9065
+
+## New features
+
+- `count_vertices()` is now exported. It reports how many polygon vertices
+  each region carries; `sum()` of it is the figure the `create_*()` pipelines
+  warn about when an atlas is large, and the one `atlas_simplify()` brings
+  down. Until now the only way to see that number was to trigger the warning.
+
+## Documentation
+
+- The tutorials plot the atlas at each stage of the build rather than once at
+  the end, so the effect of each step is visible. The cortical, label and
+  cerebellar tutorials show the geometry before and after
+  `atlas_simplify()`/`atlas_smooth()` with the vertex counts beside them; the
+  subcortical and tract tutorials show the atlas as regions, views and
+  fragments are removed.
+
+- The cortical tutorial built its finished atlas from the *unsmoothed*
+  polygons: it simplified and smoothed into a variable it then never used, so
+  the atlas it told you to save was the 21,514-vertex one the pipeline warns
+  about. It now carries the tidied atlas through, and saves 6,793 vertices.
+
+- The label and tract tutorials wrote `plot(atlas) + scale_fill_viridis_d()`.
+  `plot()` draws with base graphics and returns the atlas, so the scale was
+  silently discarded and the figure never used the palette it advertised.
+  Both now go through `ggplot() + geom_brain(atlas, aes(fill = region))`,
+  which is the route that accepts a scale.
+
+- The cerebellar tutorial removed `unknown` and `corpuscallosum`, neither of
+  which a cerebellar parcellation contains. It now removes `region_28`, the
+  unnamed midline strip the SUIT parcellation actually leaves behind.
+
+- Two metadata joins in the tutorials had never matched. The cortical
+  tutorial joined a network-name table on `label`, but the labels carry a
+  hemisphere prefix (`lh_7Networks_1`), so the atlas it published still
+  called its regions `7Networks_1`. The tract tutorial stripped `.prep` off
+  its labels before joining, so every tract came out with an `NA` group.
+  Both now join on a key that exists, and the tract table lists the tracts
+  this training set actually ships.
+
+- Corrected in the tutorials: the subcortical pipeline makes seven projection
+  views, not six; the cerebellar pipeline does not simplify its polygons (the
+  claim named an `rmapshaper` call that is not there); cerebellar regions come
+  out as `I_IV` and `CrusI`, not "I-IV" and "Crus I"; and
+  `setup_atlas_repo()` does read `usethis.description`, which it has since
+  1.9.9.9062.
+
+- The publishing tutorial pins `usethis.description` while it knits, so the
+  example DESCRIPTION shows the template placeholder rather than the name and
+  email of whoever last built the vignettes.
+
+- The cortical tutorial no longer calls `atlas_region_contextual()` on the
+  medial wall. The pipeline already sets it aside; the tutorial now says so,
+  and shows the manual call for a parcellation whose leftovers are named
+  something the pipeline does not recognise, such as `aparc`'s
+  `corpuscallosum`.
+
 # ggseg.extra 1.9.9.9064
 
 ## Deprecations

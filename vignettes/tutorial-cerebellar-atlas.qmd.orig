@@ -82,7 +82,19 @@ atlas <- create_cerebellar_from_gifti(
 atlas
 ```
 
-The pipeline reads the GIFTI label table for region names and colours, maps labels onto the SUIT flatmap vertices, builds per-region sf polygons from the mesh triangles, and applies topology-preserving simplification via `rmapshaper` to clean up jagged triangle boundaries while keeping shared edges aligned.
+```{r}
+#| label: plot-raw
+#| eval: !expr can_build
+#| fig-width: 8
+#| fig-height: 5
+#| fig-alt: "The SUIT cerebellar flatmap straight from the pipeline, with lobule boundaries traced at mesh resolution."
+#| fig-cap: "Stage 1 --- straight out of the pipeline, at flatmap mesh resolution."
+plot(atlas)
+```
+
+Every lobule boundary is a chain of triangle edges, which is why the outlines look sampled rather than drawn.
+
+The pipeline reads the GIFTI label table for region names and colours, maps labels onto the SUIT flatmap vertices, and builds per-region sf polygons from the mesh triangles. It does not simplify them --- the polygons arrive at mesh resolution, and tidying is the separate step below.
 
 If you also have a matching NIfTI volume and want 3D meshes:
 
@@ -160,18 +172,34 @@ Use `interpolation = "nearest"` for label maps (the default) and `"linear"` for 
 
 After the transform, pass the SUIT-space volume to `create_cerebellar_from_volume()` as usual.
 
-## Tuning the output
+## Tidying the geometry
 
 The cerebellar pipeline now returns raw, unsmoothed flatmap polygons.
 Tidying them is a separate post-processing step in two parts — `atlas_simplify()` drops vertices, `atlas_smooth()` rounds off what is left — so you can tune either without re-running the pipeline:
 
 ```{r}
-#| label: tune
+#| label: tidy
 #| eval: !expr can_build
+sum(count_vertices(atlas))
+
 atlas <- atlas |>
   atlas_simplify(keep = 0.2, exclude = "cortex_") |>
   atlas_smooth(exclude = "cortex_")
+
+sum(count_vertices(atlas))
 ```
+
+```{r}
+#| label: plot-tidy
+#| eval: !expr can_build
+#| fig-width: 8
+#| fig-height: 5
+#| fig-alt: "The same flatmap after simplification and smoothing, with rounded lobule boundaries."
+#| fig-cap: "Stage 2 --- simplified and smoothed."
+plot(atlas)
+```
+
+Roughly three quarters of the vertices are gone and the lobules read more clearly for it --- the flatmap is a schematic, so nothing is lost by drawing it as one.
 
 For 3D meshes, `decimate` controls quadric edge decimation (0–1, default 0.5).
 A value of 0.5 reduces the mesh to roughly half its original vertex count.
@@ -181,29 +209,34 @@ Supplying them emits a lifecycle warning and they are otherwise ignored.
 
 ## Post-processing
 
-The same post-processing tools from the other tutorials work here.
-Remove unwanted regions, mark context regions, rename labels:
+The same post-processing tools from the other tutorials work here. What needs removing depends on the parcellation, so look before you cut:
+
+```{r}
+#| label: inspect-regions
+#| eval: !expr can_build
+atlas_regions(atlas)
+```
+
+`region_28` is the giveaway --- a midline strip the parcellation numbers but does not name. Drop it:
 
 ```{r}
 #| label: post-process
 #| eval: !expr can_build
-atlas <- atlas |>
-  atlas_region_remove("unknown", match_on = "label") |>
-  atlas_region_remove("corpuscallosum", match_on = "label")
+atlas <- atlas_region_remove(atlas, "region_28")
 ```
 
 Cerebellar atlases use hemisphere values `"left"`, `"right"`, and `"vermis"` — the pipeline detects these from region name prefixes like "Left I-IV", "Right Crus I", or "Vermis VI".
-The `region` column has the hemisphere prefix stripped, so you get clean names like "I-IV" and "Crus I".
+The `region` column has the hemisphere prefix stripped and the remainder sanitised, so you get `I_IV` and `CrusI` rather than "Left I-IV" and "Right Crus I".
 
 ## Visualization
 
 ```{r}
 #| label: plot
 #| eval: !expr can_build
-#| fig.width: 8
-#| fig.height: 5
-#| fig.alt: "SUIT flatmap of the cerebellum with the lobular parcellation in colour, vermis down the centre and the two hemispheres either side."
-#| fig.cap: "The SUIT anatomical parcellation on the cerebellar flatmap."
+#| fig-width: 8
+#| fig-height: 5
+#| fig-alt: "SUIT flatmap of the cerebellum with the lobular parcellation in colour, vermis down the centre and the two hemispheres either side, with the unnamed midline strip removed."
+#| fig-cap: "Stage 3 --- the finished atlas, after the unwanted regions are dropped."
 plot(atlas)
 ```
 

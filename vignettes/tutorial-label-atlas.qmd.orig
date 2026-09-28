@@ -38,6 +38,8 @@ Label files conventionally include hemisphere in the filename: `lh.motor.label` 
 #| eval: !expr can_run
 library(ggseg.extra)
 library(ggseg.formats)
+library(ggseg)
+library(ggplot2)
 library(dplyr)
 ```
 
@@ -97,23 +99,55 @@ atlas <- create_cortical_from_labels(
 
 Left and right hemisphere versions of the same region should share the same region name --- the hemisphere column distinguishes them.
 
-## Full pipeline with 2D geometry
+## The 2D geometry
 
-For 2D plots, enable the full pipeline:
+There is nothing extra to switch on: the call above already ran the full pipeline, the same one behind `create_cortical_from_annotation()`, projecting the inflated mesh triangles straight to 2D and converting them to sf polygons. The atlas is ready to plot.
 
 ```{r}
-#| label: full-atlas
+#| label: geometry
 #| eval: !expr can_run
-
-ba_atlas <- create_cortical_from_labels(
-  label_files = ba_labels,
-  atlas_name = "custom"
-)
-
-ba_atlas
+atlas_views(ba_atlas)
 ```
 
-This runs the same pipeline as `create_cortical_from_annotation()` --- it projects the inflated mesh triangles straight to 2D and converts them to sf polygons.
+```{r}
+#| label: plot-raw
+#| eval: !expr can_run
+#| fig-width: 10
+#| fig-height: 6
+#| fig-alt: "Brodmann area regions straight from the pipeline, with stepped boundaries traced from the mesh."
+#| fig-cap: "Stage 1 --- straight out of the pipeline, boundaries still following the mesh."
+plot(ba_atlas)
+```
+
+The boundaries are staircases, because the pipeline traces the edges of mesh triangles rather than drawing a line through them.
+
+## Tidying the geometry
+
+As with any pipeline output, the polygons arrive at mesh resolution. `atlas_simplify()` drops vertices and `atlas_smooth()` rounds off what is left:
+
+```{r}
+#| label: tidy
+#| eval: !expr can_run
+sum(count_vertices(ba_atlas))
+
+ba_atlas <- ba_atlas |>
+  atlas_simplify(keep = 0.2, exclude = "cortex_") |>
+  atlas_smooth(exclude = "cortex_")
+
+sum(count_vertices(ba_atlas))
+```
+
+```{r}
+#| label: plot-tidy
+#| eval: !expr can_run
+#| fig-width: 10
+#| fig-height: 6
+#| fig-alt: "The same Brodmann regions after simplification and smoothing, with rounded boundaries."
+#| fig-cap: "Stage 2 --- simplified and smoothed."
+plot(ba_atlas)
+```
+
+Around two thirds of the vertices are gone and the areas read more cleanly, which is the trade this step exists to make.
 
 ## Post-processing
 
@@ -122,10 +156,6 @@ Clean up region names:
 ```{r}
 #| label: post-process
 #| eval: !expr can_run
-ba_atlas <- ba_atlas |>
-  atlas_region_contextual("cortex", match_on = "label") |>
-  atlas_region_contextual("unknown", match_on = "label")
-
 core_clean <- ba_atlas$core |>
   mutate(
     region = gsub("\\.", " ", region),
@@ -144,14 +174,18 @@ ba_atlas <- ggseg_atlas(
 ```{r}
 #| label: plot
 #| eval: !expr can_run
-#| fig-cap: "Brodmann area atlas plotted with ggseg."
-#| fig-alt: "2D brain atlas plot showing Brodmann area regions across lateral and medial views of both hemispheres."
+#| fig-cap: "Stage 3 --- the finished atlas, drawn through ggplot2 with a viridis fill."
+#| fig-alt: "2D brain atlas plot showing Brodmann area regions across lateral and medial views of both hemispheres, filled with a viridis colour scale."
 #| fig-width: 10
 #| fig-height: 6
 
-plot(ba_atlas) +
-  ggplot2::scale_fill_viridis_d(na.value = "grey80")
+ggplot() +
+  geom_brain(atlas = ba_atlas, aes(fill = region)) +
+  scale_fill_viridis_d(na.value = "grey80") +
+  theme_void()
 ```
+
+`plot()` is the quick look --- base graphics, the atlas's own palette, no customisation. When you want to control the colours, go through ggplot2: `geom_brain()` draws the same atlas as a layer you can add scales and themes to. Map something to `fill` when you do, or there is nothing for a fill scale to colour and every region comes back as `na.value`.
 
 ## Finding label files
 
@@ -165,8 +199,7 @@ label_dir <- file.path(
   freesurfer::fs_dir(), "subjects", "fsaverage5", "label"
 )
 
-ba_files <- list.files(label_dir, "^[lr]h\\.BA.*\\.label$", full.names = TRUE)
-length(ba_files)
+length(list.files(label_dir, "^[lr]h\\.BA.*\\.label$"))
 ```
 
 Other useful labels include V1/V2, MT, and entorhinal cortex.

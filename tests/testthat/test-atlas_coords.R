@@ -224,7 +224,7 @@ describe("correct_coords_sf", {
 })
 
 
-describe("count_vertices", {
+describe("vertices_per_row", {
   it("counts vertices in each geometry", {
     sf_obj <- sf::st_sf(
       id = c("a", "b"),
@@ -242,7 +242,7 @@ describe("count_vertices", {
       )
     )
 
-    result <- count_vertices(sf_obj)
+    result <- vertices_per_row(sf_obj)
 
     expect_length(result, 2)
     expect_identical(result[1], 5L)
