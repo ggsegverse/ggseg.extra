@@ -11,7 +11,9 @@ count_vertices(atlas)
 }
 \value{
 A named integer vector, one element per label, in the order the
-labels appear in the atlas. Take \code{sum()} of it for the atlas total.
+labels appear in the atlas. Take \code{sum()} of it for the atlas total; that
+total is every vertex the atlas carries, including any under a missing
+label, so it always agrees with the large-atlas warning.
 }
 \description{
 Reports how many polygon vertices each region is drawn from. The total is
