@@ -159,7 +159,7 @@ your structures best:
 ``` r
 
 aseg_raw <- aseg_raw |>
-  atlas_view_keep("axial_3|coronal_2|coronal_3|sagittal")
+  atlas_view_keep("axial_3|coronal_2|coronal_3|sagittal_left")
 ```
 
 ``` r
@@ -173,10 +173,9 @@ gone.](figures/tutorial-subcortical-atlas-plot-views-1.png)
 
 Stage 3 — only the views that show the structures well.
 
-Three views are gone. The two that showed almost nothing were costing as
-much space as the ones that carry the atlas, and a view that adds no
-information is worse than no view at all — the reader has to check it to
-find that out.
+Three views are gone. Two showed almost nothing, and one added no
+information while costing as much space as the views that carry the
+atlas — the reader still has to check it to find that out.
 
 ## Cleaning up the layout
 

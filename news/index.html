@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9065</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9066</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -68,14 +68,30 @@
     </div>
 
     <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.9.9.9066" id="ggsegextra-1999066">ggseg.extra 1.9.9.9066<a class="anchor" aria-label="anchor" href="#ggsegextra-1999066"></a></h2>
+<div class="section level3">
+<h3 id="user-facing-changes-1-9-9-9066">User-facing changes<a class="anchor" aria-label="anchor" href="#user-facing-changes-1-9-9-9066"></a></h3>
+<div class="section level4">
+<h4 id="minor-changes-1-9-9-9066">Minor changes<a class="anchor" aria-label="anchor" href="#minor-changes-1-9-9-9066"></a></h4>
+<ul><li>
+<code><a href="../reference/aseg_context.html">aseg_context()</a></code> applies its hidden-label recipe as one pattern rather than one call per pattern. The recipe names structures an <code>aseg</code> may or may not carry, so most of its patterns match nothing on any given atlas; with ggseg.formats reporting a pattern that matches nothing, calling them one at a time would have produced a warning per miss. Behaviour is unchanged.</li>
+</ul></div>
+</div>
+</div>
+    <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9065" id="ggsegextra-1999065">ggseg.extra 1.9.9.9065<a class="anchor" aria-label="anchor" href="#ggsegextra-1999065"></a></h2>
 <div class="section level3">
-<h3 id="new-features-1-9-9-9065">New features<a class="anchor" aria-label="anchor" href="#new-features-1-9-9-9065"></a></h3>
+<h3 id="user-facing-changes-1-9-9-9065">User-facing changes<a class="anchor" aria-label="anchor" href="#user-facing-changes-1-9-9-9065"></a></h3>
+<div class="section level4">
+<h4 id="minor-changes-1-9-9-9065">Minor changes<a class="anchor" aria-label="anchor" href="#minor-changes-1-9-9-9065"></a></h4>
 <ul><li>
 <code><a href="../reference/count_vertices.html">count_vertices()</a></code> is now exported. It reports how many polygon vertices each region carries; <code><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum()</a></code> of it is the figure the <code>create_*()</code> pipelines warn about when an atlas is large, and the one <code><a href="../reference/atlas_simplify.html">atlas_simplify()</a></code> brings down. Until now the only way to see that number was to trigger the warning.</li>
 </ul></div>
+</div>
 <div class="section level3">
-<h3 id="documentation-1-9-9-9065">Documentation<a class="anchor" aria-label="anchor" href="#documentation-1-9-9-9065"></a></h3>
+<h3 id="developer-facing-changes-1-9-9-9065">Developer-facing changes<a class="anchor" aria-label="anchor" href="#developer-facing-changes-1-9-9-9065"></a></h3>
+<div class="section level4">
+<h4 id="minor-changes-1-9-9-9065-1">Minor changes<a class="anchor" aria-label="anchor" href="#minor-changes-1-9-9-9065-1"></a></h4>
 <ul><li><p>The tutorials plot the atlas at each stage of the build rather than once at the end, so the effect of each step is visible. The cortical, label and cerebellar tutorials show the geometry before and after <code><a href="../reference/atlas_simplify.html">atlas_simplify()</a></code>/<code><a href="../reference/atlas_smooth.html">atlas_smooth()</a></code> with the vertex counts beside them; the subcortical and tract tutorials show the atlas as regions, views and fragments are removed.</p></li>
 <li><p>The cortical tutorial built its finished atlas from the <em>unsmoothed</em> polygons: it simplified and smoothed into a variable it then never used, so the atlas it told you to save was the 21,514-vertex one the pipeline warns about. It now carries the tidied atlas through, and saves 6,793 vertices.</p></li>
 <li><p>The label and tract tutorials wrote <code>plot(atlas) + scale_fill_viridis_d()</code>. <code><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot()</a></code> draws with base graphics and returns the atlas, so the scale was silently discarded and the figure never used the palette it advertised. Both now go through <code>ggplot() + geom_brain(atlas, aes(fill = region))</code>, which is the route that accepts a scale.</p></li>
@@ -85,6 +101,7 @@
 <li><p>The publishing tutorial pins <code>usethis.description</code> while it knits, so the example DESCRIPTION shows the template placeholder rather than the name and email of whoever last built the vignettes.</p></li>
 <li><p>The cortical tutorial no longer calls <code><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_contextual()</a></code> on the medial wall. The pipeline already sets it aside; the tutorial now says so, and shows the manual call for a parcellation whose leftovers are named something the pipeline does not recognise, such as <code>aparc</code>’s <code>corpuscallosum</code>.</p></li>
 </ul></div>
+</div>
 </div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9064" id="ggsegextra-1999064">ggseg.extra 1.9.9.9064<a class="anchor" aria-label="anchor" href="#ggsegextra-1999064"></a></h2>

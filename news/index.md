@@ -1,8 +1,24 @@
 # Changelog
 
+## ggseg.extra 1.9.9.9066
+
+### User-facing changes
+
+#### Minor changes
+
+- [`aseg_context()`](https://ggsegverse.github.io/ggseg.extra/reference/aseg_context.md)
+  applies its hidden-label recipe as one pattern rather than one call
+  per pattern. The recipe names structures an `aseg` may or may not
+  carry, so most of its patterns match nothing on any given atlas; with
+  ggseg.formats reporting a pattern that matches nothing, calling them
+  one at a time would have produced a warning per miss. Behaviour is
+  unchanged.
+
 ## ggseg.extra 1.9.9.9065
 
-### New features
+### User-facing changes
+
+#### Minor changes
 
 - [`count_vertices()`](https://ggsegverse.github.io/ggseg.extra/reference/count_vertices.md)
   is now exported. It reports how many polygon vertices each region
@@ -13,7 +29,9 @@
   brings down. Until now the only way to see that number was to trigger
   the warning.
 
-### Documentation
+### Developer-facing changes
+
+#### Minor changes
 
 - The tutorials plot the atlas at each stage of the build rather than
   once at the end, so the effect of each step is visible. The cortical,

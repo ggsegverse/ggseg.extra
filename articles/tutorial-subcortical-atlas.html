@@ -28,7 +28,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9065</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9066</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -205,7 +205,7 @@ Stage 2 — the structures we actually want, once the bulk tissue is gone.
 <p>Not all projection views are equally useful. Keep the ones that show your structures best:</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">aseg_raw</span> <span class="op">&lt;-</span> <span class="va">aseg_raw</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_view_keep</a></span><span class="op">(</span><span class="st">"axial_3|coronal_2|coronal_3|sagittal"</span><span class="op">)</span></span></code></pre></div>
+<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_view_keep</a></span><span class="op">(</span><span class="st">"axial_3|coronal_2|coronal_3|sagittal_left"</span><span class="op">)</span></span></code></pre></div>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">aseg_raw</span><span class="op">)</span></span></code></pre></div>
 <div class="figure">
@@ -213,7 +213,7 @@ Stage 2 — the structures we actually want, once the bulk tissue is gone.
 Stage 3 — only the views that show the structures well.
 </p>
 </div>
-<p>Three views are gone. The two that showed almost nothing were costing as much space as the ones that carry the atlas, and a view that adds no information is worse than no view at all — the reader has to check it to find that out.</p>
+<p>Three views are gone. Two showed almost nothing, and one added no information while costing as much space as the views that carry the atlas — the reader still has to check it to find that out.</p>
 </section><section class="level2"><h2 id="cleaning-up-the-layout">Cleaning up the layout<a class="anchor" aria-label="anchor" href="#cleaning-up-the-layout"></a>
 </h2>
 <p>Gather views into a compact arrangement:</p>

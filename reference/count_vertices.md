@@ -20,9 +20,12 @@ count_vertices(atlas)
 
 ## Value
 
-A named integer vector, one element per label, in the order the labels
-appear in the atlas. Take [`sum()`](https://rdrr.io/r/base/sum.html) of
-it for the atlas total.
+A named integer vector, one element per geometry label value, in the
+order those values appear in the atlas. When geometry is missing a
+label, it is counted in a separate `"<NA>"` entry. Take
+[`sum()`](https://rdrr.io/r/base/sum.html) of the vector for the atlas
+total; that total is every vertex the atlas carries, so it always agrees
+with the large-atlas warning.
 
 ## Details
 
