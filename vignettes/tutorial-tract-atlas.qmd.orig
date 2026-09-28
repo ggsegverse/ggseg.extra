@@ -70,6 +70,16 @@ tracula_raw <- create_tract_from_tractography(
 tracula_raw
 ```
 
+```{r}
+#| label: plot-raw
+#| eval: !expr can_run
+#| fig-width: 10
+#| fig-height: 8
+#| fig-alt: "All reconstructed tracts on every projection view the pipeline produced, crowded and overlapping."
+#| fig-cap: "Stage 1 --- every tract on every view the pipeline made."
+plot(tracula_raw)
+```
+
 Key parameters:
 
 - **`tube_radius`** controls tube thickness. Larger values make tracts more visible at the cost of anatomical precision.
@@ -93,6 +103,16 @@ tracula_raw <- tracula_raw |>
     "coronal_4",
     "sagittal"
   ))
+```
+
+```{r}
+#| label: plot-views
+#| eval: !expr can_run
+#| fig-width: 10
+#| fig-height: 8
+#| fig-alt: "The tracts on the seven retained projection views, two axial, two coronal and three sagittal."
+#| fig-cap: "Stage 2 --- down to the seven views that show the tracts; the `sagittal` pattern keeps all three."
+plot(tracula_raw)
 ```
 
 ### Setting context regions
@@ -122,64 +142,64 @@ tracula_raw <- tracula_raw |>
   atlas_view_remove_small(min_area = 50)
 ```
 
+```{r}
+#| label: plot-despeckled
+#| eval: !expr can_run
+#| fig-width: 10
+#| fig-height: 8
+#| fig-alt: "The same views with the small cross-sectional fragments removed, leaving the coherent tract bodies."
+#| fig-cap: "Stage 3 --- the specks are gone."
+plot(tracula_raw)
+```
+
+The specks were real geometry --- a tract crossing an axial slab leaves a dot where it passes through --- but a dot carries no shape and reads as noise, so dropping them costs nothing and quiets the figure considerably.
+
 The first call applies a higher threshold to axial and coronal views (where tracts appear in cross-section and produce small dots).
 The second call applies a lower threshold everywhere to catch remaining slivers.
 
 ## Adding metadata
 
-Join tract group information --- which tracts are projection fibres, which are commissural, which are association:
+Join tract group information --- which tracts are commissural, which are projection fibres, which are association:
 
 ```{r}
 #| label: metadata
 #| eval: !expr can_run
-normalize_label <- function(x) {
-  x |>
-    basename() |>
-    tools::file_path_sans_ext()
-}
-
 tracula_metadata <- data.frame(
-  label_key = c(
+  label = c(
     "lh.cst.bbr.prep", "rh.cst.bbr.prep",
     "lh.ilf.bbr.prep", "rh.ilf.bbr.prep",
-    "lh.unc.bbr.prep", "rh.unc.bbr.prep",
+    "lh.uf.bbr.prep", "rh.uf.bbr.prep",
     "lh.atr.bbr.prep", "rh.atr.bbr.prep",
-    "lh.cab.bbr.prep", "rh.cab.bbr.prep",
-    "lh.slfp.bbr.prep", "rh.slfp.bbr.prep",
-    "lh.slft.bbr.prep", "rh.slft.bbr.prep",
-    "lh.ccg.bbr.prep", "rh.ccg.bbr.prep",
-    "fmajor.bbr.prep", "fminor.bbr.prep"
+    "acomm.bbr.prep",
+    "cc.genu.bbr.prep", "cc.rostrum.bbr.prep", "cc.splenium.bbr.prep",
+    "cc.bodyc.bbr.prep", "cc.bodyp.bbr.prep", "cc.bodypf.bbr.prep",
+    "cc.bodypm.bbr.prep", "cc.bodyt.bbr.prep"
   ),
-  region = c(
+  region_pretty = c(
     "corticospinal tract", "corticospinal tract",
     "inferior longitudinal fasciculus", "inferior longitudinal fasciculus",
     "uncinate fasciculus", "uncinate fasciculus",
     "anterior thalamic radiation", "anterior thalamic radiation",
-    "cingulum (angular bundle)", "cingulum (angular bundle)",
-    "SLF (parietal)", "SLF (parietal)",
-    "SLF (temporal)", "SLF (temporal)",
-    "cingulum (cingulate gyrus)", "cingulum (cingulate gyrus)",
-    "forceps major", "forceps minor"
+    "anterior commissure",
+    "callosal genu", "callosal rostrum", "callosal splenium",
+    "callosal body (central)", "callosal body (posterior)",
+    "callosal body (prefrontal)", "callosal body (premotor)",
+    "callosal body (temporal)"
   ),
   group = c(
     "projection", "projection",
     "association", "association",
     "association", "association",
     "projection", "projection",
-    "limbic", "limbic",
-    "association", "association",
-    "association", "association",
-    "limbic", "limbic",
-    "commissural", "commissural"
+    "commissural",
+    "commissural", "commissural", "commissural",
+    "commissural", "commissural", "commissural", "commissural",
+    "commissural"
   )
 )
 
 core_with_meta <- tracula_raw$core |>
-  mutate(label_key = normalize_label(label)) |>
-  left_join(
-    tracula_metadata |> select(label_key, region_pretty = region, group),
-    by = "label_key"
-  ) |>
+  left_join(tracula_metadata, by = "label") |>
   mutate(region = coalesce(region_pretty, region)) |>
   select(hemi, region, label, group)
 ```
@@ -208,14 +228,20 @@ atlas_labels(tracula)
 table(tracula$core$group, useNA = "ifany")
 ```
 
+The table above covers the tracts this training set names unambiguously; the rest keep their raw labels and an `NA` group. Note the join key is the label exactly as the pipeline wrote it, `.bbr.prep` and all --- strip the extension first and nothing matches, silently.
+
 ```{r}
 #| label: plot
 #| eval: !expr can_run
-#| fig-cap: "TRACULA white matter tract atlas plotted with ggseg."
-#| fig-alt: "2D brain atlas plot showing white matter tracts including corticospinal tract, uncinate fasciculus, and cingulum across axial, coronal, and sagittal projection views."
+#| fig-cap: "Stage 4 --- the finished atlas, drawn through ggplot2 with a viridis fill."
+#| fig-alt: "2D brain atlas plot showing white matter tracts including corticospinal tract, uncinate fasciculus, and cingulum across axial, coronal, and sagittal projection views, filled with a viridis colour scale."
 #| fig-width: 10
 #| fig-height: 8
 
-plot(tracula) +
-  ggplot2::scale_fill_viridis_d(na.value = "grey80")
+ggplot2::ggplot() +
+  ggseg::geom_brain(atlas = tracula, ggplot2::aes(fill = region)) +
+  ggplot2::scale_fill_viridis_d(na.value = "grey80") +
+  ggplot2::theme_void()
 ```
+
+`plot()` is the quick look, using the atlas's own palette. `geom_brain()` is the route when you want to control the colours --- map something to `fill`, or a fill scale has nothing to colour and every region comes back as `na.value`.

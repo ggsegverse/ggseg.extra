@@ -91,6 +91,7 @@ when a build needs to interleave them differently.
 Other atlas geometry:
 \code{\link[=atlas_dilate]{atlas_dilate()}},
 \code{\link[=atlas_simplify]{atlas_simplify()}},
-\code{\link[=atlas_smooth]{atlas_smooth()}}
+\code{\link[=atlas_smooth]{atlas_smooth()}},
+\code{\link[=count_vertices]{count_vertices()}}
 }
 \concept{atlas geometry}
