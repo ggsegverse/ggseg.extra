@@ -52,6 +52,8 @@ Functions to manipulate and manage brain atlases
 - [`context_pattern()`](https://ggsegverse.github.io/ggseg.extra/reference/context_pattern.md)
   **\[experimental\]** : The label pattern that matches an atlas's brain
   silhouette
+- [`count_vertices()`](https://ggsegverse.github.io/ggseg.extra/reference/count_vertices.md)
+  : Count the vertices an atlas carries
 
 ## Atlas Repository
 

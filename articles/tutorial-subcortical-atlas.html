@@ -28,7 +28,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9064</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9065</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -165,11 +165,19 @@
 <span><span class="co">#&gt; 9  left                 putamen                 Left-Putamen</span></span>
 <span><span class="co">#&gt; 10 left                pallidum                Left-Pallidum</span></span>
 <span><span class="co">#&gt; ... with 33 more rows</span></span></code></pre></div>
-<p>The default pipeline creates six projection views focused on the subcortical range: axial inferior, axial superior, coronal posterior, coronal anterior, sagittal left, and sagittal right. Each view collapses a slab of the volume onto a single plane, giving you spatial context without the complexity of individual slices.</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">aseg_raw</span><span class="op">)</span></span></code></pre></div>
+<div class="figure">
+<img src="figures/tutorial-subcortical-atlas-plot-raw-1.png" alt="The full aseg segmentation across all seven projection views, every label filled, including cortex, white matter and ventricles." width="960"><p class="caption">
+Stage 1 — everything aseg labels, on every view the pipeline made.
+</p>
+</div>
+<p>That is the whole segmentation, and it is not yet an atlas anyone would want: cortex and white matter dominate the picture, and half the views say the same thing twice. The rest of this tutorial is subtraction.</p>
+<p>The default pipeline creates seven projection views focused on the subcortical range: three axial slabs, three coronal slabs, and one sagittal (<code>axial_1</code> to <code>axial_3</code>, <code>coronal_1</code> to <code>coronal_3</code>, <code>sagittal_left</code>). Each view collapses a slab of the volume onto a single plane, giving you spatial context without the complexity of individual slices.</p>
 </section><section class="level2"><h2 id="removing-unwanted-regions">Removing unwanted regions<a class="anchor" aria-label="anchor" href="#removing-unwanted-regions"></a>
 </h2>
 <p>The aseg segmentation contains everything — cortex, white matter, ventricles, CSF. For a subcortical atlas, most of these are noise. Remove them:</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">aseg_raw</span> <span class="op">&lt;-</span> <span class="va">aseg_raw</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_remove</a></span><span class="op">(</span><span class="st">"White-Matter"</span>, match_on <span class="op">=</span> <span class="st">"label"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_remove</a></span><span class="op">(</span><span class="st">"WM-hypointensities"</span>, match_on <span class="op">=</span> <span class="st">"label"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
@@ -178,28 +186,52 @@
 <span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_remove</a></span><span class="op">(</span><span class="st">"CSF"</span>, match_on <span class="op">=</span> <span class="st">"label"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_remove</a></span><span class="op">(</span><span class="st">"Cerebral-Cortex"</span>, match_on <span class="op">=</span> <span class="st">"label"</span><span class="op">)</span></span></code></pre></div>
 <p>Patterns are regular expressions, so <code>-Vent$</code> matches “3rd-Vent” and “4th-Vent” without catching “Ventral-DC.”</p>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">aseg_raw</span><span class="op">)</span></span></code></pre></div>
+<div class="figure">
+<img src="figures/tutorial-subcortical-atlas-plot-removed-1.png" alt="The same views with cortex, white matter, ventricles and CSF gone, leaving the deep grey structures." width="960"><p class="caption">
+Stage 2 — the structures we actually want, once the bulk tissue is gone.
+</p>
+</div>
+<p>The cortical ribbon and white matter are gone, and what is left is what the atlas is for. The grey silhouette stays: it is context geometry, not a region, so it gives the structures somewhere to sit without taking a colour.</p>
 </section><section class="level2"><h2 id="setting-context-regions">Setting context regions<a class="anchor" aria-label="anchor" href="#setting-context-regions"></a>
 </h2>
 <p>The cortex works well as a background outline — it shows where subcortical structures sit relative to the brain surface without competing for colour:</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">aseg_raw</span> <span class="op">&lt;-</span> <span class="va">aseg_raw</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_contextual</a></span><span class="op">(</span><span class="st">"Cortex"</span>, match_on <span class="op">=</span> <span class="st">"label"</span><span class="op">)</span></span></code></pre></div>
 </section><section class="level2"><h2 id="selecting-views">Selecting views<a class="anchor" aria-label="anchor" href="#selecting-views"></a>
 </h2>
 <p>Not all projection views are equally useful. Keep the ones that show your structures best:</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">aseg_raw</span> <span class="op">&lt;-</span> <span class="va">aseg_raw</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_view_keep</a></span><span class="op">(</span><span class="st">"axial_3|axial_5|coronal_2|coronal_3|coronal_4|sagittal"</span><span class="op">)</span></span></code></pre></div>
+<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_view_keep</a></span><span class="op">(</span><span class="st">"axial_3|coronal_2|coronal_3|sagittal"</span><span class="op">)</span></span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">aseg_raw</span><span class="op">)</span></span></code></pre></div>
+<div class="figure">
+<img src="figures/tutorial-subcortical-atlas-plot-views-1.png" alt="One axial, two coronal and one sagittal view of the deep grey structures, the other three views gone." width="960"><p class="caption">
+Stage 3 — only the views that show the structures well.
+</p>
+</div>
+<p>Three views are gone. The two that showed almost nothing were costing as much space as the ones that carry the atlas, and a view that adds no information is worse than no view at all — the reader has to check it to find that out.</p>
 </section><section class="level2"><h2 id="cleaning-up-the-layout">Cleaning up the layout<a class="anchor" aria-label="anchor" href="#cleaning-up-the-layout"></a>
 </h2>
 <p>Gather views into a compact arrangement:</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">aseg_raw</span> <span class="op">&lt;-</span> <span class="va">aseg_raw</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_view_gather</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">aseg_raw</span><span class="op">)</span></span></code></pre></div>
+<div class="figure">
+<img src="figures/tutorial-subcortical-atlas-plot-gathered-1.png" alt="The same four views packed together, with the empty space between them closed up." width="960"><p class="caption">
+Stage 4 — gathered. Same geometry, less white space.
+</p>
+</div>
+<p>Nothing was added or removed here; the views were simply packed together. It matters more than it sounds: an atlas is usually printed small, and the white space between views is space the structures could have had.</p>
 </section><section class="level2"><h2 id="adding-metadata">Adding metadata<a class="anchor" aria-label="anchor" href="#adding-metadata"></a>
 </h2>
 <p>The raw labels are technical identifiers like “Left-Thalamus-Proper.” Join human-readable names and structural groupings:</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">normalize_region</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/ifelse.html" class="external-link">ifelse</a></span><span class="op">(</span></span>
 <span>    <span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span>,</span>
@@ -244,7 +276,7 @@
 </section><section class="level2"><h2 id="rebuilding-and-saving">Rebuilding and saving<a class="anchor" aria-label="anchor" href="#rebuilding-and-saving"></a>
 </h2>
 <p>Construct the final atlas from modified components:</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">aseg</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/ggseg_atlas.html" class="external-link">ggseg_atlas</a></span><span class="op">(</span></span>
 <span>  atlas <span class="op">=</span> <span class="va">aseg_raw</span><span class="op">$</span><span class="va">atlas</span>,</span>
 <span>  type <span class="op">=</span> <span class="va">aseg_raw</span><span class="op">$</span><span class="va">type</span>,</span>
@@ -276,7 +308,7 @@
 <span><span class="co">#&gt; 9  left        ventral DC      Left-VentralDC  diencephalon</span></span>
 <span><span class="co">#&gt; 10 left            vessel         Left-vessel          &lt;NA&gt;</span></span>
 <span><span class="co">#&gt; ... with 17 more rows</span></span></code></pre></div>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_labels.html" class="external-link">atlas_labels</a></span><span class="op">(</span><span class="va">aseg</span><span class="op">)</span></span>
 <span><span class="co">#&gt;  [1] "Brain-Stem"           "CC_Anterior"          "CC_Central"          </span></span>
 <span><span class="co">#&gt;  [4] "CC_Mid_Anterior"      "CC_Mid_Posterior"     "CC_Posterior"        </span></span>
@@ -292,11 +324,11 @@
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; basal ganglia     brainstem  diencephalon        limbic </span></span>
 <span><span class="co">#&gt;             8             1             2             4</span></span></code></pre></div>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">aseg</span><span class="op">)</span></span></code></pre></div>
 <div class="figure">
-<img src="figures/tutorial-subcortical-atlas-plot-1.png" alt="2D brain atlas plot showing subcortical structures including thalamus, caudate, putamen, hippocampus, and amygdala across axial, coronal, and sagittal projection views." width="960"><p class="caption">
-Subcortical aseg atlas plotted with ggseg.
+<img src="figures/tutorial-subcortical-atlas-plot-1.png" alt="The same four views as the previous figure, unchanged; the structures now carry readable names in the atlas core rather than FreeSurfer identifiers." width="960"><p class="caption">
+Stage 5 — the finished atlas. Same geometry as stage 4; what changed is the names behind it.
 </p>
 </div>
 </section><script id="quarto-html-after-body" type="application/javascript">

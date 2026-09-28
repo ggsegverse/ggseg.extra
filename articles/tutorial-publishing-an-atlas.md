@@ -51,6 +51,8 @@ setup_atlas_repo(repo, open = FALSE, rstudio = FALSE)
 #> ✔ Downloaded template
 #> ✔ Created 'R/', 'tests/', 'data-raw/'
 #> ✔ Replaced template placeholders
+#> ✔ Set Authors@R in 'DESCRIPTION' from
+#> `usethis.description`
 #> ✔ Added 5 workflows to '.github/workflows/'
 #> • R-CMD-check.yaml
 #> • code-quality.yaml
@@ -104,8 +106,7 @@ infrastructure you inherit rather than write.
 
 ## Filling in DESCRIPTION
 
-The scaffold writes a placeholder author, and it is the one thing that
-will embarrass you if you forget it:
+DESCRIPTION is the one thing that will embarrass you if you forget it:
 
 ``` r
 
@@ -113,10 +114,9 @@ cat(readLines(file.path(repo, "DESCRIPTION")), sep = "\n")
 #> Package: ggsegDemo
 #> Title: demo Brain Atlas for the 'ggseg' Ecosystem
 #> Version: 1.0.0
-#> Authors@R: c(
-#>     person("First", "Last", , "your.email@example.com", role = c("aut", "cre"),
-#>            comment = c(ORCID = "0000-0000-0000-0000"))
-#>   )
+#> Authors@R:
+#>     person("First", "Last", , "your.email@example.com",
+#>     role = c("aut", "cre"), comment = c(ORCID = "0000-0000-0000-0000"))
 #> Description: Brain atlas data for the 'ggseg' ecosystem. Provides a unified
 #>     'ggseg_atlas' object with both 2D polygon geometry and 3D vertex indices,
 #>     for use with 'ggseg' and 'ggseg3d'.
@@ -142,12 +142,28 @@ cat(readLines(file.path(repo, "DESCRIPTION")), sep = "\n")
 #> RoxygenNote: 7.3.3
 #> Config/testthat/edition: 3
 #> Config/Needs/website: ggsegverse/ggseg.docs
+#> Config/Needs/lint:
+#>     dplyr,
+#>     future,
+#>     progressr,
+#>     ggsegverse/ggseg.extra
 ```
 
-Replace the `Authors@R` block with your own name, email and ORCID. The
-scaffold writes the same placeholder for everyone; it does not read
-usethis’s `usethis.description` option, so setting that up will not save
-you this step.
+If you have set usethis’s `usethis.description` option, the scaffold
+writes your `Authors@R` and `Version` straight in and there is nothing
+to do here. If you have not, you get the template’s placeholder — shown
+above — and you replace it by hand with your own name, email and ORCID.
+
+Setting the option once is worth it if you expect to build more than one
+atlas package:
+
+``` r
+
+options(usethis.description = list(
+  `Authors@R` = 'person("Your", "Name", , "you@example.org",
+     role = c("aut", "cre"), comment = c(ORCID = "0000-0000-0000-0000"))'
+))
+```
 
 Check `Title` too — it is derived from the directory name, so the
 capitalisation is a guess rather than a decision.
@@ -357,8 +373,19 @@ file.size(file.path(repo, "R", "sysdata.rda")) / 1024^2
 
 If that number is over a few megabytes, go back and simplify.
 `atlas_simplify(atlas, keep = 0.2)` followed by `atlas_smooth(atlas)`
-usually takes an order of magnitude off the vertex count without a
-visible difference in the plot.
+takes roughly two thirds off the vertex count, and the plot comes back
+looking better rather than worse — the tidying is what removes the
+staircases the mesh leaves behind.
+[`count_vertices()`](https://ggsegverse.github.io/ggseg.extra/reference/count_vertices.md)
+reports where you are:
+
+``` r
+
+sum(count_vertices(ggsegDemo::demo()))
+```
+
+The cortical, label and cerebellar tutorials each walk through that step
+and show the figure before and after.
 
 ## An easier starting point
 

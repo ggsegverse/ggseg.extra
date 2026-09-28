@@ -81,11 +81,27 @@ aseg_raw
 #> ... with 33 more rows
 ```
 
-The default pipeline creates six projection views focused on the
-subcortical range: axial inferior, axial superior, coronal posterior,
-coronal anterior, sagittal left, and sagittal right. Each view collapses
-a slab of the volume onto a single plane, giving you spatial context
-without the complexity of individual slices.
+``` r
+
+plot(aseg_raw)
+```
+
+![The full aseg segmentation across all seven projection views, every
+label filled, including cortex, white matter and
+ventricles.](figures/tutorial-subcortical-atlas-plot-raw-1.png)
+
+Stage 1 — everything aseg labels, on every view the pipeline made.
+
+That is the whole segmentation, and it is not yet an atlas anyone would
+want: cortex and white matter dominate the picture, and half the views
+say the same thing twice. The rest of this tutorial is subtraction.
+
+The default pipeline creates seven projection views focused on the
+subcortical range: three axial slabs, three coronal slabs, and one
+sagittal (`axial_1` to `axial_3`, `coronal_1` to `coronal_3`,
+`sagittal_left`). Each view collapses a slab of the volume onto a single
+plane, giving you spatial context without the complexity of individual
+slices.
 
 ## Removing unwanted regions
 
@@ -107,6 +123,22 @@ aseg_raw <- aseg_raw |>
 Patterns are regular expressions, so `-Vent$` matches “3rd-Vent” and
 “4th-Vent” without catching “Ventral-DC.”
 
+``` r
+
+plot(aseg_raw)
+```
+
+![The same views with cortex, white matter, ventricles and CSF gone,
+leaving the deep grey
+structures.](figures/tutorial-subcortical-atlas-plot-removed-1.png)
+
+Stage 2 — the structures we actually want, once the bulk tissue is gone.
+
+The cortical ribbon and white matter are gone, and what is left is what
+the atlas is for. The grey silhouette stays: it is context geometry, not
+a region, so it gives the structures somewhere to sit without taking a
+colour.
+
 ## Setting context regions
 
 The cortex works well as a background outline — it shows where
@@ -127,8 +159,24 @@ your structures best:
 ``` r
 
 aseg_raw <- aseg_raw |>
-  atlas_view_keep("axial_3|axial_5|coronal_2|coronal_3|coronal_4|sagittal")
+  atlas_view_keep("axial_3|coronal_2|coronal_3|sagittal")
 ```
+
+``` r
+
+plot(aseg_raw)
+```
+
+![One axial, two coronal and one sagittal view of the deep grey
+structures, the other three views
+gone.](figures/tutorial-subcortical-atlas-plot-views-1.png)
+
+Stage 3 — only the views that show the structures well.
+
+Three views are gone. The two that showed almost nothing were costing as
+much space as the ones that carry the atlas, and a view that adds no
+information is worse than no view at all — the reader has to check it to
+find that out.
 
 ## Cleaning up the layout
 
@@ -139,6 +187,21 @@ Gather views into a compact arrangement:
 aseg_raw <- aseg_raw |>
   atlas_view_gather()
 ```
+
+``` r
+
+plot(aseg_raw)
+```
+
+![The same four views packed together, with the empty space between them
+closed up.](figures/tutorial-subcortical-atlas-plot-gathered-1.png)
+
+Stage 4 — gathered. Same geometry, less white space.
+
+Nothing was added or removed here; the views were simply packed
+together. It matters more than it sounds: an atlas is usually printed
+small, and the white space between views is space the structures could
+have had.
 
 ## Adding metadata
 
@@ -253,9 +316,9 @@ table(aseg$core$structure)
 plot(aseg)
 ```
 
-![2D brain atlas plot showing subcortical structures including thalamus,
-caudate, putamen, hippocampus, and amygdala across axial, coronal, and
-sagittal projection
-views.](figures/tutorial-subcortical-atlas-plot-1.png)
+![The same four views as the previous figure, unchanged; the structures
+now carry readable names in the atlas core rather than FreeSurfer
+identifiers.](figures/tutorial-subcortical-atlas-plot-1.png)
 
-Subcortical aseg atlas plotted with ggseg.
+Stage 5 — the finished atlas. Same geometry as stage 4; what changed is
+the names behind it.

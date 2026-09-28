@@ -35,6 +35,7 @@
 <url><loc>https://ggsegverse.github.io/ggseg.extra/reference/atlas_smooth.html</loc></url>
 <url><loc>https://ggsegverse.github.io/ggseg.extra/reference/context_pattern.html</loc></url>
 <url><loc>https://ggsegverse.github.io/ggseg.extra/reference/coregister_volume.html</loc></url>
+<url><loc>https://ggsegverse.github.io/ggseg.extra/reference/count_vertices.html</loc></url>
 <url><loc>https://ggsegverse.github.io/ggseg.extra/reference/create_cerebellar_from_annotation.html</loc></url>
 <url><loc>https://ggsegverse.github.io/ggseg.extra/reference/create_cerebellar_from_gifti.html</loc></url>
 <url><loc>https://ggsegverse.github.io/ggseg.extra/reference/create_cerebellar_from_volume.html</loc></url>

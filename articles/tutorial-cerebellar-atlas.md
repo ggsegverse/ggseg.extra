@@ -106,11 +106,25 @@ atlas
 #> ... with 17 more rows
 ```
 
+``` r
+
+plot(atlas)
+```
+
+![The SUIT cerebellar flatmap straight from the pipeline, with lobule
+boundaries traced at mesh
+resolution.](figures/tutorial-cerebellar-atlas-plot-raw-1.png)
+
+Stage 1 — straight out of the pipeline, at flatmap mesh resolution.
+
+Every lobule boundary is a chain of triangle edges, which is why the
+outlines look sampled rather than drawn.
+
 The pipeline reads the GIFTI label table for region names and colours,
-maps labels onto the SUIT flatmap vertices, builds per-region sf
-polygons from the mesh triangles, and applies topology-preserving
-simplification via `rmapshaper` to clean up jagged triangle boundaries
-while keeping shared edges aligned.
+maps labels onto the SUIT flatmap vertices, and builds per-region sf
+polygons from the mesh triangles. It does not simplify them — the
+polygons arrive at mesh resolution, and tidying is the separate step
+below.
 
 If you also have a matching NIfTI volume and want 3D meshes:
 
@@ -197,7 +211,7 @@ After the transform, pass the SUIT-space volume to
 [`create_cerebellar_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_cerebellar_from_volume.md)
 as usual.
 
-## Tuning the output
+## Tidying the geometry
 
 The cerebellar pipeline now returns raw, unsmoothed flatmap polygons.
 Tidying them is a separate post-processing step in two parts —
@@ -209,10 +223,30 @@ pipeline:
 
 ``` r
 
+sum(count_vertices(atlas))
+#> [1] 9463
+
 atlas <- atlas |>
   atlas_simplify(keep = 0.2, exclude = "cortex_") |>
   atlas_smooth(exclude = "cortex_")
+
+sum(count_vertices(atlas))
+#> [1] 2627
 ```
+
+``` r
+
+plot(atlas)
+```
+
+![The same flatmap after simplification and smoothing, with rounded
+lobule boundaries.](figures/tutorial-cerebellar-atlas-plot-tidy-1.png)
+
+Stage 2 — simplified and smoothed.
+
+Roughly three quarters of the vertices are gone and the lobules read
+more clearly for it — the flatmap is a schematic, so nothing is lost by
+drawing it as one.
 
 For 3D meshes, `decimate` controls quadric edge decimation (0–1, default
 0.5). A value of 0.5 reduces the mesh to roughly half its original
@@ -224,21 +258,29 @@ warning and they are otherwise ignored.
 
 ## Post-processing
 
-The same post-processing tools from the other tutorials work here.
-Remove unwanted regions, mark context regions, rename labels:
+The same post-processing tools from the other tutorials work here. What
+needs removing depends on the parcellation, so look before you cut:
 
 ``` r
 
-atlas <- atlas |>
-  atlas_region_remove("unknown", match_on = "label") |>
-  atlas_region_remove("corpuscallosum", match_on = "label")
+atlas_regions(atlas)
+#>  [1] "CrusI"     "CrusII"    "I_IV"      "IX"        "region_28" "V"        
+#>  [7] "VI"        "VIIb"      "VIIIa"     "VIIIb"     "X"
+```
+
+`region_28` is the giveaway — a midline strip the parcellation numbers
+but does not name. Drop it:
+
+``` r
+
+atlas <- atlas_region_remove(atlas, "region_28")
 ```
 
 Cerebellar atlases use hemisphere values `"left"`, `"right"`, and
 `"vermis"` — the pipeline detects these from region name prefixes like
 “Left I-IV”, “Right Crus I”, or “Vermis VI”. The `region` column has the
-hemisphere prefix stripped, so you get clean names like “I-IV” and “Crus
-I”.
+hemisphere prefix stripped and the remainder sanitised, so you get
+`I_IV` and `CrusI` rather than “Left I-IV” and “Right Crus I”.
 
 ## Visualization
 
@@ -248,10 +290,11 @@ plot(atlas)
 ```
 
 ![SUIT flatmap of the cerebellum with the lobular parcellation in
-colour, vermis down the centre and the two hemispheres either
-side.](figures/tutorial-cerebellar-atlas-plot-1.png)
+colour, vermis down the centre and the two hemispheres either side, with
+the unnamed midline strip
+removed.](figures/tutorial-cerebellar-atlas-plot-1.png)
 
-The SUIT anatomical parcellation on the cerebellar flatmap.
+Stage 3 — the finished atlas, after the unwanted regions are dropped.
 
 The 2D plot shows the SUIT flatmap — the cerebellum unfolded with the
 vermis in the centre, left hemisphere on the left, right on the right.

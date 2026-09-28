@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9064</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9065</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -67,6 +67,25 @@
       <small>Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.9.9.9065" id="ggsegextra-1999065">ggseg.extra 1.9.9.9065<a class="anchor" aria-label="anchor" href="#ggsegextra-1999065"></a></h2>
+<div class="section level3">
+<h3 id="new-features-1-9-9-9065">New features<a class="anchor" aria-label="anchor" href="#new-features-1-9-9-9065"></a></h3>
+<ul><li>
+<code><a href="../reference/count_vertices.html">count_vertices()</a></code> is now exported. It reports how many polygon vertices each region carries; <code><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum()</a></code> of it is the figure the <code>create_*()</code> pipelines warn about when an atlas is large, and the one <code><a href="../reference/atlas_simplify.html">atlas_simplify()</a></code> brings down. Until now the only way to see that number was to trigger the warning.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="documentation-1-9-9-9065">Documentation<a class="anchor" aria-label="anchor" href="#documentation-1-9-9-9065"></a></h3>
+<ul><li><p>The tutorials plot the atlas at each stage of the build rather than once at the end, so the effect of each step is visible. The cortical, label and cerebellar tutorials show the geometry before and after <code><a href="../reference/atlas_simplify.html">atlas_simplify()</a></code>/<code><a href="../reference/atlas_smooth.html">atlas_smooth()</a></code> with the vertex counts beside them; the subcortical and tract tutorials show the atlas as regions, views and fragments are removed.</p></li>
+<li><p>The cortical tutorial built its finished atlas from the <em>unsmoothed</em> polygons: it simplified and smoothed into a variable it then never used, so the atlas it told you to save was the 21,514-vertex one the pipeline warns about. It now carries the tidied atlas through, and saves 6,793 vertices.</p></li>
+<li><p>The label and tract tutorials wrote <code>plot(atlas) + scale_fill_viridis_d()</code>. <code><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot()</a></code> draws with base graphics and returns the atlas, so the scale was silently discarded and the figure never used the palette it advertised. Both now go through <code>ggplot() + geom_brain(atlas, aes(fill = region))</code>, which is the route that accepts a scale.</p></li>
+<li><p>The cerebellar tutorial removed <code>unknown</code> and <code>corpuscallosum</code>, neither of which a cerebellar parcellation contains. It now removes <code>region_28</code>, the unnamed midline strip the SUIT parcellation actually leaves behind.</p></li>
+<li><p>Two metadata joins in the tutorials had never matched. The cortical tutorial joined a network-name table on <code>label</code>, but the labels carry a hemisphere prefix (<code>lh_7Networks_1</code>), so the atlas it published still called its regions <code>7Networks_1</code>. The tract tutorial stripped <code>.prep</code> off its labels before joining, so every tract came out with an <code>NA</code> group. Both now join on a key that exists, and the tract table lists the tracts this training set actually ships.</p></li>
+<li><p>Corrected in the tutorials: the subcortical pipeline makes seven projection views, not six; the cerebellar pipeline does not simplify its polygons (the claim named an <code>rmapshaper</code> call that is not there); cerebellar regions come out as <code>I_IV</code> and <code>CrusI</code>, not “I-IV” and “Crus I”; and <code><a href="../reference/setup_atlas_repo.html">setup_atlas_repo()</a></code> does read <code>usethis.description</code>, which it has since 1.9.9.9062.</p></li>
+<li><p>The publishing tutorial pins <code>usethis.description</code> while it knits, so the example DESCRIPTION shows the template placeholder rather than the name and email of whoever last built the vignettes.</p></li>
+<li><p>The cortical tutorial no longer calls <code><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_contextual()</a></code> on the medial wall. The pipeline already sets it aside; the tutorial now says so, and shows the manual call for a parcellation whose leftovers are named something the pipeline does not recognise, such as <code>aparc</code>’s <code>corpuscallosum</code>.</p></li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9064" id="ggsegextra-1999064">ggseg.extra 1.9.9.9064<a class="anchor" aria-label="anchor" href="#ggsegextra-1999064"></a></h2>
 <div class="section level3">

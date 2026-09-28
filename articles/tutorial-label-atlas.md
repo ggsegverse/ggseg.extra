@@ -28,6 +28,8 @@ files conventionally include hemisphere in the filename:
 
 library(ggseg.extra)
 library(ggseg.formats)
+library(ggseg)
+library(ggplot2)
 library(dplyr)
 ```
 
@@ -112,56 +114,74 @@ atlas <- create_cortical_from_labels(
 Left and right hemisphere versions of the same region should share the
 same region name — the hemisphere column distinguishes them.
 
-## Full pipeline with 2D geometry
+## The 2D geometry
 
-For 2D plots, enable the full pipeline:
+There is nothing extra to switch on: the call above already ran the full
+pipeline, the same one behind
+[`create_cortical_from_annotation()`](https://ggsegverse.github.io/ggseg.extra/reference/create_cortical_from_annotation.md),
+projecting the inflated mesh triangles straight to 2D and converting
+them to sf polygons. The atlas is ready to plot.
 
 ``` r
 
-ba_atlas <- create_cortical_from_labels(
-  label_files = ba_labels,
-  atlas_name = "custom"
-)
-
-ba_atlas
-#> 
-#> ── custom ggseg atlas ──────────────────────────────────────────────────────────
-#> Type: cortical
-#> Regions: 9
-#> Hemispheres: left, right
-#> Views: lateral, medial
-#> Palette: ✖
-#> Rendering: ✔ ggseg
-#> ✔ ggseg3d (vertices)
-#> ────────────────────────────────────────────────────────────────────────────────
-#>     hemi      region          label
-#> 1   left  BA1_exvivo  lh_BA1_exvivo
-#> 2   left  BA2_exvivo  lh_BA2_exvivo
-#> 3   left BA3a_exvivo lh_BA3a_exvivo
-#> 4   left BA3b_exvivo lh_BA3b_exvivo
-#> 5   left BA44_exvivo lh_BA44_exvivo
-#> 6   left BA45_exvivo lh_BA45_exvivo
-#> 7   left BA4a_exvivo lh_BA4a_exvivo
-#> 8   left BA4p_exvivo lh_BA4p_exvivo
-#> 9   left  BA6_exvivo  lh_BA6_exvivo
-#> 10 right  BA1_exvivo  rh_BA1_exvivo
-#> ... with 8 more rows
+atlas_views(ba_atlas)
+#> [1] "lateral" "medial"
 ```
 
-This runs the same pipeline as
-[`create_cortical_from_annotation()`](https://ggsegverse.github.io/ggseg.extra/reference/create_cortical_from_annotation.md)
-— it projects the inflated mesh triangles straight to 2D and converts
-them to sf polygons.
+``` r
+
+plot(ba_atlas)
+```
+
+![Brodmann area regions straight from the pipeline, with stepped
+boundaries traced from the
+mesh.](figures/tutorial-label-atlas-plot-raw-1.png)
+
+Stage 1 — straight out of the pipeline, boundaries still following the
+mesh.
+
+The boundaries are staircases, because the pipeline traces the edges of
+mesh triangles rather than drawing a line through them.
+
+## Tidying the geometry
+
+As with any pipeline output, the polygons arrive at mesh resolution.
+[`atlas_simplify()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_simplify.md)
+drops vertices and
+[`atlas_smooth()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_smooth.md)
+rounds off what is left:
+
+``` r
+
+sum(count_vertices(ba_atlas))
+#> [1] 2975
+
+ba_atlas <- ba_atlas |>
+  atlas_simplify(keep = 0.2, exclude = "cortex_") |>
+  atlas_smooth(exclude = "cortex_")
+
+sum(count_vertices(ba_atlas))
+#> [1] 1034
+```
+
+``` r
+
+plot(ba_atlas)
+```
+
+![The same Brodmann regions after simplification and smoothing, with
+rounded boundaries.](figures/tutorial-label-atlas-plot-tidy-1.png)
+
+Stage 2 — simplified and smoothed.
+
+Around two thirds of the vertices are gone and the areas read more
+cleanly, which is the trade this step exists to make.
 
 ## Post-processing
 
 Clean up region names:
 
 ``` r
-
-ba_atlas <- ba_atlas |>
-  atlas_region_contextual("cortex", match_on = "label") |>
-  atlas_region_contextual("unknown", match_on = "label")
 
 core_clean <- ba_atlas$core |>
   mutate(
@@ -180,17 +200,25 @@ ba_atlas <- ggseg_atlas(
 
 ``` r
 
-plot(ba_atlas) +
-  ggplot2::scale_fill_viridis_d(na.value = "grey80")
+ggplot() +
+  geom_brain(atlas = ba_atlas, aes(fill = region)) +
+  scale_fill_viridis_d(na.value = "grey80") +
+  theme_void()
 ```
 
 ![2D brain atlas plot showing Brodmann area regions across lateral and
-medial views of both
-hemispheres.](figures/tutorial-label-atlas-plot-1.png)
+medial views of both hemispheres, filled with a viridis colour
+scale.](figures/tutorial-label-atlas-plot-1.png)
 
-Brodmann area atlas plotted with ggseg.
+Stage 3 — the finished atlas, drawn through ggplot2 with a viridis fill.
 
-    #> NULL
+[`plot()`](https://rdrr.io/r/graphics/plot.default.html) is the quick
+look — base graphics, the atlas’s own palette, no customisation. When
+you want to control the colours, go through ggplot2:
+[`geom_brain()`](https://ggsegverse.github.io/ggseg/reference/ggbrain.html)
+draws the same atlas as a layer you can add scales and themes to. Map
+something to `fill` when you do, or there is nothing for a fill scale to
+colour and every region comes back as `na.value`.
 
 ## Finding label files
 
@@ -203,8 +231,7 @@ label_dir <- file.path(
   freesurfer::fs_dir(), "subjects", "fsaverage5", "label"
 )
 
-ba_files <- list.files(label_dir, "^[lr]h\\.BA.*\\.label$", full.names = TRUE)
-length(ba_files)
+length(list.files(label_dir, "^[lr]h\\.BA.*\\.label$"))
 #> [1] 18
 ```
 

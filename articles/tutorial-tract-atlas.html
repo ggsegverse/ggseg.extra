@@ -28,7 +28,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9064</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9065</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -169,6 +169,13 @@
 <span><span class="co">#&gt; 9  midline cc.splenium.bbr.prep cc.splenium.bbr.prep</span></span>
 <span><span class="co">#&gt; 10    left          af.bbr.prep       lh.af.bbr.prep</span></span>
 <span><span class="co">#&gt; ... with 32 more rows</span></span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">tracula_raw</span><span class="op">)</span></span></code></pre></div>
+<div class="figure">
+<img src="figures/tutorial-tract-atlas-plot-raw-1.png" alt="All reconstructed tracts on every projection view the pipeline produced, crowded and overlapping." width="960"><p class="caption">
+Stage 1 — every tract on every view the pipeline made.
+</p>
+</div>
 <p>Key parameters:</p>
 <ul>
 <li>
@@ -182,7 +189,7 @@
 <section class="level3"><h3 id="selecting-views">Selecting views<a class="anchor" aria-label="anchor" href="#selecting-views"></a>
 </h3>
 <p>Keep the projections that show your tracts best:</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">tracula_raw</span> <span class="op">&lt;-</span> <span class="va">tracula_raw</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_view_keep</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
 <span>    <span class="st">"axial_2"</span>,</span>
@@ -191,16 +198,23 @@
 <span>    <span class="st">"coronal_4"</span>,</span>
 <span>    <span class="st">"sagittal"</span></span>
 <span>  <span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">tracula_raw</span><span class="op">)</span></span></code></pre></div>
+<div class="figure">
+<img src="figures/tutorial-tract-atlas-plot-views-1.png" alt="The tracts on the seven retained projection views, two axial, two coronal and three sagittal." width="960"><p class="caption">
+Stage 2 — down to the seven views that show the tracts; the <code>sagittal</code> pattern keeps all three.
+</p>
+</div>
 </section><section class="level3"><h3 id="setting-context-regions">Setting context regions<a class="anchor" aria-label="anchor" href="#setting-context-regions"></a>
 </h3>
 <p>Add cortex as a background outline:</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">tracula_raw</span> <span class="op">&lt;-</span> <span class="va">tracula_raw</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_contextual</a></span><span class="op">(</span><span class="st">"cortex"</span><span class="op">)</span></span></code></pre></div>
 </section><section class="level3"><h3 id="removing-small-fragments">Removing small fragments<a class="anchor" aria-label="anchor" href="#removing-small-fragments"></a>
 </h3>
 <p>After view selection, some tracts may appear as tiny slivers in certain views. Remove fragments below a minimum area:</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">tracula_raw</span> <span class="op">&lt;-</span> <span class="va">tracula_raw</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_view_remove_small</a></span><span class="op">(</span></span>
 <span>    min_area <span class="op">=</span> <span class="fl">500</span>,</span>
@@ -209,64 +223,60 @@
 <span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_view_remove_small</a></span><span class="op">(</span>min_area <span class="op">=</span> <span class="fl">50</span><span class="op">)</span></span>
 <span><span class="co">#&gt; ℹ Removed 98 geometries below area 500</span></span>
 <span><span class="co">#&gt; ℹ Removed 12 geometries below area 50</span></span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">tracula_raw</span><span class="op">)</span></span></code></pre></div>
+<div class="figure">
+<img src="figures/tutorial-tract-atlas-plot-despeckled-1.png" alt="The same views with the small cross-sectional fragments removed, leaving the coherent tract bodies." width="960"><p class="caption">
+Stage 3 — the specks are gone.
+</p>
+</div>
+<p>The specks were real geometry — a tract crossing an axial slab leaves a dot where it passes through — but a dot carries no shape and reads as noise, so dropping them costs nothing and quiets the figure considerably.</p>
 <p>The first call applies a higher threshold to axial and coronal views (where tracts appear in cross-section and produce small dots). The second call applies a lower threshold everywhere to catch remaining slivers.</p>
 </section></section><section class="level2"><h2 id="adding-metadata">Adding metadata<a class="anchor" aria-label="anchor" href="#adding-metadata"></a>
 </h2>
-<p>Join tract group information — which tracts are projection fibres, which are commissural, which are association:</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">normalize_label</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="op">{</span></span>
-<span>  <span class="va">x</span> <span class="op">|&gt;</span></span>
-<span>    <span class="fu"><a href="https://rdrr.io/r/base/basename.html" class="external-link">basename</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>    <span class="fu">tools</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/tools/fileutils.html" class="external-link">file_path_sans_ext</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="op">}</span></span>
-<span></span>
-<span><span class="va">tracula_metadata</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
-<span>  label_key <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
+<p>Join tract group information — which tracts are commissural, which are projection fibres, which are association:</p>
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">tracula_metadata</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
+<span>  label <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
 <span>    <span class="st">"lh.cst.bbr.prep"</span>, <span class="st">"rh.cst.bbr.prep"</span>,</span>
 <span>    <span class="st">"lh.ilf.bbr.prep"</span>, <span class="st">"rh.ilf.bbr.prep"</span>,</span>
-<span>    <span class="st">"lh.unc.bbr.prep"</span>, <span class="st">"rh.unc.bbr.prep"</span>,</span>
+<span>    <span class="st">"lh.uf.bbr.prep"</span>, <span class="st">"rh.uf.bbr.prep"</span>,</span>
 <span>    <span class="st">"lh.atr.bbr.prep"</span>, <span class="st">"rh.atr.bbr.prep"</span>,</span>
-<span>    <span class="st">"lh.cab.bbr.prep"</span>, <span class="st">"rh.cab.bbr.prep"</span>,</span>
-<span>    <span class="st">"lh.slfp.bbr.prep"</span>, <span class="st">"rh.slfp.bbr.prep"</span>,</span>
-<span>    <span class="st">"lh.slft.bbr.prep"</span>, <span class="st">"rh.slft.bbr.prep"</span>,</span>
-<span>    <span class="st">"lh.ccg.bbr.prep"</span>, <span class="st">"rh.ccg.bbr.prep"</span>,</span>
-<span>    <span class="st">"fmajor.bbr.prep"</span>, <span class="st">"fminor.bbr.prep"</span></span>
+<span>    <span class="st">"acomm.bbr.prep"</span>,</span>
+<span>    <span class="st">"cc.genu.bbr.prep"</span>, <span class="st">"cc.rostrum.bbr.prep"</span>, <span class="st">"cc.splenium.bbr.prep"</span>,</span>
+<span>    <span class="st">"cc.bodyc.bbr.prep"</span>, <span class="st">"cc.bodyp.bbr.prep"</span>, <span class="st">"cc.bodypf.bbr.prep"</span>,</span>
+<span>    <span class="st">"cc.bodypm.bbr.prep"</span>, <span class="st">"cc.bodyt.bbr.prep"</span></span>
 <span>  <span class="op">)</span>,</span>
-<span>  region <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
+<span>  region_pretty <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
 <span>    <span class="st">"corticospinal tract"</span>, <span class="st">"corticospinal tract"</span>,</span>
 <span>    <span class="st">"inferior longitudinal fasciculus"</span>, <span class="st">"inferior longitudinal fasciculus"</span>,</span>
 <span>    <span class="st">"uncinate fasciculus"</span>, <span class="st">"uncinate fasciculus"</span>,</span>
 <span>    <span class="st">"anterior thalamic radiation"</span>, <span class="st">"anterior thalamic radiation"</span>,</span>
-<span>    <span class="st">"cingulum (angular bundle)"</span>, <span class="st">"cingulum (angular bundle)"</span>,</span>
-<span>    <span class="st">"SLF (parietal)"</span>, <span class="st">"SLF (parietal)"</span>,</span>
-<span>    <span class="st">"SLF (temporal)"</span>, <span class="st">"SLF (temporal)"</span>,</span>
-<span>    <span class="st">"cingulum (cingulate gyrus)"</span>, <span class="st">"cingulum (cingulate gyrus)"</span>,</span>
-<span>    <span class="st">"forceps major"</span>, <span class="st">"forceps minor"</span></span>
+<span>    <span class="st">"anterior commissure"</span>,</span>
+<span>    <span class="st">"callosal genu"</span>, <span class="st">"callosal rostrum"</span>, <span class="st">"callosal splenium"</span>,</span>
+<span>    <span class="st">"callosal body (central)"</span>, <span class="st">"callosal body (posterior)"</span>,</span>
+<span>    <span class="st">"callosal body (prefrontal)"</span>, <span class="st">"callosal body (premotor)"</span>,</span>
+<span>    <span class="st">"callosal body (temporal)"</span></span>
 <span>  <span class="op">)</span>,</span>
 <span>  group <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
 <span>    <span class="st">"projection"</span>, <span class="st">"projection"</span>,</span>
 <span>    <span class="st">"association"</span>, <span class="st">"association"</span>,</span>
 <span>    <span class="st">"association"</span>, <span class="st">"association"</span>,</span>
 <span>    <span class="st">"projection"</span>, <span class="st">"projection"</span>,</span>
-<span>    <span class="st">"limbic"</span>, <span class="st">"limbic"</span>,</span>
-<span>    <span class="st">"association"</span>, <span class="st">"association"</span>,</span>
-<span>    <span class="st">"association"</span>, <span class="st">"association"</span>,</span>
-<span>    <span class="st">"limbic"</span>, <span class="st">"limbic"</span>,</span>
-<span>    <span class="st">"commissural"</span>, <span class="st">"commissural"</span></span>
+<span>    <span class="st">"commissural"</span>,</span>
+<span>    <span class="st">"commissural"</span>, <span class="st">"commissural"</span>, <span class="st">"commissural"</span>,</span>
+<span>    <span class="st">"commissural"</span>, <span class="st">"commissural"</span>, <span class="st">"commissural"</span>, <span class="st">"commissural"</span>,</span>
+<span>    <span class="st">"commissural"</span></span>
 <span>  <span class="op">)</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">core_with_meta</span> <span class="op">&lt;-</span> <span class="va">tracula_raw</span><span class="op">$</span><span class="va">core</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>label_key <span class="op">=</span> <span class="fu">normalize_label</span><span class="op">(</span><span class="va">label</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate-joins.html" class="external-link">left_join</a></span><span class="op">(</span></span>
-<span>    <span class="va">tracula_metadata</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">label_key</span>, region_pretty <span class="op">=</span> <span class="va">region</span>, <span class="va">group</span><span class="op">)</span>,</span>
-<span>    by <span class="op">=</span> <span class="st">"label_key"</span></span>
-<span>  <span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate-joins.html" class="external-link">left_join</a></span><span class="op">(</span><span class="va">tracula_metadata</span>, by <span class="op">=</span> <span class="st">"label"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>region <span class="op">=</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/coalesce.html" class="external-link">coalesce</a></span><span class="op">(</span><span class="va">region_pretty</span>, <span class="va">region</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">hemi</span>, <span class="va">region</span>, <span class="va">label</span>, <span class="va">group</span><span class="op">)</span></span></code></pre></div>
 </section><section class="level2"><h2 id="rebuilding-and-saving">Rebuilding and saving<a class="anchor" aria-label="anchor" href="#rebuilding-and-saving"></a>
 </h2>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">tracula</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/ggseg_atlas.html" class="external-link">ggseg_atlas</a></span><span class="op">(</span></span>
 <span>  atlas <span class="op">=</span> <span class="st">"tracula"</span>,</span>
 <span>  type <span class="op">=</span> <span class="st">"tract"</span>,</span>
@@ -287,19 +297,19 @@
 <span><span class="co">#&gt; Rendering: ✔ ggseg</span></span>
 <span><span class="co">#&gt; ✔ ggseg3d (centerlines)</span></span>
 <span><span class="co">#&gt; ────────────────────────────────────────────────────────────────────────────────</span></span>
-<span><span class="co">#&gt;       hemi               region                label group</span></span>
-<span><span class="co">#&gt; 1  midline       acomm.bbr.prep       acomm.bbr.prep  &lt;NA&gt;</span></span>
-<span><span class="co">#&gt; 2  midline    cc.bodyc.bbr.prep    cc.bodyc.bbr.prep  &lt;NA&gt;</span></span>
-<span><span class="co">#&gt; 3  midline    cc.bodyp.bbr.prep    cc.bodyp.bbr.prep  &lt;NA&gt;</span></span>
-<span><span class="co">#&gt; 4  midline   cc.bodypf.bbr.prep   cc.bodypf.bbr.prep  &lt;NA&gt;</span></span>
-<span><span class="co">#&gt; 5  midline   cc.bodypm.bbr.prep   cc.bodypm.bbr.prep  &lt;NA&gt;</span></span>
-<span><span class="co">#&gt; 6  midline    cc.bodyt.bbr.prep    cc.bodyt.bbr.prep  &lt;NA&gt;</span></span>
-<span><span class="co">#&gt; 7  midline     cc.genu.bbr.prep     cc.genu.bbr.prep  &lt;NA&gt;</span></span>
-<span><span class="co">#&gt; 8  midline  cc.rostrum.bbr.prep  cc.rostrum.bbr.prep  &lt;NA&gt;</span></span>
-<span><span class="co">#&gt; 9  midline cc.splenium.bbr.prep cc.splenium.bbr.prep  &lt;NA&gt;</span></span>
-<span><span class="co">#&gt; 10    left          af.bbr.prep       lh.af.bbr.prep  &lt;NA&gt;</span></span>
+<span><span class="co">#&gt;       hemi                     region                label       group</span></span>
+<span><span class="co">#&gt; 1  midline        anterior commissure       acomm.bbr.prep commissural</span></span>
+<span><span class="co">#&gt; 2  midline    callosal body (central)    cc.bodyc.bbr.prep commissural</span></span>
+<span><span class="co">#&gt; 3  midline  callosal body (posterior)    cc.bodyp.bbr.prep commissural</span></span>
+<span><span class="co">#&gt; 4  midline callosal body (prefrontal)   cc.bodypf.bbr.prep commissural</span></span>
+<span><span class="co">#&gt; 5  midline   callosal body (premotor)   cc.bodypm.bbr.prep commissural</span></span>
+<span><span class="co">#&gt; 6  midline   callosal body (temporal)    cc.bodyt.bbr.prep commissural</span></span>
+<span><span class="co">#&gt; 7  midline              callosal genu     cc.genu.bbr.prep commissural</span></span>
+<span><span class="co">#&gt; 8  midline           callosal rostrum  cc.rostrum.bbr.prep commissural</span></span>
+<span><span class="co">#&gt; 9  midline          callosal splenium cc.splenium.bbr.prep commissural</span></span>
+<span><span class="co">#&gt; 10    left                af.bbr.prep       lh.af.bbr.prep        &lt;NA&gt;</span></span>
 <span><span class="co">#&gt; ... with 32 more rows</span></span></code></pre></div>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_labels.html" class="external-link">atlas_labels</a></span><span class="op">(</span><span class="va">tracula</span><span class="op">)</span></span>
 <span><span class="co">#&gt;  [1] "acomm.bbr.prep"       "cc.bodyc.bbr.prep"    "cc.bodyp.bbr.prep"   </span></span>
 <span><span class="co">#&gt;  [4] "cc.bodypf.bbr.prep"   "cc.bodypm.bbr.prep"   "cc.bodyt.bbr.prep"   </span></span>
@@ -318,17 +328,20 @@
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/table.html" class="external-link">table</a></span><span class="op">(</span><span class="va">tracula</span><span class="op">$</span><span class="va">core</span><span class="op">$</span><span class="va">group</span>, useNA <span class="op">=</span> <span class="st">"ifany"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; &lt;NA&gt; </span></span>
-<span><span class="co">#&gt;   42</span></span></code></pre></div>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">tracula</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/scale_viridis.html" class="external-link">scale_fill_viridis_d</a></span><span class="op">(</span>na.value <span class="op">=</span> <span class="st">"grey80"</span><span class="op">)</span></span></code></pre></div>
+<span><span class="co">#&gt; association commissural  projection        &lt;NA&gt; </span></span>
+<span><span class="co">#&gt;           4           9           4          25</span></span></code></pre></div>
+<p>The table above covers the tracts this training set names unambiguously; the rest keep their raw labels and an <code>NA</code> group. Note the join key is the label exactly as the pipeline wrote it, <code>.bbr.prep</code> and all — strip the extension first and nothing matches, silently.</p>
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu">ggseg</span><span class="fu">::</span><span class="fu"><a href="https://ggsegverse.github.io/ggseg/reference/ggbrain.html" class="external-link">geom_brain</a></span><span class="op">(</span>atlas <span class="op">=</span> <span class="va">tracula</span>, <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>fill <span class="op">=</span> <span class="va">region</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/scale_viridis.html" class="external-link">scale_fill_viridis_d</a></span><span class="op">(</span>na.value <span class="op">=</span> <span class="st">"grey80"</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_void</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <div class="figure">
-<img src="figures/tutorial-tract-atlas-plot-1.png" alt="2D brain atlas plot showing white matter tracts including corticospinal tract, uncinate fasciculus, and cingulum across axial, coronal, and sagittal projection views." width="960"><p class="caption">
-TRACULA white matter tract atlas plotted with ggseg.
+<img src="figures/tutorial-tract-atlas-plot-1.png" alt="2D brain atlas plot showing white matter tracts including corticospinal tract, uncinate fasciculus, and cingulum across axial, coronal, and sagittal projection views, filled with a viridis colour scale." width="960"><p class="caption">
+Stage 4 — the finished atlas, drawn through ggplot2 with a viridis fill.
 </p>
 </div>
-<pre><code><span><span class="co">#&gt; NULL</span></span></code></pre>
+<p><code><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot()</a></code> is the quick look, using the atlas’s own palette. <code><a href="https://ggsegverse.github.io/ggseg/reference/ggbrain.html" class="external-link">geom_brain()</a></code> is the route when you want to control the colours — map something to <code>fill</code>, or a fill scale has nothing to colour and every region comes back as <code>na.value</code>.</p>
 </section><script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);

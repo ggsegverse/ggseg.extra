@@ -28,7 +28,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9064</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9065</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -127,6 +127,8 @@
 <span><span class="co">#&gt; ✔ Downloaded template</span></span>
 <span><span class="co">#&gt; ✔ Created 'R/', 'tests/', 'data-raw/'</span></span>
 <span><span class="co">#&gt; ✔ Replaced template placeholders</span></span>
+<span><span class="co">#&gt; ✔ Set Authors@R in 'DESCRIPTION' from</span></span>
+<span><span class="co">#&gt; `usethis.description`</span></span>
 <span><span class="co">#&gt; ✔ Added 5 workflows to '.github/workflows/'</span></span>
 <span><span class="co">#&gt; • R-CMD-check.yaml</span></span>
 <span><span class="co">#&gt; • code-quality.yaml</span></span>
@@ -169,16 +171,15 @@
 <p>The rest — the workflows, <code>.lintr</code>, <code>_pkgdown.yml</code>, the test file — are infrastructure you inherit rather than write.</p>
 </section><section class="level2"><h2 id="filling-in-description">Filling in DESCRIPTION<a class="anchor" aria-label="anchor" href="#filling-in-description"></a>
 </h2>
-<p>The scaffold writes a placeholder author, and it is the one thing that will embarrass you if you forget it:</p>
+<p>DESCRIPTION is the one thing that will embarrass you if you forget it:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/readLines.html" class="external-link">readLines</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">repo</span>, <span class="st">"DESCRIPTION"</span><span class="op">)</span><span class="op">)</span>, sep <span class="op">=</span> <span class="st">"\n"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Package: ggsegDemo</span></span>
 <span><span class="co">#&gt; Title: demo Brain Atlas for the 'ggseg' Ecosystem</span></span>
 <span><span class="co">#&gt; Version: 1.0.0</span></span>
-<span><span class="co">#&gt; Authors@R: c(</span></span>
-<span><span class="co">#&gt;     person("First", "Last", , "your.email@example.com", role = c("aut", "cre"),</span></span>
-<span><span class="co">#&gt;            comment = c(ORCID = "0000-0000-0000-0000"))</span></span>
-<span><span class="co">#&gt;   )</span></span>
+<span><span class="co">#&gt; Authors@R:</span></span>
+<span><span class="co">#&gt;     person("First", "Last", , "your.email@example.com",</span></span>
+<span><span class="co">#&gt;     role = c("aut", "cre"), comment = c(ORCID = "0000-0000-0000-0000"))</span></span>
 <span><span class="co">#&gt; Description: Brain atlas data for the 'ggseg' ecosystem. Provides a unified</span></span>
 <span><span class="co">#&gt;     'ggseg_atlas' object with both 2D polygon geometry and 3D vertex indices,</span></span>
 <span><span class="co">#&gt;     for use with 'ggseg' and 'ggseg3d'.</span></span>
@@ -203,8 +204,19 @@
 <span><span class="co">#&gt; Roxygen: list(markdown = TRUE)</span></span>
 <span><span class="co">#&gt; RoxygenNote: 7.3.3</span></span>
 <span><span class="co">#&gt; Config/testthat/edition: 3</span></span>
-<span><span class="co">#&gt; Config/Needs/website: ggsegverse/ggseg.docs</span></span></code></pre></div>
-<p>Replace the <code>Authors@R</code> block with your own name, email and ORCID. The scaffold writes the same placeholder for everyone; it does not read usethis’s <code>usethis.description</code> option, so setting that up will not save you this step.</p>
+<span><span class="co">#&gt; Config/Needs/website: ggsegverse/ggseg.docs</span></span>
+<span><span class="co">#&gt; Config/Needs/lint:</span></span>
+<span><span class="co">#&gt;     dplyr,</span></span>
+<span><span class="co">#&gt;     future,</span></span>
+<span><span class="co">#&gt;     progressr,</span></span>
+<span><span class="co">#&gt;     ggsegverse/ggseg.extra</span></span></code></pre></div>
+<p>If you have set usethis’s <code>usethis.description</code> option, the scaffold writes your <code>Authors@R</code> and <code>Version</code> straight in and there is nothing to do here. If you have not, you get the template’s placeholder — shown above — and you replace it by hand with your own name, email and ORCID.</p>
+<p>Setting the option once is worth it if you expect to build more than one atlas package:</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>usethis.description <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
+<span>  `Authors@R` <span class="op">=</span> <span class="st">'person("Your", "Name", , "you@example.org",</span></span>
+<span><span class="st">     role = c("aut", "cre"), comment = c(ORCID = "0000-0000-0000-0000"))'</span></span>
+<span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <p>Check <code>Title</code> too — it is derived from the directory name, so the capitalisation is a guess rather than a decision.</p>
 <p>If you want the package named something other than the directory, pass <code>atlas_name</code>. Be aware that it renames the <em>package</em> and leaves the directory alone, so <code>setup_atlas_repo("ggsegFoo", atlas_name = "custom")</code> gives you a directory called <code>ggsegFoo</code> holding a package called <code>ggsegCustom</code>. Matching the two is less confusing later.</p>
 <p><code>Imports: ggseg.formats</code> is deliberate and should stay. An atlas package depends on the format, not on the builder: users installing <code>ggsegDemo</code> need to <em>read</em> a <code>ggseg_atlas</code>, not build one, so ggseg.extra is not a dependency of the thing you publish.</p>
@@ -212,7 +224,7 @@
 </h2>
 <p><code>data-raw/create-atlas.R</code> ships as a menu. It has a commented-out section for every pipeline in this package — annotation, GIFTI, CIFTI, labels, neuromaps, subcortical, cerebellar, tract, whole-brain. Delete the sections you don’t need and uncomment the one you do.</p>
 <p>The script ends with the step that actually matters:</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">.demo</span> <span class="op">&lt;-</span> <span class="va">demo</span></span>
 <span><span class="fu">usethis</span><span class="fu">::</span><span class="fu">use_data</span><span class="op">(</span></span>
 <span>  <span class="va">.demo</span>,</span>
@@ -222,7 +234,7 @@
 <span><span class="op">)</span></span></code></pre></div>
 <p>Note the name. The package is <code>ggsegDemo</code>, but the atlas is <code>demo</code> — the <code>ggseg</code> prefix is dropped and the rest lower-cased, which is why <code>ggsegDK</code> gives you <code>dk</code> and not <code>ggsegDK</code>. The scaffold has already substituted the right name throughout, so follow what the template wrote rather than reasoning it out each time.</p>
 <p>The leading dot and <code>internal = TRUE</code> are the ecosystem’s convention. The atlas is stored as internal data and exposed through a function in <code>R/data.R</code>:</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">demo</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="op">)</span> <span class="va">.demo</span></span></code></pre></div>
 <p>Users call <code><a href="https://rdrr.io/r/utils/demo.html" class="external-link">demo()</a></code>, with the parentheses. That indirection is what lets the package document and version the atlas properly instead of shipping a bare <code>.rda</code>.</p>
 <p><code>compress = "xz"</code> is not optional in practice. Atlas geometry is large, and CRAN-style checks complain about packages over 5 MB.</p>
@@ -231,10 +243,10 @@
 <p>The scaffold sets up one atlas because that is the smallest thing that works, not because a package should hold only one. Most don’t. <code>ggsegTian</code> ships eight, <code>ggsegJulich</code> a cortical and a subcortical atlas, <code>ggsegAicha</code> a cortical one and its subcortical companion.</p>
 <p>Group by source, not by count: atlases that come from one parcellation, cite one paper and are built by one script belong in one package. Splitting them means maintaining the same citation and the same build pipeline in several repositories.</p>
 <p>Adding a second atlas means one more internal object, one more accessor and one more <code>@describeIn</code>:</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">demo_fine</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="op">)</span> <span class="va">.demo_fine</span></span></code></pre></div>
 <p>Document them as a family rather than one Rd page each — a shared block under <code>@name</code>, with <code>@describeIn</code> on each accessor, so the citation and the shared caveats are written once:</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co">#' Demo Atlas</span></span>
 <span><span class="co">#'</span></span>
 <span><span class="co">#' @family ggseg_atlases</span></span>
@@ -257,22 +269,22 @@
 </section></section><section class="level2"><h2 id="continuous-integration">Continuous integration<a class="anchor" aria-label="anchor" href="#continuous-integration"></a>
 </h2>
 <p>The scaffold installs five workflows:</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/atlas_github_actions.html">atlas_github_actions</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "R-CMD-check"     "code-quality"    "pkgdown"         "render-readme"  </span></span>
 <span><span class="co">#&gt; [5] "update-codemeta"</span></span></code></pre></div>
 <p><code>R-CMD-check</code> and <code>code-quality</code> are the gates. <code>pkgdown</code> builds the documentation site, <code>render-readme</code> keeps the README’s plots current, and <code>update-codemeta</code> maintains the machine-readable metadata that makes the package citable.</p>
 <p>If you are adding CI to a repository that already exists, <code><a href="../reference/use_atlas_github_actions.html">use_atlas_github_actions()</a></code> installs them without touching anything else:</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/use_atlas_github_actions.html">use_atlas_github_actions</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <p>It refuses to overwrite existing workflows unless you pass <code>overwrite = TRUE</code>, so it is safe to run on a repository you have already customised. You can also install a subset:</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/use_atlas_github_actions.html">use_atlas_github_actions</a></span><span class="op">(</span>workflows <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"R-CMD-check"</span>, <span class="st">"pkgdown"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 </section><section class="level2"><h2 id="getting-it-onto-github">Getting it onto GitHub<a class="anchor" aria-label="anchor" href="#getting-it-onto-github"></a>
 </h2>
 <p><code><a href="../reference/setup_atlas_repo.html">setup_atlas_repo()</a></code> writes files. It does not initialise git, create a remote, or push — the scaffold is deliberately inert, so you can inspect it before committing to anything.</p>
 <p>That means the next steps are yours:</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">usethis</span><span class="fu">::</span><span class="fu">use_git</span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="fu">usethis</span><span class="fu">::</span><span class="fu">use_github</span><span class="op">(</span>organisation <span class="op">=</span> <span class="st">"ggsegverse"</span><span class="op">)</span></span></code></pre></div>
 <p>Two settings need a visit to the repository’s web interface, and both are easy to miss because nothing fails loudly without them.</p>
@@ -282,17 +294,20 @@
 </h2>
 <p>Before the first release, check the three things that are specific to atlas packages rather than to R packages in general.</p>
 <p>The atlas loads from the installed package, not from your session:</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">pkgload</span><span class="fu">::</span><span class="fu"><a href="https://pkgload.r-lib.org/reference/load_all.html" class="external-link">load_all</a></span><span class="op">(</span><span class="va">repo</span><span class="op">)</span></span>
 <span><span class="fu">ggsegDemo</span><span class="fu">::</span><span class="fu">demo</span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <p>It plots in both dimensions, since 2D and 3D geometry can break independently:</p>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="fu">ggsegDemo</span><span class="fu">::</span><span class="fu">demo</span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu">ggseg3d</span><span class="fu">::</span><span class="fu"><a href="https://ggsegverse.github.io/ggseg3d/reference/ggseg3d.html" class="external-link">ggseg3d</a></span><span class="op">(</span>atlas <span class="op">=</span> <span class="fu">ggsegDemo</span><span class="fu">::</span><span class="fu">demo</span><span class="op">(</span><span class="op">)</span>, hemisphere <span class="op">=</span> <span class="st">"left"</span><span class="op">)</span></span></code></pre></div>
 <p>And the installed size is sane:</p>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/file.info.html" class="external-link">file.size</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">repo</span>, <span class="st">"R"</span>, <span class="st">"sysdata.rda"</span><span class="op">)</span><span class="op">)</span> <span class="op">/</span> <span class="fl">1024</span><span class="op">^</span><span class="fl">2</span></span></code></pre></div>
-<p>If that number is over a few megabytes, go back and simplify. <code>atlas_simplify(atlas, keep = 0.2)</code> followed by <code>atlas_smooth(atlas)</code> usually takes an order of magnitude off the vertex count without a visible difference in the plot.</p>
+<p>If that number is over a few megabytes, go back and simplify. <code>atlas_simplify(atlas, keep = 0.2)</code> followed by <code>atlas_smooth(atlas)</code> takes roughly two thirds off the vertex count, and the plot comes back looking better rather than worse — the tidying is what removes the staircases the mesh leaves behind. <code><a href="../reference/count_vertices.html">count_vertices()</a></code> reports where you are:</p>
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="fu"><a href="../reference/count_vertices.html">count_vertices</a></span><span class="op">(</span><span class="fu">ggsegDemo</span><span class="fu">::</span><span class="fu">demo</span><span class="op">(</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<p>The cortical, label and cerebellar tutorials each walk through that step and show the figure before and after.</p>
 </section><section class="level2"><h2 id="an-easier-starting-point">An easier starting point<a class="anchor" aria-label="anchor" href="#an-easier-starting-point"></a>
 </h2>
 <p>If you are starting from nothing rather than adding to an existing project, <code><a href="../reference/new_project_setup_atlas_repo.html">new_project_setup_atlas_repo()</a></code> is the same scaffold wired into RStudio’s <em>New Project</em> dialogue. Pick <em>Create ggseg brain atlas</em> from the template list, type the atlas name into the one field it offers, and you get the skeleton in a fresh project — which saves you from getting the directory name wrong and having to rename the package afterwards.</p>
