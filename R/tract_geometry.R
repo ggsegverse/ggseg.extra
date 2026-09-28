@@ -386,7 +386,8 @@ streamlines_to_volume <- function(
   dims <- dim(read_volume(template_file, reorient = FALSE))
   # Always resolve the affine: it is needed to reorient the finished volume
   # even when the coordinates are already voxel indices.
-  vox2ras <- load_vox2ras_matrix(template_file, coords_are_voxels = FALSE)
+  grid <- load_tract_grid(template_file, coords_are_voxels = FALSE)
+  vox2ras <- grid$vox2ras
   vol <- array(0L, dim = dims)
 
   for (i in seq_len(nrow(centerline))) {
@@ -394,7 +395,8 @@ streamlines_to_volume <- function(
       centerline[i, ],
       dims,
       if (coords_are_voxels) NULL else vox2ras,
-      coords_are_voxels
+      coords_are_voxels,
+      grid$voxel_size
     )
     vol <- set_sphere_voxels(vol, vox_idx, radius, label_value, dims)
   }
@@ -412,27 +414,97 @@ streamlines_to_volume <- function(
 }
 
 
-#' Load vox2ras transformation matrix from volume file
+#' Everything known about the template's voxel grid
+#'
+#' `vox2ras` is the full affine whenever the header carries one. When it does
+#' not, `voxel_size` is the header's voxel size, which is all the fallback in
+#' `coord_to_voxel()` needs to stop treating every grid as 1mm isotropic; it
+#' is `NULL` when even that cannot be read.
 #' @noRd
-load_vox2ras_matrix <- function(template_file, coords_are_voxels) {
+load_tract_grid <- function(template_file, coords_are_voxels) {
   if (coords_are_voxels) {
-    return(NULL)
+    return(list(vox2ras = NULL, voxel_size = NULL))
   }
 
   vox2ras <- read_vox2ras(template_file)
-
-  if (is.null(vox2ras)) {
-    cli::cli_warn(c(
-      "Could not read a voxel-to-world affine from {.path {template_file}}.",
-      "!" = "Falling back to an approximate origin-centering heuristic; \\
-             RAS streamlines may be placed at the wrong voxels.",
-      "i" = "Install the matching reader package, or pass a volume whose \\
-             header carries a valid affine."
-    ))
+  if (!is.null(vox2ras)) {
+    return(list(vox2ras = vox2ras, voxel_size = NULL))
   }
 
-  vox2ras
+  voxel_size <- read_voxel_size(template_file)
+  scale_note <- if (is.null(voxel_size)) {
+    "The header's voxel size is unreadable too, so the fallback assumes 1mm \\
+     isotropic; on any other grid a coordinate lands at a multiple of its \\
+     true distance from the centre."
+  } else {
+    paste0(
+      "Falling back to origin-centering scaled by the header voxel size (",
+      paste(voxel_size, collapse = " x "),
+      "mm)."
+    )
+  }
+
+  cli::cli_warn(c(
+    "Could not read a voxel-to-world affine from {.path {template_file}}.",
+    "!" = scale_note,
+    "!" = "The volume is not reoriented to RAS on this path either, so \\
+           placement stays approximate whatever the voxel size.",
+    "i" = "Install the matching reader package, or pass a volume whose \\
+           header carries a valid affine."
+  ))
+
+  list(vox2ras = NULL, voxel_size = voxel_size)
 }
+
+
+#' Read a volume's voxel size in mm, or `NULL` if it can't be read
+#'
+#' Same sources and same failure modes as `read_vox2ras()`; a header can carry
+#' a usable voxel size while its affine is missing or flagged invalid, which is
+#' exactly the case this exists to serve.
+#' @noRd
+read_voxel_size <- function(template_file) {
+  ext <- volume_ext(template_file)
+  if (ext == "mgz") {
+    if (!requireNamespace("freesurferformats", quietly = TRUE)) {
+      return(NULL)
+    }
+    return(tryCatch(
+      {
+        mgh <- freesurferformats::read.fs.mgh(template_file, with_header = TRUE)
+        usable_voxel_size(c(
+          mgh$header$internal$xsize,
+          mgh$header$internal$ysize,
+          mgh$header$internal$zsize
+        ))
+      },
+      error = function(e) NULL
+    ))
+  }
+  if (ext == "nii") {
+    if (!requireNamespace("RNifti", quietly = TRUE)) {
+      return(NULL)
+    }
+    return(tryCatch(
+      usable_voxel_size(
+        RNifti::pixdim(RNifti::niftiHeader(template_file))[1:3]
+      ),
+      error = function(e) NULL
+    ))
+  }
+  NULL
+}
+
+
+#' A voxel size is only usable if it is three finite, positive millimetres
+#' @noRd
+usable_voxel_size <- function(size) {
+  if (length(size) != 3L || !all(is.finite(size)) || any(size <= 0)) {
+    return(NULL)
+  }
+  size
+}
+
 
 #' Read a volume's voxel-to-world affine, or `NULL` if it can't be read
 #'
@@ -472,7 +544,13 @@ read_vox2ras <- function(template_file) {
 #' When coords_are_voxels is TRUE, assumes 0-based voxel indices
 #' (TrackVis convention) and adds 1 for R indexing.
 #' @noRd
-coord_to_voxel <- function(coord, dims, vox2ras, coords_are_voxels) {
+coord_to_voxel <- function(
+  coord,
+  dims,
+  vox2ras,
+  coords_are_voxels,
+  voxel_size = NULL
+) {
   if (coords_are_voxels) {
     return(round(coord) + 1L)
   }
@@ -481,10 +559,11 @@ coord_to_voxel <- function(coord, dims, vox2ras, coords_are_voxels) {
     vox_coord <- ras2vox %*% c(coord, 1)
     return(round(vox_coord[1:3]) + 1)
   }
+  size <- if (is.null(voxel_size)) c(1, 1, 1) else voxel_size
   c(
-    round(dims[1] / 2 - coord[1]) + 1,
-    round(dims[2] / 2 + coord[2]) + 1,
-    round(dims[3] / 2 + coord[3]) + 1
+    round(dims[1] / 2 - coord[1] / size[1]) + 1,
+    round(dims[2] / 2 + coord[2] / size[2]) + 1,
+    round(dims[3] / 2 + coord[3] / size[3]) + 1
   )
 }
 

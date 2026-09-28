@@ -430,6 +430,18 @@ describe("coord_to_voxel", {
     result <- coord_to_voxel(c(0, 0, 0), dims, NULL, FALSE)
     expect_identical(result, c(129, 129, 129))
   })
+
+  it("scales the fallback by voxel size rather than assuming 1mm", {
+    dims <- c(128, 128, 128)
+    result <- coord_to_voxel(
+      c(-20, 20, 20),
+      dims,
+      NULL,
+      FALSE,
+      voxel_size = c(2, 2, 2)
+    )
+    expect_identical(result, c(75, 75, 75))
+  })
 })
 
 
@@ -527,18 +539,19 @@ describe("extract_centerline medoid", {
 })
 
 
-describe("load_vox2ras_matrix", {
+describe("load_tract_grid", {
   it("returns NULL when coords_are_voxels is TRUE", {
-    result <- load_vox2ras_matrix("any_file.mgz", TRUE)
-    expect_null(result)
+    result <- load_tract_grid("any_file.mgz", TRUE)
+    expect_null(result$vox2ras)
+    expect_null(result$voxel_size)
   })
 
   it("warns and returns NULL for unsupported file extension", {
     expect_warning(
-      result <- load_vox2ras_matrix("file.txt", FALSE),
-      "approximate origin-centering"
+      result <- load_tract_grid("file.txt", FALSE),
+      "Could not read a voxel-to-world affine"
     )
-    expect_null(result)
+    expect_null(result$vox2ras)
   })
 })
 
@@ -643,7 +656,7 @@ describe("compute_streamline_density", {
 })
 
 
-describe("load_vox2ras_matrix", {
+describe("load_tract_grid", {
   it("warns and falls back when the mgz header lacks RAS info", {
     skip_if_not_installed("freesurferformats")
     # Written without a vox2ras matrix, so ras_good_flag is -1. This used to
@@ -654,10 +667,34 @@ describe("load_vox2ras_matrix", {
     freesurferformats::write.fs.mgh(headerless, array(0L, dim = c(4, 4, 4)))
 
     expect_warning(
-      result <- load_vox2ras_matrix(headerless, coords_are_voxels = FALSE),
-      "approximate origin-centering"
+      result <- load_tract_grid(headerless, coords_are_voxels = FALSE),
+      "Could not read a voxel-to-world affine"
     )
-    expect_null(result)
+    expect_null(result$vox2ras)
+  })
+
+  it("recovers the voxel size when the affine is unreadable", {
+    skip_if_not_installed("RNifti")
+    tmp <- withr::local_tempfile(fileext = ".nii")
+    nii <- RNifti::asNifti(array(0L, dim = c(5, 5, 5)))
+    RNifti::pixdim(nii) <- c(2, 2, 2)
+    RNifti::writeNifti(nii, tmp)
+
+    local_mocked_bindings(read_vox2ras = function(...) NULL)
+
+    expect_warning(
+      result <- load_tract_grid(tmp, coords_are_voxels = FALSE),
+      "scaled by the header voxel size"
+    )
+    expect_identical(result$voxel_size, c(2, 2, 2))
+  })
+
+  it("reports the 1mm assumption when the voxel size is unreadable too", {
+    expect_warning(
+      result <- load_tract_grid("file.txt", coords_are_voxels = FALSE),
+      "assumes 1mm"
+    )
+    expect_null(result$voxel_size)
   })
 
   it("handles .nii.gz extension by parsing gz correctly", {
@@ -667,9 +704,9 @@ describe("load_vox2ras_matrix", {
     RNifti::writeNifti(nii, tmp)
     on.exit(unlink(tmp))
 
-    result <- load_vox2ras_matrix(tmp, FALSE)
-    expect_true(is.matrix(result))
-    expect_identical(dim(result), c(4L, 4L))
+    result <- load_tract_grid(tmp, FALSE)
+    expect_true(is.matrix(result$vox2ras))
+    expect_identical(dim(result$vox2ras), c(4L, 4L))
   })
 
   it("loads vox2ras from nii file", {
@@ -679,9 +716,9 @@ describe("load_vox2ras_matrix", {
     RNifti::writeNifti(nii, tmp)
     on.exit(unlink(tmp))
 
-    result <- load_vox2ras_matrix(tmp, FALSE)
-    expect_true(is.matrix(result))
-    expect_identical(dim(result), c(4L, 4L))
+    result <- load_tract_grid(tmp, FALSE)
+    expect_true(is.matrix(result$vox2ras))
+    expect_identical(dim(result$vox2ras), c(4L, 4L))
   })
 
   it("returns NULL for mgz when freesurferformats unavailable", {
@@ -697,10 +734,10 @@ describe("load_vox2ras_matrix", {
     )
 
     expect_warning(
-      result <- load_vox2ras_matrix("file.mgz", FALSE),
-      "approximate origin-centering"
+      result <- load_tract_grid("file.mgz", FALSE),
+      "Could not read a voxel-to-world affine"
     )
-    expect_null(result)
+    expect_null(result$vox2ras)
   })
 
   it("returns NULL for nii when RNifti unavailable", {
@@ -716,10 +753,10 @@ describe("load_vox2ras_matrix", {
     )
 
     expect_warning(
-      result <- load_vox2ras_matrix("file.nii", FALSE),
-      "approximate origin-centering"
+      result <- load_tract_grid("file.nii", FALSE),
+      "Could not read a voxel-to-world affine"
     )
-    expect_null(result)
+    expect_null(result$vox2ras)
   })
 })
 

@@ -822,7 +822,7 @@ reorient_volume_to_ras <- function(vol, vox2ras) {
 #' the only thing that can place it -- and a conformed volume is typically LIA,
 #' not RAS. Returning it unreoriented and unannounced would hand the projection
 #' code a volume whose axes are transposed, which renders as a plausible brain
-#' rather than failing. `load_vox2ras_matrix()` reports the same condition the
+#' rather than failing. `load_tract_grid()` reports the same condition the
 #' same way.
 #' @noRd
 reorient_mgz_to_ras <- function(data, vox2ras, file) {
