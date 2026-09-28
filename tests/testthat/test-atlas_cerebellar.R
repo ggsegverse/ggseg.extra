@@ -341,6 +341,28 @@ describe("clean_cerebellar_region", {
 })
 
 
+describe("build_suit_region_row missing label names", {
+  it("falls back to the numbered region name used in the tutorial", {
+    label_table <- tibble(
+      id = 1L,
+      name = "Left I-IV",
+      colour = "#ffffff"
+    )
+
+    row <- build_suit_region_row(
+      pid = 28L,
+      region_vertices = c(0L, 1L, 2L),
+      label_table = label_table
+    )
+
+    expect_identical(row$hemi, "midline")
+    expect_identical(row$region, "region_28")
+    expect_identical(row$label, "midline_region_28")
+    expect_true(is.na(row$colour))
+  })
+})
+
+
 describe("read_suit_parcellation", {
   it("errors on missing files", {
     expect_error(
