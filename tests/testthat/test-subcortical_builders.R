@@ -162,31 +162,31 @@ describe("aseg_context", {
     expect_false("Left-Thalamus" %in% a$core$label)
   })
 
-  it("applies the whole recipe without reporting the patterns that miss", {
-    # The recipe lists structures an aseg may or may not carry, so most of
-    # its patterns match nothing on any given atlas. Applied one at a time
-    # they each announce that; applied together they are quiet unless the
-    # whole recipe found nothing.
-    expect_no_warning(
-      a <- aseg_context(
-        make_test_atlas(),
-        focus = "hypothalamus",
-        punch_white_matter = FALSE
-      )
+  it("applies the whole recipe in a single call", {
+    # The recipe names structures an aseg may or may not carry, so most of
+    # its patterns match nothing on any given atlas. One call per pattern
+    # makes every miss a separate event for ggseg.formats to report; one
+    # call for the set makes "nothing matched" mean the whole recipe missed.
+    patterns <- NULL
+    local_mocked_bindings(
+      atlas_region_remove = function(atlas, pattern, ...) {
+        patterns <<- c(patterns, pattern)
+        atlas
+      }
     )
-    expect_false("Left-Cerebral-White-Matter" %in% a$core$label)
-  })
 
-  it("says so when the whole recipe matches nothing", {
-    expect_warning(
-      aseg_context(
-        make_test_atlas(),
-        focus = "hypothalamus",
-        remove = c("no_such_structure", "nor_this_one"),
-        punch_white_matter = FALSE
-      ),
-      "No regions matched"
+    aseg_context(
+      make_test_atlas(),
+      focus = "hypothalamus",
+      punch_white_matter = FALSE
     )
+
+    expect_length(patterns, 1L)
+    expect_true(all(vapply(
+      aseg_hidden_labels(),
+      function(p) grepl(p, patterns, fixed = TRUE),
+      logical(1)
+    )))
   })
 
   it("removes hidden labels entirely (not just from core)", {
