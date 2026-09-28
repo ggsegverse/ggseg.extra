@@ -222,8 +222,18 @@ aseg_context <- function(
     atlas <- aseg_punch_white_matter(atlas, cortex, white_matter, sf_labels)
   }
 
-  for (pat in remove) {
-    atlas <- atlas_region_remove(atlas, pat, match_on = "label")
+  # One alternation rather than one call per pattern. The recipe is a set of
+  # patterns for structures an atlas may or may not carry, so most of them
+  # match nothing on any given atlas; called one at a time, each of those
+  # reports that it matched nothing. Combined, the call says so only when the
+  # whole recipe found nothing to remove, which is the case worth hearing
+  # about.
+  if (length(remove) > 0) {
+    atlas <- atlas_region_remove(
+      atlas,
+      paste(remove, collapse = "|"),
+      match_on = "label"
+    )
   }
 
   atlas <- aseg_demote_context(atlas, focus, match_on)
