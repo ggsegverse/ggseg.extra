@@ -31,6 +31,25 @@
   which a cerebellar parcellation contains. It now removes `region_28`, the
   unnamed midline strip the SUIT parcellation actually leaves behind.
 
+- Two metadata joins in the tutorials had never matched. The cortical
+  tutorial joined a network-name table on `label`, but the labels carry a
+  hemisphere prefix (`lh_7Networks_1`), so the atlas it published still
+  called its regions `7Networks_1`. The tract tutorial stripped `.prep` off
+  its labels before joining, so every tract came out with an `NA` group.
+  Both now join on a key that exists, and the tract table lists the tracts
+  this training set actually ships.
+
+- Corrected in the tutorials: the subcortical pipeline makes seven projection
+  views, not six; the cerebellar pipeline does not simplify its polygons (the
+  claim named an `rmapshaper` call that is not there); cerebellar regions come
+  out as `I_IV` and `CrusI`, not "I-IV" and "Crus I"; and
+  `setup_atlas_repo()` does read `usethis.description`, which it has since
+  1.9.9.9062.
+
+- The publishing tutorial pins `usethis.description` while it knits, so the
+  example DESCRIPTION shows the template placeholder rather than the name and
+  email of whoever last built the vignettes.
+
 - The cortical tutorial no longer calls `atlas_region_contextual()` on the
   medial wall. The pipeline already sets it aside; the tutorial now says so,
   and shows the manual call for a parcellation whose leftovers are named

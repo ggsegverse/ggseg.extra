@@ -99,23 +99,15 @@ atlas <- create_cortical_from_labels(
 
 Left and right hemisphere versions of the same region should share the same region name --- the hemisphere column distinguishes them.
 
-## Full pipeline with 2D geometry
+## The 2D geometry
 
-For 2D plots, enable the full pipeline:
+There is nothing extra to switch on: the call above already ran the full pipeline, the same one behind `create_cortical_from_annotation()`, projecting the inflated mesh triangles straight to 2D and converting them to sf polygons. The atlas is ready to plot.
 
 ```{r}
-#| label: full-atlas
+#| label: geometry
 #| eval: !expr can_run
-
-ba_atlas <- create_cortical_from_labels(
-  label_files = ba_labels,
-  atlas_name = "custom"
-)
-
-ba_atlas
+atlas_views(ba_atlas)
 ```
-
-This runs the same pipeline as `create_cortical_from_annotation()` --- it projects the inflated mesh triangles straight to 2D and converts them to sf polygons.
 
 ```{r}
 #| label: plot-raw
@@ -126,6 +118,8 @@ This runs the same pipeline as `create_cortical_from_annotation()` --- it projec
 #| fig-cap: "Stage 1 --- straight out of the pipeline, boundaries still following the mesh."
 plot(ba_atlas)
 ```
+
+The boundaries are staircases, because the pipeline traces the edges of mesh triangles rather than drawing a line through them.
 
 ## Tidying the geometry
 
@@ -152,6 +146,8 @@ sum(count_vertices(ba_atlas))
 #| fig-cap: "Stage 2 --- simplified and smoothed."
 plot(ba_atlas)
 ```
+
+Around two thirds of the vertices are gone and the areas read more cleanly, which is the trade this step exists to make.
 
 ## Post-processing
 
@@ -203,8 +199,7 @@ label_dir <- file.path(
   freesurfer::fs_dir(), "subjects", "fsaverage5", "label"
 )
 
-ba_files <- list.files(label_dir, "^[lr]h\\.BA.*\\.label$", full.names = TRUE)
-length(ba_files)
+length(list.files(label_dir, "^[lr]h\\.BA.*\\.label$"))
 ```
 
 Other useful labels include V1/V2, MT, and entorhinal cortex.

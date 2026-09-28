@@ -47,7 +47,7 @@ setup_atlas_repo(repo, open = FALSE, rstudio = FALSE)
 #> ✔ Downloaded template
 #> ✔ Created 'R/', 'tests/', 'data-raw/'
 #> ✔ Replaced template placeholders
-#> ✔ Set Authors@R and Version in 'DESCRIPTION' from
+#> ✔ Set Authors@R in 'DESCRIPTION' from
 #> `usethis.description`
 #> ✔ Added 5 workflows to '.github/workflows/'
 #> • R-CMD-check.yaml
@@ -100,20 +100,17 @@ The rest — the workflows, `.lintr`, `_pkgdown.yml`, the test file — are infr
 
 ## Filling in DESCRIPTION
 
-The scaffold writes a placeholder author, and it is the one thing that will embarrass you if you forget it:
+DESCRIPTION is the one thing that will embarrass you if you forget it:
 
 
 ``` r
 cat(readLines(file.path(repo, "DESCRIPTION")), sep = "\n")
 #> Package: ggsegDemo
 #> Title: demo Brain Atlas for the 'ggseg' Ecosystem
-#> Version: 0.0.0.9000
+#> Version: 1.0.0
 #> Authors@R:
-#>     person(given = "Athanasia Mo",
-#>            family = "Mowinckel",
-#>            role = c("aut", "cre"),
-#>            email = "a.m.mowinckel@psykologi.uio.no",
-#>            comment = c(ORCID = "0000-0002-5756-0223", GitHub = "drmowinckels"))
+#>     person("First", "Last", , "your.email@example.com",
+#>     role = c("aut", "cre"), comment = c(ORCID = "0000-0000-0000-0000"))
 #> Description: Brain atlas data for the 'ggseg' ecosystem. Provides a unified
 #>     'ggseg_atlas' object with both 2D polygon geometry and 3D vertex indices,
 #>     for use with 'ggseg' and 'ggseg3d'.
@@ -146,8 +143,17 @@ cat(readLines(file.path(repo, "DESCRIPTION")), sep = "\n")
 #>     ggsegverse/ggseg.extra
 ```
 
-Replace the `Authors@R` block with your own name, email and ORCID.
-The scaffold writes the same placeholder for everyone; it does not read usethis's `usethis.description` option, so setting that up will not save you this step.
+If you have set usethis's `usethis.description` option, the scaffold writes your `Authors@R` and `Version` straight in and there is nothing to do here. If you have not, you get the template's placeholder --- shown above --- and you replace it by hand with your own name, email and ORCID.
+
+Setting the option once is worth it if you expect to build more than one atlas package:
+
+
+``` r
+options(usethis.description = list(
+  `Authors@R` = 'person("Your", "Name", , "you@example.org",
+     role = c("aut", "cre"), comment = c(ORCID = "0000-0000-0000-0000"))'
+))
+```
 
 Check `Title` too — it is derived from the directory name, so the capitalisation is a guess rather than a decision.
 

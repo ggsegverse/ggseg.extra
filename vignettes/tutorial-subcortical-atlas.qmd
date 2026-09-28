@@ -89,14 +89,13 @@ plot(aseg_raw)
 ```
 
 <div class="figure">
-<img src="figures/tutorial-subcortical-atlas-plot-raw-1.png" alt="The full aseg segmentation across six projection views, every label filled, including cortex, white matter and ventricles." width="960" />
+<img src="figures/tutorial-subcortical-atlas-plot-raw-1.png" alt="The full aseg segmentation across all seven projection views, every label filled, including cortex, white matter and ventricles." width="960" />
 <p class="caption">Stage 1 --- everything aseg labels, on every view the pipeline made.</p>
 </div>
 
 That is the whole segmentation, and it is not yet an atlas anyone would want: cortex and white matter dominate the picture, and half the views say the same thing twice. The rest of this tutorial is subtraction.
 
-The default pipeline creates six projection views focused on the subcortical range:
-axial inferior, axial superior, coronal posterior, coronal anterior, sagittal left, and sagittal right.
+The default pipeline creates seven projection views focused on the subcortical range: three axial slabs, three coronal slabs, and one sagittal (`axial_1` to `axial_3`, `coronal_1` to `coronal_3`, `sagittal_left`).
 Each view collapses a slab of the volume onto a single plane, giving you spatial context without the complexity of individual slices.
 
 ## Removing unwanted regions
@@ -128,6 +127,8 @@ plot(aseg_raw)
 <p class="caption">Stage 2 --- the structures we actually want, once the bulk tissue is gone.</p>
 </div>
 
+The cortical ribbon and white matter are gone, and what is left is what the atlas is for. The grey silhouette stays: it is context geometry, not a region, so it gives the structures somewhere to sit without taking a colour.
+
 ## Setting context regions
 
 The cortex works well as a background outline --- it shows where subcortical structures sit relative to the brain surface without competing for colour:
@@ -146,7 +147,7 @@ Keep the ones that show your structures best:
 
 ``` r
 aseg_raw <- aseg_raw |>
-  atlas_view_keep("axial_3|axial_5|coronal_2|coronal_3|coronal_4|sagittal")
+  atlas_view_keep("axial_3|coronal_2|coronal_3|sagittal")
 ```
 
 
@@ -155,9 +156,11 @@ plot(aseg_raw)
 ```
 
 <div class="figure">
-<img src="figures/tutorial-subcortical-atlas-plot-views-1.png" alt="The retained projection views only, with the less informative ones dropped." width="960" />
+<img src="figures/tutorial-subcortical-atlas-plot-views-1.png" alt="One axial, two coronal and one sagittal view of the deep grey structures, the other three views gone." width="960" />
 <p class="caption">Stage 3 --- only the views that show the structures well.</p>
 </div>
+
+Three views are gone. The two that showed almost nothing were costing as much space as the ones that carry the atlas, and a view that adds no information is worse than no view at all --- the reader has to check it to find that out.
 
 ## Cleaning up the layout
 
@@ -175,9 +178,11 @@ plot(aseg_raw)
 ```
 
 <div class="figure">
-<img src="figures/tutorial-subcortical-atlas-plot-gathered-1.png" alt="The retained views packed into a compact arrangement with less empty space between them." width="960" />
+<img src="figures/tutorial-subcortical-atlas-plot-gathered-1.png" alt="The same four views packed together, with the empty space between them closed up." width="960" />
 <p class="caption">Stage 4 --- gathered. Same geometry, less white space.</p>
 </div>
+
+Nothing was added or removed here; the views were simply packed together. It matters more than it sounds: an atlas is usually printed small, and the white space between views is space the structures could have had.
 
 ## Adding metadata
 
@@ -293,6 +298,6 @@ plot(aseg)
 ```
 
 <div class="figure">
-<img src="figures/tutorial-subcortical-atlas-plot-1.png" alt="2D brain atlas plot showing subcortical structures including thalamus, caudate, putamen, hippocampus, and amygdala across axial, coronal, and sagittal projection views." width="960" />
-<p class="caption">Stage 5 --- the finished atlas, with structures under readable names.</p>
+<img src="figures/tutorial-subcortical-atlas-plot-1.png" alt="The same four views as the previous figure, unchanged; the structures now carry readable names in the atlas core rather than FreeSurfer identifiers." width="960" />
+<p class="caption">Stage 5 --- the finished atlas. Same geometry as stage 4; what changed is the names behind it.</p>
 </div>

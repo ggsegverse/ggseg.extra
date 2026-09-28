@@ -1241,7 +1241,34 @@ describe("count_vertices", {
     expect_identical(count_vertices(atlas), c(region_a = 10L))
   })
 
-  it("falls with the geometry simplification drops", {
+  it("counts geometry under a missing label rather than dropping it", {
+    # The total is documented to agree with the large-atlas warning, which
+    # counts every row. Dropping an NA level would quietly under-report.
+    square <- sf::st_polygon(list(matrix(
+      c(0, 0, 1, 0, 1, 1, 0, 1, 0, 0),
+      ncol = 2,
+      byrow = TRUE
+    )))
+    sf_obj <- sf::st_sf(
+      label = c("region_a", NA),
+      view = "lateral",
+      geometry = sf::st_sfc(square, square)
+    )
+    atlas <- ggseg.formats::ggseg_atlas(
+      atlas = "t",
+      type = "subcortical",
+      palette = c(region_a = "#000000"),
+      core = data.frame(label = "region_a", region = "region_a"),
+      data = ggseg.formats::ggseg_data_subcortical(geom = sf_obj)
+    )
+
+    expect_identical(
+      sum(count_vertices(atlas)),
+      sum(vertices_per_row(ggseg.formats::atlas_sf(atlas)))
+    )
+  })
+
+  it("falls when simplification drops geometry", {
     atlas <- two_region_atlas()
     before <- sum(count_vertices(atlas))
 

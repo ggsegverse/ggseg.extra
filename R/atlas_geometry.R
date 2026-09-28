@@ -322,7 +322,9 @@ atlas_dilate <- function(atlas, amount, labels = NULL, exclude = NULL) {
 #'
 #' @param atlas A `ggseg_atlas`.
 #' @return A named integer vector, one element per label, in the order the
-#'   labels appear in the atlas. Take `sum()` of it for the atlas total.
+#'   labels appear in the atlas. Take `sum()` of it for the atlas total; that
+#'   total is every vertex the atlas carries, including any under a missing
+#'   label, so it always agrees with the large-atlas warning.
 #' @family atlas geometry
 #' @seealso [atlas_simplify()] to bring the count down, and [atlas_smooth()],
 #'   which raises it again -- rounding a corner off means inserting points.
@@ -339,15 +341,15 @@ count_vertices <- function(atlas) {
   sf_data <- ggseg.formats::atlas_sf(atlas)
   counts <- vertices_per_row(sf_data)
 
-  labels <- sf_data$label
-  if (is.null(labels)) {
-    return(counts)
-  }
-  vapply(
-    split(counts, factor(labels, levels = unique(labels))),
-    sum,
-    integer(1)
+  # exclude = NULL keeps a missing label as its own level. Dropping it would
+  # lose its vertices from the total, which is the one number this function
+  # promises to agree with the large-atlas warning on.
+  labels <- factor(
+    sf_data$label,
+    levels = unique(sf_data$label),
+    exclude = NULL
   )
+  vapply(split(counts, labels), sum, integer(1))
 }
 
 

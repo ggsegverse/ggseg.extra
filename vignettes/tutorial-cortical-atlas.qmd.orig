@@ -88,10 +88,10 @@ This is the atlas at its roughest, and it is worth looking at before tidying any
 ```{r}
 #| label: plot-raw
 #| eval: !expr can_run
-#| fig.width: 10
-#| fig.height: 6
-#| fig.alt: "Yeo 7-network parcellation straight from the pipeline, with visibly stepped region boundaries and the medial wall filled in grey."
-#| fig.cap: "Stage 1 --- straight out of the pipeline. The boundaries still follow the mesh triangles."
+#| fig-width: 10
+#| fig-height: 6
+#| fig-alt: "Yeo 7-network parcellation straight from the pipeline, with visibly stepped region boundaries and the medial wall filled in grey."
+#| fig-cap: "Stage 1 --- straight out of the pipeline. The boundaries still follow the mesh triangles."
 plot(yeo7_raw)
 ```
 
@@ -122,16 +122,16 @@ sum(count_vertices(yeo7_simple))
 ```{r}
 #| label: plot-simple
 #| eval: !expr can_run
-#| fig.width: 10
-#| fig.height: 6
-#| fig.alt: "The same parcellation after simplification, with fewer vertices and straighter but still angular boundaries."
-#| fig.cap: "Stage 2 --- simplified. Most of the vertices are gone; the corners they left behind are not."
+#| fig-width: 10
+#| fig-height: 6
+#| fig-alt: "The same parcellation after simplification, with fewer vertices and straighter but still angular boundaries."
+#| fig-cap: "Stage 2 --- simplified. Most of the vertices are gone; the corners they left behind are not."
 plot(yeo7_simple)
 ```
 
 `exclude = "cortex_"` leaves the brain-outline geometry crisp while simplifying the labelled regions.
 
-Simplification is topology-aware, so neighbouring regions lose the same vertices and no gaps open between them. What it does not do is make anything look smooth --- it removes points from a jagged line and leaves a jagged line with fewer points. That is what `atlas_smooth()` is for:
+Simplification is topology-aware, so neighbouring regions lose the same vertices and no gaps open between them. What it does not do is make anything look smooth --- it removes vertices from a jagged line and leaves a jagged line with fewer vertices. That is what `atlas_smooth()` is for:
 
 ```{r}
 #| label: smooth
@@ -144,14 +144,14 @@ sum(count_vertices(yeo7_smooth))
 ```{r}
 #| label: plot-smooth
 #| eval: !expr can_run
-#| fig.width: 10
-#| fig.height: 6
-#| fig.alt: "The same parcellation after smoothing, with rounded region boundaries and no visible stepping."
-#| fig.cap: "Stage 3 --- smoothed. The staircases are gone."
+#| fig-width: 10
+#| fig-height: 6
+#| fig-alt: "The same parcellation after smoothing, with rounded region boundaries and no visible stepping."
+#| fig-cap: "Stage 3 --- smoothed. The staircases are gone."
 plot(yeo7_smooth)
 ```
 
-Notice the count went **up**. Rounding a corner means inserting points, so smoothing gives some of the budget back --- and it is still a large cut on where we started. Simplify first and smooth afterwards, so the smoothing has the last word on the outline.
+Notice the count went **up**. Rounding a corner means inserting vertices, so smoothing gives some of the budget back --- and it is still a large cut on where we started. Simplify first and smooth afterwards, so the smoothing has the last word on the outline.
 
 ## Background regions
 
@@ -164,13 +164,14 @@ length(unique(atlas_sf(yeo7_smooth)$label))
 length(atlas_regions(yeo7_smooth))
 ```
 
-Sixteen labels carry geometry; seven are regions you can fill with data. The medial wall is *context*: `create_cortical_from_annotation()` recognises regions named `unknown`, `???`, or anything ending in "medial wall", and sets them aside for you.
+Sixteen labels carry geometry; seven are regions you can fill with data. The medial wall is *context*: `create_cortical_from_annotation()` sets aside any region whose whole name is `unknown` or `???`, or whose name ends in "medial wall" (with a space, underscore, dot, hyphen or nothing in between). Case does not matter.
 
 Which is fine until a parcellation names its leftovers something else. FreeSurfer's own `aparc` labels the callosal region `corpuscallosum`, and that matches none of the above --- so it would arrive as an ordinary region, coloured and listed alongside the real ones. `atlas_region_contextual()` is how you set one aside by hand. It keeps the geometry for spatial reference and drops the region from `$core`:
 
 ```{r}
 #| label: contextual
 #| eval: false
+dk <- create_cortical_from_annotation(dk_annots, atlas_name = "dk")
 dk <- atlas_region_contextual(dk, "corpuscallosum", match_on = "region")
 ```
 
@@ -179,14 +180,16 @@ Check `atlas_regions()` after a pipeline run; anything in that list you would no
 ## Adding metadata
 
 The atlas has region names derived from the annotation file.
-For the Yeo atlas, the annotation labels are numeric network IDs.
-We can map them to descriptive network names:
+For the Yeo atlas, they are numeric network IDs.
+Map them to descriptive names on `region` rather than `label` --- the label
+carries a hemisphere prefix (`lh_7Networks_1`), so a table keyed on the bare
+network name joins to `region` and matches both hemispheres at once:
 
 ```{r}
 #| label: metadata
 #| eval: !expr can_run
 yeo7_metadata <- data.frame(
-  label = c(
+  region = c(
     "7Networks_1", "7Networks_2", "7Networks_3", "7Networks_4",
     "7Networks_5", "7Networks_6", "7Networks_7"
   ),
@@ -197,7 +200,7 @@ yeo7_metadata <- data.frame(
 )
 
 core_with_meta <- yeo7_smooth$core |>
-  left_join(yeo7_metadata, by = "label") |>
+  left_join(yeo7_metadata, by = "region") |>
   mutate(region = coalesce(region_pretty, region)) |>
   select(hemi, region, label)
 ```
@@ -229,12 +232,14 @@ atlas_regions(yeo7) |> sort()
 ```{r}
 #| label: plot
 #| eval: !expr can_run
-#| fig.width: 10
-#| fig.height: 6
-#| fig.alt: "2D brain atlas plot showing the Yeo 7-network cortical parcellation with seven coloured regions across lateral, medial, inferior, and superior views."
-#| fig.cap: "Stage 5 --- the finished atlas, with the networks under their own names."
+#| fig-width: 10
+#| fig-height: 6
+#| fig-alt: "2D brain atlas plot showing the Yeo 7-network cortical parcellation with seven coloured regions across lateral, medial, inferior, and superior views."
+#| fig-cap: "Stage 4 --- the finished atlas. The geometry is stage 3's; what changed is the names behind it, listed above."
 plot(yeo7)
 ```
+
+`plot()` draws geometry, not names, so stage 4 is stage 3's picture --- the renaming shows up in `atlas_regions()` above, and in any plot you fill from your own data.
 
 Side by side with stage 1, that is the whole job: the same parcellation, a fraction of the vertices, and boundaries that look drawn rather than sampled.
 

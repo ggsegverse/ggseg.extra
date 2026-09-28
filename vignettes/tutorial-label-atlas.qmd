@@ -116,43 +116,15 @@ atlas <- create_cortical_from_labels(
 
 Left and right hemisphere versions of the same region should share the same region name --- the hemisphere column distinguishes them.
 
-## Full pipeline with 2D geometry
+## The 2D geometry
 
-For 2D plots, enable the full pipeline:
+There is nothing extra to switch on: the call above already ran the full pipeline, the same one behind `create_cortical_from_annotation()`, projecting the inflated mesh triangles straight to 2D and converting them to sf polygons. The atlas is ready to plot.
 
 
 ``` r
-ba_atlas <- create_cortical_from_labels(
-  label_files = ba_labels,
-  atlas_name = "custom"
-)
-
-ba_atlas
-#> 
-#> ── custom ggseg atlas ──────────────────────────────────────────────────────────
-#> Type: cortical
-#> Regions: 9
-#> Hemispheres: left, right
-#> Views: lateral, medial
-#> Palette: ✖
-#> Rendering: ✔ ggseg
-#> ✔ ggseg3d (vertices)
-#> ────────────────────────────────────────────────────────────────────────────────
-#>     hemi      region          label
-#> 1   left  BA1_exvivo  lh_BA1_exvivo
-#> 2   left  BA2_exvivo  lh_BA2_exvivo
-#> 3   left BA3a_exvivo lh_BA3a_exvivo
-#> 4   left BA3b_exvivo lh_BA3b_exvivo
-#> 5   left BA44_exvivo lh_BA44_exvivo
-#> 6   left BA45_exvivo lh_BA45_exvivo
-#> 7   left BA4a_exvivo lh_BA4a_exvivo
-#> 8   left BA4p_exvivo lh_BA4p_exvivo
-#> 9   left  BA6_exvivo  lh_BA6_exvivo
-#> 10 right  BA1_exvivo  rh_BA1_exvivo
-#> ... with 8 more rows
+atlas_views(ba_atlas)
+#> [1] "lateral" "medial"
 ```
-
-This runs the same pipeline as `create_cortical_from_annotation()` --- it projects the inflated mesh triangles straight to 2D and converts them to sf polygons.
 
 
 ``` r
@@ -163,6 +135,8 @@ plot(ba_atlas)
 <img src="figures/tutorial-label-atlas-plot-raw-1.png" alt="Brodmann area regions straight from the pipeline, with stepped boundaries traced from the mesh." width="960" />
 <p class="caption">Stage 1 --- straight out of the pipeline, boundaries still following the mesh.</p>
 </div>
+
+The boundaries are staircases, because the pipeline traces the edges of mesh triangles rather than drawing a line through them.
 
 ## Tidying the geometry
 
@@ -190,6 +164,8 @@ plot(ba_atlas)
 <img src="figures/tutorial-label-atlas-plot-tidy-1.png" alt="The same Brodmann regions after simplification and smoothing, with rounded boundaries." width="960" />
 <p class="caption">Stage 2 --- simplified and smoothed.</p>
 </div>
+
+Around two thirds of the vertices are gone and the areas read more cleanly, which is the trade this step exists to make.
 
 ## Post-processing
 
@@ -238,8 +214,7 @@ label_dir <- file.path(
   freesurfer::fs_dir(), "subjects", "fsaverage5", "label"
 )
 
-ba_files <- list.files(label_dir, "^[lr]h\\.BA.*\\.label$", full.names = TRUE)
-length(ba_files)
+length(list.files(label_dir, "^[lr]h\\.BA.*\\.label$"))
 #> [1] 18
 ```
 

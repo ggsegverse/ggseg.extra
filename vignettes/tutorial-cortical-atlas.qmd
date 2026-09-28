@@ -72,7 +72,7 @@ yeo7_raw <- create_cortical_from_annotation(
 #> ── Creating brain atlas "yeo7" ─────────────────────────────────────────────────
 #> ℹ Input files: '$FREESURFER_HOME/subjects/fsaverage5/label/lh.Yeo2011_7Networks_N1000.annot' and '$FREESURFER_HOME/subjects/fsaverage5/label/rh.Yeo2011_7Networks_N1000.annot'
 #> ℹ Reading annotation files
-#> ✔ Reading annotation files [71ms]
+#> ✔ Reading annotation files [112ms]
 #> 
 #> ℹ Projecting mesh to 2D polygons
 #> ℹ Projecting "rh" "lateral"
@@ -83,10 +83,10 @@ yeo7_raw <- create_cortical_from_annotation(
 #> ℹ Projecting mesh to 2D polygonsℹ Projecting "lh" "medial"
 #> ℹ Projecting mesh to 2D polygonsℹ Projecting "lh" "superior"
 #> ℹ Projecting mesh to 2D polygonsℹ Projecting "lh" "inferior"
-#> ℹ Projecting mesh to 2D polygons✔ Projecting mesh to 2D polygons [3.7s]
+#> ℹ Projecting mesh to 2D polygons✔ Projecting mesh to 2D polygons [6s]
 #> 
 #> ✔ Brain atlas created with 14 regions
-#> ℹ Pipeline completed [3.8s]
+#> ℹ Pipeline completed [6.2s]
 #> Warning: Atlas has 21514 vertices (threshold: 10000)
 #> ℹ Large atlases may be slow to plot and increase package size
 #> ℹ Call `atlas_simplify(atlas, keep = 0.2)`, then `atlas_smooth(atlas)`, to tidy
@@ -170,7 +170,7 @@ plot(yeo7_simple)
 
 `exclude = "cortex_"` leaves the brain-outline geometry crisp while simplifying the labelled regions.
 
-Simplification is topology-aware, so neighbouring regions lose the same vertices and no gaps open between them. What it does not do is make anything look smooth --- it removes points from a jagged line and leaves a jagged line with fewer points. That is what `atlas_smooth()` is for:
+Simplification is topology-aware, so neighbouring regions lose the same vertices and no gaps open between them. What it does not do is make anything look smooth --- it removes vertices from a jagged line and leaves a jagged line with fewer vertices. That is what `atlas_smooth()` is for:
 
 
 ``` r
@@ -190,7 +190,7 @@ plot(yeo7_smooth)
 <p class="caption">Stage 3 --- smoothed. The staircases are gone.</p>
 </div>
 
-Notice the count went **up**. Rounding a corner means inserting points, so smoothing gives some of the budget back --- and it is still a large cut on where we started. Simplify first and smooth afterwards, so the smoothing has the last word on the outline.
+Notice the count went **up**. Rounding a corner means inserting vertices, so smoothing gives some of the budget back --- and it is still a large cut on where we started. Simplify first and smooth afterwards, so the smoothing has the last word on the outline.
 
 ## Background regions
 
@@ -204,12 +204,13 @@ length(atlas_regions(yeo7_smooth))
 #> [1] 7
 ```
 
-Sixteen labels carry geometry; seven are regions you can fill with data. The medial wall is *context*: `create_cortical_from_annotation()` recognises regions named `unknown`, `???`, or anything ending in "medial wall", and sets them aside for you.
+Sixteen labels carry geometry; seven are regions you can fill with data. The medial wall is *context*: `create_cortical_from_annotation()` sets aside any region whose whole name is `unknown` or `???`, or whose name ends in "medial wall" (with a space, underscore, dot, hyphen or nothing in between). Case does not matter.
 
 Which is fine until a parcellation names its leftovers something else. FreeSurfer's own `aparc` labels the callosal region `corpuscallosum`, and that matches none of the above --- so it would arrive as an ordinary region, coloured and listed alongside the real ones. `atlas_region_contextual()` is how you set one aside by hand. It keeps the geometry for spatial reference and drops the region from `$core`:
 
 
 ``` r
+dk <- create_cortical_from_annotation(dk_annots, atlas_name = "dk")
 dk <- atlas_region_contextual(dk, "corpuscallosum", match_on = "region")
 ```
 
@@ -218,13 +219,15 @@ Check `atlas_regions()` after a pipeline run; anything in that list you would no
 ## Adding metadata
 
 The atlas has region names derived from the annotation file.
-For the Yeo atlas, the annotation labels are numeric network IDs.
-We can map them to descriptive network names:
+For the Yeo atlas, they are numeric network IDs.
+Map them to descriptive names on `region` rather than `label` --- the label
+carries a hemisphere prefix (`lh_7Networks_1`), so a table keyed on the bare
+network name joins to `region` and matches both hemispheres at once:
 
 
 ``` r
 yeo7_metadata <- data.frame(
-  label = c(
+  region = c(
     "7Networks_1", "7Networks_2", "7Networks_3", "7Networks_4",
     "7Networks_5", "7Networks_6", "7Networks_7"
   ),
@@ -235,7 +238,7 @@ yeo7_metadata <- data.frame(
 )
 
 core_with_meta <- yeo7_smooth$core |>
-  left_join(yeo7_metadata, by = "label") |>
+  left_join(yeo7_metadata, by = "region") |>
   mutate(region = coalesce(region_pretty, region)) |>
   select(hemi, region, label)
 ```
@@ -265,25 +268,26 @@ yeo7
 #> Rendering: ✔ ggseg
 #> ✔ ggseg3d (vertices)
 #> ────────────────────────────────────────────────────────────────────────────────
-#>     hemi      region          label
-#> 1   left 7Networks_1 lh_7Networks_1
-#> 2   left 7Networks_2 lh_7Networks_2
-#> 3   left 7Networks_3 lh_7Networks_3
-#> 4   left 7Networks_4 lh_7Networks_4
-#> 5   left 7Networks_5 lh_7Networks_5
-#> 6   left 7Networks_6 lh_7Networks_6
-#> 7   left 7Networks_7 lh_7Networks_7
-#> 8  right 7Networks_1 rh_7Networks_1
-#> 9  right 7Networks_2 rh_7Networks_2
-#> 10 right 7Networks_3 rh_7Networks_3
+#>     hemi            region          label
+#> 1   left            visual lh_7Networks_1
+#> 2   left       somatomotor lh_7Networks_2
+#> 3   left  dorsal attention lh_7Networks_3
+#> 4   left ventral attention lh_7Networks_4
+#> 5   left            limbic lh_7Networks_5
+#> 6   left    frontoparietal lh_7Networks_6
+#> 7   left           default lh_7Networks_7
+#> 8  right            visual rh_7Networks_1
+#> 9  right       somatomotor rh_7Networks_2
+#> 10 right  dorsal attention rh_7Networks_3
 #> ... with 4 more rows
 ```
 
 
 ``` r
 atlas_regions(yeo7) |> sort()
-#> [1] "7Networks_1" "7Networks_2" "7Networks_3" "7Networks_4" "7Networks_5"
-#> [6] "7Networks_6" "7Networks_7"
+#> [1] "default"           "dorsal attention"  "frontoparietal"   
+#> [4] "limbic"            "somatomotor"       "ventral attention"
+#> [7] "visual"
 ```
 
 
@@ -293,8 +297,10 @@ plot(yeo7)
 
 <div class="figure">
 <img src="figures/tutorial-cortical-atlas-plot-1.png" alt="2D brain atlas plot showing the Yeo 7-network cortical parcellation with seven coloured regions across lateral, medial, inferior, and superior views." width="960" />
-<p class="caption">Stage 5 --- the finished atlas, with the networks under their own names.</p>
+<p class="caption">Stage 4 --- the finished atlas. The geometry is stage 3's; what changed is the names behind it, listed above.</p>
 </div>
+
+`plot()` draws geometry, not names, so stage 4 is stage 3's picture --- the renaming shows up in `atlas_regions()` above, and in any plot you fill from your own data.
 
 Side by side with stage 1, that is the whole job: the same parcellation, a fraction of the vertices, and boundaries that look drawn rather than sampled.
 
