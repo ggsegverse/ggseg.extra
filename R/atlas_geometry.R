@@ -321,10 +321,11 @@ atlas_dilate <- function(atlas, amount, labels = NULL, exclude = NULL) {
 #' and medial views is reported once.
 #'
 #' @param atlas A `ggseg_atlas`.
-#' @return A named integer vector, one element per label, in the order the
-#'   labels appear in the atlas. Take `sum()` of it for the atlas total; that
-#'   total is every vertex the atlas carries, including any under a missing
-#'   label, so it always agrees with the large-atlas warning.
+#' @return A named integer vector, one element per geometry label value, in the
+#'   order those values appear in the atlas. When geometry is missing a label,
+#'   it is counted in a separate `NA` entry. Take `sum()` of the vector for the
+#'   atlas total; that total is every vertex the atlas carries, so it always
+#'   agrees with the large-atlas warning.
 #' @family atlas geometry
 #' @seealso [atlas_simplify()] to bring the count down, and [atlas_smooth()],
 #'   which raises it again -- rounding a corner off means inserting points.
