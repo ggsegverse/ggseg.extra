@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9066</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9067</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -67,6 +67,16 @@
       <small>Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.9.9.9067" id="ggsegextra-1999067">ggseg.extra 1.9.9.9067<a class="anchor" aria-label="anchor" href="#ggsegextra-1999067"></a></h2>
+<div class="section level3">
+<h3 id="user-facing-changes-1-9-9-9067">User-facing changes<a class="anchor" aria-label="anchor" href="#user-facing-changes-1-9-9-9067"></a></h3>
+<div class="section level4">
+<h4 id="minor-changes-1-9-9-9067">Minor changes<a class="anchor" aria-label="anchor" href="#minor-changes-1-9-9-9067"></a></h4>
+<ul><li>The three remaining places that catch a failing FreeSurfer command now chain the original condition rather than rewording its rendered message. <code>read_fs_surface()</code>, <code>tessellate_smooth_mesh()</code> and <code>subcort_mesh_one()</code> captured FreeSurfer’s stderr and then dropped or re-rendered it, so the reason a mesh failed to build was lost by the time the warning reached the build log. They now report <code>Caused by error:</code> with the tool’s own output, as <code>resample_volume_to_grid()</code> already did.</li>
+</ul></div>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9066" id="ggsegextra-1999066">ggseg.extra 1.9.9.9066<a class="anchor" aria-label="anchor" href="#ggsegextra-1999066"></a></h2>
 <div class="section level3">

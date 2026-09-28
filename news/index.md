@@ -1,5 +1,20 @@
 # Changelog
 
+## ggseg.extra 1.9.9.9067
+
+### User-facing changes
+
+#### Minor changes
+
+- The three remaining places that catch a failing FreeSurfer command now
+  chain the original condition rather than rewording its rendered
+  message. `read_fs_surface()`, `tessellate_smooth_mesh()` and
+  `subcort_mesh_one()` captured FreeSurfer’s stderr and then dropped or
+  re-rendered it, so the reason a mesh failed to build was lost by the
+  time the warning reached the build log. They now report
+  `Caused by error:` with the tool’s own output, as
+  `resample_volume_to_grid()` already did.
+
 ## ggseg.extra 1.9.9.9066
 
 ### User-facing changes
