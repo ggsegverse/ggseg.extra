@@ -68,10 +68,11 @@ subcort_mesh_one <- function(
       verbose = verbose,
       skip_existing = skip_existing
     ),
-    error = function(e) {
+    error = function(cnd) {
       if (verbose) {
         cli::cli_warn(
-          "Failed to create mesh for {label_name}: {e$message}"
+          "Failed to create mesh for {label_name}",
+          parent = cnd
         )
       }
       NULL

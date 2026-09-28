@@ -4,9 +4,13 @@
       subcort_create_meshes("fake.mgz", colortable, dirs, FALSE, TRUE)
     Condition
       Warning:
-      Failed to create mesh for Left-Putamen: mesh error
+      Failed to create mesh for Left-Putamen
+      Caused by error in `tessellate_label()`:
+      ! mesh error
       Warning:
-      Failed to create mesh for Right-Putamen: mesh error
+      Failed to create mesh for Right-Putamen
+      Caused by error in `tessellate_label()`:
+      ! mesh error
       Error in `subcort_create_meshes()`:
       ! No meshes were successfully created
 
