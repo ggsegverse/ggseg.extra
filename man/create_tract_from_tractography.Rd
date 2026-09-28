@@ -18,7 +18,8 @@ create_tract_from_tractography(
   vertex_size_limits = NULL,
   steps = NULL,
   cleanup = NULL,
-  skip_existing = NULL
+  skip_existing = NULL,
+  coord_space = c("infer", "voxel", "mm")
 )
 }
 \arguments{
@@ -100,6 +101,13 @@ environment variable. Default is TRUE.}
 allowing interrupted atlas creation to resume. If not specified, uses
 \code{options("ggseg.extra.skip_existing")} or the \code{GGSEG_EXTRA_SKIP_EXISTING}
 environment variable. Default is TRUE.}
+
+\item{coord_space}{The space the streamline coordinates are in. One of
+\code{"infer"} (the default), \code{"voxel"} for voxel indices, or \code{"mm"} for RAS
+world millimetres. Inference is a heuristic: it cannot always tell, and a
+wrong guess does not error -- it places the tract in the wrong space and
+produces a plausible-looking atlas. Declare the space when you know it.
+Whichever applies is reported at \code{verbose >= 1}.}
 }
 \value{
 A \code{ggseg_atlas} object with type \code{"tract"}, containing region
@@ -132,6 +140,12 @@ atlas <- create_tract_from_tractography(
 atlas <- create_tract_from_tractography(
   input_tracts = c("cst_left.trk", "cst_right.trk"),
   input_lut = "tract_colors.txt"
+)
+
+# Declare the coordinate space rather than letting it be inferred
+atlas <- create_tract_from_tractography(
+  input_tracts = c("cst_left.trk", "cst_right.trk"),
+  coord_space = "voxel"
 )
 
 # View with ggseg3d

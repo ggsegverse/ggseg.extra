@@ -495,27 +495,54 @@ describe("detect_coords_are_voxels", {
 })
 
 
-describe("detect_tract_coord_space", {
+describe("resolve_tract_coord_space", {
   it("detects voxel space from a list of bare matrices (in-memory input)", {
     voxel_tracts <- list(
       cst = matrix(c(10, 20, 30, 11, 21, 31), ncol = 3, byrow = TRUE),
       af = matrix(c(5, 6, 7, 8, 9, 10), ncol = 3, byrow = TRUE)
     )
-    expect_true(detect_tract_coord_space(voxel_tracts, verbose = FALSE))
+    expect_true(resolve_tract_coord_space(voxel_tracts, verbose = FALSE))
   })
 
   it("detects RAS space from a list of bare matrices", {
     ras_tracts <- list(
       cst = matrix(c(-40, 10, 5, -38, 12, 6), ncol = 3, byrow = TRUE)
     )
-    expect_false(detect_tract_coord_space(ras_tracts, verbose = FALSE))
+    expect_false(resolve_tract_coord_space(ras_tracts, verbose = FALSE))
   })
 
   it("handles file-style nested lists of matrices", {
     nested <- list(
       cst = list(matrix(c(10, 20, 30, 11, 21, 31), ncol = 3, byrow = TRUE))
     )
-    expect_true(detect_tract_coord_space(nested, verbose = FALSE))
+    expect_true(resolve_tract_coord_space(nested, verbose = FALSE))
+  })
+
+  it("takes a declared space over what the coordinates look like", {
+    looks_like_voxels <- list(
+      cst = matrix(c(10, 20, 30, 11, 21, 31), ncol = 3, byrow = TRUE)
+    )
+    expect_false(
+      resolve_tract_coord_space(
+        looks_like_voxels,
+        verbose = FALSE,
+        coords_are_voxels = FALSE
+      )
+    )
+  })
+
+  it("reports which space is in force, and how it was settled", {
+    tracts <- list(
+      cst = matrix(c(10, 20, 30, 11, 21, 31), ncol = 3, byrow = TRUE)
+    )
+    expect_snapshot({
+      declared <- resolve_tract_coord_space(
+        tracts,
+        verbose = TRUE,
+        coords_are_voxels = TRUE
+      )
+      inferred <- resolve_tract_coord_space(tracts, verbose = TRUE)
+    })
   })
 })
 

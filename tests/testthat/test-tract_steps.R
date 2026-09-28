@@ -887,7 +887,7 @@ describe("tract_resolve_step1", {
 })
 
 
-describe("detect_tract_coord_space", {
+describe("resolve_tract_coord_space", {
   it("detects voxel coordinates", {
     local_mocked_bindings(
       detect_coords_are_voxels = function(...) TRUE
@@ -895,7 +895,7 @@ describe("detect_tract_coord_space", {
 
     streamlines_data <- list(t1 = list(matrix(1:9, ncol = 3)))
 
-    result <- detect_tract_coord_space(streamlines_data, FALSE)
+    result <- resolve_tract_coord_space(streamlines_data, FALSE)
 
     expect_true(result)
   })
@@ -907,7 +907,7 @@ describe("detect_tract_coord_space", {
 
     streamlines_data <- list(t1 = list(matrix(1:9, ncol = 3)))
 
-    result <- detect_tract_coord_space(streamlines_data, FALSE)
+    result <- resolve_tract_coord_space(streamlines_data, FALSE)
 
     expect_false(result)
   })
