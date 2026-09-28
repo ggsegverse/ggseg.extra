@@ -214,7 +214,7 @@ label_dir <- file.path(
   freesurfer::fs_dir(), "subjects", "fsaverage5", "label"
 )
 
-length(list.files(label_dir, "^[lr]h\\.BA.*\\.label$"))
+length(list.files(label_dir, "^[lr]h\\.BA.*\\.label$", full.names = TRUE))
 #> [1] 18
 ```
 
