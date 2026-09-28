@@ -1,3 +1,19 @@
+# ggseg.extra 1.9.9.9068
+
+## Developer-facing changes
+
+### Minor changes
+
+- `.lintr` now declares the linter set rather than only exclusions, so a clean
+  local `lintr::lint_package()` predicts a clean CI run. CI gates twice --
+  the lintr defaults in the `lint` job and a much broader goodpractice set in
+  the `good-practice` job -- and only the first was reachable locally, so the
+  only way to learn about the second was to push. The pinned set is
+  `linters_with_defaults()` plus the 45 goodpractice linters that are not
+  already defaults, plus an `undesirable_function_linter()` standing in for
+  the goodpractice `attach`/`detach`/`setwd`/`sapply`/`library` checks, scoped
+  to `R/` as goodpractice scopes them. The package is clean under it.
+
 # ggseg.extra 1.9.9.9066
 
 ## User-facing changes

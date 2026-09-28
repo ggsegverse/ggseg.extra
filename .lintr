@@ -1,5 +1,78 @@
-
+# The linter set CI applies, pinned so a clean local `lintr::lint_package()`
+# predicts a clean CI run. CI gates twice: the `lint` job runs
+# `lintr::lint_package()` (lintr's defaults, via this file) and the
+# `good-practice` job runs goodpractice with a far broader set. Declaring only
+# exclusions here left the defaults in force locally while the real gate was
+# the wider goodpractice set, so the only way to find out was to push.
+#
+# This is `linters_with_defaults()` plus every lintr check goodpractice runs
+# that is not already a default, minus the five ggsegverse/.github
+# code-quality.yaml excludes as genuine false positives on this ecosystem's
+# idioms (strings_as_factors, duplicate_argument, scalar_in,
+# unnecessary_lambda, and tidyverse_r_file_names, which is not a linter).
+# Keep in step with that workflow when its exclusion list changes.
+linters: linters_with_defaults(
+    any_duplicated_linter(),
+    any_is_na_linter(),
+    boolean_arithmetic_linter(),
+    class_equals_linter(),
+    comparison_negation_linter(),
+    condition_message_linter(),
+    conjunct_test_linter(),
+    consecutive_assertion_linter(),
+    expect_comparison_linter(),
+    expect_identical_linter(),
+    expect_length_linter(),
+    expect_named_linter(),
+    expect_not_linter(),
+    expect_null_linter(),
+    expect_s3_class_linter(),
+    expect_s4_class_linter(),
+    expect_true_false_linter(),
+    expect_type_linter(),
+    fixed_regex_linter(),
+    for_loop_index_linter(),
+    if_not_else_linter(),
+    ifelse_censor_linter(),
+    implicit_assignment_linter(),
+    inner_combine_linter(),
+    length_levels_linter(),
+    length_test_linter(),
+    literal_coercion_linter(),
+    matrix_apply_linter(),
+    missing_argument_linter(),
+    nested_ifelse_linter(),
+    nested_pipe_linter(),
+    nrow_subset_linter(),
+    numeric_leading_zero_linter(),
+    outer_negation_linter(),
+    paste_linter(),
+    redundant_equals_linter(),
+    redundant_ifelse_linter(),
+    regex_subset_linter(),
+    sort_linter(),
+    system_file_linter(),
+    terminal_close_linter(),
+    undesirable_operator_linter(),
+    unnecessary_concatenation_linter(),
+    unreachable_code_linter(),
+    which_grepl_linter(),
+    undesirable_function_linter(c(
+      attach = "use explicit namespacing instead",
+      detach = "use explicit namespacing instead",
+      setwd = "use withr::local_dir() instead",
+      sapply = "use vapply() so the return type is checked",
+      library = "use Imports/Depends and namespace the call",
+      require = "use Imports/Depends and namespace the call"
+    ))
+  )
 exclusions: list("inst/rstudio/templates", "inst/templates", "vignettes/*.qmd",
   # testthat is attached when tests run, but lintr cannot see that from
   # inside a function definition, so bare skip()/expect_*() read as undefined.
-  "tests/testthat" = list(object_usage_linter = Inf))
+  "tests/testthat" = list(object_usage_linter = Inf),
+  # goodpractice only inspects R/, so its library()/require() check never sees
+  # these. Attaching a package is the right thing to do in a build script, the
+  # test runner and a vignette; only package code should be namespacing.
+  "data-raw" = list(undesirable_function_linter = Inf),
+  "tests/testthat.R" = list(undesirable_function_linter = Inf),
+  "vignettes" = list(undesirable_function_linter = Inf))
