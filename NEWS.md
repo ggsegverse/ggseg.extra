@@ -1,3 +1,11 @@
+# ggseg.extra 1.9.9.9066
+
+- `aseg_context()` applies its hidden-label recipe as one pattern rather than
+  one call per pattern. The recipe names structures an `aseg` may or may not
+  carry, so most of its patterns match nothing on any given atlas; with
+  ggseg.formats reporting a pattern that matches nothing, calling them one at
+  a time would have produced a warning per miss. Behaviour is unchanged.
+
 # ggseg.extra 1.9.9.9064
 
 ## Deprecations
