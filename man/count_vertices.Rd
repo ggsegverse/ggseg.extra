@@ -12,9 +12,9 @@ count_vertices(atlas)
 \value{
 A named integer vector, one element per geometry label value, in the
 order those values appear in the atlas. When geometry is missing a label,
-it is counted in a separate \code{NA} entry. Take \code{sum()} of the vector for the
-atlas total; that total is every vertex the atlas carries, so it always
-agrees with the large-atlas warning.
+it is counted in a separate \code{"<NA>"} entry. Take \code{sum()} of the vector for
+the atlas total; that total is every vertex the atlas carries, so it
+always agrees with the large-atlas warning.
 }
 \description{
 Reports how many polygon vertices each region is drawn from. The total is
