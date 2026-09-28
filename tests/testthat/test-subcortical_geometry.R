@@ -504,3 +504,27 @@ describe("tessellate_remap_label", {
     expect_identical(readLines(remap_file, warn = FALSE)[1], "sentinel")
   })
 })
+
+
+describe("tessellate_smooth_mesh", {
+  it("keeps the FreeSurfer failure attached to the fallback warning", {
+    local_mocked_bindings(
+      mri_smooth = function(...) {
+        cli::cli_abort("FreeSurfer command failed (exit 1).")
+      }
+    )
+
+    tmp <- withr::local_tempdir()
+    warning <- expect_warning(
+      tessellate_smooth_mesh(
+        tess_file = file.path(tmp, "label.tess"),
+        smooth_file = file.path(tmp, "label.smooth"),
+        label_id = 17L,
+        skip_existing = FALSE,
+        verbose = FALSE
+      ),
+      "Smoothing failed for label 17"
+    )
+    expect_match(conditionMessage(warning), "FreeSurfer command failed")
+  })
+})

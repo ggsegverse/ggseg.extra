@@ -99,9 +99,10 @@ tessellate_smooth_mesh <- function(
         output_file = smooth_file,
         verbose = verbose
       ),
-      error = function(e) {
+      error = function(cnd) {
         cli::cli_warn(
-          "Smoothing failed for label {label_id}, using unsmoothed mesh"
+          "Smoothing failed for label {label_id}, using unsmoothed mesh",
+          parent = cnd
         )
       }
     )
@@ -268,8 +269,9 @@ decimate_mesh <- function(mesh, percent = 0.5) {
 read_fs_surface <- function(file, verbose = get_verbose()) {
   dpv_file <- paste0(file, ".dpv")
 
-  # On success this is the mesh; on failure it is the error message, so the
-  # reason for falling back to freesurferformats survives the tryCatch.
+  # On success this is the mesh; on failure it is the condition itself, so
+  # FreeSurfer's own stderr -- not the rendered cli message -- can be chained
+  # onto whatever the fallback path reports.
   surf2asc_result <- tryCatch(
     {
       surf2asc(file, dpv_file, verbose = verbose)
@@ -284,18 +286,20 @@ read_fs_surface <- function(file, verbose = get_verbose()) {
         )
       )
     },
-    error = function(e) conditionMessage(e)
+    error = function(cnd) cnd
   )
 
-  fell_back <- is.character(surf2asc_result)
+  fell_back <- inherits(surf2asc_result, "condition")
   mesh <- if (fell_back) {
     if (!requireNamespace("freesurferformats", quietly = TRUE)) {
-      cli::cli_abort(c(
-        "Failed to read surface file: {.path {file}}",
-        "i" = "FreeSurfer conversion failed and {.pkg freesurferformats} \\
-               not available",
-        "x" = "Conversion error: {surf2asc_result}"
-      ))
+      cli::cli_abort(
+        c(
+          "Failed to read surface file: {.path {file}}",
+          "i" = "FreeSurfer conversion failed and {.pkg freesurferformats} \\
+                 not available"
+        ),
+        parent = surf2asc_result
+      )
     }
     surf <- freesurferformats::read.fs.surface(file)
     list(
@@ -320,15 +324,17 @@ read_fs_surface <- function(file, verbose = get_verbose()) {
   # surfaces mri_tessellate writes.
   face_idx <- unlist(mesh$faces, use.names = FALSE)
   if (!all(face_idx %in% seq_len(nrow(mesh$vertices)))) {
-    cli::cli_abort(c(
-      "Failed to read surface file: {.path {file}}",
-      "x" = "The surface has faces that reference non-existent vertices.",
-      "i" = if (fell_back) {
-        "FreeSurfer conversion failed ({surf2asc_result}); make \\
-         {.code mris_convert} available on {.envvar PATH} so the surface \\
-         is not read through the fallback."
-      }
-    ))
+    cli::cli_abort(
+      c(
+        "Failed to read surface file: {.path {file}}",
+        "x" = "The surface has faces that reference non-existent vertices.",
+        "i" = if (fell_back) {
+          "FreeSurfer conversion failed; make {.code mris_convert} available \\
+           on {.envvar PATH} so the surface is not read through the fallback."
+        }
+      ),
+      parent = if (fell_back) surf2asc_result else NULL
+    )
   }
 
   mesh
