@@ -1,7 +1,15 @@
-# Developer tooling for building the tutorial vignettes from their `.orig`
+# Developer tooling for building the tutorial pages from their `.orig`
 # sources. Not part of the package: source this file (after
 # `devtools::load_all()`) and call `knit_tutorials()`. The `.qmd.orig` setup
 # chunks call `set_tutorial_options()`, so it must be in scope when knitting.
+#
+# The tutorials live in `vignettes/articles/`, not `vignettes/` itself. They
+# are website-only pages -- `.Rbuildignore` keeps the whole directory out of
+# the tarball -- and `vignettes/articles/` is where pkgdown expects those,
+# rendering them to the same `articles/<name>.html` a top-level vignette would
+# get. `vignettes/tutorials/` would be the obvious name and is the one to
+# avoid: pkgdown reserves it for learnr tutorials and excludes it from
+# articles entirely, so the pages would silently vanish from the site.
 #
 # Only tutorials that cannot run unattended are pre-compiled. A tutorial earns
 # a `.orig` by needing something a runner does not have: a FreeSurfer subject
@@ -21,13 +29,19 @@
 
 knit_tutorials <- function(tutorials = NULL) {
   if (is.null(tutorials)) {
-    tutorials <- list.files("vignettes", "orig$", full.names = TRUE)
+    tutorials <- list.files(
+      "vignettes/articles",
+      "orig$",
+      full.names = TRUE
+    )
   }
 
   build_tutorials <- function(file) {
     cli::cli_h1("Building {basename(file)}")
 
-    knitr::opts_knit$set(base.dir = "vignettes/")
+    # base.dir is the directory the figure paths are resolved against, so it
+    # follows the tutorials rather than staying at the vignettes root.
+    knitr::opts_knit$set(base.dir = "vignettes/articles/")
     knitr::knit(
       file,
       sub("\\.orig$", "", file)

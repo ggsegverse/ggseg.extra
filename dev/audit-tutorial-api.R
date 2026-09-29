@@ -208,10 +208,13 @@ audit_file <- function(path) {
   unique(issues)
 }
 
+# Recursive: the pre-knitted tutorials live in vignettes/articles/, and a
+# non-recursive glob would quietly audit only the seven shipped vignettes.
 files <- list.files(
   "vignettes",
   pattern = "[.](qmd|Rmd)([.]orig)?$",
-  full.names = TRUE
+  full.names = TRUE,
+  recursive = TRUE
 )
 
 failed <- 0L

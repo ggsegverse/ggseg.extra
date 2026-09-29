@@ -74,19 +74,19 @@ articles:
   - title: "Tutorials: Creating Atlases"
     desc: Step-by-step atlas creation with full pipelines
     contents:
-      - tutorial-cortical-atlas
-      - tutorial-neuromaps-atlas
-      - tutorial-subcortical-atlas
-      - tutorial-wholebrain-atlas
-      - tutorial-cerebellar-atlas
-      - tutorial-tract-atlas
-      - tutorial-label-atlas
+      - articles/tutorial-cortical-atlas
+      - articles/tutorial-neuromaps-atlas
+      - articles/tutorial-subcortical-atlas
+      - articles/tutorial-wholebrain-atlas
+      - articles/tutorial-cerebellar-atlas
+      - articles/tutorial-tract-atlas
+      - articles/tutorial-label-atlas
 
   - title: "Tutorials: Working with Atlases"
     desc: Preparing the inputs an atlas needs, and shipping the result
     contents:
-      - tutorial-lookup-tables
-      - tutorial-publishing-an-atlas
+      - articles/tutorial-lookup-tables
+      - articles/tutorial-publishing-an-atlas
 
   - title: Legacy & Contributing
     contents:

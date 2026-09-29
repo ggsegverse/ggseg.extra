@@ -4,6 +4,16 @@
 
 ### Minor changes
 
+- The pre-knitted tutorials moved from `vignettes/` to `vignettes/articles/`,
+  together with the `.qmd.orig` sources they are knitted from and the
+  `figures/` they draw on. They were never shipped in the tarball --
+  `.Rbuildignore` excluded them one pattern at a time -- and
+  `vignettes/articles/` is where pkgdown expects website-only pages, so
+  `vignettes/` now holds the six real vignettes and nothing else. **Every
+  tutorial URL is unchanged**: pkgdown renders `vignettes/articles/x.qmd` to
+  the same `articles/x.html` a top-level vignette would get, so no existing
+  link breaks.
+
 - The subcortical and tract tutorials now cover tidying the geometry, which
   only the cortical, label and cerebellar ones did. Both show `count_vertices()`
   before and after `atlas_simplify()` and `atlas_smooth()`, and both make the
