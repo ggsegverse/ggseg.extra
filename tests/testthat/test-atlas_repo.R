@@ -208,7 +208,7 @@ describe("setup_atlas_repo template files", {
   it("adds the shared GitHub Actions workflows", {
     written <- list.files(file.path(tmp, ".github", "workflows"))
 
-    expect_setequal(written, paste0(atlas_github_actions(), ".yaml"))
+    expect_setequal(written, paste0(ggseg_atlas_github_actions(), ".yaml"))
   })
 
   it("renames package-level documentation file", {
@@ -442,7 +442,7 @@ describe("setup_atlas_repo github actions", {
     it("writes the shared workflows from bundled templates", {
       expect_setequal(
         list.files(file.path(tmp, ".github", "workflows")),
-        paste0(atlas_github_actions(), ".yaml")
+        paste0(ggseg_atlas_github_actions(), ".yaml")
       )
     })
   })

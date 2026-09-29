@@ -1,6 +1,6 @@
 .cap <- new.env()
 
-# setup_sitrep() reports on whatever is installed on the machine. Pin every
+# sitrep() reports on whatever is installed on the machine. Pin every
 # environment-dependent input so its output is the same everywhere.
 local_ready_environment <- function(env = parent.frame()) {
   local_test_workdir(env)
@@ -22,19 +22,17 @@ local_ready_environment <- function(env = parent.frame()) {
     ggseg.extra.verbose = FALSE,
     ggseg.extra.cleanup = TRUE,
     ggseg.extra.skip_existing = TRUE,
-    ggseg.extra.tolerance = 0.05,
-    ggseg.extra.smoothness = 5,
     ggseg.extra.output_dir = "/atlas-output",
     .local_envir = env
   )
 }
 
-describe("setup_sitrep", {
+describe("sitrep", {
   it("returns list of results invisibly", {
     local_ready_environment()
 
     expect_snapshot(
-      result <- setup_sitrep("simple")
+      result <- sitrep("simple")
     )
 
     expect_type(result, "list")
@@ -45,11 +43,11 @@ describe("setup_sitrep", {
   it("reports paths and options in full detail", {
     local_ready_environment()
 
-    expect_snapshot(setup_sitrep("full"))
+    expect_snapshot(sitrep("full"))
   })
 
   it("validates detail argument", {
-    expect_error(setup_sitrep("invalid"), "arg")
+    expect_error(sitrep("invalid"), "arg")
   })
 })
 
@@ -115,7 +113,8 @@ describe("summarize_pipelines", {
         ciftiTools = cifti,
         RNifti = TRUE,
         Rvcg = TRUE,
-        neuromapr = TRUE
+        neuromapr = TRUE,
+        princurve = TRUE
       ),
       suit = list(flatmap = TRUE, surface_3d = TRUE)
     )
@@ -138,7 +137,7 @@ describe("summarize_pipelines", {
     expect_snapshot(summarize_pipelines(make_results(), "minimal"))
   })
 
-  it("lists only failing pipelines and hints setup_sitrep in minimal mode", {
+  it("lists only failing pipelines and hints sitrep in minimal mode", {
     expect_snapshot(
       summarize_pipelines(make_results(gifti = FALSE), "minimal")
     )
@@ -305,5 +304,14 @@ describe("check_optional_packages minimum versions", {
 
     expect_false(results$ciftiTools)
     expect_true(results$gifti)
+  })
+})
+
+
+describe("setup_sitrep (deprecated)", {
+  it("warns and delegates to the renamed function", {
+    local_ready_environment()
+
+    expect_snapshot(invisible(setup_sitrep("minimal")))
   })
 })

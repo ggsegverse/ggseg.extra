@@ -72,5 +72,5 @@ aseg_context(atlas, focus = "Hippocampus")
 }
 }
 \seealso{
-\code{\link[=subcortical_views]{subcortical_views()}}, \code{\link[ggseg.formats:atlas_region_contextual]{ggseg.formats::atlas_region_contextual()}}
+\code{\link[=subcortical_slabs]{subcortical_slabs()}}, \code{\link[ggseg.formats:atlas_region_contextual]{ggseg.formats::atlas_region_contextual()}}
 }

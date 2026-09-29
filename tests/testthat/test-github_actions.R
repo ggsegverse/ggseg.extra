@@ -1,6 +1,6 @@
-describe("atlas_github_actions", {
+describe("ggseg_atlas_github_actions", {
   it("lists the workflows shipped with the package", {
-    available <- atlas_github_actions()
+    available <- ggseg_atlas_github_actions()
 
     expect_type(available, "character")
     expect_setequal(
@@ -16,7 +16,7 @@ describe("atlas_github_actions", {
   })
 
   it("names a bundled template for every workflow it lists", {
-    for (workflow in atlas_github_actions()) {
+    for (workflow in ggseg_atlas_github_actions()) {
       src <- system.file(
         "templates",
         "workflows",
@@ -42,8 +42,8 @@ describe("use_atlas_github_actions", {
     expect_snapshot(use_atlas_github_actions(path = tmp))
 
     written <- list.files(file.path(tmp, ".github", "workflows"))
-    expect_setequal(written, paste0(atlas_github_actions(), ".yaml"))
-    for (workflow in atlas_github_actions()) {
+    expect_setequal(written, paste0(ggseg_atlas_github_actions(), ".yaml"))
+    for (workflow in ggseg_atlas_github_actions()) {
       yaml <- readLines(
         file.path(tmp, ".github", "workflows", paste0(workflow, ".yaml"))
       )
@@ -113,5 +113,13 @@ describe("use_atlas_github_actions", {
 
     expect_match(yaml, "readme-file: README.qmd", fixed = TRUE)
     expect_no_match(yaml, "README.Rmd", fixed = TRUE)
+  })
+})
+
+
+describe("atlas_github_actions (deprecated)", {
+  it("warns and delegates to the renamed function", {
+    expect_snapshot(result <- atlas_github_actions())
+    expect_identical(result, ggseg_atlas_github_actions())
   })
 })

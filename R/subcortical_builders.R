@@ -184,7 +184,7 @@ aseg_hidden_labels <- function() {
 #'   cerebral white matter used by the punch.
 #' @param drop_empty_views If `TRUE`, remove views containing no focus region.
 #' @return The post-processed `ggseg_atlas`.
-#' @seealso [subcortical_views()], [ggseg.formats::atlas_region_contextual()]
+#' @seealso [subcortical_slabs()], [ggseg.formats::atlas_region_contextual()]
 #' @export
 #' @examples
 #' \dontrun{
