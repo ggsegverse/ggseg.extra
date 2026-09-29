@@ -443,10 +443,12 @@ finalize_atlas <- function(
     if (config$verbose) cli::cli_alert_success("Temporary files removed")
   }
 
+  steps <- config$steps
+
   if (config$verbose) {
     if (!is.null(atlas)) {
       # fmt: skip
-      type <- if (max(config$steps) == early_step) { # nolint
+      type <- if (max(steps) == early_step) { # nolint
         "3D"
       } else {
         type_label
@@ -455,10 +457,8 @@ finalize_atlas <- function(
         "{type} atlas created with {nrow(atlas$core)} {unit}"
       )
     } else {
-      steps <- config$steps
-      n_steps <- length(steps)
       cli::cli_alert_success(
-        "Completed {cli::qty(n_steps)}step{?s} {.val {steps}}"
+        "Completed {cli::qty(length(steps))}step{?s} {.val {steps}}"
       )
     }
     log_elapsed(start_time) # nolint: object_usage_linter.
