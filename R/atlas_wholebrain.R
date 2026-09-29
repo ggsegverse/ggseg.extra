@@ -18,18 +18,20 @@
 #' and which are subcortical (rendered as 3D meshes / 2D slices). Three
 #' mechanisms are available, applied in priority order:
 #'
-#' 1. **Function arguments** (highest priority): `cortical_labels` and
-#'    `subcortical_labels` override everything for the specified labels.
+#' 1. **The `labels` argument** (highest priority): `labels = list(cortical =
+#'    ..., subcortical = ..., cerebellar = ...)` overrides everything for the
+#'    labels it names.
 #' 2. **LUT `type` column**: If the colour lookup table has a `type` column
 #'    with values `"cortical"` or `"subcortical"`, that classification is
-#'    used for any labels not covered by the function arguments. This is the
-#'    recommended approach for reproducible atlas creation.
+#'    used for any labels `labels` does not name. This is the recommended
+#'    approach for reproducible atlas creation.
 #' 3. **Vertex-count heuristic** (fallback): Labels with at least
-#'    `min_vertices` vertices on the surface projection are classified as
-#'    cortical; the rest as subcortical. It measures how much surface a
-#'    label covers rather than where the label sits, so a small cortical
-#'    parcel and a deep structure look the same to it. It warns whenever it
-#'    runs; treat that warning as a request to declare the labels instead.
+#'    `projection_opts$min_vertices` vertices on the surface projection are
+#'    classified as cortical; the rest as subcortical. It measures how much
+#'    surface a label covers rather than where the label sits, so a small
+#'    cortical parcel and a deep structure look the same to it. It warns
+#'    whenever it runs; treat that warning as a request to declare the
+#'    labels instead.
 #'
 #' [lut_classify_anatomy()] writes the `type` column for a lookup table that
 #' has none, by reading each label's position in FreeSurfer's `aparc+aseg`.
@@ -78,13 +80,13 @@
 #' midline split is used and the pipeline warns.
 #'
 #' @section Human oversight:
-#' This is the most complex pipeline in ggsegExtra and the one most likely
+#' This is the most complex pipeline in ggseg.extra and the one most likely
 #' to need manual correction. Recommended workflow:
 #'
 #' 1. Run `steps = 1:2` first to project the volume and classify labels.
 #' 2. Inspect `result$cortical_labels` and `result$subcortical_labels`.
 #'    If the automatic split is wrong, either add a `type` column to the
-#'    LUT or use `cortical_labels` / `subcortical_labels` to override.
+#'    LUT or name the labels in `labels`.
 #' 3. Run the full pipeline once you are satisfied with the split.
 #' 4. Visually inspect the resulting atlas with `ggseg()` / `ggseg3d()`.
 #'

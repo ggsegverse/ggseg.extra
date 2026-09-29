@@ -1,53 +1,55 @@
 #' Generate a palette for a colourless lookup table
 #'
 #' Several atlas releases ship a lookup table of names only, with every RGB
-#' channel set to zero. Handed to a creation pipeline as-is, the atlas
-#' arrives with no palette and the plotting packages assign one, which
-#' renders as large blocks of repeated hue. `lut_generate_colors()` fills the
-#' `R`, `G` and `B` columns with a palette built from the label names, and
-#' sets `A` to `0`.
-#'
-#' Colours are assigned per *structure*, not per region, so a structure's two
-#' hemispheres share one the way FreeSurfer's own tables do. The hemisphere
-#' marker is read off the label in the spellings the rest of the package
-#' recognises - a `Left-` / `rh_` / `L_` prefix or a `_right` / `-lh` suffix -
-#' plus the `ctx-lh-` and `wm-rh-` prefixes FreeSurfer's cortical and
-#' white-matter tables use. A label carrying none of them is a structure of
-#' its own.
-#'
-#' Hues are spread evenly around the colour circle in order of first
-#' appearance, and stepped through `luminance` in turn so that neighbouring
-#' hues still separate. Reordering the table's rows therefore reshuffles the
-#' palette; generate it once and commit the result.
-#'
-#' No two structures are given the same colour: `grDevices::hcl()` clips
-#' out-of-gamut colours without saying so, and where that would hand back a
-#' colour twice this errors rather than let it through. Colours growing
-#' merely *close* is not an error. One chroma and three luminances hold only
-#' so many, and past roughly sixty structures neighbouring hues stop being
-#' easy to tell apart - a limit of the ramp rather than a fault, and a
-#' parcellation that fine is read by hovering a region rather than by
-#' matching it to a legend.
-#'
-#' Rows with `idx = 0` are the background rather than a structure, and are
-#' left exactly as they are. Every other row has its `R`, `G`, `B` and `A`
-#' replaced, so run this on a table that has no palette worth keeping.
+#' channel set to zero. Handed to a creation pipeline as-is, the atlas arrives
+#' with no palette and the plotting packages assign one, which renders as large
+#' blocks of repeated hue. `lut_generate_colors()` fills the `R`, `G` and `B`
+#' columns with a palette built from the label names, and sets `A` to `0`.
 #'
 #' @param lut A lookup table with `idx`, `label`, `R`, `G`, `B` and `A`
 #'   columns, as returned by [read_lut()].
-#' @param by Optional name of a column whose groups are each coloured from
-#'   the full colour circle, rather than from a slice of one shared circle.
-#'   Pass `by = "type"` for a whole-brain table, where the cortical and
-#'   subcortical rows become two atlases that are never plotted together: a
-#'   colour then has to be unique within an atlas rather than within the
-#'   table, and each atlas gets the whole circle to spend. The default,
-#'   `NULL`, colours the table as one atlas.
-#' @param chroma Colour intensity, zero or more, passed to
-#'   [grDevices::hcl()] and held constant across the palette. Asking for more
-#'   than the display can show is what makes colours collide, so lowering
-#'   this is the usual answer to the error that reports one.
+#' @param chroma Colour intensity, zero or more, passed to [grDevices::hcl()]
+#'   and held constant across the palette. Lower it if colours collide.
 #' @param luminance Lightness values, 0 to 100, passed to [grDevices::hcl()]
-#'   and cycled through in order as the hue advances.
+#'   and cycled through as the hue advances.
+#' @param by Optional column whose groups are each coloured from the full
+#'   colour circle rather than from a slice of one shared circle. Pass
+#'   `by = "type"` for a whole-brain table. See details.
+#'
+#' @details
+#' # How colours are assigned
+#'
+#' Colours go to *structures*, not regions, so a structure's two hemispheres
+#' share one the way FreeSurfer's own tables do. The hemisphere marker is read
+#' off the label in the spellings the rest of the package recognises -- a
+#' `Left-` / `rh_` / `L_` prefix, a `_right` / `-lh` suffix, or the `ctx-lh-`
+#' and `wm-rh-` prefixes FreeSurfer's cortical and white-matter tables use. A
+#' label carrying none of them is a structure of its own.
+#'
+#' Hues are spread evenly around the colour circle in order of first
+#' appearance, and stepped through `luminance` in turn so neighbouring hues
+#' still separate. Reordering the table's rows therefore reshuffles the
+#' palette: generate it once and commit the result.
+#'
+#' Rows with `idx = 0` are the background rather than a structure, and are left
+#' exactly as they are. Every other row has its `R`, `G`, `B` and `A` replaced,
+#' so run this on a table that has no palette worth keeping.
+#'
+#' # When it errors
+#'
+#' No two structures may be given the same colour: [grDevices::hcl()] clips
+#' out-of-gamut colours without saying so, and where that would hand back a
+#' colour twice this errors rather than let it through. Lowering `chroma` is
+#' the usual answer. Colours growing merely *close* is not an error -- one
+#' chroma and three luminances hold only so many, and past roughly sixty
+#' structures neighbouring hues stop being easy to tell apart.
+#'
+#' # Grouping with `by`
+#'
+#' In a whole-brain table the cortical and subcortical rows become two atlases
+#' that are never plotted together, so a colour only has to be unique within an
+#' atlas and each can spend the whole circle. `by = "type"` does that. The
+#' default, `NULL`, colours the table as one atlas.
 #'
 #' @return `lut`, with `R`, `G` and `B` filled in and `A` set to `0` on every
 #'   row that is not the background.

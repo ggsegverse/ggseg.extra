@@ -115,7 +115,6 @@ furrr
 GDAL
 ggplot
 ggseg
-ggsegExtra
 ggsegHO
 ggsegHO's
 ggsegJHU's
@@ -268,6 +267,7 @@ sagittal
 sanitised
 sawtooth
 scaffolded
+scannable
 Schaefer
 segmentations
 serialised

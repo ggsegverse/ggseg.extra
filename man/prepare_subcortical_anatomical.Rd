@@ -36,21 +36,15 @@ directory used as the registration target. Defaults to \code{"brain"}
 does not exceed this threshold are kept as the source \code{aparc+aseg}
 label. Defaults to \code{0.3}.}
 
-\item{id_offset}{Integer added to every input label ID when writing
-the merged volume to avoid collisions with FreeSurfer \code{aparc+aseg}
-labels. Defaults to \code{200L}. Set to \code{0L} if you have already remapped
-your IDs. Either way, a shifted ID that would land on an \code{aparc+aseg}
-structure still standing in the merged volume is an error rather than a
-silent merge.}
+\item{id_offset}{Integer added to every input label ID so it cannot
+collide with a FreeSurfer \code{aparc+aseg} label. Defaults to \code{200L}; use
+\code{0L} if your IDs are already remapped. A collision is an error either
+way, never a silent merge.}
 
-\item{protect_cortex}{Logical. If \code{TRUE} (default), the cerebral outline
-in \code{aparc+aseg} is never overwritten by user labels even when argmax
-wins above \code{threshold}: the cortical ribbon (aparc labels \code{1000-2999})
-plus cerebral white matter (\code{2}, \code{41}) and the corpus callosum
-(\code{251-255}). This preserves the brain-outline geometry the subcortical
-pipeline renders as context. Cerebellar structures are not protected
-here (they are handled downstream by \code{\link[=aseg_context]{aseg_context()}}). Disable only if
-you intentionally want user labels to overwrite the cerebrum.}
+\item{protect_cortex}{Whether the cerebral outline in \code{aparc+aseg} is
+safe from being overwritten by your labels. \code{TRUE}, the default, keeps
+the brain-outline geometry the subcortical pipeline draws as context.
+See details.}
 
 \item{dof}{Degrees of freedom for \code{mri_coreg} (\code{6}, \code{9}, or \code{12}).
 Defaults to \code{12} (rigid + per-axis scale + shear).}
@@ -61,23 +55,19 @@ before coregistration. Set to \code{FALSE} to register on raw intensities.}
 \item{subjects_dir}{FreeSurfer \code{SUBJECTS_DIR}. Defaults to
 \code{\link[freesurfer:fs_subj_dir]{freesurfer::fs_subj_dir()}}.}
 
-\item{skip_existing}{Skip generating output files that already exist,
-allowing interrupted atlas creation to resume. If not specified, uses
-\code{options("ggseg.extra.skip_existing")} or the \code{GGSEG_EXTRA_SKIP_EXISTING}
-environment variable. Default is TRUE.}
+\item{skip_existing}{Reuse intermediate files that already exist, so an
+interrupted run can resume. Default \code{TRUE}, from
+\code{options("ggseg.extra.skip_existing")} or \code{GGSEG_EXTRA_SKIP_EXISTING}.}
 
-\item{verbose}{Verbosity level: \code{0} (silent), \code{1} (standard progress,
-default), or \code{2} (debug, includes FreeSurfer output). Logical values
-are accepted (\code{TRUE} = 1, \code{FALSE} = 0). If not specified, uses the
-value from \code{options("ggseg.extra.verbose")} or the \code{GGSEG_EXTRA_VERBOSE}
-environment variable.}
+\item{verbose}{How much to print: \code{0} silent, \code{1} progress (the default),
+\code{2} adds FreeSurfer's own output. \code{TRUE} and \code{FALSE} mean \code{1} and \code{0}.
+Falls back to \code{options("ggseg.extra.verbose")}, then
+\code{GGSEG_EXTRA_VERBOSE}.}
 
-\item{lut}{Optional colour LUT (data frame with at least an \code{idx}
-column, or path to a TSV with \verb{idx, label, R, G, B, A}). When
-provided, its \code{idx} (intersected with the volume) selects which labels
-to project, and it is returned alongside the volume with \code{idx} shifted
-by \code{id_offset} to match. With no \code{lut}, every non-zero label is
-projected. To project a subset, subset the \code{lut}.}
+\item{lut}{Optional colour lookup table: a data frame with at least an
+\code{idx} column, or a path to one. Its \code{idx} selects which labels to
+project, and it comes back beside the volume with \code{idx} shifted to match.
+With no \code{lut}, every non-zero label is projected.}
 
 \item{output_file}{Path for the merged volume. Defaults to a temp file.}
 
@@ -95,6 +85,33 @@ Convenience wrapper that runs \code{\link[=coregister_volume]{coregister_volume(
 on a FreeSurfer subject's \code{aparc+aseg} grid together with a matching
 colour table, ready to feed \code{\link[=create_subcortical_from_volume]{create_subcortical_from_volume()}}.
 }
+\details{
+\strong{Start here.} The three functions it wraps or sits beside are for when
+this one does not fit; see \emph{Which of these to use}.
+}
+\section{Which of these to use}{
+
+A subcortical atlas is drawn against a brain outline, and that outline comes
+from a FreeSurfer subject's \code{aparc+aseg}. Getting your volume onto that grid
+is what these four functions do between them.
+\itemize{
+\item \code{prepare_subcortical_anatomical()} is the whole job in one call, and what
+most atlases want: align the volume, merge it into \code{aparc+aseg}, hand back
+a volume and a matching colour table.
+\item \code{\link[=coregister_volume]{coregister_volume()}} is only the alignment, and returns an LTA. Reach for
+it when you want to inspect or reuse the registration, or pass it to
+\verb{registration =} yourself.
+\item \code{\link[=project_volume_anatomical]{project_volume_anatomical()}} is only the merge, and takes a volume that
+already sits on the target grid -- either because its header says so
+(\code{registration = "header"}) or because you have an LTA from
+\code{\link[=coregister_volume]{coregister_volume()}}.
+\item \code{\link[=prepare_subcortical_mni152]{prepare_subcortical_mni152()}} is the older, lighter route: it replaces
+labels in a stock MNI152 \code{aseg} rather than registering to a subject. Use
+it when your volume is already in MNI152 space and you do not need a
+subject-specific outline.
+}
+}
+
 \examples{
 \dontrun{
 merged <- prepare_subcortical_anatomical(

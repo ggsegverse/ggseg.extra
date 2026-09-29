@@ -25,11 +25,10 @@ Hemisphere is detected from filename patterns (\code{lh.}, \code{rh.}, \code{.L.
 \item{views}{Which views to include: "lateral", "medial",
 "superior", "inferior".}
 
-\item{verbose}{Verbosity level: \code{0} (silent), \code{1} (standard progress,
-default), or \code{2} (debug, includes FreeSurfer output). Logical values
-are accepted (\code{TRUE} = 1, \code{FALSE} = 0). If not specified, uses the
-value from \code{options("ggseg.extra.verbose")} or the \code{GGSEG_EXTRA_VERBOSE}
-environment variable.}
+\item{verbose}{How much to print: \code{0} silent, \code{1} progress (the default),
+\code{2} adds FreeSurfer's own output. \code{TRUE} and \code{FALSE} mean \code{1} and \code{0}.
+Falls back to \code{options("ggseg.extra.verbose")}, then
+\code{GGSEG_EXTRA_VERBOSE}.}
 
 \item{...}{Catches the retired \code{dilate}, \code{smoothness}, \code{tolerance} and
 \code{smooth_refinements} arguments, so a call that still passes one keeps
@@ -41,17 +40,16 @@ unused argument always was.}
 \item{atlas_name}{Name for the atlas. If NULL, derived from the input
 filename.}
 
-\item{output_dir}{Directory to store intermediate files (screenshots, masks,
-contours). Defaults to \code{\link[=tempdir]{tempdir()}}.}
+\item{output_dir}{Where to put the intermediate files. Defaults to
+\code{\link[=tempdir]{tempdir()}}, from \code{options("ggseg.extra.output_dir")} or
+\code{GGSEG_EXTRA_OUTPUT_DIR}.}
 
-\item{cleanup}{Remove intermediate files after atlas creation. If not
-specified, uses \code{options("ggseg.extra.cleanup")} or the \code{GGSEG_EXTRA_CLEANUP}
-environment variable. Default is TRUE.}
+\item{cleanup}{Remove the intermediate files afterwards. Default \code{TRUE},
+from \code{options("ggseg.extra.cleanup")} or \code{GGSEG_EXTRA_CLEANUP}.}
 
-\item{skip_existing}{Skip generating output files that already exist,
-allowing interrupted atlas creation to resume. If not specified, uses
-\code{options("ggseg.extra.skip_existing")} or the \code{GGSEG_EXTRA_SKIP_EXISTING}
-environment variable. Default is TRUE.}
+\item{skip_existing}{Reuse intermediate files that already exist, so an
+interrupted run can resume. Default \code{TRUE}, from
+\code{options("ggseg.extra.skip_existing")} or \code{GGSEG_EXTRA_SKIP_EXISTING}.}
 }
 \value{
 A \code{ggseg_atlas} object.

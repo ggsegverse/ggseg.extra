@@ -122,39 +122,27 @@ coregister_volume <- function(
 #' it matches the merged volume.
 #'
 #' @param input_volume Path to the atlas volume, or an `RNifti` object.
-#' @param lut Optional colour LUT (data frame with at least an `idx`
-#'   column, or path to a TSV with `idx, label, R, G, B, A`). When
-#'   provided, its `idx` (intersected with the volume) selects which labels
-#'   to project, and it is returned alongside the volume with `idx` shifted
-#'   by `id_offset` to match. With no `lut`, every non-zero label is
-#'   projected. To project a subset, subset the `lut`.
+#' @param lut Optional colour lookup table: a data frame with at least an
+#'   `idx` column, or a path to one. Its `idx` selects which labels to
+#'   project, and it comes back beside the volume with `idx` shifted to match.
+#'   With no `lut`, every non-zero label is projected.
 #' @param registration How the volume reaches the target's grid: `"header"`
-#'   (the default) trusts the volume's own xform (`mri_vol2vol --regheader`),
-#'   `"mni152"` applies FreeSurfer's `mni152.register.dat`, or give a path to
-#'   an LTA file (typically from [coregister_volume()]). The same vocabulary
-#'   as [create_wholebrain_from_volume()] and [prepare_subcortical_mni152()].
-#'   `NULL` is deprecated; it meant `"header"`. An LTA must be registered to a
-#'   volume on the same subject's conformed grid as `aparc+aseg.mgz` (true for
-#'   any `recon-all` output); a mismatch is caught and aborted.
+#'   (the default) trusts the volume's own xform, `"mni152"` applies
+#'   FreeSurfer's `mni152.register.dat`, or give the path to an LTA file,
+#'   typically from [coregister_volume()]. See details.
 #' @param target_subject FreeSurfer subject providing the anatomical grid
 #'   and `aparc+aseg.mgz`. Defaults to `"cvs_avg35_inMNI152"`.
 #' @param threshold Numeric in `[0, 1]`. Voxels whose argmax probability
 #'   does not exceed this threshold are kept as the source `aparc+aseg`
 #'   label. Defaults to `0.3`.
-#' @param id_offset Integer added to every input label ID when writing
-#'   the merged volume to avoid collisions with FreeSurfer `aparc+aseg`
-#'   labels. Defaults to `200L`. Set to `0L` if you have already remapped
-#'   your IDs. Either way, a shifted ID that would land on an `aparc+aseg`
-#'   structure still standing in the merged volume is an error rather than a
-#'   silent merge.
-#' @param protect_cortex Logical. If `TRUE` (default), the cerebral outline
-#'   in `aparc+aseg` is never overwritten by user labels even when argmax
-#'   wins above `threshold`: the cortical ribbon (aparc labels `1000-2999`)
-#'   plus cerebral white matter (`2`, `41`) and the corpus callosum
-#'   (`251-255`). This preserves the brain-outline geometry the subcortical
-#'   pipeline renders as context. Cerebellar structures are not protected
-#'   here (they are handled downstream by [aseg_context()]). Disable only if
-#'   you intentionally want user labels to overwrite the cerebrum.
+#' @param id_offset Integer added to every input label ID so it cannot
+#'   collide with a FreeSurfer `aparc+aseg` label. Defaults to `200L`; use
+#'   `0L` if your IDs are already remapped. A collision is an error either
+#'   way, never a silent merge.
+#' @param protect_cortex Whether the cerebral outline in `aparc+aseg` is
+#'   safe from being overwritten by your labels. `TRUE`, the default, keeps
+#'   the brain-outline geometry the subcortical pipeline draws as context.
+#'   See details.
 #' @param output_file Path for the merged volume. Defaults to a temp file.
 #' @param subjects_dir FreeSurfer `SUBJECTS_DIR`. Defaults to
 #'   [freesurfer::fs_subj_dir()].
@@ -171,9 +159,28 @@ coregister_volume <- function(
 #'       names and no colours.}
 #'     \item{`id_offset`}{The offset applied to the user's label IDs.}
 #'   }
+#' @details
+#' # Registration
+#'
+#' `registration` takes the same vocabulary as
+#' [create_wholebrain_from_volume()] and [prepare_subcortical_mni152()]. An
+#' LTA must be registered to a volume on the same subject's conformed grid as
+#' `aparc+aseg.mgz`, which any `recon-all` output is; a mismatch is caught and
+#' aborted. `NULL` is deprecated and meant `"header"`.
+#'
+#' # What `protect_cortex` protects
+#'
+#' The cortical ribbon (aparc labels `1000-2999`), cerebral white matter (`2`,
+#' `41`) and the corpus callosum (`251-255`) are left in place even where a
+#' user label wins the argmax above `threshold`. Cerebellar structures are not
+#' protected here; [aseg_context()] handles them downstream. Disable it only
+#' if you mean your labels to overwrite the cerebrum.
+#'
 #' @export
 #'
-#' @seealso [coregister_volume()], [prepare_subcortical_anatomical()]
+#' @seealso [prepare_subcortical_anatomical()], which runs this and
+#'   [coregister_volume()] together, and explains which of the four to reach
+#'   for.
 #'
 #' @examples
 #' \dontrun{
@@ -254,6 +261,29 @@ project_volume_anatomical <- function(
 #' [project_volume_anatomical()] in one call, producing a merged volume
 #' on a FreeSurfer subject's `aparc+aseg` grid together with a matching
 #' colour table, ready to feed [create_subcortical_from_volume()].
+#'
+#' **Start here.** The three functions it wraps or sits beside are for when
+#' this one does not fit; see *Which of these to use*.
+#'
+#' @section Which of these to use:
+#' A subcortical atlas is drawn against a brain outline, and that outline comes
+#' from a FreeSurfer subject's `aparc+aseg`. Getting your volume onto that grid
+#' is what these four functions do between them.
+#'
+#' * `prepare_subcortical_anatomical()` is the whole job in one call, and what
+#'   most atlases want: align the volume, merge it into `aparc+aseg`, hand back
+#'   a volume and a matching colour table.
+#' * [coregister_volume()] is only the alignment, and returns an LTA. Reach for
+#'   it when you want to inspect or reuse the registration, or pass it to
+#'   `registration =` yourself.
+#' * [project_volume_anatomical()] is only the merge, and takes a volume that
+#'   already sits on the target grid -- either because its header says so
+#'   (`registration = "header"`) or because you have an LTA from
+#'   [coregister_volume()].
+#' * [prepare_subcortical_mni152()] is the older, lighter route: it replaces
+#'   labels in a stock MNI152 `aseg` rather than registering to a subject. Use
+#'   it when your volume is already in MNI152 space and you do not need a
+#'   subject-specific outline.
 #'
 #' @inheritParams coregister_volume
 #' @inheritParams project_volume_anatomical

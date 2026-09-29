@@ -36,16 +36,14 @@ before coregistration. Set to \code{FALSE} to register on raw intensities.}
 \item{subjects_dir}{FreeSurfer \code{SUBJECTS_DIR}. Defaults to
 \code{\link[freesurfer:fs_subj_dir]{freesurfer::fs_subj_dir()}}.}
 
-\item{skip_existing}{Skip generating output files that already exist,
-allowing interrupted atlas creation to resume. If not specified, uses
-\code{options("ggseg.extra.skip_existing")} or the \code{GGSEG_EXTRA_SKIP_EXISTING}
-environment variable. Default is TRUE.}
+\item{skip_existing}{Reuse intermediate files that already exist, so an
+interrupted run can resume. Default \code{TRUE}, from
+\code{options("ggseg.extra.skip_existing")} or \code{GGSEG_EXTRA_SKIP_EXISTING}.}
 
-\item{verbose}{Verbosity level: \code{0} (silent), \code{1} (standard progress,
-default), or \code{2} (debug, includes FreeSurfer output). Logical values
-are accepted (\code{TRUE} = 1, \code{FALSE} = 0). If not specified, uses the
-value from \code{options("ggseg.extra.verbose")} or the \code{GGSEG_EXTRA_VERBOSE}
-environment variable.}
+\item{verbose}{How much to print: \code{0} silent, \code{1} progress (the default),
+\code{2} adds FreeSurfer's own output. \code{TRUE} and \code{FALSE} mean \code{1} and \code{0}.
+Falls back to \code{options("ggseg.extra.verbose")}, then
+\code{GGSEG_EXTRA_VERBOSE}.}
 
 \item{output_lta}{Path to write the resulting LTA file. Defaults to a
 temporary file.}

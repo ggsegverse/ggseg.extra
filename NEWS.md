@@ -1,3 +1,39 @@
+# ggseg.extra 1.9.9.9078
+
+## Documentation
+
+- Argument lists are scannable again. Several help pages had grown an essay
+  per argument: `atlas_smooth()` spent twelve lines of `@param` on
+  `vertex_budget` and ten on `close_gaps`, and
+  `project_volume_anatomical()` nine each on `registration` and
+  `protect_cortex`. Each argument now says what it does and what to pass in a
+  sentence or two, and the reasoning moved to `@details` under its own
+  heading, where a reader who wants it can find it and a reader looking up one
+  argument is not made to read it. `lut_generate_colors()` had 57 lines of
+  prose before its first argument; it now has ten.
+
+  Measured on the `\arguments` block, which is the part a reader scans:
+  `atlas_smooth()` 49 lines to 24, `project_volume_anatomical()` 53 to 40,
+  `lut_generate_colors()` 20 to 14.
+
+- The `verbose`, `cleanup`, `skip_existing` and `output_dir` argument
+  descriptions are shorter, which shows up on the twenty or so pages that
+  share them.
+
+- `?create_wholebrain_from_volume` described `cortical_labels`,
+  `subcortical_labels` and `min_vertices` as current arguments in its **Label
+  classification** section and told readers to "use `cortical_labels` /
+  `subcortical_labels` to override" in its recommended workflow. They were
+  retired into `labels` and `projection_opts` several dev versions ago, so the
+  advice warned rather than worked.
+
+- `?prepare_subcortical_anatomical` now says which of the four anatomical
+  coregistration functions to reach for and why, and the others link to it.
+  There was nothing distinguishing them, and their argument lists overlap
+  heavily.
+
+- The one remaining reference to the old package name `ggsegExtra` is gone.
+
 # ggseg.extra 1.9.9.9077
 
 ## Documentation
