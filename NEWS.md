@@ -1,3 +1,32 @@
+# ggseg.extra 1.9.9.9071
+
+## User-facing changes
+
+### Minor changes
+
+- The `create_tract_from_volume()` example passed `tube_radius = 3`, which
+  #253 retired into `tube_opts`, so following the documentation produced a
+  deprecation warning. It now passes `tube_opts = list(tube_radius = 3)`, and
+  the `...` documentation names current arguments rather than retired ones.
+
+## Developer-facing changes
+
+### Minor changes
+
+- A new test parses every documented example and asserts that each argument it
+  names is one the function actually accepts. All 58 help topics wrap their
+  examples in `\dontrun{}` -- they need FreeSurfer, a subject directory and
+  hours -- so `R CMD check` executes no line of the package's primary API, and
+  a renamed argument in any of the 24 pipeline entry points would have shipped
+  a broken example with every check still green. That is how the
+  `tube_radius` rot above was found.
+
+  A function whose `...` forwards to another exported function declares the
+  target rather than listing names, so an argument retired from the target
+  stops being a formal there and is caught here. `\donttest{}` was considered
+  and rejected: it runs under `--run-donttest`, where these examples would
+  fail for want of FreeSurfer.
+
 # ggseg.extra 1.9.9.9069
 
 ## User-facing changes
