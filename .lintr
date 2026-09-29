@@ -1,5 +1,9 @@
 
-exclusions: list("inst/rstudio/templates", "inst/templates", "vignettes/*.qmd",
+exclusions: list("inst/rstudio/templates", "inst/templates",
+  # Pre-knitted output: the tutorials in vignettes/articles/ are generated
+  # from their .qmd.orig sources, so their line lengths are knitr's, not
+  # ours. "vignettes/*.qmd" covers atlas-workflows.qmd, still at the root.
+  "vignettes/*.qmd", "vignettes/articles",
   # testthat is attached when tests run, but lintr cannot see that from
   # inside a function definition, so bare skip()/expect_*() read as undefined.
   "tests/testthat" = list(object_usage_linter = Inf))
