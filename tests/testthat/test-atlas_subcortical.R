@@ -255,7 +255,7 @@ describe("create_subcortical_from_volume with meshes", {
 describe("create_subcortical_from_volume pipeline flow", {
   it("passes correct volume path to generate_colortable_from_volume", {
     .cap$captured_gen_args <- NULL
-    dirs <- mock_subcort_dirs()
+    dirs <- local_subcort_dirs()
     local_mocked_bindings(
       check_fs = function(...) TRUE,
       generate_colortable_from_volume = function(vol) {
@@ -325,7 +325,7 @@ describe("create_subcortical_from_volume pipeline flow", {
 
   it("returns 3D-only atlas with correct structure count", {
     local_test_workdir()
-    dirs <- mock_subcort_dirs()
+    dirs <- local_subcort_dirs()
     local_mocked_bindings(
       check_fs = function(...) TRUE,
       get_lut = function(f) {
@@ -397,7 +397,7 @@ describe("create_subcortical_from_volume pipeline flow", {
   })
 
   it("errors when no matching labels found", {
-    dirs <- mock_subcort_dirs()
+    dirs <- local_subcort_dirs()
     local_mocked_bindings(
       check_fs = function(...) TRUE,
       get_lut = function(f) {
@@ -438,7 +438,7 @@ describe("create_subcortical_from_volume pipeline flow", {
 
   it("loads cached data for skipped steps and proceeds", {
     local_test_workdir()
-    dirs <- mock_subcort_dirs()
+    dirs <- local_subcort_dirs()
     cached_colortable <- data.frame(
       idx = 10,
       label = "cached_r",
@@ -521,7 +521,7 @@ describe("create_subcortical_from_volume pipeline flow", {
   })
 
   it("step 9 errors when contours_reduced.rda missing", {
-    dirs <- mock_subcort_dirs()
+    dirs <- local_subcort_dirs()
     local_mocked_bindings(
       check_fs = function(...) TRUE,
       setup_atlas_dirs = function(...) dirs,
@@ -596,7 +596,7 @@ describe("create_subcortical_from_volume pipeline flow", {
   })
 
   it("passes correct args to snapshot and image step functions", {
-    dirs <- mock_subcort_dirs()
+    dirs <- local_subcort_dirs()
     .cap$captured_snapshot_args <- NULL
 
     local_mocked_bindings(
@@ -673,7 +673,7 @@ describe("create_subcortical_from_volume pipeline flow", {
 
   it("step 9 builds final atlas with cleanup", {
     local_test_workdir()
-    dirs <- mock_subcort_dirs()
+    dirs <- local_subcort_dirs()
     cached_components <- list(
       core = data.frame(
         hemi = NA,
@@ -756,7 +756,7 @@ describe("create_subcortical_from_volume pipeline flow", {
 
   it("returns invisible NULL for partial steps", {
     local_test_workdir()
-    dirs <- mock_subcort_dirs()
+    dirs <- local_subcort_dirs()
     local_mocked_bindings(
       check_fs = function(...) TRUE,
       setup_atlas_dirs = function(...) dirs,
@@ -1084,7 +1084,7 @@ describe("subcort_drop_missing_labels", {
 
 describe("subcortical pipeline snapshot pruning", {
   it("clears images left by an earlier slab configuration", {
-    dirs <- mock_subcort_dirs()
+    dirs <- local_subcort_dirs()
     slabs <- data.frame(
       stringsAsFactors = FALSE,
       name = "ax_1",

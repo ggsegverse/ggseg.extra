@@ -455,6 +455,29 @@ describe("finalize_atlas", {
 
     expect_true(ggseg.formats::is_atlas_polygon(result))
   })
+
+  it("clears the nested working directories when cleanup is TRUE", {
+    dirs <- setup_atlas_dirs(
+      withr::local_tempdir(),
+      atlas_name = "test_atlas",
+      type = "subcortical"
+    )
+    file.create(file.path(dirs$snapshots, "view.rda"))
+    file.create(file.path(dirs$meshes, "0010_smooth"))
+
+    finalize_atlas(
+      NULL,
+      config = list(cleanup = TRUE, verbose = FALSE, steps = 1L),
+      dirs = dirs,
+      start_time = Sys.time()
+    )
+
+    # One recursive unlink() of base is the whole cleanup, which only works
+    # because setup_atlas_dirs() nests the others inside it.
+    expect_false(dir.exists(dirs$base))
+    expect_false(dir.exists(dirs$snapshots))
+    expect_false(dir.exists(dirs$meshes))
+  })
 })
 
 
