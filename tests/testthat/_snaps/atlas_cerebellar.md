@@ -1,8 +1,7 @@
-# cerebellar_build_sf_flatmap smoothing and simplification / verbose mode prints progress messages
+# cerebellar_build_sf_flatmap / verbose mode prints progress messages
 
     Code
-      result <- cerebellar_build_sf_flatmap(components, suit_flatmap_path(),
-      tolerance = 0, smooth_refinements = 0, verbose = TRUE)
+      result <- cerebellar_build_sf_flatmap(components, suit_flatmap_path(), verbose = TRUE)
     Message
       i Reading SUIT flatmap surface
       i Building polygons from 28935 vertices, 56588 faces

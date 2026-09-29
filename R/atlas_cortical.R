@@ -18,7 +18,6 @@
 #' @param hemisphere Which hemispheres to include: "lh", "rh", or both.
 #' @param views Which views to include: "lateral", "medial",
 #'   "superior", "inferior".
-#' @template smooth_refinements
 #' @template cleanup
 #' @template verbose
 #' @template skip_existing
@@ -51,12 +50,10 @@ create_cortical_from_annotation <- function(
   ...,
   atlas_name = NULL,
   output_dir = NULL,
-  smooth_refinements = NULL,
   cleanup = NULL,
   skip_existing = NULL
 ) {
-  dots <- check_post_creation_dots("create_cortical_from_annotation", ...)
-  tolerance <- dots$tolerance
+  check_post_creation_dots("create_cortical_from_annotation", ...)
   if (length(input_annot) == 0) {
     cli::cli_abort("{.arg input_annot} must not be empty")
   }
@@ -65,9 +62,7 @@ create_cortical_from_annotation <- function(
     output_dir,
     verbose,
     cleanup,
-    skip_existing,
-    tolerance,
-    smooth_refinements
+    skip_existing
   )
 
   if (is.null(atlas_name)) {
@@ -106,7 +101,6 @@ create_cortical_from_annotation <- function(
 #' @template output_dir
 #' @param views Which views to include: "lateral", "medial",
 #'   "superior", "inferior".
-#' @template smooth_refinements
 #' @template cleanup
 #' @template verbose
 #' @template skip_existing
@@ -132,20 +126,16 @@ create_cortical_from_labels <- function(
   input_lut = NULL,
   atlas_name = NULL,
   output_dir = NULL,
-  smooth_refinements = NULL,
   cleanup = NULL,
   skip_existing = NULL
 ) {
-  dots <- check_post_creation_dots("create_cortical_from_labels", ...)
-  tolerance <- dots$tolerance
+  check_post_creation_dots("create_cortical_from_labels", ...)
 
   config <- validate_surface_config(
     output_dir,
     verbose,
     cleanup,
-    skip_existing,
-    tolerance,
-    smooth_refinements
+    skip_existing
   )
 
   if (!all(file.exists(label_files))) {
@@ -178,7 +168,6 @@ create_cortical_from_labels <- function(
 #' @param hemisphere Which hemispheres to include: "lh", "rh", or both.
 #' @param views Which views to include: "lateral", "medial",
 #'   "superior", "inferior".
-#' @template smooth_refinements
 #' @template cleanup
 #' @template verbose
 #' @template skip_existing
@@ -201,12 +190,10 @@ create_cortical_from_gifti <- function(
   ...,
   atlas_name = NULL,
   output_dir = NULL,
-  smooth_refinements = NULL,
   cleanup = NULL,
   skip_existing = NULL
 ) {
-  dots <- check_post_creation_dots("create_cortical_from_gifti", ...)
-  tolerance <- dots$tolerance
+  check_post_creation_dots("create_cortical_from_gifti", ...)
   if (length(gifti_files) == 0) {
     cli::cli_abort("{.arg gifti_files} must not be empty")
   }
@@ -215,9 +202,7 @@ create_cortical_from_gifti <- function(
     output_dir,
     verbose,
     cleanup,
-    skip_existing,
-    tolerance,
-    smooth_refinements
+    skip_existing
   )
 
   if (is.null(atlas_name)) {
@@ -251,7 +236,6 @@ create_cortical_from_gifti <- function(
 #' @param hemisphere Which hemispheres to include: "lh", "rh", or both.
 #' @param views Which views to include: "lateral", "medial",
 #'   "superior", "inferior".
-#' @template smooth_refinements
 #' @template cleanup
 #' @template verbose
 #' @template skip_existing
@@ -274,12 +258,10 @@ create_cortical_from_cifti <- function(
   ...,
   atlas_name = NULL,
   output_dir = NULL,
-  smooth_refinements = NULL,
   cleanup = NULL,
   skip_existing = NULL
 ) {
-  dots <- check_post_creation_dots("create_cortical_from_cifti", ...)
-  tolerance <- dots$tolerance
+  check_post_creation_dots("create_cortical_from_cifti", ...)
   if (!file.exists(cifti_file)) {
     cli::cli_abort("CIFTI file not found: {.path {cifti_file}}")
   }
@@ -288,9 +270,7 @@ create_cortical_from_cifti <- function(
     output_dir,
     verbose,
     cleanup,
-    skip_existing,
-    tolerance,
-    smooth_refinements
+    skip_existing
   )
 
   if (is.null(atlas_name)) {
@@ -334,7 +314,6 @@ create_cortical_from_cifti <- function(
 #' @param hemisphere Which hemispheres to include: "lh", "rh", or both.
 #' @param views Which views to include: "lateral", "medial",
 #'   "superior", "inferior".
-#' @template smooth_refinements
 #' @template cleanup
 #' @template verbose
 #' @template skip_existing
@@ -364,24 +343,20 @@ create_cortical_from_neuromaps <- function(
   n_bins = NULL,
   atlas_name = NULL,
   output_dir = NULL,
-  smooth_refinements = NULL,
   cleanup = NULL,
   skip_existing = NULL
 ) {
-  dots <- check_post_creation_dots("create_cortical_from_neuromaps", ...)
-  tolerance <- dots$tolerance
+  check_post_creation_dots("create_cortical_from_neuromaps", ...)
   rlang::check_installed(
     "neuromapr",
     reason = "to download neuromaps annotations"
   )
 
-  config <- setup_neuromaps_config(
-    output_dir = output_dir,
-    verbose = verbose,
-    cleanup = cleanup,
-    skip_existing = skip_existing,
-    tolerance = tolerance,
-    smooth_refinements = smooth_refinements
+  config <- validate_surface_config(
+    output_dir,
+    verbose,
+    cleanup,
+    skip_existing
   )
 
   run_neuromaps_creation(
@@ -450,27 +425,6 @@ derive_label_hemisphere <- function(step1) {
     USE.NAMES = FALSE
   )
   if (length(hemi_short) == 0) c("lh", "rh") else hemi_short
-}
-
-
-#' Warn about deprecated smoothing args and resolve the cortical config
-#' @noRd
-setup_neuromaps_config <- function(
-  output_dir,
-  verbose,
-  cleanup,
-  skip_existing,
-  tolerance,
-  smooth_refinements
-) {
-  validate_surface_config(
-    output_dir,
-    verbose,
-    cleanup,
-    skip_existing,
-    tolerance,
-    smooth_refinements
-  )
 }
 
 
@@ -723,8 +677,6 @@ cortical_project_and_build <- function(
     components,
     hemisphere,
     views,
-    tolerance = config$tolerance,
-    smooth_refinements = config$smooth_refinements,
     verbose = config$verbose
   )
 

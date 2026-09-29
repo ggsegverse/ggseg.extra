@@ -189,56 +189,6 @@ describe("get_skip_existing", {
 })
 
 
-describe("get_tolerance", {
-  it("returns explicit value when provided", {
-    expect_identical(get_tolerance(0.5), 0.5)
-    expect_identical(get_tolerance(1), 1)
-  })
-
-  it("reads from option when explicit value is NULL", {
-    withr::local_options(ggseg.extra.tolerance = 0.75)
-    expect_identical(get_tolerance(), 0.75)
-  })
-
-  it("reads from environment variable when option is NULL", {
-    withr::local_options(ggseg.extra.tolerance = NULL)
-    withr::local_envvar(GGSEG_EXTRA_TOLERANCE = "0.25")
-    expect_identical(get_tolerance(), 0.25)
-  })
-
-  it("returns default of 0.05 when nothing is set", {
-    withr::local_options(ggseg.extra.tolerance = NULL)
-    withr::local_envvar(GGSEG_EXTRA_TOLERANCE = NA)
-    expect_identical(get_tolerance(), 0.05)
-  })
-})
-
-
-describe("get_smoothness", {
-  it("returns explicit value when provided", {
-    expect_identical(get_smoothness(10), 10)
-    expect_identical(get_smoothness(2.5), 2.5)
-  })
-
-  it("reads from option when explicit value is NULL", {
-    withr::local_options(ggseg.extra.smoothness = 15)
-    expect_identical(get_smoothness(), 15)
-  })
-
-  it("reads from environment variable when option is NULL", {
-    withr::local_options(ggseg.extra.smoothness = NULL)
-    withr::local_envvar(GGSEG_EXTRA_SMOOTHNESS = "20")
-    expect_identical(get_smoothness(), 20)
-  })
-
-  it("returns default of 5 when nothing is set", {
-    withr::local_options(ggseg.extra.smoothness = NULL)
-    withr::local_envvar(GGSEG_EXTRA_SMOOTHNESS = NA)
-    expect_identical(get_smoothness(), 5)
-  })
-})
-
-
 describe("load_or_run_step", {
   it("returns run=TRUE when step is requested and files don't exist", {
     result <- load_or_run_step(
@@ -651,15 +601,6 @@ describe("get_output_dir", {
     withr::local_options(ggseg.extra.output_dir = NULL)
     withr::local_envvar(GGSEG_EXTRA_OUTPUT_DIR = NA)
     expect_identical(get_output_dir(), tempdir(check = TRUE))
-  })
-})
-
-
-describe("get_numeric_option", {
-  it("falls back to default when env var is not numeric", {
-    withr::local_options(ggseg.extra.tolerance = NULL)
-    withr::local_envvar(GGSEG_EXTRA_TOLERANCE = "not_a_number")
-    expect_identical(get_tolerance(), 0.05)
   })
 })
 

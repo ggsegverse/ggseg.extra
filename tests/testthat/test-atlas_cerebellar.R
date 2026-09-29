@@ -169,8 +169,6 @@ describe("cerebellar_build_sf_flatmap", {
         cerebellar_build_sf_flatmap(
           components,
           suit_flatmap_path(),
-          tolerance = 0,
-          smooth_refinements = 0,
           verbose = FALSE
         ),
         "No vertices matched"
@@ -1006,8 +1004,8 @@ describe("cerebellar pipeline orchestration", {
 })
 
 
-describe("cerebellar_build_sf_flatmap smoothing and simplification", {
-  it("applies topology-preserving simplification", {
+describe("cerebellar_build_sf_flatmap", {
+  it("builds flatmap polygons from the SUIT surface", {
     skip_if_not_installed("gifti")
 
     components <- list(
@@ -1021,35 +1019,11 @@ describe("cerebellar_build_sf_flatmap smoothing and simplification", {
     result <- cerebellar_build_sf_flatmap(
       components,
       suit_flatmap_path(),
-      tolerance = 0,
-      smooth_refinements = 2,
       verbose = FALSE
     )
 
     expect_s3_class(result, "sf")
     expect_true("flatmap" %in% result$view)
-  })
-
-  it("applies simplification when tolerance > 0", {
-    skip_if_not_installed("gifti")
-
-    components <- list(
-      vertices_df = data.frame(
-        label = "left_I-IV",
-        stringsAsFactors = FALSE
-      )
-    )
-    components$vertices_df$vertices <- list(0:999)
-
-    result <- cerebellar_build_sf_flatmap(
-      components,
-      suit_flatmap_path(),
-      tolerance = 0.5,
-      smooth_refinements = 0,
-      verbose = FALSE
-    )
-
-    expect_s3_class(result, "sf")
   })
 
   it("verbose mode prints progress messages", {
@@ -1067,8 +1041,6 @@ describe("cerebellar_build_sf_flatmap smoothing and simplification", {
       result <- cerebellar_build_sf_flatmap(
         components,
         suit_flatmap_path(),
-        tolerance = 0,
-        smooth_refinements = 0,
         verbose = TRUE
       ),
       transform = scrub_geometry_counts
@@ -1846,9 +1818,7 @@ describe("cerebellar_read_data", {
     config <- list(
       steps = 1L,
       skip_existing = FALSE,
-      verbose = FALSE,
-      tolerance = 0,
-      smooth_refinements = 0
+      verbose = FALSE
     )
 
     result <- cerebellar_read_data(config, dirs, read_fn = function() {
@@ -1884,9 +1854,7 @@ describe("cerebellar_read_data", {
     config <- list(
       steps = 1L,
       skip_existing = FALSE,
-      verbose = FALSE,
-      tolerance = 0,
-      smooth_refinements = 0
+      verbose = FALSE
     )
 
     result <- cerebellar_read_data(config, dirs, read_fn = function() {
@@ -1919,8 +1887,6 @@ describe("cerebellar_project_and_build", {
     dirs <- local_atlas_dirs()
     config <- list(
       verbose = FALSE,
-      tolerance = 0,
-      smooth_refinements = 0,
       cleanup = FALSE,
       skip_existing = FALSE
     )
@@ -2230,9 +2196,7 @@ describe("run_cerebellar_creation verbose output", {
       output_dir = dirs_tmp,
       steps = 1:2,
       skip_existing = FALSE,
-      cleanup = FALSE,
-      tolerance = 0,
-      smooth_refinements = 0
+      cleanup = FALSE
     )
 
     expect_snapshot(
@@ -2493,9 +2457,7 @@ describe("cerebellar_read_data verbose and error branches", {
     config <- list(
       steps = 1L,
       skip_existing = FALSE,
-      verbose = TRUE,
-      tolerance = 0,
-      smooth_refinements = 0
+      verbose = TRUE
     )
     expect_snapshot(
       result <- cerebellar_read_data(
@@ -2516,9 +2478,7 @@ describe("cerebellar_read_data verbose and error branches", {
     config <- list(
       steps = 1L,
       skip_existing = FALSE,
-      verbose = FALSE,
-      tolerance = 0,
-      smooth_refinements = 0
+      verbose = FALSE
     )
     empty <- tibble(
       hemi = character(),
@@ -2620,8 +2580,6 @@ describe("cerebellar_project_and_build with deep nuclei", {
     dirs <- local_atlas_dirs()
     config <- list(
       verbose = TRUE,
-      tolerance = 0,
-      smooth_refinements = 0,
       cleanup = FALSE,
       skip_existing = FALSE
     )

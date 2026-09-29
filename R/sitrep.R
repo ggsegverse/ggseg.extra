@@ -210,8 +210,6 @@ check_pipeline_options <- function(detail = "simple") {
     verbose = get_verbose(),
     cleanup = get_cleanup(),
     skip_existing = get_skip_existing(),
-    tolerance = get_tolerance(),
-    smoothness = get_smoothness(),
     output_dir = get_output_dir()
   )
 
@@ -220,8 +218,6 @@ check_pipeline_options <- function(detail = "simple") {
     verbose = "{opts$verbose}",
     cleanup = "{opts$cleanup}",
     skip_existing = "{opts$skip_existing}",
-    tolerance = "{opts$tolerance}",
-    smoothness = "{opts$smoothness}",
     output_dir = "{.path {opts$output_dir}}"
   ))
 
