@@ -1,3 +1,34 @@
+# ggseg.extra 1.9.9.9073
+
+## User-facing changes
+
+### Minor changes
+
+- The pre-knitted tutorials moved from `vignettes/` to `vignettes/articles/`,
+  together with the `.qmd.orig` sources they are knitted from and the
+  `figures/` they draw on. They were never shipped in the tarball --
+  `.Rbuildignore` excluded them one pattern at a time -- and
+  `vignettes/articles/` is where pkgdown expects website-only pages, so
+  `vignettes/` now holds the six real vignettes and nothing else. **Every
+  tutorial URL is unchanged**: pkgdown renders `vignettes/articles/x.qmd` to
+  the same `articles/x.html` a top-level vignette would get, so no existing
+  link breaks.
+
+- The subcortical and tract tutorials now cover tidying the geometry, which
+  only the cortical, label and cerebellar ones did. Both show `count_vertices()`
+  before and after `atlas_simplify()` and `atlas_smooth()`, and both make the
+  point the other tutorials do not have to: the context silhouette and the
+  structures need **separate** passes. A single pass tuned for nuclei or tubes
+  flattens the cortical ribbon into a blob, and `method = "chaikin"` is what
+  keeps its sulci, because the default `close` fills any hole narrower than the
+  smoothing distance. Both tutorials also show that the context carries most of
+  the vertices, and that smoothing puts some back rather than removing them.
+
+- The tract tutorial's key-parameter list presented `tube_radius`,
+  `tube_segments` and `n_points` as arguments of
+  `create_tract_from_tractography()`. #253 moved them into `tube_opts`, so the
+  list now says so and shows the call.
+
 # ggseg.extra 1.9.9.9072
 
 ## Developer-facing changes

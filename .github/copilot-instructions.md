@@ -4,8 +4,10 @@
   datasets for the `ggseg` / `ggseg3d` plotting ecosystem. See
   `DESCRIPTION` for package dependencies and system requirements
   (notably: FreeSurfer, which the subcortical, tract and whole-brain
-  pipelines shell out to). The user-facing documentation and
-  tutorials live in `vignettes/` and `docs/`.
+  pipelines shell out to). Shipped vignettes live in `vignettes/`; the
+  pre-knitted tutorials are website-only articles in
+  `vignettes/articles/`, alongside the `.qmd.orig` sources they are
+  knitted from.
 
 ### Big-picture architecture
 
@@ -58,8 +60,8 @@
 - `DESCRIPTION` — package dependencies & SystemRequirements
 - `inst/surfaces/` and `data-raw/` — examples and raw assets used by
   pipelines
-- `_pkgdown.yml`, `vignettes/`, — examples and tutorials to
-  mirror for usage patterns and function signatures
+- `_pkgdown.yml`, `vignettes/`, `vignettes/articles/` — examples and
+  tutorials to mirror for usage patterns and function signatures
 - `.github/workflows/*.yaml` — CI setup; useful for reproducing
   environment & install order
 

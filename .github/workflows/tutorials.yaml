@@ -117,11 +117,11 @@ jobs:
           }
 
           tutorials <- c(
-            "vignettes/tutorial-cerebellar-atlas.qmd.orig",
-            "vignettes/tutorial-cortical-atlas.qmd.orig",
-            "vignettes/tutorial-label-atlas.qmd.orig",
-            "vignettes/tutorial-subcortical-atlas.qmd.orig",
-            "vignettes/tutorial-tract-atlas.qmd.orig"
+            "vignettes/articles/tutorial-cerebellar-atlas.qmd.orig",
+            "vignettes/articles/tutorial-cortical-atlas.qmd.orig",
+            "vignettes/articles/tutorial-label-atlas.qmd.orig",
+            "vignettes/articles/tutorial-subcortical-atlas.qmd.orig",
+            "vignettes/articles/tutorial-tract-atlas.qmd.orig"
           )
 
           # Knitting writes the .qmd next to its source. The rendered output
@@ -137,11 +137,11 @@ jobs:
         run: |
           set -euo pipefail
           status=0
-          for f in vignettes/tutorial-cerebellar-atlas.qmd \
-                   vignettes/tutorial-cortical-atlas.qmd \
-                   vignettes/tutorial-label-atlas.qmd \
-                   vignettes/tutorial-subcortical-atlas.qmd \
-                   vignettes/tutorial-tract-atlas.qmd; do
+          for f in vignettes/articles/tutorial-cerebellar-atlas.qmd \
+                   vignettes/articles/tutorial-cortical-atlas.qmd \
+                   vignettes/articles/tutorial-label-atlas.qmd \
+                   vignettes/articles/tutorial-subcortical-atlas.qmd \
+                   vignettes/articles/tutorial-tract-atlas.qmd; do
             if grep -nE '^#> (Error|Quitting)' "$f"; then
               echo "::error file=$f::the tutorial rendered an error"
               status=1
