@@ -8,6 +8,12 @@ options(
   rgl.useNULL = TRUE
 )
 
+# Tests stamp caches directly rather than always going through a pipeline, so
+# the test process claims the manifests the way setup_atlas_dirs() does for a
+# real run. The guard itself is tested by moving the claim, not by leaving it
+# unset here.
+claim_cache_manifests()
+
 testdata_dir <- function() {
   test_path("testdata")
 }

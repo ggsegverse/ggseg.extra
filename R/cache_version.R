@@ -83,18 +83,76 @@ write_cache_manifest <- function(dir, manifest) {
   invisible(manifest_file)
 }
 
+# Cache manifest ownership ----
+
+# Which process may write the cache manifests. `setup_atlas_dirs()` claims
+# them at the top of every pipeline, in the main thread, before any work.
+# Neither kind of parallel worker can hold the claim: a multisession worker
+# starts with a fresh namespace and so has none, and a forked worker inherits
+# the parent's claim but not its pid. One mechanism catches each.
+cache_manifest_owner <- new.env(parent = emptyenv())
+
+#' Claim the cache manifests for the calling process
+#' @noRd
+claim_cache_manifests <- function() {
+  cache_manifest_owner$pid <- Sys.getpid()
+  invisible(cache_manifest_owner$pid)
+}
+
+#' Why the calling process must not write a cache manifest, or `NULL` if it may
+#'
+#' The single definition of the invariant, so the claim and the check cannot
+#' drift apart.
+#' @noRd
+cache_manifest_owner_violation <- function() {
+  owner <- cache_manifest_owner$pid
+  if (is.null(owner)) {
+    return("no process has claimed them")
+  }
+  if (!identical(owner, Sys.getpid())) {
+    return(cli::format_inline("process {owner} has claimed them"))
+  }
+  NULL
+}
+
+#' Abort unless the calling process owns the cache manifests
+#'
+#' Fails at the moment the invariant is broken. Losing manifest rows does not
+#' error on its own: it leaves caches looking stale, so the next run silently
+#' redoes hours of work and the cause is nowhere near the symptom.
+#' @noRd
+abort_unless_manifest_owner <- function() {
+  violation <- cache_manifest_owner_violation()
+  if (is.null(violation)) {
+    return(invisible(NULL))
+  }
+  cli::cli_abort(
+    c(
+      "Cache manifests may only be stamped by the process that claimed them.",
+      "x" = "Called from process {Sys.getpid()}, but {violation}.",
+      "i" = "Stamping is a read-modify-write on state shared by every cache \\
+             in the directory, so two workers would each drop the other's \\
+             rows. Collect the files the workers wrote and stamp them once, \\
+             after {.fn future_map} returns."
+    ),
+    class = "ggseg_extra_cache_manifest_thread_error"
+  )
+}
+
+
 #' Record the current format version for freshly written cache files
 #'
 #' The stamp lives in a sidecar manifest rather than on the objects
 #' themselves: attributes do not survive the dplyr verbs the pipelines apply
 #' to loaded data, and the same manifest covers `.rds` and `.rda` caches.
 #'
-#' Call this from the main thread only. It is a read-modify-write on state
-#' shared by every cache in the directory, and the atomic rename protects
-#' against a torn manifest, not against two workers each dropping the
-#' other's rows.
+#' Only the process that claimed the manifests may stamp. It is a
+#' read-modify-write on state shared by every cache in the directory, and the
+#' atomic rename protects against a torn manifest, not against two workers
+#' each dropping the other's rows.
 #' @noRd
 stamp_cache_files <- function(files) {
+  abort_unless_manifest_owner()
   files <- unlist(files, use.names = FALSE)
   if (length(files) == 0L) {
     return(invisible(character()))

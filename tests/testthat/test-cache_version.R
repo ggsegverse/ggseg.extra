@@ -223,3 +223,56 @@ describe("step_rerun_remedy", {
     expect_match(step_rerun_remedy(3L), "Include step 3")
   })
 })
+
+
+describe("cache manifest ownership", {
+  local_owner <- function(pid, env = parent.frame()) {
+    withr::defer(claim_cache_manifests(), envir = env)
+    cache_manifest_owner$pid <- pid
+  }
+
+  it("lets the claiming process stamp", {
+    dir <- withr::local_tempdir()
+    file <- file.path(dir, "step1_data.rds")
+    saveRDS(1, file)
+
+    claim_cache_manifests()
+    expect_identical(stamp_cache_files(file), file)
+    expect_identical(read_cache_manifest(dir)[["step1_data.rds"]], 2L)
+  })
+
+  it("refuses to stamp from a process that did not claim", {
+    dir <- withr::local_tempdir()
+    file <- file.path(dir, "step1_data.rds")
+    saveRDS(1, file)
+    local_owner(Sys.getpid() + 1L)
+
+    expect_error(
+      stamp_cache_files(file),
+      class = "ggseg_extra_cache_manifest_thread_error"
+    )
+    expect_identical(read_cache_manifest(dir), integer())
+  })
+
+  it("refuses to stamp when nothing has claimed", {
+    local_owner(NULL)
+    expect_error(
+      stamp_cache_files("anywhere/step1_data.rds"),
+      class = "ggseg_extra_cache_manifest_thread_error"
+    )
+  })
+
+  it("explains which process holds the claim", {
+    local_owner(424242L)
+    err <- expect_error(stamp_cache_files("anywhere/step1_data.rds"))
+    # Not a snapshot: the calling pid is in the message, so it varies.
+    expect_match(conditionMessage(err), "process 424242 has claimed them")
+    expect_match(conditionMessage(err), "after `future_map\\(\\)` returns")
+  })
+
+  it("is claimed by setup_atlas_dirs, before any work is done", {
+    local_owner(NULL)
+    setup_atlas_dirs(withr::local_tempdir(), atlas_name = "test")
+    expect_null(cache_manifest_owner_violation())
+  })
+})

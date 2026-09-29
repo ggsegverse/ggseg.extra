@@ -222,12 +222,17 @@ hemi_to_short <- function(hemi_long) {
 # Directory setup ----
 
 #' Setup standard atlas directory structure
+#'
+#' Also claims the cache manifests for this process. Every pipeline calls this
+#' from the main thread before doing any work, which is what makes a later
+#' stamp from inside a worker fail rather than silently drop manifest rows.
 #' @param output_dir Base output directory
 #' @param atlas_name Name of the atlas
 #' @param type Type of atlas: "cortical", "subcortical", or "tract"
 #' @return Named list of directory paths
 #' @noRd
 setup_atlas_dirs <- function(output_dir, type = "cortical", atlas_name = NULL) {
+  claim_cache_manifests()
   base <- if (is.null(atlas_name)) {
     output_dir
   } else {
