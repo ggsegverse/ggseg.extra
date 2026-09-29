@@ -39,7 +39,7 @@ value from \code{options("ggseg.extra.verbose")} or the \code{GGSEG_EXTRA_VERBOS
 environment variable.}
 
 \item{...}{Passed to \code{\link[=create_tract_from_tractography]{create_tract_from_tractography()}} (for example
-\code{tube_radius}, \code{tube_segments}, \code{steps}).}
+\code{tube_opts}, \code{slabs}, \code{steps}).}
 
 \item{input_aseg}{Path to a segmentation volume in the same space, used to
 draw the grey-brain cortex outline in the 2D views. Required for the 2D
@@ -76,7 +76,7 @@ atlas <- create_tract_from_volume(
   input_lut = "AtlasTrack_LUT.txt",
   input_aseg = "fsaverage/mri/aseg.mgz",
   exclude = c(2000, 2001, 2002, 2003, 2004),
-  tube_radius = 3
+  tube_opts = list(tube_radius = 3)
 )
 }
 }

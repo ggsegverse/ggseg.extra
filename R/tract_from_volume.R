@@ -29,7 +29,7 @@
 #' @template atlas_name
 #' @template output_dir
 #' @param ... Passed to [create_tract_from_tractography()] (for example
-#'   `tube_radius`, `tube_segments`, `steps`).
+#'   `tube_opts`, `slabs`, `steps`).
 #' @template verbose
 #'
 #' @return A `ggseg_atlas` of type `"tract"`, as returned by
@@ -45,7 +45,7 @@
 #'   input_lut = "AtlasTrack_LUT.txt",
 #'   input_aseg = "fsaverage/mri/aseg.mgz",
 #'   exclude = c(2000, 2001, 2002, 2003, 2004),
-#'   tube_radius = 3
+#'   tube_opts = list(tube_radius = 3)
 #' )
 #' }
 create_tract_from_volume <- function(
