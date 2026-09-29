@@ -21,7 +21,7 @@ distributed as NIfTI label volumes (e.g. AtlasTrack)."><meta property="og:image"
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9069</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9071</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -144,7 +144,7 @@ environment variable.</p></dd>
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
 <dd><p>Passed to <code><a href="create_tract_from_tractography.html">create_tract_from_tractography()</a></code> (for example
-<code>tube_radius</code>, <code>tube_segments</code>, <code>steps</code>).</p></dd>
+<code>tube_opts</code>, <code>slabs</code>, <code>steps</code>).</p></dd>
 
 
 <dt id="arg-input-aseg">input_aseg<a class="anchor" aria-label="anchor" href="#arg-input-aseg"></a></dt>
@@ -188,7 +188,7 @@ counterpart.</p></div>
 <span class="r-in"><span>  input_lut <span class="op">=</span> <span class="st">"AtlasTrack_LUT.txt"</span>,</span></span>
 <span class="r-in"><span>  input_aseg <span class="op">=</span> <span class="st">"fsaverage/mri/aseg.mgz"</span>,</span></span>
 <span class="r-in"><span>  exclude <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2000</span>, <span class="fl">2001</span>, <span class="fl">2002</span>, <span class="fl">2003</span>, <span class="fl">2004</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>  tube_radius <span class="op">=</span> <span class="fl">3</span></span></span>
+<span class="r-in"><span>  tube_opts <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>tube_radius <span class="op">=</span> <span class="fl">3</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
 </code></pre></div>

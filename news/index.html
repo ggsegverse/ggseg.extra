@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9069</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9071</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -67,6 +67,26 @@
       <small>Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.9.9.9071" id="ggsegextra-1999071">ggseg.extra 1.9.9.9071<a class="anchor" aria-label="anchor" href="#ggsegextra-1999071"></a></h2>
+<div class="section level3">
+<h3 id="user-facing-changes-1-9-9-9071">User-facing changes<a class="anchor" aria-label="anchor" href="#user-facing-changes-1-9-9-9071"></a></h3>
+<div class="section level4">
+<h4 id="minor-changes-1-9-9-9071">Minor changes<a class="anchor" aria-label="anchor" href="#minor-changes-1-9-9-9071"></a></h4>
+<ul><li>The <code><a href="../reference/create_tract_from_volume.html">create_tract_from_volume()</a></code> example passed <code>tube_radius = 3</code>, which <a href="https://github.com/ggsegverse/ggseg.extra/issues/253" class="external-link">#253</a> retired into <code>tube_opts</code>, so following the documentation produced a deprecation warning. It now passes <code>tube_opts = list(tube_radius = 3)</code>, and the <code>...</code> documentation names current arguments rather than retired ones.</li>
+</ul></div>
+</div>
+<div class="section level3">
+<h3 id="developer-facing-changes-1-9-9-9071">Developer-facing changes<a class="anchor" aria-label="anchor" href="#developer-facing-changes-1-9-9-9071"></a></h3>
+<div class="section level4">
+<h4 id="minor-changes-1-9-9-9071-1">Minor changes<a class="anchor" aria-label="anchor" href="#minor-changes-1-9-9-9071-1"></a></h4>
+<ul><li>
+<p>A new test parses every documented example and asserts that each argument it names is one the function actually accepts. All 58 help topics wrap their examples in <code>\dontrun{}</code> – they need FreeSurfer, a subject directory and hours – so <code>R CMD check</code> executes no line of the package’s primary API, and a renamed argument in any of the 24 pipeline entry points would have shipped a broken example with every check still green. That is how the <code>tube_radius</code> rot above was found.</p>
+<p>A function whose <code>...</code> forwards to another exported function declares the target rather than listing names, so an argument retired from the target stops being a formal there and is caught here. <code>\donttest{}</code> was considered and rejected: it runs under <code>--run-donttest</code>, where these examples would fail for want of FreeSurfer.</p>
+</li>
+</ul></div>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9069" id="ggsegextra-1999069">ggseg.extra 1.9.9.9069<a class="anchor" aria-label="anchor" href="#ggsegextra-1999069"></a></h2>
 <div class="section level3">

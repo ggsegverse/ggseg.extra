@@ -65,7 +65,7 @@ create_tract_from_volume(
 
   Passed to
   [`create_tract_from_tractography()`](https://ggsegverse.github.io/ggseg.extra/reference/create_tract_from_tractography.md)
-  (for example `tube_radius`, `tube_segments`, `steps`).
+  (for example `tube_opts`, `slabs`, `steps`).
 
 - input_aseg:
 
@@ -107,7 +107,7 @@ atlas <- create_tract_from_volume(
   input_lut = "AtlasTrack_LUT.txt",
   input_aseg = "fsaverage/mri/aseg.mgz",
   exclude = c(2000, 2001, 2002, 2003, 2004),
-  tube_radius = 3
+  tube_opts = list(tube_radius = 3)
 )
 } # }
 ```
