@@ -266,7 +266,7 @@ subcort_extract_contours <- function(config, dirs, vertex_size_limits) {
   extract_contours(
     dirs$snapshots,
     dirs$base,
-    step = paste0("5/", subcort_total_steps()),
+    step = sprintf("5/%d", subcort_total_steps()),
     verbose = config$verbose,
     vertex_size_limits = vertex_size_limits
   )

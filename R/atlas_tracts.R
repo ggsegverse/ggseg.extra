@@ -319,7 +319,7 @@ tract_extract_contours <- function(config, dirs, vertex_size_limits) {
   extract_contours(
     dirs$snapshots,
     dirs$base,
-    step = paste0("3/", tract_total_steps()),
+    step = sprintf("3/%d", tract_total_steps()),
     verbose = config$verbose,
     vertex_size_limits = vertex_size_limits
   )
