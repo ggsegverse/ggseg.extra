@@ -4,7 +4,7 @@
       invisible(cortical_project_and_build(components = mock_components(),
       atlas_name = "test", hemisphere = "lh", views = "lateral", config = list(steps = 1:
         2, skip_existing = FALSE, tolerance = 1, cleanup = FALSE, verbose = TRUE),
-      dirs = mock_dirs(), start_time = Sys.time()))
+      dirs = local_atlas_dirs(), start_time = Sys.time()))
     Message
       i Projecting mesh to 2D polygons
       v Projecting mesh to 2D polygons [<time>]

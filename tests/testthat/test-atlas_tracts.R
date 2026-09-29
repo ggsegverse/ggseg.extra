@@ -153,7 +153,7 @@ describe("create_tract_from_tractography pipeline flow", {
   it("passes correct args to tract_read_input and tract_create_meshes", {
     .cap$captured_read_args <- NULL
     .cap$captured_mesh_args <- NULL
-    dirs <- mock_dirs()
+    dirs <- local_atlas_dirs()
     local_mocked_bindings(
       tract_read_input = function(input_tracts, tract_names) {
         .cap$captured_read_args <- list(
@@ -217,7 +217,7 @@ describe("create_tract_from_tractography pipeline flow", {
   })
 
   it("errors when input_aseg is NULL for steps beyond 1", {
-    dirs <- mock_dirs()
+    dirs <- local_atlas_dirs()
     cached <- list(
       streamlines_data = list(t1 = matrix(1:30, ncol = 3)),
       centerlines_df = data.frame(stringsAsFactors = FALSE, label = "t1"),
@@ -300,7 +300,7 @@ describe("create_tract_from_tractography pipeline flow", {
 
   it("loads cached data for skipped steps and proceeds", {
     local_test_workdir()
-    dirs <- mock_dirs()
+    dirs <- local_atlas_dirs()
     cached <- list(
       streamlines_data = list(t1 = matrix(1:30, ncol = 3)),
       centerlines_df = data.frame(stringsAsFactors = FALSE, label = "t1"),
@@ -363,7 +363,7 @@ describe("create_tract_from_tractography pipeline flow", {
 
   it("step 1 returns 3D-only atlas with verbose and cleanup", {
     local_test_workdir()
-    dirs <- mock_dirs()
+    dirs <- local_atlas_dirs()
     tract_file <- "tract.trk"
     file.create(tract_file)
 
@@ -425,7 +425,7 @@ describe("create_tract_from_tractography pipeline flow", {
 
   it("step 7 builds final atlas with cleanup", {
     local_test_workdir()
-    dirs <- mock_dirs()
+    dirs <- local_atlas_dirs()
     tract_file <- "tract.trk"
     file.create(tract_file)
 
@@ -505,7 +505,7 @@ describe("create_tract_from_tractography pipeline flow", {
   })
 
   it("step 7 errors when contours_reduced.rda missing", {
-    dirs <- mock_dirs()
+    dirs <- local_atlas_dirs()
     cached <- list(
       streamlines_data = list(t1 = matrix(1:30, ncol = 3)),
       centerlines_df = data.frame(stringsAsFactors = FALSE, label = "t1"),

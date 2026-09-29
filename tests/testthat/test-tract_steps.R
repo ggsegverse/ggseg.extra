@@ -1055,7 +1055,7 @@ describe("run_image_steps (tract step_map)", {
     )
 
     config <- list(steps = 3L, verbose = FALSE)
-    dirs <- mock_dirs()
+    dirs <- local_atlas_dirs()
 
     run_image_steps(config, dirs, tract_step_map, 6L)
 
@@ -1072,7 +1072,7 @@ describe("run_image_steps (tract step_map)", {
     )
 
     config <- list(steps = 4L, verbose = FALSE, smoothness = 1.0)
-    dirs <- mock_dirs()
+    dirs <- local_atlas_dirs()
 
     run_image_steps(config, dirs, tract_step_map, 6L)
 
@@ -1089,7 +1089,7 @@ describe("run_image_steps (tract step_map)", {
     )
 
     config <- list(steps = 5L, verbose = FALSE, tolerance = 0.01)
-    dirs <- mock_dirs()
+    dirs <- local_atlas_dirs()
 
     run_image_steps(config, dirs, tract_step_map, 6L)
 
@@ -1120,7 +1120,7 @@ describe("run_image_steps (tract step_map)", {
       smoothness = 1.0,
       tolerance = 0.01
     )
-    dirs <- mock_dirs()
+    dirs <- local_atlas_dirs()
 
     run_image_steps(config, dirs, tract_step_map, 6L)
 

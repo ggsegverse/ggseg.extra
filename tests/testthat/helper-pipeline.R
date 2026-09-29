@@ -6,20 +6,23 @@ mock_future_map2 <- function(.x, .y, .f, ...) {
   mapply(.f, .x, .y, SIMPLIFY = FALSE)
 }
 
-mock_dirs <- function() {
-  list(
-    base = withr::local_tempdir(.local_envir = parent.frame()),
-    snapshots = withr::local_tempdir(.local_envir = parent.frame())
+# Real directories from the real setup_atlas_dirs(), not a hand-built list.
+# These used to return two or three unrelated tempdirs, a shape the pipeline
+# never sees: production nests snapshots/ and meshes/ under base/, which is why
+# finalize_atlas() can clear the intermediates with a single recursive unlink()
+# of base. Siblings survive that, so a test using the old shape could not tell
+# cleanup from a no-op.
+local_atlas_dirs <- function() {
+  setup_atlas_dirs(
+    withr::local_tempdir(.local_envir = parent.frame()),
+    type = "cortical"
   )
 }
 
-# The shape setup_atlas_dirs() builds for a subcortical atlas.
-mock_subcort_dirs <- function() {
-  pf <- parent.frame()
-  list(
-    base = withr::local_tempdir(.local_envir = pf),
-    snapshots = withr::local_tempdir(.local_envir = pf),
-    meshes = withr::local_tempdir(.local_envir = pf)
+local_subcort_dirs <- function() {
+  setup_atlas_dirs(
+    withr::local_tempdir(.local_envir = parent.frame()),
+    type = "subcortical"
   )
 }
 

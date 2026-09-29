@@ -1,3 +1,21 @@
+# ggseg.extra 1.9.9.9074
+
+## Developer-facing changes
+
+### Minor changes
+
+- The test helpers that stood in for `setup_atlas_dirs()` now call it. They
+  returned two or three unrelated temporary directories, a shape the pipeline
+  never sees: production nests `snapshots/` and `meshes/` under `base/`, which
+  is why `finalize_atlas()` can clear the intermediates with a single recursive
+  `unlink()` of `base`. Siblings survive that, so roughly forty tests ran
+  against a layout in which cleanup was indistinguishable from a no-op. They
+  are renamed `local_atlas_dirs()` and `local_subcort_dirs()`, since they no
+  longer mock anything.
+
+- A new `finalize_atlas()` test asserts that cleanup clears the nested
+  directories, the behaviour the old helper shape could not detect.
+
 # ggseg.extra 1.9.9.9073
 
 ## User-facing changes

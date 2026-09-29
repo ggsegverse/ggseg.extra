@@ -106,7 +106,7 @@ describe("cortical_project_and_build", {
         cleanup = FALSE,
         verbose = FALSE
       ),
-      dirs = mock_dirs(),
+      dirs = local_atlas_dirs(),
       start_time = Sys.time()
     )
 
@@ -481,7 +481,7 @@ describe("cortical_project_and_build verbose and cleanup paths", {
           cleanup = FALSE,
           verbose = TRUE
         ),
-        dirs = mock_dirs(),
+        dirs = local_atlas_dirs(),
         start_time = Sys.time()
       ))
     )

@@ -1916,7 +1916,7 @@ describe("cerebellar_project_and_build", {
     )
     components$vertices_df$vertices <- list(0:999)
 
-    dirs <- mock_dirs()
+    dirs <- local_atlas_dirs()
     config <- list(
       verbose = FALSE,
       tolerance = 0,
@@ -1956,7 +1956,7 @@ describe("cerebellar_process_deep_nuclei", {
     )
     deep_data$vertices <- list(integer(0))
 
-    dirs <- mock_dirs()
+    dirs <- local_atlas_dirs()
 
     expect_warning(
       {
@@ -1994,7 +1994,7 @@ describe("cerebellar_process_deep_nuclei", {
     )
     deep_data$vertices <- list(integer(0))
 
-    dirs <- mock_dirs()
+    dirs <- local_atlas_dirs()
 
     local_mocked_bindings(check_fs = function(...) FALSE)
 
@@ -2032,7 +2032,7 @@ describe("cerebellar_process_deep_nuclei", {
     )
     deep_data$vertices <- list(integer(0), integer(0))
 
-    dirs <- mock_dirs()
+    dirs <- local_atlas_dirs()
     local_mocked_bindings(check_fs = function(...) FALSE)
 
     result <- cerebellar_process_deep_nuclei(
@@ -2067,7 +2067,7 @@ describe("cerebellar_process_deep_nuclei", {
     )
     deep_data$vertices <- list(integer(0))
 
-    dirs <- mock_dirs()
+    dirs <- local_atlas_dirs()
 
     expect_message(
       result <- cerebellar_process_deep_nuclei(
@@ -2617,7 +2617,7 @@ describe("cerebellar_project_and_build with deep nuclei", {
       }
     )
 
-    dirs <- mock_dirs()
+    dirs <- local_atlas_dirs()
     config <- list(
       verbose = TRUE,
       tolerance = 0,
@@ -2723,7 +2723,7 @@ describe("build_deep_nucleus_sf polygonisation failure", {
 describe("build_deep_nuclei_meshes without FreeSurfer", {
   it("warns and returns NULL when FreeSurfer is unavailable and verbose", {
     deep_data <- tibble(label = "midline_Dentate", vol_idx = 1L)
-    dirs <- mock_dirs()
+    dirs <- local_atlas_dirs()
     local_mocked_bindings(check_fs = function(...) FALSE)
     expect_warning(
       {

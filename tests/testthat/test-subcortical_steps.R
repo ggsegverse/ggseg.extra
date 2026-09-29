@@ -1020,7 +1020,7 @@ describe("run_image_steps (subcort step_map)", {
       smoothness = 3,
       tolerance = 0.5
     )
-    dirs <- mock_dirs()
+    dirs <- local_atlas_dirs()
 
     run_image_steps(config, dirs, subcort_step_map, 8L)
 
@@ -1056,7 +1056,7 @@ describe("run_image_steps (subcort step_map)", {
       smoothness = 3,
       tolerance = 0.5
     )
-    dirs <- mock_dirs()
+    dirs <- local_atlas_dirs()
 
     run_image_steps(config, dirs, subcort_step_map, 8L)
 
@@ -1066,7 +1066,7 @@ describe("run_image_steps (subcort step_map)", {
   })
 
   it("refuses a projection an older cache format wrote", {
-    dirs <- mock_dirs()
+    dirs <- local_atlas_dirs()
     outfile <- projection_file(dirs$snapshots, "ax_1", "thalamus")
     projection <- matrix(1L, 4, 4)
     save(projection, file = outfile)
@@ -1159,7 +1159,7 @@ describe("subcort_snapshot_names", {
 
 describe("prune_stale_snapshots", {
   it("removes projections no slab in this run can produce", {
-    dirs <- mock_subcort_dirs()
+    dirs <- local_subcort_dirs()
     file.create(file.path(dirs$snapshots, c("axial_1_a.rda", "axial_9_a.rda")))
     file.create(file.path(dirs$snapshots, "cache_manifest.rds"))
 
@@ -1175,7 +1175,7 @@ describe("prune_stale_snapshots", {
   })
 
   it("says nothing when every image belongs to this run", {
-    dirs <- mock_subcort_dirs()
+    dirs <- local_subcort_dirs()
     file.create(file.path(dirs$snapshots, "axial_1_a.rda"))
 
     expect_silent(stale <- prune_stale_snapshots(dirs, "axial_1_a.rda"))
@@ -1183,7 +1183,7 @@ describe("prune_stale_snapshots", {
   })
 
   it("prunes quietly when verbose is FALSE", {
-    dirs <- mock_subcort_dirs()
+    dirs <- local_subcort_dirs()
     file.create(file.path(dirs$snapshots, c("axial_1_a.rda", "axial_9_a.rda")))
 
     expect_silent(
@@ -1359,7 +1359,7 @@ describe("cortex silhouette snapshot staleness", {
   }
 
   it("redraws an unrecorded snapshot", {
-    dirs <- mock_subcort_dirs()
+    dirs <- local_subcort_dirs()
     outfile <- file.path(dirs$snapshots, "ax_1_cortex_left.rda")
     file.create(outfile)
     local_counting_slice()
@@ -1376,7 +1376,7 @@ describe("cortex silhouette snapshot staleness", {
   })
 
   it("reuses a snapshot recorded for this context volume", {
-    dirs <- mock_subcort_dirs()
+    dirs <- local_subcort_dirs()
     outfile <- file.path(dirs$snapshots, "ax_1_cortex_left.rda")
     file.create(outfile)
     local_counting_slice()
@@ -1403,7 +1403,7 @@ describe("cortex silhouette snapshot staleness", {
   })
 
   it("redraws when the context volume itself changed", {
-    dirs <- mock_subcort_dirs()
+    dirs <- local_subcort_dirs()
     outfile <- file.path(dirs$snapshots, "ax_1_cortex_left.rda")
     file.create(outfile)
     local_counting_slice()
@@ -1491,7 +1491,7 @@ describe("structure snapshot staleness", {
   }
 
   it("stamps every projection it writes, so the contour step accepts them", {
-    dirs <- mock_subcort_dirs()
+    dirs <- local_subcort_dirs()
     vol <- array(0L, dim = c(10, 10, 10))
     vol[2:4, 2:4, 2:4] <- 10L
     vol[6:8, 6:8, 2:4] <- 11L
@@ -1521,7 +1521,7 @@ describe("structure snapshot staleness", {
   })
 
   it("reuses a snapshot whose voxels are unchanged", {
-    dirs <- mock_subcort_dirs()
+    dirs <- local_subcort_dirs()
     outfile <- file.path(dirs$snapshots, "ax_1_Pallidum_l.rda")
     file.create(outfile)
     local_counting_projection()
@@ -1537,7 +1537,7 @@ describe("structure snapshot staleness", {
   })
 
   it("redraws when reindexing hands the label different voxels", {
-    dirs <- mock_subcort_dirs()
+    dirs <- local_subcort_dirs()
     outfile <- file.path(dirs$snapshots, "ax_1_Pallidum_l.rda")
     file.create(outfile)
     local_counting_projection()
@@ -1563,7 +1563,7 @@ describe("structure snapshot staleness", {
   })
 
   it("redraws when the slab framing the structure changes", {
-    dirs <- mock_subcort_dirs()
+    dirs <- local_subcort_dirs()
     file.create(file.path(dirs$snapshots, "ax_1_Pallidum_l.rda"))
     local_counting_projection()
     vol <- structure_vol()
@@ -1590,7 +1590,7 @@ describe("structure snapshot staleness", {
   })
 
   it("names every signature after the file it belongs to", {
-    dirs <- mock_subcort_dirs()
+    dirs <- local_subcort_dirs()
     local_counting_projection()
 
     signatures <- draw(structure_vol(), colortable_for(42L), dirs)
