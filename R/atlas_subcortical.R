@@ -45,26 +45,22 @@
 #' @template cleanup
 #' @template verbose
 #' @template skip_existing
-#' @param steps Which pipeline steps to run. Default NULL runs all steps.
-#'   Steps are:
+#' @param steps Which pipeline steps to run. Default NULL runs all six:
 #'   \itemize{
-#'     \item 1: Extract labels from volume and get colour table
-#'     \item 2: Create meshes for each structure
+#'     \item 1: Extract labels from the volume and read the colour table
+#'     \item 2: Create a mesh for each structure
 #'     \item 3: Build atlas data (3D only if stopping here)
 #'     \item 4: Create projection snapshots
-#'     \item 5: Process images
-#'     \item 6: Extract contours
-#'     \item 7: Smooth contours
-#'     \item 8: Reduce vertices
-#'     \item 9: Build final atlas with 2D geometry
+#'     \item 5: Extract contours
+#'     \item 6: Build the final atlas with 2D geometry
 #'   }
-#'   Use `steps = 1:3` for 3D-only atlas. Use `steps = 7:8` to iterate on
-#'   smoothing and reduction parameters.
+#'   Use `steps = 1:3` for a 3D-only atlas. Geometry is shaped after the
+#'   build, not during it: see [atlas_polish()].
 #' @param context Optional named list of [aseg_context()] arguments (e.g.
 #'   `context = list(focus = "Hippocampus")`) applied to the finished 2D atlas
 #'   to keep the focus regions coloured on grey anatomical context. `NULL`
 #'   (default) leaves the atlas unchanged. Only applied when the 2D build
-#'   (step 9) runs.
+#'   (step 6) runs.
 #' @template views_deprecated
 #'
 #' @return A `ggseg_atlas` object with region metadata (core), 3D meshes,
@@ -115,9 +111,7 @@ create_subcortical_from_volume <- function(
   steps = NULL,
   context = NULL
 ) {
-  dots <- check_post_creation_dots("create_subcortical_from_volume", ...)
-  smoothness <- dots$smoothness
-  tolerance <- dots$tolerance
+  check_post_creation_dots("create_subcortical_from_volume", ...)
   if (lifecycle::is_present(views)) {
     lifecycle::deprecate_warn(
       "1.9.9.9005",
@@ -140,8 +134,6 @@ create_subcortical_from_volume <- function(
     skip_existing = skip_existing,
     decimate = decimate,
     steps = steps,
-    tolerance = tolerance,
-    smoothness = smoothness,
     context = context
   )
 
@@ -166,8 +158,6 @@ subcort_setup_pipeline <- function(
   skip_existing,
   decimate,
   steps,
-  tolerance,
-  smoothness,
   context
 ) {
   config <- validate_subcort_config(
@@ -179,9 +169,7 @@ subcort_setup_pipeline <- function(
     cleanup = cleanup,
     skip_existing = skip_existing,
     decimate = decimate,
-    steps = steps,
-    tolerance = tolerance,
-    smoothness = smoothness
+    steps = steps
   )
 
   validate_subcort_context_arg(context, config$steps)
@@ -201,14 +189,11 @@ subcort_setup_pipeline <- function(
 #' @noRd
 #' Number of steps in the subcortical pipeline
 #'
-#' Step 9 assembles the 2D atlas, so this is both the ceiling `steps` is
-#' validated against and the step that assembly is gated on. It is one value
-#' because it was three: removing the PNG stage lowered the ceiling and the
-#' progress total to 8 but left the gate, the progress labels and the
-#' assembly's own error message on 9. Step 9 was then never in the default
-#' set, so the pipeline ran everything, reported success and returned `NULL`.
+#' The last step assembles the 2D atlas, so this is both the ceiling `steps`
+#' is validated against and the step that assembly is gated on. One value,
+#' because it was once three and they drifted apart.
 #' @noRd
-subcort_total_steps <- function() 9L
+subcort_total_steps <- function() 6L
 
 
 subcort_run_pipeline <- function(
@@ -246,7 +231,7 @@ subcort_run_pipeline <- function(
     ),
     verbose = config$verbose
   )
-  subcort_image_steps(config, dirs, vertex_size_limits)
+  subcort_extract_contours(config, dirs, vertex_size_limits)
 
   if (subcort_total_steps() %in% config$steps) {
     atlas <- subcort_build_2d_atlas(config, components, dirs, snaps, context)
@@ -272,12 +257,17 @@ subcort_finalize <- function(atlas, config, dirs, start_time) {
 
 
 #' @noRd
-subcort_image_steps <- function(config, dirs, vertex_size_limits) {
-  run_image_steps(
-    config,
-    dirs,
-    step_map = list(extract = 5L, smooth = 6L, reduce = 7L),
-    total_steps = subcort_total_steps(),
+subcort_extract_contours <- function(config, dirs, vertex_size_limits) {
+  if (!(5L %in% config$steps)) {
+    return(invisible(NULL))
+  }
+  # Each projection carries its own cache stamp and read_projection() rejects
+  # a stale one, so there is no directory-level check to make.
+  extract_contours(
+    dirs$snapshots,
+    dirs$base,
+    step = paste0("5/", subcort_total_steps()),
+    verbose = config$verbose,
     vertex_size_limits = vertex_size_limits
   )
 }
@@ -340,7 +330,7 @@ resolve_subcort_slabs_spec <- function(slabs, input_volume) {
 
 #' Validate the `context` argument of `create_subcortical_from_volume()`
 #'
-#' `context` is only applied when the 2D build (step 9) runs; warn otherwise.
+#' `context` is only applied when the 2D build (step 6) runs; warn otherwise.
 #' @noRd
 validate_subcort_context_arg <- function(context, steps) {
   if (is.null(context)) {
@@ -352,9 +342,10 @@ validate_subcort_context_arg <- function(context, steps) {
       "i" = "Got {.cls {class(context)}}."
     ))
   }
-  if (!(9L %in% steps)) {
+  if (!(subcort_total_steps() %in% steps)) {
     cli::cli_warn(
-      "{.arg context} is ignored unless step 9 (the 2D build) runs."
+      "{.arg context} is ignored unless step {subcort_total_steps()} (the 2D
+      build) runs."
     )
   }
   invisible(NULL)
@@ -383,17 +374,13 @@ validate_subcort_config <- function(
   cleanup,
   skip_existing,
   decimate,
-  steps,
-  tolerance,
-  smoothness
+  steps
 ) {
   config <- resolve_common_config(
     output_dir,
     verbose,
     cleanup,
     skip_existing,
-    tolerance,
-    smoothness,
     steps,
     max_step = subcort_total_steps()
   )
@@ -497,7 +484,9 @@ subcort_resolve_labels <- function(config, dirs) {
   }
 
   if (config$verbose) {
-    cli::cli_progress_step("1/9 Extracting labels from volume")
+    cli::cli_progress_step(
+      "1/{subcort_total_steps()} Extracting labels from volume"
+    )
   }
 
   loaded <- load_volume_colortable(
@@ -529,7 +518,7 @@ subcort_resolve_labels <- function(config, dirs) {
 #' @noRd
 subcort_cached_labels <- function(cached, verbose) {
   if (verbose) {
-    cli::cli_alert_success("1/9 Loaded existing labels")
+    cli::cli_alert_success("1/{subcort_total_steps()} Loaded existing labels")
   }
   list(
     colortable = cached$data[["colortable.rds"]],
@@ -552,7 +541,9 @@ subcort_resolve_meshes <- function(config, dirs, colortable) {
   if (!cached$run) {
     if (any(config$steps > 2L)) {
       if (config$verbose) {
-        cli::cli_alert_success("2/9 Loaded existing meshes")
+        cli::cli_alert_success(
+          "2/{subcort_total_steps()} Loaded existing meshes"
+        )
       }
       return(cached$data[["meshes_list.rds"]])
     }
@@ -560,7 +551,9 @@ subcort_resolve_meshes <- function(config, dirs, colortable) {
   }
 
   if (config$verbose) {
-    cli::cli_progress_step("2/9 Creating meshes for each structure")
+    cli::cli_progress_step(
+      "2/{subcort_total_steps()} Creating meshes for each structure"
+    )
   }
 
   meshes_list <- subcort_create_meshes(
@@ -594,7 +587,9 @@ subcort_resolve_components <- function(config, dirs, colortable, meshes_list) {
   if (!cached$run) {
     if (any(config$steps > 3L)) {
       if (config$verbose) {
-        cli::cli_alert_success("3/9 Loaded existing components")
+        cli::cli_alert_success(
+          "3/{subcort_total_steps()} Loaded existing components"
+        )
       }
       return(cached$data[["components.rds"]])
     }
@@ -602,7 +597,7 @@ subcort_resolve_components <- function(config, dirs, colortable, meshes_list) {
   }
 
   if (config$verbose) {
-    cli::cli_progress_step("3/9 Building atlas data")
+    cli::cli_progress_step("3/{subcort_total_steps()} Building atlas data")
   }
 
   components <- subcort_build_components(colortable, meshes_list)
@@ -631,7 +626,9 @@ subcort_resolve_snapshots <- function(config, dirs, colortable, slabs) {
   if (!cached$run) {
     if (any(config$steps > 4L)) {
       if (config$verbose) {
-        cli::cli_alert_success("4/9 Loaded existing slabs")
+        cli::cli_alert_success(
+          "4/{subcort_total_steps()} Loaded existing slabs"
+        )
       }
       return(list(
         slabs = cached$data[["slabs.rds"]],
@@ -642,7 +639,9 @@ subcort_resolve_snapshots <- function(config, dirs, colortable, slabs) {
   }
 
   if (config$verbose) {
-    cli::cli_progress_step("4/9 Creating projection snapshots")
+    cli::cli_progress_step(
+      "4/{subcort_total_steps()} Creating projection snapshots"
+    )
   }
 
   result <- subcort_create_snapshots(
@@ -685,11 +684,12 @@ subcort_assemble_full <- function(
   slabs,
   cortex_slices
 ) {
-  contours_file <- as.character(fs::path(dirs$base, "contours_reduced.rda"))
+  contours_file <- as.character(fs::path(dirs$base, "contours.rda"))
   if (!file.exists(contours_file)) {
     cli::cli_abort(c(
-      "Step 9 requires contours_reduced.rda which doesn't exist",
-      "i" = "Run steps 5-8 first to generate contour data"
+      "Step {subcort_total_steps()} needs {.path contours.rda}, which does
+      not exist.",
+      "i" = "Run step 5 first to extract contour data."
     ))
   }
 

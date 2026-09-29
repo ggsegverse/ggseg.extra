@@ -410,6 +410,43 @@ describe("extract_contours", {
     expect_identical(saved$contours$y_axis, rep("up", nrow(saved$contours)))
   })
 
+  it("warns and saves empty when every contour is invalid", {
+    input_dir <- withr::local_tempdir("masks_")
+    output_dir <- withr::local_tempdir("output_")
+    write_projection_fixture(file.path(input_dir, "region1.rda"), 2:5, 2:5)
+
+    local_mocked_bindings(
+      global = function(r, ...) data.frame(max = 255),
+      .package = "terra"
+    )
+    local_mocked_bindings(
+      get_contours = function(...) {
+        sf::st_sf(
+          geometry = sf::st_sfc(sf::st_polygon(list(matrix(
+            c(0, 0, 1, 0, 1, 1, 0, 0),
+            ncol = 2,
+            byrow = TRUE
+          ))))
+        )
+      },
+      progressor = function(...) function(...) NULL,
+      filter_valid_geometries = function(sf_obj) sf_obj[0, ]
+    )
+    local_mocked_bindings(
+      future_map = function(.x, .f, ...) lapply(.x, .f),
+      .package = "furrr"
+    )
+
+    expect_warning(
+      {
+        result <- extract_contours(input_dir, output_dir, verbose = FALSE)
+      },
+      "No valid contours"
+    )
+    expect_identical(nrow(result), 0L)
+    expect_true(file.exists(file.path(output_dir, "contours.rda")))
+  })
+
   it("logs progress when verbose is TRUE", {
     input_dir <- withr::local_tempdir("masks_")
     output_dir <- withr::local_tempdir("output_")
@@ -619,127 +656,6 @@ describe("combine_region_contours", {
   })
 })
 
-describe("smooth_contours", {
-  it("smooths contour geometry", {
-    outdir <- withr::local_tempdir("smooth_test_")
-
-    contours <- sf::st_sf(
-      region = c("test1", "test2"),
-      geometry = sf::st_sfc(
-        sf::st_polygon(list(matrix(
-          c(0, 0, 1, 0, 1, 1, 0, 1, 0, 0),
-          ncol = 2,
-          byrow = TRUE
-        ))),
-        sf::st_polygon(list(matrix(
-          c(2, 0, 3, 0, 3, 1, 2, 1, 2, 0),
-          ncol = 2,
-          byrow = TRUE
-        )))
-      )
-    )
-    save_contours_fixture(
-      file.path(outdir, "contours.rda"),
-      contours = contours
-    )
-
-    result <- smooth_contours(outdir, smoothness = 5, step = "")
-
-    expect_s3_class(result, "sf")
-    expect_true(file.exists(file.path(outdir, "contours_smoothed.rda")))
-  })
-
-  it("warns and saves empty when all contours are invalid", {
-    outdir <- withr::local_tempdir("smooth_empty_")
-
-    contours <- sf::st_sf(
-      filenm = "test",
-      geometry = sf::st_sfc(sf::st_polygon())
-    )
-    save_contours_fixture(
-      file.path(outdir, "contours.rda"),
-      contours = contours
-    )
-
-    expect_warning(
-      {
-        result <- smooth_contours(outdir, smoothness = 5, step = "")
-      },
-      "No valid contours"
-    )
-    expect_identical(nrow(result), 0L)
-    expect_true(file.exists(file.path(outdir, "contours_smoothed.rda")))
-  })
-})
-
-
-describe("reduce_vertex", {
-  it("passes contour geometry through unchanged", {
-    outdir <- withr::local_tempdir("reduce_test_")
-
-    coords <- matrix(
-      c(
-        0,
-        0,
-        0.1,
-        0.01,
-        0.2,
-        0,
-        1,
-        0,
-        1,
-        1,
-        0,
-        1,
-        0,
-        0
-      ),
-      ncol = 2,
-      byrow = TRUE
-    )
-    contours <- sf::st_sf(
-      region = "test",
-      geometry = sf::st_sfc(sf::st_polygon(list(coords)))
-    )
-    save_contours_fixture(
-      file.path(outdir, "contours_smoothed.rda"),
-      contours = contours
-    )
-
-    result <- reduce_vertex(outdir, tolerance = 0.5, step = "")
-
-    expect_s3_class(result, "sf")
-    expect_true(file.exists(file.path(outdir, "contours_reduced.rda")))
-    expect_identical(
-      nrow(sf::st_coordinates(result)),
-      nrow(sf::st_coordinates(contours))
-    )
-  })
-
-  it("warns and saves empty when all contours are invalid", {
-    outdir <- withr::local_tempdir("reduce_empty_")
-
-    contours <- sf::st_sf(
-      filenm = "test",
-      geometry = sf::st_sfc(sf::st_polygon())
-    )
-    save_contours_fixture(
-      file.path(outdir, "contours_smoothed.rda"),
-      contours = contours
-    )
-
-    expect_warning(
-      {
-        result <- reduce_vertex(outdir, tolerance = 0.5, step = "")
-      },
-      "No valid contours"
-    )
-    expect_identical(nrow(result), 0L)
-    expect_true(file.exists(file.path(outdir, "contours_reduced.rda")))
-  })
-})
-
-
 describe("make_multipolygon", {
   it("combines contours into multipolygons", {
     contourfile <- save_contours_fixture(
@@ -772,58 +688,6 @@ describe("make_multipolygon", {
     local_mocked_bindings(cache_format_version = function() 9999L)
 
     expect_error(make_multipolygon(contourfile), "written by cache format")
-  })
-})
-
-
-describe("smooth_contours verbose output", {
-  it("emits progress message when verbose is TRUE", {
-    outdir <- withr::local_tempdir("smooth_verbose_")
-
-    contours <- sf::st_sf(
-      region = "test",
-      geometry = sf::st_sfc(
-        sf::st_polygon(list(matrix(
-          c(0, 0, 1, 0, 1, 1, 0, 1, 0, 0),
-          ncol = 2,
-          byrow = TRUE
-        )))
-      )
-    )
-    save_contours_fixture(
-      file.path(outdir, "contours.rda"),
-      contours = contours
-    )
-
-    expect_no_message(
-      smooth_contours(outdir, smoothness = 5, step = "1/3", verbose = TRUE)
-    )
-  })
-})
-
-
-describe("reduce_vertex verbose output", {
-  it("is silent now that simplification has moved post-creation", {
-    outdir <- withr::local_tempdir("reduce_verbose_")
-
-    contours <- sf::st_sf(
-      region = "test",
-      geometry = sf::st_sfc(
-        sf::st_polygon(list(matrix(
-          c(0, 0, 1, 0, 1, 1, 0, 1, 0, 0),
-          ncol = 2,
-          byrow = TRUE
-        )))
-      )
-    )
-    save_contours_fixture(
-      file.path(outdir, "contours_smoothed.rda"),
-      contours = contours
-    )
-
-    expect_no_message(
-      reduce_vertex(outdir, tolerance = 0.5, step = "2/3", verbose = TRUE)
-    )
   })
 })
 
@@ -1431,29 +1295,6 @@ describe("smoothness scale", {
 })
 
 
-describe("contour stage cache staleness", {
-  it("aborts when smooth_contours reads contours from another version", {
-    outdir <- withr::local_tempdir("smooth_stale_")
-    save_contours_fixture(file.path(outdir, "contours.rda"))
-    local_mocked_bindings(cache_format_version = function() 9999L)
-
-    expect_error(
-      smooth_contours(outdir, smoothness = 5, step = "", verbose = FALSE),
-      "Rerun the contour extraction"
-    )
-  })
-
-  it("aborts when reduce_vertex reads contours from another version", {
-    outdir <- withr::local_tempdir("reduce_stale_")
-    save_contours_fixture(file.path(outdir, "contours_smoothed.rda"))
-    local_mocked_bindings(cache_format_version = function() 9999L)
-
-    expect_error(
-      reduce_vertex(outdir, tolerance = 0.5, step = "", verbose = FALSE),
-      "Rerun the contour extraction"
-    )
-  })
-})
 # A three-by-three grid of square parcels sharing every interior edge, with a
 # staircase along one of them so there is something to round off. Anything
 # that pulls the shared edges apart shows up as a hole in the union.

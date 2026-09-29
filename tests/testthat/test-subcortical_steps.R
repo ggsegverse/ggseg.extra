@@ -579,9 +579,7 @@ describe("validate_subcort_config", {
       cleanup = FALSE,
       skip_existing = FALSE,
       decimate = 0.5,
-      steps = NULL,
-      tolerance = NULL,
-      smoothness = NULL
+      steps = NULL
     )
 
     expect_type(result, "list")
@@ -594,9 +592,7 @@ describe("validate_subcort_config", {
       "cleanup",
       "skip_existing",
       "decimate",
-      "steps",
-      "tolerance",
-      "smoothness"
+      "steps"
     )
     expect_true(all(expected_fields %in% names(result)))
     expect_identical(result$atlas_name, "test_atlas")
@@ -620,16 +616,14 @@ describe("validate_subcort_config", {
           cleanup = FALSE,
           skip_existing = FALSE,
           decimate = val,
-          steps = NULL,
-          tolerance = NULL,
-          smoothness = NULL
+          steps = NULL
         ),
         "decimate"
       )
     }
   })
 
-  it("defaults steps to 1:9 when NULL", {
+  it("defaults steps to the whole pipeline when NULL", {
     local_mocked_bindings(check_fs = function(...) TRUE)
     vol_file <- withr::local_tempfile(fileext = ".mgz")
     file.create(vol_file)
@@ -644,9 +638,7 @@ describe("validate_subcort_config", {
       cleanup = FALSE,
       skip_existing = FALSE,
       decimate = 0.5,
-      steps = NULL,
-      tolerance = NULL,
-      smoothness = NULL
+      steps = NULL
     )
 
     expect_identical(result$steps, seq_len(subcort_total_steps()))
@@ -674,9 +666,7 @@ describe("validate_subcort_config", {
       cleanup = FALSE,
       skip_existing = FALSE,
       decimate = 0.5,
-      steps = NULL,
-      tolerance = NULL,
-      smoothness = NULL
+      steps = NULL
     )
 
     expect_s3_class(result$input_lut, "data.frame")
@@ -990,79 +980,39 @@ describe("finalize_atlas (subcort parameters)", {
 })
 
 
-describe("run_image_steps (subcort step_map)", {
-  subcort_step_map <- list(extract = 5L, smooth = 6L, reduce = 7L)
-
-  it("calls the right functions for the right steps", {
-    .cap$step5_called <- FALSE
-    .cap$step6_called <- FALSE
-    .cap$step7_called <- FALSE
+describe("subcort_extract_contours", {
+  it("extracts contours when step 5 is requested", {
+    .cap$extract_called <- FALSE
 
     local_mocked_bindings(
       extract_contours = function(...) {
-        .cap$step5_called <- TRUE
-        invisible(NULL)
-      },
-      smooth_contours = function(...) {
-        .cap$step6_called <- TRUE
-        invisible(NULL)
-      },
-      reduce_vertex = function(...) {
-        .cap$step7_called <- TRUE
+        .cap$extract_called <- TRUE
         invisible(NULL)
       }
     )
 
-    config <- list(
-      steps = 5L:7L,
-      verbose = FALSE,
-      skip_existing = FALSE,
-      smoothness = 3,
-      tolerance = 0.5
-    )
-    dirs <- local_atlas_dirs()
+    config <- list(steps = 5L:6L, verbose = FALSE, skip_existing = FALSE)
 
-    run_image_steps(config, dirs, subcort_step_map, 8L)
+    subcort_extract_contours(config, local_atlas_dirs(), NULL)
 
-    expect_true(.cap$step5_called)
-    expect_true(.cap$step6_called)
-    expect_true(.cap$step7_called)
+    expect_true(.cap$extract_called)
   })
 
-  it("skips steps not in config$steps", {
-    .cap$step5_called <- FALSE
-    .cap$step6_called <- FALSE
-    .cap$step7_called <- FALSE
+  it("skips extraction when step 5 is not requested", {
+    .cap$extract_called <- FALSE
 
     local_mocked_bindings(
       extract_contours = function(...) {
-        .cap$step5_called <- TRUE
-        invisible(NULL)
-      },
-      smooth_contours = function(...) {
-        .cap$step6_called <- TRUE
-        invisible(NULL)
-      },
-      reduce_vertex = function(...) {
-        .cap$step7_called <- TRUE
+        .cap$extract_called <- TRUE
         invisible(NULL)
       }
     )
 
-    config <- list(
-      steps = c(6L, 7L),
-      verbose = FALSE,
-      skip_existing = FALSE,
-      smoothness = 3,
-      tolerance = 0.5
-    )
-    dirs <- local_atlas_dirs()
+    config <- list(steps = 6L, verbose = FALSE, skip_existing = FALSE)
 
-    run_image_steps(config, dirs, subcort_step_map, 8L)
+    subcort_extract_contours(config, local_atlas_dirs(), NULL)
 
-    expect_false(.cap$step5_called)
-    expect_true(.cap$step6_called)
-    expect_true(.cap$step7_called)
+    expect_false(.cap$extract_called)
   })
 
   it("refuses a projection an older cache format wrote", {
@@ -1610,8 +1560,6 @@ describe("pipeline step ceilings", {
       verbose = FALSE,
       cleanup = NULL,
       skip_existing = NULL,
-      tolerance = NULL,
-      smoothness = NULL,
       steps = NULL,
       max_step = subcort_total_steps()
     )
@@ -1625,8 +1573,6 @@ describe("pipeline step ceilings", {
       verbose = FALSE,
       cleanup = NULL,
       skip_existing = NULL,
-      tolerance = NULL,
-      smoothness = NULL,
       steps = NULL,
       max_step = tract_total_steps()
     )

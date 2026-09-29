@@ -495,18 +495,18 @@ describe("create_subcortical_from_volume slab/context specs", {
   })
 
   it("errors when context is not a list", {
-    expect_error(validate_subcort_context_arg("nope", 1:9), "must be a list")
+    expect_error(validate_subcort_context_arg("nope", 1:6), "must be a list")
   })
 
-  it("warns when context is set but the 2D build (step 9) is skipped", {
+  it("warns when context is set but the 2D build is skipped", {
     expect_warning(
       validate_subcort_context_arg(list(focus = "x"), 1:3),
-      "step 9"
+      "step 6"
     )
   })
 
-  it("is silent for valid context (with step 9) or NULL context", {
-    expect_silent(validate_subcort_context_arg(list(focus = "x"), 1:9))
+  it("is silent for valid context (with the 2D build) or NULL context", {
+    expect_silent(validate_subcort_context_arg(list(focus = "x"), 1:6))
     expect_silent(validate_subcort_context_arg(NULL, 1:3))
   })
 

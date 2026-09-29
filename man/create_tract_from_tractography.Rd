@@ -35,11 +35,12 @@ environment variable.}
 
 \item{views}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} Use \code{slabs} instead.}
 
-\item{...}{Catches the retired \code{dilate}, \code{smoothness} and \code{tolerance}
-arguments, so a call that still passes one keeps working and says so.
-These are post-creation steps now: see \code{\link[=atlas_dilate]{atlas_dilate()}},
-\code{\link[=atlas_smooth]{atlas_smooth()}} and \code{\link[=atlas_simplify]{atlas_simplify()}}. Anything else in \code{...} is an
-error, as an unused argument always was.}
+\item{...}{Catches the retired \code{dilate}, \code{smoothness}, \code{tolerance} and
+\code{smooth_refinements} arguments, so a call that still passes one keeps
+working and says so. These are post-creation steps now: see
+\code{\link[=atlas_polish]{atlas_polish()}}, or \code{\link[=atlas_simplify]{atlas_simplify()}}, \code{\link[=atlas_smooth]{atlas_smooth()}} and
+\code{\link[=atlas_dilate]{atlas_dilate()}} individually. Anything else in \code{...} is an error, as an
+unused argument always was.}
 
 \item{input_aseg}{Path to a segmentation volume (\code{.mgz}, \code{.nii}) used to
 draw cortex outlines in 2D views. Required for steps 2+.}
@@ -84,14 +85,11 @@ Steps are:
 \itemize{
 \item 1: Read tractography and create tube meshes
 \item 2: Create projection snapshots
-\item 3: Process images
-\item 4: Extract contours
-\item 5: Smooth contours
-\item 6: Reduce vertices
-\item 7: Build atlas
+\item 3: Extract contours
+\item 4: Build the atlas
 }
-Use \code{steps = 1} for 3D-only atlas. Use \code{steps = 5:7} to iterate on
-smoothing and vertex reduction.}
+Use \code{steps = 1} for a 3D-only atlas. Geometry is shaped after the build,
+not during it: see \code{\link[=atlas_polish]{atlas_polish()}}.}
 
 \item{cleanup}{Remove intermediate files after atlas creation. If not
 specified, uses \code{options("ggseg.extra.cleanup")} or the \code{GGSEG_EXTRA_CLEANUP}

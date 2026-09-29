@@ -497,9 +497,7 @@ describe("create_subcortical_from_volume pipeline flow", {
           list(run = step %in% steps, data = list())
         }
       },
-      extract_contours = function(...) invisible(NULL),
-      smooth_contours = function(...) invisible(NULL),
-      reduce_vertex = function(...) invisible(NULL)
+      extract_contours = function(...) invisible(NULL)
     )
 
     vol_file <- "aseg.mgz"
@@ -511,7 +509,7 @@ describe("create_subcortical_from_volume pipeline flow", {
       result <- create_subcortical_from_volume(
         input_volume = vol_file,
         input_lut = lut_file,
-        steps = 5:8,
+        steps = 5,
         verbose = TRUE
       ),
       transform = scrub_workdir
@@ -520,7 +518,7 @@ describe("create_subcortical_from_volume pipeline flow", {
     expect_null(result)
   })
 
-  it("step 9 errors when contours_reduced.rda missing", {
+  it("step 6 errors when contours.rda is missing", {
     dirs <- local_subcort_dirs()
     local_mocked_bindings(
       check_fs = function(...) TRUE,
@@ -573,9 +571,7 @@ describe("create_subcortical_from_volume pipeline flow", {
           cortex_slices = NULL
         )
       },
-      extract_contours = function(...) invisible(NULL),
-      smooth_contours = function(...) invisible(NULL),
-      reduce_vertex = function(...) invisible(NULL)
+      extract_contours = function(...) invisible(NULL)
     )
 
     vol_file <- withr::local_tempfile(fileext = ".mgz")
@@ -588,10 +584,10 @@ describe("create_subcortical_from_volume pipeline flow", {
       create_subcortical_from_volume(
         input_volume = vol_file,
         input_lut = lut_file,
-        steps = 9,
+        steps = 6,
         verbose = FALSE
       ),
-      "contours_reduced"
+      "contours.rda"
     )
   })
 
@@ -649,9 +645,7 @@ describe("create_subcortical_from_volume pipeline flow", {
           cortex_slices = NULL
         )
       },
-      extract_contours = function(...) invisible(NULL),
-      smooth_contours = function(...) invisible(NULL),
-      reduce_vertex = function(...) invisible(NULL)
+      extract_contours = function(...) invisible(NULL)
     )
 
     vol_file <- withr::local_tempfile(fileext = ".mgz")
@@ -663,7 +657,7 @@ describe("create_subcortical_from_volume pipeline flow", {
     result <- create_subcortical_from_volume(
       input_volume = vol_file,
       input_lut = lut_file,
-      steps = 4:8,
+      steps = 4:5,
       verbose = FALSE
     )
 
@@ -671,7 +665,7 @@ describe("create_subcortical_from_volume pipeline flow", {
     expect_null(result)
   })
 
-  it("step 9 builds final atlas with cleanup", {
+  it("step 6 builds final atlas with cleanup", {
     local_test_workdir()
     dirs <- local_subcort_dirs()
     cached_components <- list(
@@ -692,7 +686,7 @@ describe("create_subcortical_from_volume pipeline flow", {
       stringsAsFactors = FALSE
     )
 
-    contours_file <- file.path(dirs$base, "contours_reduced.rda")
+    contours_file <- file.path(dirs$base, "contours.rda")
     file.create(contours_file)
 
     local_mocked_bindings(
@@ -744,7 +738,7 @@ describe("create_subcortical_from_volume pipeline flow", {
       atlas <- create_subcortical_from_volume(
         input_volume = vol_file,
         input_lut = lut_file,
-        steps = 9,
+        steps = 6,
         verbose = TRUE,
         cleanup = TRUE
       ),
@@ -857,7 +851,7 @@ describe("subcort_assemble_full sf_data as data.frame", {
     test_dir <- withr::local_tempdir()
     save(
       list = character(0),
-      file = file.path(test_dir, "contours_reduced.rda")
+      file = file.path(test_dir, "contours.rda")
     )
 
     sf_df <- data.frame(
@@ -959,7 +953,7 @@ describe("subcort_resolve_snapshots early-return NULL", {
       }
     )
 
-    config <- list(steps = 4L:9L, verbose = TRUE)
+    config <- list(steps = 4L:6L, verbose = TRUE)
     dirs <- list(base = withr::local_tempdir())
     colortable <- data.frame(stringsAsFactors = FALSE, idx = 10, label = "r")
 
@@ -991,7 +985,7 @@ describe("subcort_resolve_snapshots early-return NULL", {
     )
 
     config <- list(
-      steps = 4L:9L,
+      steps = 4L:6L,
       verbose = TRUE,
       input_volume = "fake.mgz",
       skip_existing = FALSE
@@ -1119,9 +1113,7 @@ describe("subcortical pipeline snapshot pruning", {
           )
         )
       },
-      extract_contours = function(...) invisible(NULL),
-      smooth_contours = function(...) invisible(NULL),
-      reduce_vertex = function(...) invisible(NULL)
+      extract_contours = function(...) invisible(NULL)
     )
 
     file.create(file.path(dirs$snapshots, c("ax_1_r.rda", "ax_9_r.rda")))
@@ -1136,10 +1128,10 @@ describe("subcortical pipeline snapshot pruning", {
       create_subcortical_from_volume(
         input_volume = vol_file,
         input_lut = lut_file,
-        steps = 9,
+        steps = 6,
         verbose = FALSE
       ),
-      "contours_reduced.rda"
+      "contours.rda"
     )
 
     # The stale projection is what st_coordinates() chokes on at assembly: it

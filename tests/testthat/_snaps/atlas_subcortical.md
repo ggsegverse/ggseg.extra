@@ -9,16 +9,16 @@
       i Volume: 'aseg.mgz'
       i Color LUT: 'lut.txt'
       i Setting output directory to '<workdir>/out'
-      i 1/9 Extracting labels from volume
+      i 1/6 Extracting labels from volume
       v Found 2 subcortical structures
-      i 1/9 Extracting labels from volume
-      v 1/9 Extracting labels from volume [<time>]
+      i 1/6 Extracting labels from volume
+      v 1/6 Extracting labels from volume [<time>]
       
-      i 2/9 Creating meshes for each structure
-      v 2/9 Creating meshes for each structure [<time>]
+      i 2/6 Creating meshes for each structure
+      v 2/6 Creating meshes for each structure [<time>]
       
-      i 3/9 Building atlas data
-      v 3/9 Building atlas data [<time>]
+      i 3/6 Building atlas data
+      v 3/6 Building atlas data [<time>]
       
       v Temporary files removed
       v 3D atlas created with 2 structures
@@ -28,36 +28,36 @@
 
     Code
       result <- create_subcortical_from_volume(input_volume = vol_file, input_lut = lut_file,
-        steps = 5:8, verbose = TRUE)
+        steps = 5, verbose = TRUE)
     Message
       
       -- Creating subcortical atlas "aseg" -------------------------------------------
       i Volume: 'aseg.mgz'
       i Color LUT: 'lut.txt'
       i Setting output directory to '<workdir>/out'
-      v 1/9 Loaded existing labels
-      v 2/9 Loaded existing meshes
-      v 3/9 Loaded existing components
-      v 4/9 Loaded existing slabs
+      v 1/6 Loaded existing labels
+      v 2/6 Loaded existing meshes
+      v 3/6 Loaded existing components
+      v 4/6 Loaded existing slabs
       v Temporary files removed
-      v Completed steps 5, 6, 7, and 8
+      v Completed step 5
       i Pipeline completed [<time>]
 
-# create_subcortical_from_volume pipeline flow / step 9 builds final atlas with cleanup
+# create_subcortical_from_volume pipeline flow / step 6 builds final atlas with cleanup
 
     Code
       atlas <- create_subcortical_from_volume(input_volume = vol_file, input_lut = lut_file,
-        steps = 9, verbose = TRUE, cleanup = TRUE)
+        steps = 6, verbose = TRUE, cleanup = TRUE)
     Message
       
       -- Creating subcortical atlas "aseg" -------------------------------------------
       i Volume: 'aseg.mgz'
       i Color LUT: 'lut.txt'
       i Setting output directory to '<workdir>/out'
-      v 1/9 Loaded existing labels
-      v 2/9 Loaded existing meshes
-      v 3/9 Loaded existing components
-      v 4/9 Loaded existing slabs
+      v 1/6 Loaded existing labels
+      v 2/6 Loaded existing meshes
+      v 3/6 Loaded existing components
+      v 4/6 Loaded existing slabs
     Condition
       Warning:
       Atlas has no 2D geometry
@@ -77,12 +77,12 @@
       i Volume: 'aseg.mgz'
       i Color LUT: 'lut.txt'
       i Setting output directory to '<workdir>/out'
-      v 1/9 Loaded existing labels
-      v 2/9 Loaded existing meshes
-      v 3/9 Loaded existing components
-      v 4/9 Loaded existing slabs
+      v 1/6 Loaded existing labels
+      v 2/6 Loaded existing meshes
+      v 3/6 Loaded existing components
+      v 4/6 Loaded existing slabs
       v Temporary files removed
-      v Completed steps 5
+      v Completed step 5
       i Pipeline completed [<time>]
 
 # subcort_resolve_snapshots early-return NULL / runs snapshots and logs progress when the step executes with verbose
@@ -90,8 +90,8 @@
     Code
       result <- subcort_resolve_snapshots(config, dirs, colortable, NULL)
     Message
-      i 4/9 Creating projection snapshots
-      v 4/9 Creating projection snapshots [<time>]
+      i 4/6 Creating projection snapshots
+      v 4/6 Creating projection snapshots [<time>]
       
 
 # subcort_drop_missing_labels / treats non-data.frame sf_data as having no labels and aborts

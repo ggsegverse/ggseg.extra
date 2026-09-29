@@ -375,23 +375,16 @@ validate_surface_config <- function(
   output_dir,
   verbose,
   cleanup,
-  skip_existing,
-  tolerance,
-  smooth_refinements = NULL
+  skip_existing
 ) {
-  config <- resolve_common_config(
+  resolve_common_config(
     output_dir,
     verbose,
     cleanup,
     skip_existing,
-    tolerance,
-    smoothness = NULL,
     steps = NULL,
     max_step = 2L
   )
-  config$smooth_refinements <- get_smooth_refinements(smooth_refinements)
-
-  config
 }
 
 
@@ -401,8 +394,6 @@ resolve_common_config <- function(
   verbose,
   cleanup,
   skip_existing,
-  tolerance,
-  smoothness,
   steps,
   max_step
 ) {
@@ -411,10 +402,29 @@ resolve_common_config <- function(
     verbose = get_verbose(verbose),
     cleanup = get_cleanup(cleanup),
     skip_existing = get_skip_existing(skip_existing),
-    tolerance = get_tolerance(tolerance),
-    smoothness = get_smoothness(smoothness),
-    steps = if (is.null(steps)) seq_len(max_step) else as.integer(steps)
+    steps = validate_steps(steps, max_step)
   )
+}
+
+
+#' Resolve and bounds-check the `steps` argument
+#'
+#' `steps` was only ever used to pick a default, so a value above the last
+#' step ran nothing and reported success. Checking it here costs nothing and
+#' turns a silent no-op into an error that names the steps there are.
+#' @noRd
+validate_steps <- function(steps, max_step) {
+  if (is.null(steps)) {
+    return(seq_len(max_step))
+  }
+  steps <- as.integer(steps)
+  if (anyNA(steps) || any(steps < 1L) || any(steps > max_step)) {
+    cli::cli_abort(c(
+      "{.arg steps} must be whole numbers between 1 and {max_step}.",
+      "x" = "Got {.val {steps}}."
+    ))
+  }
+  steps
 }
 
 
@@ -445,7 +455,11 @@ finalize_atlas <- function(
         "{type} atlas created with {nrow(atlas$core)} {unit}"
       )
     } else {
-      cli::cli_alert_success("Completed steps {.val {config$steps}}")
+      steps <- config$steps
+      n_steps <- length(steps)
+      cli::cli_alert_success(
+        "Completed {cli::qty(n_steps)}step{?s} {.val {steps}}"
+      )
     }
     log_elapsed(start_time) # nolint: object_usage_linter.
   }
@@ -458,49 +472,6 @@ finalize_atlas <- function(
     atlas <- ggseg.formats::as_polygon_atlas(atlas)
   }
   atlas
-}
-
-
-#' @noRd
-run_image_steps <- function(
-  config,
-  dirs,
-  step_map,
-  total_steps,
-  vertex_size_limits = NULL
-) {
-  fmt <- function(step) sprintf("%s/%s", step, total_steps)
-
-  if (step_map$extract %in% config$steps) {
-    # Each projection carries its own cache stamp and read_projection()
-    # rejects a stale one, so there is no directory-level check to make.
-    extract_contours(
-      dirs$snapshots,
-      dirs$base,
-      step = fmt(step_map$extract),
-      verbose = config$verbose,
-      vertex_size_limits = vertex_size_limits
-    )
-  }
-
-  if (step_map$smooth %in% config$steps) {
-    smooth_contours(
-      dirs$base,
-      config$smoothness,
-      step = fmt(step_map$smooth),
-      verbose = config$verbose
-    )
-  }
-
-  if (step_map$reduce %in% config$steps) {
-    reduce_vertex(
-      dirs$base,
-      config$tolerance,
-      smoothness = config$smoothness,
-      step = fmt(step_map$reduce),
-      verbose = config$verbose
-    )
-  }
 }
 
 

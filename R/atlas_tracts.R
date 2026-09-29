@@ -59,14 +59,11 @@
 #'   \itemize{
 #'     \item 1: Read tractography and create tube meshes
 #'     \item 2: Create projection snapshots
-#'     \item 3: Process images
-#'     \item 4: Extract contours
-#'     \item 5: Smooth contours
-#'     \item 6: Reduce vertices
-#'     \item 7: Build atlas
+#'     \item 3: Extract contours
+#'     \item 4: Build the atlas
 #'   }
-#'   Use `steps = 1` for 3D-only atlas. Use `steps = 5:7` to iterate on
-#'   smoothing and vertex reduction.
+#'   Use `steps = 1` for a 3D-only atlas. Geometry is shaped after the build,
+#'   not during it: see [atlas_polish()].
 #' @param coord_space The space the streamline coordinates are in. One of
 #'   `"infer"` (the default), `"voxel"` for voxel indices, or `"mm"` for RAS
 #'   world millimetres. Inference is a heuristic: it cannot always tell, and a
@@ -134,7 +131,7 @@ create_tract_from_tractography <- function(
   )
   tube <- resolve_opts(grouped$opts$tube_opts, "tube_opts", TRACT_TUBE_DEFAULTS)
 
-  dots <- do.call(
+  do.call(
     check_post_creation_dots,
     c(list("create_tract_from_tractography"), grouped$dots)
   )
@@ -159,8 +156,6 @@ create_tract_from_tractography <- function(
     cleanup = cleanup,
     skip_existing = skip_existing,
     coord_space = coord_space,
-    tolerance = dots$tolerance,
-    smoothness = dots$smoothness,
     steps = steps,
     centerline_method = tube$centerline_method,
     tube_radius = tube$tube_radius,
@@ -209,8 +204,6 @@ tract_setup_pipeline <- function(
   cleanup,
   skip_existing,
   coord_space,
-  tolerance,
-  smoothness,
   steps,
   centerline_method,
   tube_radius,
@@ -222,8 +215,6 @@ tract_setup_pipeline <- function(
     verbose,
     cleanup,
     skip_existing,
-    tolerance,
-    smoothness,
     steps,
     centerline_method,
     tube_radius,
@@ -287,7 +278,7 @@ tract_run_pipeline <- function(
     slabs
   )
 
-  tract_image_steps(config, dirs, vertex_size_limits)
+  tract_extract_contours(config, dirs, vertex_size_limits)
 
   if (tract_total_steps() %in% config$steps) {
     atlas <- tract_assemble_full(step1, dirs, snaps$slabs, snaps$cortex_slices)
@@ -315,19 +306,21 @@ tract_finalize <- function(atlas, config, dirs, start_time) {
 #' @noRd
 #' Number of steps in the tract pipeline
 #'
-#' Step 7 assembles the atlas. Same story as `subcort_total_steps()`: the
-#' ceiling and the progress total dropped to 6 while everything else stayed
-#' on 7, so the last step could never run.
+#' The last step assembles the atlas, so this is both the ceiling `steps` is
+#' validated against and the step assembly is gated on.
 #' @noRd
-tract_total_steps <- function() 7L
+tract_total_steps <- function() 4L
 
 
-tract_image_steps <- function(config, dirs, vertex_size_limits) {
-  run_image_steps(
-    config,
-    dirs,
-    step_map = list(extract = 3L, smooth = 4L, reduce = 5L),
-    total_steps = tract_total_steps(),
+tract_extract_contours <- function(config, dirs, vertex_size_limits) {
+  if (!(3L %in% config$steps)) {
+    return(invisible(NULL))
+  }
+  extract_contours(
+    dirs$snapshots,
+    dirs$base,
+    step = paste0("3/", tract_total_steps()),
+    verbose = config$verbose,
     vertex_size_limits = vertex_size_limits
   )
 }
@@ -341,8 +334,6 @@ validate_tract_config <- function(
   verbose,
   cleanup,
   skip_existing,
-  tolerance,
-  smoothness,
   steps,
   centerline_method,
   tube_radius,
@@ -354,8 +345,6 @@ validate_tract_config <- function(
     verbose,
     cleanup,
     skip_existing,
-    tolerance,
-    smoothness,
     steps,
     max_step = tract_total_steps()
   )
@@ -423,7 +412,9 @@ tract_resolve_step1 <- function(
 
   if (!cached$run) {
     if (config$verbose) {
-      cli::cli_alert_success("1/7 Loaded existing tract data")
+      cli::cli_alert_success(
+        "1/{tract_total_steps()} Loaded existing tract data"
+      )
     }
     return(cached$data[["step1_data.rds"]])
   }
@@ -506,7 +497,8 @@ tract_prepare_inputs <- function(
 tract_build_meshes <- function(config, streamlines_data, tract_names) {
   if (config$verbose) {
     cli::cli_progress_step(
-      "1/7 Creating tube meshes for {length(streamlines_data)} tracts"
+      "1/{tract_total_steps()} Creating tube meshes for
+      {length(streamlines_data)} tracts"
     )
   }
 
@@ -583,7 +575,9 @@ tract_resolve_snapshots <- function(config, dirs, step1, input_aseg, slabs) {
 #' @noRd
 tract_run_snapshots <- function(config, dirs, step1, input_aseg, slabs, files) {
   if (config$verbose) {
-    cli::cli_progress_step("2/7 Creating projection snapshots")
+    cli::cli_progress_step(
+      "2/{tract_total_steps()} Creating projection snapshots"
+    )
   }
 
   coords_are_voxels <- step1$coords_are_voxels
@@ -623,7 +617,9 @@ tract_run_snapshots <- function(config, dirs, step1, input_aseg, slabs, files) {
 tract_cached_snapshots <- function(cached, config) {
   if (any(config$steps > 2L)) {
     if (config$verbose) {
-      cli::cli_alert_success("2/7 Loaded existing snapshots")
+      cli::cli_alert_success(
+        "2/{tract_total_steps()} Loaded existing snapshots"
+      )
     }
     return(list(
       slabs = cached$data[["slabs.rds"]],
@@ -650,11 +646,12 @@ tract_assemble_3d <- function(step1) {
 
 #' @noRd
 tract_assemble_full <- function(step1, dirs, slabs, cortex_slices) {
-  contours_file <- as.character(fs::path(dirs$base, "contours_reduced.rda"))
+  contours_file <- as.character(fs::path(dirs$base, "contours.rda"))
   if (!file.exists(contours_file)) {
     cli::cli_abort(c(
-      "Step 7 requires contours_reduced.rda which doesn't exist",
-      "i" = "Run steps 3-6 first to generate contour data"
+      "Step {tract_total_steps()} needs {.path contours.rda}, which does not
+      exist.",
+      "i" = "Run step 3 first to extract contour data."
     ))
   }
 
