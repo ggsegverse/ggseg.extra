@@ -18,7 +18,6 @@ If you have atlases from older versions of ggseg or ggseg3d, this vignette expla
 ```{r}
 #| label: load-libraries
 #| eval: false
-library(ggseg.formats)
 library(ggseg)
 library(ggseg3d)
 ```

@@ -30,7 +30,6 @@ We'll use the Yeo 7-network parcellation as a working example --- it has only 7 
 #| label: load-libraries
 #| eval: !expr can_run
 library(ggseg.extra)
-library(ggseg.formats)
 library(dplyr)
 ```
 
@@ -58,8 +57,9 @@ all(file.exists(annot_files))
 
 The pipeline reads the annotation, extracts vertex-to-region assignments, and
 projects the inflated mesh triangles directly to 2D polygons via orthographic
-projection. This is fast (seconds, not minutes) and requires no external
-dependencies beyond FreeSurfer for reading the annotation:
+projection. This is fast (seconds, not minutes) and needs no external
+dependencies at all --- reading the annotation is the `freesurferformats` R
+package's job, not FreeSurfer's:
 
 ```{r}
 #| label: create-atlas
@@ -114,7 +114,7 @@ Take them one at a time, so you can see what each does. Simplification first:
 ```{r}
 #| label: simplify
 #| eval: !expr can_run
-yeo7_simple <- atlas_simplify(yeo7_raw, keep = 0.2, exclude = "cortex_")
+yeo7_simple <- atlas_simplify(yeo7_raw, keep = 0.2, exclude = context_pattern())
 
 sum(count_vertices(yeo7_simple))
 ```
@@ -129,14 +129,14 @@ sum(count_vertices(yeo7_simple))
 plot(yeo7_simple)
 ```
 
-`exclude = "cortex_"` leaves the brain-outline geometry crisp while simplifying the labelled regions.
+`exclude = context_pattern()` leaves the brain-outline geometry crisp while simplifying the labelled regions.
 
 Simplification is topology-aware, so neighbouring regions lose the same vertices and no gaps open between them. What it does not do is make anything look smooth --- it removes vertices from a jagged line and leaves a jagged line with fewer vertices. That is what `atlas_smooth()` is for:
 
 ```{r}
 #| label: smooth
 #| eval: !expr can_run
-yeo7_smooth <- atlas_smooth(yeo7_simple, exclude = "cortex_")
+yeo7_smooth <- atlas_smooth(yeo7_simple, exclude = context_pattern())
 
 sum(count_vertices(yeo7_smooth))
 ```

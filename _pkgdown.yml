@@ -50,12 +50,12 @@ navbar:
           href: articles/tutorial-lookup-tables.html
         - text: Publishing an Atlas
           href: articles/tutorial-publishing-an-atlas.html
+        - text: Listing on r-universe
+          href: articles/contributing.html
         - text: -------
-        - text: Legacy & Contributing
+        - text: Legacy
         - text: Legacy Conversion
           href: articles/legacy-conversion.html
-        - text: Contributing
-          href: articles/contributing.html
 
 articles:
   - title: Getting Started
@@ -87,11 +87,11 @@ articles:
     contents:
       - articles/tutorial-lookup-tables
       - articles/tutorial-publishing-an-atlas
+      - contributing
 
-  - title: Legacy & Contributing
+  - title: Legacy
     contents:
       - legacy-conversion
-      - contributing
 
 reference:
   - title: Create Brain Atlases
