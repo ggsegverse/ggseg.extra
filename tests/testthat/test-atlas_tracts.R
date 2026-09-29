@@ -713,3 +713,20 @@ describe("create_tract_from_tractography tube_opts", {
     expect_identical(seen$.vsl, c(1, 2))
   })
 })
+
+
+describe("coord_space_to_voxels", {
+  it("maps each space onto the internal flag", {
+    expect_true(coord_space_to_voxels("voxel"))
+    expect_false(coord_space_to_voxels("mm"))
+    expect_null(coord_space_to_voxels("infer"))
+  })
+
+  it("infers when given the untouched default", {
+    expect_null(coord_space_to_voxels(c("infer", "voxel", "mm")))
+  })
+
+  it("rejects a space it does not know", {
+    expect_snapshot(coord_space_to_voxels("ras"), error = TRUE)
+  })
+})

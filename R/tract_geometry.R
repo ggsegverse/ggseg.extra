@@ -594,8 +594,25 @@ set_sphere_voxels <- function(vol, center, radius, label_value, dims) {
 
 #' Detect if streamline coordinates are in voxel space
 #'
-#' Uses heuristics to guess whether coordinates are in voxel space (0 to dims)
-#' or RAS/world space (centered around 0).
+#' A guess, and only used when the caller did not declare the space. Voxel
+#' indices run from 0 to the volume dimensions; RAS world coordinates are
+#' millimetres about an origin near the centre of the head, so roughly half of
+#' them are negative. The thresholds:
+#'
+#' * `-10`: a voxel index is never negative, but a RAS volume's origin is not
+#'   exactly at the centre either, so a small negative excursion is tolerated
+#'   before the coordinates are called RAS. Ten millimetres is comfortably
+#'   inside the ~70mm a real RAS bundle reaches on its negative side.
+#' * `300`: an upper bound on plausible voxel indices. A conformed FreeSurfer
+#'   volume is 256^3 and few research grids exceed that, whereas RAS
+#'   millimetres for a head stay well under 150 -- so a value above 300 is
+#'   neither, and the coordinates are not trusted as voxels.
+#' * `1.1` in `coords_fit_dims()`: 10% slack so streamlines that graze or
+#'   slightly overrun the volume bounds still read as voxel indices.
+#'
+#' The bounds overlap for a small bundle sitting entirely in the positive
+#' octant, which is why `resolve_tract_coord_space()` reports what it decided
+#' and why callers can declare the space outright with `coord_space`.
 #'
 #' @param streamlines List of streamline matrices (each with x, y, z columns)
 #' @param dims Optional volume dimensions for validation
@@ -750,9 +767,26 @@ snapshot_cortex_views <- function(
 }
 
 
-#' Auto-detect tract coordinate space and report it when verbose
+#' Settle the tract coordinate space, by declaration or by inference
+#'
+#' `coords_are_voxels` is the caller's `coord_space` resolved to a flag;
+#' `NULL` asks for the heuristic. Either way the space in force is reported
+#' when verbose, because getting it wrong does not error -- it places the
+#' tract in the wrong space and produces a plausible-looking atlas.
 #' @noRd
-detect_tract_coord_space <- function(streamlines, verbose) {
+resolve_tract_coord_space <- function(
+  streamlines,
+  verbose,
+  coords_are_voxels = NULL
+) {
+  if (!is.null(coords_are_voxels)) {
+    if (verbose) {
+      space <- if (coords_are_voxels) "voxel" else "mm" # nolint: object_usage_linter
+      cli::cli_alert_info("Coordinate space (as declared): {.val {space}}")
+    }
+    return(coords_are_voxels)
+  }
+
   # Flatten to a flat list of matrices. Direct in-memory input is a list of
   # matrices (one per tract); unlisting those with recursive = FALSE would
   # collapse each matrix into a numeric vector and lose the coordinate columns.
@@ -762,8 +796,12 @@ detect_tract_coord_space <- function(streamlines, verbose) {
   )
   coords_are_voxels <- detect_coords_are_voxels(all_streamlines)
   if (verbose) {
-    space <- if (coords_are_voxels) "voxel" else "RAS" # nolint: object_usage_linter
-    cli::cli_alert_info("Auto-detected coordinate space: {.val {space}}")
+    space <- if (coords_are_voxels) "voxel" else "mm" # nolint: object_usage_linter
+    cli::cli_inform(c(
+      "i" = "Auto-detected coordinate space: {.val {space}}",
+      "i" = "Set {.arg coord_space} to declare it instead of relying on the \\
+             heuristic."
+    ))
   }
   coords_are_voxels
 }

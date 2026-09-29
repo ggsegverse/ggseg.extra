@@ -67,6 +67,12 @@
 #'   }
 #'   Use `steps = 1` for 3D-only atlas. Use `steps = 5:7` to iterate on
 #'   smoothing and vertex reduction.
+#' @param coord_space The space the streamline coordinates are in. One of
+#'   `"infer"` (the default), `"voxel"` for voxel indices, or `"mm"` for RAS
+#'   world millimetres. Inference is a heuristic: it cannot always tell, and a
+#'   wrong guess does not error -- it places the tract in the wrong space and
+#'   produces a plausible-looking atlas. Declare the space when you know it.
+#'   Whichever applies is reported at `verbose >= 1`.
 #' @template views_deprecated
 #'
 #' @return A `ggseg_atlas` object with type `"tract"`, containing region
@@ -93,6 +99,12 @@
 #'   input_lut = "tract_colors.txt"
 #' )
 #'
+#' # Declare the coordinate space rather than letting it be inferred
+#' atlas <- create_tract_from_tractography(
+#'   input_tracts = c("cst_left.trk", "cst_right.trk"),
+#'   coord_space = "voxel"
+#' )
+#'
 #' # View with ggseg3d
 #' ggseg3d(atlas = atlas)
 #' }
@@ -110,7 +122,8 @@ create_tract_from_tractography <- function(
   vertex_size_limits = NULL,
   steps = NULL,
   cleanup = NULL,
-  skip_existing = NULL
+  skip_existing = NULL,
+  coord_space = c("infer", "voxel", "mm")
 ) {
   grouped <- group_retired_dots(
     opts = list(tube_opts = tube_opts),
@@ -145,6 +158,7 @@ create_tract_from_tractography <- function(
     verbose = verbose,
     cleanup = cleanup,
     skip_existing = skip_existing,
+    coord_space = coord_space,
     tolerance = dots$tolerance,
     smoothness = dots$smoothness,
     steps = steps,
@@ -194,6 +208,7 @@ tract_setup_pipeline <- function(
   verbose,
   cleanup,
   skip_existing,
+  coord_space,
   tolerance,
   smoothness,
   steps,
@@ -230,6 +245,7 @@ tract_setup_pipeline <- function(
 
   config$input_tracts <- input_tracts
   config$input_aseg <- input_aseg
+  config$coords_are_voxels <- coord_space_to_voxels(coord_space)
   # Carried through so the finished atlas is named what the caller asked for,
   # not the name derived from the tract labels.
   config$atlas_name <- atlas_name
@@ -416,7 +432,8 @@ tract_resolve_step1 <- function(
     input_tracts,
     tract_names,
     colours,
-    config$verbose
+    config$verbose,
+    config$coords_are_voxels
   )
 
   meshes_list <- tract_build_meshes(
@@ -438,17 +455,37 @@ tract_resolve_step1 <- function(
 }
 
 
+#' Turn the declared coordinate space into the internal three-state flag
+#'
+#' `NULL` for `"infer"`, so the rest of the pipeline sees the same
+#' three-state value it always did. Resolved at setup rather than where it is
+#' used, so a misspelled space fails before the pipeline spends its first hour
+#' reading streamlines.
+#' @noRd
+coord_space_to_voxels <- function(coord_space) {
+  coord_space <- rlang::arg_match(coord_space, c("infer", "voxel", "mm"))
+  switch(coord_space, infer = NULL, voxel = TRUE, mm = FALSE)
+}
+
+
 #' Read the tractography input, sanitize names and resolve colours
 #' @noRd
-tract_prepare_inputs <- function(input_tracts, tract_names, colours, verbose) {
+tract_prepare_inputs <- function(
+  input_tracts,
+  tract_names,
+  colours,
+  verbose,
+  coords_are_voxels = NULL
+) {
   input_result <- tract_read_input(input_tracts, tract_names)
   streamlines_data <- input_result$streamlines_data
   tract_names <- sanitize_label(input_result$tract_names)
   names(streamlines_data) <- tract_names
 
-  coords_are_voxels <- detect_tract_coord_space(
+  coords_are_voxels <- resolve_tract_coord_space(
     streamlines_data,
-    verbose
+    verbose,
+    coords_are_voxels
   )
 
   if (is.null(colours)) {
@@ -551,9 +588,10 @@ tract_run_snapshots <- function(config, dirs, step1, input_aseg, slabs, files) {
 
   coords_are_voxels <- step1$coords_are_voxels
   if (is.null(coords_are_voxels)) {
-    coords_are_voxels <- detect_tract_coord_space(
+    coords_are_voxels <- resolve_tract_coord_space(
       step1$streamlines_data,
-      config$verbose
+      config$verbose,
+      config$coords_are_voxels
     )
   }
 

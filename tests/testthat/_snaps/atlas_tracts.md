@@ -24,6 +24,7 @@
       -- Creating tractography atlas -------------------------------------------------
       i Tract files: 'tract.trk'
       i Auto-detected coordinate space: "voxel"
+      i Set `coord_space` to declare it instead of relying on the heuristic.
       i 1/7 Creating tube meshes for 1 tracts
       v 1/7 Creating tube meshes for 1 tracts [<time>]
       
@@ -69,4 +70,12 @@
       Warning:
       The `centerline_method` argument of `create_tract_from_tractography()` is deprecated as of ggseg.extra 1.9.9.9053.
       i Please use the `tube_opts` argument instead.
+
+# coord_space_to_voxels / rejects a space it does not know
+
+    Code
+      coord_space_to_voxels("ras")
+    Condition
+      Error in `coord_space_to_voxels()`:
+      ! `coord_space` must be one of "infer", "voxel", or "mm", not "ras".
 
