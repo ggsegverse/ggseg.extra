@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9071</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9072</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -67,6 +67,19 @@
       <small>Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.9.9.9072" id="ggsegextra-1999072">ggseg.extra 1.9.9.9072<a class="anchor" aria-label="anchor" href="#ggsegextra-1999072"></a></h2>
+<div class="section level3">
+<h3 id="developer-facing-changes-1-9-9-9072">Developer-facing changes<a class="anchor" aria-label="anchor" href="#developer-facing-changes-1-9-9-9072"></a></h3>
+<div class="section level4">
+<h4 id="minor-changes-1-9-9-9072">Minor changes<a class="anchor" aria-label="anchor" href="#minor-changes-1-9-9-9072"></a></h4>
+<ul><li>
+<p>Writing a cache manifest from a parallel worker now aborts instead of silently dropping rows. Stamping is a read-modify-write on state shared by every cache in a directory, so two workers each drop the other’s rows; the documentation said main-thread-only but nothing enforced it, and with furrr throughout the pipelines a refactor that moved a stamp into a worker closure would have produced caches that merely look stale and get rebuilt – hours of work lost, with the cause nowhere near the symptom.</p>
+<p><code>setup_atlas_dirs()</code> claims the manifests for the calling process at the top of every pipeline, before any work, and <code>stamp_cache_files()</code> refuses unless the claim is held. One check covers both worker kinds from a single definition: a multisession worker has a fresh namespace and so holds no claim, and a forked worker inherits the parent’s claim but not its pid.</p>
+</li>
+</ul></div>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9071" id="ggsegextra-1999071">ggseg.extra 1.9.9.9071<a class="anchor" aria-label="anchor" href="#ggsegextra-1999071"></a></h2>
 <div class="section level3">

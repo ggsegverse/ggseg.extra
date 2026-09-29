@@ -1,5 +1,27 @@
 # Changelog
 
+## ggseg.extra 1.9.9.9072
+
+### Developer-facing changes
+
+#### Minor changes
+
+- Writing a cache manifest from a parallel worker now aborts instead of
+  silently dropping rows. Stamping is a read-modify-write on state
+  shared by every cache in a directory, so two workers each drop the
+  other’s rows; the documentation said main-thread-only but nothing
+  enforced it, and with furrr throughout the pipelines a refactor that
+  moved a stamp into a worker closure would have produced caches that
+  merely look stale and get rebuilt – hours of work lost, with the cause
+  nowhere near the symptom.
+
+  `setup_atlas_dirs()` claims the manifests for the calling process at
+  the top of every pipeline, before any work, and `stamp_cache_files()`
+  refuses unless the claim is held. One check covers both worker kinds
+  from a single definition: a multisession worker has a fresh namespace
+  and so holds no claim, and a forked worker inherits the parent’s claim
+  but not its pid.
+
 ## ggseg.extra 1.9.9.9071
 
 ### User-facing changes
