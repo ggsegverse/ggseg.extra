@@ -1,5 +1,31 @@
 # Changelog
 
+## ggseg.extra 1.9.9.9068
+
+### User-facing changes
+
+#### Minor changes
+
+- The no-affine fallback in `coord_to_voxel()` no longer assumes a 1mm
+  isotropic grid. It mapped world millimetres to voxel indices 1:1
+  around the volume centre, so on a 2mm grid every coordinate landed at
+  twice its true distance from the centre – a systematic scale error
+  that the warning described only as streamlines that “may be placed at
+  the wrong voxels”. The voxel size now comes from the header (NIfTI
+  `pixdim`, MGZ `xsize`/`ysize`/ `zsize`) even when the full affine is
+  unreadable.
+
+### Developer-facing changes
+
+#### Minor changes
+
+- `load_vox2ras_matrix()` is now `load_tract_grid()` and reports both
+  the affine and the fallback voxel size, so its warning can say which
+  fallback is in force: scaled by a recovered voxel size, or assuming
+  1mm because even that could not be read. It also now says that the
+  volume is not reoriented to RAS on this path, which the old wording
+  left out.
+
 ## ggseg.extra 1.9.9.9067
 
 ### User-facing changes

@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9067</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9068</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -67,6 +67,24 @@
       <small>Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.9.9.9068" id="ggsegextra-1999068">ggseg.extra 1.9.9.9068<a class="anchor" aria-label="anchor" href="#ggsegextra-1999068"></a></h2>
+<div class="section level3">
+<h3 id="user-facing-changes-1-9-9-9068">User-facing changes<a class="anchor" aria-label="anchor" href="#user-facing-changes-1-9-9-9068"></a></h3>
+<div class="section level4">
+<h4 id="minor-changes-1-9-9-9068">Minor changes<a class="anchor" aria-label="anchor" href="#minor-changes-1-9-9-9068"></a></h4>
+<ul><li>The no-affine fallback in <code>coord_to_voxel()</code> no longer assumes a 1mm isotropic grid. It mapped world millimetres to voxel indices 1:1 around the volume centre, so on a 2mm grid every coordinate landed at twice its true distance from the centre – a systematic scale error that the warning described only as streamlines that “may be placed at the wrong voxels”. The voxel size now comes from the header (NIfTI <code>pixdim</code>, MGZ <code>xsize</code>/<code>ysize</code>/ <code>zsize</code>) even when the full affine is unreadable.</li>
+</ul></div>
+</div>
+<div class="section level3">
+<h3 id="developer-facing-changes-1-9-9-9068">Developer-facing changes<a class="anchor" aria-label="anchor" href="#developer-facing-changes-1-9-9-9068"></a></h3>
+<div class="section level4">
+<h4 id="minor-changes-1-9-9-9068-1">Minor changes<a class="anchor" aria-label="anchor" href="#minor-changes-1-9-9-9068-1"></a></h4>
+<ul><li>
+<code>load_vox2ras_matrix()</code> is now <code>load_tract_grid()</code> and reports both the affine and the fallback voxel size, so its warning can say which fallback is in force: scaled by a recovered voxel size, or assuming 1mm because even that could not be read. It also now says that the volume is not reoriented to RAS on this path, which the old wording left out.</li>
+</ul></div>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9067" id="ggsegextra-1999067">ggseg.extra 1.9.9.9067<a class="anchor" aria-label="anchor" href="#ggsegextra-1999067"></a></h2>
 <div class="section level3">
