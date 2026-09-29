@@ -1,5 +1,35 @@
 # Changelog
 
+## ggseg.extra 1.9.9.9069
+
+### User-facing changes
+
+#### Minor changes
+
+- [`create_tract_from_tractography()`](https://ggsegverse.github.io/ggseg.extra/reference/create_tract_from_tractography.md)
+  gains `coord_space`, to declare whether streamline coordinates are
+  `"voxel"` indices or RAS world `"mm"` instead of always inferring the
+  space. Inference is a heuristic that cannot always tell, and getting
+  it wrong does not error – it places the tract in the wrong space and
+  produces a plausible-looking atlas. The default `"infer"` keeps
+  inferring.
+
+- The coordinate space in force is reported at `verbose >= 1` whether it
+  was declared or inferred, naming the same `"voxel"`/`"mm"` values
+  `coord_space` takes, and the inferred message points at the argument.
+
+### Developer-facing changes
+
+#### Minor changes
+
+- The constants in `detect_coords_are_voxels()` (`-10`, `300`, `1.1`)
+  are documented: what each bounds, and why the bounds overlap for a
+  small bundle sitting entirely in the positive octant, which is the
+  case `coord_space` exists for.
+
+- `detect_tract_coord_space()` is now `resolve_tract_coord_space()`,
+  since it settles the space rather than always detecting it.
+
 ## ggseg.extra 1.9.9.9068
 
 ### User-facing changes

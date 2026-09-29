@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9068</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9069</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -67,6 +67,25 @@
       <small>Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.9.9.9069" id="ggsegextra-1999069">ggseg.extra 1.9.9.9069<a class="anchor" aria-label="anchor" href="#ggsegextra-1999069"></a></h2>
+<div class="section level3">
+<h3 id="user-facing-changes-1-9-9-9069">User-facing changes<a class="anchor" aria-label="anchor" href="#user-facing-changes-1-9-9-9069"></a></h3>
+<div class="section level4">
+<h4 id="minor-changes-1-9-9-9069">Minor changes<a class="anchor" aria-label="anchor" href="#minor-changes-1-9-9-9069"></a></h4>
+<ul><li><p><code><a href="../reference/create_tract_from_tractography.html">create_tract_from_tractography()</a></code> gains <code>coord_space</code>, to declare whether streamline coordinates are <code>"voxel"</code> indices or RAS world <code>"mm"</code> instead of always inferring the space. Inference is a heuristic that cannot always tell, and getting it wrong does not error – it places the tract in the wrong space and produces a plausible-looking atlas. The default <code>"infer"</code> keeps inferring.</p></li>
+<li><p>The coordinate space in force is reported at <code>verbose &gt;= 1</code> whether it was declared or inferred, naming the same <code>"voxel"</code>/<code>"mm"</code> values <code>coord_space</code> takes, and the inferred message points at the argument.</p></li>
+</ul></div>
+</div>
+<div class="section level3">
+<h3 id="developer-facing-changes-1-9-9-9069">Developer-facing changes<a class="anchor" aria-label="anchor" href="#developer-facing-changes-1-9-9-9069"></a></h3>
+<div class="section level4">
+<h4 id="minor-changes-1-9-9-9069-1">Minor changes<a class="anchor" aria-label="anchor" href="#minor-changes-1-9-9-9069-1"></a></h4>
+<ul><li><p>The constants in <code>detect_coords_are_voxels()</code> (<code>-10</code>, <code>300</code>, <code>1.1</code>) are documented: what each bounds, and why the bounds overlap for a small bundle sitting entirely in the positive octant, which is the case <code>coord_space</code> exists for.</p></li>
+<li><p><code>detect_tract_coord_space()</code> is now <code>resolve_tract_coord_space()</code>, since it settles the space rather than always detecting it.</p></li>
+</ul></div>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9068" id="ggsegextra-1999068">ggseg.extra 1.9.9.9068<a class="anchor" aria-label="anchor" href="#ggsegextra-1999068"></a></h2>
 <div class="section level3">

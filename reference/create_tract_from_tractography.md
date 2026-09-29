@@ -32,7 +32,8 @@ create_tract_from_tractography(
   vertex_size_limits = NULL,
   steps = NULL,
   cleanup = NULL,
-  skip_existing = NULL
+  skip_existing = NULL,
+  coord_space = c("infer", "voxel", "mm")
 )
 ```
 
@@ -153,6 +154,15 @@ create_tract_from_tractography(
   `options("ggseg.extra.skip_existing")` or the
   `GGSEG_EXTRA_SKIP_EXISTING` environment variable. Default is TRUE.
 
+- coord_space:
+
+  The space the streamline coordinates are in. One of `"infer"` (the
+  default), `"voxel"` for voxel indices, or `"mm"` for RAS world
+  millimetres. Inference is a heuristic: it cannot always tell, and a
+  wrong guess does not error – it places the tract in the wrong space
+  and produces a plausible-looking atlas. Declare the space when you
+  know it. Whichever applies is reported at `verbose >= 1`.
+
 ## Value
 
 A `ggseg_atlas` object with type `"tract"`, containing region metadata,
@@ -172,6 +182,12 @@ atlas <- create_tract_from_tractography(
 atlas <- create_tract_from_tractography(
   input_tracts = c("cst_left.trk", "cst_right.trk"),
   input_lut = "tract_colors.txt"
+)
+
+# Declare the coordinate space rather than letting it be inferred
+atlas <- create_tract_from_tractography(
+  input_tracts = c("cst_left.trk", "cst_right.trk"),
+  coord_space = "voxel"
 )
 
 # View with ggseg3d
