@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9072</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9073</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -70,7 +70,7 @@
 
 <div class="section level3">
 <h3 id="quick-orientation--what-this-repo-is">Quick orientation — what this repo is<a class="anchor" aria-label="anchor" href="#quick-orientation--what-this-repo-is"></a></h3>
-<ul><li>This is an R package that provides atlas creation pipelines and datasets for the <code>ggseg</code> / <code>ggseg3d</code> plotting ecosystem. See <code>DESCRIPTION</code> for package dependencies and system requirements (notably: FreeSurfer, which the subcortical, tract and whole-brain pipelines shell out to). The user-facing documentation and tutorials live in <code>vignettes/</code> and <code>docs/</code>.</li>
+<ul><li>This is an R package that provides atlas creation pipelines and datasets for the <code>ggseg</code> / <code>ggseg3d</code> plotting ecosystem. See <code>DESCRIPTION</code> for package dependencies and system requirements (notably: FreeSurfer, which the subcortical, tract and whole-brain pipelines shell out to). Shipped vignettes live in <code>vignettes/</code>; the pre-knitted tutorials are website-only articles in <code>vignettes/articles/</code>, alongside the <code>.qmd.orig</code> sources they are knitted from.</li>
 </ul></div>
 <div class="section level3">
 <h3 id="big-picture-architecture">Big-picture architecture<a class="anchor" aria-label="anchor" href="#big-picture-architecture"></a></h3>
@@ -102,7 +102,7 @@
 <li>
 <code>inst/surfaces/</code> and <code>data-raw/</code> — examples and raw assets used by pipelines</li>
 <li>
-<code>_pkgdown.yml</code>, <code>vignettes/</code>, — examples and tutorials to mirror for usage patterns and function signatures</li>
+<code>_pkgdown.yml</code>, <code>vignettes/</code>, <code>vignettes/articles/</code> — examples and tutorials to mirror for usage patterns and function signatures</li>
 <li>
 <code>.github/workflows/*.yaml</code> — CI setup; useful for reproducing environment &amp; install order</li>
 </ul></div>

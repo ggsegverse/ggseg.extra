@@ -28,7 +28,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9072</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9073</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -96,7 +96,7 @@
 
 
 
-      <small class="dont-index">Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/vignettes/tutorial-subcortical-atlas.qmd" class="external-link"><code>vignettes/tutorial-subcortical-atlas.qmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/vignettes/articles/tutorial-subcortical-atlas.qmd" class="external-link"><code>vignettes/articles/tutorial-subcortical-atlas.qmd</code></a></small>
       <div class="d-none name"><code></code></div>
     </div>
 
@@ -228,10 +228,60 @@ Stage 4 — gathered. Same geometry, less white space.
 </p>
 </div>
 <p>Nothing was added or removed here; the views were simply packed together. It matters more than it sounds: an atlas is usually printed small, and the white space between views is space the structures could have had.</p>
+</section><section class="level2"><h2 id="tidying-the-geometry">Tidying the geometry<a class="anchor" aria-label="anchor" href="#tidying-the-geometry"></a>
+</h2>
+<p>Every outline here is still made of mesh triangle edges, so each nucleus is bounded by a staircase rather than a line anyone would draw. <code><a href="../reference/count_vertices.html">count_vertices()</a></code> gives the price, and says where it is being paid:</p>
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">vertices</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/count_vertices.html">count_vertices</a></span><span class="op">(</span><span class="va">aseg_raw</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="va">vertices</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] 10909</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="va">vertices</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/grep.html" class="external-link">grepl</a></span><span class="op">(</span><span class="st">"^cortex"</span>, <span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">vertices</span><span class="op">)</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] 6796</span></span></code></pre></div>
+<p>Most of the atlas is the cortex silhouette. That matters for what comes next: the <code>create_*()</code> functions warn above ten thousand vertices, and here the context geometry alone accounts for the bulk of it.</p>
+<p>Tidying is a separate post-processing step in two parts — <code><a href="../reference/atlas_simplify.html">atlas_simplify()</a></code> drops vertices, <code><a href="../reference/atlas_smooth.html">atlas_smooth()</a></code> rounds off what is left — and on a subcortical atlas <strong>both have to be applied twice</strong>, because the context and the structures want opposite things. The silhouette is only useful while its sulci and gyri survive, so it needs gentle settings; the nuclei need firmer ones to read as smooth shapes. A single pass tuned for nuclei flattens the cortical ribbon into a blob.</p>
+<p>Simplify each separately:</p>
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">aseg_raw</span> <span class="op">&lt;-</span> <span class="va">aseg_raw</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/atlas_simplify.html">atlas_simplify</a></span><span class="op">(</span>keep <span class="op">=</span> <span class="fl">0.5</span>, labels <span class="op">=</span> <span class="st">"^cortex"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/atlas_simplify.html">atlas_simplify</a></span><span class="op">(</span>keep <span class="op">=</span> <span class="fl">0.25</span>, exclude <span class="op">=</span> <span class="st">"^cortex"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="fu"><a href="../reference/count_vertices.html">count_vertices</a></span><span class="op">(</span><span class="va">aseg_raw</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] 5478</span></span></code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">aseg_raw</span><span class="op">)</span></span></code></pre></div>
+<div class="figure">
+<img src="figures/tutorial-subcortical-atlas-plot-simple-1.png" alt="The same four views after simplification, with fewer vertices and straighter but still angular outlines on both the structures and the cortex silhouette." width="960"><p class="caption">
+Stage 5 — simplified. Most of the vertices are gone; the corners they left behind are not.
+</p>
+</div>
+<p><code>keep = 0.5</code> on the context is deliberately mild. It drops roughly a quarter of the contour rings, which is a real loss, but the alternative is a silhouette whose sulci close up as soon as it is smoothed. Simplification is topology-aware, so neighbouring structures lose the same vertices and no gaps open between them.</p>
+<p>Then smooth each separately, and note the second argument:</p>
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">aseg_raw</span> <span class="op">&lt;-</span> <span class="va">aseg_raw</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/atlas_smooth.html">atlas_smooth</a></span><span class="op">(</span></span>
+<span>    smoothness <span class="op">=</span> <span class="fl">0.35</span>,</span>
+<span>    labels <span class="op">=</span> <span class="st">"^cortex"</span>,</span>
+<span>    method <span class="op">=</span> <span class="st">"chaikin"</span></span>
+<span>  <span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/atlas_smooth.html">atlas_smooth</a></span><span class="op">(</span>smoothness <span class="op">=</span> <span class="fl">0.4</span>, exclude <span class="op">=</span> <span class="st">"^cortex"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="fu"><a href="../reference/count_vertices.html">count_vertices</a></span><span class="op">(</span><span class="va">aseg_raw</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] 6621</span></span></code></pre></div>
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">aseg_raw</span><span class="op">)</span></span></code></pre></div>
+<div class="figure">
+<img src="figures/tutorial-subcortical-atlas-plot-smooth-1.png" alt="The same four views after smoothing, with rounded structure outlines and a cortex silhouette that still shows its sulci." width="960"><p class="caption">
+Stage 6 — smoothed. The staircases are gone and the silhouette still has its folds.
+</p>
+</div>
+<p><code>method = "chaikin"</code> is not optional for the context. The default <code>close</code> dilates and then erodes, which fills any hole narrower than the smoothing distance — and on a cortex silhouette those holes are the sulci, so the default destroys exactly what the context is for. Chaikin’s corner-cutting preserves rings instead.</p>
+<p>Notice that the count went back up. Smoothing is not a reduction step: chaikin subdivides each corner it cuts, and <code>close</code> resamples what it traces. Simplify to set the budget, smooth to set the look, and read the total after both rather than after either.</p>
+<p>These four numbers — two thresholds and two smoothing strengths — are the ones worth experimenting with, and none of them requires re-running the pipeline.</p>
 </section><section class="level2"><h2 id="adding-metadata">Adding metadata<a class="anchor" aria-label="anchor" href="#adding-metadata"></a>
 </h2>
 <p>The raw labels are technical identifiers like “Left-Thalamus-Proper.” Join human-readable names and structural groupings:</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">normalize_region</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/ifelse.html" class="external-link">ifelse</a></span><span class="op">(</span></span>
 <span>    <span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span>,</span>
@@ -276,7 +326,7 @@ Stage 4 — gathered. Same geometry, less white space.
 </section><section class="level2"><h2 id="rebuilding-and-saving">Rebuilding and saving<a class="anchor" aria-label="anchor" href="#rebuilding-and-saving"></a>
 </h2>
 <p>Construct the final atlas from modified components:</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">aseg</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/ggseg_atlas.html" class="external-link">ggseg_atlas</a></span><span class="op">(</span></span>
 <span>  atlas <span class="op">=</span> <span class="va">aseg_raw</span><span class="op">$</span><span class="va">atlas</span>,</span>
 <span>  type <span class="op">=</span> <span class="va">aseg_raw</span><span class="op">$</span><span class="va">type</span>,</span>
@@ -308,7 +358,7 @@ Stage 4 — gathered. Same geometry, less white space.
 <span><span class="co">#&gt; 9  left        ventral DC      Left-VentralDC  diencephalon</span></span>
 <span><span class="co">#&gt; 10 left            vessel         Left-vessel          &lt;NA&gt;</span></span>
 <span><span class="co">#&gt; ... with 17 more rows</span></span></code></pre></div>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_labels.html" class="external-link">atlas_labels</a></span><span class="op">(</span><span class="va">aseg</span><span class="op">)</span></span>
 <span><span class="co">#&gt;  [1] "Brain-Stem"           "CC_Anterior"          "CC_Central"          </span></span>
 <span><span class="co">#&gt;  [4] "CC_Mid_Anterior"      "CC_Mid_Posterior"     "CC_Posterior"        </span></span>
@@ -324,11 +374,11 @@ Stage 4 — gathered. Same geometry, less white space.
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; basal ganglia     brainstem  diencephalon        limbic </span></span>
 <span><span class="co">#&gt;             8             1             2             4</span></span></code></pre></div>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">aseg</span><span class="op">)</span></span></code></pre></div>
 <div class="figure">
 <img src="figures/tutorial-subcortical-atlas-plot-1.png" alt="The same four views as the previous figure, unchanged; the structures now carry readable names in the atlas core rather than FreeSurfer identifiers." width="960"><p class="caption">
-Stage 5 — the finished atlas. Same geometry as stage 4; what changed is the names behind it.
+Stage 7 — the finished atlas. Same geometry as stage 6; what changed is the names behind it.
 </p>
 </div>
 </section><script id="quarto-html-after-body" type="application/javascript">

@@ -28,7 +28,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9072</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9073</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -96,7 +96,7 @@
 
 
 
-      <small class="dont-index">Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/vignettes/tutorial-tract-atlas.qmd" class="external-link"><code>vignettes/tutorial-tract-atlas.qmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/vignettes/articles/tutorial-tract-atlas.qmd" class="external-link"><code>vignettes/articles/tutorial-tract-atlas.qmd</code></a></small>
       <div class="d-none name"><code></code></div>
     </div>
 
@@ -176,20 +176,28 @@
 Stage 1 — every tract on every view the pipeline made.
 </p>
 </div>
-<p>Key parameters:</p>
+<p>Key parameters, all passed together in <code>tube_opts</code>:</p>
 <ul>
 <li>
-<strong><code>tube_radius</code></strong> controls tube thickness. Larger values make tracts more visible at the cost of anatomical precision.</li>
+<strong><code>tube_radius</code></strong> controls tube thickness. Larger values make tracts more visible at the cost of anatomical precision. It also takes <code>"density"</code>, to scale thickness by how many streamlines pass through each point.</li>
 <li>
 <strong><code>tube_segments</code></strong> controls the number of vertices around the tube circumference. Six gives hexagonal cross-sections; 12+ gives smoother tubes.</li>
 <li>
 <strong><code>n_points</code></strong> controls centerline resolution. More points capture finer curvature.</li>
-</ul></section><section class="level2"><h2 id="post-processing">Post-processing<a class="anchor" aria-label="anchor" href="#post-processing"></a>
+</ul>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/create_tract_from_tractography.html">create_tract_from_tractography</a></span><span class="op">(</span></span>
+<span>  input_tracts <span class="op">=</span> <span class="va">tract_files</span>,</span>
+<span>  input_aseg <span class="op">=</span> <span class="va">aseg_file</span>,</span>
+<span>  atlas_name <span class="op">=</span> <span class="st">"tracula"</span>,</span>
+<span>  tube_opts <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>tube_radius <span class="op">=</span> <span class="fl">3</span>, tube_segments <span class="op">=</span> <span class="fl">12</span><span class="op">)</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+</section><section class="level2"><h2 id="post-processing">Post-processing<a class="anchor" aria-label="anchor" href="#post-processing"></a>
 </h2>
 <section class="level3"><h3 id="selecting-views">Selecting views<a class="anchor" aria-label="anchor" href="#selecting-views"></a>
 </h3>
 <p>Keep the projections that show your tracts best:</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">tracula_raw</span> <span class="op">&lt;-</span> <span class="va">tracula_raw</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_view_keep</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
 <span>    <span class="st">"axial_2"</span>,</span>
@@ -198,7 +206,7 @@ Stage 1 — every tract on every view the pipeline made.
 <span>    <span class="st">"coronal_4"</span>,</span>
 <span>    <span class="st">"sagittal"</span></span>
 <span>  <span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">tracula_raw</span><span class="op">)</span></span></code></pre></div>
 <div class="figure">
 <img src="figures/tutorial-tract-atlas-plot-views-1.png" alt="The tracts on the seven retained projection views, two axial, two coronal and three sagittal." width="960"><p class="caption">
@@ -208,13 +216,13 @@ Stage 2 — down to the seven views that show the tracts; the <code>sagittal</co
 </section><section class="level3"><h3 id="setting-context-regions">Setting context regions<a class="anchor" aria-label="anchor" href="#setting-context-regions"></a>
 </h3>
 <p>Add cortex as a background outline:</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">tracula_raw</span> <span class="op">&lt;-</span> <span class="va">tracula_raw</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_contextual</a></span><span class="op">(</span><span class="st">"cortex"</span><span class="op">)</span></span></code></pre></div>
 </section><section class="level3"><h3 id="removing-small-fragments">Removing small fragments<a class="anchor" aria-label="anchor" href="#removing-small-fragments"></a>
 </h3>
 <p>After view selection, some tracts may appear as tiny slivers in certain views. Remove fragments below a minimum area:</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">tracula_raw</span> <span class="op">&lt;-</span> <span class="va">tracula_raw</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_view_remove_small</a></span><span class="op">(</span></span>
 <span>    min_area <span class="op">=</span> <span class="fl">500</span>,</span>
@@ -223,7 +231,7 @@ Stage 2 — down to the seven views that show the tracts; the <code>sagittal</co
 <span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_view_remove_small</a></span><span class="op">(</span>min_area <span class="op">=</span> <span class="fl">50</span><span class="op">)</span></span>
 <span><span class="co">#&gt; ℹ Removed 98 geometries below area 500</span></span>
 <span><span class="co">#&gt; ℹ Removed 12 geometries below area 50</span></span></code></pre></div>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">tracula_raw</span><span class="op">)</span></span></code></pre></div>
 <div class="figure">
 <img src="figures/tutorial-tract-atlas-plot-despeckled-1.png" alt="The same views with the small cross-sectional fragments removed, leaving the coherent tract bodies." width="960"><p class="caption">
@@ -232,10 +240,53 @@ Stage 3 — the specks are gone.
 </div>
 <p>The specks were real geometry — a tract crossing an axial slab leaves a dot where it passes through — but a dot carries no shape and reads as noise, so dropping them costs nothing and quiets the figure considerably.</p>
 <p>The first call applies a higher threshold to axial and coronal views (where tracts appear in cross-section and produce small dots). The second call applies a lower threshold everywhere to catch remaining slivers.</p>
+</section><section class="level3"><h3 id="tidying-the-geometry">Tidying the geometry<a class="anchor" aria-label="anchor" href="#tidying-the-geometry"></a>
+</h3>
+<p>The tube outlines are still traced from mesh triangles, so every tract edge is a staircase. <code><a href="../reference/count_vertices.html">count_vertices()</a></code> gives the price, and says where it is being paid:</p>
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">vertices</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/count_vertices.html">count_vertices</a></span><span class="op">(</span><span class="va">tracula_raw</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="va">vertices</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] 26545</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="va">vertices</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/grep.html" class="external-link">grepl</a></span><span class="op">(</span><span class="st">"^cortex"</span>, <span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">vertices</span><span class="op">)</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] 18673</span></span></code></pre></div>
+<p>Most of the atlas is the cortex silhouette rather than the tracts, which is worth knowing before tuning anything: the <code>create_*()</code> functions warn above ten thousand vertices, and on a tract atlas the context is usually the reason.</p>
+<p>Tidying is a separate post-processing step in two parts — <code><a href="../reference/atlas_simplify.html">atlas_simplify()</a></code> drops vertices, <code><a href="../reference/atlas_smooth.html">atlas_smooth()</a></code> rounds off what is left — and both are applied twice, because the context and the tracts want different things. The silhouette is only useful while its sulci survive, so it needs gentle settings; the tubes can take firmer ones.</p>
+<p>Simplify each separately:</p>
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">tracula_raw</span> <span class="op">&lt;-</span> <span class="va">tracula_raw</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/atlas_simplify.html">atlas_simplify</a></span><span class="op">(</span>keep <span class="op">=</span> <span class="fl">0.5</span>, labels <span class="op">=</span> <span class="st">"^cortex"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/atlas_simplify.html">atlas_simplify</a></span><span class="op">(</span>keep <span class="op">=</span> <span class="fl">0.3</span>, exclude <span class="op">=</span> <span class="st">"^cortex"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="fu"><a href="../reference/count_vertices.html">count_vertices</a></span><span class="op">(</span><span class="va">tracula_raw</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] 14927</span></span></code></pre></div>
+<p>Simplification is topology-aware, so neighbouring geometries lose the same vertices and no gaps open between them. Keep an eye on the tracts as you lower <code>keep</code>: a tube cross-section is a small ring to begin with, and there is a point below which it stops reading as a tube and starts reading as a polygon.</p>
+<p>Then smooth each separately, and note the second argument:</p>
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">tracula_raw</span> <span class="op">&lt;-</span> <span class="va">tracula_raw</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/atlas_smooth.html">atlas_smooth</a></span><span class="op">(</span></span>
+<span>    smoothness <span class="op">=</span> <span class="fl">0.35</span>,</span>
+<span>    labels <span class="op">=</span> <span class="st">"^cortex"</span>,</span>
+<span>    method <span class="op">=</span> <span class="st">"chaikin"</span></span>
+<span>  <span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/atlas_smooth.html">atlas_smooth</a></span><span class="op">(</span>smoothness <span class="op">=</span> <span class="fl">0.4</span>, exclude <span class="op">=</span> <span class="st">"^cortex"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="fu"><a href="../reference/count_vertices.html">count_vertices</a></span><span class="op">(</span><span class="va">tracula_raw</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] 16191</span></span></code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">tracula_raw</span><span class="op">)</span></span></code></pre></div>
+<div class="figure">
+<img src="figures/tutorial-tract-atlas-plot-polished-1.png" alt="The same seven views with the tracts drawn as smooth tapering bands and a cortex silhouette that still shows its sulci." width="960"><p class="caption">
+Stage 4 — simplified and smoothed. The tube edges are clean and the silhouette still has its folds.
+</p>
+</div>
+<p><code>method = "chaikin"</code> is not optional for the context. The default <code>close</code> dilates and then erodes, which fills any hole narrower than the smoothing distance — on a cortex silhouette those holes are the sulci, so the default destroys exactly what the context is for. Chaikin’s corner-cutting preserves rings instead.</p>
+<p>Notice that the count went back up. Smoothing is not a reduction step: chaikin subdivides each corner it cuts, and <code>close</code> resamples what it traces. Simplify to set the budget, smooth to set the look, and read the total after both rather than after either.</p>
+<p>This atlas stays heavy even so — forty-two tracts across seven views, each with its own silhouette, is a lot of geometry. If the total matters more than the coverage, the levers are the same ones used above: fewer views, or fewer tracts.</p>
 </section></section><section class="level2"><h2 id="adding-metadata">Adding metadata<a class="anchor" aria-label="anchor" href="#adding-metadata"></a>
 </h2>
 <p>Join tract group information — which tracts are commissural, which are projection fibres, which are association:</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">tracula_metadata</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
 <span>  label <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
 <span>    <span class="st">"lh.cst.bbr.prep"</span>, <span class="st">"rh.cst.bbr.prep"</span>,</span>
@@ -276,7 +327,7 @@ Stage 3 — the specks are gone.
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">hemi</span>, <span class="va">region</span>, <span class="va">label</span>, <span class="va">group</span><span class="op">)</span></span></code></pre></div>
 </section><section class="level2"><h2 id="rebuilding-and-saving">Rebuilding and saving<a class="anchor" aria-label="anchor" href="#rebuilding-and-saving"></a>
 </h2>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">tracula</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/ggseg_atlas.html" class="external-link">ggseg_atlas</a></span><span class="op">(</span></span>
 <span>  atlas <span class="op">=</span> <span class="st">"tracula"</span>,</span>
 <span>  type <span class="op">=</span> <span class="st">"tract"</span>,</span>
@@ -309,7 +360,7 @@ Stage 3 — the specks are gone.
 <span><span class="co">#&gt; 9  midline          callosal splenium cc.splenium.bbr.prep commissural</span></span>
 <span><span class="co">#&gt; 10    left                af.bbr.prep       lh.af.bbr.prep        &lt;NA&gt;</span></span>
 <span><span class="co">#&gt; ... with 32 more rows</span></span></code></pre></div>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_labels.html" class="external-link">atlas_labels</a></span><span class="op">(</span><span class="va">tracula</span><span class="op">)</span></span>
 <span><span class="co">#&gt;  [1] "acomm.bbr.prep"       "cc.bodyc.bbr.prep"    "cc.bodyp.bbr.prep"   </span></span>
 <span><span class="co">#&gt;  [4] "cc.bodypf.bbr.prep"   "cc.bodypm.bbr.prep"   "cc.bodyt.bbr.prep"   </span></span>
@@ -331,14 +382,14 @@ Stage 3 — the specks are gone.
 <span><span class="co">#&gt; association commissural  projection        &lt;NA&gt; </span></span>
 <span><span class="co">#&gt;           4           9           4          25</span></span></code></pre></div>
 <p>The table above covers the tracts this training set names unambiguously; the rest keep their raw labels and an <code>NA</code> group. Note the join key is the label exactly as the pipeline wrote it, <code>.bbr.prep</code> and all — strip the extension first and nothing matches, silently.</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu">ggseg</span><span class="fu">::</span><span class="fu"><a href="https://ggsegverse.github.io/ggseg/reference/ggbrain.html" class="external-link">geom_brain</a></span><span class="op">(</span>atlas <span class="op">=</span> <span class="va">tracula</span>, <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>fill <span class="op">=</span> <span class="va">region</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/scale_viridis.html" class="external-link">scale_fill_viridis_d</a></span><span class="op">(</span>na.value <span class="op">=</span> <span class="st">"grey80"</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_void</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <div class="figure">
 <img src="figures/tutorial-tract-atlas-plot-1.png" alt="2D brain atlas plot showing white matter tracts including corticospinal tract, uncinate fasciculus, and cingulum across axial, coronal, and sagittal projection views, filled with a viridis colour scale." width="960"><p class="caption">
-Stage 4 — the finished atlas, drawn through ggplot2 with a viridis fill.
+Stage 5 — the finished atlas, drawn through ggplot2 with a viridis fill.
 </p>
 </div>
 <p><code><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot()</a></code> is the quick look, using the atlas’s own palette. <code><a href="https://ggsegverse.github.io/ggseg/reference/ggbrain.html" class="external-link">geom_brain()</a></code> is the route when you want to control the colours — map something to <code>fill</code>, or a fill scale has nothing to colour and every region comes back as <code>na.value</code>.</p>

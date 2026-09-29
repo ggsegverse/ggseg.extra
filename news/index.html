@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9072</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9073</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -67,6 +67,18 @@
       <small>Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.9.9.9073" id="ggsegextra-1999073">ggseg.extra 1.9.9.9073<a class="anchor" aria-label="anchor" href="#ggsegextra-1999073"></a></h2>
+<div class="section level3">
+<h3 id="user-facing-changes-1-9-9-9073">User-facing changes<a class="anchor" aria-label="anchor" href="#user-facing-changes-1-9-9-9073"></a></h3>
+<div class="section level4">
+<h4 id="minor-changes-1-9-9-9073">Minor changes<a class="anchor" aria-label="anchor" href="#minor-changes-1-9-9-9073"></a></h4>
+<ul><li><p>The pre-knitted tutorials moved from <code>vignettes/</code> to <code>vignettes/articles/</code>, together with the <code>.qmd.orig</code> sources they are knitted from and the <code>figures/</code> they draw on. They were never shipped in the tarball – <code>.Rbuildignore</code> excluded them one pattern at a time – and <code>vignettes/articles/</code> is where pkgdown expects website-only pages, so <code>vignettes/</code> now holds the six real vignettes and nothing else. <strong>Every tutorial URL is unchanged</strong>: pkgdown renders <code>vignettes/articles/x.qmd</code> to the same <code>articles/x.html</code> a top-level vignette would get, so no existing link breaks.</p></li>
+<li><p>The subcortical and tract tutorials now cover tidying the geometry, which only the cortical, label and cerebellar ones did. Both show <code><a href="../reference/count_vertices.html">count_vertices()</a></code> before and after <code><a href="../reference/atlas_simplify.html">atlas_simplify()</a></code> and <code><a href="../reference/atlas_smooth.html">atlas_smooth()</a></code>, and both make the point the other tutorials do not have to: the context silhouette and the structures need <strong>separate</strong> passes. A single pass tuned for nuclei or tubes flattens the cortical ribbon into a blob, and <code>method = "chaikin"</code> is what keeps its sulci, because the default <code>close</code> fills any hole narrower than the smoothing distance. Both tutorials also show that the context carries most of the vertices, and that smoothing puts some back rather than removing them.</p></li>
+<li><p>The tract tutorial’s key-parameter list presented <code>tube_radius</code>, <code>tube_segments</code> and <code>n_points</code> as arguments of <code><a href="../reference/create_tract_from_tractography.html">create_tract_from_tractography()</a></code>. <a href="https://github.com/ggsegverse/ggseg.extra/issues/253" class="external-link">#253</a> moved them into <code>tube_opts</code>, so the list now says so and shows the call.</p></li>
+</ul></div>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9072" id="ggsegextra-1999072">ggseg.extra 1.9.9.9072<a class="anchor" aria-label="anchor" href="#ggsegextra-1999072"></a></h2>
 <div class="section level3">

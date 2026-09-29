@@ -202,6 +202,112 @@ together. It matters more than it sounds: an atlas is usually printed
 small, and the white space between views is space the structures could
 have had.
 
+## Tidying the geometry
+
+Every outline here is still made of mesh triangle edges, so each nucleus
+is bounded by a staircase rather than a line anyone would draw.
+[`count_vertices()`](https://ggsegverse.github.io/ggseg.extra/reference/count_vertices.md)
+gives the price, and says where it is being paid:
+
+``` r
+
+vertices <- count_vertices(aseg_raw)
+
+sum(vertices)
+#> [1] 10909
+sum(vertices[grepl("^cortex", names(vertices))])
+#> [1] 6796
+```
+
+Most of the atlas is the cortex silhouette. That matters for what comes
+next: the `create_*()` functions warn above ten thousand vertices, and
+here the context geometry alone accounts for the bulk of it.
+
+Tidying is a separate post-processing step in two parts —
+[`atlas_simplify()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_simplify.md)
+drops vertices,
+[`atlas_smooth()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_smooth.md)
+rounds off what is left — and on a subcortical atlas **both have to be
+applied twice**, because the context and the structures want opposite
+things. The silhouette is only useful while its sulci and gyri survive,
+so it needs gentle settings; the nuclei need firmer ones to read as
+smooth shapes. A single pass tuned for nuclei flattens the cortical
+ribbon into a blob.
+
+Simplify each separately:
+
+``` r
+
+aseg_raw <- aseg_raw |>
+  atlas_simplify(keep = 0.5, labels = "^cortex") |>
+  atlas_simplify(keep = 0.25, exclude = "^cortex")
+
+sum(count_vertices(aseg_raw))
+#> [1] 5478
+```
+
+``` r
+
+plot(aseg_raw)
+```
+
+![The same four views after simplification, with fewer vertices and
+straighter but still angular outlines on both the structures and the
+cortex
+silhouette.](figures/tutorial-subcortical-atlas-plot-simple-1.png)
+
+Stage 5 — simplified. Most of the vertices are gone; the corners they
+left behind are not.
+
+`keep = 0.5` on the context is deliberately mild. It drops roughly a
+quarter of the contour rings, which is a real loss, but the alternative
+is a silhouette whose sulci close up as soon as it is smoothed.
+Simplification is topology-aware, so neighbouring structures lose the
+same vertices and no gaps open between them.
+
+Then smooth each separately, and note the second argument:
+
+``` r
+
+aseg_raw <- aseg_raw |>
+  atlas_smooth(
+    smoothness = 0.35,
+    labels = "^cortex",
+    method = "chaikin"
+  ) |>
+  atlas_smooth(smoothness = 0.4, exclude = "^cortex")
+
+sum(count_vertices(aseg_raw))
+#> [1] 6621
+```
+
+``` r
+
+plot(aseg_raw)
+```
+
+![The same four views after smoothing, with rounded structure outlines
+and a cortex silhouette that still shows its
+sulci.](figures/tutorial-subcortical-atlas-plot-smooth-1.png)
+
+Stage 6 — smoothed. The staircases are gone and the silhouette still has
+its folds.
+
+`method = "chaikin"` is not optional for the context. The default
+`close` dilates and then erodes, which fills any hole narrower than the
+smoothing distance — and on a cortex silhouette those holes are the
+sulci, so the default destroys exactly what the context is for.
+Chaikin’s corner-cutting preserves rings instead.
+
+Notice that the count went back up. Smoothing is not a reduction step:
+chaikin subdivides each corner it cuts, and `close` resamples what it
+traces. Simplify to set the budget, smooth to set the look, and read the
+total after both rather than after either.
+
+These four numbers — two thresholds and two smoothing strengths — are
+the ones worth experimenting with, and none of them requires re-running
+the pipeline.
+
 ## Adding metadata
 
 The raw labels are technical identifiers like “Left-Thalamus-Proper.”
@@ -319,5 +425,5 @@ plot(aseg)
 now carry readable names in the atlas core rather than FreeSurfer
 identifiers.](figures/tutorial-subcortical-atlas-plot-1.png)
 
-Stage 5 — the finished atlas. Same geometry as stage 4; what changed is
+Stage 7 — the finished atlas. Same geometry as stage 6; what changed is
 the names behind it.
