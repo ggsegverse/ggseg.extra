@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9081</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9082</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -69,6 +69,18 @@
       <small>Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.9.9.9082" id="ggsegextra-1999082">ggseg.extra 1.9.9.9082<a class="anchor" aria-label="anchor" href="#ggsegextra-1999082"></a></h2>
+<div class="section level3">
+<h3 id="documentation-1-9-9-9082">Documentation<a class="anchor" aria-label="anchor" href="#documentation-1-9-9-9082"></a></h3>
+<ul><li>
+<p>The neuromaps tutorial is re-knitted from its reconstructed source, which is what it needed to be trusted. Three things came out of actually running it.</p>
+<p><code>plot(atlas, show.legend = FALSE)</code> does not hide a legend. <code><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot()</a></code> for an atlas takes <code>...</code>, so <code>show.legend</code> reaches base graphics and warns once per polygon – 185 warnings on the Yeo fixture, and roughly 400 lines of them in the rendered page. The tutorial now uses <code>theme(legend.position = "none")</code>, which is what it meant.</p>
+<p>Two of its examples cannot run. <code>source = "schaefer"</code> and <code>source = "pet"</code> are not in the neuromaps registry, which ships 124 annotations and no parcellations at all, and the saving example would write package data. They are marked as shown rather than run, and the parcellation section says why, so a reader copying it does not meet an error.</p>
+<p>The page also predates the large-atlas advisory, which now appears where it applies.</p>
+</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9081" id="ggsegextra-1999081">ggseg.extra 1.9.9.9081<a class="anchor" aria-label="anchor" href="#ggsegextra-1999081"></a></h2>
 <div class="section level3">

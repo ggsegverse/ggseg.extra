@@ -43,53 +43,34 @@ atlas_auto <- create_cortical_from_neuromaps(
   desc = "genepc1",
   atlas_name = "abagen_genepc1"
 )
+#> Warning: Atlas has 87312 vertices (threshold: 10000)
+#> ℹ Large atlases may be slow to plot and increase package size
+#> ℹ Call `atlas_simplify(atlas, keep = 0.2)`, then `atlas_smooth(atlas)`, to tidy
+#>   it and reduce vertices
 
 atlas_auto
-#>
-#> ── abagen_genepc1 ggseg atlas ────────────
+#> 
+#> ── abagen_genepc1 ggseg atlas ──────────────────────────────────────────────────
 #> Type: cortical
-#> Regions: 16
+#> Regions: 15
 #> Hemispheres: left, right
 #> Views: inferior, lateral, medial, superior
 #> Palette: ✔
 #> Rendering: ✔ ggseg
 #> ✔ ggseg3d (vertices)
-#> ──────────────────────────────────────────
-#> # A tibble: 32 × 3
-#>    hemi  region  label     
-#>    <chr> <chr>   <chr>     
-#>  1 left  bin_1   lh_bin_1  
-#>  2 left  bin_2   lh_bin_2  
-#>  3 left  bin_3   lh_bin_3  
-#>  4 left  bin_4   lh_bin_4  
-#>  5 left  bin_5   lh_bin_5  
-#>  6 left  bin_6   lh_bin_6  
-#>  7 left  bin_7   lh_bin_7  
-#>  8 left  bin_8   lh_bin_8  
-#>  9 left  bin_9   lh_bin_9  
-#> 10 left  bin_10  lh_bin_10 
-#> 11 left  bin_11  lh_bin_11 
-#> 12 left  bin_12  lh_bin_12 
-#> 13 left  bin_13  lh_bin_13 
-#> 14 left  bin_14  lh_bin_14 
-#> 15 left  bin_15  lh_bin_15 
-#> 16 left  unknown lh_unknown
-#> 17 right bin_1   rh_bin_1  
-#> 18 right bin_2   rh_bin_2  
-#> 19 right bin_3   rh_bin_3  
-#> 20 right bin_4   rh_bin_4  
-#> 21 right bin_5   rh_bin_5  
-#> 22 right bin_6   rh_bin_6  
-#> 23 right bin_7   rh_bin_7  
-#> 24 right bin_8   rh_bin_8  
-#> 25 right bin_9   rh_bin_9  
-#> 26 right bin_10  rh_bin_10 
-#> 27 right bin_11  rh_bin_11 
-#> 28 right bin_12  rh_bin_12 
-#> 29 right bin_13  rh_bin_13 
-#> 30 right bin_14  rh_bin_14 
-#> 31 right bin_15  rh_bin_15 
-#> 32 right unknown rh_unknown
+#> ────────────────────────────────────────────────────────────────────────────────
+#>    hemi region     label
+#> 1  left  bin_1  lh_bin_1
+#> 2  left  bin_2  lh_bin_2
+#> 3  left  bin_3  lh_bin_3
+#> 4  left  bin_4  lh_bin_4
+#> 5  left  bin_5  lh_bin_5
+#> 6  left  bin_6  lh_bin_6
+#> 7  left  bin_7  lh_bin_7
+#> 8  left  bin_8  lh_bin_8
+#> 9  left  bin_9  lh_bin_9
+#> 10 left bin_10 lh_bin_10
+#> ... with 20 more rows
 ```
 
 The pipeline reads the annotation, bins the values, and projects the
@@ -133,7 +114,7 @@ per hemisphere, this gives `1 + log2(10242) ≈ 14` bins.
 ``` r
 
 nrow(atlas_auto$core)
-#> [1] 32
+#> [1] 30
 atlas_auto$core |> filter(region != "unknown") |> distinct(region)
 #> # A tibble: 15 × 1
 #>    region
@@ -166,6 +147,10 @@ atlas_5 <- create_cortical_from_neuromaps(
   n_bins = 5,
   atlas_name = "abagen_5bin"
 )
+#> Warning: Atlas has 29534 vertices (threshold: 10000)
+#> ℹ Large atlases may be slow to plot and increase package size
+#> ℹ Call `atlas_simplify(atlas, keep = 0.2)`, then `atlas_smooth(atlas)`, to tidy
+#>   it and reduce vertices
 
 atlas_5$core |> filter(region != "unknown") |> distinct(region)
 #> # A tibble: 5 × 1
@@ -186,6 +171,10 @@ atlas_20 <- create_cortical_from_neuromaps(
   n_bins = 20,
   atlas_name = "abagen_20bin"
 )
+#> Warning: Atlas has 113589 vertices (threshold: 10000)
+#> ℹ Large atlases may be slow to plot and increase package size
+#> ℹ Call `atlas_simplify(atlas, keep = 0.2)`, then `atlas_smooth(atlas)`, to tidy
+#>   it and reduce vertices
 
 atlas_20$core |> filter(region != "unknown") |> distinct(region)
 #> # A tibble: 20 × 1
@@ -234,28 +223,14 @@ labeled “unknown.”
 ``` r
 
 atlas_auto$palette
-#>   lh_bin_1   lh_bin_2   lh_bin_3 
-#>  "#A71B4B"  "#C84040"  "#E5610A" 
-#>   lh_bin_4   lh_bin_5   lh_bin_6 
-#>  "#EF8913"  "#F6AD3E"  "#FBCC6B" 
-#>   lh_bin_7   lh_bin_8   lh_bin_9 
-#>  "#FDE896"  "#FEFDBE"  "#D0F4B1" 
-#>  lh_bin_10  lh_bin_11  lh_bin_12 
-#>  "#96E4AD"  "#52CFB0"  "#00B6B5" 
-#>  lh_bin_13  lh_bin_14  lh_bin_15 
-#>  "#0099B5"  "#2275AF"  "#584B9F" 
-#> lh_unknown   rh_bin_1   rh_bin_2 
-#>  "#BEBEBE"  "#A71B4B"  "#C84040" 
-#>   rh_bin_3   rh_bin_4   rh_bin_5 
-#>  "#E5610A"  "#EF8913"  "#F6AD3E" 
-#>   rh_bin_6   rh_bin_7   rh_bin_8 
-#>  "#FBCC6B"  "#FDE896"  "#FEFDBE" 
-#>   rh_bin_9  rh_bin_10  rh_bin_11 
-#>  "#D0F4B1"  "#96E4AD"  "#52CFB0" 
-#>  rh_bin_12  rh_bin_13  rh_bin_14 
-#>  "#00B6B5"  "#0099B5"  "#2275AF" 
-#>  rh_bin_15 rh_unknown 
-#>  "#584B9F"  "#BEBEBE"
+#>  lh_bin_1  lh_bin_2  lh_bin_3  lh_bin_4  lh_bin_5  lh_bin_6  lh_bin_7  lh_bin_8 
+#> "#A71B4B" "#C84040" "#E5610A" "#EF8913" "#F6AD3E" "#FBCC6B" "#FDE896" "#FEFDBE" 
+#>  lh_bin_9 lh_bin_10 lh_bin_11 lh_bin_12 lh_bin_13 lh_bin_14 lh_bin_15  rh_bin_1 
+#> "#D0F4B1" "#96E4AD" "#52CFB0" "#00B6B5" "#0099B5" "#2275AF" "#584B9F" "#A71B4B" 
+#>  rh_bin_2  rh_bin_3  rh_bin_4  rh_bin_5  rh_bin_6  rh_bin_7  rh_bin_8  rh_bin_9 
+#> "#C84040" "#E5610A" "#EF8913" "#F6AD3E" "#FBCC6B" "#FDE896" "#FEFDBE" "#D0F4B1" 
+#> rh_bin_10 rh_bin_11 rh_bin_12 rh_bin_13 rh_bin_14 rh_bin_15 
+#> "#96E4AD" "#52CFB0" "#00B6B5" "#0099B5" "#2275AF" "#584B9F"
 ```
 
 ## Visualizing the effect of bin count
@@ -306,7 +281,6 @@ afterwards to balance clarity and file size. We start with 7 bins and
 then simplify to roughly 20% of vertices:
 
 ``` r
-
 atlas_full <- create_cortical_from_neuromaps(
   source = "abagen",
   desc = "genepc1",
@@ -314,17 +288,45 @@ atlas_full <- create_cortical_from_neuromaps(
   atlas_name = "abagen_genepc1",
   verbose = TRUE
 )
+#> ℹ Fetching neuromaps: source="abagen", desc="genepc1"
+#> ℹ Using cached 'source-abagen_desc-genepc1_space-fsaverage_den-10k_hemi-L_feature.func.gii'
+#> ℹ Using cached 'source-abagen_desc-genepc1_space-fsaverage_den-10k_hemi-R_feature.func.gii'
+#> 
+#> ── Creating brain atlas "abagen_genepc1" from neuromaps ────────────────────────
+#> ℹ Input files: '/Users/athanasm/Library/Caches/org.R-project.R/R/neuromapr/annotations/abagen/genepc1/fsaverage//source-abagen_desc-genepc1_space-fsaverage_den-10k_hemi-L_feature.func.gii' and '/Users/athanasm/Library/Caches/org.R-project.R/R/neuromapr/annotations/abagen/genepc1/fsaverage//source-abagen_desc-genepc1_space-fsaverage_den-10k_hemi-R_feature.func.gii'
+#> ℹ Reading neuromaps annotation
+#> ✔ Reading neuromaps annotation [116ms]
+#> 
+#> ℹ Projecting mesh to 2D polygons
+#> ℹ Projecting "rh" "lateral"
+#> ℹ Projecting mesh to 2D polygons
+ℹ Projecting "rh" "medial"
+#> ℹ Projecting mesh to 2D polygons
+ℹ Projecting "rh" "superior"
+#> ℹ Projecting mesh to 2D polygons
+ℹ Projecting "rh" "inferior"
+#> ℹ Projecting mesh to 2D polygons
+ℹ Projecting "lh" "lateral"
+#> ℹ Projecting mesh to 2D polygons
+ℹ Projecting "lh" "medial"
+#> ℹ Projecting mesh to 2D polygons
+ℹ Projecting "lh" "superior"
+#> ℹ Projecting mesh to 2D polygons
+ℹ Projecting "lh" "inferior"
+#> ℹ Projecting mesh to 2D polygons
+✔ Projecting mesh to 2D polygons [15.7s]
+#> 
+#> ✔ Temporary files removed
+#> ✔ Brain atlas created with 14 regions
+#> ℹ Pipeline completed [16.1s]
+#> Warning: Atlas has 43679 vertices (threshold: 10000)
+#> ℹ Large atlases may be slow to plot and increase package size
+#> ℹ Call `atlas_simplify(atlas, keep = 0.2)`, then `atlas_smooth(atlas)`, to tidy
+#>   it and reduce vertices
 
 atlas_full <- atlas_full |>
   atlas_simplify(keep = 0.2, exclude = "cortex_") |>
   atlas_smooth(exclude = "cortex_")
-#>
-#> ── Creating brain atlas "abagen_genepc1" ──
-#> ℹ Reading neuromaps annotation
-#> ✔ Reading neuromaps annotation
-#> ℹ Projecting mesh to 2D polygons
-#> ✔ Projecting mesh to 2D polygons
-#> ✔ Brain atlas created with 16 regions
 ```
 
 ## Post-processing
@@ -343,8 +345,9 @@ atlas_clean <- atlas_full |>
 
 ``` r
 
-plot(atlas_clean, show.legend = FALSE) +
-  theme_void()
+plot(atlas_clean) +
+  theme_void() +
+  theme(legend.position = "none")
 ```
 
 ![2D brain atlas plot showing gene expression quantile bins across
@@ -352,6 +355,8 @@ lateral, medial, inferior, and superior views without
 legend.](figures/tutorial-neuromaps-atlas-plot-2d-1.png)
 
 2D gene expression atlas plotted with ggseg.
+
+    #> NULL
 
 ``` r
 
@@ -371,7 +376,9 @@ vertex labels where each value maps to a brain region. The pipeline
 detects this automatically and skips binning entirely.
 
 For parcellations, you can provide a `label_table` to map the numeric
-IDs to human-readable region names and custom colors:
+IDs to human-readable region names and custom colors. The registry
+currently ships only continuous maps, so the call below is shown rather
+than run — substitute a parcellation annotation when one is available:
 
 ``` r
 
@@ -433,24 +440,24 @@ files <- neuromapr::fetch_neuromaps_annotation(
 annot_data <- read_neuromaps_annotation(files, n_bins = 7)
 annot_data
 #> # A tibble: 16 × 5
-#>    hemi  region  label     colour vertices
-#>    <chr> <chr>   <chr>     <chr>  <list>  
-#>  1 left  bin_1   lh_bin_1  #A71B… <int>   
-#>  2 left  bin_2   lh_bin_2  #E96F… <int>   
-#>  3 left  bin_3   lh_bin_3  #F9C2… <int>   
-#>  4 left  bin_4   lh_bin_4  #FEFD… <int>   
-#>  5 left  bin_5   lh_bin_5  #81DE… <int>   
-#>  6 left  bin_6   lh_bin_6  #00A3… <int>   
-#>  7 left  bin_7   lh_bin_7  #584B… <int>   
-#>  8 left  unknown lh_unkno… #BEBE… <int>   
-#>  9 right bin_1   rh_bin_1  #A71B… <int>   
-#> 10 right bin_2   rh_bin_2  #E96F… <int>   
-#> 11 right bin_3   rh_bin_3  #F9C2… <int>   
-#> 12 right bin_4   rh_bin_4  #FEFD… <int>   
-#> 13 right bin_5   rh_bin_5  #81DE… <int>   
-#> 14 right bin_6   rh_bin_6  #00A3… <int>   
-#> 15 right bin_7   rh_bin_7  #584B… <int>   
-#> 16 right unknown rh_unkno… #BEBE… <int>
+#>    hemi  region  label      colour  vertices     
+#>    <chr> <chr>   <chr>      <chr>   <list>       
+#>  1 left  bin_1   lh_bin_1   #A71B4B <int [1,315]>
+#>  2 left  bin_2   lh_bin_2   #E96F02 <int [1,315]>
+#>  3 left  bin_3   lh_bin_3   #F9C25C <int [1,315]>
+#>  4 left  bin_4   lh_bin_4   #FEFDBE <int [1,314]>
+#>  5 left  bin_5   lh_bin_5   #81DEAD <int [1,315]>
+#>  6 left  bin_6   lh_bin_6   #00A3B6 <int [1,315]>
+#>  7 left  bin_7   lh_bin_7   #584B9F <int [1,315]>
+#>  8 left  unknown lh_unknown #BEBEBE <int [1,038]>
+#>  9 right bin_1   rh_bin_1   #A71B4B <int [1,318]>
+#> 10 right bin_2   rh_bin_2   #E96F02 <int [1,317]>
+#> 11 right bin_3   rh_bin_3   #F9C25C <int [1,317]>
+#> 12 right bin_4   rh_bin_4   #FEFDBE <int [1,318]>
+#> 13 right bin_5   rh_bin_5   #81DEAD <int [1,317]>
+#> 14 right bin_6   rh_bin_6   #00A3B6 <int [1,317]>
+#> 15 right bin_7   rh_bin_7   #584B9F <int [1,318]>
+#> 16 right unknown rh_unknown #BEBEBE <int [1,020]>
 ```
 
 For volume files in MNI152 space, use
@@ -470,13 +477,3 @@ More bins means more regions and larger atlas objects. The pipeline is
 fast regardless of bin count, so experiment freely.
 
 ## Saving
-
-Once you’re happy with the atlas, save it as package data:
-
-``` r
-
-usethis::use_data(abagen_genepc1, overwrite = TRUE, compress = "xz")
-```
-
-The `compress = "xz"` flag gives the best compression for sf geometry
-data.
