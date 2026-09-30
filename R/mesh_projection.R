@@ -89,7 +89,53 @@ build_vertex_label_vector <- function(vertices_df, n_vertices, hemi_short) {
     idx <- idx[idx >= 1L & idx <= n_vertices]
     vertex_labels[idx] <- lbl
   }
+
+  fill_unlabelled_with_context(vertex_labels, hemi_short)
+}
+
+
+#' Name the cortex a parcellation does not cover
+#'
+#' A parcellation that covers only part of the mantle -- a handful of `.label`
+#' files, say -- left every other vertex `NA`, and an `NA` vertex produces no
+#' polygon. The atlas was then a few shapes floating in empty space, with
+#' nothing to say where on the brain they sit.
+#'
+#' Those vertices become one region per hemisphere, named the way the
+#' volumetric pipelines name the same thing so that [context_pattern()]
+#' matches it. It is never added to `$core`, which is built from the
+#' parcellation, so it carries no colour and no legend entry and renders as the
+#' silhouette the structures are read against.
+#'
+#' A parcellation that already covers the mantle, which most annotations do
+#' via a medial-wall region, leaves nothing unlabelled and gets no extra
+#' region. One that covers *nothing* gets none either: the silhouette is
+#' defined as the part no label claimed, so with no labels there is nothing to
+#' be the context of, and a hemisphere of pure silhouette would turn a
+#' parcellation that failed to read into a plausible-looking grey brain
+#' instead of the error it should be.
+#' @noRd
+fill_unlabelled_with_context <- function(vertex_labels, hemi_short) {
+  unlabelled <- is.na(vertex_labels)
+  if (!any(unlabelled) || all(unlabelled)) {
+    return(vertex_labels)
+  }
+  vertex_labels[unlabelled] <- cortex_context_label(hemi_short)
   vertex_labels
+}
+
+
+#' The silhouette label for one hemisphere
+#'
+#' `lh_cortex` / `rh_cortex`. Surface atlases name every label
+#' `<hemi>_<region>`, and ggseg.formats reads the hemisphere back off that
+#' prefix when it lays views out -- a label it cannot parse becomes a view of
+#' its own and the silhouette lands beside the regions instead of behind them.
+#' The volumetric pipelines spell the same thing `cortex_left`, so
+#' [context_pattern()] matches both.
+#' @noRd
+cortex_context_label <- function(hemi_short) {
+  paste0(hemi_short, "_cortex")
 }
 
 #' Split a boundary triangle into per-region polygon fragments
@@ -382,7 +428,7 @@ project_mesh_to_polygons <- function(
 
 
 #' @noRd
-#' @importFrom dplyr group_by mutate ungroup select
+#' @importFrom dplyr arrange group_by mutate ungroup select
 #' @importFrom sf st_combine st_as_sf
 cortical_build_sf_projected <- function(
   components,
@@ -397,11 +443,15 @@ cortical_build_sf_projected <- function(
     verbose = verbose
   )
 
-  projected |>
+  sf_data <- projected |>
     layout_cortical_views() |>
     dplyr::group_by(view, label) |>
     dplyr::mutate(geometry = sf::st_combine(geometry)) |>
     dplyr::ungroup() |>
     dplyr::select(label, view, geometry) |>
     sf::st_as_sf()
+
+  # The silhouette is drawn first so the regions sit on top of it, the same
+  # order arrange_contour_sf() gives the volumetric pipelines.
+  dplyr::arrange(sf_data, view, !is_cortex_outline(label))
 }

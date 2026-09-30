@@ -108,7 +108,7 @@ describe("build_vertex_label_vector", {
     labels <- build_vertex_label_vector(vertices_df, 4L, "lh")
 
     expect_length(labels, 4L)
-    expect_identical(labels, c("lh_a", NA_character_, "lh_a", NA_character_))
+    expect_identical(labels, c("lh_a", "lh_cortex", "lh_a", "lh_cortex"))
   })
 
   it("keeps only labels matching the hemisphere prefix", {
@@ -120,7 +120,7 @@ describe("build_vertex_label_vector", {
 
     labels <- build_vertex_label_vector(vertices_df, 3L, "lh")
 
-    expect_identical(labels, c("lh_a", NA_character_, NA_character_))
+    expect_identical(labels, c("lh_a", "lh_cortex", "lh_cortex"))
   })
 
   it("skips NA labels without erroring", {
@@ -132,7 +132,7 @@ describe("build_vertex_label_vector", {
 
     labels <- build_vertex_label_vector(vertices_df, 3L, "lh")
 
-    expect_identical(labels, c("lh_a", NA_character_, NA_character_))
+    expect_identical(labels, c("lh_a", "lh_cortex", "lh_cortex"))
   })
 
   it("drops out-of-range vertex indices", {
@@ -144,7 +144,7 @@ describe("build_vertex_label_vector", {
 
     labels <- build_vertex_label_vector(vertices_df, 3L, "lh")
 
-    expect_identical(labels, c("lh_a", NA_character_, NA_character_))
+    expect_identical(labels, c("lh_a", "lh_cortex", "lh_cortex"))
   })
 })
 
@@ -477,5 +477,48 @@ describe("project_mesh_to_polygons", {
       ),
       "No polygons generated"
     )
+  })
+})
+
+
+describe("fill_unlabelled_with_context", {
+  it("names the cortex a parcellation leaves uncovered", {
+    labels <- c("lh_a", NA, NA, "lh_b")
+
+    expect_identical(
+      fill_unlabelled_with_context(labels, "lh"),
+      c("lh_a", "lh_cortex", "lh_cortex", "lh_b")
+    )
+  })
+
+  it("adds nothing when the parcellation covers every vertex", {
+    labels <- c("rh_a", "rh_b")
+
+    expect_identical(fill_unlabelled_with_context(labels, "rh"), labels)
+  })
+
+  # The silhouette is the part no label claimed. With no labels at all there
+  # is nothing for it to be the context of, and filling anyway would turn a
+  # parcellation that failed to read into a plausible grey brain rather than
+  # the error it should be.
+  it("adds nothing when the parcellation covers no vertex", {
+    labels <- rep(NA_character_, 3L)
+
+    expect_identical(fill_unlabelled_with_context(labels, "lh"), labels)
+  })
+
+  # The silhouette has to carry the hemisphere prefix every other label uses:
+  # ggseg.formats reads the hemisphere back off it when laying views out, and
+  # a label it cannot parse becomes a view of its own, which puts the
+  # silhouette beside the regions instead of behind them.
+  it("labels the silhouette so its hemisphere can be read back", {
+    for (hemi in c("lh", "rh")) {
+      label <- fill_unlabelled_with_context(
+        c(paste0(hemi, "_a"), NA_character_),
+        hemi
+      )[2]
+      expect_match(label, paste0("^", hemi, "_"))
+      expect_true(grepl(context_pattern(), label))
+    }
   })
 })

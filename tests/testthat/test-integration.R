@@ -69,6 +69,32 @@ describe("integration tests", {
     })
   })
 
+  # A handful of label files cover a fraction of the mantle, and the rest used
+  # to be nothing at all: the atlas was a few shapes floating in empty space
+  # with no way to tell where on the brain they sat.
+  it("gives a sparse label atlas a cortical silhouette to sit on", {
+    skip_if_not_installed("freesurferformats")
+
+    atlas <- create_cortical_from_labels(
+      unlist(test_label_files()),
+      atlas_name = "context_test",
+      verbose = FALSE
+    )
+
+    sf_labels <- ggseg.formats::atlas_geom(
+      ggseg.formats::as_sf_atlas(atlas)
+    )$label
+
+    expect_setequal(
+      intersect(sf_labels, c("lh_cortex", "rh_cortex")),
+      c("lh_cortex", "rh_cortex")
+    )
+
+    # Context, not a region: it carries no colour and no legend entry.
+    expect_false(any(grepl(context_pattern(), atlas$core$label)))
+    expect_false(any(grepl(context_pattern(), names(atlas$palette))))
+  })
+
   it("creates atlas from annotation and renders with ggseg3d", {
     skip_render_on_windows()
     skip_if_not_installed("freesurferformats")

@@ -482,11 +482,15 @@ describe("finalize_atlas", {
 
 
 describe("context_pattern", {
-  it("matches the silhouette labels the pipelines produce", {
+  it("matches the silhouette labels the volumetric pipelines produce", {
     expect_true(all(grepl(
       context_pattern(),
       c("cortex", "cortex_", "cortex_left", "cortex_right")
     )))
+  })
+
+  it("matches the silhouette labels the surface pipelines produce", {
+    expect_true(all(grepl(context_pattern(), c("lh_cortex", "rh_cortex"))))
   })
 
   it("does not match structures that merely have cortex in the name", {
