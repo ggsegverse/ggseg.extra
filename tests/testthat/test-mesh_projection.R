@@ -507,6 +507,19 @@ describe("fill_unlabelled_with_context", {
     expect_identical(fill_unlabelled_with_context(labels, "lh"), labels)
   })
 
+  # FreeSurfer ships lh.cortex.label, so a real parcellation can arrive already
+  # using the silhouette's name. Merging the two would fold a region the user
+  # coloured into the grey behind everything else, without saying so.
+  it("leaves a parcellation that already uses the silhouette's name alone", {
+    labels <- c("lh_cortex", NA_character_, "lh_a")
+
+    expect_warning(
+      out <- fill_unlabelled_with_context(labels, "lh"),
+      "already has a region"
+    )
+    expect_identical(out, labels)
+  })
+
   # The silhouette has to carry the hemisphere prefix every other label uses:
   # ggseg.formats reads the hemisphere back off it when laying views out, and
   # a label it cannot parse becomes a view of its own, which puts the

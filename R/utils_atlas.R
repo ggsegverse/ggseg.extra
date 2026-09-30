@@ -109,7 +109,7 @@ label_to_region <- function(
 #'   atlas_polish(keep = 0.1, smoothness = 0.4, exclude = context_pattern())
 #' }
 context_pattern <- function() {
-  "^cortex|^[lr]h_cortex$"
+  "^([lr]h_)?cortex"
 }
 
 

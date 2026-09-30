@@ -113,12 +113,16 @@ atlas_views(ba_atlas)
 #| eval: !expr can_run
 #| fig-width: 10
 #| fig-height: 6
-#| fig-alt: "Brodmann area regions straight from the pipeline, with stepped boundaries traced from the mesh."
+#| fig-alt: "Brodmann area regions straight from the pipeline, drawn on a grey cortical silhouette, with stepped boundaries traced from the mesh."
 #| fig-cap: "Stage 1 --- straight out of the pipeline, boundaries still following the mesh."
 plot(ba_atlas)
 ```
 
 The boundaries are staircases, because the pipeline traces the edges of mesh triangles rather than drawing a line through them.
+
+Four label files cover a small part of the cortex, and the grey behind them is the rest of it.
+Any vertex no label claims becomes a silhouette region, `lh_cortex` or `rh_cortex`, so a sparse parcellation still reads as somewhere on a brain rather than as shapes in empty space.
+It is context rather than a region: it is not in `$core`, so it takes no colour and no legend entry, and `context_pattern()` matches it when you want to treat it differently from the regions --- as the next section does.
 
 ## Tidying the geometry
 
