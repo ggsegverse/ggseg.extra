@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9079</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9080</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -67,6 +67,24 @@
       <small>Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.9.9.9080" id="ggsegextra-1999080">ggseg.extra 1.9.9.9080<a class="anchor" aria-label="anchor" href="#ggsegextra-1999080"></a></h2>
+<div class="section level3">
+<h3 id="breaking-changes-1-9-9-9080">Breaking changes<a class="anchor" aria-label="anchor" href="#breaking-changes-1-9-9-9080"></a></h3>
+<ul><li>The cerebellar flatmap gets a backdrop too, and perimeter regions stop being inflated to reach the flatmap edge. Previously the surface no parcellation claimed was nothing, and <code>fill_inter_region_gaps()</code> expanded whichever regions bordered it outward to fill the rim. Now that surface is a <code>cerebellum</code> backdrop, so those regions stop where the parcellation says they stop. Measured on the SUIT anatomical parcellation, 18 of 27 regions change vertex count and a thin grey rim appears at the flatmap edge; the region count is unchanged. Rebuilding a published cerebellar atlas will produce slightly different geometry.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="new-features-1-9-9-9080">New features<a class="anchor" aria-label="anchor" href="#new-features-1-9-9-9080"></a></h3>
+<ul><li><p><code><a href="../reference/context_pattern.html">context_pattern()</a></code> matches every backdrop an atlas can have, not just the ones a pipeline generates. An annotation’s medial wall is demoted to backdrop during the build exactly as a generated silhouette is, but the pattern did not match it, so <code>exclude = context_pattern()</code> protected nothing on an annotation atlas – the case the cortical tutorial is built around. It now covers the generated names (<code>lh_cortex</code> / <code>rh_cortex</code>, <code>cerebellum</code>, <code>cortex_left</code> / <code>cortex_right</code>) and the carried ones (<code>unknown</code>, <code>???</code>, medial wall). On the Yeo fixture, <code>atlas_simplify(keep = 0.1, exclude = context_pattern())</code> now keeps the medial wall intact where before it simplified it along with everything else.</p></li>
+<li><p>A sparse cerebellar parcellation gets a backdrop, as a sparse cortical one now does. The flatmap is a single mesh with no hemisphere split, so it is one <code>cerebellum</code> region rather than one per hemisphere.</p></li>
+</ul></div>
+<div class="section level3">
+<h3 id="minor-changes-1-9-9-9080">Minor changes<a class="anchor" aria-label="anchor" href="#minor-changes-1-9-9-9080"></a></h3>
+<ul><li><p><code>is_cortex_outline()</code> matches case-insensitively, as <code><a href="../reference/atlas_simplify.html">atlas_simplify()</a></code> and <code><a href="../reference/atlas_smooth.html">atlas_smooth()</a></code> already did, so a parcellation’s own backdrop sorts to the bottom layer whatever case its author used. Anchoring, not case, is what keeps <code>Cerebellar_Cortex_*</code> and <code>Left-Cerebral-Cortex</code> out.</p></li>
+<li><p><code>context_region_pattern</code> and <code><a href="../reference/context_pattern.html">context_pattern()</a></code> are documented as the different questions they answer – “did the parcellation mean this as a structure?” against a source name, versus “is this geometry the backdrop?” against a finished atlas – since the obvious reading is that one of them is redundant.</p></li>
+<li><p>The cortical tutorial is re-knitted: with the medial wall now protected, simplification leaves 5,645 vertices rather than 5,189, and the claim that <code>exclude = context_pattern()</code> “leaves the brain-outline geometry crisp” is true for the first time.</p></li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9079" id="ggsegextra-1999079">ggseg.extra 1.9.9.9079<a class="anchor" aria-label="anchor" href="#ggsegextra-1999079"></a></h2>
 <div class="section level3">

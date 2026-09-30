@@ -1,5 +1,60 @@
 # Changelog
 
+## ggseg.extra 1.9.9.9080
+
+### Breaking changes
+
+- The cerebellar flatmap gets a backdrop too, and perimeter regions stop
+  being inflated to reach the flatmap edge. Previously the surface no
+  parcellation claimed was nothing, and `fill_inter_region_gaps()`
+  expanded whichever regions bordered it outward to fill the rim. Now
+  that surface is a `cerebellum` backdrop, so those regions stop where
+  the parcellation says they stop. Measured on the SUIT anatomical
+  parcellation, 18 of 27 regions change vertex count and a thin grey rim
+  appears at the flatmap edge; the region count is unchanged. Rebuilding
+  a published cerebellar atlas will produce slightly different geometry.
+
+### New features
+
+- [`context_pattern()`](https://ggsegverse.github.io/ggseg.extra/reference/context_pattern.md)
+  matches every backdrop an atlas can have, not just the ones a pipeline
+  generates. An annotation’s medial wall is demoted to backdrop during
+  the build exactly as a generated silhouette is, but the pattern did
+  not match it, so `exclude = context_pattern()` protected nothing on an
+  annotation atlas – the case the cortical tutorial is built around. It
+  now covers the generated names (`lh_cortex` / `rh_cortex`,
+  `cerebellum`, `cortex_left` / `cortex_right`) and the carried ones
+  (`unknown`, `???`, medial wall). On the Yeo fixture,
+  `atlas_simplify(keep = 0.1, exclude = context_pattern())` now keeps
+  the medial wall intact where before it simplified it along with
+  everything else.
+
+- A sparse cerebellar parcellation gets a backdrop, as a sparse cortical
+  one now does. The flatmap is a single mesh with no hemisphere split,
+  so it is one `cerebellum` region rather than one per hemisphere.
+
+### Minor changes
+
+- `is_cortex_outline()` matches case-insensitively, as
+  [`atlas_simplify()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_simplify.md)
+  and
+  [`atlas_smooth()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_smooth.md)
+  already did, so a parcellation’s own backdrop sorts to the bottom
+  layer whatever case its author used. Anchoring, not case, is what
+  keeps `Cerebellar_Cortex_*` and `Left-Cerebral-Cortex` out.
+
+- `context_region_pattern` and
+  [`context_pattern()`](https://ggsegverse.github.io/ggseg.extra/reference/context_pattern.md)
+  are documented as the different questions they answer – “did the
+  parcellation mean this as a structure?” against a source name, versus
+  “is this geometry the backdrop?” against a finished atlas – since the
+  obvious reading is that one of them is redundant.
+
+- The cortical tutorial is re-knitted: with the medial wall now
+  protected, simplification leaves 5,645 vertices rather than 5,189, and
+  the claim that `exclude = context_pattern()` “leaves the brain-outline
+  geometry crisp” is true for the first time.
+
 ## ggseg.extra 1.9.9.9079
 
 ### New features

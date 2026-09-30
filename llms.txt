@@ -129,8 +129,8 @@ the returned atlas, not during the build, so retuning one is cheap.
 - [`atlas_dilate()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_dilate.md)
   : Grow or shrink an atlas's regions
 - [`context_pattern()`](https://ggsegverse.github.io/ggseg.extra/reference/context_pattern.md)
-  **\[experimental\]** : The label pattern that matches an atlas's brain
-  silhouette
+  **\[experimental\]** : The label pattern that matches an atlas's
+  backdrop
 - [`count_vertices()`](https://ggsegverse.github.io/ggseg.extra/reference/count_vertices.md)
   : Count the vertices an atlas carries
 

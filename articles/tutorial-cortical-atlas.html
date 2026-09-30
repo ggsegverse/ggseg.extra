@@ -28,7 +28,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9079</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9080</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -133,7 +133,7 @@
 <span><span class="co">#&gt; [1] TRUE</span></span></code></pre></div>
 </section><section class="level2"><h2 id="creating-the-atlas">Creating the atlas<a class="anchor" aria-label="anchor" href="#creating-the-atlas"></a>
 </h2>
-<p>The pipeline reads the annotation, extracts vertex-to-region assignments, and projects the inflated mesh triangles directly to 2D polygons via orthographic projection. This is fast (seconds, not minutes) and requires no external dependencies beyond FreeSurfer for reading the annotation:</p>
+<p>The pipeline reads the annotation, extracts vertex-to-region assignments, and projects the inflated mesh triangles directly to 2D polygons via orthographic projection. This is fast (seconds, not minutes) and needs no external dependencies at all — reading the annotation is the <code>freesurferformats</code> R package’s job, not FreeSurfer’s:</p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>output_dir <span class="ot">&lt;-</span> <span class="fu">file.path</span>(<span class="fu">tempdir</span>(), <span class="st">"yeo7_tutorial"</span>)</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>yeo7_raw <span class="ot">&lt;-</span> <span class="fu">create_cortical_from_annotation</span>(</span>
@@ -148,7 +148,7 @@
 <span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ── Creating brain atlas "yeo7" ─────────────────────────────────────────────────</span></span>
 <span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ Input files: '$FREESURFER_HOME/subjects/fsaverage5/label/lh.Yeo2011_7Networks_N1000.annot' and '$FREESURFER_HOME/subjects/fsaverage5/label/rh.Yeo2011_7Networks_N1000.annot'</span></span>
 <span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ Reading annotation files</span></span>
-<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ✔ Reading annotation files [112ms]</span></span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ✔ Reading annotation files [188ms]</span></span>
 <span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ Projecting mesh to 2D polygons</span></span>
 <span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ Projecting "rh" "lateral"</span></span>
@@ -167,10 +167,10 @@
 <span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ Projecting mesh to 2D polygons</span></span>
 <span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a>ℹ Projecting <span class="st">"lh"</span> <span class="st">"inferior"</span></span>
 <span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ Projecting mesh to 2D polygons</span></span>
-<span id="cb3-34"><a href="#cb3-34" aria-hidden="true" tabindex="-1"></a>✔ Projecting mesh to <span class="dv">2</span>D polygons [<span class="dv">6</span>s]</span>
+<span id="cb3-34"><a href="#cb3-34" aria-hidden="true" tabindex="-1"></a>✔ Projecting mesh to <span class="dv">2</span>D polygons [<span class="fl">3.8</span>s]</span>
 <span id="cb3-35"><a href="#cb3-35" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb3-36"><a href="#cb3-36" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ✔ Brain atlas created with 14 regions</span></span>
-<span id="cb3-37"><a href="#cb3-37" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ Pipeline completed [6.2s]</span></span>
+<span id="cb3-37"><a href="#cb3-37" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ Pipeline completed [4.1s]</span></span>
 <span id="cb3-38"><a href="#cb3-38" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Warning: Atlas has 21514 vertices (threshold: 10000)</span></span>
 <span id="cb3-39"><a href="#cb3-39" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ Large atlases may be slow to plot and increase package size</span></span>
 <span id="cb3-40"><a href="#cb3-40" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ Call `atlas_simplify(atlas, keep = 0.2)`, then `atlas_smooth(atlas)`, to tidy</span></span>
@@ -227,7 +227,7 @@ Stage 1 — straight out of the pipeline. The boundaries still follow the mesh t
 <code class="sourceCode R"><span><span class="va">yeo7_simple</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/atlas_simplify.html">atlas_simplify</a></span><span class="op">(</span><span class="va">yeo7_raw</span>, keep <span class="op">=</span> <span class="fl">0.2</span>, exclude <span class="op">=</span> <span class="fu"><a href="../reference/context_pattern.html">context_pattern</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="fu"><a href="../reference/count_vertices.html">count_vertices</a></span><span class="op">(</span><span class="va">yeo7_simple</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] 5189</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] 5645</span></span></code></pre></div>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">yeo7_simple</span><span class="op">)</span></span></code></pre></div>
 <div class="figure">
@@ -241,7 +241,7 @@ Stage 2 — simplified. Most of the vertices are gone; the corners they left beh
 <code class="sourceCode R"><span><span class="va">yeo7_smooth</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/atlas_smooth.html">atlas_smooth</a></span><span class="op">(</span><span class="va">yeo7_simple</span>, exclude <span class="op">=</span> <span class="fu"><a href="../reference/context_pattern.html">context_pattern</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="fu"><a href="../reference/count_vertices.html">count_vertices</a></span><span class="op">(</span><span class="va">yeo7_smooth</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] 6793</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] 7354</span></span></code></pre></div>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">yeo7_smooth</span><span class="op">)</span></span></code></pre></div>
 <div class="figure">
@@ -334,7 +334,7 @@ Stage 4 — the finished atlas. The geometry is stage 3’s; what changed is the
 <p>Side by side with stage 1, that is the whole job: the same parcellation, a fraction of the vertices, and boundaries that look drawn rather than sampled.</p>
 <div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="fu"><a href="../reference/count_vertices.html">count_vertices</a></span><span class="op">(</span><span class="va">yeo7</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] 6793</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] 7354</span></span></code></pre></div>
 </section><section class="level2"><h2 id="applying-the-same-pattern-to-larger-atlases">Applying the same pattern to larger atlases<a class="anchor" aria-label="anchor" href="#applying-the-same-pattern-to-larger-atlases"></a>
 </h2>
 <p>The Yeo 7-network atlas runs in seconds because it has few regions. Larger atlases like aparc (34 regions/hemisphere) or Glasser (180 regions/hemisphere) take a bit longer but follow the same pattern and still complete in under a minute:</p>
@@ -351,10 +351,6 @@ Stage 4 — the finished atlas. The geometry is stage 3’s; what changed is the
 <span><span class="op">)</span></span></code></pre></div>
 </section><section class="level2"><h2 id="saving">Saving<a class="anchor" aria-label="anchor" href="#saving"></a>
 </h2>
-<p>Once you’re satisfied with the atlas, save it as package data:</p>
-<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu">usethis</span><span class="fu">::</span><span class="fu">use_data</span><span class="op">(</span><span class="va">yeo7</span>, overwrite <span class="op">=</span> <span class="cn">TRUE</span>, compress <span class="op">=</span> <span class="st">"xz"</span><span class="op">)</span></span></code></pre></div>
-<p>The <code>compress = "xz"</code> flag gives the best compression for sf geometry data.</p>
 </section><script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);

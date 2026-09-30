@@ -48,8 +48,8 @@ all(file.exists(annot_files))
 The pipeline reads the annotation, extracts vertex-to-region
 assignments, and projects the inflated mesh triangles directly to 2D
 polygons via orthographic projection. This is fast (seconds, not
-minutes) and requires no external dependencies beyond FreeSurfer for
-reading the annotation:
+minutes) and needs no external dependencies at all — reading the
+annotation is the `freesurferformats` R package’s job, not FreeSurfer’s:
 
 ``` r
 output_dir <- file.path(tempdir(), "yeo7_tutorial")
@@ -66,7 +66,7 @@ yeo7_raw <- create_cortical_from_annotation(
 #> ── Creating brain atlas "yeo7" ─────────────────────────────────────────────────
 #> ℹ Input files: '$FREESURFER_HOME/subjects/fsaverage5/label/lh.Yeo2011_7Networks_N1000.annot' and '$FREESURFER_HOME/subjects/fsaverage5/label/rh.Yeo2011_7Networks_N1000.annot'
 #> ℹ Reading annotation files
-#> ✔ Reading annotation files [112ms]
+#> ✔ Reading annotation files [188ms]
 #> 
 #> ℹ Projecting mesh to 2D polygons
 #> ℹ Projecting "rh" "lateral"
@@ -85,10 +85,10 @@ yeo7_raw <- create_cortical_from_annotation(
 #> ℹ Projecting mesh to 2D polygons
 ℹ Projecting "lh" "inferior"
 #> ℹ Projecting mesh to 2D polygons
-✔ Projecting mesh to 2D polygons [6s]
+✔ Projecting mesh to 2D polygons [3.8s]
 #> 
 #> ✔ Brain atlas created with 14 regions
-#> ℹ Pipeline completed [6.2s]
+#> ℹ Pipeline completed [4.1s]
 #> Warning: Atlas has 21514 vertices (threshold: 10000)
 #> ℹ Large atlases may be slow to plot and increase package size
 #> ℹ Call `atlas_simplify(atlas, keep = 0.2)`, then `atlas_smooth(atlas)`, to tidy
@@ -173,7 +173,7 @@ first:
 yeo7_simple <- atlas_simplify(yeo7_raw, keep = 0.2, exclude = context_pattern())
 
 sum(count_vertices(yeo7_simple))
-#> [1] 5189
+#> [1] 5645
 ```
 
 ``` r
@@ -203,7 +203,7 @@ is for:
 yeo7_smooth <- atlas_smooth(yeo7_simple, exclude = context_pattern())
 
 sum(count_vertices(yeo7_smooth))
-#> [1] 6793
+#> [1] 7354
 ```
 
 ``` r
@@ -361,7 +361,7 @@ sampled.
 ``` r
 
 sum(count_vertices(yeo7))
-#> [1] 6793
+#> [1] 7354
 ```
 
 ## Applying the same pattern to larger atlases
@@ -386,13 +386,3 @@ dk <- create_cortical_from_annotation(
 ```
 
 ## Saving
-
-Once you’re satisfied with the atlas, save it as package data:
-
-``` r
-
-usethis::use_data(yeo7, overwrite = TRUE, compress = "xz")
-```
-
-The `compress = "xz"` flag gives the best compression for sf geometry
-data.
