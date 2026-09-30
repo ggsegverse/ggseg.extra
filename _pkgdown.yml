@@ -5,7 +5,7 @@ template:
 
 navbar:
   structure:
-    left: [intro, articles, reference, news]
+    left: [intro, articles, tutorials, reference, news]
     right: [search, github, lightswitch]
   components:
     github:
@@ -29,7 +29,13 @@ navbar:
         - text: Post-Processing
           href: articles/post-processing.html
         - text: -------
-        - text: "Tutorials: Creating Atlases"
+        - text: Legacy
+        - text: Legacy Conversion
+          href: articles/legacy-conversion.html
+    tutorials:
+      text: Tutorials
+      menu:
+        - text: Creating an atlas
         - text: Cortical Atlas
           href: articles/tutorial-cortical-atlas.html
         - text: Neuromaps Atlas
@@ -45,17 +51,13 @@ navbar:
         - text: Label Atlas
           href: articles/tutorial-label-atlas.html
         - text: -------
-        - text: "Tutorials: Working with Atlases"
+        - text: Working with atlases
         - text: Lookup Tables and Colours
           href: articles/tutorial-lookup-tables.html
         - text: Publishing an Atlas
           href: articles/tutorial-publishing-an-atlas.html
         - text: Listing on r-universe
           href: articles/contributing.html
-        - text: -------
-        - text: Legacy
-        - text: Legacy Conversion
-          href: articles/legacy-conversion.html
 
 articles:
   - title: Getting Started
@@ -115,8 +117,14 @@ reference:
     desc: >
       The `atlas_region_*` and `atlas_view_*` vocabulary, re-exported from
       ggseg.formats, plus the constructor that validates a hand-edited atlas.
+      `?atlas-verbs` groups them by what they change.
     contents:
       - atlas-verbs
+      # Every re-export shares one topic, so naming any of its aliases brings
+      # the whole block here. Without this they render wherever the section
+      # that happens to name one lands -- which was Utilities, via
+      # convert_legacy_brain_atlas.
+      - atlas_regions
 
   - title: Atlas Repository
     desc: Create and maintain a ggseg atlas package
@@ -176,7 +184,6 @@ reference:
 
   - title: Utilities
     contents:
-      - convert_legacy_brain_atlas
       - mri_surf2surf_rereg
       - label_to_region
       - get_verbose

@@ -1,3 +1,19 @@
+# ggseg.extra 1.9.9.9081
+
+## Documentation
+
+- The re-exported `atlas_*` verbs render under **Curate an Atlas** rather than
+  in a wall of names at the end of **Utilities**. They all share one help
+  topic, so the section that happens to name any of its aliases pulls the whole
+  block in -- which was Utilities, via `convert_legacy_brain_atlas`. Building
+  the site is the only way to see that; the config looked right either way.
+
+- The tutorials have their own navbar menu. All sixteen articles shared one
+  **Articles** dropdown, so the seven atlas-creation tutorials -- the reason
+  most people open the site -- sat eighth to fifteenth in it, below two
+  headings. **Articles** now holds the conceptual guides and **Tutorials**
+  holds the step-by-step ones, creating an atlas first.
+
 # ggseg.extra 1.9.9.9080
 
 ## Breaking changes
@@ -75,7 +91,6 @@
   the silhouette `lh_cortex` / `rh_cortex`, because ggseg.formats reads a
   label's hemisphere off its prefix when laying views out, and
   `context_pattern()` now covers both.
-
 # ggseg.extra 1.9.9.9078
 
 ## Documentation
