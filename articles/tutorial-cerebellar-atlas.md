@@ -28,7 +28,6 @@ tessellation) and a NIfTI segmentation already in SUIT space.
 ``` r
 
 library(ggseg.extra)
-library(ggseg.formats)
 library(dplyr)
 ```
 
@@ -227,8 +226,8 @@ sum(count_vertices(atlas))
 #> [1] 9463
 
 atlas <- atlas |>
-  atlas_simplify(keep = 0.2, exclude = "cortex_") |>
-  atlas_smooth(exclude = "cortex_")
+  atlas_simplify(keep = 0.2, exclude = context_pattern()) |>
+  atlas_smooth(exclude = context_pattern())
 
 sum(count_vertices(atlas))
 #> [1] 2627

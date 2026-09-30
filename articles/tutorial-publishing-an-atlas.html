@@ -28,7 +28,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9076</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9077</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -61,10 +61,10 @@
     <li><h6 class="dropdown-header" data-toc-skip>Tutorials: Working with Atlases</h6></li>
     <li><a class="dropdown-item" href="../articles/tutorial-lookup-tables.html">Lookup Tables and Colours</a></li>
     <li><a class="dropdown-item" href="../articles/tutorial-publishing-an-atlas.html">Publishing an Atlas</a></li>
+    <li><a class="dropdown-item" href="../articles/contributing.html">Listing on r-universe</a></li>
     <li><hr class="dropdown-divider"></li>
-    <li><h6 class="dropdown-header" data-toc-skip>Legacy &amp; Contributing</h6></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Legacy</h6></li>
     <li><a class="dropdown-item" href="../articles/legacy-conversion.html">Legacy Conversion</a></li>
-    <li><a class="dropdown-item" href="../articles/contributing.html">Contributing</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
@@ -270,7 +270,7 @@
 </h2>
 <p>The scaffold installs five workflows:</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/ggseg_atlas_github_actions.html">atlas_github_actions</a></span><span class="op">(</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/ggseg_atlas_github_actions.html">ggseg_atlas_github_actions</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "R-CMD-check"     "code-quality"    "pkgdown"         "render-readme"  </span></span>
 <span><span class="co">#&gt; [5] "update-codemeta"</span></span></code></pre></div>
 <p><code>R-CMD-check</code> and <code>code-quality</code> are the gates. <code>pkgdown</code> builds the documentation site, <code>render-readme</code> keeps the README’s plots current, and <code>update-codemeta</code> maintains the machine-readable metadata that makes the package citable.</p>
@@ -314,7 +314,7 @@
 </section><section class="level2"><h2 id="where-to-go-next">Where to go next<a class="anchor" aria-label="anchor" href="#where-to-go-next"></a>
 </h2>
 <p>The atlas is the easy part to redo and the hard part to get right. Once it is published, the geometry is what other people’s figures depend on, so it is worth spending time in <a href="post-processing.html">Post-processing atlases</a> before the first tag rather than after it.</p>
-<p><a href="contributing.html">Contributing</a> covers getting an atlas adopted into the ggsegverse organisation, if you would rather it live there than in your own account.</p>
+<p><a href="contributing.html">Contributing an atlas package</a> covers the last step: getting the finished package listed on the ggsegverse r-universe, so users can install it with <code><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages()</a></code>.</p>
 </section><script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);

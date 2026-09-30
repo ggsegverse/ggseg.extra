@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9076</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9077</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -58,10 +58,10 @@
     <li><h6 class="dropdown-header" data-toc-skip>Tutorials: Working with Atlases</h6></li>
     <li><a class="dropdown-item" href="../articles/tutorial-lookup-tables.html">Lookup Tables and Colours</a></li>
     <li><a class="dropdown-item" href="../articles/tutorial-publishing-an-atlas.html">Publishing an Atlas</a></li>
+    <li><a class="dropdown-item" href="../articles/contributing.html">Listing on r-universe</a></li>
     <li><hr class="dropdown-divider"></li>
-    <li><h6 class="dropdown-header" data-toc-skip>Legacy &amp; Contributing</h6></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Legacy</h6></li>
     <li><a class="dropdown-item" href="../articles/legacy-conversion.html">Legacy Conversion</a></li>
-    <li><a class="dropdown-item" href="../articles/contributing.html">Contributing</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
@@ -152,9 +152,29 @@ multiple neuroimaging input formats:</p>
 <td>Combined cortical + subcortical atlases</td>
 </tr>
 <tr class="even">
+<td><code><a href="../reference/create_cerebellar_from_gifti.html">create_cerebellar_from_gifti()</a></code></td>
+<td>GIFTI labels on the SUIT surface</td>
+<td>Cerebellar parcellations</td>
+</tr>
+<tr class="odd">
+<td><code><a href="../reference/create_cerebellar_from_annotation.html">create_cerebellar_from_annotation()</a></code></td>
+<td>FreeSurfer <code>.annot</code> on the SUIT surface</td>
+<td>Cerebellar parcellations</td>
+</tr>
+<tr class="even">
+<td><code><a href="../reference/create_cerebellar_from_volume.html">create_cerebellar_from_volume()</a></code></td>
+<td>Volumetric cerebellar segmentation</td>
+<td>Cerebellar parcellations, with 3D meshes</td>
+</tr>
+<tr class="odd">
 <td><code><a href="../reference/create_tract_from_tractography.html">create_tract_from_tractography()</a></code></td>
 <td>Tractography files (<code>.trk</code>, <code>.tck</code>)</td>
 <td>White matter tracts</td>
+</tr>
+<tr class="even">
+<td><code><a href="../reference/create_tract_from_volume.html">create_tract_from_volume()</a></code></td>
+<td>Volumetric tract labels</td>
+<td>Tracts given as a segmentation rather than streamlines</td>
 </tr>
 </tbody>
 </table>
@@ -202,20 +222,24 @@ completes in seconds and needs no external rendering dependencies:</p>
 <div class="section level3">
 <h3 id="subcortical-and-tract-pipelines">Subcortical and tract pipelines<a class="anchor" aria-label="anchor" href="#subcortical-and-tract-pipelines"></a>
 </h3>
-<p>The subcortical and tract pipelines use a <code>steps</code>
-parameter to control how much of the pipeline runs. Use a low step count
-for fast 3D-only iteration, then run the full pipeline when you’re ready
-for 2D geometry.</p>
+<p>These build 3D meshes from a volume, then get their 2D view by
+slicing: the pipeline cuts the volume along the slabs you choose and
+traces each structure’s outline in each cut. Both are controlled by a
+<code>steps</code> argument, so you can stop after the meshes
+(<code>steps = 1:3</code> for subcortical, <code>steps = 1</code> for
+tract) while iterating, then run the default for the slices as well.</p>
 </div>
 <div class="section level3">
 <h3 id="post-processing">Post-processing<a class="anchor" aria-label="anchor" href="#post-processing"></a>
 </h3>
 <p>Raw atlases often contain regions you don’t need (white matter,
-ventricles, unknown labels) and views that don’t show your structures
-well. The <code>atlas_region_*</code> and <code>atlas_view_*</code>
-helpers from ggseg.formats handle cleanup without rebuilding from
-scratch. See <code><a href="../articles/post-processing.html">vignette("post-processing")</a></code> for the full
-toolkit.</p>
+ventricles, unknown labels), views that don’t show your structures well,
+and outlines that still follow the voxel grid. The
+<code>atlas_region_*</code> and <code>atlas_view_*</code> verbs curate
+the first two and <code><a href="../reference/atlas_polish.html">atlas_polish()</a></code> shapes the third, all
+without rebuilding from scratch. See
+<code><a href="../articles/post-processing.html">vignette("post-processing")</a></code> for the full toolkit and
+<code>?atlas-verbs</code> for the vocabulary.</p>
 </div>
 <div class="section level2">
 <h2 id="system-requirements">System requirements<a class="anchor" aria-label="anchor" href="#system-requirements"></a>
@@ -238,31 +262,17 @@ with R packages.</li>
 <p>All heavier dependencies (<code>freesurfer</code>, <code>Rvcg</code>,
 <code>terra</code>, etc.) are in Suggests and only loaded when
 needed.</p>
-<p>Run <code><a href="../reference/sitrep.html">setup_sitrep()</a></code> to check your setup, or see
+<p>Run <code><a href="../reference/sitrep.html">sitrep()</a></code> to check your setup, or see
 <code><a href="../articles/system-setup.html">vignette("system-setup")</a></code> for details.</p>
 </div>
 <div class="section level2">
 <h2 id="tutorials">Tutorials<a class="anchor" aria-label="anchor" href="#tutorials"></a>
 </h2>
-<p>The package includes step-by-step tutorials that walk through
-complete atlas creation pipelines:</p>
-<ul>
-<li>
-<a href="tutorial-cortical-atlas.html">Cortical atlas</a> — from
-FreeSurfer annotation files</li>
-<li>
-<a href="tutorial-label-atlas.html">Label-based atlas</a> — from
-individual label files</li>
-<li>
-<a href="tutorial-neuromaps-atlas.html">Neuromaps atlas</a> — from
-neuromaps surface or volume data</li>
-<li>
-<a href="tutorial-subcortical-atlas.html">Subcortical atlas</a> —
-from volumetric segmentation</li>
-<li>
-<a href="tutorial-tract-atlas.html">Tract atlas</a> — from
-tractography data</li>
-</ul>
+<p>Step-by-step tutorials that walk through complete atlas creation
+pipelines, one per input format, live on the <a href="https://ggsegverse.github.io/ggseg.extra/">package website</a>
+under <em>Articles</em>. They are not shipped with the installed package
+because they need FreeSurfer subject data and network access to
+build.</p>
 <p>See also <code><a href="../articles/pipeline-configuration.html">vignette("pipeline-configuration")</a></code> for
 controlling verbosity, parallelism, and output directories.</p>
 </div>

@@ -19,7 +19,6 @@ This tutorial recreates the TRACULA atlas — the same pipeline behind
 ``` r
 
 library(ggseg.extra)
-library(ggseg.formats)
 library(dplyr)
 ```
 
@@ -213,7 +212,7 @@ vertices <- count_vertices(tracula_raw)
 
 sum(vertices)
 #> [1] 26545
-sum(vertices[grepl("^cortex", names(vertices))])
+sum(vertices[grepl(context_pattern(), names(vertices))])
 #> [1] 18673
 ```
 
@@ -236,8 +235,8 @@ Simplify each separately:
 ``` r
 
 tracula_raw <- tracula_raw |>
-  atlas_simplify(keep = 0.5, labels = "^cortex") |>
-  atlas_simplify(keep = 0.3, exclude = "^cortex")
+  atlas_simplify(keep = 0.5, labels = context_pattern()) |>
+  atlas_simplify(keep = 0.3, exclude = context_pattern())
 
 sum(count_vertices(tracula_raw))
 #> [1] 14927
@@ -256,10 +255,10 @@ Then smooth each separately, and note the second argument:
 tracula_raw <- tracula_raw |>
   atlas_smooth(
     smoothness = 0.35,
-    labels = "^cortex",
+    labels = context_pattern(),
     method = "chaikin"
   ) |>
-  atlas_smooth(smoothness = 0.4, exclude = "^cortex")
+  atlas_smooth(smoothness = 0.4, exclude = context_pattern())
 
 sum(count_vertices(tracula_raw))
 #> [1] 16191

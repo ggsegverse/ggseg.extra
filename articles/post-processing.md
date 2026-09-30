@@ -6,9 +6,11 @@ well. The `atlas_region_*` and `atlas_view_*` families let you curate an
 atlas without rebuilding from scratch.
 
 Most of the functions in this vignette come from ggseg.formats and are
-re-exported by ggseg.extra for convenience. The geometry adjustment
-functions
-([`atlas_simplify()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_simplify.md),
+re-exported by ggseg.extra, so
+[`library(ggseg.extra)`](https://github.com/ggsegverse/ggseg.extra) is
+all you need. `?atlas-verbs` lists them. The geometry functions
+([`atlas_polish()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_polish.md),
+[`atlas_simplify()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_simplify.md),
 [`atlas_smooth()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_smooth.md),
 [`atlas_dilate()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_dilate.md))
 are native to ggseg.extra.
@@ -18,8 +20,6 @@ are native to ggseg.extra.
 Before changing anything, understand what you have:
 
 ``` r
-
-library(ggseg.formats)
 
 atlas_labels(atlas)
 
@@ -98,6 +98,16 @@ atlas <- atlas |>
 
 The `match_on` parameter controls whether patterns match against `label`
 (annotation identifiers) or `region` (display names).
+
+Every pipeline labels the silhouette it produces the same way, and
+[`context_pattern()`](https://ggsegverse.github.io/ggseg.extra/reference/context_pattern.md)
+is that pattern. Use it rather than typing `"^cortex"`, so a change of
+convention is one release rather than one edit per atlas repository:
+
+``` r
+
+context_pattern()
+```
 
 ## Labels versus regions
 
@@ -239,19 +249,44 @@ Shaping it is a separate step you run on the finished atlas, so retuning
 a value costs a second rather than another pass through snapshots and
 contours.
 
-Three functions, each answering one question:
+Four functions. Start with the first one:
 
 | Function | Question | Typical values |
 |----|----|----|
+| [`atlas_polish()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_polish.md) | Fewer vertices *and* rounder, in the right order | `keep = 0.05`–`0.5` |
 | [`atlas_simplify()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_simplify.md) | How many vertices does this cost? | `keep = 0.05`–`0.5` |
 | [`atlas_smooth()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_smooth.md) | How round is the outline? | `smoothness = 0.4`–`0.6` |
 | [`atlas_dilate()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_dilate.md) | How big is the region? | `0.5`–`1` voxels |
 
-### Order matters
+### Start with atlas_polish()
 
-Simplify first, smooth second. Dropping vertices from an outline that
-has already been rounded replaces its curves with straight chords, which
-puts back the stair-step the smoothing removed:
+Most atlases want both things at once: fewer vertices, and the voxel
+staircase rounded off.
+[`atlas_polish()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_polish.md)
+does the pair, and owns the order they go in:
+
+``` r
+
+atlas <- atlas_polish(atlas, keep = 0.3, smoothness = 0.4)
+```
+
+That order is not obvious, which is why it is worth having a function
+for it. Rounding a corner *adds* vertices, so smoothing after
+simplifying undoes some of the reduction; simplifying after smoothing
+replaces the new curves with straight chords and puts the staircase
+back.
+[`atlas_polish()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_polish.md)
+simplifies, rounds, and then simplifies the rounding back towards the
+budget you asked for.
+
+`keep` is a dial rather than a guarantee. Simplification will not take a
+ring below the handful of vertices that holds its shape, so an atlas of
+many small rings lands well above what you asked for. Ask for what you
+want, then look at what you got with
+[`count_vertices()`](https://ggsegverse.github.io/ggseg.extra/reference/count_vertices.md).
+
+The two halves are available separately when you want to see what each
+does, or when you want one without the other:
 
 ``` r
 
@@ -259,6 +294,8 @@ atlas <- atlas |>
   atlas_simplify(keep = 0.3) |>
   atlas_smooth(smoothness = 0.4)
 ```
+
+Simplify first, smooth second, for the reason above.
 
 ### Reducing the vertex count
 
@@ -276,11 +313,13 @@ atlas <- atlas_simplify(atlas, keep = 0.3)
 `keep` is the proportion of vertices retained. The brain silhouette
 drawn behind the structures usually holds most of an atlas’s vertices,
 so it is the part worth simplifying; small deep structures have few to
-spare. `labels` and `exclude` say which:
+spare. `labels` and `exclude` say which, and
+[`context_pattern()`](https://ggsegverse.github.io/ggseg.extra/reference/context_pattern.md)
+is the silhouette’s pattern:
 
 ``` r
 
-atlas <- atlas_simplify(atlas, keep = 0.3, labels = "^cortex")
+atlas <- atlas_simplify(atlas, keep = 0.3, labels = context_pattern())
 ```
 
 ### Rounding off the staircase
@@ -297,7 +336,7 @@ keeping:
 atlas <- atlas_smooth(atlas, smoothness = 0.4)
 
 atlas <- atlas_smooth(atlas, smoothness = 0.4, method = "chaikin",
-                      labels = "^cortex")
+                      labels = context_pattern())
 ```
 
 `smoothness` runs 0–1 on a scale shared by every method, so switching
@@ -318,15 +357,20 @@ the ribbon loses its sulci and flattens into a blob, which is the one
 thing the context was there to avoid.
 
 Polish them separately — the context gently and with `"chaikin"`, the
-structures more firmly and with the default `"close"`:
+structures more firmly and with the default `"close"`. That is two
+[`atlas_polish()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_polish.md)
+calls, one selecting the context and one excluding it:
 
 ``` r
 
 atlas <- atlas |>
-  atlas_simplify(keep = 0.5, labels = "^cortex") |>
-  atlas_smooth(smoothness = 0.35, labels = "^cortex", method = "chaikin") |>
-  atlas_simplify(keep = 0.25, exclude = "^cortex") |>
-  atlas_smooth(smoothness = 0.4, exclude = "^cortex")
+  atlas_polish(
+    keep = 0.5,
+    smoothness = 0.35,
+    method = "chaikin",
+    labels = context_pattern()
+  ) |>
+  atlas_polish(keep = 0.25, smoothness = 0.4, exclude = context_pattern())
 ```
 
 Each of those four numbers is answering a question about the geometry it
@@ -354,7 +398,9 @@ for the context, firmly and `"close"` for the core.
 ## Rebuilding the atlas
 
 After modifying components directly (e.g., editing `$core` by hand),
-reconstruct the atlas to ensure consistency:
+reconstruct the atlas with
+[`ggseg_atlas()`](https://ggsegverse.github.io/ggseg.formats/reference/ggseg_atlas.html)
+to ensure consistency:
 
 ``` r
 
@@ -384,11 +430,14 @@ atlas <- atlas_raw |>
   atlas_view_keep("axial_3|axial_5|coronal_3|sagittal") |>
   atlas_view_remove_small(min_area = 100) |>
   atlas_view_gather() |>
-  atlas_dilate(0.6, exclude = "^cortex") |>
-  atlas_simplify(keep = 0.5, labels = "^cortex") |>
-  atlas_smooth(smoothness = 0.35, labels = "^cortex", method = "chaikin") |>
-  atlas_simplify(keep = 0.25, exclude = "^cortex") |>
-  atlas_smooth(smoothness = 0.4, exclude = "^cortex")
+  atlas_dilate(0.6, exclude = context_pattern()) |>
+  atlas_polish(
+    keep = 0.5,
+    smoothness = 0.35,
+    method = "chaikin",
+    labels = context_pattern()
+  ) |>
+  atlas_polish(keep = 0.25, smoothness = 0.4, exclude = context_pattern())
 ```
 
 Each step is a pure transformation — pipe them together, inspect the

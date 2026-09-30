@@ -1,5 +1,72 @@
 # Changelog
 
+## ggseg.extra 1.9.9.9077
+
+### Documentation
+
+- The documentation now teaches the API the package recommends.
+  [`atlas_polish()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_polish.md)
+  and
+  [`context_pattern()`](https://ggsegverse.github.io/ggseg.extra/reference/context_pattern.md)
+  appeared in no vignette at all, although
+  [`?atlas_smooth`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_smooth.md)
+  calls the first “what most builds want” and
+  [`?context_pattern`](https://ggsegverse.github.io/ggseg.extra/reference/context_pattern.md)
+  exists so that the silhouette pattern is not retyped. The pattern was
+  instead hardcoded thirty-odd times in two incompatible spellings,
+  `"^cortex"` in the volume tutorials and `"cortex_"` in the surface
+  ones. Every one is now
+  [`context_pattern()`](https://ggsegverse.github.io/ggseg.extra/reference/context_pattern.md),
+  and
+  [`vignette("post-processing")`](https://ggsegverse.github.io/ggseg.extra/articles/post-processing.md)
+  leads with
+  [`atlas_polish()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_polish.md).
+
+- [`vignette("post-processing")`](https://ggsegverse.github.io/ggseg.extra/articles/post-processing.md)
+  no longer tells readers to call
+  [`ggseg_atlas()`](https://ggsegverse.github.io/ggseg.formats/reference/ggseg_atlas.html)
+  while it is unreachable, and its inspection example no longer attaches
+  ggseg.formats, since the verbs are re-exported. The same redundant
+  [`library(ggseg.formats)`](https://github.com/ggsegverse/ggseg.formats)
+  is gone from six tutorials.
+
+- “Atlas Creation Workflows” said twice, in prose and in two diagrams,
+  that subcortical and tract atlases are 3D-only with “no meaningful 2D
+  representation”. Both pipelines build 2D slice geometry, and both
+  tutorials ship the renders. The sections now explain where that 2D
+  actually comes from – slicing the volume rather than projecting a
+  surface.
+
+- “Reading annotation files needs FreeSurfer” was wrong in the README,
+  two vignettes and a tutorial, all tracing back to one NEWS entry. It
+  needs the `freesurferformats` R package. `SystemRequirements` also
+  listed FreeSurfer for the tract pipelines, which never call it.
+
+- [`vignette("pipeline-configuration")`](https://ggsegverse.github.io/ggseg.extra/articles/pipeline-configuration.md)’s
+  options table was missing `ggseg.extra.output_dir` and gave
+  `verbose`’s default as `TRUE` rather than as a level on its 0/1/2
+  scale.
+
+- [`vignette("ggseg.extra")`](https://ggsegverse.github.io/ggseg.extra/articles/ggseg.extra.md)
+  linked to five tutorials that are not shipped with the installed
+  package, so the links 404’d for anyone reading it in R. Its function
+  table was also missing the three cerebellar creators and
+  [`create_tract_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_tract_from_volume.md).
+
+- [`vignette("contributing")`](https://ggsegverse.github.io/ggseg.extra/articles/contributing.md)
+  duplicated seven sections of the publishing tutorial, down to
+  scaffolding and CI, and pointed at
+  `ggseg_atlas_repos()`/`install_ggseg_atlas()`, which moved to
+  ‘ggseg.hub’. It is now just the r-universe listing steps and a link,
+  and sits beside the publishing tutorial rather than under “Legacy”.
+
+- `tutorial-neuromaps-atlas.qmd` and `tutorial-wholebrain-atlas.qmd` had
+  no source: static fences and, for the first, hand-baked `<img>` tags,
+  so their code was never run and their figures could not be
+  regenerated. Both have a `.qmd.orig` again, and
+  `dev/audit-tutorial-api.R` now fails on a tutorial that has neither a
+  source nor live chunks.
+
 ## ggseg.extra 1.9.9.9076
 
 ### Breaking changes

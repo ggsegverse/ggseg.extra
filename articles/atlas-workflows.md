@@ -64,8 +64,8 @@ data — follows the same two-step pipeline.
 Step 1 reads your input file and maps it to 3D vertices on the brain
 surface. Step 2 projects the inflated mesh triangles directly to 2D
 polygons via orthographic projection. Both steps complete in seconds and
-require no external rendering dependencies — just FreeSurfer to read the
-annotation files.
+need no external rendering dependencies. Reading the annotation files
+needs the `freesurferformats` R package, not a FreeSurfer installation.
 
 ``` mermaid
 flowchart LR
@@ -96,10 +96,18 @@ the brain, so the approach changes. Instead of vertex indices, you’re
 extracting 3D meshes directly from volumetric segmentations.
 
 The pipeline reads your volume file (typically a `.mgz` or `.nii`
-segmentation) along with its color table, identifies each unique
+segmentation) along with its colour table, identifies each unique
 structure, and generates a mesh for it. Each mesh becomes a distinct 3D
-object you can visualize, but there’s no 2D equivalent here —
-subcortical atlases are 3D-only.
+object you can rotate and explore.
+
+2D comes from slices rather than from a surface. A structure buried
+inside the brain has no outside to project, so the pipeline takes
+orthogonal cuts through the volume — the slabs you choose with
+[`subcortical_slabs()`](https://ggsegverse.github.io/ggseg.extra/reference/subcortical_slabs.md)
+— and traces each structure’s outline in each cut. That gives you a
+flat, multi-panel view in the same `ggseg_atlas`. Stop at `steps = 1:3`
+if you only want the meshes; the default runs all six and gives you
+both.
 
 You have two functions to choose from:
 [`create_subcortical_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_subcortical_from_volume.md)
@@ -115,13 +123,16 @@ flowchart TB
     C -->|Subcortical only| D[create_subcortical_from_volume]
     C -->|Whole brain| E[create_wholebrain_from_volume]
 
-    D --> F[For each structure:<br/>Extract voxels<br/>Generate mesh<br/>Calculate vertices]
+    D --> F[For each structure:<br/>Extract voxels<br/>Generate mesh]
     E --> F
 
-    F --> G[Combine meshes<br/>Add metadata<br/>Apply color palette]
-    G --> H[ggseg_atlas<br/>3D meshes only<br/>No 2D]
+    F --> G["Steps 1-3<br/>3D meshes"]
+    G --> S["Steps 4-6<br/>Slice the volume<br/>Trace contours"]
+    S --> H[ggseg_atlas<br/>3D meshes + 2D slices]
+    G -->|steps = 1:3| H2[ggseg_atlas<br/>3D meshes only]
 
     style H fill:#e1f5ff
+    style H2 fill:#e1f5ff
 ```
 
 Figure 3: Subcortical and whole-brain volumetric atlas pipeline
@@ -178,26 +189,22 @@ tractography file (`.trk` or `.tck`), which contains a collection of 3D
 curves representing fiber bundles.
 
 The pipeline reads those streamlines and converts them into tube-like
-meshes that can be rendered in 3D. There’s an optional resampling step
-(step 2) that normalizes the point spacing along each streamline, which
-can make the resulting meshes cleaner and more consistent. Like
-subcortical atlases, tract atlases are 3D-only — there’s no meaningful
-2D representation of a white matter pathway.
+meshes that can be rendered in 3D. Like subcortical atlases, the 2D view
+comes from slicing rather than from a surface: the tubes are cut by the
+slabs you choose, and each tract’s cross-section is traced into a
+polygon. Stop at `steps = 1` if the meshes are all you want; the default
+runs all four.
 
 ``` mermaid
 flowchart TB
-    A[Tractography<br/>.trk or .tck] --> B[Read streamlines<br/>Parse header]
-    B --> C{steps parameter}
-    C -->|steps = 1| D[Keep original<br/>streamlines]
-    C -->|steps = 1:2| E[Step 2:<br/>Resample streamlines<br/>Uniform point spacing]
-
-    D --> F[Convert to meshes<br/>Create tubes<br/>from streamlines]
-    E --> F
-
-    F --> G[Add metadata<br/>Color palette<br/>Hemisphere labels]
-    G --> H[ggseg_atlas<br/>3D tract meshes<br/>No 2D]
+    A[Tractography<br/>.trk or .tck] --> B["Step 1<br/>Read streamlines<br/>Build tube meshes"]
+    B --> C{Stop here?}
+    C -->|steps = 1| H2[ggseg_atlas<br/>3D tract meshes only]
+    C -->|default| S["Steps 2-4<br/>Slice the tubes<br/>Trace contours<br/>Assemble"]
+    S --> H[ggseg_atlas<br/>3D meshes + 2D slices]
 
     style H fill:#e1f5ff
+    style H2 fill:#e1f5ff
 ```
 
 Figure 5: White matter tract atlas pipeline
@@ -212,9 +219,8 @@ If your atlas has 2D geometries (cortical atlases from the full
 pipeline, or cerebellar atlases with SUIT flatmap polygons), you can
 plot it with both ggseg for flat 2D ggplot2-based visualizations and
 ggseg3d for interactive 3D rotation and exploration. If it’s 3D-only —
-because it’s subcortical, a tract atlas, or a cortical atlas you stopped
-at step 1 — then ggseg3d is your only option, but that’s often all you
-need.
+because you stopped a pipeline before its 2D steps — then ggseg3d is
+your only option, but that’s often all you need.
 
 ``` mermaid
 flowchart LR
@@ -237,14 +243,21 @@ Figure 6: Atlas compatibility with ggseg plotting packages
 
 Cortical atlas creation is fast — the full pipeline (read + project)
 completes in seconds because the mesh projection is pure geometry with
-no external rendering. The pipeline now returns raw, unsmoothed polygons
-— `atlas_simplify(keep = ...)` is the tuning knob for the
-detail-versus-file-size trade-off and can be re-applied cheaply on the
-cached atlas.
+no external rendering. Every pipeline returns raw, unsmoothed polygons.
+Shaping them is a separate step on the finished atlas:
+[`atlas_polish()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_polish.md)
+does the usual pair, or
+[`atlas_simplify()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_simplify.md)
+and
+[`atlas_smooth()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_smooth.md)
+separately. Because it runs on the returned object rather than during
+the build, trying a different setting costs a second rather than another
+pass through the pipeline.
 
-For subcortical and tract pipelines, the `steps` parameter lets you
-control how much of the pipeline runs. Use a low step count for fast
-3D-only iteration, then run the full pipeline when you need 2D geometry.
+For subcortical and tract pipelines, the `steps` argument controls how
+much of the pipeline runs. Use `steps = 1:3` (subcortical) or
+`steps = 1` (tract) for fast 3D-only iteration, then run the default
+when you need the 2D slices.
 
 ## Where to go from here
 
@@ -259,8 +272,11 @@ for details.
 
 The [Pipeline
 Configuration](https://ggsegverse.github.io/ggseg.extra/articles/pipeline-configuration.md)
-article covers how to customize the creation process, including options
-for controlling smoothing, contour extraction, and other pipeline
-parameters. When you’re ready to build a specific atlas type, the
-individual tutorials under “Tutorials: Creating Atlases” walk through
-complete examples with real data.
+article covers verbosity, intermediate files and resuming an interrupted
+run.
+[Post-processing](https://ggsegverse.github.io/ggseg.extra/articles/post-processing.md)
+covers what to do with the atlas the pipeline hands back: dropping
+regions you do not need, choosing views, and shaping the geometry. When
+you’re ready to build a specific atlas type, the individual tutorials
+under “Tutorials: Creating Atlases” walk through complete examples with
+real data.

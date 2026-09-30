@@ -29,7 +29,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9076</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9077</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -62,10 +62,10 @@
     <li><h6 class="dropdown-header" data-toc-skip>Tutorials: Working with Atlases</h6></li>
     <li><a class="dropdown-item" href="../articles/tutorial-lookup-tables.html">Lookup Tables and Colours</a></li>
     <li><a class="dropdown-item" href="../articles/tutorial-publishing-an-atlas.html">Publishing an Atlas</a></li>
+    <li><a class="dropdown-item" href="../articles/contributing.html">Listing on r-universe</a></li>
     <li><hr class="dropdown-divider"></li>
-    <li><h6 class="dropdown-header" data-toc-skip>Legacy &amp; Contributing</h6></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Legacy</h6></li>
     <li><a class="dropdown-item" href="../articles/legacy-conversion.html">Legacy Conversion</a></li>
-    <li><a class="dropdown-item" href="../articles/contributing.html">Contributing</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
@@ -157,7 +157,7 @@ Figure 1: All atlas creation pathways in ggseg.extra
 </section><section class="level2"><h2 id="how-cortical-atlases-get-built">How cortical atlases get built<a class="anchor" aria-label="anchor" href="#how-cortical-atlases-get-built"></a>
 </h2>
 <p>Every cortical creation function — whether you’re starting with FreeSurfer annotations, GIFTI labels, CIFTI parcellations, or neuromaps data — follows the same two-step pipeline.</p>
-<p>Step 1 reads your input file and maps it to 3D vertices on the brain surface. Step 2 projects the inflated mesh triangles directly to 2D polygons via orthographic projection. Both steps complete in seconds and require no external rendering dependencies — just FreeSurfer to read the annotation files.</p>
+<p>Step 1 reads your input file and maps it to 3D vertices on the brain surface. Step 2 projects the inflated mesh triangles directly to 2D polygons via orthographic projection. Both steps complete in seconds and need no external rendering dependencies. Reading the annotation files needs the <code>freesurferformats</code> R package, not a FreeSurfer installation.</p>
 <div class="cell" data-fig-width="10" data-layout-align="default">
 <div class="cell-output-display">
 <div id="fig-cortical-fork" class="quarto-float quarto-figure quarto-figure-center">
@@ -184,7 +184,8 @@ Figure 2: Cortical atlas creation pipeline
 </section><section class="level2"><h2 id="subcortical-and-volumetric-atlases-work-differently">Subcortical and volumetric atlases work differently<a class="anchor" aria-label="anchor" href="#subcortical-and-volumetric-atlases-work-differently"></a>
 </h2>
 <p>Cortical atlases are all about surface vertices — mapping regions to points on the brain’s outer layer. Subcortical structures live inside the brain, so the approach changes. Instead of vertex indices, you’re extracting 3D meshes directly from volumetric segmentations.</p>
-<p>The pipeline reads your volume file (typically a <code>.mgz</code> or <code>.nii</code> segmentation) along with its color table, identifies each unique structure, and generates a mesh for it. Each mesh becomes a distinct 3D object you can visualize, but there’s no 2D equivalent here — subcortical atlases are 3D-only.</p>
+<p>The pipeline reads your volume file (typically a <code>.mgz</code> or <code>.nii</code> segmentation) along with its colour table, identifies each unique structure, and generates a mesh for it. Each mesh becomes a distinct 3D object you can rotate and explore.</p>
+<p>2D comes from slices rather than from a surface. A structure buried inside the brain has no outside to project, so the pipeline takes orthogonal cuts through the volume — the slabs you choose with <code><a href="../reference/subcortical_slabs.html">subcortical_slabs()</a></code> — and traces each structure’s outline in each cut. That gives you a flat, multi-panel view in the same <code>ggseg_atlas</code>. Stop at <code>steps = 1:3</code> if you only want the meshes; the default runs all six and gives you both.</p>
 <p>You have two functions to choose from: <code><a href="../reference/create_subcortical_from_volume.html">create_subcortical_from_volume()</a></code> if you only want subcortical structures, or <code><a href="../reference/create_wholebrain_from_volume.html">create_wholebrain_from_volume()</a></code> if your segmentation includes both cortical and subcortical regions and you want everything in one atlas.</p>
 <div class="cell" data-fig-width="10" data-layout-align="default">
 <div class="cell-output-display">
@@ -197,13 +198,16 @@ Figure 2: Cortical atlas creation pipeline
     C --&gt;|Subcortical only| D[create_subcortical_from_volume]
     C --&gt;|Whole brain| E[create_wholebrain_from_volume]
 
-    D --&gt; F[For each structure:&lt;br/&gt;Extract voxels&lt;br/&gt;Generate mesh&lt;br/&gt;Calculate vertices]
+    D --&gt; F[For each structure:&lt;br/&gt;Extract voxels&lt;br/&gt;Generate mesh]
     E --&gt; F
 
-    F --&gt; G[Combine meshes&lt;br/&gt;Add metadata&lt;br/&gt;Apply color palette]
-    G --&gt; H[ggseg_atlas&lt;br/&gt;3D meshes only&lt;br/&gt;No 2D]
+    F --&gt; G["Steps 1-3&lt;br/&gt;3D meshes"]
+    G --&gt; S["Steps 4-6&lt;br/&gt;Slice the volume&lt;br/&gt;Trace contours"]
+    S --&gt; H[ggseg_atlas&lt;br/&gt;3D meshes + 2D slices]
+    G --&gt;|steps = 1:3| H2[ggseg_atlas&lt;br/&gt;3D meshes only]
 
     style H fill:#e1f5ff
+    style H2 fill:#e1f5ff
 </pre>
 </div>
 </div>
@@ -244,25 +248,21 @@ Figure 4: Cerebellar atlas creation pipeline
 </section><section class="level2"><h2 id="tracts-are-a-special-case">Tracts are a special case<a class="anchor" aria-label="anchor" href="#tracts-are-a-special-case"></a>
 </h2>
 <p>White matter tracts don’t fit neatly into the cortical or subcortical categories. They’re defined by tractography — streamlines that trace the paths of white matter fibers through the brain. Your input is a tractography file (<code>.trk</code> or <code>.tck</code>), which contains a collection of 3D curves representing fiber bundles.</p>
-<p>The pipeline reads those streamlines and converts them into tube-like meshes that can be rendered in 3D. There’s an optional resampling step (step 2) that normalizes the point spacing along each streamline, which can make the resulting meshes cleaner and more consistent. Like subcortical atlases, tract atlases are 3D-only — there’s no meaningful 2D representation of a white matter pathway.</p>
+<p>The pipeline reads those streamlines and converts them into tube-like meshes that can be rendered in 3D. Like subcortical atlases, the 2D view comes from slicing rather than from a surface: the tubes are cut by the slabs you choose, and each tract’s cross-section is traced into a polygon. Stop at <code>steps = 1</code> if the meshes are all you want; the default runs all four.</p>
 <div class="cell" data-fig-width="10" data-layout-align="default">
 <div class="cell-output-display">
 <div id="fig-tracts" class="quarto-float quarto-figure quarto-figure-center">
 <figure class="quarto-float quarto-float-fig"><div aria-describedby="fig-tracts-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 <div>
 <pre class="mermaid mermaid-js" data-label="fig-tracts">flowchart TB
-    A[Tractography&lt;br/&gt;.trk or .tck] --&gt; B[Read streamlines&lt;br/&gt;Parse header]
-    B --&gt; C{steps parameter}
-    C --&gt;|steps = 1| D[Keep original&lt;br/&gt;streamlines]
-    C --&gt;|steps = 1:2| E[Step 2:&lt;br/&gt;Resample streamlines&lt;br/&gt;Uniform point spacing]
-
-    D --&gt; F[Convert to meshes&lt;br/&gt;Create tubes&lt;br/&gt;from streamlines]
-    E --&gt; F
-
-    F --&gt; G[Add metadata&lt;br/&gt;Color palette&lt;br/&gt;Hemisphere labels]
-    G --&gt; H[ggseg_atlas&lt;br/&gt;3D tract meshes&lt;br/&gt;No 2D]
+    A[Tractography&lt;br/&gt;.trk or .tck] --&gt; B["Step 1&lt;br/&gt;Read streamlines&lt;br/&gt;Build tube meshes"]
+    B --&gt; C{Stop here?}
+    C --&gt;|steps = 1| H2[ggseg_atlas&lt;br/&gt;3D tract meshes only]
+    C --&gt;|default| S["Steps 2-4&lt;br/&gt;Slice the tubes&lt;br/&gt;Trace contours&lt;br/&gt;Assemble"]
+    S --&gt; H[ggseg_atlas&lt;br/&gt;3D meshes + 2D slices]
 
     style H fill:#e1f5ff
+    style H2 fill:#e1f5ff
 </pre>
 </div>
 </div>
@@ -275,7 +275,7 @@ Figure 5: White matter tract atlas pipeline
 </section><section class="level2"><h2 id="where-your-atlas-can-go">Where your atlas can go<a class="anchor" aria-label="anchor" href="#where-your-atlas-can-go"></a>
 </h2>
 <p>Every <code>ggseg_atlas</code> object, regardless of how it was created, works with the ggseg plotting ecosystem. But what you can do with it depends on whether it contains 2D polygon data.</p>
-<p>If your atlas has 2D geometries (cortical atlases from the full pipeline, or cerebellar atlases with SUIT flatmap polygons), you can plot it with both ggseg for flat 2D ggplot2-based visualizations and ggseg3d for interactive 3D rotation and exploration. If it’s 3D-only — because it’s subcortical, a tract atlas, or a cortical atlas you stopped at step 1 — then ggseg3d is your only option, but that’s often all you need.</p>
+<p>If your atlas has 2D geometries (cortical atlases from the full pipeline, or cerebellar atlases with SUIT flatmap polygons), you can plot it with both ggseg for flat 2D ggplot2-based visualizations and ggseg3d for interactive 3D rotation and exploration. If it’s 3D-only — because you stopped a pipeline before its 2D steps — then ggseg3d is your only option, but that’s often all you need.</p>
 <div class="cell" data-fig-width="8" data-layout-align="default">
 <div class="cell-output-display">
 <div id="fig-output-compatibility" class="quarto-float quarto-figure quarto-figure-center">
@@ -304,12 +304,12 @@ Figure 6: Atlas compatibility with ggseg plotting packages
 </div>
 </section><section class="level2"><h2 id="performance">Performance<a class="anchor" aria-label="anchor" href="#performance"></a>
 </h2>
-<p>Cortical atlas creation is fast — the full pipeline (read + project) completes in seconds because the mesh projection is pure geometry with no external rendering. The pipeline now returns raw, unsmoothed polygons — <code>atlas_simplify(keep = ...)</code> is the tuning knob for the detail-versus-file-size trade-off and can be re-applied cheaply on the cached atlas.</p>
-<p>For subcortical and tract pipelines, the <code>steps</code> parameter lets you control how much of the pipeline runs. Use a low step count for fast 3D-only iteration, then run the full pipeline when you need 2D geometry.</p>
+<p>Cortical atlas creation is fast — the full pipeline (read + project) completes in seconds because the mesh projection is pure geometry with no external rendering. Every pipeline returns raw, unsmoothed polygons. Shaping them is a separate step on the finished atlas: <code><a href="../reference/atlas_polish.html">atlas_polish()</a></code> does the usual pair, or <code><a href="../reference/atlas_simplify.html">atlas_simplify()</a></code> and <code><a href="../reference/atlas_smooth.html">atlas_smooth()</a></code> separately. Because it runs on the returned object rather than during the build, trying a different setting costs a second rather than another pass through the pipeline.</p>
+<p>For subcortical and tract pipelines, the <code>steps</code> argument controls how much of the pipeline runs. Use <code>steps = 1:3</code> (subcortical) or <code>steps = 1</code> (tract) for fast 3D-only iteration, then run the default when you need the 2D slices.</p>
 </section><section class="level2"><h2 id="where-to-go-from-here">Where to go from here<a class="anchor" aria-label="anchor" href="#where-to-go-from-here"></a>
 </h2>
 <p>If you’re new to ggseg.extra, start with the <a href="ggseg.extra.html">Getting Started</a> guide for installation and basic usage. The cortical pipeline has no system dependencies — it only needs the <code>freesurferformats</code> R package to read annotation files. Subcortical and whole-brain pipelines need FreeSurfer; see <a href="system-setup.html">System Setup</a> for details.</p>
-<p>The <a href="pipeline-configuration.html">Pipeline Configuration</a> article covers how to customize the creation process, including options for controlling smoothing, contour extraction, and other pipeline parameters. When you’re ready to build a specific atlas type, the individual tutorials under “Tutorials: Creating Atlases” walk through complete examples with real data.</p>
+<p>The <a href="pipeline-configuration.html">Pipeline Configuration</a> article covers verbosity, intermediate files and resuming an interrupted run. <a href="post-processing.html">Post-processing</a> covers what to do with the atlas the pipeline hands back: dropping regions you do not need, choosing views, and shaping the geometry. When you’re ready to build a specific atlas type, the individual tutorials under “Tutorials: Creating Atlases” walk through complete examples with real data.</p>
 </section><script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);

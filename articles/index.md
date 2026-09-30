@@ -45,10 +45,10 @@ Preparing the inputs an atlas needs, and shipping the result
   colours](https://ggsegverse.github.io/ggseg.extra/articles/tutorial-lookup-tables.md):
 - [Tutorial: Publishing an atlas as a
   package](https://ggsegverse.github.io/ggseg.extra/articles/tutorial-publishing-an-atlas.md):
+- [Contributing an atlas
+  package](https://ggsegverse.github.io/ggseg.extra/articles/contributing.md):
 
-### Legacy & Contributing
+### Legacy
 
 - [Converting legacy
   atlases](https://ggsegverse.github.io/ggseg.extra/articles/legacy-conversion.md):
-- [Contributing an atlas
-  package](https://ggsegverse.github.io/ggseg.extra/articles/contributing.md):

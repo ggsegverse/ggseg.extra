@@ -287,7 +287,7 @@ The scaffold installs five workflows:
 
 ``` r
 
-atlas_github_actions()
+ggseg_atlas_github_actions()
 #> [1] "R-CMD-check"     "code-quality"    "pkgdown"         "render-readme"  
 #> [5] "update-codemeta"
 ```
@@ -406,6 +406,8 @@ so it is worth spending time in [Post-processing
 atlases](https://ggsegverse.github.io/ggseg.extra/articles/post-processing.md)
 before the first tag rather than after it.
 
-[Contributing](https://ggsegverse.github.io/ggseg.extra/articles/contributing.md)
-covers getting an atlas adopted into the ggsegverse organisation, if you
-would rather it live there than in your own account.
+[Contributing an atlas
+package](https://ggsegverse.github.io/ggseg.extra/articles/contributing.md)
+covers the last step: getting the finished package listed on the
+ggsegverse r-universe, so users can install it with
+[`install.packages()`](https://rdrr.io/r/utils/install.packages.html).

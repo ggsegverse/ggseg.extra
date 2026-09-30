@@ -22,15 +22,24 @@ specific calls.
 
 | Parameter | R Option | Environment Variable | Default |
 |----|----|----|----|
-| `verbose` | `ggseg.extra.verbose` | `GGSEG_EXTRA_VERBOSE` | `TRUE` |
+| `verbose` | `ggseg.extra.verbose` | `GGSEG_EXTRA_VERBOSE` | `1` |
 | `cleanup` | `ggseg.extra.cleanup` | `GGSEG_EXTRA_CLEANUP` | `TRUE` |
 | `skip_existing` | `ggseg.extra.skip_existing` | `GGSEG_EXTRA_SKIP_EXISTING` | `TRUE` |
+| `output_dir` | `ggseg.extra.output_dir` | `GGSEG_EXTRA_OUTPUT_DIR` | [`tempdir()`](https://rdrr.io/r/base/tempfile.html) |
 
-The `tolerance`, `smoothness` and `smooth_refinements` parameters are
-deprecated. sf simplification has moved out of atlas creation entirely —
-call
-[`atlas_simplify()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_simplify.md)
-on the returned atlas instead.
+`verbose` runs on a three-level scale rather than being a flag: `0` is
+silent, `1` is progress, `2` adds FreeSurfer’s own output. `TRUE` and
+`FALSE` are accepted and mean `1` and `0`.
+
+The `tolerance`, `smoothness`, `smooth_refinements` and `dilate`
+arguments are gone, along with the `ggseg.extra.tolerance` and
+`ggseg.extra.smoothness` options. Geometry shaping happens after the
+build: see
+[`atlas_polish()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_polish.md)
+and
+[`vignette("post-processing")`](https://ggsegverse.github.io/ggseg.extra/articles/post-processing.md).
+Passing one of the old arguments still warns rather than raising an
+error.
 
 ## Setting options in R
 
@@ -56,9 +65,11 @@ execution.
 
 ``` r
 
-options(ggseg.extra.verbose = FALSE)
+options(ggseg.extra.verbose = 0)
 
-Sys.setenv(GGSEG_EXTRA_VERBOSE = "false")
+options(ggseg.extra.verbose = 2)
+
+Sys.setenv(GGSEG_EXTRA_VERBOSE = "0")
 ```
 
 ### Cleanup
@@ -88,15 +99,25 @@ options(ggseg.extra.skip_existing = FALSE)
 options(ggseg.extra.skip_existing = TRUE)
 ```
 
-### Geometry parameters
+### Output directory
 
-sf geometry simplification is no longer applied during atlas creation.
-Use
-[`atlas_simplify()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_simplify.md)
-on the returned atlas to control the trade-off between detail and file
-size. See
-[`vignette("post-processing")`](https://ggsegverse.github.io/ggseg.extra/articles/post-processing.md)
-for the full workflow.
+Intermediate files — meshes, projections, traced contours — are written
+under `output_dir`, and removed again unless `cleanup = FALSE`. It
+defaults to [`tempdir()`](https://rdrr.io/r/base/tempfile.html), so a
+build leaves nothing behind. Set it when you want the intermediates to
+survive the session, which is what makes `skip_existing` useful:
+
+``` r
+
+options(ggseg.extra.output_dir = "~/atlas-builds")
+```
+
+### Geometry
+
+Nothing about the geometry is configured here. The pipelines return raw
+outlines and shaping is a separate step on the finished atlas, so there
+is nothing to set before a build. See
+[`vignette("post-processing")`](https://ggsegverse.github.io/ggseg.extra/articles/post-processing.md).
 
 ## Environment variables
 
@@ -105,21 +126,21 @@ settings that should persist across R sessions.
 
 In `.Renviron`:
 
-    GGSEG_EXTRA_VERBOSE=false
+    GGSEG_EXTRA_VERBOSE=0
     GGSEG_EXTRA_CLEANUP=true
     GGSEG_EXTRA_SKIP_EXISTING=true
 
 In a shell:
 
 ``` bash
-export GGSEG_EXTRA_VERBOSE=false
+export GGSEG_EXTRA_VERBOSE=0
 R -e "ggseg.extra::create_cortical_from_annotation(...)"
 ```
 
 In Docker:
 
 ``` dockerfile
-ENV GGSEG_EXTRA_VERBOSE=false
+ENV GGSEG_EXTRA_VERBOSE=0
 ENV GGSEG_EXTRA_CLEANUP=true
 ```
 
@@ -144,7 +165,7 @@ atlas <- create_cortical_from_annotation(
 ``` r
 
 options(
-  ggseg.extra.verbose = TRUE,
+  ggseg.extra.verbose = 2,
   ggseg.extra.cleanup = FALSE,
   ggseg.extra.skip_existing = FALSE
 )
@@ -155,18 +176,17 @@ options(
 ``` r
 
 options(
-  ggseg.extra.verbose = FALSE,
+  ggseg.extra.verbose = 0,
   ggseg.extra.cleanup = TRUE,
   ggseg.extra.skip_existing = TRUE
 )
 ```
 
-### Iterating on simplification level
+### Iterating on the geometry
 
-`atlas_simplify(keep = ...)` is the tuning knob for vertex count;
-`atlas_smooth(smoothness = ...)` is the one for shape. Higher `keep`
-retains more vertices (more detail, larger file). Try a few values
-without re-running the slow creation pipeline:
+Build once, then shape the returned atlas as many times as you like.
+[`atlas_polish()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_polish.md)
+does the usual pair — simplify, then smooth — against a vertex budget:
 
 ``` r
 
@@ -178,8 +198,13 @@ atlas_raw <- create_cortical_from_annotation(
 )
 
 # High fidelity
-atlas <- atlas_raw |> atlas_simplify(keep = 0.5)
+atlas <- atlas_polish(atlas_raw, keep = 0.5)
 
-# Compact
-atlas <- atlas_raw |> atlas_simplify(keep = 0.05, exclude = "cortex_")
+# Compact, leaving the brain silhouette crisp
+atlas <- atlas_polish(atlas_raw, keep = 0.05, exclude = context_pattern())
 ```
+
+[`context_pattern()`](https://ggsegverse.github.io/ggseg.extra/reference/context_pattern.md)
+matches the grey silhouette the structures are read against, which
+usually wants gentler treatment than they do. See
+[`vignette("post-processing")`](https://ggsegverse.github.io/ggseg.extra/articles/post-processing.md).

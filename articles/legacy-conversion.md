@@ -6,7 +6,6 @@ format.
 
 ``` r
 
-library(ggseg.formats)
 library(ggseg)
 library(ggseg3d)
 ```

@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9076</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9077</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -58,10 +58,10 @@
     <li><h6 class="dropdown-header" data-toc-skip>Tutorials: Working with Atlases</h6></li>
     <li><a class="dropdown-item" href="../articles/tutorial-lookup-tables.html">Lookup Tables and Colours</a></li>
     <li><a class="dropdown-item" href="../articles/tutorial-publishing-an-atlas.html">Publishing an Atlas</a></li>
+    <li><a class="dropdown-item" href="../articles/contributing.html">Listing on r-universe</a></li>
     <li><hr class="dropdown-divider"></li>
-    <li><h6 class="dropdown-header" data-toc-skip>Legacy &amp; Contributing</h6></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Legacy</h6></li>
     <li><a class="dropdown-item" href="../articles/legacy-conversion.html">Legacy Conversion</a></li>
-    <li><a class="dropdown-item" href="../articles/contributing.html">Contributing</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
@@ -103,250 +103,89 @@
     
 <p>ggseg atlases live in their own R packages, distributed through the
 <a href="https://ggsegverse.r-universe.dev" class="external-link">ggsegverse r-universe</a>.
-This provides a single place for all ggseg-compatible packages, whether
-hosted on GitHub, GitLab, or elsewhere.</p>
-<p>If you have a working atlas and want it available through r-universe,
-follow these steps.</p>
+This gives users a single place to install from, whether your package is
+hosted on GitHub, GitLab or elsewhere.</p>
+<p>This article covers the last step: getting a finished atlas package
+listed on r-universe. For building the package itself — scaffolding it
+with <code><a href="../reference/setup_atlas_repo.html">setup_atlas_repo()</a></code>, writing the <code>data-raw/</code>
+build script, documenting the atlas, and getting
+<code>R CMD check</code> to pass — see <a href="https://ggsegverse.github.io/ggseg.extra/articles/tutorial-publishing-an-atlas.html">Publishing
+an atlas</a>, which walks through a complete example.</p>
 <div class="section level2">
-<h2 id="requirements">Requirements<a class="anchor" aria-label="anchor" href="#requirements"></a>
+<h2 id="what-we-expect-of-a-package">What we expect of a package<a class="anchor" aria-label="anchor" href="#what-we-expect-of-a-package"></a>
 </h2>
 <ol style="list-style-type: decimal">
-<li>The data must work with ggseg, ggseg3d, or both.</li>
-<li>The data must be in its own R package.</li>
-<li>The R package must be hosted in a public version control repository
-(GitHub, GitLab, etc.).</li>
-<li>The package must pass <code>R CMD check</code> without errors.</li>
+<li>The atlas works with ggseg, ggseg3d, or both.</li>
+<li>It lives in its own R package.</li>
+<li>That package is in a public version control repository.</li>
+<li>It passes <code>R CMD check</code> without errors.</li>
 </ol>
-</div>
-<div class="section level2">
-<h2 id="setting-up-the-package-repository">Setting up the package repository<a class="anchor" aria-label="anchor" href="#setting-up-the-package-repository"></a>
-</h2>
-<p>Since setting up a data package can be tricky, we provide a function
-to get you started. It downloads the <a href="https://github.com/ggsegverse/ggseg-atlas-template" class="external-link">ggseg-atlas-template</a>
-from GitHub and customises it for your atlas. The result includes tests,
-GitHub Actions workflows, pkgdown configuration, and the general
-structure we expect from a ggseg-atlas package. If you already make R
-packages comfortably, you can also use the template repository directly
-on GitHub.</p>
-<p>To create a ggseg repo, use the RStudio New Project creation GUI and
-look for the ggseg icon. Or call <code><a href="../reference/setup_atlas_repo.html">setup_atlas_repo()</a></code>
-directly:</p>
-<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu">ggseg.extra</span><span class="fu">::</span><span class="fu"><a href="../reference/setup_atlas_repo.html">setup_atlas_repo</a></span><span class="op">(</span><span class="st">"ggsegMyatlas"</span>, <span class="st">"myatlas"</span><span class="op">)</span></span></code></pre></div>
-<div class="section level3">
-<h3 id="edit-description">Edit DESCRIPTION<a class="anchor" aria-label="anchor" href="#edit-description"></a>
-</h3>
-<p>The DESCRIPTION file contains important metadata about your package.
-You need to edit it for several reasons:</p>
-<ul>
-<li>List yourself (and collaborators) as authors and maintainers. Remove
-the template authors and add your own names. ORCID is optional.</li>
-<li>Update the <code>Description:</code> section to reflect your package
-contents.</li>
-<li>Change <code>URL:</code> and <code>BugReports</code> to point to
-your remote repository. If your host doesn’t support issues, delete
-<code>BugReports</code> entirely.</li>
-</ul>
-</div>
-<div class="section level3">
-<h3 id="create-your-atlas">Create your atlas<a class="anchor" aria-label="anchor" href="#create-your-atlas"></a>
-</h3>
-<p>Run the script in <code>data-raw/create-atlas.R</code>. This walks
-you through the atlas creation pipeline and saves the result as internal
-package data in <code>R/sysdata.rda</code>.</p>
-<p>The pipeline produces a <code>ggseg_atlas</code> object validated by
-<code><a href="https://ggsegverse.github.io/ggseg.formats/reference/is_ggseg_atlas.html" class="external-link">is_ggseg_atlas()</a></code>.</p>
-</div>
-<div class="section level3">
-<h3 id="how-atlas-data-is-stored">How atlas data is stored<a class="anchor" aria-label="anchor" href="#how-atlas-data-is-stored"></a>
-</h3>
-<p>Atlas packages store their data as <strong>internal objects</strong>
-accessed through <strong>exported functions</strong>. This avoids
-lazy-loading issues and gives you full control over how the atlas is
-loaded.</p>
-<p>The pattern looks like this:</p>
-<p><strong><code>R/data.R</code></strong> – the exported accessor
-function:</p>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co">#' My Atlas</span></span>
-<span><span class="co">#'</span></span>
-<span><span class="co">#' @references</span></span>
-<span><span class="co">#' Author A, Author B (Year). Title. *Journal*. doi</span></span>
-<span><span class="co">#'</span></span>
-<span><span class="co">#' @return A [ggseg.formats::ggseg_atlas] object.</span></span>
-<span><span class="co">#' @export</span></span>
-<span><span class="co">#' @family ggseg_atlases</span></span>
-<span><span class="va">myatlas</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="op">)</span> <span class="va">.myatlas</span></span></code></pre></div>
-<p><strong><code>data-raw/create-atlas.R</code></strong> – saves the
-atlas as internal data:</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">.myatlas</span> <span class="op">&lt;-</span> <span class="va">myatlas</span></span>
-<span><span class="fu">usethis</span><span class="fu">::</span><span class="fu">use_data</span><span class="op">(</span><span class="va">.myatlas</span>, internal <span class="op">=</span> <span class="cn">TRUE</span>, overwrite <span class="op">=</span> <span class="cn">TRUE</span>, compress <span class="op">=</span> <span class="st">"xz"</span><span class="op">)</span></span></code></pre></div>
-<p>This creates <code>R/sysdata.rda</code> containing the dot-prefixed
-object <code>.myatlas</code>. The exported function
-<code>myatlas()</code> returns it. Users call <code>myatlas()</code>
-(with parentheses) to access the atlas.</p>
-<p>Do <strong>not</strong> use <code>LazyData: true</code> or place
-<code>.rda</code> files in <code>data/</code>.</p>
-</div>
-<div class="section level3">
-<h3 id="document-your-atlas">Document your atlas<a class="anchor" aria-label="anchor" href="#document-your-atlas"></a>
-</h3>
-<p>Edit <code>R/data.R</code> to describe your atlas. Pay particular
-attention to:</p>
-<ul>
-<li>The <code>@references</code> tag: cite the original publication for
-the parcellation.</li>
-<li>The <code>@return</code> tag: specify the atlas type (cortical,
-subcortical, tract).</li>
-<li>The <code>@family ggseg_atlases</code> tag: this is required for the
-pkgdown documentation site to work.</li>
-</ul>
-<p>After editing, regenerate documentation:</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu">devtools</span><span class="fu">::</span><span class="fu">document</span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
-</div>
-<div class="section level3">
-<h3 id="getting-tests-to-pass">Getting tests to pass<a class="anchor" aria-label="anchor" href="#getting-tests-to-pass"></a>
-</h3>
-<p>Once data is saved and documentation is updated, run the tests:</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu">devtools</span><span class="fu">::</span><span class="fu">test</span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
-<p>There will likely be failures. Try to resolve them by reading the
-error messages.</p>
-<p>Common things to check:</p>
-<ul>
-<li>If you only have a 2D or 3D atlas, comment out test sections that
-refer to the atlas type you’re not including.</li>
-<li>If you have a ggseg-atlas, the tests check for a palette matching
-<code>atlas$region</code>. Palettes are stored in
-<code>atlas$palette</code> as a named character vector. Names should
-match region labels and values should be hexadecimal colour codes.</li>
-</ul>
-<p>Let us know if you struggle. We would love to improve this tutorial
-with the issues you encounter.</p>
-</div>
-<div class="section level3">
-<h3 id="multiple-atlases-in-one-package">Multiple atlases in one package<a class="anchor" aria-label="anchor" href="#multiple-atlases-in-one-package"></a>
-</h3>
-<p>If your package contains multiple atlases (e.g. <code>yeo7</code> and
-<code>yeo17</code>), create one accessor function per atlas:</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co">#' Yeo 7-Network Atlas</span></span>
-<span><span class="co">#' @return A [ggseg.formats::ggseg_atlas] object.</span></span>
-<span><span class="co">#' @export</span></span>
-<span><span class="co">#' @family ggseg_atlases</span></span>
-<span><span class="va">yeo7</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="op">)</span> <span class="va">.yeo7</span></span>
-<span></span>
-<span><span class="co">#' Yeo 17-Network Atlas</span></span>
-<span><span class="co">#' @return A [ggseg.formats::ggseg_atlas] object.</span></span>
-<span><span class="co">#' @export</span></span>
-<span><span class="co">#' @family ggseg_atlases</span></span>
-<span><span class="va">yeo17</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="op">)</span> <span class="va">.yeo17</span></span></code></pre></div>
-<p>Save all objects together in one call:</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">.yeo7</span> <span class="op">&lt;-</span> <span class="va">yeo7</span></span>
-<span><span class="va">.yeo17</span> <span class="op">&lt;-</span> <span class="va">yeo17</span></span>
-<span><span class="fu">usethis</span><span class="fu">::</span><span class="fu">use_data</span><span class="op">(</span><span class="va">.yeo7</span>, <span class="va">.yeo17</span>, internal <span class="op">=</span> <span class="cn">TRUE</span>, overwrite <span class="op">=</span> <span class="cn">TRUE</span>, compress <span class="op">=</span> <span class="st">"xz"</span><span class="op">)</span></span></code></pre></div>
-</div>
-<div class="section level3">
-<h3 id="getting-package-checks-to-pass">Getting package checks to pass<a class="anchor" aria-label="anchor" href="#getting-package-checks-to-pass"></a>
-</h3>
-<p>Once all tests pass, run package checks:</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu">devtools</span><span class="fu">::</span><span class="fu">check</span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
-<p>This attempts to build your package and verify everything works.</p>
-<p>Read error messages carefully and try to resolve them.</p>
-<p>Common things to check:</p>
-<ul>
-<li>If you haven’t added a license, try
-<code>usethis::use_mit_license("Your Name Here")</code>.</li>
-</ul>
-<p>If everything passes, push to your remote repository.</p>
-</div>
+<p><code><a href="../reference/setup_atlas_repo.html">setup_atlas_repo()</a></code> gives you a package that satisfies
+all four from the start, including tests, GitHub Actions workflows and a
+pkgdown site. In RStudio it is also available from the New Project
+dialog, under the ggseg icon.</p>
 </div>
 <div class="section level2">
 <h2 id="adding-your-package-to-r-universe">Adding your package to r-universe<a class="anchor" aria-label="anchor" href="#adding-your-package-to-r-universe"></a>
 </h2>
-<p>Once your package is ready and hosted publicly, submit it to the
-ggsegverse r-universe.</p>
 <div class="section level3">
 <h3 id="fork-the-r-universe-repository">1. Fork the r-universe repository<a class="anchor" aria-label="anchor" href="#fork-the-r-universe-repository"></a>
 </h3>
-<p>Go to <a href="https://github.com/ggsegverse/ggsegverse.r-universe.dev" class="external-link">source
-repository for r-universe setup</a> and fork the repository.</p>
+<p>Fork <a href="https://github.com/ggsegverse/ggsegverse.r-universe.dev" class="external-link">ggsegverse/ggsegverse.r-universe.dev</a>.</p>
 </div>
 <div class="section level3">
-<h3 id="edit-packages-json">2. Edit packages.json<a class="anchor" aria-label="anchor" href="#edit-packages-json"></a>
+<h3 id="add-yourself-to-packages-json">2. Add yourself to packages.json<a class="anchor" aria-label="anchor" href="#add-yourself-to-packages-json"></a>
 </h3>
-<p>The <code>packages.json</code> file lists all packages in the
-ggsegverse r-universe. Add an entry for your package:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode json"><code class="sourceCode json"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a><span class="ot">[</span></span>
-<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a>  <span class="fu">{</span></span>
-<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a>    <span class="dt">"package"</span><span class="fu">:</span> <span class="st">"ggsegYeo2011"</span><span class="fu">,</span></span>
-<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a>    <span class="dt">"url"</span><span class="fu">:</span> <span class="st">"https://github.com/ggsegverse/ggsegYeo2011"</span></span>
-<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a>  <span class="fu">}</span><span class="ot">,</span></span>
-<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a>  <span class="fu">{</span></span>
-<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a>    <span class="dt">"package"</span><span class="fu">:</span> <span class="st">"yourpackage"</span><span class="fu">,</span></span>
-<span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a>    <span class="dt">"url"</span><span class="fu">:</span> <span class="st">"https://github.com/yourusername/yourpackage"</span></span>
-<span id="cb9-9"><a href="#cb9-9" tabindex="-1"></a>  <span class="fu">}</span></span>
-<span id="cb9-10"><a href="#cb9-10" tabindex="-1"></a><span class="ot">]</span></span></code></pre></div>
-<p>Each entry needs:</p>
-<ul>
-<li>
-<code>package</code>: The exact package name (must match your
-DESCRIPTION file).</li>
-<li>
-<code>url</code>: The URL to your repository.</li>
-</ul>
-<p>For packages not on GitHub, you can also specify a
-<code>branch</code> or use other URL schemes:</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode json"><code class="sourceCode json"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="fu">{</span></span>
-<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a>  <span class="dt">"package"</span><span class="fu">:</span> <span class="st">"yourpackage"</span><span class="fu">,</span></span>
-<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a>  <span class="dt">"url"</span><span class="fu">:</span> <span class="st">"https://gitlab.com/yourusername/yourpackage"</span><span class="fu">,</span></span>
-<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a>  <span class="dt">"branch"</span><span class="fu">:</span> <span class="st">"main"</span></span>
-<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<p><code>packages.json</code> lists every package in the ggsegverse
+r-universe. Add an entry for yours:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode json"><code class="sourceCode json"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="ot">[</span></span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a>  <span class="fu">{</span></span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a>    <span class="dt">"package"</span><span class="fu">:</span> <span class="st">"ggsegYeo2011"</span><span class="fu">,</span></span>
+<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a>    <span class="dt">"url"</span><span class="fu">:</span> <span class="st">"https://github.com/ggsegverse/ggsegYeo2011"</span></span>
+<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a>  <span class="fu">}</span><span class="ot">,</span></span>
+<span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a>  <span class="fu">{</span></span>
+<span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a>    <span class="dt">"package"</span><span class="fu">:</span> <span class="st">"yourpackage"</span><span class="fu">,</span></span>
+<span id="cb1-8"><a href="#cb1-8" tabindex="-1"></a>    <span class="dt">"url"</span><span class="fu">:</span> <span class="st">"https://github.com/yourusername/yourpackage"</span></span>
+<span id="cb1-9"><a href="#cb1-9" tabindex="-1"></a>  <span class="fu">}</span></span>
+<span id="cb1-10"><a href="#cb1-10" tabindex="-1"></a><span class="ot">]</span></span></code></pre></div>
+<p><code>package</code> must match the <code>Package</code> field of
+your DESCRIPTION exactly, and <code>url</code> points at the repository.
+For a repository that is not on GitHub, or one whose default branch is
+not the one to build, add <code>branch</code>:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode json"><code class="sourceCode json"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>  <span class="dt">"package"</span><span class="fu">:</span> <span class="st">"yourpackage"</span><span class="fu">,</span></span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a>  <span class="dt">"url"</span><span class="fu">:</span> <span class="st">"https://gitlab.com/yourusername/yourpackage"</span><span class="fu">,</span></span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a>  <span class="dt">"branch"</span><span class="fu">:</span> <span class="st">"main"</span></span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
 </div>
 <div class="section level3">
-<h3 id="submit-a-pull-request">3. Submit a pull request<a class="anchor" aria-label="anchor" href="#submit-a-pull-request"></a>
+<h3 id="open-a-pull-request">3. Open a pull request<a class="anchor" aria-label="anchor" href="#open-a-pull-request"></a>
 </h3>
-<p>Commit your changes and open a pull request to the ggseg/universe
-repository. Include a brief description of your atlas and a link to any
-relevant publication.</p>
+<p>Include a sentence on what the atlas is and a link to the paper it
+comes from, if there is one.</p>
 </div>
 <div class="section level3">
-<h3 id="wait-for-review">4. Wait for review<a class="anchor" aria-label="anchor" href="#wait-for-review"></a>
+<h3 id="review">4. Review<a class="anchor" aria-label="anchor" href="#review"></a>
 </h3>
-<p>We will check that:</p>
-<ul>
-<li>The package installs correctly</li>
-<li>It passes <code>R CMD check</code>
-</li>
-<li>The atlas works with ggseg and/or ggseg3d</li>
-</ul>
-<p>Once merged, r-universe automatically builds your package. It
-typically appears within an hour at <a href="https://ggsegverse.r-universe.dev" class="external-link">ggsegverse.r-universe.dev</a>.</p>
+<p>We check that the package installs, that it passes
+<code>R CMD check</code>, and that the atlas plots with ggseg and/or
+ggseg3d. Once merged, r-universe builds it automatically and it appears
+at <a href="https://ggsegverse.r-universe.dev" class="external-link">ggsegverse.r-universe.dev</a>,
+usually within the hour.</p>
 </div>
 </div>
 <div class="section level2">
-<h2 id="installing-from-r-universe">Installing from r-universe<a class="anchor" aria-label="anchor" href="#installing-from-r-universe"></a>
+<h2 id="once-you-are-listed">Once you are listed<a class="anchor" aria-label="anchor" href="#once-you-are-listed"></a>
 </h2>
-<p>Users can then install your atlas with:</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"yourpackage"</span>, repos <span class="op">=</span> <span class="st">"https://ggsegverse.r-universe.dev"</span><span class="op">)</span></span></code></pre></div>
-<p>Or use the ggseg.extra helper:</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu">ggseg_atlas_repos</span><span class="op">(</span><span class="st">"yourpackage"</span><span class="op">)</span></span>
-<span><span class="fu">install_ggseg_atlas</span><span class="op">(</span><span class="st">"yourpackage"</span><span class="op">)</span></span></code></pre></div>
-</div>
-<div class="section level2">
-<h2 id="updating-your-package">Updating your package<a class="anchor" aria-label="anchor" href="#updating-your-package"></a>
-</h2>
-<p>When you push updates to your repository, r-universe automatically
-rebuilds the package. No action needed on your part after the initial
-setup.</p>
-<p>If you move the repository to a different URL, submit a pull request
-to update <code>packages.json</code>.</p>
+<p>Users install your atlas with:</p>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span></span>
+<span>  <span class="st">"yourpackage"</span>,</span>
+<span>  repos <span class="op">=</span> <span class="st">"https://ggsegverse.r-universe.dev"</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p>r-universe rebuilds on every push to your repository, so updates need
+nothing from you. If you move the repository, open another pull request
+to update its <code>url</code> in <code>packages.json</code>.</p>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>

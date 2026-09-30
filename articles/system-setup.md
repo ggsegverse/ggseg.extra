@@ -11,7 +11,8 @@ atlases may require external software depending on the pipeline.
 | **Cortical** (neuromaps volume) | `freesurfer`, `neuromapr` | FreeSurfer |
 | **Subcortical** | `freesurfer`, `Rvcg`, `terra` | FreeSurfer |
 | **Whole-brain** | `freesurfer`, `RNifti`, `Rvcg`, `terra` | FreeSurfer |
-| **Tract** | `RNifti`, `Rvcg` | None |
+| **Tract** (tractography) | `RNifti`, `Rvcg` | None |
+| **Tract** (volume) | `RNifti`, `Rvcg`, `princurve` | None |
 | **GIFTI / CIFTI** | `gifti` or `ciftiTools` | Connectome Workbench (CIFTI only) |
 
 The cortical mesh-projection pipeline is the lightest — it runs in
@@ -25,7 +26,7 @@ loaded when a pipeline actually needs them.
 is needed by the subcortical, whole-brain, and neuromaps volume
 pipelines. The cortical annotation pipeline needs the
 `freesurferformats` R package (not FreeSurfer itself) to read `.annot`
-and `.label` files.
+and `.label` files, and the tract pipelines need no system tools at all.
 
 On macOS, you also need:
 
@@ -105,5 +106,5 @@ Run the setup report to verify everything is in place:
 
 ``` r
 
-setup_sitrep()
+sitrep()
 ```

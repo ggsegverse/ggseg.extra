@@ -28,7 +28,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9076</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9077</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -61,10 +61,10 @@
     <li><h6 class="dropdown-header" data-toc-skip>Tutorials: Working with Atlases</h6></li>
     <li><a class="dropdown-item" href="../articles/tutorial-lookup-tables.html">Lookup Tables and Colours</a></li>
     <li><a class="dropdown-item" href="../articles/tutorial-publishing-an-atlas.html">Publishing an Atlas</a></li>
+    <li><a class="dropdown-item" href="../articles/contributing.html">Listing on r-universe</a></li>
     <li><hr class="dropdown-divider"></li>
-    <li><h6 class="dropdown-header" data-toc-skip>Legacy &amp; Contributing</h6></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Legacy</h6></li>
     <li><a class="dropdown-item" href="../articles/legacy-conversion.html">Legacy Conversion</a></li>
-    <li><a class="dropdown-item" href="../articles/contributing.html">Contributing</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
@@ -115,7 +115,6 @@
 </ul>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/ggsegverse/ggseg.extra" class="external-link">ggseg.extra</a></span><span class="op">)</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/ggsegverse/ggseg.formats" class="external-link">ggseg.formats</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span><span class="op">)</span></span></code></pre></div>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fs_dir</span> <span class="op">&lt;-</span> <span class="fu">freesurfer</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/freesurfer/man/fs_dir.html" class="external-link">fs_dir</a></span><span class="op">(</span><span class="op">)</span></span>
@@ -236,15 +235,15 @@ Stage 4 — gathered. Same geometry, less white space.
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="va">vertices</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] 10909</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="va">vertices</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/grep.html" class="external-link">grepl</a></span><span class="op">(</span><span class="st">"^cortex"</span>, <span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">vertices</span><span class="op">)</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="va">vertices</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/grep.html" class="external-link">grepl</a></span><span class="op">(</span><span class="fu"><a href="../reference/context_pattern.html">context_pattern</a></span><span class="op">(</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">vertices</span><span class="op">)</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] 6796</span></span></code></pre></div>
 <p>Most of the atlas is the cortex silhouette. That matters for what comes next: the <code>create_*()</code> functions warn above ten thousand vertices, and here the context geometry alone accounts for the bulk of it.</p>
 <p>Tidying is a separate post-processing step in two parts — <code><a href="../reference/atlas_simplify.html">atlas_simplify()</a></code> drops vertices, <code><a href="../reference/atlas_smooth.html">atlas_smooth()</a></code> rounds off what is left — and on a subcortical atlas <strong>both have to be applied twice</strong>, because the context and the structures want opposite things. The silhouette is only useful while its sulci and gyri survive, so it needs gentle settings; the nuclei need firmer ones to read as smooth shapes. A single pass tuned for nuclei flattens the cortical ribbon into a blob.</p>
 <p>Simplify each separately:</p>
 <div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">aseg_raw</span> <span class="op">&lt;-</span> <span class="va">aseg_raw</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="../reference/atlas_simplify.html">atlas_simplify</a></span><span class="op">(</span>keep <span class="op">=</span> <span class="fl">0.5</span>, labels <span class="op">=</span> <span class="st">"^cortex"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="../reference/atlas_simplify.html">atlas_simplify</a></span><span class="op">(</span>keep <span class="op">=</span> <span class="fl">0.25</span>, exclude <span class="op">=</span> <span class="st">"^cortex"</span><span class="op">)</span></span>
+<span>  <span class="fu"><a href="../reference/atlas_simplify.html">atlas_simplify</a></span><span class="op">(</span>keep <span class="op">=</span> <span class="fl">0.5</span>, labels <span class="op">=</span> <span class="fu"><a href="../reference/context_pattern.html">context_pattern</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/atlas_simplify.html">atlas_simplify</a></span><span class="op">(</span>keep <span class="op">=</span> <span class="fl">0.25</span>, exclude <span class="op">=</span> <span class="fu"><a href="../reference/context_pattern.html">context_pattern</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="fu"><a href="../reference/count_vertices.html">count_vertices</a></span><span class="op">(</span><span class="va">aseg_raw</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] 5478</span></span></code></pre></div>
@@ -261,10 +260,10 @@ Stage 5 — simplified. Most of the vertices are gone; the corners they left beh
 <code class="sourceCode R"><span><span class="va">aseg_raw</span> <span class="op">&lt;-</span> <span class="va">aseg_raw</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/atlas_smooth.html">atlas_smooth</a></span><span class="op">(</span></span>
 <span>    smoothness <span class="op">=</span> <span class="fl">0.35</span>,</span>
-<span>    labels <span class="op">=</span> <span class="st">"^cortex"</span>,</span>
+<span>    labels <span class="op">=</span> <span class="fu"><a href="../reference/context_pattern.html">context_pattern</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>    method <span class="op">=</span> <span class="st">"chaikin"</span></span>
 <span>  <span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="../reference/atlas_smooth.html">atlas_smooth</a></span><span class="op">(</span>smoothness <span class="op">=</span> <span class="fl">0.4</span>, exclude <span class="op">=</span> <span class="st">"^cortex"</span><span class="op">)</span></span>
+<span>  <span class="fu"><a href="../reference/atlas_smooth.html">atlas_smooth</a></span><span class="op">(</span>smoothness <span class="op">=</span> <span class="fl">0.4</span>, exclude <span class="op">=</span> <span class="fu"><a href="../reference/context_pattern.html">context_pattern</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="fu"><a href="../reference/count_vertices.html">count_vertices</a></span><span class="op">(</span><span class="va">aseg_raw</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] 6621</span></span></code></pre></div>

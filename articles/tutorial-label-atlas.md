@@ -27,7 +27,6 @@ files conventionally include hemisphere in the filename:
 ``` r
 
 library(ggseg.extra)
-library(ggseg.formats)
 library(ggseg)
 library(ggplot2)
 library(dplyr)
@@ -157,8 +156,8 @@ sum(count_vertices(ba_atlas))
 #> [1] 2975
 
 ba_atlas <- ba_atlas |>
-  atlas_simplify(keep = 0.2, exclude = "cortex_") |>
-  atlas_smooth(exclude = "cortex_")
+  atlas_simplify(keep = 0.2, exclude = context_pattern()) |>
+  atlas_smooth(exclude = context_pattern())
 
 sum(count_vertices(ba_atlas))
 #> [1] 1034

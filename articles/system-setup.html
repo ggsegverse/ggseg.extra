@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9076</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9077</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -58,10 +58,10 @@
     <li><h6 class="dropdown-header" data-toc-skip>Tutorials: Working with Atlases</h6></li>
     <li><a class="dropdown-item" href="../articles/tutorial-lookup-tables.html">Lookup Tables and Colours</a></li>
     <li><a class="dropdown-item" href="../articles/tutorial-publishing-an-atlas.html">Publishing an Atlas</a></li>
+    <li><a class="dropdown-item" href="../articles/contributing.html">Listing on r-universe</a></li>
     <li><hr class="dropdown-divider"></li>
-    <li><h6 class="dropdown-header" data-toc-skip>Legacy &amp; Contributing</h6></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Legacy</h6></li>
     <li><a class="dropdown-item" href="../articles/legacy-conversion.html">Legacy Conversion</a></li>
-    <li><a class="dropdown-item" href="../articles/contributing.html">Contributing</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
@@ -148,13 +148,22 @@ atlases may require external software depending on the pipeline.</p>
 <td>FreeSurfer</td>
 </tr>
 <tr class="odd">
-<td><strong>Tract</strong></td>
+<td>
+<strong>Tract</strong> (tractography)</td>
 <td>
 <code>RNifti</code>, <code>Rvcg</code>
 </td>
 <td>None</td>
 </tr>
 <tr class="even">
+<td>
+<strong>Tract</strong> (volume)</td>
+<td>
+<code>RNifti</code>, <code>Rvcg</code>, <code>princurve</code>
+</td>
+<td>None</td>
+</tr>
+<tr class="odd">
 <td><strong>GIFTI / CIFTI</strong></td>
 <td>
 <code>gifti</code> or <code>ciftiTools</code>
@@ -176,7 +185,8 @@ pipeline actually needs them.</p>
 is needed by the subcortical, whole-brain, and neuromaps volume
 pipelines. The cortical annotation pipeline needs the
 <code>freesurferformats</code> R package (not FreeSurfer itself) to read
-<code>.annot</code> and <code>.label</code> files.</p>
+<code>.annot</code> and <code>.label</code> files, and the tract
+pipelines need no system tools at all.</p>
 <p>On macOS, you also need:</p>
 <ul>
 <li><a href="https://www.xquartz.org/" class="external-link">XQuartz</a></li>
@@ -240,7 +250,7 @@ execution.</p>
 </h2>
 <p>Run the setup report to verify everything is in place:</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/sitrep.html">setup_sitrep</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/sitrep.html">sitrep</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>
