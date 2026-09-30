@@ -90,7 +90,10 @@ build_vertex_label_vector <- function(vertices_df, n_vertices, hemi_short) {
     vertex_labels[idx] <- lbl
   }
 
-  fill_unlabelled_with_context(vertex_labels, hemi_short)
+  fill_unlabelled_with_context(
+    vertex_labels,
+    context = paste0(hemi_short, "_cortex")
+  )
 }
 
 
@@ -101,12 +104,14 @@ build_vertex_label_vector <- function(vertices_df, n_vertices, hemi_short) {
 #' polygon. The atlas was then a few shapes floating in empty space, with
 #' nothing to say where on the brain they sit.
 #'
-#' Those vertices become `lh_cortex` / `rh_cortex`, one region per hemisphere.
-#' The hemisphere prefix is not decoration: ggseg.formats reads a label's
-#' hemisphere back off it when laying views out, and a label it cannot parse
-#' becomes a view of its own, which puts the silhouette beside the regions
-#' rather than behind them. It is never added to `$core`, which is built from
-#' the parcellation, so it carries no colour and no legend entry.
+#' Those vertices become one region, named by the caller: `lh_cortex` /
+#' `rh_cortex` for a cortical surface, `cerebellum` for the SUIT flatmap. On a
+#' cortical surface the hemisphere prefix is not decoration -- ggseg.formats
+#' reads a label's hemisphere back off it when laying views out, and a label it
+#' cannot parse becomes a view of its own, which puts the backdrop beside the
+#' regions rather than behind them. The flatmap is a single mesh and needs no
+#' prefix. Either way it is never added to `$core`, which is built from the
+#' parcellation, so it carries no colour and no legend entry.
 #'
 #' A parcellation that already covers the mantle, which most annotations do via
 #' a medial-wall region, leaves nothing unlabelled and gets no extra region. One
@@ -115,19 +120,18 @@ build_vertex_label_vector <- function(vertices_df, n_vertices, hemi_short) {
 #' that failed to read into a plausible grey brain instead of the error it
 #' should be.
 #' @noRd
-fill_unlabelled_with_context <- function(vertex_labels, hemi_short) {
+fill_unlabelled_with_context <- function(vertex_labels, context) {
   n_unlabelled <- sum(is.na(vertex_labels))
   if (n_unlabelled == 0L || n_unlabelled == length(vertex_labels)) {
     return(vertex_labels)
   }
 
-  context <- paste0(hemi_short, "_cortex")
   if (context %in% vertex_labels) {
     cli::cli_warn(c(
-      "Not adding a cortical silhouette for {.val {hemi_short}}.",
+      "Not adding a backdrop for the surface nothing covers.",
       "i" = "The parcellation already has a region called {.val {context}},
-        and the silhouette would merge into it.",
-      "i" = "Rename that region to get a silhouette as well."
+        and the backdrop would merge into it.",
+      "i" = "Rename that region to get a backdrop as well."
     ))
     return(vertex_labels)
   }

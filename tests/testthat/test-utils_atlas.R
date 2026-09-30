@@ -489,14 +489,42 @@ describe("context_pattern", {
     )))
   })
 
-  it("matches the silhouette labels the surface pipelines produce", {
-    expect_true(all(grepl(context_pattern(), c("lh_cortex", "rh_cortex"))))
+  it("matches the backdrops the surface pipelines generate", {
+    expect_true(all(grepl(
+      context_pattern(),
+      c("lh_cortex", "rh_cortex", "cerebellum")
+    )))
+  })
+
+  # A parcellation's own medial wall is demoted to backdrop during the build,
+  # so from a plotting point of view it is the same thing as a generated one.
+  # While the pattern missed it, `exclude = context_pattern()` protected
+  # nothing on an annotation atlas.
+  it("matches the backdrops a parcellation carries", {
+    expect_true(all(grepl(
+      context_pattern(),
+      c(
+        "lh_FreeSurfer_Defined_Medial_Wall",
+        "rh_Medial_Wall",
+        "lh_unknown",
+        "lh_???"
+      ),
+      ignore.case = TRUE
+    )))
   })
 
   it("does not match structures that merely have cortex in the name", {
     expect_false(any(grepl(
       context_pattern(),
-      c("Cerebellar_Cortex_left", "Left-Cerebral-Cortex", "ctx-lh-cuneus")
+      c(
+        "Cerebellar_Cortex_left",
+        "Left-Cerebral-Cortex",
+        "ctx-lh-cuneus",
+        "Left-Cerebellum-Cortex",
+        "lh_unknown_gyrus",
+        "left_I-IV"
+      ),
+      ignore.case = TRUE
     )))
   })
 })
