@@ -39,7 +39,7 @@
 #' atlas <- create_cortical_from_annotation(
 #'   input_annot = c("lh.aparc.DKTatlas.annot", "rh.aparc.DKTatlas.annot")
 #' )
-#' ggseg(atlas = atlas)
+#' plot(atlas)
 #' }
 # nolint next: object_length_linter.
 create_cortical_from_annotation <- function(

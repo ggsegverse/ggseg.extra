@@ -79,6 +79,6 @@ already contains 2D coordinates.
 atlas <- create_cerebellar_from_gifti(
   gifti_files = "Lobules-SUIT.label.gii"
 )
-ggseg(atlas = atlas)
+plot(atlas)
 }
 }
