@@ -48,11 +48,13 @@ read_suit_flatmap <- function(suit_surface) {
 #'
 #' Maps all labels in `vertices_df` to a character vector indexed by vertex.
 #' Unlike the cortical version, there is no hemisphere prefix filtering —
-#' all labels share a single flatmap mesh.
+#' all labels share a single flatmap mesh, so the backdrop for the surface the
+#' parcellation does not cover is one region rather than one per hemisphere.
 #'
 #' @inheritParams build_vertex_label_vector
 #' @param n_vertices Total number of vertices in the flatmap.
-#' @return Character vector of length `n_vertices` (NA for unlabelled).
+#' @return Character vector of length `n_vertices`, with any vertex no label
+#'   claims named `cerebellum`.
 #' @noRd
 # nolint next: object_length_linter.
 build_vertex_label_vector_cerebellum <- function(vertices_df, n_vertices) {
@@ -63,7 +65,8 @@ build_vertex_label_vector_cerebellum <- function(vertices_df, n_vertices) {
     idx <- idx[idx >= 1L & idx <= n_vertices]
     vertex_labels[idx] <- vertices_df$label[i]
   }
-  vertex_labels
+
+  fill_unlabelled_with_context(vertex_labels, context = "cerebellum")
 }
 
 
@@ -245,7 +248,7 @@ cerebellar_build_sf_flatmap <- function(
   sf_data <- fill_flatmap_holes(sf_data, verbose = verbose)
 
   sf_data$view <- "flatmap"
-  sf::st_as_sf(sf_data)
+  arrange_contour_sf(sf_data)
 }
 
 

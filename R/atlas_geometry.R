@@ -946,19 +946,19 @@ strip_view_prefix <- function(filenm_base, views) {
 }
 
 
-#' Whether a contour label names the brain silhouette rather than a structure
+#' Whether a contour label names the atlas's backdrop rather than a structure
 #'
-#' The silhouette arrives under several names: `cortex_` from the legacy
-#' single-slice path, `cortex` from the projection path where sanitize_label
-#' strips the trailing underscore, and `cortex_left` / `cortex_right` from
-#' sagittal views, which cortex_slice_file() names per hemisphere.
+#' Matched case-insensitively, as [atlas_simplify()] and [atlas_smooth()] match
+#' it: a parcellation's own backdrop arrives capitalised however its author
+#' spelled it (`FreeSurfer_Defined_Medial_Wall`), and it has to sort to the
+#' bottom layer like a generated one.
 #'
 #' Anchoring is what makes this safe. A loose `grepl("cortex", ...)` also
 #' catches `Cerebellar_Cortex_*` and lets cerebellum sort above the outline
-#' (HO2 regression); anchored and case-sensitive, it cannot.
+#' (HO2 regression); anchored, it cannot.
 #' @noRd
 is_cortex_outline <- function(label) {
-  grepl(context_pattern(), label)
+  grepl(context_pattern(), label, ignore.case = TRUE)
 }
 
 

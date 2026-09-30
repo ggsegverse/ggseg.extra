@@ -482,11 +482,11 @@ describe("project_mesh_to_polygons", {
 
 
 describe("fill_unlabelled_with_context", {
-  it("names the cortex a parcellation leaves uncovered", {
+  it("names the surface a parcellation leaves uncovered", {
     labels <- c("lh_a", NA, NA, "lh_b")
 
     expect_identical(
-      fill_unlabelled_with_context(labels, "lh"),
+      fill_unlabelled_with_context(labels, "lh_cortex"),
       c("lh_a", "lh_cortex", "lh_cortex", "lh_b")
     )
   })
@@ -494,44 +494,58 @@ describe("fill_unlabelled_with_context", {
   it("adds nothing when the parcellation covers every vertex", {
     labels <- c("rh_a", "rh_b")
 
-    expect_identical(fill_unlabelled_with_context(labels, "rh"), labels)
+    expect_identical(fill_unlabelled_with_context(labels, "rh_cortex"), labels)
   })
 
-  # The silhouette is the part no label claimed. With no labels at all there
-  # is nothing for it to be the context of, and filling anyway would turn a
+  # The backdrop is the part no label claimed. With no labels at all there is
+  # nothing for it to be the backdrop of, and filling anyway would turn a
   # parcellation that failed to read into a plausible grey brain rather than
   # the error it should be.
   it("adds nothing when the parcellation covers no vertex", {
     labels <- rep(NA_character_, 3L)
 
-    expect_identical(fill_unlabelled_with_context(labels, "lh"), labels)
+    expect_identical(fill_unlabelled_with_context(labels, "lh_cortex"), labels)
   })
 
   # FreeSurfer ships lh.cortex.label, so a real parcellation can arrive already
-  # using the silhouette's name. Merging the two would fold a region the user
+  # using the backdrop's name. Merging the two would fold a region the user
   # coloured into the grey behind everything else, without saying so.
-  it("leaves a parcellation that already uses the silhouette's name alone", {
+  it("leaves a parcellation that already uses the backdrop's name alone", {
     labels <- c("lh_cortex", NA_character_, "lh_a")
 
     expect_warning(
-      out <- fill_unlabelled_with_context(labels, "lh"),
+      out <- fill_unlabelled_with_context(labels, "lh_cortex"),
       "already has a region"
     )
     expect_identical(out, labels)
   })
 
-  # The silhouette has to carry the hemisphere prefix every other label uses:
-  # ggseg.formats reads the hemisphere back off it when laying views out, and
-  # a label it cannot parse becomes a view of its own, which puts the
-  # silhouette beside the regions instead of behind them.
-  it("labels the silhouette so its hemisphere can be read back", {
-    for (hemi in c("lh", "rh")) {
-      label <- fill_unlabelled_with_context(
-        c(paste0(hemi, "_a"), NA_character_),
-        hemi
-      )[2]
-      expect_match(label, paste0("^", hemi, "_"))
-      expect_true(grepl(context_pattern(), label))
+  # Every backdrop the pipelines generate has to be recognisable as one, or
+  # `exclude = context_pattern()` silently protects nothing.
+  it("names a backdrop that context_pattern() matches", {
+    for (context in c("lh_cortex", "rh_cortex", "cerebellum")) {
+      label <- fill_unlabelled_with_context(c("x_a", NA_character_), context)[2]
+      expect_identical(label, context)
+      expect_true(grepl(context_pattern(), label, ignore.case = TRUE))
     }
+  })
+})
+
+
+describe("build_vertex_label_vector context naming", {
+  # On a cortical surface the prefix is not decoration: ggseg.formats reads the
+  # hemisphere back off it when laying views out, and a label it cannot parse
+  # becomes a view of its own, putting the backdrop beside the regions.
+  it("gives the cortical backdrop a hemisphere ggseg.formats can read", {
+    vertices_df <- data.frame(
+      label = "lh_a",
+      vertices = I(list(0L)),
+      stringsAsFactors = FALSE
+    )
+
+    labels <- build_vertex_label_vector(vertices_df, 2L, "lh")
+
+    expect_identical(labels[2], "lh_cortex")
+    expect_identical(ggseg.formats:::hemi_from_label(labels[2]), "left")
   })
 })

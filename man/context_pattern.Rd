@@ -2,7 +2,7 @@
 % Please edit documentation in R/utils_atlas.R
 \name{context_pattern}
 \alias{context_pattern}
-\title{The label pattern that matches an atlas's brain silhouette}
+\title{The label pattern that matches an atlas's backdrop}
 \usage{
 context_pattern()
 }
@@ -12,30 +12,37 @@ A regular expression, as a length-one character vector.
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
 
-The grey outline drawn behind an atlas's structures is the cortex, and
-almost every polish step treats it differently from the structures -- a
-silhouette wants rounding that keeps its sulci, the structures want their
-staircase taken off. That means writing the same pattern twice per build,
-in every build, and the pattern has to agree with what the pipelines
-actually label it.
+The grey drawn behind an atlas's structures is not a structure, and almost
+every polish step treats it differently -- a backdrop wants rounding that
+keeps its sulci, the structures want their staircase taken off. That means
+writing the same pattern twice per build, in every build, and the pattern
+has to agree with what the pipelines actually label it.
 
 This is that pattern, in one place. Use it rather than retyping the
 spellings below, so a change of convention is one release rather than one
 edit per atlas repository.
 }
 \details{
-It matches both spellings the pipelines produce. The volumetric ones name
-the silhouette \code{cortex}, \code{cortex_left} or \code{cortex_right}, after the slice
-it was traced from. The surface ones name it \code{lh_cortex} / \code{rh_cortex},
-because a surface atlas's labels are all \verb{<hemi>_<region>} and ggseg.formats
-reads the hemisphere back off that prefix.
+A backdrop reaches an atlas two ways, and this matches both, because from a
+plotting point of view they are the same thing.
 
-Anchored and case-sensitive on purpose. A loose \code{"cortex"} also matches
-\verb{Cerebellar_Cortex_*} and \code{Left-Cerebral-Cortex}, which are structures, not
-the silhouette.
+The pipelines generate one for the surface a parcellation does not cover:
+\code{lh_cortex} / \code{rh_cortex} on a cortical surface, \code{cerebellum} on the SUIT
+flatmap, and \code{cortex}, \code{cortex_left} or \code{cortex_right} from the volumetric
+slice tracing.
+
+A parcellation can also carry its own -- an annotation's \code{unknown}, \verb{???} or
+medial-wall region. Those arrive as regions and are demoted to backdrop
+during the build, so an atlas's medial wall is as much the grey behind the
+structures as a generated silhouette is.
+
+Anchored on purpose. A loose \code{"cortex"} also matches \verb{Cerebellar_Cortex_*}
+and \code{Left-Cerebral-Cortex}, which are structures; anchoring at the start is
+what excludes them, so the pattern is safe to use case-insensitively, as
+\code{\link[=atlas_simplify]{atlas_simplify()}} and \code{\link[=atlas_smooth]{atlas_smooth()}} do.
 }
 \examples{
-# The usual shape of a build: silhouette and structures, each its own way.
+# The usual shape of a build: backdrop and structures, each its own way.
 \dontrun{
 atlas <- my_atlas |>
   atlas_polish(
@@ -46,4 +53,8 @@ atlas <- my_atlas |>
   ) |>
   atlas_polish(keep = 0.1, smoothness = 0.4, exclude = context_pattern())
 }
+}
+\seealso{
+\code{\link[=atlas_polish]{atlas_polish()}}, \code{\link[=atlas_simplify]{atlas_simplify()}} and \code{\link[=atlas_smooth]{atlas_smooth()}}, which
+take it as \code{labels} or \code{exclude}.
 }
