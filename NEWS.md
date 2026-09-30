@@ -1,3 +1,25 @@
+# ggseg.extra 1.9.9.9082
+
+## Documentation
+
+- The neuromaps tutorial is re-knitted from its reconstructed source, which is
+  what it needed to be trusted. Three things came out of actually running it.
+
+  `plot(atlas, show.legend = FALSE)` does not hide a legend. `plot()` for an
+  atlas takes `...`, so `show.legend` reaches base graphics and warns once per
+  polygon -- 185 warnings on the Yeo fixture, and roughly 400 lines of them in
+  the rendered page. The tutorial now uses
+  `theme(legend.position = "none")`, which is what it meant.
+
+  Two of its examples cannot run. `source = "schaefer"` and `source = "pet"`
+  are not in the neuromaps registry, which ships 124 annotations and no
+  parcellations at all, and the saving example would write package data. They
+  are marked as shown rather than run, and the parcellation section says why,
+  so a reader copying it does not meet an error.
+
+  The page also predates the large-atlas advisory, which now appears where it
+  applies.
+
 # ggseg.extra 1.9.9.9081
 
 ## Documentation

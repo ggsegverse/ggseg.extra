@@ -211,8 +211,9 @@ atlas_clean <- atlas_full |>
 #| fig-width: 10
 #| fig-cap: "2D gene expression atlas plotted with ggseg."
 #| fig-alt: "2D brain atlas plot showing gene expression quantile bins across lateral, medial, inferior, and superior views without legend."
-plot(atlas_clean, show.legend = FALSE) +
-  theme_void()
+plot(atlas_clean) +
+  theme_void() +
+  theme(legend.position = "none")
 ```
 
 ```{r}
@@ -230,11 +231,12 @@ Not all neuromaps annotations are continuous.
 Some contain integer vertex labels where each value maps to a brain region.
 The pipeline detects this automatically and skips binning entirely.
 
-For parcellations, you can provide a `label_table` to map the numeric IDs to human-readable region names and custom colors:
+For parcellations, you can provide a `label_table` to map the numeric IDs to human-readable region names and custom colors.
+The registry currently ships only continuous maps, so the call below is shown rather than run --- substitute a parcellation annotation when one is available:
 
 ```{r}
 #| label: working-with-parcellation-maps
-#| eval: !expr can_run
+#| eval: false
 labels <- data.frame(
   id = c(1, 2, 3),
   region = c("visual", "somatomotor", "dorsal_attention"),
@@ -257,7 +259,7 @@ The pipeline detects this from the file extension (`.nii` or `.nii.gz`) and proj
 
 ```{r}
 #| label: volume-annotations
-#| eval: !expr can_run
+#| eval: false
 atlas_vol <- create_cortical_from_neuromaps(
   source = "pet",
   desc = "5HT1a",
@@ -308,7 +310,7 @@ Once you're happy with the atlas, save it as package data:
 
 ```{r}
 #| label: saving
-#| eval: !expr can_run
+#| eval: false
 usethis::use_data(abagen_genepc1, overwrite = TRUE, compress = "xz")
 ```
 
