@@ -21,7 +21,7 @@ threshold)."><meta property="og:image" content="https://ggsegverse.github.io/ggs
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9077</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9078</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -116,13 +116,9 @@ labels (replacing <code>aparc+aseg</code> voxels wherever a label wins above
 
 <dt id="arg-registration">registration<a class="anchor" aria-label="anchor" href="#arg-registration"></a></dt>
 <dd><p>How the volume reaches the target's grid: <code>"header"</code>
-(the default) trusts the volume's own xform (<code>mri_vol2vol --regheader</code>),
-<code>"mni152"</code> applies FreeSurfer's <code>mni152.register.dat</code>, or give a path to
-an LTA file (typically from <code><a href="coregister_volume.html">coregister_volume()</a></code>). The same vocabulary
-as <code><a href="create_wholebrain_from_volume.html">create_wholebrain_from_volume()</a></code> and <code><a href="prepare_subcortical_mni152.html">prepare_subcortical_mni152()</a></code>.
-<code>NULL</code> is deprecated; it meant <code>"header"</code>. An LTA must be registered to a
-volume on the same subject's conformed grid as <code>aparc+aseg.mgz</code> (true for
-any <code>recon-all</code> output); a mismatch is caught and aborted.</p></dd>
+(the default) trusts the volume's own xform, <code>"mni152"</code> applies
+FreeSurfer's <code>mni152.register.dat</code>, or give the path to an LTA file,
+typically from <code><a href="coregister_volume.html">coregister_volume()</a></code>. See details.</p></dd>
 
 
 <dt id="arg-target-subject">target_subject<a class="anchor" aria-label="anchor" href="#arg-target-subject"></a></dt>
@@ -137,23 +133,17 @@ label. Defaults to <code>0.3</code>.</p></dd>
 
 
 <dt id="arg-id-offset">id_offset<a class="anchor" aria-label="anchor" href="#arg-id-offset"></a></dt>
-<dd><p>Integer added to every input label ID when writing
-the merged volume to avoid collisions with FreeSurfer <code>aparc+aseg</code>
-labels. Defaults to <code>200L</code>. Set to <code>0L</code> if you have already remapped
-your IDs. Either way, a shifted ID that would land on an <code>aparc+aseg</code>
-structure still standing in the merged volume is an error rather than a
-silent merge.</p></dd>
+<dd><p>Integer added to every input label ID so it cannot
+collide with a FreeSurfer <code>aparc+aseg</code> label. Defaults to <code>200L</code>; use
+<code>0L</code> if your IDs are already remapped. A collision is an error either
+way, never a silent merge.</p></dd>
 
 
 <dt id="arg-protect-cortex">protect_cortex<a class="anchor" aria-label="anchor" href="#arg-protect-cortex"></a></dt>
-<dd><p>Logical. If <code>TRUE</code> (default), the cerebral outline
-in <code>aparc+aseg</code> is never overwritten by user labels even when argmax
-wins above <code>threshold</code>: the cortical ribbon (aparc labels <code>1000-2999</code>)
-plus cerebral white matter (<code>2</code>, <code>41</code>) and the corpus callosum
-(<code>251-255</code>). This preserves the brain-outline geometry the subcortical
-pipeline renders as context. Cerebellar structures are not protected
-here (they are handled downstream by <code><a href="aseg_context.html">aseg_context()</a></code>). Disable only if
-you intentionally want user labels to overwrite the cerebrum.</p></dd>
+<dd><p>Whether the cerebral outline in <code>aparc+aseg</code> is
+safe from being overwritten by your labels. <code>TRUE</code>, the default, keeps
+the brain-outline geometry the subcortical pipeline draws as context.
+See details.</p></dd>
 
 
 <dt id="arg-subjects-dir">subjects_dir<a class="anchor" aria-label="anchor" href="#arg-subjects-dir"></a></dt>
@@ -162,20 +152,17 @@ you intentionally want user labels to overwrite the cerebrum.</p></dd>
 
 
 <dt id="arg-verbose">verbose<a class="anchor" aria-label="anchor" href="#arg-verbose"></a></dt>
-<dd><p>Verbosity level: <code>0</code> (silent), <code>1</code> (standard progress,
-default), or <code>2</code> (debug, includes FreeSurfer output). Logical values
-are accepted (<code>TRUE</code> = 1, <code>FALSE</code> = 0). If not specified, uses the
-value from <code>options("ggseg.extra.verbose")</code> or the <code>GGSEG_EXTRA_VERBOSE</code>
-environment variable.</p></dd>
+<dd><p>How much to print: <code>0</code> silent, <code>1</code> progress (the default),
+<code>2</code> adds FreeSurfer's own output. <code>TRUE</code> and <code>FALSE</code> mean <code>1</code> and <code>0</code>.
+Falls back to <code>options("ggseg.extra.verbose")</code>, then
+<code>GGSEG_EXTRA_VERBOSE</code>.</p></dd>
 
 
 <dt id="arg-lut">lut<a class="anchor" aria-label="anchor" href="#arg-lut"></a></dt>
-<dd><p>Optional colour LUT (data frame with at least an <code>idx</code>
-column, or path to a TSV with <code>idx, label, R, G, B, A</code>). When
-provided, its <code>idx</code> (intersected with the volume) selects which labels
-to project, and it is returned alongside the volume with <code>idx</code> shifted
-by <code>id_offset</code> to match. With no <code>lut</code>, every non-zero label is
-projected. To project a subset, subset the <code>lut</code>.</p></dd>
+<dd><p>Optional colour lookup table: a data frame with at least an
+<code>idx</code> column, or a path to one. Its <code>idx</code> selects which labels to
+project, and it comes back beside the volume with <code>idx</code> shifted to match.
+With no <code>lut</code>, every non-zero label is projected.</p></dd>
 
 
 <dt id="arg-output-file">output_file<a class="anchor" aria-label="anchor" href="#arg-output-file"></a></dt>
@@ -217,8 +204,26 @@ that the user's IDs sit in a range that doesn't overlap any
 it matches the merged volume.</p>
     </div>
     <div class="section level2">
+    <h2 id="registration">Registration<a class="anchor" aria-label="anchor" href="#registration"></a></h2>
+    <p><code>registration</code> takes the same vocabulary as
+<code><a href="create_wholebrain_from_volume.html">create_wholebrain_from_volume()</a></code> and <code><a href="prepare_subcortical_mni152.html">prepare_subcortical_mni152()</a></code>. An
+LTA must be registered to a volume on the same subject's conformed grid as
+<code>aparc+aseg.mgz</code>, which any <code>recon-all</code> output is; a mismatch is caught and
+aborted. <code>NULL</code> is deprecated and meant <code>"header"</code>.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="what-protect-cortex-protects">What <code>protect_cortex</code> protects<a class="anchor" aria-label="anchor" href="#what-protect-cortex-protects"></a></h2>
+    <p>The cortical ribbon (aparc labels <code>1000-2999</code>), cerebral white matter (<code>2</code>,
+<code>41</code>) and the corpus callosum (<code>251-255</code>) are left in place even where a
+user label wins the argmax above <code>threshold</code>. Cerebellar structures are not
+protected here; <code><a href="aseg_context.html">aseg_context()</a></code> handles them downstream. Disable it only
+if you mean your labels to overwrite the cerebrum.</p>
+    </div>
+    <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p><code><a href="coregister_volume.html">coregister_volume()</a></code>, <code><a href="prepare_subcortical_anatomical.html">prepare_subcortical_anatomical()</a></code></p></div>
+    <div class="dont-index"><p><code><a href="prepare_subcortical_anatomical.html">prepare_subcortical_anatomical()</a></code>, which runs this and
+<code><a href="coregister_volume.html">coregister_volume()</a></code> together, and explains which of the four to reach
+for.</p></div>
     </div>
 
     <div class="section level2">

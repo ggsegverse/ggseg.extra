@@ -60,11 +60,9 @@ create_cortical_from_neuromaps(
 
 - verbose:
 
-  Verbosity level: `0` (silent), `1` (standard progress, default), or
-  `2` (debug, includes FreeSurfer output). Logical values are accepted
-  (`TRUE` = 1, `FALSE` = 0). If not specified, uses the value from
-  `options("ggseg.extra.verbose")` or the `GGSEG_EXTRA_VERBOSE`
-  environment variable.
+  How much to print: `0` silent, `1` progress (the default), `2` adds
+  FreeSurfer's own output. `TRUE` and `FALSE` mean `1` and `0`. Falls
+  back to `options("ggseg.extra.verbose")`, then `GGSEG_EXTRA_VERBOSE`.
 
 - ...:
 
@@ -94,21 +92,20 @@ create_cortical_from_neuromaps(
 
 - output_dir:
 
-  Directory to store intermediate files (screenshots, masks, contours).
-  Defaults to [`tempdir()`](https://rdrr.io/r/base/tempfile.html).
+  Where to put the intermediate files. Defaults to
+  [`tempdir()`](https://rdrr.io/r/base/tempfile.html), from
+  `options("ggseg.extra.output_dir")` or `GGSEG_EXTRA_OUTPUT_DIR`.
 
 - cleanup:
 
-  Remove intermediate files after atlas creation. If not specified, uses
-  `options("ggseg.extra.cleanup")` or the `GGSEG_EXTRA_CLEANUP`
-  environment variable. Default is TRUE.
+  Remove the intermediate files afterwards. Default `TRUE`, from
+  `options("ggseg.extra.cleanup")` or `GGSEG_EXTRA_CLEANUP`.
 
 - skip_existing:
 
-  Skip generating output files that already exist, allowing interrupted
-  atlas creation to resume. If not specified, uses
-  `options("ggseg.extra.skip_existing")` or the
-  `GGSEG_EXTRA_SKIP_EXISTING` environment variable. Default is TRUE.
+  Reuse intermediate files that already exist, so an interrupted run can
+  resume. Default `TRUE`, from `options("ggseg.extra.skip_existing")` or
+  `GGSEG_EXTRA_SKIP_EXISTING`.
 
 ## Value
 

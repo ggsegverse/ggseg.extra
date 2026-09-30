@@ -21,7 +21,7 @@ create_wholebrain_from_volume() is neither."><meta property="og:image" content="
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9077</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9078</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -140,11 +140,10 @@ stops one ribbon voxel from making a white-matter label cortical.</p></dd>
 
 
 <dt id="arg-verbose">verbose<a class="anchor" aria-label="anchor" href="#arg-verbose"></a></dt>
-<dd><p>Verbosity level: <code>0</code> (silent), <code>1</code> (standard progress,
-default), or <code>2</code> (debug, includes FreeSurfer output). Logical values
-are accepted (<code>TRUE</code> = 1, <code>FALSE</code> = 0). If not specified, uses the
-value from <code>options("ggseg.extra.verbose")</code> or the <code>GGSEG_EXTRA_VERBOSE</code>
-environment variable.</p></dd>
+<dd><p>How much to print: <code>0</code> silent, <code>1</code> progress (the default),
+<code>2</code> adds FreeSurfer's own output. <code>TRUE</code> and <code>FALSE</code> mean <code>1</code> and <code>0</code>.
+Falls back to <code>options("ggseg.extra.verbose")</code>, then
+<code>GGSEG_EXTRA_VERBOSE</code>.</p></dd>
 
 </dl></div>
     <div class="section level2">

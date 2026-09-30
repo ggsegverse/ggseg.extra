@@ -40,11 +40,9 @@ create_wholebrain_from_volume(
 
 - verbose:
 
-  Verbosity level: `0` (silent), `1` (standard progress, default), or
-  `2` (debug, includes FreeSurfer output). Logical values are accepted
-  (`TRUE` = 1, `FALSE` = 0). If not specified, uses the value from
-  `options("ggseg.extra.verbose")` or the `GGSEG_EXTRA_VERBOSE`
-  environment variable.
+  How much to print: `0` silent, `1` progress (the default), `2` adds
+  FreeSurfer's own output. `TRUE` and `FALSE` mean `1` and `0`. Falls
+  back to `options("ggseg.extra.verbose")`, then `GGSEG_EXTRA_VERBOSE`.
 
 - regheader:
 
@@ -75,8 +73,9 @@ create_wholebrain_from_volume(
 
 - output_dir:
 
-  Directory to store intermediate files (screenshots, masks, contours).
-  Defaults to [`tempdir()`](https://rdrr.io/r/base/tempfile.html).
+  Where to put the intermediate files. Defaults to
+  [`tempdir()`](https://rdrr.io/r/base/tempfile.html), from
+  `options("ggseg.extra.output_dir")` or `GGSEG_EXTRA_OUTPUT_DIR`.
 
 - labels:
 
@@ -172,16 +171,14 @@ create_wholebrain_from_volume(
 
 - cleanup:
 
-  Remove intermediate files after atlas creation. If not specified, uses
-  `options("ggseg.extra.cleanup")` or the `GGSEG_EXTRA_CLEANUP`
-  environment variable. Default is TRUE.
+  Remove the intermediate files afterwards. Default `TRUE`, from
+  `options("ggseg.extra.cleanup")` or `GGSEG_EXTRA_CLEANUP`.
 
 - skip_existing:
 
-  Skip generating output files that already exist, allowing interrupted
-  atlas creation to resume. If not specified, uses
-  `options("ggseg.extra.skip_existing")` or the
-  `GGSEG_EXTRA_SKIP_EXISTING` environment variable. Default is TRUE.
+  Reuse intermediate files that already exist, so an interrupted run can
+  resume. Default `TRUE`, from `options("ggseg.extra.skip_existing")` or
+  `GGSEG_EXTRA_SKIP_EXISTING`.
 
 ## Value
 
@@ -194,22 +191,22 @@ The pipeline must know which labels are cortical (rendered on the
 surface) and which are subcortical (rendered as 3D meshes / 2D slices).
 Three mechanisms are available, applied in priority order:
 
-1.  **Function arguments** (highest priority): `cortical_labels` and
-    `subcortical_labels` override everything for the specified labels.
+1.  **The `labels` argument** (highest priority):
+    `labels = list(cortical = ..., subcortical = ..., cerebellar = ...)`
+    overrides everything for the labels it names.
 
 2.  **LUT `type` column**: If the colour lookup table has a `type`
     column with values `"cortical"` or `"subcortical"`, that
-    classification is used for any labels not covered by the function
-    arguments. This is the recommended approach for reproducible atlas
-    creation.
+    classification is used for any labels `labels` does not name. This
+    is the recommended approach for reproducible atlas creation.
 
 3.  **Vertex-count heuristic** (fallback): Labels with at least
-    `min_vertices` vertices on the surface projection are classified as
-    cortical; the rest as subcortical. It measures how much surface a
-    label covers rather than where the label sits, so a small cortical
-    parcel and a deep structure look the same to it. It warns whenever
-    it runs; treat that warning as a request to declare the labels
-    instead.
+    `projection_opts$min_vertices` vertices on the surface projection
+    are classified as cortical; the rest as subcortical. It measures how
+    much surface a label covers rather than where the label sits, so a
+    small cortical parcel and a deep structure look the same to it. It
+    warns whenever it runs; treat that warning as a request to declare
+    the labels instead.
 
 [`lut_classify_anatomy()`](https://ggsegverse.github.io/ggseg.extra/reference/lut_classify_anatomy.md)
 writes the `type` column for a lookup table that has none, by reading
@@ -260,14 +257,14 @@ midline split is used and the pipeline warns.
 
 ## Human oversight
 
-This is the most complex pipeline in ggsegExtra and the one most likely
+This is the most complex pipeline in ggseg.extra and the one most likely
 to need manual correction. Recommended workflow:
 
 1.  Run `steps = 1:2` first to project the volume and classify labels.
 
 2.  Inspect `result$cortical_labels` and `result$subcortical_labels`. If
     the automatic split is wrong, either add a `type` column to the LUT
-    or use `cortical_labels` / `subcortical_labels` to override.
+    or name the labels in `labels`.
 
 3.  Run the full pipeline once you are satisfied with the split.
 

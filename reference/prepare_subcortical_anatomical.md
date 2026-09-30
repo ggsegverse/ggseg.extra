@@ -53,24 +53,17 @@ prepare_subcortical_anatomical(
 
 - id_offset:
 
-  Integer added to every input label ID when writing the merged volume
-  to avoid collisions with FreeSurfer `aparc+aseg` labels. Defaults to
-  `200L`. Set to `0L` if you have already remapped your IDs. Either way,
-  a shifted ID that would land on an `aparc+aseg` structure still
-  standing in the merged volume is an error rather than a silent merge.
+  Integer added to every input label ID so it cannot collide with a
+  FreeSurfer `aparc+aseg` label. Defaults to `200L`; use `0L` if your
+  IDs are already remapped. A collision is an error either way, never a
+  silent merge.
 
 - protect_cortex:
 
-  Logical. If `TRUE` (default), the cerebral outline in `aparc+aseg` is
-  never overwritten by user labels even when argmax wins above
-  `threshold`: the cortical ribbon (aparc labels `1000-2999`) plus
-  cerebral white matter (`2`, `41`) and the corpus callosum (`251-255`).
-  This preserves the brain-outline geometry the subcortical pipeline
-  renders as context. Cerebellar structures are not protected here (they
-  are handled downstream by
-  [`aseg_context()`](https://ggsegverse.github.io/ggseg.extra/reference/aseg_context.md)).
-  Disable only if you intentionally want user labels to overwrite the
-  cerebrum.
+  Whether the cerebral outline in `aparc+aseg` is safe from being
+  overwritten by your labels. `TRUE`, the default, keeps the
+  brain-outline geometry the subcortical pipeline draws as context. See
+  details.
 
 - dof:
 
@@ -89,27 +82,22 @@ prepare_subcortical_anatomical(
 
 - skip_existing:
 
-  Skip generating output files that already exist, allowing interrupted
-  atlas creation to resume. If not specified, uses
-  `options("ggseg.extra.skip_existing")` or the
-  `GGSEG_EXTRA_SKIP_EXISTING` environment variable. Default is TRUE.
+  Reuse intermediate files that already exist, so an interrupted run can
+  resume. Default `TRUE`, from `options("ggseg.extra.skip_existing")` or
+  `GGSEG_EXTRA_SKIP_EXISTING`.
 
 - verbose:
 
-  Verbosity level: `0` (silent), `1` (standard progress, default), or
-  `2` (debug, includes FreeSurfer output). Logical values are accepted
-  (`TRUE` = 1, `FALSE` = 0). If not specified, uses the value from
-  `options("ggseg.extra.verbose")` or the `GGSEG_EXTRA_VERBOSE`
-  environment variable.
+  How much to print: `0` silent, `1` progress (the default), `2` adds
+  FreeSurfer's own output. `TRUE` and `FALSE` mean `1` and `0`. Falls
+  back to `options("ggseg.extra.verbose")`, then `GGSEG_EXTRA_VERBOSE`.
 
 - lut:
 
-  Optional colour LUT (data frame with at least an `idx` column, or path
-  to a TSV with `idx, label, R, G, B, A`). When provided, its `idx`
-  (intersected with the volume) selects which labels to project, and it
-  is returned alongside the volume with `idx` shifted by `id_offset` to
-  match. With no `lut`, every non-zero label is projected. To project a
-  subset, subset the `lut`.
+  Optional colour lookup table: a data frame with at least an `idx`
+  column, or a path to one. Its `idx` selects which labels to project,
+  and it comes back beside the volume with `idx` shifted to match. With
+  no `lut`, every non-zero label is projected.
 
 - output_file:
 
@@ -126,6 +114,38 @@ Invisibly, the `list(volume, lut, id_offset)` returned by
 Pass it straight to
 [`create_subcortical_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_subcortical_from_volume.md),
 which unpacks `volume` and `lut`.
+
+## Details
+
+**Start here.** The three functions it wraps or sits beside are for when
+this one does not fit; see *Which of these to use*.
+
+## Which of these to use
+
+A subcortical atlas is drawn against a brain outline, and that outline
+comes from a FreeSurfer subject's `aparc+aseg`. Getting your volume onto
+that grid is what these four functions do between them.
+
+- `prepare_subcortical_anatomical()` is the whole job in one call, and
+  what most atlases want: align the volume, merge it into `aparc+aseg`,
+  hand back a volume and a matching colour table.
+
+- [`coregister_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/coregister_volume.md)
+  is only the alignment, and returns an LTA. Reach for it when you want
+  to inspect or reuse the registration, or pass it to `registration =`
+  yourself.
+
+- [`project_volume_anatomical()`](https://ggsegverse.github.io/ggseg.extra/reference/project_volume_anatomical.md)
+  is only the merge, and takes a volume that already sits on the target
+  grid – either because its header says so (`registration = "header"`)
+  or because you have an LTA from
+  [`coregister_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/coregister_volume.md).
+
+- [`prepare_subcortical_mni152()`](https://ggsegverse.github.io/ggseg.extra/reference/prepare_subcortical_mni152.md)
+  is the older, lighter route: it replaces labels in a stock MNI152
+  `aseg` rather than registering to a subject. Use it when your volume
+  is already in MNI152 space and you do not need a subject-specific
+  outline.
 
 ## Examples
 

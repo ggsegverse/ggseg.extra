@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9077</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9078</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -67,6 +67,20 @@
       <small>Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.9.9.9078" id="ggsegextra-1999078">ggseg.extra 1.9.9.9078<a class="anchor" aria-label="anchor" href="#ggsegextra-1999078"></a></h2>
+<div class="section level3">
+<h3 id="documentation-1-9-9-9078">Documentation<a class="anchor" aria-label="anchor" href="#documentation-1-9-9-9078"></a></h3>
+<ul><li>
+<p>Argument lists are scannable again. Several help pages had grown an essay per argument: <code><a href="../reference/atlas_smooth.html">atlas_smooth()</a></code> spent twelve lines of <code>@param</code> on <code>vertex_budget</code> and ten on <code>close_gaps</code>, and <code><a href="../reference/project_volume_anatomical.html">project_volume_anatomical()</a></code> nine each on <code>registration</code> and <code>protect_cortex</code>. Each argument now says what it does and what to pass in a sentence or two, and the reasoning moved to <code>@details</code> under its own heading, where a reader who wants it can find it and a reader looking up one argument is not made to read it. <code><a href="../reference/lut_generate_colors.html">lut_generate_colors()</a></code> had 57 lines of prose before its first argument; it now has ten.</p>
+<p>Measured on the <code>\arguments</code> block, which is the part a reader scans: <code><a href="../reference/atlas_smooth.html">atlas_smooth()</a></code> 49 lines to 24, <code><a href="../reference/project_volume_anatomical.html">project_volume_anatomical()</a></code> 53 to 40, <code><a href="../reference/lut_generate_colors.html">lut_generate_colors()</a></code> 20 to 14.</p>
+</li>
+<li><p>The <code>verbose</code>, <code>cleanup</code>, <code>skip_existing</code> and <code>output_dir</code> argument descriptions are shorter, which shows up on the twenty or so pages that share them.</p></li>
+<li><p><code><a href="../reference/create_wholebrain_from_volume.html">?create_wholebrain_from_volume</a></code> described <code>cortical_labels</code>, <code>subcortical_labels</code> and <code>min_vertices</code> as current arguments in its <strong>Label classification</strong> section and told readers to “use <code>cortical_labels</code> / <code>subcortical_labels</code> to override” in its recommended workflow. They were retired into <code>labels</code> and <code>projection_opts</code> several dev versions ago, so the advice warned rather than worked.</p></li>
+<li><p><code><a href="../reference/prepare_subcortical_anatomical.html">?prepare_subcortical_anatomical</a></code> now says which of the four anatomical coregistration functions to reach for and why, and the others link to it. There was nothing distinguishing them, and their argument lists overlap heavily.</p></li>
+<li><p>The one remaining reference to the old package name <code>ggsegExtra</code> is gone.</p></li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9077" id="ggsegextra-1999077">ggseg.extra 1.9.9.9077<a class="anchor" aria-label="anchor" href="#ggsegextra-1999077"></a></h2>
 <div class="section level3">

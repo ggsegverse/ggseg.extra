@@ -15,7 +15,7 @@ colour table, ready to feed create_subcortical_from_volume()."><meta property="o
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9077</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9078</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -128,23 +128,17 @@ label. Defaults to <code>0.3</code>.</p></dd>
 
 
 <dt id="arg-id-offset">id_offset<a class="anchor" aria-label="anchor" href="#arg-id-offset"></a></dt>
-<dd><p>Integer added to every input label ID when writing
-the merged volume to avoid collisions with FreeSurfer <code>aparc+aseg</code>
-labels. Defaults to <code>200L</code>. Set to <code>0L</code> if you have already remapped
-your IDs. Either way, a shifted ID that would land on an <code>aparc+aseg</code>
-structure still standing in the merged volume is an error rather than a
-silent merge.</p></dd>
+<dd><p>Integer added to every input label ID so it cannot
+collide with a FreeSurfer <code>aparc+aseg</code> label. Defaults to <code>200L</code>; use
+<code>0L</code> if your IDs are already remapped. A collision is an error either
+way, never a silent merge.</p></dd>
 
 
 <dt id="arg-protect-cortex">protect_cortex<a class="anchor" aria-label="anchor" href="#arg-protect-cortex"></a></dt>
-<dd><p>Logical. If <code>TRUE</code> (default), the cerebral outline
-in <code>aparc+aseg</code> is never overwritten by user labels even when argmax
-wins above <code>threshold</code>: the cortical ribbon (aparc labels <code>1000-2999</code>)
-plus cerebral white matter (<code>2</code>, <code>41</code>) and the corpus callosum
-(<code>251-255</code>). This preserves the brain-outline geometry the subcortical
-pipeline renders as context. Cerebellar structures are not protected
-here (they are handled downstream by <code><a href="aseg_context.html">aseg_context()</a></code>). Disable only if
-you intentionally want user labels to overwrite the cerebrum.</p></dd>
+<dd><p>Whether the cerebral outline in <code>aparc+aseg</code> is
+safe from being overwritten by your labels. <code>TRUE</code>, the default, keeps
+the brain-outline geometry the subcortical pipeline draws as context.
+See details.</p></dd>
 
 
 <dt id="arg-dof">dof<a class="anchor" aria-label="anchor" href="#arg-dof"></a></dt>
@@ -163,27 +157,23 @@ before coregistration. Set to <code>FALSE</code> to register on raw intensities.
 
 
 <dt id="arg-skip-existing">skip_existing<a class="anchor" aria-label="anchor" href="#arg-skip-existing"></a></dt>
-<dd><p>Skip generating output files that already exist,
-allowing interrupted atlas creation to resume. If not specified, uses
-<code>options("ggseg.extra.skip_existing")</code> or the <code>GGSEG_EXTRA_SKIP_EXISTING</code>
-environment variable. Default is TRUE.</p></dd>
+<dd><p>Reuse intermediate files that already exist, so an
+interrupted run can resume. Default <code>TRUE</code>, from
+<code>options("ggseg.extra.skip_existing")</code> or <code>GGSEG_EXTRA_SKIP_EXISTING</code>.</p></dd>
 
 
 <dt id="arg-verbose">verbose<a class="anchor" aria-label="anchor" href="#arg-verbose"></a></dt>
-<dd><p>Verbosity level: <code>0</code> (silent), <code>1</code> (standard progress,
-default), or <code>2</code> (debug, includes FreeSurfer output). Logical values
-are accepted (<code>TRUE</code> = 1, <code>FALSE</code> = 0). If not specified, uses the
-value from <code>options("ggseg.extra.verbose")</code> or the <code>GGSEG_EXTRA_VERBOSE</code>
-environment variable.</p></dd>
+<dd><p>How much to print: <code>0</code> silent, <code>1</code> progress (the default),
+<code>2</code> adds FreeSurfer's own output. <code>TRUE</code> and <code>FALSE</code> mean <code>1</code> and <code>0</code>.
+Falls back to <code>options("ggseg.extra.verbose")</code>, then
+<code>GGSEG_EXTRA_VERBOSE</code>.</p></dd>
 
 
 <dt id="arg-lut">lut<a class="anchor" aria-label="anchor" href="#arg-lut"></a></dt>
-<dd><p>Optional colour LUT (data frame with at least an <code>idx</code>
-column, or path to a TSV with <code>idx, label, R, G, B, A</code>). When
-provided, its <code>idx</code> (intersected with the volume) selects which labels
-to project, and it is returned alongside the volume with <code>idx</code> shifted
-by <code>id_offset</code> to match. With no <code>lut</code>, every non-zero label is
-projected. To project a subset, subset the <code>lut</code>.</p></dd>
+<dd><p>Optional colour lookup table: a data frame with at least an
+<code>idx</code> column, or a path to one. Its <code>idx</code> selects which labels to
+project, and it comes back beside the volume with <code>idx</code> shifted to match.
+With no <code>lut</code>, every non-zero label is projected.</p></dd>
 
 
 <dt id="arg-output-file">output_file<a class="anchor" aria-label="anchor" href="#arg-output-file"></a></dt>
@@ -201,6 +191,32 @@ temporary file.</p></dd>
 <code><a href="project_volume_anatomical.html">project_volume_anatomical()</a></code>. Pass it straight to
 <code><a href="create_subcortical_from_volume.html">create_subcortical_from_volume()</a></code>, which unpacks <code>volume</code> and <code>lut</code>.</p>
     </div>
+    <div class="section level2">
+    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
+    <p><strong>Start here.</strong> The three functions it wraps or sits beside are for when
+this one does not fit; see <em>Which of these to use</em>.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="which-of-these-to-use">Which of these to use<a class="anchor" aria-label="anchor" href="#which-of-these-to-use"></a></h2>
+
+
+<p>A subcortical atlas is drawn against a brain outline, and that outline comes
+from a FreeSurfer subject's <code>aparc+aseg</code>. Getting your volume onto that grid
+is what these four functions do between them.</p><ul><li><p><code>prepare_subcortical_anatomical()</code> is the whole job in one call, and what
+most atlases want: align the volume, merge it into <code>aparc+aseg</code>, hand back
+a volume and a matching colour table.</p></li>
+<li><p><code><a href="coregister_volume.html">coregister_volume()</a></code> is only the alignment, and returns an LTA. Reach for
+it when you want to inspect or reuse the registration, or pass it to
+<code>registration =</code> yourself.</p></li>
+<li><p><code><a href="project_volume_anatomical.html">project_volume_anatomical()</a></code> is only the merge, and takes a volume that
+already sits on the target grid – either because its header says so
+(<code>registration = "header"</code>) or because you have an LTA from
+<code><a href="coregister_volume.html">coregister_volume()</a></code>.</p></li>
+<li><p><code><a href="prepare_subcortical_mni152.html">prepare_subcortical_mni152()</a></code> is the older, lighter route: it replaces
+labels in a stock MNI152 <code>aseg</code> rather than registering to a subject. Use
+it when your volume is already in MNI152 space and you do not need a
+subject-specific outline.</p></li>
+</ul></div>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
