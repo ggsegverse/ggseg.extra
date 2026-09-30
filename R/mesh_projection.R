@@ -89,8 +89,53 @@ build_vertex_label_vector <- function(vertices_df, n_vertices, hemi_short) {
     idx <- idx[idx >= 1L & idx <= n_vertices]
     vertex_labels[idx] <- lbl
   }
+
+  fill_unlabelled_with_context(vertex_labels, hemi_short)
+}
+
+
+#' Name the cortex a parcellation does not cover
+#'
+#' A parcellation that covers only part of the mantle -- a handful of `.label`
+#' files, say -- left every other vertex `NA`, and an `NA` vertex produces no
+#' polygon. The atlas was then a few shapes floating in empty space, with
+#' nothing to say where on the brain they sit.
+#'
+#' Those vertices become `lh_cortex` / `rh_cortex`, one region per hemisphere.
+#' The hemisphere prefix is not decoration: ggseg.formats reads a label's
+#' hemisphere back off it when laying views out, and a label it cannot parse
+#' becomes a view of its own, which puts the silhouette beside the regions
+#' rather than behind them. It is never added to `$core`, which is built from
+#' the parcellation, so it carries no colour and no legend entry.
+#'
+#' A parcellation that already covers the mantle, which most annotations do via
+#' a medial-wall region, leaves nothing unlabelled and gets no extra region. One
+#' that covers *nothing* gets none either: with no labels there is nothing for a
+#' silhouette to be the context of, and filling anyway would turn a parcellation
+#' that failed to read into a plausible grey brain instead of the error it
+#' should be.
+#' @noRd
+fill_unlabelled_with_context <- function(vertex_labels, hemi_short) {
+  n_unlabelled <- sum(is.na(vertex_labels))
+  if (n_unlabelled == 0L || n_unlabelled == length(vertex_labels)) {
+    return(vertex_labels)
+  }
+
+  context <- paste0(hemi_short, "_cortex")
+  if (context %in% vertex_labels) {
+    cli::cli_warn(c(
+      "Not adding a cortical silhouette for {.val {hemi_short}}.",
+      "i" = "The parcellation already has a region called {.val {context}},
+        and the silhouette would merge into it.",
+      "i" = "Rename that region to get a silhouette as well."
+    ))
+    return(vertex_labels)
+  }
+
+  vertex_labels[is.na(vertex_labels)] <- context
   vertex_labels
 }
+
 
 #' Split a boundary triangle into per-region polygon fragments
 #'
@@ -182,7 +227,11 @@ project_mesh_view <- function(
 
   all_labeled <- !is.na(l1) & !is.na(l2) & !is.na(l3)
 
-  region_sizes <- table(vertex_labels[!is.na(vertex_labels)])
+  region_sizes <- if (all(all_labeled)) {
+    NULL
+  } else {
+    table(vertex_labels[!is.na(vertex_labels)])
+  }
 
   polys <- build_view_polygons(
     visible,
@@ -382,7 +431,7 @@ project_mesh_to_polygons <- function(
 
 
 #' @noRd
-#' @importFrom dplyr group_by mutate ungroup select
+#' @importFrom dplyr group_by mutate ungroup
 #' @importFrom sf st_combine st_as_sf
 cortical_build_sf_projected <- function(
   components,
@@ -402,6 +451,5 @@ cortical_build_sf_projected <- function(
     dplyr::group_by(view, label) |>
     dplyr::mutate(geometry = sf::st_combine(geometry)) |>
     dplyr::ungroup() |>
-    dplyr::select(label, view, geometry) |>
-    sf::st_as_sf()
+    arrange_contour_sf()
 }

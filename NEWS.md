@@ -1,3 +1,32 @@
+# ggseg.extra 1.9.9.9079
+
+## New features
+
+- A cortical parcellation that covers only part of the mantle now gets the
+  rest of it as a silhouette to sit on (#285). A handful of `.label` files
+  used to produce an atlas of a few shapes floating in empty space, with
+  nothing to say where on the brain they were. Every vertex no label claims
+  becomes one region per hemisphere, `lh_cortex` / `rh_cortex`, drawn behind
+  the parcellation.
+
+  It is context, not a region: it is never added to `$core`, so it carries no
+  colour and no legend entry, exactly as the volumetric pipelines' silhouette
+  does. It applies to every cortical pipeline, but only appears where there is
+  something to appear for -- an annotation that covers the mantle via a
+  medial-wall region leaves nothing unlabelled and is unchanged. A
+  parcellation that covers *nothing* is also unchanged, so a file that failed
+  to read still errors rather than rendering as a plausible grey brain.
+
+- `context_pattern()` matches the surface spelling as well as the volumetric
+  one. It was `"^cortex"`, which matched the `cortex_left` that volumetric
+  pipelines produce and nothing at all on a surface atlas -- so
+  `exclude = context_pattern()` in the cortical, cerebellar, label and
+  neuromaps tutorials excluded nothing, and the prose promising it would
+  "leave the brain-outline geometry crisp" was untrue. Surface atlases label
+  the silhouette `lh_cortex` / `rh_cortex`, because ggseg.formats reads a
+  label's hemisphere off its prefix when laying views out, and
+  `context_pattern()` now covers both.
+
 # ggseg.extra 1.9.9.9078
 
 ## Documentation
@@ -33,7 +62,6 @@
   heavily.
 
 - The one remaining reference to the old package name `ggsegExtra` is gone.
-
 # ggseg.extra 1.9.9.9077
 
 ## Documentation
