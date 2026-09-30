@@ -1,6 +1,6 @@
 Package: ggseg.extra
 Title: Create Brain Atlases for the 'ggsegverse' Plotting Ecosystem
-Version: 1.9.9.9076
+Version: 1.9.9.9077
 Authors@R: c(
     person(
         given = "Athanasia Mo",
@@ -82,7 +82,7 @@ VignetteBuilder:
 Encoding: UTF-8
 Language: en-US
 Roxygen: list(markdown = TRUE)
-SystemRequirements: FreeSurfer (subcortical/tract/wholebrain pipelines), 
+SystemRequirements: FreeSurfer (subcortical/wholebrain pipelines), 
     Connectome Workbench (optional, for CIFTI resampling),
     GDAL (>= 2.0.1), 
     GEOS (>= 3.4.0), 

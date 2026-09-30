@@ -24,8 +24,9 @@ It covers the parts that trip people up: label ID conflicts, the cortical/subcor
 - FreeSurfer installed with the `fsaverage5` subject
 - The Harvard-Oxford combined atlas volume (available from [NeuroVault collection 262](https://neurovault.org/collections/262/))
 
-
-``` r
+```{r}
+#| label: what-you-need
+#| eval: false
 library(ggseg.extra)
 library(RNifti)
 library(dplyr)
@@ -42,8 +43,9 @@ If your atlas also has a label 3, the pipeline can't tell which is which, and th
 The fix is straightforward: remap subcortical IDs to a range that doesn't collide with FreeSurfer's reserved labels.
 Adding 200 to every subcortical ID puts them safely out of the way:
 
-
-``` r
+```{r}
+#| label: the-label-id-problem
+#| eval: false
 vol <- readNifti("data-raw/HarvardOxford-cort_and_sub-maxprob-thr25-1mm.nii.gz")
 arr <- as.array(vol)
 
@@ -72,8 +74,9 @@ Unlisted IDs are automatically excluded from the atlas.
 The wholebrain pipeline needs to know which labels are cortical and which are subcortical.
 There are three ways to tell it (see the function documentation for the full priority system), but the most reliable is a `type` column in the lookup table:
 
-
-``` r
+```{r}
+#| label: building-a-lookup-table
+#| eval: false
 subcortical_labels <- c(
   "Left Lateral Ventricle", "Left Thalamus", "Left Caudate",
   "Left Putamen", "Left Pallidum", "Brain-Stem",
@@ -146,8 +149,9 @@ If you know which labels belong where (and you usually do), spell it out.
 
 When you don't — a fine-grained parcellation with hundreds of numbered parcels is the usual case — `lut_classify_anatomy()` works the column out for you, from where each label sits in FreeSurfer's `aparc+aseg` rather than from its name:
 
-
-``` r
+```{r}
+#| label: building-a-lookup-table-2
+#| eval: false
 lut <- lut_classify_anatomy("data-raw/ho_combined_remapped.nii.gz", lut)
 table(lut$type)
 ```
@@ -161,8 +165,9 @@ Plenty of parcellations come as names only, with every RGB channel set to `0 0 0
 Sent down the pipeline that way the atlas arrives with no palette, the plotting packages assign one, and the render comes back as large blocks of repeated hue.
 `lut_generate_colors()` builds a palette from the label names instead:
 
-
-``` r
+```{r}
+#| label: when-the-release-ships
+#| eval: false
 lut <- lut_generate_colors(lut, by = "type")
 write_lut(lut, "data-raw/my_atlas_LUT.txt")
 ```
@@ -177,8 +182,9 @@ The wholebrain pipeline is the most complex pipeline in ggseg.extra, and the one
 Running the full pipeline blind is asking for trouble.
 Instead, run steps 1–2 first to project the volume onto the surface and classify labels, then inspect the result before committing to the expensive steps:
 
-
-``` r
+```{r}
+#| label: the-twopass-verification-workflow
+#| eval: false
 result <- create_wholebrain_from_volume(
   input_volume = remapped_path,
   input_lut = lut,
@@ -202,8 +208,9 @@ Once the split looks right, run the full pipeline.
 
 ## Running the full pipeline
 
-
-``` r
+```{r}
+#| label: running-the-full-pipeline
+#| eval: false
 library(progressr)
 library(future)
 
@@ -242,8 +249,9 @@ Some whole-brain parcellations include cerebellar regions alongside cortical and
 The pipeline handles this as a fifth step.
 Classification works the same way as the cortical/subcortical split: you can mark labels as cerebellar via the `type` column in your LUT (set to `"cerebellar"`), pass them explicitly with `cerebellar_labels`, or let the heuristic sort them out.
 
-
-``` r
+```{r}
+#| label: cerebellar-labels-in-the
+#| eval: false
 lut <- data.frame(
   idx = c(subcort_remapped_ids, 101:148, 301:310),
   label = c(subcortical_labels, cortical_labels, cerebellar_labels),
@@ -265,8 +273,9 @@ The result lands in `$cerebellar` — a `ggseg_atlas` with SUIT flatmap polygons
 
 The verification workflow at `steps = 1:2` now reports three lists:
 
-
-``` r
+```{r}
+#| label: cerebellar-labels-in-the-2
+#| eval: false
 result <- create_wholebrain_from_volume(
   input_volume = remapped_path,
   input_lut = lut,
@@ -311,8 +320,9 @@ This uses the volume's own orientation matrix, so it works for any volume whose 
 The raw atlas usually needs cleanup.
 Simplify the contours for faster plotting using topology-preserving simplification:
 
-
-``` r
+```{r}
+#| label: postprocessing
+#| eval: false
 ho_cort <- ho$cortical |>
   atlas_simplify(keep = 0.05)
 
@@ -325,8 +335,9 @@ The right value depends on your atlas: parcellations with many small regions nee
 
 You can also remove unwanted regions from the subcortical atlas (ventricles, white matter) and set context regions, just like in the [subcortical tutorial](tutorial-subcortical-atlas.html):
 
-
-``` r
+```{r}
+#| label: postprocessing-2
+#| eval: false
 ho_sub <- ho_sub |>
   atlas_region_remove("Ventricle", match_on = "label")
 ```
@@ -338,8 +349,9 @@ The [post-processing vignette](post-processing.html) covers this in detail — t
 
 The Harvard-Oxford atlas is a good example of both:
 
-
-``` r
+```{r}
+#| label: structuring-atlas-metadata
+#| eval: false
 ho_cort <- ho_cort |>
   atlas_region_rename("Left |Right ", "") |>
   atlas_region_rename("-", " ")
@@ -363,8 +375,9 @@ ho_sub <- ho_sub |>
 
 The conventional pattern for atlas packages is to save cortical and subcortical atlases as separate internal data objects:
 
-
-``` r
+```{r}
+#| label: saving
+#| eval: false
 .hoCort <- ho_cort
 .hoSub <- ho_sub
 

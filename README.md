@@ -52,10 +52,11 @@ pak::pak("muschellij2/freesurfer")
 Tutorials are available in the `Articles` of the [package documentation
 page](https://ggsegverse.github.io/ggseg.extra/). The cortical pipeline
 projects inflated mesh triangles directly to 2D polygons — atlas
-creation takes seconds and needs only FreeSurfer to read annotation
-files, with no rendering step. Subcortical and tract pipelines are also
-available. Suggestions for improvement are welcome through GH issues or
-direct Pull requests.
+creation takes seconds, with no rendering step and no FreeSurfer
+installation: reading `.annot` files needs only the `freesurferformats`
+R package. Subcortical and tract pipelines are also available.
+Suggestions for improvement are welcome through GH issues or direct Pull
+requests.
 
 ## Code of Conduct
 

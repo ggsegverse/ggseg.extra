@@ -242,4 +242,39 @@ if (failed > 0L) {
   quit(status = 1L)
 }
 
+# A tutorial is either knitted from a `.orig` or run live by pkgdown. Two of
+# them were neither: static ``` r fences with baked-in output and no source,
+# so nothing re-ran their code and nothing could regenerate their figures.
+# That state looks exactly like a finished page, which is why it survived.
+articles <- list.files(
+  file.path("vignettes", "articles"),
+  pattern = "^tutorial-.*[.]qmd$",
+  full.names = TRUE
+)
+orphans <- Filter(
+  function(path) {
+    if (file.exists(paste0(path, ".orig"))) {
+      return(FALSE)
+    }
+    !any(grepl("^```[{][rR]", readLines(path, warn = FALSE)))
+  },
+  articles
+)
+
+if (length(orphans)) {
+  cat("\nTutorials with neither a .orig source nor live chunks:\n")
+  cat(sprintf("  - %s\n", orphans), sep = "")
+  cat("Knit them from a .orig, or make their chunks live.\n")
+  if (nzchar(Sys.getenv("GITHUB_ACTIONS"))) {
+    for (path in orphans) {
+      cat(sprintf(
+        "::error file=%s::rendered tutorial with no source to regenerate it\n",
+        path
+      ))
+    }
+  }
+  quit(status = 1L)
+}
+
 cat(sprintf("Checked %d vignettes; every call resolves.\n", length(files)))
+cat(sprintf("%d tutorials, each with a source.\n", length(articles)))
