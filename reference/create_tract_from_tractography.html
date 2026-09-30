@@ -27,7 +27,7 @@ the tube thicker where more streamlines pass through.'><meta property="og:image"
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9074</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9075</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -143,11 +143,12 @@ environment variable.</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
-<dd><p>Catches the retired <code>dilate</code>, <code>smoothness</code> and <code>tolerance</code>
-arguments, so a call that still passes one keeps working and says so.
-These are post-creation steps now: see <code><a href="atlas_dilate.html">atlas_dilate()</a></code>,
-<code><a href="atlas_smooth.html">atlas_smooth()</a></code> and <code><a href="atlas_simplify.html">atlas_simplify()</a></code>. Anything else in <code>...</code> is an
-error, as an unused argument always was.</p></dd>
+<dd><p>Catches the retired <code>dilate</code>, <code>smoothness</code>, <code>tolerance</code> and
+<code>smooth_refinements</code> arguments, so a call that still passes one keeps
+working and says so. These are post-creation steps now: see
+<code><a href="atlas_polish.html">atlas_polish()</a></code>, or <code><a href="atlas_simplify.html">atlas_simplify()</a></code>, <code><a href="atlas_smooth.html">atlas_smooth()</a></code> and
+<code><a href="atlas_dilate.html">atlas_dilate()</a></code> individually. Anything else in <code>...</code> is an error, as an
+unused argument always was.</p></dd>
 
 
 <dt id="arg-input-aseg">input_aseg<a class="anchor" aria-label="anchor" href="#arg-input-aseg"></a></dt>
@@ -203,13 +204,10 @@ filtered out. Default NULL applies no limits.</p></dd>
 <dd><p>Which pipeline steps to run. Default NULL runs all steps.
 Steps are:</p><ul><li><p>1: Read tractography and create tube meshes</p></li>
 <li><p>2: Create projection snapshots</p></li>
-<li><p>3: Process images</p></li>
-<li><p>4: Extract contours</p></li>
-<li><p>5: Smooth contours</p></li>
-<li><p>6: Reduce vertices</p></li>
-<li><p>7: Build atlas</p></li>
-</ul><p>Use <code>steps = 1</code> for 3D-only atlas. Use <code>steps = 5:7</code> to iterate on
-smoothing and vertex reduction.</p></dd>
+<li><p>3: Extract contours</p></li>
+<li><p>4: Build the atlas</p></li>
+</ul><p>Use <code>steps = 1</code> for a 3D-only atlas. Geometry is shaped after the build,
+not during it: see <code><a href="atlas_polish.html">atlas_polish()</a></code>.</p></dd>
 
 
 <dt id="arg-cleanup">cleanup<a class="anchor" aria-label="anchor" href="#arg-cleanup"></a></dt>

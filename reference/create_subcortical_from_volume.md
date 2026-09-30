@@ -68,14 +68,17 @@ create_subcortical_from_volume(
 
 - ...:
 
-  Catches the retired `dilate`, `smoothness` and `tolerance` arguments,
-  so a call that still passes one keeps working and says so. These are
-  post-creation steps now: see
-  [`atlas_dilate()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_dilate.md),
+  Catches the retired `dilate`, `smoothness`, `tolerance` and
+  `smooth_refinements` arguments, so a call that still passes one keeps
+  working and says so. These are post-creation steps now: see
+  [`atlas_polish()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_polish.md),
+  or
+  [`atlas_simplify()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_simplify.md),
   [`atlas_smooth()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_smooth.md)
   and
-  [`atlas_simplify()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_simplify.md).
-  Anything else in `...` is an error, as an unused argument always was.
+  [`atlas_dilate()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_dilate.md)
+  individually. Anything else in `...` is an error, as an unused
+  argument always was.
 
 - input_lut:
 
@@ -133,28 +136,23 @@ create_subcortical_from_volume(
 
 - steps:
 
-  Which pipeline steps to run. Default NULL runs all steps. Steps are:
+  Which pipeline steps to run. Default NULL runs all six:
 
-  - 1: Extract labels from volume and get colour table
+  - 1: Extract labels from the volume and read the colour table
 
-  - 2: Create meshes for each structure
+  - 2: Create a mesh for each structure
 
   - 3: Build atlas data (3D only if stopping here)
 
   - 4: Create projection snapshots
 
-  - 5: Process images
+  - 5: Extract contours
 
-  - 6: Extract contours
+  - 6: Build the final atlas with 2D geometry
 
-  - 7: Smooth contours
-
-  - 8: Reduce vertices
-
-  - 9: Build final atlas with 2D geometry
-
-  Use `steps = 1:3` for 3D-only atlas. Use `steps = 7:8` to iterate on
-  smoothing and reduction parameters.
+  Use `steps = 1:3` for a 3D-only atlas. Geometry is shaped after the
+  build, not during it: see
+  [`atlas_polish()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_polish.md).
 
 - context:
 
@@ -163,7 +161,7 @@ create_subcortical_from_volume(
   arguments (e.g. `context = list(focus = "Hippocampus")`) applied to
   the finished 2D atlas to keep the focus regions coloured on grey
   anatomical context. `NULL` (default) leaves the atlas unchanged. Only
-  applied when the 2D build (step 9) runs.
+  applied when the 2D build (step 6) runs.
 
 ## Value
 

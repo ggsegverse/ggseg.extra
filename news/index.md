@@ -1,5 +1,58 @@
 # Changelog
 
+## ggseg.extra 1.9.9.9075
+
+### Breaking changes
+
+- The subcortical pipeline has six steps, not nine, and the tract
+  pipeline has four, not seven. Contour smoothing and vertex reduction
+  stopped doing anything when geometry shaping moved out of atlas
+  creation, but they kept their step numbers, their progress labels and
+  — in
+  [`create_subcortical_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_subcortical_from_volume.md)’s
+  help — the advice to “use `steps = 7:8` to iterate on smoothing and
+  reduction parameters”, which rebuilt an atlas to no effect. They are
+  gone, and the steps after them have moved down: the subcortical 2D
+  build is step 6 (was 9) and the tract build is step 4 (was 7). Steps
+  1-5 of the subcortical pipeline and 1-3 of the tract pipeline keep
+  their meaning, so `steps = 1:3` for a 3D-only subcortical atlas is
+  unaffected.
+
+- `steps` is now bounds-checked. It only ever picked a default, so a
+  value above the last step ran nothing and reported success; it errors
+  now and names the range.
+
+- `smooth_refinements` is no longer a formal of the six surface
+  creators. It joins `dilate`, `smoothness` and `tolerance` in `...`, so
+  it warns when supplied but no longer appears in any signature or help
+  page.
+
+- The `ggseg.extra.tolerance` and `ggseg.extra.smoothness` options (and
+  their `GGSEG_EXTRA_*` environment variables) are removed. Nothing had
+  read them since geometry shaping moved post-creation, yet
+  `setup_sitrep("full")` listed them under “Pipeline options” and told
+  you how to set them. Use
+  [`atlas_polish()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_polish.md),
+  [`atlas_simplify()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_simplify.md)
+  and
+  [`atlas_smooth()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_smooth.md)
+  on the finished atlas.
+
+### Minor changes
+
+- Pipeline progress labels interpolate the step total rather than
+  hardcoding it, which is how `1/9` and `2/7` survived two step-count
+  changes.
+
+- Invalid contour geometry is filtered in `extract_contours()`, where
+  the contours are produced, rather than in a later pass-through step.
+
+- “Completed step 5” is no longer “Completed steps 5”.
+
+- Ten unused `man-roxygen` templates are deleted, including
+  `snapshot_dim`, which documented an option that went away with the
+  rendering step.
+
 ## ggseg.extra 1.9.9.9074
 
 ### Developer-facing changes
@@ -2289,21 +2342,21 @@ geometry.
   through gracefully and lets downstream FreeSurfer commands handle the
   file.
 
-## ggseg.extra 2.0.1
+## ggseg.extra 1.9.9.9002
 
 ### Cortical pipeline: mesh projection
 
 The cortical atlas pipeline now projects inflated mesh triangles
 directly to 2D polygons via orthographic projection, replacing the
-screenshot-based contour extraction from v2.0.0.
+screenshot-based contour extraction that preceded it.
 
 - **Much faster** — atlas creation completes in ~5 seconds instead of
   minutes.
 - **Cleaner geometry** — no pixel staircase artifacts from
   rasterisation.
 - **Fewer dependencies** — no FreeSurfer rendering, ImageMagick, or
-  Chrome needed for 2D geometry (FreeSurfer is still required to *read*
-  annotation files).
+  Chrome needed for 2D geometry. Reading `.annot` files needs the
+  `freesurferformats` R package, not a FreeSurfer installation.
 - **Better small-region visibility** — boundary faces are assigned to
   the smallest neighbouring region so tiny parcels are not swallowed by
   their neighbours.
@@ -2336,7 +2389,7 @@ screenshot-based contour extraction from v2.0.0.
   algorithm: orthonormal view basis computation, backface culling,
   per-face label assignment, and triangle-to-polygon union via sf.
 
-## ggseg.extra 2.0.0
+## ggseg.extra 1.9.9.9001
 
 - Major rewrite of atlas creation pipelines with modular step-based
   architecture

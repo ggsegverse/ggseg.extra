@@ -59,14 +59,17 @@ create_tract_from_tractography(
 
 - ...:
 
-  Catches the retired `dilate`, `smoothness` and `tolerance` arguments,
-  so a call that still passes one keeps working and says so. These are
-  post-creation steps now: see
-  [`atlas_dilate()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_dilate.md),
+  Catches the retired `dilate`, `smoothness`, `tolerance` and
+  `smooth_refinements` arguments, so a call that still passes one keeps
+  working and says so. These are post-creation steps now: see
+  [`atlas_polish()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_polish.md),
+  or
+  [`atlas_simplify()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_simplify.md),
   [`atlas_smooth()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_smooth.md)
   and
-  [`atlas_simplify()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_simplify.md).
-  Anything else in `...` is an error, as an unused argument always was.
+  [`atlas_dilate()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_dilate.md)
+  individually. Anything else in `...` is an error, as an unused
+  argument always was.
 
 - input_aseg:
 
@@ -128,18 +131,13 @@ create_tract_from_tractography(
 
   - 2: Create projection snapshots
 
-  - 3: Process images
+  - 3: Extract contours
 
-  - 4: Extract contours
+  - 4: Build the atlas
 
-  - 5: Smooth contours
-
-  - 6: Reduce vertices
-
-  - 7: Build atlas
-
-  Use `steps = 1` for 3D-only atlas. Use `steps = 5:7` to iterate on
-  smoothing and vertex reduction.
+  Use `steps = 1` for a 3D-only atlas. Geometry is shaped after the
+  build, not during it: see
+  [`atlas_polish()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_polish.md).
 
 - cleanup:
 

@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9074</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9075</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -67,6 +67,23 @@
       <small>Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.9.9.9075" id="ggsegextra-1999075">ggseg.extra 1.9.9.9075<a class="anchor" aria-label="anchor" href="#ggsegextra-1999075"></a></h2>
+<div class="section level3">
+<h3 id="breaking-changes-1-9-9-9075">Breaking changes<a class="anchor" aria-label="anchor" href="#breaking-changes-1-9-9-9075"></a></h3>
+<ul><li><p>The subcortical pipeline has six steps, not nine, and the tract pipeline has four, not seven. Contour smoothing and vertex reduction stopped doing anything when geometry shaping moved out of atlas creation, but they kept their step numbers, their progress labels and — in <code><a href="../reference/create_subcortical_from_volume.html">create_subcortical_from_volume()</a></code>’s help — the advice to “use <code>steps = 7:8</code> to iterate on smoothing and reduction parameters”, which rebuilt an atlas to no effect. They are gone, and the steps after them have moved down: the subcortical 2D build is step 6 (was 9) and the tract build is step 4 (was 7). Steps 1-5 of the subcortical pipeline and 1-3 of the tract pipeline keep their meaning, so <code>steps = 1:3</code> for a 3D-only subcortical atlas is unaffected.</p></li>
+<li><p><code>steps</code> is now bounds-checked. It only ever picked a default, so a value above the last step ran nothing and reported success; it errors now and names the range.</p></li>
+<li><p><code>smooth_refinements</code> is no longer a formal of the six surface creators. It joins <code>dilate</code>, <code>smoothness</code> and <code>tolerance</code> in <code>...</code>, so it warns when supplied but no longer appears in any signature or help page.</p></li>
+<li><p>The <code>ggseg.extra.tolerance</code> and <code>ggseg.extra.smoothness</code> options (and their <code>GGSEG_EXTRA_*</code> environment variables) are removed. Nothing had read them since geometry shaping moved post-creation, yet <code>setup_sitrep("full")</code> listed them under “Pipeline options” and told you how to set them. Use <code><a href="../reference/atlas_polish.html">atlas_polish()</a></code>, <code><a href="../reference/atlas_simplify.html">atlas_simplify()</a></code> and <code><a href="../reference/atlas_smooth.html">atlas_smooth()</a></code> on the finished atlas.</p></li>
+</ul></div>
+<div class="section level3">
+<h3 id="minor-changes-1-9-9-9075">Minor changes<a class="anchor" aria-label="anchor" href="#minor-changes-1-9-9-9075"></a></h3>
+<ul><li><p>Pipeline progress labels interpolate the step total rather than hardcoding it, which is how <code>1/9</code> and <code>2/7</code> survived two step-count changes.</p></li>
+<li><p>Invalid contour geometry is filtered in <code>extract_contours()</code>, where the contours are produced, rather than in a later pass-through step.</p></li>
+<li><p>“Completed step 5” is no longer “Completed steps 5”.</p></li>
+<li><p>Ten unused <code>man-roxygen</code> templates are deleted, including <code>snapshot_dim</code>, which documented an option that went away with the rendering step.</p></li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9074" id="ggsegextra-1999074">ggseg.extra 1.9.9.9074<a class="anchor" aria-label="anchor" href="#ggsegextra-1999074"></a></h2>
 <div class="section level3">
@@ -841,37 +858,37 @@
 </ul></div>
 </div>
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="2.0.1" id="ggsegextra-201">ggseg.extra 2.0.1<a class="anchor" aria-label="anchor" href="#ggsegextra-201"></a></h2>
+<h2 class="pkg-version" data-toc-text="1.9.9.9002" id="ggsegextra-1999002">ggseg.extra 1.9.9.9002<a class="anchor" aria-label="anchor" href="#ggsegextra-1999002"></a></h2>
 <div class="section level3">
-<h3 id="cortical-pipeline-mesh-projection-2-0-1">Cortical pipeline: mesh projection<a class="anchor" aria-label="anchor" href="#cortical-pipeline-mesh-projection-2-0-1"></a></h3>
-<p>The cortical atlas pipeline now projects inflated mesh triangles directly to 2D polygons via orthographic projection, replacing the screenshot-based contour extraction from v2.0.0.</p>
+<h3 id="cortical-pipeline-mesh-projection-1-9-9-9002">Cortical pipeline: mesh projection<a class="anchor" aria-label="anchor" href="#cortical-pipeline-mesh-projection-1-9-9-9002"></a></h3>
+<p>The cortical atlas pipeline now projects inflated mesh triangles directly to 2D polygons via orthographic projection, replacing the screenshot-based contour extraction that preceded it.</p>
 <ul><li>
 <strong>Much faster</strong> — atlas creation completes in ~5 seconds instead of minutes.</li>
 <li>
 <strong>Cleaner geometry</strong> — no pixel staircase artifacts from rasterisation.</li>
 <li>
-<strong>Fewer dependencies</strong> — no FreeSurfer rendering, ImageMagick, or Chrome needed for 2D geometry (FreeSurfer is still required to <em>read</em> annotation files).</li>
+<strong>Fewer dependencies</strong> — no FreeSurfer rendering, ImageMagick, or Chrome needed for 2D geometry. Reading <code>.annot</code> files needs the <code>freesurferformats</code> R package, not a FreeSurfer installation.</li>
 <li>
 <strong>Better small-region visibility</strong> — boundary faces are assigned to the smallest neighbouring region so tiny parcels are not swallowed by their neighbours.</li>
 <li>
 <strong>Smooth region borders</strong> — boundary triangles (vertices in different regions) are split along edge midpoints so each region gets a clean polygon slice, eliminating the sawtooth artifacts from whole-triangle assignment.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="breaking-changes-2-0-1">Breaking changes<a class="anchor" aria-label="anchor" href="#breaking-changes-2-0-1"></a></h3>
+<h3 id="breaking-changes-1-9-9-9002">Breaking changes<a class="anchor" aria-label="anchor" href="#breaking-changes-1-9-9-9002"></a></h3>
 <ul><li>Removed <code>method</code>, <code>snapshot_dim</code>, <code>smoothness</code>, and <code>steps</code> parameters from all <code>create_cortical_from_*()</code> functions. The pipeline always reads data and projects to 2D in one pass — no step-based control needed.</li>
 <li>Changed default <code>tolerance</code> from 0.5 to 1 — the triangle-splitting approach produces smoother borders that tolerate higher simplification.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="lighter-dependency-footprint-2-0-1">Lighter dependency footprint<a class="anchor" aria-label="anchor" href="#lighter-dependency-footprint-2-0-1"></a></h3>
+<h3 id="lighter-dependency-footprint-1-9-9-9002">Lighter dependency footprint<a class="anchor" aria-label="anchor" href="#lighter-dependency-footprint-1-9-9-9002"></a></h3>
 <ul><li>Moved <code>chromote</code>, <code>htmlwidgets</code>, <code>magick</code>, <code>smoothr</code>, <code>terra</code>, <code>RNifti</code>, and <code>freesurfer</code> from Imports to Suggests. Users who only need the cortical pipeline no longer need these packages installed. They are checked at runtime and requested when needed (subcortical, tract, and volumetric pipelines).</li>
 </ul></div>
 <div class="section level3">
-<h3 id="new-internals-2-0-1">New internals<a class="anchor" aria-label="anchor" href="#new-internals-2-0-1"></a></h3>
+<h3 id="new-internals-1-9-9-9002">New internals<a class="anchor" aria-label="anchor" href="#new-internals-1-9-9-9002"></a></h3>
 <ul><li>Added <code>R/mesh-projection.R</code> with the full geometric projection algorithm: orthonormal view basis computation, backface culling, per-face label assignment, and triangle-to-polygon union via sf.</li>
 </ul></div>
 </div>
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="2.0.0" id="ggsegextra-200">ggseg.extra 2.0.0<a class="anchor" aria-label="anchor" href="#ggsegextra-200"></a></h2>
+<h2 class="pkg-version" data-toc-text="1.9.9.9001" id="ggsegextra-1999001">ggseg.extra 1.9.9.9001<a class="anchor" aria-label="anchor" href="#ggsegextra-1999001"></a></h2>
 <ul><li>Major rewrite of atlas creation pipelines with modular step-based architecture</li>
 <li>Added GIFTI (<code>.label.gii</code>) and CIFTI (<code>.dlabel.nii</code>) annotation support</li>
 <li>Added neuromaps surface and volume annotation pipelines</li>

@@ -21,7 +21,7 @@ Requires FreeSurfer for mesh generation."><meta property="og:image" content="htt
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9074</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9075</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -144,11 +144,12 @@ environment variable.</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
-<dd><p>Catches the retired <code>dilate</code>, <code>smoothness</code> and <code>tolerance</code>
-arguments, so a call that still passes one keeps working and says so.
-These are post-creation steps now: see <code><a href="atlas_dilate.html">atlas_dilate()</a></code>,
-<code><a href="atlas_smooth.html">atlas_smooth()</a></code> and <code><a href="atlas_simplify.html">atlas_simplify()</a></code>. Anything else in <code>...</code> is an
-error, as an unused argument always was.</p></dd>
+<dd><p>Catches the retired <code>dilate</code>, <code>smoothness</code>, <code>tolerance</code> and
+<code>smooth_refinements</code> arguments, so a call that still passes one keeps
+working and says so. These are post-creation steps now: see
+<code><a href="atlas_polish.html">atlas_polish()</a></code>, or <code><a href="atlas_simplify.html">atlas_simplify()</a></code>, <code><a href="atlas_smooth.html">atlas_smooth()</a></code> and
+<code><a href="atlas_dilate.html">atlas_dilate()</a></code> individually. Anything else in <code>...</code> is an error, as an
+unused argument always was.</p></dd>
 
 
 <dt id="arg-input-lut">input_lut<a class="anchor" aria-label="anchor" href="#arg-input-lut"></a></dt>
@@ -204,18 +205,14 @@ environment variable. Default is TRUE.</p></dd>
 
 
 <dt id="arg-steps">steps<a class="anchor" aria-label="anchor" href="#arg-steps"></a></dt>
-<dd><p>Which pipeline steps to run. Default NULL runs all steps.
-Steps are:</p><ul><li><p>1: Extract labels from volume and get colour table</p></li>
-<li><p>2: Create meshes for each structure</p></li>
+<dd><p>Which pipeline steps to run. Default NULL runs all six:</p><ul><li><p>1: Extract labels from the volume and read the colour table</p></li>
+<li><p>2: Create a mesh for each structure</p></li>
 <li><p>3: Build atlas data (3D only if stopping here)</p></li>
 <li><p>4: Create projection snapshots</p></li>
-<li><p>5: Process images</p></li>
-<li><p>6: Extract contours</p></li>
-<li><p>7: Smooth contours</p></li>
-<li><p>8: Reduce vertices</p></li>
-<li><p>9: Build final atlas with 2D geometry</p></li>
-</ul><p>Use <code>steps = 1:3</code> for 3D-only atlas. Use <code>steps = 7:8</code> to iterate on
-smoothing and reduction parameters.</p></dd>
+<li><p>5: Extract contours</p></li>
+<li><p>6: Build the final atlas with 2D geometry</p></li>
+</ul><p>Use <code>steps = 1:3</code> for a 3D-only atlas. Geometry is shaped after the
+build, not during it: see <code><a href="atlas_polish.html">atlas_polish()</a></code>.</p></dd>
 
 
 <dt id="arg-context">context<a class="anchor" aria-label="anchor" href="#arg-context"></a></dt>
@@ -223,7 +220,7 @@ smoothing and reduction parameters.</p></dd>
 <code>context = list(focus = "Hippocampus")</code>) applied to the finished 2D atlas
 to keep the focus regions coloured on grey anatomical context. <code>NULL</code>
 (default) leaves the atlas unchanged. Only applied when the 2D build
-(step 9) runs.</p></dd>
+(step 6) runs.</p></dd>
 
 </dl></div>
     <div class="section level2">
