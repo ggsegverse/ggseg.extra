@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9080</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9081</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -28,7 +28,12 @@
     <li><a class="dropdown-item" href="../articles/pipeline-configuration.html">Pipeline Configuration</a></li>
     <li><a class="dropdown-item" href="../articles/post-processing.html">Post-Processing</a></li>
     <li><hr class="dropdown-divider"></li>
-    <li><h6 class="dropdown-header" data-toc-skip>Tutorials: Creating Atlases</h6></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Legacy</h6></li>
+    <li><a class="dropdown-item" href="../articles/legacy-conversion.html">Legacy Conversion</a></li>
+  </ul></li>
+<li class="nav-item dropdown">
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-tutorials" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Tutorials</button>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-tutorials"><li><h6 class="dropdown-header" data-toc-skip>Creating an atlas</h6></li>
     <li><a class="dropdown-item" href="../articles/tutorial-cortical-atlas.html">Cortical Atlas</a></li>
     <li><a class="dropdown-item" href="../articles/tutorial-neuromaps-atlas.html">Neuromaps Atlas</a></li>
     <li><a class="dropdown-item" href="../articles/tutorial-subcortical-atlas.html">Subcortical Atlas</a></li>
@@ -37,13 +42,10 @@
     <li><a class="dropdown-item" href="../articles/tutorial-tract-atlas.html">Tract Atlas</a></li>
     <li><a class="dropdown-item" href="../articles/tutorial-label-atlas.html">Label Atlas</a></li>
     <li><hr class="dropdown-divider"></li>
-    <li><h6 class="dropdown-header" data-toc-skip>Tutorials: Working with Atlases</h6></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Working with atlases</h6></li>
     <li><a class="dropdown-item" href="../articles/tutorial-lookup-tables.html">Lookup Tables and Colours</a></li>
     <li><a class="dropdown-item" href="../articles/tutorial-publishing-an-atlas.html">Publishing an Atlas</a></li>
     <li><a class="dropdown-item" href="../articles/contributing.html">Listing on r-universe</a></li>
-    <li><hr class="dropdown-divider"></li>
-    <li><h6 class="dropdown-header" data-toc-skip>Legacy</h6></li>
-    <li><a class="dropdown-item" href="../articles/legacy-conversion.html">Legacy Conversion</a></li>
   </ul></li>
 <li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -213,7 +215,7 @@
       </dl></div><div class="section level2">
       <h2 id="curate-an-atlas">Curate an Atlas<a class="anchor" aria-label="anchor" href="#curate-an-atlas"></a></h2>
 
-      <div class="section-desc"><p>The <code>atlas_region_*</code> and <code>atlas_view_*</code> vocabulary, re-exported from ggseg.formats, plus the constructor that validates a hand-edited atlas.</p></div>
+      <div class="section-desc"><p>The <code>atlas_region_*</code> and <code>atlas_view_*</code> vocabulary, re-exported from ggseg.formats, plus the constructor that validates a hand-edited atlas. <code>?atlas-verbs</code> groups them by what they change.</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -226,6 +228,13 @@
 
         </dt>
         <dd>Atlas manipulation verbs, re-exported from ggseg.formats</dd>
+
+        <dt>
+
+          <code><a href="reexports.html">reexports</a></code> <code><a href="reexports.html">convert_legacy_brain_atlas</a></code> <code><a href="reexports.html">atlas_context_remove</a></code> <code><a href="reexports.html">atlas_core_add</a></code> <code><a href="reexports.html">atlas_geom</a></code> <code><a href="reexports.html">atlas_geometry_type</a></code> <code><a href="reexports.html">atlas_labels</a></code> <code><a href="reexports.html">atlas_meshes</a></code> <code><a href="reexports.html">atlas_palette</a></code> <code><a href="reexports.html">atlas_polygons</a></code> <code><a href="reexports.html">atlas_region_contextual</a></code> <code><a href="reexports.html">atlas_region_keep</a></code> <code><a href="reexports.html">atlas_region_op</a></code> <code><a href="reexports.html">atlas_region_remove</a></code> <code><a href="reexports.html">atlas_region_rename</a></code> <code><a href="reexports.html">atlas_regions</a></code> <code><a href="reexports.html">atlas_sf</a></code> <code><a href="reexports.html">atlas_type</a></code> <code><a href="reexports.html">atlas_vertices</a></code> <code><a href="reexports.html">atlas_view_gather</a></code> <code><a href="reexports.html">atlas_view_keep</a></code> <code><a href="reexports.html">atlas_view_remove</a></code> <code><a href="reexports.html">atlas_view_remove_region</a></code> <code><a href="reexports.html">atlas_view_remove_small</a></code> <code><a href="reexports.html">atlas_view_reorder</a></code> <code><a href="reexports.html">atlas_views</a></code> <code><a href="reexports.html">ggseg_atlas</a></code> <code><a href="reexports.html">is_ggseg_atlas</a></code>
+
+        </dt>
+        <dd>Objects exported from other packages</dd>
       </dl></div><div class="section level2">
       <h2 id="atlas-repository">Atlas Repository<a class="anchor" aria-label="anchor" href="#atlas-repository"></a></h2>
 
@@ -515,13 +524,6 @@
 
 
       <dl><dt>
-
-          <code><a href="reexports.html">reexports</a></code> <code><a href="reexports.html">convert_legacy_brain_atlas</a></code> <code><a href="reexports.html">atlas_context_remove</a></code> <code><a href="reexports.html">atlas_core_add</a></code> <code><a href="reexports.html">atlas_geom</a></code> <code><a href="reexports.html">atlas_geometry_type</a></code> <code><a href="reexports.html">atlas_labels</a></code> <code><a href="reexports.html">atlas_meshes</a></code> <code><a href="reexports.html">atlas_palette</a></code> <code><a href="reexports.html">atlas_polygons</a></code> <code><a href="reexports.html">atlas_region_contextual</a></code> <code><a href="reexports.html">atlas_region_keep</a></code> <code><a href="reexports.html">atlas_region_op</a></code> <code><a href="reexports.html">atlas_region_remove</a></code> <code><a href="reexports.html">atlas_region_rename</a></code> <code><a href="reexports.html">atlas_regions</a></code> <code><a href="reexports.html">atlas_sf</a></code> <code><a href="reexports.html">atlas_type</a></code> <code><a href="reexports.html">atlas_vertices</a></code> <code><a href="reexports.html">atlas_view_gather</a></code> <code><a href="reexports.html">atlas_view_keep</a></code> <code><a href="reexports.html">atlas_view_remove</a></code> <code><a href="reexports.html">atlas_view_remove_region</a></code> <code><a href="reexports.html">atlas_view_remove_small</a></code> <code><a href="reexports.html">atlas_view_reorder</a></code> <code><a href="reexports.html">atlas_views</a></code> <code><a href="reexports.html">ggseg_atlas</a></code> <code><a href="reexports.html">is_ggseg_atlas</a></code>
-
-        </dt>
-        <dd>Objects exported from other packages</dd>
-
-        <dt>
 
           <code><a href="mri_surf2surf_rereg.html">mri_surf2surf_rereg()</a></code>
 
