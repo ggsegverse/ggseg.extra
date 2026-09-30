@@ -630,8 +630,6 @@ describe("validate_tract_config", {
       verbose = FALSE,
       cleanup = FALSE,
       skip_existing = FALSE,
-      tolerance = NULL,
-      smoothness = NULL,
       steps = NULL,
       centerline_method = "mean",
       tube_radius = 5,
@@ -644,8 +642,6 @@ describe("validate_tract_config", {
       "verbose",
       "cleanup",
       "skip_existing",
-      "tolerance",
-      "smoothness",
       "steps",
       "centerline_method",
       "tube_radius",
@@ -658,7 +654,7 @@ describe("validate_tract_config", {
     expect_type(result, "list")
   })
 
-  it("defaults steps to 1:7", {
+  it("defaults steps to the whole pipeline", {
     withr::local_options(ggseg.extra.output_dir = tempdir())
 
     result <- validate_tract_config(
@@ -666,8 +662,6 @@ describe("validate_tract_config", {
       verbose = FALSE,
       cleanup = FALSE,
       skip_existing = FALSE,
-      tolerance = NULL,
-      smoothness = NULL,
       steps = NULL,
       centerline_method = "mean",
       tube_radius = 5,
@@ -687,8 +681,6 @@ describe("validate_tract_config", {
         verbose = FALSE,
         cleanup = FALSE,
         skip_existing = FALSE,
-        tolerance = NULL,
-        smoothness = NULL,
         steps = NULL,
         centerline_method = "medoid",
         tube_radius = 5,
@@ -703,8 +695,6 @@ describe("validate_tract_config", {
         verbose = FALSE,
         cleanup = FALSE,
         skip_existing = FALSE,
-        tolerance = NULL,
-        smoothness = NULL,
         steps = NULL,
         centerline_method = "invalid",
         tube_radius = 5,
@@ -723,8 +713,6 @@ describe("validate_tract_config", {
       verbose = FALSE,
       cleanup = FALSE,
       skip_existing = FALSE,
-      tolerance = NULL,
-      smoothness = NULL,
       steps = NULL,
       centerline_method = "mean",
       tube_radius = 5,
@@ -781,7 +769,7 @@ describe("tract_resolve_step1", {
     )
 
     config <- list(
-      steps = 2L:7L,
+      steps = 2L:4L,
       skip_existing = TRUE,
       verbose = FALSE,
       centerline_method = "mean",
@@ -848,7 +836,7 @@ describe("tract_resolve_step1", {
     )
 
     config <- list(
-      steps = 1L:7L,
+      steps = 1L:4L,
       skip_existing = FALSE,
       verbose = FALSE,
       centerline_method = "mean",
@@ -917,14 +905,14 @@ describe("resolve_tract_coord_space", {
 describe("tract_check_aseg", {
   it("aborts when aseg is NULL and steps include 2-7", {
     expect_error(
-      tract_check_aseg(NULL, 2L:7L),
+      tract_check_aseg(NULL, 2L:4L),
       "input_aseg.*required"
     )
   })
 
   it("passes when aseg is provided", {
     expect_no_error(
-      tract_check_aseg("some_aseg.mgz", 2L:7L)
+      tract_check_aseg("some_aseg.mgz", 2L:4L)
     )
   })
 
@@ -968,7 +956,7 @@ describe("tract_resolve_snapshots", {
     )
 
     config <- list(
-      steps = 3L:7L,
+      steps = 3L:4L,
       skip_existing = TRUE,
       verbose = FALSE,
       tract_radius = 3
@@ -1015,7 +1003,7 @@ describe("tract_resolve_snapshots", {
     )
 
     config <- list(
-      steps = 2L:7L,
+      steps = 2L:4L,
       skip_existing = FALSE,
       verbose = FALSE,
       tract_radius = 3
@@ -1042,10 +1030,8 @@ describe("tract_resolve_snapshots", {
 })
 
 
-describe("run_image_steps (tract step_map)", {
-  tract_step_map <- list(extract = 3L, smooth = 4L, reduce = 5L)
-
-  it(".cap$calls extract_contours for step 3", {
+describe("tract_extract_contours", {
+  it("extracts contours when step 3 is requested", {
     .cap$extract_called <- FALSE
     local_mocked_bindings(
       extract_contours = function(...) {
@@ -1055,76 +1041,26 @@ describe("run_image_steps (tract step_map)", {
     )
 
     config <- list(steps = 3L, verbose = FALSE)
-    dirs <- local_atlas_dirs()
 
-    run_image_steps(config, dirs, tract_step_map, 6L)
+    tract_extract_contours(config, local_atlas_dirs(), NULL)
 
     expect_true(.cap$extract_called)
   })
 
-  it(".cap$calls smooth_contours for step 4", {
-    .cap$smooth_called <- FALSE
-    local_mocked_bindings(
-      smooth_contours = function(...) {
-        .cap$smooth_called <- TRUE
-        invisible(NULL)
-      }
-    )
-
-    config <- list(steps = 4L, verbose = FALSE, smoothness = 1.0)
-    dirs <- local_atlas_dirs()
-
-    run_image_steps(config, dirs, tract_step_map, 6L)
-
-    expect_true(.cap$smooth_called)
-  })
-
-  it(".cap$calls reduce_vertex for step 5", {
-    .cap$reduce_called <- FALSE
-    local_mocked_bindings(
-      reduce_vertex = function(...) {
-        .cap$reduce_called <- TRUE
-        invisible(NULL)
-      }
-    )
-
-    config <- list(steps = 5L, verbose = FALSE, tolerance = 0.01)
-    dirs <- local_atlas_dirs()
-
-    run_image_steps(config, dirs, tract_step_map, 6L)
-
-    expect_true(.cap$reduce_called)
-  })
-
-  it(".cap$calls all functions for steps 3-5", {
-    .cap$calls <- character()
+  it("skips extraction when step 3 is not requested", {
+    .cap$extract_called <- FALSE
     local_mocked_bindings(
       extract_contours = function(...) {
-        .cap$calls <- c(.cap$calls, "extract")
-        invisible(NULL)
-      },
-      smooth_contours = function(...) {
-        .cap$calls <- c(.cap$calls, "smooth")
-        invisible(NULL)
-      },
-      reduce_vertex = function(...) {
-        .cap$calls <- c(.cap$calls, "reduce")
+        .cap$extract_called <- TRUE
         invisible(NULL)
       }
     )
 
-    config <- list(
-      steps = 3L:5L,
-      verbose = FALSE,
-      skip_existing = FALSE,
-      smoothness = 1.0,
-      tolerance = 0.01
-    )
-    dirs <- local_atlas_dirs()
+    config <- list(steps = 4L, verbose = FALSE)
 
-    run_image_steps(config, dirs, tract_step_map, 6L)
+    tract_extract_contours(config, local_atlas_dirs(), NULL)
 
-    expect_identical(.cap$calls, c("extract", "smooth", "reduce"))
+    expect_false(.cap$extract_called)
   })
 })
 
@@ -1170,7 +1106,7 @@ describe("tract_assemble_3d", {
 
 
 describe("tract_assemble_full", {
-  it("errors when contours_reduced.rda missing", {
+  it("errors when contours.rda is missing", {
     test_dir <- withr::local_tempdir()
     dirs <- list(base = test_dir)
     step1 <- list(
@@ -1189,7 +1125,7 @@ describe("tract_assemble_full", {
 
     expect_error(
       tract_assemble_full(step1, dirs, NULL, NULL),
-      "contours_reduced"
+      "contours.rda"
     )
   })
 })

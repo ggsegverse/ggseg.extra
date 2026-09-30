@@ -554,6 +554,10 @@ extract_contours <- function(
   names(contourobjs) <- region_names
 
   contours <- combine_region_contours(contourobjs)
+  contours <- filter_valid_geometries(contours)
+  if (nrow(contours) == 0) {
+    cli::cli_warn("No valid contours found after extraction")
+  }
   contours$y_axis <- "up"
 
   save_cache_rda(contours, output_dir, "contours.rda")
@@ -630,64 +634,6 @@ combine_region_contours <- function(contourobjs) {
   contours <- summarise(contours, geometry = st_combine(geometry))
   contours <- st_as_sf(contours)
   st_make_valid(contours)
-}
-
-
-#' Pass extracted contours through unchanged
-#'
-#' Pipeline smoothing and simplification have been removed from atlas
-#' creation. Apply [atlas_smooth()] after the atlas is built instead.
-#' This function only filters out invalid geometries and writes the
-#' result to `contours_smoothed.rda` so downstream pipeline steps that
-#' load that filename continue to work.
-#'
-#' @noRd
-smooth_contours <- function(
-  dir,
-  step = "",
-  verbose = get_verbose(), # nolint: object_usage_linter
-  smoothness = NULL # nolint: object_usage_linter.
-) {
-  load_cached_rda(
-    as.character(fs::path(dir, "contours.rda")),
-    contour_rerun_remedy
-  )
-
-  contours <- filter_valid_geometries(contours)
-  if (nrow(contours) == 0) {
-    cli::cli_warn("No valid contours found after extraction")
-  }
-
-  save_cache_rda(contours, dir, "contours_smoothed.rda")
-  invisible(contours)
-}
-
-
-#' Pass smoothed contours through unchanged
-#'
-#' Pipeline simplification has been removed; this writes the loaded
-#' contours back to `contours_reduced.rda` after filtering invalid
-#' geometries so the assembly step can keep reading that filename.
-#'
-#' @noRd
-reduce_vertex <- function(
-  dir,
-  step = "",
-  verbose = get_verbose(), # nolint: object_usage_linter
-  tolerance = NULL,
-  smoothness = NULL
-) {
-  load_cached_rda(
-    as.character(fs::path(dir, "contours_smoothed.rda")),
-    contour_rerun_remedy
-  )
-
-  contours <- filter_valid_geometries(contours)
-  if (nrow(contours) == 0) {
-    cli::cli_warn("No valid contours to simplify")
-  }
-  save_cache_rda(contours, dir, "contours_reduced.rda")
-  invisible(contours)
 }
 
 
@@ -932,7 +878,7 @@ native_smoothness <- function(smoothness, method) {
 #' assigns view names, adjusts coordinates, and extracts labels from
 #' filenames.
 #'
-#' @param contours_file Path to `contours_reduced.rda`
+#' @param contours_file Path to `contours.rda`
 #' @param slabs data.frame with `name` column of slab names
 #' @param cortex_slices Optional data.frame with `name` column for cortex
 #'   slice view names (appended to `slabs$name`)

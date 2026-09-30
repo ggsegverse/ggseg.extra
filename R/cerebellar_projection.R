@@ -204,16 +204,13 @@ union_polys_by_region <- function(sfc_all, all_labels) {
 #' Build cerebellar sf data from SUIT flatmap projection
 #'
 #' Reads the SUIT flatmap surface, assigns region labels to vertices,
-#' builds sf polygons from the mesh triangles, and applies smoothing
-#' and simplification.
+#' builds sf polygons from the mesh triangles.
 #'
 #' @noRd
 #' @importFrom sf st_make_valid st_as_sf
 cerebellar_build_sf_flatmap <- function(
   components,
   suit_surface,
-  tolerance = 0,
-  smooth_refinements = 2,
   verbose = FALSE
 ) {
   if (verbose) {

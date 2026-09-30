@@ -43,11 +43,12 @@ environment variable.}
 
 \item{views}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} Use \code{slabs} instead.}
 
-\item{...}{Catches the retired \code{dilate}, \code{smoothness} and \code{tolerance}
-arguments, so a call that still passes one keeps working and says so.
-These are post-creation steps now: see \code{\link[=atlas_dilate]{atlas_dilate()}},
-\code{\link[=atlas_smooth]{atlas_smooth()}} and \code{\link[=atlas_simplify]{atlas_simplify()}}. Anything else in \code{...} is an
-error, as an unused argument always was.}
+\item{...}{Catches the retired \code{dilate}, \code{smoothness}, \code{tolerance} and
+\code{smooth_refinements} arguments, so a call that still passes one keeps
+working and says so. These are post-creation steps now: see
+\code{\link[=atlas_polish]{atlas_polish()}}, or \code{\link[=atlas_simplify]{atlas_simplify()}}, \code{\link[=atlas_smooth]{atlas_smooth()}} and
+\code{\link[=atlas_dilate]{atlas_dilate()}} individually. Anything else in \code{...} is an error, as an
+unused argument always was.}
 
 \item{input_lut}{Path to a FreeSurfer-style colour lookup table that maps
 label IDs to region names and colours (e.g., \code{FreeSurferColorLUT.txt}
@@ -87,27 +88,23 @@ allowing interrupted atlas creation to resume. If not specified, uses
 \code{options("ggseg.extra.skip_existing")} or the \code{GGSEG_EXTRA_SKIP_EXISTING}
 environment variable. Default is TRUE.}
 
-\item{steps}{Which pipeline steps to run. Default NULL runs all steps.
-Steps are:
+\item{steps}{Which pipeline steps to run. Default NULL runs all six:
 \itemize{
-\item 1: Extract labels from volume and get colour table
-\item 2: Create meshes for each structure
+\item 1: Extract labels from the volume and read the colour table
+\item 2: Create a mesh for each structure
 \item 3: Build atlas data (3D only if stopping here)
 \item 4: Create projection snapshots
-\item 5: Process images
-\item 6: Extract contours
-\item 7: Smooth contours
-\item 8: Reduce vertices
-\item 9: Build final atlas with 2D geometry
+\item 5: Extract contours
+\item 6: Build the final atlas with 2D geometry
 }
-Use \code{steps = 1:3} for 3D-only atlas. Use \code{steps = 7:8} to iterate on
-smoothing and reduction parameters.}
+Use \code{steps = 1:3} for a 3D-only atlas. Geometry is shaped after the
+build, not during it: see \code{\link[=atlas_polish]{atlas_polish()}}.}
 
 \item{context}{Optional named list of \code{\link[=aseg_context]{aseg_context()}} arguments (e.g.
 \code{context = list(focus = "Hippocampus")}) applied to the finished 2D atlas
 to keep the focus regions coloured on grey anatomical context. \code{NULL}
 (default) leaves the atlas unchanged. Only applied when the 2D build
-(step 9) runs.}
+(step 6) runs.}
 }
 \value{
 A \code{ggseg_atlas} object with region metadata (core), 3D meshes,

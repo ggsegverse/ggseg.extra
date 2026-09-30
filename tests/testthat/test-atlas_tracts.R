@@ -339,9 +339,7 @@ describe("create_tract_from_tractography pipeline flow", {
           list(run = step %in% steps, data = list())
         }
       },
-      extract_contours = function(...) invisible(NULL),
-      smooth_contours = function(...) invisible(NULL),
-      reduce_vertex = function(...) invisible(NULL)
+      extract_contours = function(...) invisible(NULL)
     )
 
     tract_file <- "tract.trk"
@@ -353,7 +351,7 @@ describe("create_tract_from_tractography pipeline flow", {
       result <- create_tract_from_tractography(
         input_tracts = tract_file,
         input_aseg = aseg_file,
-        steps = 3:6,
+        steps = 3,
         verbose = TRUE
       )
     )
@@ -423,7 +421,7 @@ describe("create_tract_from_tractography pipeline flow", {
     expect_s3_class(atlas, "ggseg_atlas")
   })
 
-  it("step 7 builds final atlas with cleanup", {
+  it("step 4 builds final atlas with cleanup", {
     local_test_workdir()
     dirs <- local_atlas_dirs()
     tract_file <- "tract.trk"
@@ -444,7 +442,7 @@ describe("create_tract_from_tractography pipeline flow", {
       tube_segments = 8
     )
 
-    contours_file <- file.path(dirs$base, "contours_reduced.rda")
+    contours_file <- file.path(dirs$base, "contours.rda")
     file.create(contours_file)
 
     local_mocked_bindings(
@@ -495,7 +493,7 @@ describe("create_tract_from_tractography pipeline flow", {
       atlas <- create_tract_from_tractography(
         input_tracts = tract_file,
         input_aseg = aseg_file,
-        steps = 7,
+        steps = 4,
         verbose = TRUE,
         cleanup = TRUE
       )
@@ -504,7 +502,7 @@ describe("create_tract_from_tractography pipeline flow", {
     expect_s3_class(atlas, "ggseg_atlas")
   })
 
-  it("step 7 errors when contours_reduced.rda missing", {
+  it("step 4 errors when contours.rda is missing", {
     dirs <- local_atlas_dirs()
     cached <- list(
       streamlines_data = list(t1 = matrix(1:30, ncol = 3)),
@@ -554,10 +552,10 @@ describe("create_tract_from_tractography pipeline flow", {
       create_tract_from_tractography(
         input_tracts = list(t1 = matrix(1:30, ncol = 3)),
         input_aseg = aseg_file,
-        steps = 7,
+        steps = 4,
         verbose = FALSE
       ),
-      "contours_reduced"
+      "contours.rda"
     )
   })
 })

@@ -335,8 +335,6 @@ project_mesh_to_polygons <- function(
   components,
   hemisphere,
   views,
-  tolerance = 0,
-  smooth_refinements = 2,
   verbose = FALSE
 ) {
   hemi_data <- lapply(stats::setNames(hemisphere, hemisphere), function(hemi) {
@@ -390,16 +388,12 @@ cortical_build_sf_projected <- function(
   components,
   hemisphere,
   views,
-  tolerance = 0,
-  smooth_refinements = 2,
   verbose = FALSE
 ) {
   projected <- project_mesh_to_polygons(
     components,
     hemisphere,
     views,
-    tolerance = tolerance,
-    smooth_refinements = smooth_refinements,
     verbose = verbose
   )
 

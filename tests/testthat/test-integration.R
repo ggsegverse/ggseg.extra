@@ -29,11 +29,11 @@ describe("integration tests", {
     expect_null(result$cerebellar)
   })
 
-  # The pipeline used to run all eight steps, report success and hand back
-  # NULL: its ceiling dropped to 8 when a stage was removed, while the atlas
-  # assembly stayed gated on step 9. Only the `steps = 1:3` path was ever
-  # asserted to return anything, so nothing caught it. This runs the default
-  # steps, which is what the tutorials and every user actually call.
+  # The pipeline once ran every step, reported success and handed back NULL:
+  # its ceiling dropped when a stage was removed while atlas assembly stayed
+  # gated on the old last step. Only the `steps = 1:3` path was ever asserted
+  # to return anything, so nothing caught it. This runs the default steps,
+  # which is what the tutorials and every user actually call.
   it("returns an atlas from the full default subcortical pipeline", {
     skip_if_no_freesurfer()
 

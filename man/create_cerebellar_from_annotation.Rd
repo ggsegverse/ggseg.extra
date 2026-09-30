@@ -12,7 +12,6 @@ create_cerebellar_from_annotation(
   volume = NULL,
   atlas_name = NULL,
   output_dir = NULL,
-  smooth_refinements = NULL,
   cleanup = NULL,
   skip_existing = NULL
 )
@@ -32,11 +31,12 @@ are accepted (\code{TRUE} = 1, \code{FALSE} = 0). If not specified, uses the
 value from \code{options("ggseg.extra.verbose")} or the \code{GGSEG_EXTRA_VERBOSE}
 environment variable.}
 
-\item{...}{Catches the retired \code{dilate}, \code{smoothness} and \code{tolerance}
-arguments, so a call that still passes one keeps working and says so.
-These are post-creation steps now: see \code{\link[=atlas_dilate]{atlas_dilate()}},
-\code{\link[=atlas_smooth]{atlas_smooth()}} and \code{\link[=atlas_simplify]{atlas_simplify()}}. Anything else in \code{...} is an
-error, as an unused argument always was.}
+\item{...}{Catches the retired \code{dilate}, \code{smoothness}, \code{tolerance} and
+\code{smooth_refinements} arguments, so a call that still passes one keeps
+working and says so. These are post-creation steps now: see
+\code{\link[=atlas_polish]{atlas_polish()}}, or \code{\link[=atlas_simplify]{atlas_simplify()}}, \code{\link[=atlas_smooth]{atlas_smooth()}} and
+\code{\link[=atlas_dilate]{atlas_dilate()}} individually. Anything else in \code{...} is an error, as an
+unused argument always was.}
 
 \item{volume}{Optional path to a cerebellar segmentation volume (NIfTI)
 for 3D mesh generation.}
@@ -46,11 +46,6 @@ filename.}
 
 \item{output_dir}{Directory to store intermediate files (screenshots, masks,
 contours). Defaults to \code{\link[=tempdir]{tempdir()}}.}
-
-\item{smooth_refinements}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} sf-side
-smoothing is no longer applied during atlas creation. Use
-\code{\link[=atlas_smooth]{atlas_smooth()}} on the returned atlas instead. Supplying a value
-emits a lifecycle warning and is otherwise ignored.}
 
 \item{cleanup}{Remove intermediate files after atlas creation. If not
 specified, uses \code{options("ggseg.extra.cleanup")} or the \code{GGSEG_EXTRA_CLEANUP}

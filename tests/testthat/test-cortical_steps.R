@@ -63,27 +63,16 @@ describe("validate_surface_config", {
       get_verbose = function(x) TRUE,
       get_cleanup = function(x) FALSE,
       get_skip_existing = function(x) FALSE,
-      get_tolerance = function(x) 0.5,
       get_output_dir = function(x) tempdir()
     )
 
-    result <- validate_surface_config(
-      NULL,
-      NULL,
-      NULL,
-      NULL,
-      NULL
-    )
+    result <- validate_surface_config(NULL, NULL, NULL, NULL)
 
     expect_type(result, "list")
-    expected_fields <- c(
-      "output_dir",
-      "verbose",
-      "cleanup",
-      "skip_existing",
-      "tolerance"
+    expect_named(
+      result,
+      c("output_dir", "verbose", "cleanup", "skip_existing", "steps")
     )
-    expect_true(all(expected_fields %in% names(result)))
   })
 })
 

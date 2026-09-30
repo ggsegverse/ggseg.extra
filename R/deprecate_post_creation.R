@@ -11,10 +11,10 @@
 #' Anything else in `...` is a typo, and errors the way an unused argument
 #' always did.
 #'
-#' `tolerance`, `smoothness` and `smooth_refinements` were already deprecated
-#' by [warn_deprecated_sf_smoothing()], which this defers to; they were kept
-#' as formals only so the warning had something to fire on. `dilate` is newly
-#' deprecated here and still honoured for now.
+#' All four are caught here rather than kept as formals, so none of them
+#' appears in a signature or a help page. `warn_deprecated_sf_smoothing()`
+#' already words the notice for `tolerance`, `smoothness` and
+#' `smooth_refinements`, so this defers to it.
 #'
 #' @param fn Name of the calling creator, for the deprecation message.
 #' @param ... The caller's dots.

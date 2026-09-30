@@ -916,8 +916,6 @@ validate_wholebrain_config <- function(
     verbose,
     cleanup,
     skip_existing,
-    tolerance = NULL,
-    smoothness = NULL,
     steps,
     max_step = 5L
   )
@@ -1808,9 +1806,7 @@ wholebrain_cortical_inputs <- function(config, dirs, projection, split, opts) {
     output_dir = dirs$base,
     verbose = config$verbose,
     cleanup = FALSE,
-    skip_existing = config$skip_existing,
-    tolerance = opts$tolerance,
-    smooth_refinements = opts$smooth_refinements
+    skip_existing = config$skip_existing
   )
 
   list(

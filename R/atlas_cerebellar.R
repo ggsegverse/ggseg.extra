@@ -215,7 +215,6 @@ transform_mni_to_suit <- function(
 #' @template atlas_name
 #' @template output_dir
 #' @template decimate
-#' @template smooth_refinements
 #' @template cleanup
 #' @template verbose
 #' @template skip_existing
@@ -241,12 +240,10 @@ create_cerebellar_from_gifti <- function(
   volume = NULL,
   atlas_name = NULL,
   output_dir = NULL,
-  smooth_refinements = NULL,
   cleanup = NULL,
   skip_existing = NULL
 ) {
-  dots <- check_post_creation_dots("create_cerebellar_from_gifti", ...)
-  tolerance <- dots$tolerance
+  check_post_creation_dots("create_cerebellar_from_gifti", ...)
   if (length(gifti_files) == 0) {
     cli::cli_abort("{.arg gifti_files} must not be empty")
   }
@@ -255,9 +252,7 @@ create_cerebellar_from_gifti <- function(
     output_dir,
     verbose,
     cleanup,
-    skip_existing,
-    tolerance,
-    smooth_refinements
+    skip_existing
   )
 
   if (is.null(atlas_name)) {
@@ -287,7 +282,6 @@ create_cerebellar_from_gifti <- function(
 #' @template atlas_name
 #' @template output_dir
 #' @template decimate
-#' @template smooth_refinements
 #' @template cleanup
 #' @template verbose
 #' @template skip_existing
@@ -311,12 +305,10 @@ create_cerebellar_from_annotation <- function(
   volume = NULL,
   atlas_name = NULL,
   output_dir = NULL,
-  smooth_refinements = NULL,
   cleanup = NULL,
   skip_existing = NULL
 ) {
-  dots <- check_post_creation_dots("create_cerebellar_from_annotation", ...)
-  tolerance <- dots$tolerance
+  check_post_creation_dots("create_cerebellar_from_annotation", ...)
   if (length(input_annot) == 0) {
     cli::cli_abort("{.arg input_annot} must not be empty")
   }
@@ -325,9 +317,7 @@ create_cerebellar_from_annotation <- function(
     output_dir,
     verbose,
     cleanup,
-    skip_existing,
-    tolerance,
-    smooth_refinements
+    skip_existing
   )
 
   if (is.null(atlas_name)) {
@@ -359,7 +349,6 @@ create_cerebellar_from_annotation <- function(
 #' @template atlas_name
 #' @template output_dir
 #' @template decimate
-#' @template smooth_refinements
 #' @template cleanup
 #' @template verbose
 #' @template skip_existing
@@ -387,12 +376,10 @@ create_cerebellar_from_volume <- function(
   input_lut = NULL,
   atlas_name = NULL,
   output_dir = NULL,
-  smooth_refinements = NULL,
   cleanup = NULL,
   skip_existing = NULL
 ) {
-  dots <- check_post_creation_dots("create_cerebellar_from_volume", ...)
-  tolerance <- dots$tolerance
+  check_post_creation_dots("create_cerebellar_from_volume", ...)
   if (lifecycle::is_present(volume)) {
     lifecycle::deprecate_warn(
       "1.9.9.9005",
@@ -414,9 +401,7 @@ create_cerebellar_from_volume <- function(
     output_dir,
     verbose,
     cleanup,
-    skip_existing,
-    tolerance,
-    smooth_refinements
+    skip_existing
   )
 
   if (is.null(atlas_name)) {
@@ -855,8 +840,6 @@ cerebellar_project_and_build <- function(
   sf_data <- cerebellar_build_sf_flatmap(
     components,
     suit_flatmap_path(),
-    tolerance = config$tolerance,
-    smooth_refinements = config$smooth_refinements,
     verbose = config$verbose
   )
 

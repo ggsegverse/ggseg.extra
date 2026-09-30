@@ -413,47 +413,6 @@ get_skip_existing <- function(skip_existing = NULL) {
   )
 }
 
-#' Get tolerance setting
-#'
-#' Returns the tolerance setting from options or environment variable.
-#' Controls vertex reduction during contour simplification.
-#'
-#' @param tolerance Optional explicit value. If NULL, reads from options/env.
-#' @return Numeric keep proportion (0--1). 0 = no simplification.
-#' @noRd
-get_tolerance <- function(tolerance = NULL) {
-  get_numeric_option(
-    tolerance,
-    "ggseg.extra.tolerance",
-    "GGSEG_EXTRA_TOLERANCE",
-    0.05
-  )
-}
-
-#' Get smoothness setting
-#'
-#' @param smoothness Optional explicit value. If NULL, reads from options/env.
-#' @return Numeric smoothness value
-#' @noRd
-get_smoothness <- function(smoothness = NULL) {
-  get_numeric_option(
-    smoothness,
-    "ggseg.extra.smoothness",
-    "GGSEG_EXTRA_SMOOTHNESS",
-    5
-  )
-}
-
-#' Get smooth refinements setting
-#'
-#' @param smooth_refinements Ignored. Kept for API compatibility.
-#' @return Integer 0 (smoothing is now handled by topology-preserving
-#'   simplification).
-#' @noRd
-get_smooth_refinements <- function(smooth_refinements = NULL) {
-  0L
-}
-
 #' Warn when deprecated sf-smoothing parameters are supplied
 #'
 #' Atlas creation no longer smooths or simplifies sf geometry; users
@@ -554,29 +513,6 @@ coerce_bool <- function(x) {
     return(isTRUE(x))
   }
   tolower(trimws(as.character(x))) %in% c("true", "1", "yes", "on")
-}
-
-#' Helper to get numeric option with fallback
-#' @noRd
-get_numeric_option <- function(explicit, option_name, env_name, default) {
-  if (!is.null(explicit)) {
-    return(as.numeric(explicit))
-  }
-
-  opt <- getOption(option_name)
-  if (!is.null(opt)) {
-    return(as.numeric(opt))
-  }
-
-  env <- Sys.getenv(env_name, unset = NA)
-  if (!is.na(env)) {
-    val <- suppressWarnings(as.numeric(env))
-    if (!is.na(val)) {
-      return(val)
-    }
-  }
-
-  default
 }
 
 #' Helper to get string option with fallback

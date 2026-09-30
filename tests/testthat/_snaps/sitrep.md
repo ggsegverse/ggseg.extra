@@ -44,8 +44,6 @@
       verbose: 0
       cleanup: TRUE
       skip_existing: TRUE
-      tolerance: 0.05
-      smoothness: 5
       output_dir: '/atlas-output'
       
       i Set via `options(ggseg.extra.<name> = value)` or environment variables
