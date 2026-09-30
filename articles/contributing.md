@@ -55,7 +55,7 @@ atlas creation pipeline and saves the result as internal package data in
 `R/sysdata.rda`.
 
 The pipeline produces a `ggseg_atlas` object validated by
-`is_ggseg_atlas()`.
+[`is_ggseg_atlas()`](https://ggsegverse.github.io/ggseg.formats/reference/is_ggseg_atlas.html).
 
 ### How atlas data is stored
 

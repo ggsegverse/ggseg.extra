@@ -29,7 +29,6 @@
 <url><loc>https://ggsegverse.github.io/ggseg.extra/reference/aseg_subcortical_labels.html</loc></url>
 <url><loc>https://ggsegverse.github.io/ggseg.extra/reference/atlas-verbs.html</loc></url>
 <url><loc>https://ggsegverse.github.io/ggseg.extra/reference/atlas_dilate.html</loc></url>
-<url><loc>https://ggsegverse.github.io/ggseg.extra/reference/atlas_github_actions.html</loc></url>
 <url><loc>https://ggsegverse.github.io/ggseg.extra/reference/atlas_polish.html</loc></url>
 <url><loc>https://ggsegverse.github.io/ggseg.extra/reference/atlas_simplify.html</loc></url>
 <url><loc>https://ggsegverse.github.io/ggseg.extra/reference/atlas_smooth.html</loc></url>
@@ -51,6 +50,7 @@
 <url><loc>https://ggsegverse.github.io/ggseg.extra/reference/get_lut.html</loc></url>
 <url><loc>https://ggsegverse.github.io/ggseg.extra/reference/get_verbose.html</loc></url>
 <url><loc>https://ggsegverse.github.io/ggseg.extra/reference/ggseg.extra-package.html</loc></url>
+<url><loc>https://ggsegverse.github.io/ggseg.extra/reference/ggseg_atlas_github_actions.html</loc></url>
 <url><loc>https://ggsegverse.github.io/ggseg.extra/reference/index.html</loc></url>
 <url><loc>https://ggsegverse.github.io/ggseg.extra/reference/is_lut.html</loc></url>
 <url><loc>https://ggsegverse.github.io/ggseg.extra/reference/label_to_region.html</loc></url>
@@ -74,7 +74,7 @@
 <url><loc>https://ggsegverse.github.io/ggseg.extra/reference/read_tractography.html</loc></url>
 <url><loc>https://ggsegverse.github.io/ggseg.extra/reference/reexports.html</loc></url>
 <url><loc>https://ggsegverse.github.io/ggseg.extra/reference/setup_atlas_repo.html</loc></url>
-<url><loc>https://ggsegverse.github.io/ggseg.extra/reference/setup_sitrep.html</loc></url>
+<url><loc>https://ggsegverse.github.io/ggseg.extra/reference/sitrep.html</loc></url>
 <url><loc>https://ggsegverse.github.io/ggseg.extra/reference/subcortical_slabs.html</loc></url>
 <url><loc>https://ggsegverse.github.io/ggseg.extra/reference/suit_3d_path.html</loc></url>
 <url><loc>https://ggsegverse.github.io/ggseg.extra/reference/suit_deformation_field.html</loc></url>

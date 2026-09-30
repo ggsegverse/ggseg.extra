@@ -82,7 +82,7 @@ entry that happens to be a substring of its name (e.g. `Thalamus` vs
 
 ## See also
 
-[`subcortical_views()`](https://ggsegverse.github.io/ggseg.extra/reference/subcortical_slabs.md),
+[`subcortical_slabs()`](https://ggsegverse.github.io/ggseg.extra/reference/subcortical_slabs.md),
 [`ggseg.formats::atlas_region_contextual()`](https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html)
 
 ## Examples

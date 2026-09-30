@@ -2,7 +2,7 @@
 
 ## Create Brain Atlases
 
-Functions to create brain atlases for ggseg and ggseg3d
+Turn a parcellation into a `ggseg_atlas` you can plot
 
 - [`create_cerebellar_from_annotation()`](https://ggsegverse.github.io/ggseg.extra/reference/create_cerebellar_from_annotation.md)
   **\[experimental\]** : Create cerebellar atlas from FreeSurfer
@@ -36,12 +36,11 @@ Functions to create brain atlases for ggseg and ggseg3d
   **\[experimental\]** : Create atlas from whole-brain volumetric
   parcellation
 
-## Atlas Manipulation
+## Shape an Atlas’s Geometry
 
-Functions to manipulate and manage brain atlases
+Simplify, smooth and grow a finished atlas’s 2D outlines. These run on
+the returned atlas, not during the build, so retuning one is cheap.
 
-- [`atlas_dilate()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_dilate.md)
-  : Grow or shrink an atlas's regions
 - [`atlas_polish()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_polish.md)
   **\[experimental\]** : Simplify and smooth an atlas against a vertex
   budget
@@ -49,35 +48,47 @@ Functions to manipulate and manage brain atlases
   : Reduce an atlas's vertex count
 - [`atlas_smooth()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_smooth.md)
   : Smooth and simplify atlas 2D contours
+- [`atlas_dilate()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_dilate.md)
+  : Grow or shrink an atlas's regions
 - [`context_pattern()`](https://ggsegverse.github.io/ggseg.extra/reference/context_pattern.md)
   **\[experimental\]** : The label pattern that matches an atlas's brain
   silhouette
 - [`count_vertices()`](https://ggsegverse.github.io/ggseg.extra/reference/count_vertices.md)
   : Count the vertices an atlas carries
 
+## Curate an Atlas
+
+The `atlas_region_*` and `atlas_view_*` vocabulary, re-exported from
+ggseg.formats, plus the constructor that validates a hand-edited atlas.
+
+- [`atlas-verbs`](https://ggsegverse.github.io/ggseg.extra/reference/atlas-verbs.md)
+  : Atlas manipulation verbs, re-exported from ggseg.formats
+
 ## Atlas Repository
 
-Create and manage ggseg atlas packages
+Create and maintain a ggseg atlas package
 
 - [`setup_atlas_repo()`](https://ggsegverse.github.io/ggseg.extra/reference/setup_atlas_repo.md)
   : Create a new ggseg atlas package
 
-- [`setup_sitrep()`](https://ggsegverse.github.io/ggseg.extra/reference/setup_sitrep.md)
-  : Check ggseg.extra setup status
-
 - [`use_atlas_github_actions()`](https://ggsegverse.github.io/ggseg.extra/reference/use_atlas_github_actions.md)
   : Add ggsegverse GitHub Actions workflows to a package
 
-- [`atlas_github_actions()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_github_actions.md)
-  :
+- [`ggseg_atlas_github_actions()`](https://ggsegverse.github.io/ggseg.extra/reference/ggseg_atlas_github_actions.md)
+  [`atlas_github_actions()`](https://ggsegverse.github.io/ggseg.extra/reference/ggseg_atlas_github_actions.md)
+  **\[deprecated\]** :
 
   Workflows
   [`use_atlas_github_actions()`](https://ggsegverse.github.io/ggseg.extra/reference/use_atlas_github_actions.md)
   can write
 
-## Color Tables
+- [`sitrep()`](https://ggsegverse.github.io/ggseg.extra/reference/sitrep.md)
+  [`setup_sitrep()`](https://ggsegverse.github.io/ggseg.extra/reference/sitrep.md)
+  **\[deprecated\]** : Report on the ggseg.extra setup
 
-Read, write, and manipulate FreeSurfer color tables
+## Lookup Tables
+
+Read, write and build FreeSurfer-style colour lookup tables
 
 - [`read_lut()`](https://ggsegverse.github.io/ggseg.extra/reference/read_lut.md)
   [`read_ctab()`](https://ggsegverse.github.io/ggseg.extra/reference/read_lut.md)
@@ -85,12 +96,12 @@ Read, write, and manipulate FreeSurfer color tables
 - [`write_lut()`](https://ggsegverse.github.io/ggseg.extra/reference/write_lut.md)
   [`write_ctab()`](https://ggsegverse.github.io/ggseg.extra/reference/write_lut.md)
   **\[deprecated\]** : Write FreeSurfer LUT
-- [`is_lut()`](https://ggsegverse.github.io/ggseg.extra/reference/is_lut.md)
-  [`is_ctab()`](https://ggsegverse.github.io/ggseg.extra/reference/is_lut.md)
-  **\[deprecated\]** : Check if object is a LUT
 - [`get_lut()`](https://ggsegverse.github.io/ggseg.extra/reference/get_lut.md)
   [`get_ctab()`](https://ggsegverse.github.io/ggseg.extra/reference/get_lut.md)
   **\[deprecated\]** : Read LUT and add hex colours
+- [`is_lut()`](https://ggsegverse.github.io/ggseg.extra/reference/is_lut.md)
+  [`is_ctab()`](https://ggsegverse.github.io/ggseg.extra/reference/is_lut.md)
+  **\[deprecated\]** : Check if object is a LUT
 - [`lut_add()`](https://ggsegverse.github.io/ggseg.extra/reference/lut_add.md)
   : Add rows to a FreeSurfer LUT
 - [`lut_combine()`](https://ggsegverse.github.io/ggseg.extra/reference/lut_combine.md)
@@ -148,27 +159,26 @@ SUIT surfaces and MNI-to-SUIT transforms for cerebellar atlases
 - [`read_suit_parcellation()`](https://ggsegverse.github.io/ggseg.extra/reference/read_suit_parcellation.md)
   **\[experimental\]** : Read SUIT cerebellar parcellation from GIFTI
 
-## Utilities
+## Reading Parcellation Files
 
-General package utilities
+Read the formats the creation pipelines accept
 
 - [`read_annotation_data()`](https://ggsegverse.github.io/ggseg.extra/reference/read_annotation_data.md)
   : Read annotation data from files
-
-- [`read_cifti_annotation()`](https://ggsegverse.github.io/ggseg.extra/reference/read_cifti_annotation.md)
-  : Read CIFTI annotation file
-
-- [`read_cifti_subcortical()`](https://ggsegverse.github.io/ggseg.extra/reference/read_cifti_subcortical.md)
-  **\[experimental\]** : Extract subcortical labels from a CIFTI file
-
 - [`read_gifti_annotation()`](https://ggsegverse.github.io/ggseg.extra/reference/read_gifti_annotation.md)
   : Read GIFTI annotation files
-
+- [`read_cifti_annotation()`](https://ggsegverse.github.io/ggseg.extra/reference/read_cifti_annotation.md)
+  : Read CIFTI annotation file
+- [`read_cifti_subcortical()`](https://ggsegverse.github.io/ggseg.extra/reference/read_cifti_subcortical.md)
+  **\[experimental\]** : Extract subcortical labels from a CIFTI file
 - [`read_neuromaps_annotation()`](https://ggsegverse.github.io/ggseg.extra/reference/read_neuromaps_annotation.md)
   : Read neuromaps annotation files
-
 - [`read_neuromaps_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/read_neuromaps_volume.md)
   : Read neuromaps volume annotation via surface projection
+- [`read_tractography()`](https://ggsegverse.github.io/ggseg.extra/reference/read_tractography.md)
+  : Read tractography file
+
+## Utilities
 
 - [`reexports`](https://ggsegverse.github.io/ggseg.extra/reference/reexports.md)
   [`convert_legacy_brain_atlas`](https://ggsegverse.github.io/ggseg.extra/reference/reexports.md)
@@ -196,10 +206,9 @@ General package utilities
   [`atlas_view_remove_small`](https://ggsegverse.github.io/ggseg.extra/reference/reexports.md)
   [`atlas_view_reorder`](https://ggsegverse.github.io/ggseg.extra/reference/reexports.md)
   [`atlas_views`](https://ggsegverse.github.io/ggseg.extra/reference/reexports.md)
+  [`ggseg_atlas`](https://ggsegverse.github.io/ggseg.extra/reference/reexports.md)
+  [`is_ggseg_atlas`](https://ggsegverse.github.io/ggseg.extra/reference/reexports.md)
   : Objects exported from other packages
-
-- [`read_tractography()`](https://ggsegverse.github.io/ggseg.extra/reference/read_tractography.md)
-  : Read tractography file
 
 - [`mri_surf2surf_rereg()`](https://ggsegverse.github.io/ggseg.extra/reference/mri_surf2surf_rereg.md)
   : Re-register an annotation file

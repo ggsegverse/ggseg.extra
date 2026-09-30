@@ -1,5 +1,70 @@
 # Changelog
 
+## ggseg.extra 1.9.9.9076
+
+### Breaking changes
+
+- [`atlas_github_actions()`](https://ggsegverse.github.io/ggseg.extra/reference/ggseg_atlas_github_actions.md)
+  is renamed
+  [`ggseg_atlas_github_actions()`](https://ggsegverse.github.io/ggseg.extra/reference/ggseg_atlas_github_actions.md).
+  It takes no atlas and returns GitHub Actions workflow names, so the
+  `atlas_*` prefix put it among the verbs that reshape an atlas – the
+  reference index had to exclude it by hand. The old name warns and
+  still works.
+
+- [`setup_sitrep()`](https://ggsegverse.github.io/ggseg.extra/reference/sitrep.md)
+  is renamed
+  [`sitrep()`](https://ggsegverse.github.io/ggseg.extra/reference/sitrep.md).
+  It reports on the setup rather than performing any, which put it
+  beside
+  [`setup_atlas_repo()`](https://ggsegverse.github.io/ggseg.extra/reference/setup_atlas_repo.md)
+  under a prefix that creates things. The old name warns and still
+  works.
+
+### New features
+
+- [`ggseg_atlas()`](https://ggsegverse.github.io/ggseg.formats/reference/ggseg_atlas.html)
+  and
+  [`is_ggseg_atlas()`](https://ggsegverse.github.io/ggseg.formats/reference/is_ggseg_atlas.html)
+  are re-exported from ggseg.formats. The “Rebuilding the atlas” section
+  of
+  [`vignette("post-processing")`](https://ggsegverse.github.io/ggseg.extra/articles/post-processing.md)
+  has been telling readers to call
+  [`ggseg_atlas()`](https://ggsegverse.github.io/ggseg.formats/reference/ggseg_atlas.html),
+  which was imported but never exported – anyone with only
+  [`library(ggseg.extra)`](https://github.com/ggsegverse/ggseg.extra)
+  got `object 'ggseg_atlas' not found`.
+
+### Minor changes
+
+- The `atlas_*` manipulation verbs appear in the reference index. They
+  are re-exports, so they lived on the internal `reexports` page while
+  the section named “Atlas Manipulation” held six functions, none of
+  them the ones
+  [`vignette("post-processing")`](https://ggsegverse.github.io/ggseg.extra/articles/post-processing.md)
+  teaches. `?atlas-verbs` is now a visible page that names each verb and
+  what it is for, grouped by what it changes.
+
+- The reference index lists the `lut_*` names rather than the deprecated
+  [`read_ctab()`](https://ggsegverse.github.io/ggseg.extra/reference/read_lut.md),
+  [`write_ctab()`](https://ggsegverse.github.io/ggseg.extra/reference/write_lut.md),
+  [`is_ctab()`](https://ggsegverse.github.io/ggseg.extra/reference/is_lut.md)
+  and
+  [`get_ctab()`](https://ggsegverse.github.io/ggseg.extra/reference/get_lut.md)
+  aliases, and
+  [`subcortical_slabs()`](https://ggsegverse.github.io/ggseg.extra/reference/subcortical_slabs.md)
+  rather than the deprecated
+  [`subcortical_views()`](https://ggsegverse.github.io/ggseg.extra/reference/subcortical_slabs.md).
+  The sections are regrouped so geometry shaping, curation and file
+  reading are each their own heading.
+
+- [`sitrep()`](https://ggsegverse.github.io/ggseg.extra/reference/sitrep.md)
+  reports
+  [`create_tract_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_tract_from_volume.md),
+  which was missing from the pipeline readiness list – it claimed
+  “12/12” while listing eleven creators and one transform. It is 13 now,
+  and `princurve` is checked alongside the other optional packages.
+
 ## ggseg.extra 1.9.9.9075
 
 ### Breaking changes
@@ -461,7 +526,7 @@
 - Extracting contours no longer attaches terra to your search path,
   where it masked functions such as `describe()` and `extract()`.
 
-- [`setup_sitrep()`](https://ggsegverse.github.io/ggseg.extra/reference/setup_sitrep.md)
+- [`setup_sitrep()`](https://ggsegverse.github.io/ggseg.extra/reference/sitrep.md)
   lists optional packages by name; it printed raw `{.pkg ...}` markup
   instead.
 
@@ -670,7 +735,7 @@
 - `chromote` is gone. Nothing has rendered through a headless browser
   since contours began being traced from the projection itself, so it
   leaves Suggests, `find_chrome_path()` goes, and
-  [`setup_sitrep()`](https://ggsegverse.github.io/ggseg.extra/reference/setup_sitrep.md)
+  [`setup_sitrep()`](https://ggsegverse.github.io/ggseg.extra/reference/sitrep.md)
   no longer reports a missing Chrome as a problem or carries a `system`
   element.
 
@@ -839,7 +904,7 @@
 
 - ImageMagick is no longer required. It leaves `SystemRequirements`,
   `magick` leaves `Suggests`, and
-  [`setup_sitrep()`](https://ggsegverse.github.io/ggseg.extra/reference/setup_sitrep.md)
+  [`setup_sitrep()`](https://ggsegverse.github.io/ggseg.extra/reference/sitrep.md)
   no longer reports it or tells anyone to install it.
 
 - The `processed/` and `masks/` directories are gone, and with them the
@@ -1551,7 +1616,7 @@
   used to pass the installed-check and then fail mid-pipeline. Accepting
   the install prompt now installs from the ggsegverse r-universe instead
   of CRAN, whose release could never satisfy the check.
-  [`setup_sitrep()`](https://ggsegverse.github.io/ggseg.extra/reference/setup_sitrep.md)
+  [`setup_sitrep()`](https://ggsegverse.github.io/ggseg.extra/reference/sitrep.md)
   reports an outdated freesurfer as missing and points at
   `muschellij2/freesurfer`.
 
@@ -1864,7 +1929,7 @@ not cost a rebuild.
 - [`use_atlas_github_actions()`](https://ggsegverse.github.io/ggseg.extra/reference/use_atlas_github_actions.md)
   adds the shared ggsegverse GitHub Actions workflows to a package, in
   the style of `usethis::use_github_action()`.
-  [`atlas_github_actions()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_github_actions.md)
+  [`atlas_github_actions()`](https://ggsegverse.github.io/ggseg.extra/reference/ggseg_atlas_github_actions.md)
   lists what is available. Run it on a freshly scaffolded atlas package,
   or on an existing one to replace hand-maintained workflows with the
   shared set.

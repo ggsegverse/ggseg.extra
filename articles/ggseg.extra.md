@@ -85,7 +85,7 @@ All heavier dependencies (`freesurfer`, `Rvcg`, `terra`, etc.) are in
 Suggests and only loaded when needed.
 
 Run
-[`setup_sitrep()`](https://ggsegverse.github.io/ggseg.extra/reference/setup_sitrep.md)
+[`setup_sitrep()`](https://ggsegverse.github.io/ggseg.extra/reference/sitrep.md)
 to check your setup, or see
 [`vignette("system-setup")`](https://ggsegverse.github.io/ggseg.extra/articles/system-setup.md)
 for details.

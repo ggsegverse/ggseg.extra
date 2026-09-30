@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9075</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9076</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -67,6 +67,25 @@
       <small>Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.9.9.9076" id="ggsegextra-1999076">ggseg.extra 1.9.9.9076<a class="anchor" aria-label="anchor" href="#ggsegextra-1999076"></a></h2>
+<div class="section level3">
+<h3 id="breaking-changes-1-9-9-9076">Breaking changes<a class="anchor" aria-label="anchor" href="#breaking-changes-1-9-9-9076"></a></h3>
+<ul><li><p><code><a href="../reference/ggseg_atlas_github_actions.html">atlas_github_actions()</a></code> is renamed <code><a href="../reference/ggseg_atlas_github_actions.html">ggseg_atlas_github_actions()</a></code>. It takes no atlas and returns GitHub Actions workflow names, so the <code>atlas_*</code> prefix put it among the verbs that reshape an atlas – the reference index had to exclude it by hand. The old name warns and still works.</p></li>
+<li><p><code><a href="../reference/sitrep.html">setup_sitrep()</a></code> is renamed <code><a href="../reference/sitrep.html">sitrep()</a></code>. It reports on the setup rather than performing any, which put it beside <code><a href="../reference/setup_atlas_repo.html">setup_atlas_repo()</a></code> under a prefix that creates things. The old name warns and still works.</p></li>
+</ul></div>
+<div class="section level3">
+<h3 id="new-features-1-9-9-9076">New features<a class="anchor" aria-label="anchor" href="#new-features-1-9-9-9076"></a></h3>
+<ul><li>
+<code><a href="https://ggsegverse.github.io/ggseg.formats/reference/ggseg_atlas.html" class="external-link">ggseg_atlas()</a></code> and <code><a href="https://ggsegverse.github.io/ggseg.formats/reference/is_ggseg_atlas.html" class="external-link">is_ggseg_atlas()</a></code> are re-exported from ggseg.formats. The “Rebuilding the atlas” section of <code><a href="../articles/post-processing.html">vignette("post-processing")</a></code> has been telling readers to call <code><a href="https://ggsegverse.github.io/ggseg.formats/reference/ggseg_atlas.html" class="external-link">ggseg_atlas()</a></code>, which was imported but never exported – anyone with only <code><a href="https://github.com/ggsegverse/ggseg.extra" class="external-link">library(ggseg.extra)</a></code> got <code>object 'ggseg_atlas' not found</code>.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="minor-changes-1-9-9-9076">Minor changes<a class="anchor" aria-label="anchor" href="#minor-changes-1-9-9-9076"></a></h3>
+<ul><li><p>The <code>atlas_*</code> manipulation verbs appear in the reference index. They are re-exports, so they lived on the internal <code>reexports</code> page while the section named “Atlas Manipulation” held six functions, none of them the ones <code><a href="../articles/post-processing.html">vignette("post-processing")</a></code> teaches. <code>?atlas-verbs</code> is now a visible page that names each verb and what it is for, grouped by what it changes.</p></li>
+<li><p>The reference index lists the <code>lut_*</code> names rather than the deprecated <code><a href="../reference/read_lut.html">read_ctab()</a></code>, <code><a href="../reference/write_lut.html">write_ctab()</a></code>, <code><a href="../reference/is_lut.html">is_ctab()</a></code> and <code><a href="../reference/get_lut.html">get_ctab()</a></code> aliases, and <code><a href="../reference/subcortical_slabs.html">subcortical_slabs()</a></code> rather than the deprecated <code><a href="../reference/subcortical_slabs.html">subcortical_views()</a></code>. The sections are regrouped so geometry shaping, curation and file reading are each their own heading.</p></li>
+<li><p><code><a href="../reference/sitrep.html">sitrep()</a></code> reports <code><a href="../reference/create_tract_from_volume.html">create_tract_from_volume()</a></code>, which was missing from the pipeline readiness list – it claimed “12/12” while listing eleven creators and one transform. It is 13 now, and <code>princurve</code> is checked alongside the other optional packages.</p></li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9075" id="ggsegextra-1999075">ggseg.extra 1.9.9.9075<a class="anchor" aria-label="anchor" href="#ggsegextra-1999075"></a></h2>
 <div class="section level3">
@@ -274,7 +293,7 @@
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9055" id="ggsegextra-1999055">ggseg.extra 1.9.9.9055<a class="anchor" aria-label="anchor" href="#ggsegextra-1999055"></a></h2>
 <ul><li><p>Extracting contours no longer attaches terra to your search path, where it masked functions such as <code>describe()</code> and <code>extract()</code>.</p></li>
-<li><p><code><a href="../reference/setup_sitrep.html">setup_sitrep()</a></code> lists optional packages by name; it printed raw <code>{.pkg ...}</code> markup instead.</p></li>
+<li><p><code><a href="../reference/sitrep.html">setup_sitrep()</a></code> lists optional packages by name; it printed raw <code>{.pkg ...}</code> markup instead.</p></li>
 <li><p>Building a subcortical atlas with <code>verbose = FALSE</code> no longer reports the stale slab images it removes.</p></li>
 <li><p>A relative <code>output_dir</code> for a subcortical, tract or whole-brain atlas is now made absolute on every platform. Before, it stayed relative unless the directory already existed, except on Windows.</p></li>
 <li><p>Pipelines report their total run time the way cli reports each step (<code>Pipeline completed [1m 15s]</code>), instead of in minutes rounded to one decimal, which showed anything under three seconds as “0 minutes”.</p></li>
@@ -336,7 +355,7 @@
 </ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9048" id="ggsegextra-1999048">ggseg.extra 1.9.9.9048<a class="anchor" aria-label="anchor" href="#ggsegextra-1999048"></a></h2>
-<ul><li><p><code>chromote</code> is gone. Nothing has rendered through a headless browser since contours began being traced from the projection itself, so it leaves Suggests, <code>find_chrome_path()</code> goes, and <code><a href="../reference/setup_sitrep.html">setup_sitrep()</a></code> no longer reports a missing Chrome as a problem or carries a <code>system</code> element.</p></li>
+<ul><li><p><code>chromote</code> is gone. Nothing has rendered through a headless browser since contours began being traced from the projection itself, so it leaves Suggests, <code>find_chrome_path()</code> goes, and <code><a href="../reference/sitrep.html">setup_sitrep()</a></code> no longer reports a missing Chrome as a problem or carries a <code>system</code> element.</p></li>
 <li>
 <p>Snapshots are named <code>.rda</code>, which is what they have been on disk since the PNG round-trip was removed. <code>structure_snapshot_file()</code> still spelled them <code>.png</code>, and three mechanisms keyed on that name had been quietly doing nothing:</p>
 <ul><li>
@@ -385,7 +404,7 @@
 </li>
 <li><p><strong>Distances now mean voxels.</strong> The canvas scaled every atlas by <code>400 / max(dim)</code>, so the same <code>atlas_dilate(0.6)</code> was a different physical distance on every atlas – 1.56 pixels per voxel on a 256-cube, 1.84 on a 182x218 volume. In voxel space <code>0.6</code> is 0.6 voxels everywhere, usually 0.6 mm. Values tuned against the old canvas want dividing by that atlas’s old scale factor; <code>atlas_smooth(smoothness =)</code> is a distance too and moves the same way.</p></li>
 <li><p>The build-time <code>dilate</code> argument is no longer applied. It has been deprecated since 1.9.9.9016 in favour of <code><a href="../reference/atlas_dilate.html">atlas_dilate()</a></code> on the finished atlas, which is where it belongs – retuning it there does not mean rebuilding. Passing it still warns, and now says it is not applied.</p></li>
-<li><p>ImageMagick is no longer required. It leaves <code>SystemRequirements</code>, <code>magick</code> leaves <code>Suggests</code>, and <code><a href="../reference/setup_sitrep.html">setup_sitrep()</a></code> no longer reports it or tells anyone to install it.</p></li>
+<li><p>ImageMagick is no longer required. It leaves <code>SystemRequirements</code>, <code>magick</code> leaves <code>Suggests</code>, and <code><a href="../reference/sitrep.html">setup_sitrep()</a></code> no longer reports it or tells anyone to install it.</p></li>
 <li><p>The <code>processed/</code> and <code>masks/</code> directories are gone, and with them the image-processing step: subcortical builds run 8 steps rather than 9, tract builds 5 rather than 6.</p></li>
 </ul></div>
     <div class="section level2">
@@ -565,7 +584,7 @@
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9017" id="ggsegextra-1999017">ggseg.extra 1.9.9.9017<a class="anchor" aria-label="anchor" href="#ggsegextra-1999017"></a></h2>
 <ul><li><p>The README and CI now install freesurfer from <code>muschellij2/freesurfer</code>: the refactor it needed has been merged upstream, so the <code>drmowinckels/freesurfer@refactor</code> fork is no longer required (<a href="https://github.com/ggsegverse/ggseg.extra/issues/72" class="external-link">#72</a>, <a href="https://github.com/ggsegverse/ggseg.extra/issues/98" class="external-link">#98</a>). DESCRIPTION declares <code>Remotes: muschellij2/freesurfer</code>, so <code>pak</code> and <code>remotes</code> resolve the required version without extra steps.</p></li>
-<li><p>freesurfer is now required at <code>&gt;= 1.8.1.902</code>. The CRAN release lacks <code>fs_sitrep()</code> and <code>fs_cmd(validate_inputs = )</code>, so an older install used to pass the installed-check and then fail mid-pipeline. Accepting the install prompt now installs from the ggsegverse r-universe instead of CRAN, whose release could never satisfy the check. <code><a href="../reference/setup_sitrep.html">setup_sitrep()</a></code> reports an outdated freesurfer as missing and points at <code>muschellij2/freesurfer</code>.</p></li>
+<li><p>freesurfer is now required at <code>&gt;= 1.8.1.902</code>. The CRAN release lacks <code>fs_sitrep()</code> and <code>fs_cmd(validate_inputs = )</code>, so an older install used to pass the installed-check and then fail mid-pipeline. Accepting the install prompt now installs from the ggsegverse r-universe instead of CRAN, whose release could never satisfy the check. <code><a href="../reference/sitrep.html">setup_sitrep()</a></code> reports an outdated freesurfer as missing and points at <code>muschellij2/freesurfer</code>.</p></li>
 </ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9016" id="ggsegextra-1999016">ggseg.extra 1.9.9.9016<a class="anchor" aria-label="anchor" href="#ggsegextra-1999016"></a></h2>
@@ -656,7 +675,7 @@
 <div class="section level3">
 <h3 id="new-features-1-9-9-9010">New features<a class="anchor" aria-label="anchor" href="#new-features-1-9-9-9010"></a></h3>
 <ul><li>
-<code><a href="../reference/use_atlas_github_actions.html">use_atlas_github_actions()</a></code> adds the shared ggsegverse GitHub Actions workflows to a package, in the style of <code>usethis::use_github_action()</code>. <code><a href="../reference/atlas_github_actions.html">atlas_github_actions()</a></code> lists what is available. Run it on a freshly scaffolded atlas package, or on an existing one to replace hand-maintained workflows with the shared set.</li>
+<code><a href="../reference/use_atlas_github_actions.html">use_atlas_github_actions()</a></code> adds the shared ggsegverse GitHub Actions workflows to a package, in the style of <code>usethis::use_github_action()</code>. <code><a href="../reference/ggseg_atlas_github_actions.html">atlas_github_actions()</a></code> lists what is available. Run it on a freshly scaffolded atlas package, or on an existing one to replace hand-maintained workflows with the shared set.</li>
 <li>
 <code><a href="../reference/setup_atlas_repo.html">setup_atlas_repo()</a></code> gains <code>github_actions</code>, TRUE by default.</li>
 </ul></div>

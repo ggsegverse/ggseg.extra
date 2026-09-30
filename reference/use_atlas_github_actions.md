@@ -10,7 +10,7 @@ itself.
 
 ``` r
 use_atlas_github_actions(
-  workflows = atlas_github_actions(),
+  workflows = ggseg_atlas_github_actions(),
   path = ".",
   overwrite = FALSE
 )

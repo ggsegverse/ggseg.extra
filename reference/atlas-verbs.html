@@ -3,29 +3,11 @@
 views, boolean geometry between labels – lives in ggseg.formats, because it
 belongs to the atlas format rather than to any one builder. Every atlas
 build reaches for both packages, so ggseg.extra re-exports the verbs and
-library(ggseg.extra) is enough.
-Only the atlas_* verbs are re-exported. ggseg.formats also ships atlases
-named dk, aseg, tracula and suit, and so does ggseg; attaching the
-whole namespace would mask one set with the other depending on load order,
-which is a silently wrong atlas rather than an error.
-Four more verbs - atlas_centerlines(), atlas_plot_palette(),
-atlas_structure_reorder() and atlas_view_select() - exist only in
-ggseg.formats' development build, so re-exporting them here would stop this
-package building against the release its DESCRIPTION asks for. They can come
-across once ggseg.formats releases them and the floor here moves up."><meta property="og:description" content="The vocabulary for reshaping a finished atlas – dropping regions, gathering
+library(ggseg.extra) is enough."><meta property="og:description" content="The vocabulary for reshaping a finished atlas – dropping regions, gathering
 views, boolean geometry between labels – lives in ggseg.formats, because it
 belongs to the atlas format rather than to any one builder. Every atlas
 build reaches for both packages, so ggseg.extra re-exports the verbs and
-library(ggseg.extra) is enough.
-Only the atlas_* verbs are re-exported. ggseg.formats also ships atlases
-named dk, aseg, tracula and suit, and so does ggseg; attaching the
-whole namespace would mask one set with the other depending on load order,
-which is a silently wrong atlas rather than an error.
-Four more verbs - atlas_centerlines(), atlas_plot_palette(),
-atlas_structure_reorder() and atlas_view_select() - exist only in
-ggseg.formats' development build, so re-exporting them here would stop this
-package building against the release its DESCRIPTION asks for. They can come
-across once ggseg.formats releases them and the floor here moves up."><meta property="og:image" content="https://ggsegverse.github.io/ggseg.extra/logo.svg"></head><body>
+library(ggseg.extra) is enough."><meta property="og:image" content="https://ggsegverse.github.io/ggseg.extra/logo.svg"></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -35,7 +17,7 @@ across once ggseg.formats releases them and the floor here moves up."><meta prop
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9075</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9076</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -100,20 +82,70 @@ views, boolean geometry between labels – lives in ggseg.formats, because it
 belongs to the atlas format rather than to any one builder. Every atlas
 build reaches for both packages, so ggseg.extra re-exports the verbs and
 <code><a href="https://github.com/ggsegverse/ggseg.extra" class="external-link">library(ggseg.extra)</a></code> is enough.</p>
-<p>Only the <code>atlas_*</code> verbs are re-exported. ggseg.formats also ships atlases
-named <code>dk</code>, <code>aseg</code>, <code>tracula</code> and <code>suit</code>, and so does ggseg; attaching the
-whole namespace would mask one set with the other depending on load order,
-which is a silently wrong atlas rather than an error.</p>
+    </div>
+
+
+    <div class="section level2">
+    <h2 id="reading-an-atlas">Reading an atlas<a class="anchor" aria-label="anchor" href="#reading-an-atlas"></a></h2>
+
+
+<p><code><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_regions.html" class="external-link">atlas_regions()</a></code>, <code><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_labels.html" class="external-link">atlas_labels()</a></code>, <code><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_views.html" class="external-link">atlas_views()</a></code> and <code><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_type.html" class="external-link">atlas_type()</a></code>
+report what an atlas holds. <code><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_geom.html" class="external-link">atlas_geom()</a></code>, <code><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_sf.html" class="external-link">atlas_sf()</a></code>,
+<code><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_polygons.html" class="external-link">atlas_polygons()</a></code>, <code><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_meshes.html" class="external-link">atlas_meshes()</a></code>, <code><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_vertices.html" class="external-link">atlas_vertices()</a></code>,
+<code><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_palette.html" class="external-link">atlas_palette()</a></code> and <code><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_geometry_type.html" class="external-link">atlas_geometry_type()</a></code> reach into its parts.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="changing-which-regions-are-in-it">Changing which regions are in it<a class="anchor" aria-label="anchor" href="#changing-which-regions-are-in-it"></a></h2>
+
+
+<p><code><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_remove()</a></code> and <code><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_keep()</a></code> drop or select regions by
+regex. <code><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_rename()</a></code> rewrites display names without touching
+labels. <code><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_contextual()</a></code> keeps a region's geometry as a grey
+outline but takes it out of the palette, which is how the brain silhouette
+behind an atlas is made; <code><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_context_remove()</a></code> drops it again.
+<code><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_op()</a></code> does boolean geometry between two labels, and
+<code><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_core_add()</a></code> joins extra columns onto <code>$core</code>.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="changing-which-views-are-in-it">Changing which views are in it<a class="anchor" aria-label="anchor" href="#changing-which-views-are-in-it"></a></h2>
+
+
+<p><code><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_view_keep()</a></code>, <code><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_view_remove()</a></code> and <code><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_view_reorder()</a></code>
+select and order the 2D views. <code><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_view_remove_region()</a></code> drops one
+region from some views only, <code><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_view_remove_small()</a></code> drops slivers
+below an area, and <code><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_view_gather()</a></code> closes the gaps between panels.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="building-an-atlas-object">Building an atlas object<a class="anchor" aria-label="anchor" href="#building-an-atlas-object"></a></h2>
+
+
+<p><code><a href="https://ggsegverse.github.io/ggseg.formats/reference/ggseg_atlas.html" class="external-link">ggseg_atlas()</a></code> is the constructor, and validates that core, palette and
+geometry agree; <code><a href="https://ggsegverse.github.io/ggseg.formats/reference/is_ggseg_atlas.html" class="external-link">is_ggseg_atlas()</a></code> tests the result. Reach for them when
+you have edited a component by hand and want it checked.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="what-is-not-re-exported">What is not re-exported<a class="anchor" aria-label="anchor" href="#what-is-not-re-exported"></a></h2>
+
+
+<p>Only functions are. ggseg.formats also ships atlases named <code>dk</code>, <code>aseg</code>,
+<code>tracula</code> and <code>suit</code>, and so does ggseg; attaching the whole namespace
+would mask one set with the other depending on load order, which is a
+silently wrong atlas rather than an error.</p>
 <p>Four more verbs - <code>atlas_centerlines()</code>, <code>atlas_plot_palette()</code>,
 <code>atlas_structure_reorder()</code> and <code>atlas_view_select()</code> - exist only in
 ggseg.formats' development build, so re-exporting them here would stop this
 package building against the release its DESCRIPTION asks for. They can come
 across once ggseg.formats releases them and the floor here moves up.</p>
     </div>
+    <div class="section level2">
+    <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
+    <div class="dont-index"><p><code><a href="atlas_polish.html">atlas_polish()</a></code>, <code><a href="atlas_simplify.html">atlas_simplify()</a></code>, <code><a href="atlas_smooth.html">atlas_smooth()</a></code> and
+<code><a href="atlas_dilate.html">atlas_dilate()</a></code>, which shape an atlas's geometry and are native to
+ggseg.extra.</p></div>
+    </div>
 
-
-
-  </main></div>
+  </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
+    </nav></aside></div>
 
 
     <footer><div class="ggsegverse-footer py-3">

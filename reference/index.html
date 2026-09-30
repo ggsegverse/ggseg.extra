@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9075</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9076</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -69,7 +69,7 @@
     <div class="section level2">
       <h2 id="create-brain-atlases">Create Brain Atlases<a class="anchor" aria-label="anchor" href="#create-brain-atlases"></a></h2>
 
-      <div class="section-desc"><p>Functions to create brain atlases for ggseg and ggseg3d</p></div>
+      <div class="section-desc"><p>Turn a parcellation into a <code>ggseg_atlas</code> you can plot</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -160,9 +160,9 @@
         </dt>
         <dd>Create atlas from whole-brain volumetric parcellation</dd>
       </dl></div><div class="section level2">
-      <h2 id="atlas-manipulation">Atlas Manipulation<a class="anchor" aria-label="anchor" href="#atlas-manipulation"></a></h2>
+      <h2 id="shape-an-atlas-s-geometry">Shape an Atlas’s Geometry<a class="anchor" aria-label="anchor" href="#shape-an-atlas-s-geometry"></a></h2>
 
-      <div class="section-desc"><p>Functions to manipulate and manage brain atlases</p></div>
+      <div class="section-desc"><p>Simplify, smooth and grow a finished atlas’s 2D outlines. These run on the returned atlas, not during the build, so retuning one is cheap.</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -170,13 +170,6 @@
 
 
       <dl><dt>
-
-          <code><a href="atlas_dilate.html">atlas_dilate()</a></code>
-
-        </dt>
-        <dd>Grow or shrink an atlas's regions</dd>
-
-        <dt>
 
           <code><a href="atlas_polish.html">atlas_polish()</a></code>
           <span class="badge lifecycle lifecycle-experimental">experimental</span>
@@ -199,6 +192,13 @@
 
         <dt>
 
+          <code><a href="atlas_dilate.html">atlas_dilate()</a></code>
+
+        </dt>
+        <dd>Grow or shrink an atlas's regions</dd>
+
+        <dt>
+
           <code><a href="context_pattern.html">context_pattern()</a></code>
           <span class="badge lifecycle lifecycle-experimental">experimental</span>
         </dt>
@@ -211,9 +211,25 @@
         </dt>
         <dd>Count the vertices an atlas carries</dd>
       </dl></div><div class="section level2">
+      <h2 id="curate-an-atlas">Curate an Atlas<a class="anchor" aria-label="anchor" href="#curate-an-atlas"></a></h2>
+
+      <div class="section-desc"><p>The <code>atlas_region_*</code> and <code>atlas_view_*</code> vocabulary, re-exported from ggseg.formats, plus the constructor that validates a hand-edited atlas.</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="atlas-verbs.html">atlas-verbs</a></code>
+
+        </dt>
+        <dd>Atlas manipulation verbs, re-exported from ggseg.formats</dd>
+      </dl></div><div class="section level2">
       <h2 id="atlas-repository">Atlas Repository<a class="anchor" aria-label="anchor" href="#atlas-repository"></a></h2>
 
-      <div class="section-desc"><p>Create and manage ggseg atlas packages</p></div>
+      <div class="section-desc"><p>Create and maintain a ggseg atlas package</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -229,13 +245,6 @@
 
         <dt>
 
-          <code><a href="setup_sitrep.html">setup_sitrep()</a></code>
-
-        </dt>
-        <dd>Check ggseg.extra setup status</dd>
-
-        <dt>
-
           <code><a href="use_atlas_github_actions.html">use_atlas_github_actions()</a></code>
 
         </dt>
@@ -243,14 +252,21 @@
 
         <dt>
 
-          <code><a href="atlas_github_actions.html">atlas_github_actions()</a></code>
-
+          <code><a href="ggseg_atlas_github_actions.html">ggseg_atlas_github_actions()</a></code> <code><a href="ggseg_atlas_github_actions.html">atlas_github_actions()</a></code>
+          <span class="badge lifecycle lifecycle-deprecated">deprecated</span>
         </dt>
         <dd>Workflows <code><a href="../reference/use_atlas_github_actions.html">use_atlas_github_actions()</a></code> can write</dd>
-      </dl></div><div class="section level2">
-      <h2 id="color-tables">Color Tables<a class="anchor" aria-label="anchor" href="#color-tables"></a></h2>
 
-      <div class="section-desc"><p>Read, write, and manipulate FreeSurfer color tables</p></div>
+        <dt>
+
+          <code><a href="sitrep.html">sitrep()</a></code> <code><a href="sitrep.html">setup_sitrep()</a></code>
+          <span class="badge lifecycle lifecycle-deprecated">deprecated</span>
+        </dt>
+        <dd>Report on the ggseg.extra setup</dd>
+      </dl></div><div class="section level2">
+      <h2 id="lookup-tables">Lookup Tables<a class="anchor" aria-label="anchor" href="#lookup-tables"></a></h2>
+
+      <div class="section-desc"><p>Read, write and build FreeSurfer-style colour lookup tables</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -273,17 +289,17 @@
 
         <dt>
 
-          <code><a href="is_lut.html">is_lut()</a></code> <code><a href="is_lut.html">is_ctab()</a></code>
-          <span class="badge lifecycle lifecycle-deprecated">deprecated</span>
-        </dt>
-        <dd>Check if object is a LUT</dd>
-
-        <dt>
-
           <code><a href="get_lut.html">get_lut()</a></code> <code><a href="get_lut.html">get_ctab()</a></code>
           <span class="badge lifecycle lifecycle-deprecated">deprecated</span>
         </dt>
         <dd>Read LUT and add hex colours</dd>
+
+        <dt>
+
+          <code><a href="is_lut.html">is_lut()</a></code> <code><a href="is_lut.html">is_ctab()</a></code>
+          <span class="badge lifecycle lifecycle-deprecated">deprecated</span>
+        </dt>
+        <dd>Check if object is a LUT</dd>
 
         <dt>
 
@@ -431,9 +447,9 @@
         </dt>
         <dd>Read SUIT cerebellar parcellation from GIFTI</dd>
       </dl></div><div class="section level2">
-      <h2 id="utilities">Utilities<a class="anchor" aria-label="anchor" href="#utilities"></a></h2>
+      <h2 id="reading-parcellation-files">Reading Parcellation Files<a class="anchor" aria-label="anchor" href="#reading-parcellation-files"></a></h2>
 
-      <div class="section-desc"><p>General package utilities</p></div>
+      <div class="section-desc"><p>Read the formats the creation pipelines accept</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -446,6 +462,13 @@
 
         </dt>
         <dd>Read annotation data from files</dd>
+
+        <dt>
+
+          <code><a href="read_gifti_annotation.html">read_gifti_annotation()</a></code>
+
+        </dt>
+        <dd>Read GIFTI annotation files</dd>
 
         <dt>
 
@@ -463,13 +486,6 @@
 
         <dt>
 
-          <code><a href="read_gifti_annotation.html">read_gifti_annotation()</a></code>
-
-        </dt>
-        <dd>Read GIFTI annotation files</dd>
-
-        <dt>
-
           <code><a href="read_neuromaps_annotation.html">read_neuromaps_annotation()</a></code>
 
         </dt>
@@ -484,17 +500,26 @@
 
         <dt>
 
-          <code><a href="reexports.html">reexports</a></code> <code><a href="reexports.html">convert_legacy_brain_atlas</a></code> <code><a href="reexports.html">atlas_context_remove</a></code> <code><a href="reexports.html">atlas_core_add</a></code> <code><a href="reexports.html">atlas_geom</a></code> <code><a href="reexports.html">atlas_geometry_type</a></code> <code><a href="reexports.html">atlas_labels</a></code> <code><a href="reexports.html">atlas_meshes</a></code> <code><a href="reexports.html">atlas_palette</a></code> <code><a href="reexports.html">atlas_polygons</a></code> <code><a href="reexports.html">atlas_region_contextual</a></code> <code><a href="reexports.html">atlas_region_keep</a></code> <code><a href="reexports.html">atlas_region_op</a></code> <code><a href="reexports.html">atlas_region_remove</a></code> <code><a href="reexports.html">atlas_region_rename</a></code> <code><a href="reexports.html">atlas_regions</a></code> <code><a href="reexports.html">atlas_sf</a></code> <code><a href="reexports.html">atlas_type</a></code> <code><a href="reexports.html">atlas_vertices</a></code> <code><a href="reexports.html">atlas_view_gather</a></code> <code><a href="reexports.html">atlas_view_keep</a></code> <code><a href="reexports.html">atlas_view_remove</a></code> <code><a href="reexports.html">atlas_view_remove_region</a></code> <code><a href="reexports.html">atlas_view_remove_small</a></code> <code><a href="reexports.html">atlas_view_reorder</a></code> <code><a href="reexports.html">atlas_views</a></code>
-
-        </dt>
-        <dd>Objects exported from other packages</dd>
-
-        <dt>
-
           <code><a href="read_tractography.html">read_tractography()</a></code>
 
         </dt>
         <dd>Read tractography file</dd>
+      </dl></div><div class="section level2">
+      <h2 id="utilities">Utilities<a class="anchor" aria-label="anchor" href="#utilities"></a></h2>
+
+
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="reexports.html">reexports</a></code> <code><a href="reexports.html">convert_legacy_brain_atlas</a></code> <code><a href="reexports.html">atlas_context_remove</a></code> <code><a href="reexports.html">atlas_core_add</a></code> <code><a href="reexports.html">atlas_geom</a></code> <code><a href="reexports.html">atlas_geometry_type</a></code> <code><a href="reexports.html">atlas_labels</a></code> <code><a href="reexports.html">atlas_meshes</a></code> <code><a href="reexports.html">atlas_palette</a></code> <code><a href="reexports.html">atlas_polygons</a></code> <code><a href="reexports.html">atlas_region_contextual</a></code> <code><a href="reexports.html">atlas_region_keep</a></code> <code><a href="reexports.html">atlas_region_op</a></code> <code><a href="reexports.html">atlas_region_remove</a></code> <code><a href="reexports.html">atlas_region_rename</a></code> <code><a href="reexports.html">atlas_regions</a></code> <code><a href="reexports.html">atlas_sf</a></code> <code><a href="reexports.html">atlas_type</a></code> <code><a href="reexports.html">atlas_vertices</a></code> <code><a href="reexports.html">atlas_view_gather</a></code> <code><a href="reexports.html">atlas_view_keep</a></code> <code><a href="reexports.html">atlas_view_remove</a></code> <code><a href="reexports.html">atlas_view_remove_region</a></code> <code><a href="reexports.html">atlas_view_remove_small</a></code> <code><a href="reexports.html">atlas_view_reorder</a></code> <code><a href="reexports.html">atlas_views</a></code> <code><a href="reexports.html">ggseg_atlas</a></code> <code><a href="reexports.html">is_ggseg_atlas</a></code>
+
+        </dt>
+        <dd>Objects exported from other packages</dd>
 
         <dt>
 
