@@ -26,11 +26,10 @@ create_wholebrain_from_volume(
 \item{input_volume}{Path to volumetric parcellation in MNI152 space
 (.mgz, .nii, .nii.gz).}
 
-\item{verbose}{Verbosity level: \code{0} (silent), \code{1} (standard progress,
-default), or \code{2} (debug, includes FreeSurfer output). Logical values
-are accepted (\code{TRUE} = 1, \code{FALSE} = 0). If not specified, uses the
-value from \code{options("ggseg.extra.verbose")} or the \code{GGSEG_EXTRA_VERBOSE}
-environment variable.}
+\item{verbose}{How much to print: \code{0} silent, \code{1} progress (the default),
+\code{2} adds FreeSurfer's own output. \code{TRUE} and \code{FALSE} mean \code{1} and \code{0}.
+Falls back to \code{options("ggseg.extra.verbose")}, then
+\code{GGSEG_EXTRA_VERBOSE}.}
 
 \item{regheader}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} Use
 \code{projection_opts = list(registration = )} instead. \code{TRUE} maps to
@@ -53,8 +52,9 @@ If NULL, generic names and no palette.}
 \item{atlas_name}{Name for the atlas. If NULL, derived from the input
 filename.}
 
-\item{output_dir}{Directory to store intermediate files (screenshots, masks,
-contours). Defaults to \code{\link[=tempdir]{tempdir()}}.}
+\item{output_dir}{Where to put the intermediate files. Defaults to
+\code{\link[=tempdir]{tempdir()}}, from \code{options("ggseg.extra.output_dir")} or
+\code{GGSEG_EXTRA_OUTPUT_DIR}.}
 
 \item{labels}{Named list routing labels to a sub-pipeline, overriding the
 lookup table's \code{type} column and the vertex-count heuristic. Entries:
@@ -123,14 +123,12 @@ Steps are:
 }
 Use \code{steps = 1:2} to run projection and split only.}
 
-\item{cleanup}{Remove intermediate files after atlas creation. If not
-specified, uses \code{options("ggseg.extra.cleanup")} or the \code{GGSEG_EXTRA_CLEANUP}
-environment variable. Default is TRUE.}
+\item{cleanup}{Remove the intermediate files afterwards. Default \code{TRUE},
+from \code{options("ggseg.extra.cleanup")} or \code{GGSEG_EXTRA_CLEANUP}.}
 
-\item{skip_existing}{Skip generating output files that already exist,
-allowing interrupted atlas creation to resume. If not specified, uses
-\code{options("ggseg.extra.skip_existing")} or the \code{GGSEG_EXTRA_SKIP_EXISTING}
-environment variable. Default is TRUE.}
+\item{skip_existing}{Reuse intermediate files that already exist, so an
+interrupted run can resume. Default \code{TRUE}, from
+\code{options("ggseg.extra.skip_existing")} or \code{GGSEG_EXTRA_SKIP_EXISTING}.}
 }
 \value{
 A named list with elements \code{cortical}, \code{subcortical}, and
@@ -154,18 +152,19 @@ The pipeline must know which labels are cortical (rendered on the surface)
 and which are subcortical (rendered as 3D meshes / 2D slices). Three
 mechanisms are available, applied in priority order:
 \enumerate{
-\item \strong{Function arguments} (highest priority): \code{cortical_labels} and
-\code{subcortical_labels} override everything for the specified labels.
+\item \strong{The \code{labels} argument} (highest priority): \code{labels = list(cortical = ..., subcortical = ..., cerebellar = ...)} overrides everything for the
+labels it names.
 \item \strong{LUT \code{type} column}: If the colour lookup table has a \code{type} column
 with values \code{"cortical"} or \code{"subcortical"}, that classification is
-used for any labels not covered by the function arguments. This is the
-recommended approach for reproducible atlas creation.
+used for any labels \code{labels} does not name. This is the recommended
+approach for reproducible atlas creation.
 \item \strong{Vertex-count heuristic} (fallback): Labels with at least
-\code{min_vertices} vertices on the surface projection are classified as
-cortical; the rest as subcortical. It measures how much surface a
-label covers rather than where the label sits, so a small cortical
-parcel and a deep structure look the same to it. It warns whenever it
-runs; treat that warning as a request to declare the labels instead.
+\code{projection_opts$min_vertices} vertices on the surface projection are
+classified as cortical; the rest as subcortical. It measures how much
+surface a label covers rather than where the label sits, so a small
+cortical parcel and a deep structure look the same to it. It warns
+whenever it runs; treat that warning as a request to declare the
+labels instead.
 }
 
 \code{\link[=lut_classify_anatomy]{lut_classify_anatomy()}} writes the \code{type} column for a lookup table that
@@ -219,13 +218,13 @@ midline split is used and the pipeline warns.
 
 \section{Human oversight}{
 
-This is the most complex pipeline in ggsegExtra and the one most likely
+This is the most complex pipeline in ggseg.extra and the one most likely
 to need manual correction. Recommended workflow:
 \enumerate{
 \item Run \code{steps = 1:2} first to project the volume and classify labels.
 \item Inspect \code{result$cortical_labels} and \code{result$subcortical_labels}.
 If the automatic split is wrong, either add a \code{type} column to the
-LUT or use \code{cortical_labels} / \code{subcortical_labels} to override.
+LUT or name the labels in \code{labels}.
 \item Run the full pipeline once you are satisfied with the split.
 \item Visually inspect the resulting atlas with \code{ggseg()} / \code{ggseg3d()}.
 }

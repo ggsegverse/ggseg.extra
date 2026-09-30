@@ -35,11 +35,10 @@ that must be cerebellar cortex for the label to be called cerebellar.}
 on the winning tissue, whatever the grey-matter share says. This is what
 stops one ribbon voxel from making a white-matter label cortical.}
 
-\item{verbose}{Verbosity level: \code{0} (silent), \code{1} (standard progress,
-default), or \code{2} (debug, includes FreeSurfer output). Logical values
-are accepted (\code{TRUE} = 1, \code{FALSE} = 0). If not specified, uses the
-value from \code{options("ggseg.extra.verbose")} or the \code{GGSEG_EXTRA_VERBOSE}
-environment variable.}
+\item{verbose}{How much to print: \code{0} silent, \code{1} progress (the default),
+\code{2} adds FreeSurfer's own output. \code{TRUE} and \code{FALSE} mean \code{1} and \code{0}.
+Falls back to \code{options("ggseg.extra.verbose")}, then
+\code{GGSEG_EXTRA_VERBOSE}.}
 }
 \value{
 The lookup table as a data.frame, with a \code{type} column of

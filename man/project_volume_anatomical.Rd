@@ -21,13 +21,9 @@ project_volume_anatomical(
 \item{input_volume}{Path to the atlas volume, or an \code{RNifti} object.}
 
 \item{registration}{How the volume reaches the target's grid: \code{"header"}
-(the default) trusts the volume's own xform (\code{mri_vol2vol --regheader}),
-\code{"mni152"} applies FreeSurfer's \code{mni152.register.dat}, or give a path to
-an LTA file (typically from \code{\link[=coregister_volume]{coregister_volume()}}). The same vocabulary
-as \code{\link[=create_wholebrain_from_volume]{create_wholebrain_from_volume()}} and \code{\link[=prepare_subcortical_mni152]{prepare_subcortical_mni152()}}.
-\code{NULL} is deprecated; it meant \code{"header"}. An LTA must be registered to a
-volume on the same subject's conformed grid as \code{aparc+aseg.mgz} (true for
-any \code{recon-all} output); a mismatch is caught and aborted.}
+(the default) trusts the volume's own xform, \code{"mni152"} applies
+FreeSurfer's \code{mni152.register.dat}, or give the path to an LTA file,
+typically from \code{\link[=coregister_volume]{coregister_volume()}}. See details.}
 
 \item{target_subject}{FreeSurfer subject providing the anatomical grid
 and \code{aparc+aseg.mgz}. Defaults to \code{"cvs_avg35_inMNI152"}.}
@@ -36,37 +32,28 @@ and \code{aparc+aseg.mgz}. Defaults to \code{"cvs_avg35_inMNI152"}.}
 does not exceed this threshold are kept as the source \code{aparc+aseg}
 label. Defaults to \code{0.3}.}
 
-\item{id_offset}{Integer added to every input label ID when writing
-the merged volume to avoid collisions with FreeSurfer \code{aparc+aseg}
-labels. Defaults to \code{200L}. Set to \code{0L} if you have already remapped
-your IDs. Either way, a shifted ID that would land on an \code{aparc+aseg}
-structure still standing in the merged volume is an error rather than a
-silent merge.}
+\item{id_offset}{Integer added to every input label ID so it cannot
+collide with a FreeSurfer \code{aparc+aseg} label. Defaults to \code{200L}; use
+\code{0L} if your IDs are already remapped. A collision is an error either
+way, never a silent merge.}
 
-\item{protect_cortex}{Logical. If \code{TRUE} (default), the cerebral outline
-in \code{aparc+aseg} is never overwritten by user labels even when argmax
-wins above \code{threshold}: the cortical ribbon (aparc labels \code{1000-2999})
-plus cerebral white matter (\code{2}, \code{41}) and the corpus callosum
-(\code{251-255}). This preserves the brain-outline geometry the subcortical
-pipeline renders as context. Cerebellar structures are not protected
-here (they are handled downstream by \code{\link[=aseg_context]{aseg_context()}}). Disable only if
-you intentionally want user labels to overwrite the cerebrum.}
+\item{protect_cortex}{Whether the cerebral outline in \code{aparc+aseg} is
+safe from being overwritten by your labels. \code{TRUE}, the default, keeps
+the brain-outline geometry the subcortical pipeline draws as context.
+See details.}
 
 \item{subjects_dir}{FreeSurfer \code{SUBJECTS_DIR}. Defaults to
 \code{\link[freesurfer:fs_subj_dir]{freesurfer::fs_subj_dir()}}.}
 
-\item{verbose}{Verbosity level: \code{0} (silent), \code{1} (standard progress,
-default), or \code{2} (debug, includes FreeSurfer output). Logical values
-are accepted (\code{TRUE} = 1, \code{FALSE} = 0). If not specified, uses the
-value from \code{options("ggseg.extra.verbose")} or the \code{GGSEG_EXTRA_VERBOSE}
-environment variable.}
+\item{verbose}{How much to print: \code{0} silent, \code{1} progress (the default),
+\code{2} adds FreeSurfer's own output. \code{TRUE} and \code{FALSE} mean \code{1} and \code{0}.
+Falls back to \code{options("ggseg.extra.verbose")}, then
+\code{GGSEG_EXTRA_VERBOSE}.}
 
-\item{lut}{Optional colour LUT (data frame with at least an \code{idx}
-column, or path to a TSV with \verb{idx, label, R, G, B, A}). When
-provided, its \code{idx} (intersected with the volume) selects which labels
-to project, and it is returned alongside the volume with \code{idx} shifted
-by \code{id_offset} to match. With no \code{lut}, every non-zero label is
-projected. To project a subset, subset the \code{lut}.}
+\item{lut}{Optional colour lookup table: a data frame with at least an
+\code{idx} column, or a path to one. Its \code{idx} selects which labels to
+project, and it comes back beside the volume with \code{idx} shifted to match.
+With no \code{lut}, every non-zero label is projected.}
 
 \item{output_file}{Path for the merged volume. Defaults to a temp file.}
 }
@@ -108,6 +95,22 @@ that the user's IDs sit in a range that doesn't overlap any
 \code{aparc+aseg} label. The \code{lut} argument is shifted in the same way so
 it matches the merged volume.
 }
+\section{Registration}{
+\code{registration} takes the same vocabulary as
+\code{\link[=create_wholebrain_from_volume]{create_wholebrain_from_volume()}} and \code{\link[=prepare_subcortical_mni152]{prepare_subcortical_mni152()}}. An
+LTA must be registered to a volume on the same subject's conformed grid as
+\code{aparc+aseg.mgz}, which any \code{recon-all} output is; a mismatch is caught and
+aborted. \code{NULL} is deprecated and meant \code{"header"}.
+}
+
+\section{What \code{protect_cortex} protects}{
+The cortical ribbon (aparc labels \code{1000-2999}), cerebral white matter (\code{2},
+\code{41}) and the corpus callosum (\code{251-255}) are left in place even where a
+user label wins the argmax above \code{threshold}. Cerebellar structures are not
+protected here; \code{\link[=aseg_context]{aseg_context()}} handles them downstream. Disable it only
+if you mean your labels to overwrite the cerebrum.
+}
+
 \examples{
 \dontrun{
 lta <- coregister_volume("atlas.nii.gz")
@@ -120,5 +123,7 @@ atlas <- create_subcortical_from_volume(merged)
 }
 }
 \seealso{
-\code{\link[=coregister_volume]{coregister_volume()}}, \code{\link[=prepare_subcortical_anatomical]{prepare_subcortical_anatomical()}}
+\code{\link[=prepare_subcortical_anatomical]{prepare_subcortical_anatomical()}}, which runs this and
+\code{\link[=coregister_volume]{coregister_volume()}} together, and explains which of the four to reach
+for.
 }

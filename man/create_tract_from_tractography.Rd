@@ -27,11 +27,10 @@ create_tract_from_tractography(
 named list of coordinate matrices where each matrix has N rows and 3
 columns (x, y, z).}
 
-\item{verbose}{Verbosity level: \code{0} (silent), \code{1} (standard progress,
-default), or \code{2} (debug, includes FreeSurfer output). Logical values
-are accepted (\code{TRUE} = 1, \code{FALSE} = 0). If not specified, uses the
-value from \code{options("ggseg.extra.verbose")} or the \code{GGSEG_EXTRA_VERBOSE}
-environment variable.}
+\item{verbose}{How much to print: \code{0} silent, \code{1} progress (the default),
+\code{2} adds FreeSurfer's own output. \code{TRUE} and \code{FALSE} mean \code{1} and \code{0}.
+Falls back to \code{options("ggseg.extra.verbose")}, then
+\code{GGSEG_EXTRA_VERBOSE}.}
 
 \item{views}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} Use \code{slabs} instead.}
 
@@ -55,8 +54,9 @@ auto-generated.}
 \item{atlas_name}{Name for the atlas. If NULL, derived from the input
 filename.}
 
-\item{output_dir}{Directory to store intermediate files (screenshots, masks,
-contours). Defaults to \code{\link[=tempdir]{tempdir()}}.}
+\item{output_dir}{Where to put the intermediate files. Defaults to
+\code{\link[=tempdir]{tempdir()}}, from \code{options("ggseg.extra.output_dir")} or
+\code{GGSEG_EXTRA_OUTPUT_DIR}.}
 
 \item{tube_opts}{Named list controlling how a bundle of streamlines
 becomes a 3D tube mesh, with these entries and defaults:
@@ -91,14 +91,12 @@ Steps are:
 Use \code{steps = 1} for a 3D-only atlas. Geometry is shaped after the build,
 not during it: see \code{\link[=atlas_polish]{atlas_polish()}}.}
 
-\item{cleanup}{Remove intermediate files after atlas creation. If not
-specified, uses \code{options("ggseg.extra.cleanup")} or the \code{GGSEG_EXTRA_CLEANUP}
-environment variable. Default is TRUE.}
+\item{cleanup}{Remove the intermediate files afterwards. Default \code{TRUE},
+from \code{options("ggseg.extra.cleanup")} or \code{GGSEG_EXTRA_CLEANUP}.}
 
-\item{skip_existing}{Skip generating output files that already exist,
-allowing interrupted atlas creation to resume. If not specified, uses
-\code{options("ggseg.extra.skip_existing")} or the \code{GGSEG_EXTRA_SKIP_EXISTING}
-environment variable. Default is TRUE.}
+\item{skip_existing}{Reuse intermediate files that already exist, so an
+interrupted run can resume. Default \code{TRUE}, from
+\code{options("ggseg.extra.skip_existing")} or \code{GGSEG_EXTRA_SKIP_EXISTING}.}
 
 \item{coord_space}{The space the streamline coordinates are in. One of
 \code{"infer"} (the default), \code{"voxel"} for voxel indices, or \code{"mm"} for RAS

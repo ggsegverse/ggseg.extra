@@ -1,4 +1,3 @@
-#' @param skip_existing Skip generating output files that already exist,
-#'   allowing interrupted atlas creation to resume. If not specified, uses
-#'   `options("ggseg.extra.skip_existing")` or the `GGSEG_EXTRA_SKIP_EXISTING`
-#'   environment variable. Default is TRUE.
+#' @param skip_existing Reuse intermediate files that already exist, so an
+#'   interrupted run can resume. Default `TRUE`, from
+#'   `options("ggseg.extra.skip_existing")` or `GGSEG_EXTRA_SKIP_EXISTING`.

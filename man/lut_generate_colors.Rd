@@ -10,21 +10,15 @@ lut_generate_colors(lut, chroma = 75, luminance = c(45, 65, 82), by = NULL)
 \item{lut}{A lookup table with \code{idx}, \code{label}, \code{R}, \code{G}, \code{B} and \code{A}
 columns, as returned by \code{\link[=read_lut]{read_lut()}}.}
 
-\item{chroma}{Colour intensity, zero or more, passed to
-\code{\link[grDevices:hcl]{grDevices::hcl()}} and held constant across the palette. Asking for more
-than the display can show is what makes colours collide, so lowering
-this is the usual answer to the error that reports one.}
+\item{chroma}{Colour intensity, zero or more, passed to \code{\link[grDevices:hcl]{grDevices::hcl()}}
+and held constant across the palette. Lower it if colours collide.}
 
 \item{luminance}{Lightness values, 0 to 100, passed to \code{\link[grDevices:hcl]{grDevices::hcl()}}
-and cycled through in order as the hue advances.}
+and cycled through as the hue advances.}
 
-\item{by}{Optional name of a column whose groups are each coloured from
-the full colour circle, rather than from a slice of one shared circle.
-Pass \code{by = "type"} for a whole-brain table, where the cortical and
-subcortical rows become two atlases that are never plotted together: a
-colour then has to be unique within an atlas rather than within the
-table, and each atlas gets the whole circle to spend. The default,
-\code{NULL}, colours the table as one atlas.}
+\item{by}{Optional column whose groups are each coloured from the full
+colour circle rather than from a slice of one shared circle. Pass
+\code{by = "type"} for a whole-brain table. See details.}
 }
 \value{
 \code{lut}, with \code{R}, \code{G} and \code{B} filled in and \code{A} set to \code{0} on every
@@ -32,39 +26,45 @@ row that is not the background.
 }
 \description{
 Several atlas releases ship a lookup table of names only, with every RGB
-channel set to zero. Handed to a creation pipeline as-is, the atlas
-arrives with no palette and the plotting packages assign one, which
-renders as large blocks of repeated hue. \code{lut_generate_colors()} fills the
-\code{R}, \code{G} and \code{B} columns with a palette built from the label names, and
-sets \code{A} to \code{0}.
+channel set to zero. Handed to a creation pipeline as-is, the atlas arrives
+with no palette and the plotting packages assign one, which renders as large
+blocks of repeated hue. \code{lut_generate_colors()} fills the \code{R}, \code{G} and \code{B}
+columns with a palette built from the label names, and sets \code{A} to \code{0}.
 }
-\details{
-Colours are assigned per \emph{structure}, not per region, so a structure's two
-hemispheres share one the way FreeSurfer's own tables do. The hemisphere
-marker is read off the label in the spellings the rest of the package
-recognises - a \verb{Left-} / \code{rh_} / \code{L_} prefix or a \verb{_right} / \code{-lh} suffix -
-plus the \verb{ctx-lh-} and \verb{wm-rh-} prefixes FreeSurfer's cortical and
-white-matter tables use. A label carrying none of them is a structure of
-its own.
+\section{How colours are assigned}{
+Colours go to \emph{structures}, not regions, so a structure's two hemispheres
+share one the way FreeSurfer's own tables do. The hemisphere marker is read
+off the label in the spellings the rest of the package recognises -- a
+\verb{Left-} / \code{rh_} / \code{L_} prefix, a \verb{_right} / \code{-lh} suffix, or the \verb{ctx-lh-}
+and \verb{wm-rh-} prefixes FreeSurfer's cortical and white-matter tables use. A
+label carrying none of them is a structure of its own.
 
 Hues are spread evenly around the colour circle in order of first
-appearance, and stepped through \code{luminance} in turn so that neighbouring
-hues still separate. Reordering the table's rows therefore reshuffles the
-palette; generate it once and commit the result.
+appearance, and stepped through \code{luminance} in turn so neighbouring hues
+still separate. Reordering the table's rows therefore reshuffles the
+palette: generate it once and commit the result.
 
-No two structures are given the same colour: \code{grDevices::hcl()} clips
-out-of-gamut colours without saying so, and where that would hand back a
-colour twice this errors rather than let it through. Colours growing
-merely \emph{close} is not an error. One chroma and three luminances hold only
-so many, and past roughly sixty structures neighbouring hues stop being
-easy to tell apart - a limit of the ramp rather than a fault, and a
-parcellation that fine is read by hovering a region rather than by
-matching it to a legend.
-
-Rows with \code{idx = 0} are the background rather than a structure, and are
-left exactly as they are. Every other row has its \code{R}, \code{G}, \code{B} and \code{A}
-replaced, so run this on a table that has no palette worth keeping.
+Rows with \code{idx = 0} are the background rather than a structure, and are left
+exactly as they are. Every other row has its \code{R}, \code{G}, \code{B} and \code{A} replaced,
+so run this on a table that has no palette worth keeping.
 }
+
+\section{When it errors}{
+No two structures may be given the same colour: \code{\link[grDevices:hcl]{grDevices::hcl()}} clips
+out-of-gamut colours without saying so, and where that would hand back a
+colour twice this errors rather than let it through. Lowering \code{chroma} is
+the usual answer. Colours growing merely \emph{close} is not an error -- one
+chroma and three luminances hold only so many, and past roughly sixty
+structures neighbouring hues stop being easy to tell apart.
+}
+
+\section{Grouping with \code{by}}{
+In a whole-brain table the cortical and subcortical rows become two atlases
+that are never plotted together, so a colour only has to be unique within an
+atlas and each can spend the whole circle. \code{by = "type"} does that. The
+default, \code{NULL}, colours the table as one atlas.
+}
+
 \examples{
 lut <- data.frame(
   idx = 1:4,
