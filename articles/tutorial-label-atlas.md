@@ -132,8 +132,8 @@ atlas_views(ba_atlas)
 plot(ba_atlas)
 ```
 
-![Brodmann area regions straight from the pipeline, with stepped
-boundaries traced from the
+![Brodmann area regions straight from the pipeline, drawn on a grey
+cortical silhouette, with stepped boundaries traced from the
 mesh.](figures/tutorial-label-atlas-plot-raw-1.png)
 
 Stage 1 — straight out of the pipeline, boundaries still following the
@@ -141,6 +141,16 @@ mesh.
 
 The boundaries are staircases, because the pipeline traces the edges of
 mesh triangles rather than drawing a line through them.
+
+Four label files cover a small part of the cortex, and the grey behind
+them is the rest of it. Any vertex no label claims becomes a silhouette
+region, `lh_cortex` or `rh_cortex`, so a sparse parcellation still reads
+as somewhere on a brain rather than as shapes in empty space. It is
+context rather than a region: it is not in `$core`, so it takes no
+colour and no legend entry, and
+[`context_pattern()`](https://ggsegverse.github.io/ggseg.extra/reference/context_pattern.md)
+matches it when you want to treat it differently from the regions — as
+the next section does.
 
 ## Tidying the geometry
 
@@ -153,14 +163,14 @@ rounds off what is left:
 ``` r
 
 sum(count_vertices(ba_atlas))
-#> [1] 2975
+#> [1] 5329
 
 ba_atlas <- ba_atlas |>
   atlas_simplify(keep = 0.2, exclude = context_pattern()) |>
   atlas_smooth(exclude = context_pattern())
 
 sum(count_vertices(ba_atlas))
-#> [1] 1034
+#> [1] 2690
 ```
 
 ``` r

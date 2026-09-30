@@ -28,7 +28,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9078</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9079</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -195,24 +195,25 @@
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">ba_atlas</span><span class="op">)</span></span></code></pre></div>
 <div class="figure">
-<img src="figures/tutorial-label-atlas-plot-raw-1.png" alt="Brodmann area regions straight from the pipeline, with stepped boundaries traced from the mesh." width="960"><p class="caption">
+<img src="figures/tutorial-label-atlas-plot-raw-1.png" alt="Brodmann area regions straight from the pipeline, drawn on a grey cortical silhouette, with stepped boundaries traced from the mesh." width="960"><p class="caption">
 Stage 1 — straight out of the pipeline, boundaries still following the mesh.
 </p>
 </div>
 <p>The boundaries are staircases, because the pipeline traces the edges of mesh triangles rather than drawing a line through them.</p>
+<p>Four label files cover a small part of the cortex, and the grey behind them is the rest of it. Any vertex no label claims becomes a silhouette region, <code>lh_cortex</code> or <code>rh_cortex</code>, so a sparse parcellation still reads as somewhere on a brain rather than as shapes in empty space. It is context rather than a region: it is not in <code>$core</code>, so it takes no colour and no legend entry, and <code><a href="../reference/context_pattern.html">context_pattern()</a></code> matches it when you want to treat it differently from the regions — as the next section does.</p>
 </section><section class="level2"><h2 id="tidying-the-geometry">Tidying the geometry<a class="anchor" aria-label="anchor" href="#tidying-the-geometry"></a>
 </h2>
 <p>As with any pipeline output, the polygons arrive at mesh resolution. <code><a href="../reference/atlas_simplify.html">atlas_simplify()</a></code> drops vertices and <code><a href="../reference/atlas_smooth.html">atlas_smooth()</a></code> rounds off what is left:</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="fu"><a href="../reference/count_vertices.html">count_vertices</a></span><span class="op">(</span><span class="va">ba_atlas</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] 2975</span></span>
+<span><span class="co">#&gt; [1] 5329</span></span>
 <span></span>
 <span><span class="va">ba_atlas</span> <span class="op">&lt;-</span> <span class="va">ba_atlas</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/atlas_simplify.html">atlas_simplify</a></span><span class="op">(</span>keep <span class="op">=</span> <span class="fl">0.2</span>, exclude <span class="op">=</span> <span class="fu"><a href="../reference/context_pattern.html">context_pattern</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/atlas_smooth.html">atlas_smooth</a></span><span class="op">(</span>exclude <span class="op">=</span> <span class="fu"><a href="../reference/context_pattern.html">context_pattern</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="fu"><a href="../reference/count_vertices.html">count_vertices</a></span><span class="op">(</span><span class="va">ba_atlas</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] 1034</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] 2690</span></span></code></pre></div>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">ba_atlas</span><span class="op">)</span></span></code></pre></div>
 <div class="figure">

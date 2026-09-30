@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9078</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9079</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -68,6 +68,17 @@
     </div>
 
     <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.9.9.9079" id="ggsegextra-1999079">ggseg.extra 1.9.9.9079<a class="anchor" aria-label="anchor" href="#ggsegextra-1999079"></a></h2>
+<div class="section level3">
+<h3 id="new-features-1-9-9-9079">New features<a class="anchor" aria-label="anchor" href="#new-features-1-9-9-9079"></a></h3>
+<ul><li>
+<p>A cortical parcellation that covers only part of the mantle now gets the rest of it as a silhouette to sit on (<a href="https://github.com/ggsegverse/ggseg.extra/issues/285" class="external-link">#285</a>). A handful of <code>.label</code> files used to produce an atlas of a few shapes floating in empty space, with nothing to say where on the brain they were. Every vertex no label claims becomes one region per hemisphere, <code>lh_cortex</code> / <code>rh_cortex</code>, drawn behind the parcellation.</p>
+<p>It is context, not a region: it is never added to <code>$core</code>, so it carries no colour and no legend entry, exactly as the volumetric pipelines’ silhouette does. It applies to every cortical pipeline, but only appears where there is something to appear for – an annotation that covers the mantle via a medial-wall region leaves nothing unlabelled and is unchanged. A parcellation that covers <em>nothing</em> is also unchanged, so a file that failed to read still errors rather than rendering as a plausible grey brain.</p>
+</li>
+<li><p><code><a href="../reference/context_pattern.html">context_pattern()</a></code> matches the surface spelling as well as the volumetric one. It was <code>"^cortex"</code>, which matched the <code>cortex_left</code> that volumetric pipelines produce and nothing at all on a surface atlas – so <code>exclude = context_pattern()</code> in the cortical, cerebellar, label and neuromaps tutorials excluded nothing, and the prose promising it would “leave the brain-outline geometry crisp” was untrue. Surface atlases label the silhouette <code>lh_cortex</code> / <code>rh_cortex</code>, because ggseg.formats reads a label’s hemisphere off its prefix when laying views out, and <code><a href="../reference/context_pattern.html">context_pattern()</a></code> now covers both.</p></li>
+</ul></div>
+</div>
+    <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9078" id="ggsegextra-1999078">ggseg.extra 1.9.9.9078<a class="anchor" aria-label="anchor" href="#ggsegextra-1999078"></a></h2>
 <div class="section level3">
 <h3 id="documentation-1-9-9-9078">Documentation<a class="anchor" aria-label="anchor" href="#documentation-1-9-9-9078"></a></h3>
@@ -78,13 +89,10 @@
 <li><p>The <code>verbose</code>, <code>cleanup</code>, <code>skip_existing</code> and <code>output_dir</code> argument descriptions are shorter, which shows up on the twenty or so pages that share them.</p></li>
 <li><p><code><a href="../reference/create_wholebrain_from_volume.html">?create_wholebrain_from_volume</a></code> described <code>cortical_labels</code>, <code>subcortical_labels</code> and <code>min_vertices</code> as current arguments in its <strong>Label classification</strong> section and told readers to “use <code>cortical_labels</code> / <code>subcortical_labels</code> to override” in its recommended workflow. They were retired into <code>labels</code> and <code>projection_opts</code> several dev versions ago, so the advice warned rather than worked.</p></li>
 <li><p><code><a href="../reference/prepare_subcortical_anatomical.html">?prepare_subcortical_anatomical</a></code> now says which of the four anatomical coregistration functions to reach for and why, and the others link to it. There was nothing distinguishing them, and their argument lists overlap heavily.</p></li>
-<li><p>The one remaining reference to the old package name <code>ggsegExtra</code> is gone.</p></li>
+<li><p>The one remaining reference to the old package name <code>ggsegExtra</code> is gone. # ggseg.extra 1.9.9.9077</p></li>
 </ul></div>
-</div>
-    <div class="section level2">
-<h2 class="pkg-version" data-toc-text="1.9.9.9077" id="ggsegextra-1999077">ggseg.extra 1.9.9.9077<a class="anchor" aria-label="anchor" href="#ggsegextra-1999077"></a></h2>
 <div class="section level3">
-<h3 id="documentation-1-9-9-9077">Documentation<a class="anchor" aria-label="anchor" href="#documentation-1-9-9-9077"></a></h3>
+<h3 id="documentation-1-9-9-9078-1">Documentation<a class="anchor" aria-label="anchor" href="#documentation-1-9-9-9078-1"></a></h3>
 <ul><li><p>The documentation now teaches the API the package recommends. <code><a href="../reference/atlas_polish.html">atlas_polish()</a></code> and <code><a href="../reference/context_pattern.html">context_pattern()</a></code> appeared in no vignette at all, although <code><a href="../reference/atlas_smooth.html">?atlas_smooth</a></code> calls the first “what most builds want” and <code><a href="../reference/context_pattern.html">?context_pattern</a></code> exists so that the silhouette pattern is not retyped. The pattern was instead hardcoded thirty-odd times in two incompatible spellings, <code>"^cortex"</code> in the volume tutorials and <code>"cortex_"</code> in the surface ones. Every one is now <code><a href="../reference/context_pattern.html">context_pattern()</a></code>, and <code><a href="../articles/post-processing.html">vignette("post-processing")</a></code> leads with <code><a href="../reference/atlas_polish.html">atlas_polish()</a></code>.</p></li>
 <li><p><code><a href="../articles/post-processing.html">vignette("post-processing")</a></code> no longer tells readers to call <code><a href="https://ggsegverse.github.io/ggseg.formats/reference/ggseg_atlas.html" class="external-link">ggseg_atlas()</a></code> while it is unreachable, and its inspection example no longer attaches ggseg.formats, since the verbs are re-exported. The same redundant <code><a href="https://github.com/ggsegverse/ggseg.formats" class="external-link">library(ggseg.formats)</a></code> is gone from six tutorials.</p></li>
 <li><p>“Atlas Creation Workflows” said twice, in prose and in two diagrams, that subcortical and tract atlases are 3D-only with “no meaningful 2D representation”. Both pipelines build 2D slice geometry, and both tutorials ship the renders. The sections now explain where that 2D actually comes from – slicing the volume rather than projecting a surface.</p></li>
