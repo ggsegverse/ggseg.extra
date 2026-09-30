@@ -195,7 +195,7 @@ describe("build_vertex_label_vector_cerebellum", {
     expect_identical(result[9:10], rep("vermis_VI", 2))
   })
 
-  it("returns NA for unlabelled vertices", {
+  it("names unlabelled vertices as the flatmap backdrop", {
     vertices_df <- data.frame(
       label = "left_I-IV",
       stringsAsFactors = FALSE
@@ -204,7 +204,8 @@ describe("build_vertex_label_vector_cerebellum", {
 
     result <- build_vertex_label_vector_cerebellum(vertices_df, 5)
 
-    expect_identical(sum(is.na(result)), 2L)
+    expect_identical(sum(is.na(result)), 0L)
+    expect_identical(sum(result == "cerebellum"), 2L)
   })
 })
 

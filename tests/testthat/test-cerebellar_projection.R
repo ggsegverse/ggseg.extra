@@ -34,7 +34,7 @@ describe("build_vertex_label_vector_cerebellum", {
     expect_length(labels, 4L)
     expect_identical(
       labels,
-      c("region_a", NA_character_, NA_character_, "region_a")
+      c("region_a", "cerebellum", "cerebellum", "region_a")
     )
   })
 
@@ -47,7 +47,23 @@ describe("build_vertex_label_vector_cerebellum", {
 
     labels <- build_vertex_label_vector_cerebellum(vertices_df, 3L)
 
-    expect_identical(labels, c("lh_a", "rh_b", NA_character_))
+    expect_identical(labels, c("lh_a", "rh_b", "cerebellum"))
+  })
+
+  # The flatmap is one mesh with no hemisphere split, so the surface the
+  # parcellation does not cover is a single backdrop rather than one per
+  # hemisphere -- and it has to be one context_pattern() recognises.
+  it("names the uncovered flatmap as a backdrop", {
+    vertices_df <- data.frame(
+      label = "left_I-IV",
+      vertices = I(list(0L)),
+      stringsAsFactors = FALSE
+    )
+
+    labels <- build_vertex_label_vector_cerebellum(vertices_df, 3L)
+
+    expect_identical(unique(labels[-1]), "cerebellum")
+    expect_true(grepl(context_pattern(), "cerebellum", ignore.case = TRUE))
   })
 })
 
