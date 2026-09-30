@@ -95,33 +95,44 @@ articles:
 
 reference:
   - title: Create Brain Atlases
-    desc: Functions to create brain atlases for ggseg and ggseg3d
+    desc: Turn a parcellation into a `ggseg_atlas` you can plot
     contents:
       - starts_with("create_")
 
-  - title: Atlas Manipulation
-    desc: Functions to manipulate and manage brain atlases
+  - title: Shape an Atlas's Geometry
+    desc: >
+      Simplify, smooth and grow a finished atlas's 2D outlines. These run on
+      the returned atlas, not during the build, so retuning one is cheap.
     contents:
-      - starts_with("atlas_")
-      - -atlas_github_actions
+      - atlas_polish
+      - atlas_simplify
+      - atlas_smooth
+      - atlas_dilate
       - context_pattern
       - count_vertices
 
+  - title: Curate an Atlas
+    desc: >
+      The `atlas_region_*` and `atlas_view_*` vocabulary, re-exported from
+      ggseg.formats, plus the constructor that validates a hand-edited atlas.
+    contents:
+      - atlas-verbs
+
   - title: Atlas Repository
-    desc: Create and manage ggseg atlas packages
+    desc: Create and maintain a ggseg atlas package
     contents:
       - setup_atlas_repo
-      - setup_sitrep
       - use_atlas_github_actions
-      - atlas_github_actions
+      - ggseg_atlas_github_actions
+      - sitrep
 
-  - title: Color Tables
-    desc: Read, write, and manipulate FreeSurfer color tables
+  - title: Lookup Tables
+    desc: Read, write and build FreeSurfer-style colour lookup tables
     contents:
-      - read_ctab
-      - write_ctab
-      - is_ctab
-      - get_ctab
+      - read_lut
+      - write_lut
+      - get_lut
+      - is_lut
       - lut_add
       - lut_combine
       - lut_classify_anatomy
@@ -130,7 +141,7 @@ reference:
   - title: Subcortical Helpers
     desc: Compose slice views and anatomical context for subcortical atlases
     contents:
-      - subcortical_views
+      - subcortical_slabs
       - aseg_context
       - aseg_hidden_labels
 
@@ -152,19 +163,22 @@ reference:
       - transform_mni_to_suit
       - read_suit_parcellation
 
-  - title: Utilities
-    desc: General package utilities
+  - title: Reading Parcellation Files
+    desc: Read the formats the creation pipelines accept
     contents:
       - read_annotation_data
+      - read_gifti_annotation
       - read_cifti_annotation
       - read_cifti_subcortical
-      - read_gifti_annotation
       - read_neuromaps_annotation
       - read_neuromaps_volume
-      - convert_legacy_brain_atlas
       - read_tractography
+
+  - title: Utilities
+    contents:
+      - convert_legacy_brain_atlas
       - mri_surf2surf_rereg
       - label_to_region
       - get_verbose
-      - is_verbose
       - as_verbosity
+

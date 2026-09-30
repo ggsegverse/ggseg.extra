@@ -1,23 +1,22 @@
-#' Check ggseg.extra setup status
+#' Report on the ggseg.extra setup
 #'
-#' Performs diagnostic checks to verify that system dependencies
-#' and R packages required by ggseg.extra are properly configured.
-#' Shows per-pipeline readiness so you can see which atlas creation
-#' workflows are available and what to install for the ones that aren't.
+#' Checks the system dependencies and R packages the creation pipelines need,
+#' then reports which pipelines are ready and what to install for the ones
+#' that are not.
 #'
-#' @param detail Character. Level of detail to display:
-#'   - `"minimal"`: Just the pipeline readiness summary
-#'   - `"simple"` (default): System checks + pipeline readiness
-#'   - `"full"`: Everything above + install commands, paths, options,
-#'     and FreeSurfer diagnostics
+#' @param detail How much to show, from least to most:
+#'   - `"minimal"`: the pipeline readiness summary only
+#'   - `"simple"` (the default): system checks and pipeline readiness
+#'   - `"full"`: the above plus install commands, paths, options and
+#'     FreeSurfer diagnostics
 #'
-#' @return Invisibly returns a list with check results.
+#' @return Invisibly, a list of check results.
 #' @export
 #'
 #' @examples
-#' setup_sitrep()
-#' setup_sitrep("full")
-setup_sitrep <- function(detail = c("simple", "minimal", "full")) {
+#' sitrep()
+#' sitrep("full")
+sitrep <- function(detail = c("simple", "minimal", "full")) {
   detail <- match.arg(detail)
 
   results <- list()
@@ -38,6 +37,20 @@ setup_sitrep <- function(detail = c("simple", "minimal", "full")) {
   summarize_pipelines(results, detail)
 
   invisible(results)
+}
+
+
+#' @description
+#' `r lifecycle::badge("deprecated")`
+#'
+#' `setup_sitrep()` was renamed to [sitrep()]. It reports on the setup rather
+#' than performing any, which put it beside [setup_atlas_repo()] under a
+#' prefix that creates things.
+#' @rdname sitrep
+#' @export
+setup_sitrep <- function(detail = c("simple", "minimal", "full")) {
+  lifecycle::deprecate_warn("1.9.9.9075", "setup_sitrep()", "sitrep()")
+  sitrep(detail = detail)
 }
 
 
@@ -119,7 +132,8 @@ check_optional_packages <- function(detail = "simple") {
     "ciftiTools",
     "RNifti",
     "Rvcg",
-    "neuromapr"
+    "neuromapr",
+    "princurve"
   )
 
   min_versions <- c(ciftiTools = ciftitools_min_version())
@@ -258,6 +272,11 @@ pipeline_registry <- function(results) {
           "from tractography",
           "create_tract_from_tractography()",
           list(needs$rnifti)
+        ),
+        make_pipeline(
+          "from volume",
+          "create_tract_from_volume()",
+          list(needs$rnifti, needs$princurve)
         )
       )
     ),
@@ -359,6 +378,11 @@ pipeline_pkg_needs <- function(results) {
       isTRUE(results$packages$neuromapr),
       "{neuromapr}",
       'remotes::install_github("ggseg/neuromapr")'
+    ),
+    princurve = pipeline_need(
+      isTRUE(results$packages$princurve),
+      "{princurve}",
+      'install.packages("princurve")'
     )
   )
 }
@@ -517,11 +541,11 @@ summarize_pipeline_footer <- function(n_ready, n_total, detail) {
   cli::cli_alert_info("{n_ready}/{n_total} pipelines ready")
   if (detail == "minimal") {
     cli::cli_bullets(c(
-      "i" = "Run {.code setup_sitrep()} for details"
+      "i" = "Run {.code sitrep()} for details"
     ))
   } else if (detail == "simple") {
     cli::cli_bullets(c(
-      "i" = "Run {.code setup_sitrep(\"full\")} for install instructions"
+      "i" = "Run {.code sitrep(\"full\")} for install instructions"
     ))
   }
 

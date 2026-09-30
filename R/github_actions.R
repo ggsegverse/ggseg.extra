@@ -35,11 +35,11 @@
 #' use_atlas_github_actions("pkgdown", overwrite = TRUE)
 #' }
 use_atlas_github_actions <- function(
-  workflows = atlas_github_actions(),
+  workflows = ggseg_atlas_github_actions(),
   path = ".",
   overwrite = FALSE
 ) {
-  available <- atlas_github_actions()
+  available <- ggseg_atlas_github_actions()
   unknown <- setdiff(workflows, available)
   if (length(unknown) > 0) {
     cli::cli_abort(c(
@@ -97,8 +97,8 @@ use_atlas_github_actions <- function(
 #' @export
 #'
 #' @examples
-#' atlas_github_actions()
-atlas_github_actions <- function() {
+#' ggseg_atlas_github_actions()
+ggseg_atlas_github_actions <- function() {
   c(
     "R-CMD-check",
     "code-quality",
@@ -106,6 +106,25 @@ atlas_github_actions <- function() {
     "render-readme",
     "update-codemeta"
   )
+}
+
+
+#' @description
+#' `r lifecycle::badge("deprecated")`
+#'
+#' `atlas_github_actions()` was renamed to
+#' [ggseg_atlas_github_actions()]. It takes no atlas and returns GitHub
+#' Actions workflow names, so the `atlas_*` prefix put it among the verbs
+#' that reshape an atlas.
+#' @rdname ggseg_atlas_github_actions
+#' @export
+atlas_github_actions <- function() {
+  lifecycle::deprecate_warn(
+    "1.9.9.9075",
+    "atlas_github_actions()",
+    "ggseg_atlas_github_actions()"
+  )
+  ggseg_atlas_github_actions()
 }
 
 

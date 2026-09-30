@@ -1,3 +1,43 @@
+# ggseg.extra 1.9.9.9076
+
+## Breaking changes
+
+- `atlas_github_actions()` is renamed `ggseg_atlas_github_actions()`. It takes
+  no atlas and returns GitHub Actions workflow names, so the `atlas_*` prefix
+  put it among the verbs that reshape an atlas -- the reference index had to
+  exclude it by hand. The old name warns and still works.
+
+- `setup_sitrep()` is renamed `sitrep()`. It reports on the setup rather than
+  performing any, which put it beside `setup_atlas_repo()` under a prefix that
+  creates things. The old name warns and still works.
+
+## New features
+
+- `ggseg_atlas()` and `is_ggseg_atlas()` are re-exported from ggseg.formats.
+  The "Rebuilding the atlas" section of `vignette("post-processing")` has been
+  telling readers to call `ggseg_atlas()`, which was imported but never
+  exported -- anyone with only `library(ggseg.extra)` got
+  `object 'ggseg_atlas' not found`.
+
+## Minor changes
+
+- The `atlas_*` manipulation verbs appear in the reference index. They are
+  re-exports, so they lived on the internal `reexports` page while the section
+  named "Atlas Manipulation" held six functions, none of them the ones
+  `vignette("post-processing")` teaches. `?atlas-verbs` is now a visible page
+  that names each verb and what it is for, grouped by what it changes.
+
+- The reference index lists the `lut_*` names rather than the deprecated
+  `read_ctab()`, `write_ctab()`, `is_ctab()` and `get_ctab()` aliases, and
+  `subcortical_slabs()` rather than the deprecated `subcortical_views()`. The
+  sections are regrouped so geometry shaping, curation and file reading are
+  each their own heading.
+
+- `sitrep()` reports `create_tract_from_volume()`, which was missing from the
+  pipeline readiness list -- it claimed "12/12" while listing eleven creators
+  and one transform. It is 13 now, and `princurve` is checked alongside the
+  other optional packages.
+
 # ggseg.extra 1.9.9.9075
 
 ## Breaking changes
