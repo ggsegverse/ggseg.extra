@@ -73,21 +73,25 @@ voxel tracing, keeps some of the growth.
 }
 
 \examples{
-\dontrun{
-# Round off the voxel staircase.
-atlas <- atlas_smooth(my_atlas, smoothness = 0.4)
+\dontshow{if (requireNamespace("ggseg", quietly = TRUE)) withAutoprint(\{ # examplesIf}
+dk <- ggseg::dk()
 
+# Round off the voxel staircase.
+atlas_smooth(dk, smoothness = 0.4)
+
+\dontrun{
 # Leave the brain outline alone.
-atlas <- atlas_smooth(my_atlas, smoothness = 0.4, exclude = "^cortex")
+atlas_smooth(dk, smoothness = 0.4, exclude = context_pattern())
 
 # Round a cortical ribbon without closing its sulci.
-atlas <- atlas_smooth(
-  my_atlas,
+atlas_smooth(
+  dk,
   smoothness = 0.4,
   method = "chaikin",
-  labels = "^cortex"
+  labels = context_pattern()
 )
 }
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 \code{\link[=atlas_polish]{atlas_polish()}}, which simplifies and smooths in one call and is

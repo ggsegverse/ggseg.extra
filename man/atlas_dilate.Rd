@@ -34,10 +34,12 @@ a grey brain silhouette closes its sulci and flattens into a blob, so pass
 \code{exclude} (or \code{labels}) to keep it out.
 }
 \examples{
-\dontrun{
+\dontshow{if (requireNamespace("ggseg", quietly = TRUE)) withAutoprint(\{ # examplesIf}
+dk <- ggseg::dk()
+
 # Grow the structures and leave the grey brain alone
-atlas <- atlas_dilate(atlas, 0.5, exclude = "^cortex")
-}
+atlas_dilate(dk, 0.5, exclude = context_pattern())
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 \code{\link[=atlas_smooth]{atlas_smooth()}} and \code{\link[=atlas_simplify]{atlas_simplify()}}, the other post-creation

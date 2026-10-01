@@ -60,20 +60,22 @@
 #' @export
 #' @importFrom sf st_make_valid
 #'
-#' @examples
-#' \dontrun{
-#' # Round off the voxel staircase.
-#' atlas <- atlas_smooth(my_atlas, smoothness = 0.4)
+#' @examplesIf requireNamespace("ggseg", quietly = TRUE)
+#' dk <- ggseg::dk()
 #'
+#' # Round off the voxel staircase.
+#' atlas_smooth(dk, smoothness = 0.4)
+#'
+#' \dontrun{
 #' # Leave the brain outline alone.
-#' atlas <- atlas_smooth(my_atlas, smoothness = 0.4, exclude = "^cortex")
+#' atlas_smooth(dk, smoothness = 0.4, exclude = context_pattern())
 #'
 #' # Round a cortical ribbon without closing its sulci.
-#' atlas <- atlas_smooth(
-#'   my_atlas,
+#' atlas_smooth(
+#'   dk,
 #'   smoothness = 0.4,
 #'   method = "chaikin",
-#'   labels = "^cortex"
+#'   labels = context_pattern()
 #' )
 #' }
 atlas_smooth <- function(
@@ -190,18 +192,24 @@ atlas_smooth <- function(
 #'   when a build needs to interleave them differently.
 #' @export
 #'
-#' @examples
+#' @examplesIf requireNamespace("ggseg", quietly = TRUE)
+#' dk <- ggseg::dk()
+#' sum(count_vertices(dk))
+#'
+#' polished <- atlas_polish(dk, keep = 0.2)
+#' sum(count_vertices(polished))
+#'
 #' \dontrun{
 #' # The usual shape of a build: the context silhouette and the structures
 #' # want different budgets, so they get a call each.
-#' atlas <- my_atlas |>
+#' dk |>
 #'   atlas_polish(
 #'     keep = 0.4,
 #'     smoothness = 0.4,
 #'     method = "chaikin",
-#'     labels = "^cortex"
+#'     labels = context_pattern()
 #'   ) |>
-#'   atlas_polish(keep = 0.1, smoothness = 0.4, exclude = "^cortex")
+#'   atlas_polish(keep = 0.1, smoothness = 0.4, exclude = context_pattern())
 #' }
 atlas_polish <- function(
   atlas,
@@ -261,11 +269,11 @@ atlas_polish <- function(
 #' @seealso [atlas_smooth()] and [atlas_simplify()], the other post-creation
 #'   geometry steps.
 #' @export
-#' @examples
-#' \dontrun{
+#' @examplesIf requireNamespace("ggseg", quietly = TRUE)
+#' dk <- ggseg::dk()
+#'
 #' # Grow the structures and leave the grey brain alone
-#' atlas <- atlas_dilate(atlas, 0.5, exclude = "^cortex")
-#' }
+#' atlas_dilate(dk, 0.5, exclude = context_pattern())
 atlas_dilate <- function(atlas, amount, labels = NULL, exclude = NULL) {
   check_dilate_args(amount, labels, exclude)
 
@@ -315,14 +323,14 @@ atlas_dilate <- function(atlas, amount, labels = NULL, exclude = NULL) {
 #' @seealso [atlas_simplify()] to bring the count down, and [atlas_smooth()],
 #'   which raises it again -- rounding a corner off means inserting points.
 #' @export
-#' @examples
-#' \dontrun{
+#' @examplesIf requireNamespace("ggseg", quietly = TRUE)
+#' dk <- ggseg::dk()
+#'
 #' # The total is what the large-atlas warning reports.
-#' sum(count_vertices(my_atlas))
+#' sum(count_vertices(dk))
 #'
 #' # Which regions are the expensive ones?
-#' sort(count_vertices(my_atlas), decreasing = TRUE) |> head()
-#' }
+#' head(sort(count_vertices(dk), decreasing = TRUE))
 count_vertices <- function(atlas) {
   sf_data <- ggseg.formats::atlas_sf(atlas)
   counts <- vertices_per_row(sf_data)
@@ -376,10 +384,16 @@ count_vertices <- function(atlas) {
 #'   grow or shrink them. Simplify first and smooth afterwards, so the
 #'   smoothing has the last word on the outline.
 #' @export
-#' @examples
+#' @examplesIf requireNamespace("ggseg", quietly = TRUE)
+#' dk <- ggseg::dk()
+#' sum(count_vertices(dk))
+#'
+#' simplified <- atlas_simplify(dk, keep = 0.2)
+#' sum(count_vertices(simplified))
+#'
 #' \dontrun{
-#' # Halve the atlas, sparing the structures.
-#' atlas <- atlas_simplify(my_atlas, keep = 0.5, labels = "^cortex")
+#' # Simplify the backdrop only, sparing the structures.
+#' atlas_simplify(dk, keep = 0.5, labels = context_pattern())
 #' }
 atlas_simplify <- function(
   atlas,

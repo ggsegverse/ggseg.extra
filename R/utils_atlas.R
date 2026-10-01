@@ -104,6 +104,12 @@ label_to_region <- function(
 #' @export
 #'
 #' @examples
+#' context_pattern()
+#'
+#' # What it does and does not match: the backdrop, not a cortex structure.
+#' labels <- c("lh_cortex", "cerebellum", "lh_unknown", "Left-Cerebral-Cortex")
+#' grepl(context_pattern(), labels, ignore.case = TRUE)
+#'
 #' # The usual shape of a build: backdrop and structures, each its own way.
 #' \dontrun{
 #' atlas <- my_atlas |>
