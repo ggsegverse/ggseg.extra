@@ -48,16 +48,19 @@ returns the 3D mesh data for each region.
 The most common post-processing step is removing structures you don’t
 need.
 [`atlas_region_remove()`](https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html)
-matches against labels by default:
+matches against `region` by default — the lower-cased,
+separator-normalised name. Pass `match_on = "label"` to match the raw
+label instead, which is what the hyphenated FreeSurfer spellings below
+need:
 
 ``` r
 
 atlas <- atlas |>
-  atlas_region_remove("White-Matter") |>
-  atlas_region_remove("WM-hypointensities") |>
-  atlas_region_remove("-Ventricle") |>
-  atlas_region_remove("-Vent$") |>
-  atlas_region_remove("CSF")
+  atlas_region_remove("White-Matter", match_on = "label") |>
+  atlas_region_remove("WM-hypointensities", match_on = "label") |>
+  atlas_region_remove("-Ventricle", match_on = "label") |>
+  atlas_region_remove("-Vent$", match_on = "label") |>
+  atlas_region_remove("CSF", match_on = "label")
 ```
 
 Patterns are regular expressions, so `-Vent$` matches “3rd-Vent” and
@@ -342,7 +345,7 @@ atlas <- atlas_smooth(atlas, smoothness = 0.4, method = "chaikin",
 `smoothness` runs 0–1 on a scale shared by every method, so switching
 method does not mean re-finding the value.
 
-All three return a modified `ggseg_atlas`, so you can
+All four return a modified `ggseg_atlas`, so you can
 [`plot()`](https://rdrr.io/r/graphics/plot.default.html) the result and
 adjust before committing.
 

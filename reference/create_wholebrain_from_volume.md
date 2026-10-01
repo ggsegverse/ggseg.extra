@@ -182,8 +182,11 @@ create_wholebrain_from_volume(
 
 ## Value
 
-A named list with elements `cortical`, `subcortical`, and `cerebellar`,
-each a `ggseg_atlas` object (or NULL if no regions of that type exist).
+For a full run, a named list with elements `cortical`, `subcortical` and
+`cerebellar`, each a `ggseg_atlas` object (or `NULL` if no regions of
+that type exist). A run that stops at or before step 2 instead returns,
+invisibly, the label split to inspect: `cortical_labels`,
+`subcortical_labels`, `cerebellar_labels` and `vertex_counts`.
 
 ## Label classification
 
@@ -268,7 +271,9 @@ to need manual correction. Recommended workflow:
 
 3.  Run the full pipeline once you are satisfied with the split.
 
-4.  Visually inspect the resulting atlas with `ggseg()` / `ggseg3d()`.
+4.  Visually inspect the resulting atlas with
+    [`plot()`](https://rdrr.io/r/graphics/plot.default.html) for a quick
+    overview, or `ggplot() + geom_brain()` and `ggseg3d()` for a figure.
 
 The cortical surface projection uses FreeSurfer's cortex label
 (`{hemi}.cortex.label`) to prevent label dilation into the medial wall.
@@ -313,6 +318,24 @@ own register.dat or LTA file.
 
 FreeSurfer's own `INFO` and `WARNING` lines about the registration are
 only visible with `verbose = TRUE`.
+
+## See also
+
+[`atlas_polish()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_polish.md)
+to simplify and round off the result, which most builds want next.
+
+Other atlas creation:
+[`create_cerebellar_from_annotation()`](https://ggsegverse.github.io/ggseg.extra/reference/create_cerebellar_from_annotation.md),
+[`create_cerebellar_from_gifti()`](https://ggsegverse.github.io/ggseg.extra/reference/create_cerebellar_from_gifti.md),
+[`create_cerebellar_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_cerebellar_from_volume.md),
+[`create_cortical_from_annotation()`](https://ggsegverse.github.io/ggseg.extra/reference/create_cortical_from_annotation.md),
+[`create_cortical_from_cifti()`](https://ggsegverse.github.io/ggseg.extra/reference/create_cortical_from_cifti.md),
+[`create_cortical_from_gifti()`](https://ggsegverse.github.io/ggseg.extra/reference/create_cortical_from_gifti.md),
+[`create_cortical_from_labels()`](https://ggsegverse.github.io/ggseg.extra/reference/create_cortical_from_labels.md),
+[`create_cortical_from_neuromaps()`](https://ggsegverse.github.io/ggseg.extra/reference/create_cortical_from_neuromaps.md),
+[`create_subcortical_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_subcortical_from_volume.md),
+[`create_tract_from_tractography()`](https://ggsegverse.github.io/ggseg.extra/reference/create_tract_from_tractography.md),
+[`create_tract_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_tract_from_volume.md)
 
 ## Examples
 

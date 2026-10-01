@@ -19,7 +19,7 @@ derives region names from the rest of the filename."><meta property="og:image" c
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9085</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9086</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -115,7 +115,10 @@ FreeSurfer naming: <code>{hemi}.{regionname}.label</code> (e.g., <code>lh.motor.
 
 <dt id="arg-views">views<a class="anchor" aria-label="anchor" href="#arg-views"></a></dt>
 <dd><p>Which views to include: "lateral", "medial",
-"superior", "inferior".</p></dd>
+"superior", "inferior". Defaults to the two lateral-facing views,
+unlike the other cortical creators, because a hand-drawn label set is
+usually a few regions on the outer surface rather than a whole-cortex
+parcellation.</p></dd>
 
 
 <dt id="arg-verbose">verbose<a class="anchor" aria-label="anchor" href="#arg-verbose"></a></dt>
@@ -165,7 +168,26 @@ interrupted run can resume. Default <code>TRUE</code>, from
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>A <code>ggseg_atlas</code> object.</p>
+    <p>A <code>ggseg_atlas</code> object of type "cortical" containing region
+metadata (core), vertex indices for 3D rendering, a colour palette, and
+sf geometry for 2D plots.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
+    <div class="dont-index"><p><code><a href="atlas_polish.html">atlas_polish()</a></code> to simplify and round off the result, which
+most builds want next.</p>
+<p>Other atlas creation:
+<code><a href="create_cerebellar_from_annotation.html">create_cerebellar_from_annotation()</a></code>,
+<code><a href="create_cerebellar_from_gifti.html">create_cerebellar_from_gifti()</a></code>,
+<code><a href="create_cerebellar_from_volume.html">create_cerebellar_from_volume()</a></code>,
+<code><a href="create_cortical_from_annotation.html">create_cortical_from_annotation()</a></code>,
+<code><a href="create_cortical_from_cifti.html">create_cortical_from_cifti()</a></code>,
+<code><a href="create_cortical_from_gifti.html">create_cortical_from_gifti()</a></code>,
+<code><a href="create_cortical_from_neuromaps.html">create_cortical_from_neuromaps()</a></code>,
+<code><a href="create_subcortical_from_volume.html">create_subcortical_from_volume()</a></code>,
+<code><a href="create_tract_from_tractography.html">create_tract_from_tractography()</a></code>,
+<code><a href="create_tract_from_volume.html">create_tract_from_volume()</a></code>,
+<code><a href="create_wholebrain_from_volume.html">create_wholebrain_from_volume()</a></code></p></div>
     </div>
 
     <div class="section level2">

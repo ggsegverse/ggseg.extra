@@ -325,8 +325,8 @@ atlas_full <- create_cortical_from_neuromaps(
 #>   it and reduce vertices
 
 atlas_full <- atlas_full |>
-  atlas_simplify(keep = 0.2, exclude = "cortex_") |>
-  atlas_smooth(exclude = "cortex_")
+  atlas_simplify(keep = 0.2, exclude = context_pattern()) |>
+  atlas_smooth(exclude = context_pattern())
 ```
 
 ## Post-processing
@@ -481,3 +481,13 @@ More bins means more regions and larger atlas objects. The pipeline is
 fast regardless of bin count, so experiment freely.
 
 ## Saving
+
+Once you’re happy with the atlas, save it as package data:
+
+``` r
+
+usethis::use_data(abagen_genepc1, overwrite = TRUE, compress = "xz")
+```
+
+The `compress = "xz"` flag gives the best compression for sf geometry
+data.

@@ -35,6 +35,9 @@ create_cortical_from_labels(
 - views:
 
   Which views to include: "lateral", "medial", "superior", "inferior".
+  Defaults to the two lateral-facing views, unlike the other cortical
+  creators, because a hand-drawn label set is usually a few regions on
+  the outer surface rather than a whole-cortex parcellation.
 
 - verbose:
 
@@ -86,7 +89,27 @@ create_cortical_from_labels(
 
 ## Value
 
-A `ggseg_atlas` object.
+A `ggseg_atlas` object of type "cortical" containing region metadata
+(core), vertex indices for 3D rendering, a colour palette, and sf
+geometry for 2D plots.
+
+## See also
+
+[`atlas_polish()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_polish.md)
+to simplify and round off the result, which most builds want next.
+
+Other atlas creation:
+[`create_cerebellar_from_annotation()`](https://ggsegverse.github.io/ggseg.extra/reference/create_cerebellar_from_annotation.md),
+[`create_cerebellar_from_gifti()`](https://ggsegverse.github.io/ggseg.extra/reference/create_cerebellar_from_gifti.md),
+[`create_cerebellar_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_cerebellar_from_volume.md),
+[`create_cortical_from_annotation()`](https://ggsegverse.github.io/ggseg.extra/reference/create_cortical_from_annotation.md),
+[`create_cortical_from_cifti()`](https://ggsegverse.github.io/ggseg.extra/reference/create_cortical_from_cifti.md),
+[`create_cortical_from_gifti()`](https://ggsegverse.github.io/ggseg.extra/reference/create_cortical_from_gifti.md),
+[`create_cortical_from_neuromaps()`](https://ggsegverse.github.io/ggseg.extra/reference/create_cortical_from_neuromaps.md),
+[`create_subcortical_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_subcortical_from_volume.md),
+[`create_tract_from_tractography()`](https://ggsegverse.github.io/ggseg.extra/reference/create_tract_from_tractography.md),
+[`create_tract_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_tract_from_volume.md),
+[`create_wholebrain_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_wholebrain_from_volume.md)
 
 ## Examples
 

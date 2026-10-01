@@ -28,7 +28,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9085</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9086</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -243,8 +243,10 @@
 <ol type="1">
 <li>Add or fix the <code>type</code> column in your LUT (recommended for reproducibility), by hand or with <code><a href="../reference/lut_classify_anatomy.html">lut_classify_anatomy()</a></code>
 </li>
-<li>Pass <code>cortical_labels</code> and <code>subcortical_labels</code> arguments to override specific labels</li>
-<li>Adjust <code>min_vertices</code> if using the heuristic fallback</li>
+<li>Name the labels explicitly with <code>labels = list(cortical = ..., subcortical = ...)</code>
+</li>
+<li>Adjust the heuristic fallback with <code>projection_opts = list(min_vertices = ...)</code>
+</li>
 </ol>
 <p>Once the split looks right, run the full pipeline.</p>
 </section><section class="level2"><h2 id="running-the-full-pipeline">Running the full pipeline<a class="anchor" aria-label="anchor" href="#running-the-full-pipeline"></a>
@@ -270,11 +272,11 @@
 <p>The pipeline does up to five things in sequence:</p>
 <ol type="1">
 <li>
-<strong>Project volume onto surface</strong> — <code>mri_vol2surf</code> samples the volume at multiple cortical depths (default 0–1 in 0.1 steps) and takes the maximum label at each vertex. Unlabeled vertices are filled by mesh-neighbor dilation, constrained to the cortex mask so labels don’t bleed into the medial wall. The volume is registered to the surface subject first, using <code>registration</code>: the default <code>"mni152"</code> applies FreeSurfer’s <code>mni152.register.dat</code>, the transform between the MNI152 template space your volume is probably in and the MNI305 space <code>fsaverage</code> lives in. Pass <code>registration = "header"</code> instead when the volume already sits in the target subject’s own scanner RAS — a native or conformed volume, or one already in fsaverage space. The choice moves every vertex by about 2 mm, so getting it wrong yields an atlas that looks right and is not; see the <strong>Registration</strong> section of <code><a href="../reference/create_wholebrain_from_volume.html">?create_wholebrain_from_volume</a></code>.</li>
+<strong>Project volume onto surface</strong> — <code>mri_vol2surf</code> samples the volume at multiple cortical depths (default 0–1 in 0.1 steps) and takes the maximum label at each vertex. Unlabeled vertices are filled by mesh-neighbor dilation, constrained to the cortex mask so labels don’t bleed into the medial wall. The volume is registered to the surface subject first, using <code>registration</code>. The default <code>"header"</code> trusts the volume’s own affine, which is right when it already sits in the target subject’s scanner RAS — a native or conformed volume, or one already in fsaverage space. Pass <code>registration = "mni152"</code> instead for a volume in the MNI152 template space, which applies FreeSurfer’s <code>mni152.register.dat</code>, the transform between MNI152 and the MNI305 space <code>fsaverage</code> lives in. The choice moves every vertex by about 2 mm, so getting it wrong yields an atlas that looks right and is not; see the <strong>Registration</strong> section of <code><a href="../reference/create_wholebrain_from_volume.html">?create_wholebrain_from_volume</a></code>.</li>
 <li>
 <strong>Classify labels</strong> — Splits labels into cortical, subcortical, and cerebellar using the priority system described above.</li>
 <li>
-<strong>Run the cortical pipeline</strong> — Takes the projected cortical labels through the same 8-step pipeline used by <code><a href="../reference/create_cortical_from_annotation.html">create_cortical_from_annotation()</a></code>: screenshots, contour extraction, smoothing, and polygon conversion.</li>
+<strong>Run the cortical pipeline</strong> — Takes the projected cortical labels through the same pipeline used by <code><a href="../reference/create_cortical_from_annotation.html">create_cortical_from_annotation()</a></code>: the labelled inflated-surface triangles are projected straight to 2D polygons, one view at a time. There is no rendering step.</li>
 <li>
 <strong>Run the subcortical pipeline</strong> — Tessellates subcortical voxels into 3D meshes and creates projection views. Cortical labels are remapped to FreeSurfer’s reference IDs (3 for left cortex, 42 for right) so the subcortical pipeline can generate brain outline context geometry.</li>
 <li>
@@ -284,7 +286,7 @@
 </section><section class="level2"><h2 id="cerebellar-labels-in-the-mix">Cerebellar labels in the mix<a class="anchor" aria-label="anchor" href="#cerebellar-labels-in-the-mix"></a>
 </h2>
 <p>Some whole-brain parcellations include cerebellar regions alongside cortical and subcortical structures — the Buckner atlas and Schaefer+Melbourne combined parcellations are common examples.</p>
-<p>The pipeline handles this as a fifth step. Classification works the same way as the cortical/subcortical split: you can mark labels as cerebellar via the <code>type</code> column in your LUT (set to <code>"cerebellar"</code>), pass them explicitly with <code>cerebellar_labels</code>, or let the heuristic sort them out.</p>
+<p>The pipeline handles this as a fifth step. Classification works the same way as the cortical/subcortical split: you can mark labels as cerebellar via the <code>type</code> column in your LUT (set to <code>"cerebellar"</code>), pass them explicitly with <code>labels = list(cerebellar = ...)</code>, or let the heuristic sort them out.</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">lut</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
 <span>  idx <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">subcort_remapped_ids</span>, <span class="fl">101</span><span class="op">:</span><span class="fl">148</span>, <span class="fl">301</span><span class="op">:</span><span class="fl">310</span><span class="op">)</span>,</span>
@@ -300,7 +302,7 @@
 <span>  <span class="op">)</span>,</span>
 <span>  stringsAsFactors <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-<p>When cerebellar labels are detected, step 5 filters the volume to keep only those labels, transforms them into SUIT cerebellar space, and runs them through the cerebellar pipeline. The result lands in <code>$cerebellar</code> — a <code>ggseg_atlas</code> with SUIT flatmap polygons and 3D meshes, ready for <code><a href="https://ggsegverse.github.io/ggseg/reference/ggseg.html" class="external-link">ggseg()</a></code> and <code><a href="https://ggsegverse.github.io/ggseg3d/reference/ggseg3d.html" class="external-link">ggseg3d()</a></code>.</p>
+<p>When cerebellar labels are detected, step 5 filters the volume to keep only those labels, transforms them into SUIT cerebellar space, and runs them through the cerebellar pipeline. The result lands in <code>$cerebellar</code> — a <code>ggseg_atlas</code> with SUIT flatmap polygons and 3D meshes, ready for <code>ggplot() + geom_brain()</code> and <code><a href="https://ggsegverse.github.io/ggseg3d/reference/ggseg3d.html" class="external-link">ggseg3d()</a></code>.</p>
 <p>The verification workflow at <code>steps = 1:2</code> now reports three lists:</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/create_wholebrain_from_volume.html">create_wholebrain_from_volume</a></span><span class="op">(</span></span>
@@ -314,7 +316,7 @@
 <span><span class="va">result</span><span class="op">$</span><span class="va">cortical_labels</span></span>
 <span><span class="va">result</span><span class="op">$</span><span class="va">subcortical_labels</span></span>
 <span><span class="va">result</span><span class="op">$</span><span class="va">cerebellar_labels</span></span></code></pre></div>
-<p>Check all three before running the full pipeline. If the automatic classification puts a cerebellar lobule into the subcortical bucket (or vice versa), override with the <code>cerebellar_labels</code> argument.</p>
+<p>Check all three before running the full pipeline. If the automatic classification puts a cerebellar lobule into the subcortical bucket (or vice versa), override with <code>labels = list(cerebellar = ...)</code>.</p>
 <p>For the full details on the cerebellar pipeline itself — SUIT surfaces, flatmap projection, MNI-to-SUIT transforms — see the <a href="tutorial-cerebellar-atlas.html">cerebellar tutorial</a>.</p>
 </section><section class="level2"><h2 id="what-makes-this-tricky">What makes this tricky<a class="anchor" aria-label="anchor" href="#what-makes-this-tricky"></a>
 </h2>

@@ -28,7 +28,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9085</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9086</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -110,7 +110,7 @@
 
 
     <p>The cerebellum sits beneath the cortex and behind the brainstem, folded into tight folia that make it awkward to visualize on a standard brain surface. The <a href="https://www.diedrichsenlab.org/imaging/suit.htm" class="external-link">SUIT template</a> solves this by providing a dedicated cerebellar surface with a 2D flatmap projection — the same kind of unfolding that cartographers use to flatten a globe.</p>
-<p>ggseg.extra ships both SUIT surfaces (flatmap and 3D pial) and provides three creation functions depending on what format your parcellation is in. The result is a <code>ggseg_atlas</code> of type <code>"cerebellar"</code> that works with both <code><a href="https://ggsegverse.github.io/ggseg/reference/ggseg.html" class="external-link">ggseg()</a></code> for 2D flatmap plots and <code><a href="https://ggsegverse.github.io/ggseg3d/reference/ggseg3d.html" class="external-link">ggseg3d()</a></code> for interactive 3D views.</p>
+<p>ggseg.extra ships both SUIT surfaces (flatmap and 3D pial) and provides three creation functions depending on what format your parcellation is in. The result is a <code>ggseg_atlas</code> of type <code>"cerebellar"</code> that works with both <code>ggplot() + geom_brain()</code> for 2D flatmap plots and <code><a href="https://ggsegverse.github.io/ggseg3d/reference/ggseg3d.html" class="external-link">ggseg3d()</a></code> for interactive 3D views.</p>
 <section class="level2"><h2 id="what-you-need">What you need<a class="anchor" aria-label="anchor" href="#what-you-need"></a>
 </h2>
 <p>The cerebellar pipeline has lighter dependencies than the cortical or subcortical pipelines. No FreeSurfer installation is required for GIFTI or annotation inputs — the SUIT surfaces are bundled with the package.</p>

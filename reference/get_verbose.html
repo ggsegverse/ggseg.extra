@@ -6,16 +6,16 @@ then defaults to 1L.
 An is_ prefix on a function returning 0L, 1L or 2L invites
 if (is_verbose()), which is true at every level but silence.
 is_verbose() was renamed to get_verbose(), which takes the same
-optional argument and sits with get_cleanup() and get_output_dir(). To
-coerce a value without consulting the option, use as_verbosity()."><meta property="og:description" content="Returns the verbosity level from option, environment variable, or default.
+optional argument. To coerce a value without consulting the option, use
+as_verbosity()."><meta property="og:description" content="Returns the verbosity level from option, environment variable, or default.
 Checks in order: ggseg.extra.verbose option, GGSEG_EXTRA_VERBOSE env var,
 then defaults to 1L.
 
 An is_ prefix on a function returning 0L, 1L or 2L invites
 if (is_verbose()), which is true at every level but silence.
 is_verbose() was renamed to get_verbose(), which takes the same
-optional argument and sits with get_cleanup() and get_output_dir(). To
-coerce a value without consulting the option, use as_verbosity()."><meta property="og:image" content="https://ggsegverse.github.io/ggseg.extra/logo.svg"></head><body>
+optional argument. To coerce a value without consulting the option, use
+as_verbosity()."><meta property="og:image" content="https://ggsegverse.github.io/ggseg.extra/logo.svg"></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -25,7 +25,7 @@ coerce a value without consulting the option, use as_verbosity()."><meta propert
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9085</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9086</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -94,8 +94,8 @@ then defaults to <code>1L</code>.</p>
 <p>An <code>is_</code> prefix on a function returning <code>0L</code>, <code>1L</code> or <code>2L</code> invites
 <code>if (is_verbose())</code>, which is true at every level but silence.
 <code>is_verbose()</code> was renamed to <code>get_verbose()</code>, which takes the same
-optional argument and sits with <code>get_cleanup()</code> and <code>get_output_dir()</code>. To
-coerce a value without consulting the option, use <code><a href="as_verbosity.html">as_verbosity()</a></code>.</p>
+optional argument. To coerce a value without consulting the option, use
+<code><a href="as_verbosity.html">as_verbosity()</a></code>.</p>
     </div>
 
     <div class="section level2">
@@ -133,10 +133,14 @@ environment variable. <code>NULL</code>, the default, consults those instead.</p
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] 1</span>
 <span class="r-in"><span><span class="fu">get_verbose</span><span class="op">(</span><span class="fl">2</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] 2</span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>ggseg.extra.verbose <span class="op">=</span> <span class="fl">0</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># The option is read when no explicit level is given. options() returns</span></span></span>
+<span class="r-in"><span><span class="co"># the previous value, so the caller's setting can be put back; resetting</span></span></span>
+<span class="r-in"><span><span class="co"># to NULL instead would discard it.</span></span></span>
+<span class="r-in"><span><span class="va">old</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>ggseg.extra.verbose <span class="op">=</span> <span class="fl">0</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu">get_verbose</span><span class="op">(</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0</span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>ggseg.extra.verbose <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span><span class="va">old</span><span class="op">)</span></span></span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

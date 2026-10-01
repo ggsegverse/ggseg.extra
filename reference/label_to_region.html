@@ -13,7 +13,7 @@ spaces, lower-case the result and squeeze runs of whitespace."><meta property="o
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9085</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9086</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -113,12 +113,10 @@ that adds a <code>name</code> column keyed on <code>region</code>, for instance,
 what the pipeline will actually derive; re-implementing the rule by hand is
 how a key silently stops matching (an underscore handled but a hyphen not,
 and one region joins to <code>NA</code>).</p>
-<p>The affixes stripped here must match the ones <code>detect_hemi()</code> recognises.
-Where they disagree the hemisphere ends up in <code>region</code> as well as <code>hemi</code>:
-<code>detect_hemi()</code> reads the <code>L_</code>/<code>R_</code> convention, so <code>R_Fx</code> correctly gave
-hemi <code>"right"</code>, while this function left the prefix in place and produced
-region <code>"r fx"</code>. Two hemispheres of one structure then look like two
-different structures, since <code>region</code> is what pairs them.</p>
+<p>The affixes recognised are <code>Left</code>/<code>Right</code>, <code>left</code>/<code>right</code>, <code>lh</code>/<code>rh</code> and
+<code>L</code>/<code>R</code>, as a prefix or a suffix, separated by <code>-</code>, <code>_</code>, <code>.</code> or a space.
+A label is never stripped to nothing, so a structure genuinely named
+"left" keeps its name.</p>
     </div>
 
     <div class="section level2">

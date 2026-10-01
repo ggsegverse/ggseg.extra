@@ -165,6 +165,24 @@ create_subcortical_from_volume(
 A `ggseg_atlas` object with region metadata (core), 3D meshes, a colour
 palette, and optionally sf geometry for 2D slice plots.
 
+## See also
+
+[`atlas_polish()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_polish.md)
+to simplify and round off the result, which most builds want next.
+
+Other atlas creation:
+[`create_cerebellar_from_annotation()`](https://ggsegverse.github.io/ggseg.extra/reference/create_cerebellar_from_annotation.md),
+[`create_cerebellar_from_gifti()`](https://ggsegverse.github.io/ggseg.extra/reference/create_cerebellar_from_gifti.md),
+[`create_cerebellar_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_cerebellar_from_volume.md),
+[`create_cortical_from_annotation()`](https://ggsegverse.github.io/ggseg.extra/reference/create_cortical_from_annotation.md),
+[`create_cortical_from_cifti()`](https://ggsegverse.github.io/ggseg.extra/reference/create_cortical_from_cifti.md),
+[`create_cortical_from_gifti()`](https://ggsegverse.github.io/ggseg.extra/reference/create_cortical_from_gifti.md),
+[`create_cortical_from_labels()`](https://ggsegverse.github.io/ggseg.extra/reference/create_cortical_from_labels.md),
+[`create_cortical_from_neuromaps()`](https://ggsegverse.github.io/ggseg.extra/reference/create_cortical_from_neuromaps.md),
+[`create_tract_from_tractography()`](https://ggsegverse.github.io/ggseg.extra/reference/create_tract_from_tractography.md),
+[`create_tract_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_tract_from_volume.md),
+[`create_wholebrain_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_wholebrain_from_volume.md)
+
 ## Examples
 
 ``` r
@@ -177,7 +195,7 @@ atlas <- create_subcortical_from_volume(
 )
 
 # View with ggseg3d
-ggseg3d(atlas = atlas, hemisphere = "subcort")
+ggseg3d::ggseg3d(atlas = atlas, hemisphere = "subcort")
 
 # Full atlas with 2D slices
 atlas <- create_subcortical_from_volume(

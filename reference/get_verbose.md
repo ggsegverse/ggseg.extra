@@ -9,8 +9,7 @@ default. Checks in order: `ggseg.extra.verbose` option,
 An `is_` prefix on a function returning `0L`, `1L` or `2L` invites
 `if (is_verbose())`, which is true at every level but silence.
 `is_verbose()` was renamed to `get_verbose()`, which takes the same
-optional argument and sits with `get_cleanup()` and `get_output_dir()`.
-To coerce a value without consulting the option, use
+optional argument. To coerce a value without consulting the option, use
 [`as_verbosity()`](https://ggsegverse.github.io/ggseg.extra/reference/as_verbosity.md).
 
 ## Usage
@@ -52,8 +51,12 @@ get_verbose()
 #> [1] 1
 get_verbose(2)
 #> [1] 2
-options(ggseg.extra.verbose = 0)
+
+# The option is read when no explicit level is given. options() returns
+# the previous value, so the caller's setting can be put back; resetting
+# to NULL instead would discard it.
+old <- options(ggseg.extra.verbose = 0)
 get_verbose()
 #> [1] 0
-options(ggseg.extra.verbose = NULL)
+options(old)
 ```

@@ -37,13 +37,10 @@ key on what the pipeline will actually derive; re-implementing the rule
 by hand is how a key silently stops matching (an underscore handled but
 a hyphen not, and one region joins to `NA`).
 
-The affixes stripped here must match the ones `detect_hemi()`
-recognises. Where they disagree the hemisphere ends up in `region` as
-well as `hemi`: `detect_hemi()` reads the `L_`/`R_` convention, so
-`R_Fx` correctly gave hemi `"right"`, while this function left the
-prefix in place and produced region `"r fx"`. Two hemispheres of one
-structure then look like two different structures, since `region` is
-what pairs them.
+The affixes recognised are `Left`/`Right`, `left`/`right`, `lh`/`rh` and
+`L`/`R`, as a prefix or a suffix, separated by `-`, `_`, `.` or a space.
+A label is never stripped to nothing, so a structure genuinely named
+"left" keeps its name.
 
 ## Examples
 

@@ -28,7 +28,7 @@
 
     <a class="navbar-brand me-2" href="index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9085</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9086</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -121,7 +121,7 @@
 <div class="section level3">
 <h3 id="development-version-of-freesurfer">Development version of freesurfer<a class="anchor" aria-label="anchor" href="#development-version-of-freesurfer"></a>
 </h3>
-<p>The atlas creation functions require the development version of the freesurfer R package, which is not yet on CRAN. Install it from GitHub:</p>
+<p>The atlas creation functions require the development version of the freesurfer R package (&gt;= 1.8.1.902), which is not yet on CRAN. Install it from GitHub — an older cached copy will fail the version requirement later:</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">pak</span><span class="fu">::</span><span class="fu"><a href="https://pak.r-lib.org/reference/pak.html" class="external-link">pak</a></span><span class="op">(</span><span class="st">"muschellij2/freesurfer"</span><span class="op">)</span></span></code></pre></div>
 </div>
@@ -129,7 +129,21 @@
 <div class="section level2">
 <h2 id="create-custom-atlases">Create custom atlases<a class="anchor" aria-label="anchor" href="#create-custom-atlases"></a>
 </h2>
-<p>Tutorials are available in the <code>Articles</code> of the <a href="https://ggsegverse.github.io/ggseg.extra/">package documentation page</a>. The cortical pipeline projects inflated mesh triangles directly to 2D polygons — atlas creation takes seconds, with no rendering step and no FreeSurfer installation: reading <code>.annot</code> files needs only the <code>freesurferformats</code> R package. Subcortical and tract pipelines are also available. Suggestions for improvement are welcome through GH issues or direct Pull requests.</p>
+<p>The shortest path from a FreeSurfer annotation to a plottable atlas:</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/ggsegverse/ggseg.extra" class="external-link">ggseg.extra</a></span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">atlas</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/create_cortical_from_annotation.html">create_cortical_from_annotation</a></span><span class="op">(</span></span>
+<span>  input_annot <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"lh.aparc.annot"</span>, <span class="st">"rh.aparc.annot"</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Fewer vertices, and the voxel staircase rounded off</span></span>
+<span><span class="va">atlas</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/atlas_polish.html">atlas_polish</a></span><span class="op">(</span><span class="va">atlas</span>, keep <span class="op">=</span> <span class="fl">0.2</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">atlas</span><span class="op">)</span></span></code></pre></div>
+<p><code><a href="reference/sitrep.html">sitrep()</a></code> reports whether your machine has what each pipeline needs — FreeSurfer, Connectome Workbench, and the optional R packages — so run it first if a pipeline will not start.</p>
+<p>Step-by-step tutorials, one per input format, are under <em>Tutorials</em> on the <a href="https://ggsegverse.github.io/ggseg.extra/">package documentation page</a>. There are pipelines for cortical, subcortical, cerebellar, white-matter tract and whole-brain atlases.</p>
+<p>The cortical pipeline projects inflated mesh triangles directly to 2D polygons — atlas creation takes seconds, with no rendering step and no FreeSurfer installation: reading <code>.annot</code> files needs only the <code>freesurferformats</code> R package. Suggestions for improvement are welcome through GH issues or direct Pull requests.</p>
 </div>
 <div class="section level2">
 <h2 id="code-of-conduct">Code of Conduct<a class="anchor" aria-label="anchor" href="#code-of-conduct"></a>
@@ -141,13 +155,12 @@
 <p>Don’t hesitate to ask for support using <a href="https://github.com/ggsegverse/ggseg.extra/issues" class="external-link">github issues</a>, or requesting new atlases. While we would love getting help in creating new atlases, you may also request atlases through the issues, and we will try to get to it.</p>
 </div>
 </div>
-</div>
-<div class="section level1">
-<h1 id="funding">Funding<a class="anchor" aria-label="anchor" href="#funding"></a>
-</h1>
+<div class="section level2">
+<h2 id="funding">Funding<a class="anchor" aria-label="anchor" href="#funding"></a>
+</h2>
 <p>This work is funded by <strong>EU Horizon 2020 Grant</strong> <em>‘Healthy minds 0-100 years: Optimizing the use of European brain imaging cohorts (Lifebrain)’</em>, with grant agreement <code>732592</code>. The project has also received funding from the <strong>European Research Council</strong>’s <em>Starting grant</em> (grant agreements <code>283634</code>, to Anders Martin Fjell and <code>313440</code> to Kristine Beate Walhovd) and <em>Consolidator Grant</em> (grant agreement <code>771355</code> to Kristine Beate Walhovd and <code>725025</code> to Anders Martin Fjell). The project has received funding through multiple grants from the Norwegian Research Council.</p>
 </div>
-
+</div>
   </main><aside class="col-md-3"><div class="links">
 <h2 data-toc-skip>Links</h2>
 <ul class="list-unstyled">
@@ -184,7 +197,7 @@
 <h2 data-toc-skip>Dev status</h2>
 <ul class="list-unstyled">
 <li><a href="https://github.com/ggsegverse/ggseg.extra/actions/workflows/test-coverage.yaml" class="external-link"><img src="https://raw.githubusercontent.com/ggsegverse/ggseg.extra/coverage/badges/coverage.svg" alt="Coverage Status"></a></li>
-<li><a href="https://lifecycle.r-lib.org/articles/stages.html" class="external-link"><img src="https://img.shields.io/badge/lifecycle-stable-brightgreen.svg" alt="Lifecycle: stable"></a></li>
+<li><a href="https://lifecycle.r-lib.org/articles/stages.html#experimental" class="external-link"><img src="https://img.shields.io/badge/lifecycle-experimental-orange.svg" alt="Lifecycle: experimental"></a></li>
 <li><a href="https://github.com/ggsegverse/ggseg.extra/actions" class="external-link"><img src="https://github.com/ggsegverse/ggseg.extra/workflows/R-CMD-check/badge.svg" alt="R-CMD-check"></a></li>
 </ul>
 </div>

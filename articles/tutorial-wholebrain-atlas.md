@@ -229,9 +229,10 @@ options:
 1.  Add or fix the `type` column in your LUT (recommended for
     reproducibility), by hand or with
     [`lut_classify_anatomy()`](https://ggsegverse.github.io/ggseg.extra/reference/lut_classify_anatomy.md)
-2.  Pass `cortical_labels` and `subcortical_labels` arguments to
-    override specific labels
-3.  Adjust `min_vertices` if using the heuristic fallback
+2.  Name the labels explicitly with
+    `labels = list(cortical = ..., subcortical = ...)`
+3.  Adjust the heuristic fallback with
+    `projection_opts = list(min_vertices = ...)`
 
 Once the split looks right, run the full pipeline.
 
@@ -265,22 +266,23 @@ The pipeline does up to five things in sequence:
     maximum label at each vertex. Unlabeled vertices are filled by
     mesh-neighbor dilation, constrained to the cortex mask so labels
     don’t bleed into the medial wall. The volume is registered to the
-    surface subject first, using `registration`: the default `"mni152"`
-    applies FreeSurfer’s `mni152.register.dat`, the transform between
-    the MNI152 template space your volume is probably in and the MNI305
-    space `fsaverage` lives in. Pass `registration = "header"` instead
-    when the volume already sits in the target subject’s own scanner RAS
-    — a native or conformed volume, or one already in fsaverage space.
-    The choice moves every vertex by about 2 mm, so getting it wrong
-    yields an atlas that looks right and is not; see the
-    **Registration** section of
+    surface subject first, using `registration`. The default `"header"`
+    trusts the volume’s own affine, which is right when it already sits
+    in the target subject’s scanner RAS — a native or conformed volume,
+    or one already in fsaverage space. Pass `registration = "mni152"`
+    instead for a volume in the MNI152 template space, which applies
+    FreeSurfer’s `mni152.register.dat`, the transform between MNI152 and
+    the MNI305 space `fsaverage` lives in. The choice moves every vertex
+    by about 2 mm, so getting it wrong yields an atlas that looks right
+    and is not; see the **Registration** section of
     [`?create_wholebrain_from_volume`](https://ggsegverse.github.io/ggseg.extra/reference/create_wholebrain_from_volume.md).
 2.  **Classify labels** — Splits labels into cortical, subcortical, and
     cerebellar using the priority system described above.
 3.  **Run the cortical pipeline** — Takes the projected cortical labels
-    through the same 8-step pipeline used by
+    through the same pipeline used by
     [`create_cortical_from_annotation()`](https://ggsegverse.github.io/ggseg.extra/reference/create_cortical_from_annotation.md):
-    screenshots, contour extraction, smoothing, and polygon conversion.
+    the labelled inflated-surface triangles are projected straight to 2D
+    polygons, one view at a time. There is no rendering step.
 4.  **Run the subcortical pipeline** — Tessellates subcortical voxels
     into 3D meshes and creates projection views. Cortical labels are
     remapped to FreeSurfer’s reference IDs (3 for left cortex, 42 for
@@ -305,7 +307,8 @@ Schaefer+Melbourne combined parcellations are common examples.
 The pipeline handles this as a fifth step. Classification works the same
 way as the cortical/subcortical split: you can mark labels as cerebellar
 via the `type` column in your LUT (set to `"cerebellar"`), pass them
-explicitly with `cerebellar_labels`, or let the heuristic sort them out.
+explicitly with `labels = list(cerebellar = ...)`, or let the heuristic
+sort them out.
 
 ``` r
 
@@ -329,7 +332,7 @@ When cerebellar labels are detected, step 5 filters the volume to keep
 only those labels, transforms them into SUIT cerebellar space, and runs
 them through the cerebellar pipeline. The result lands in `$cerebellar`
 — a `ggseg_atlas` with SUIT flatmap polygons and 3D meshes, ready for
-[`ggseg()`](https://ggsegverse.github.io/ggseg/reference/ggseg.html) and
+`ggplot() + geom_brain()` and
 [`ggseg3d()`](https://ggsegverse.github.io/ggseg3d/reference/ggseg3d.html).
 
 The verification workflow at `steps = 1:2` now reports three lists:
@@ -351,7 +354,7 @@ result$cerebellar_labels
 
 Check all three before running the full pipeline. If the automatic
 classification puts a cerebellar lobule into the subcortical bucket (or
-vice versa), override with the `cerebellar_labels` argument.
+vice versa), override with `labels = list(cerebellar = ...)`.
 
 For the full details on the cerebellar pipeline itself — SUIT surfaces,
 flatmap projection, MNI-to-SUIT transforms — see the [cerebellar

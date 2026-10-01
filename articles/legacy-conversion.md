@@ -95,10 +95,16 @@ env <- new.env()
 load("data/my_atlas.rda", envir = env)
 atlas_2d <- env[["my_atlas"]]
 
-result <- convert_legacy_brain_atlas(atlas_2d = atlas_2d)
+my_atlas <- convert_legacy_brain_atlas(atlas_2d = atlas_2d)
 
-save(my_atlas = result, file = "data/my_atlas.rda", compress = "xz")
+save(my_atlas, file = "data/my_atlas.rda", compress = "xz")
 ```
+
+[`save()`](https://rdrr.io/r/base/save.html) takes the object’s name
+from the expression you hand it, so the object has to already be called
+what you want it called in the `.rda`. `save(my_atlas = result, ...)`
+does not rename anything — it writes an object called `result`, and the
+file then disagrees with its own name.
 
 Always save with `compress = "xz"` for significant file size reduction.
 
@@ -124,9 +130,7 @@ Each converted atlas package needs these updates:
   [`is_ggseg_atlas()`](https://ggsegverse.github.io/ggseg.formats/reference/is_ggseg_atlas.html)
   and
   [`geom_brain()`](https://ggsegverse.github.io/ggseg/reference/ggbrain.html)
-  instead of legacy
-  [`is_ggseg_atlas()`](https://ggsegverse.github.io/ggseg.formats/reference/is_ggseg_atlas.html)
-  and
+  instead of legacy `is_brain_atlas()` and
   [`ggseg()`](https://ggsegverse.github.io/ggseg/reference/ggseg.html)
 - **R/sysdata.rda**: Delete. Palettes are embedded in the atlas object
   (`atlas$palette`), not stored separately in `brain_pals`
@@ -175,7 +179,7 @@ will error. Either omit the 3D test entirely or guard it:
 
 it("renders with ggseg3d", {
   skip_if_not_installed("ggseg3d")
-  skip_if(is.null(my_atlas$geometry$vertices), "No 3D data")
+  skip_if(is.null(my_atlas$data$vertices), "No 3D data")
   p <- ggseg3d::ggseg3d(atlas = my_atlas)
   expect_s3_class(p, "htmlwidget")
 })

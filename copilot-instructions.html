@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9085</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9086</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -76,16 +76,16 @@
 </ul></div>
 <div class="section level3">
 <h3 id="big-picture-architecture">Big-picture architecture<a class="anchor" aria-label="anchor" href="#big-picture-architecture"></a></h3>
-<ul><li>Core R code lives in <code>R/</code> (e.g. <code>R/atlas-cortical.R</code>, <code>R/atlas-subcortical.R</code>, <code>R/mesh-projection.R</code>). Cortical pipelines use direct mesh-to-polygon projection (no screenshots/external rendering). Subcortical and tract pipelines still use multi-step disk-based workflows. All return <code>ggseg_atlas</code> objects.</li>
+<ul><li>Core R code lives in <code>R/</code> (e.g. <code>R/atlas_cortical.R</code>, <code>R/atlas_subcortical.R</code>, <code>R/mesh_projection.R</code>). Cortical pipelines use direct mesh-to-polygon projection (no screenshots/external rendering). Subcortical and tract pipelines still use multi-step disk-based workflows. All return <code>ggseg_atlas</code> objects.</li>
 <li>Data and generated surfaces are under <code>inst/</code> and <code>data-raw/</code>.</li>
 <li>Documentation is generated with <code>pkgdown</code> into <code>docs/</code> (see <code>_pkgdown.yml</code>). CI builds and renders on macOS (see <code>.github/workflows/*.yaml</code>).</li>
 </ul></div>
 <div class="section level3">
 <h3 id="important-conventions--patterns-an-ai-should-follow">Important conventions &amp; patterns an AI should follow<a class="anchor" aria-label="anchor" href="#important-conventions--patterns-an-ai-should-follow"></a></h3>
 <ul><li>Pipeline steps: subcortical/tract/wholebrain functions accept a <code>steps</code> numeric vector and write files to an <code>output_dir</code>. Cortical functions (<code>create_cortical_from_*()</code>) do NOT have a <code>steps</code> parameter — they always read data and project to 2D in one pass.</li>
-<li>Atlas naming: ggseg3d atlases often use <code>_3d</code> suffixes and palettes are created with <code>make_palette_ggseg()</code> (see <code>R/create-ggseg-atlas.R</code>). When generating atlases, ensure names and palette keys match repository conventions (see usage of <code>brain_atlas()</code> in the R code).</li>
+<li>Atlas objects: one <code>ggseg_atlas</code> carries both 2D and 3D data, built with <code><a href="https://ggsegverse.github.io/ggseg.formats/reference/ggseg_atlas.html" class="external-link">ggseg.formats::ggseg_atlas()</a></code>. The palette is a named character vector keyed by <code>label</code>, and <code>core</code> carries <code>hemi</code>/<code>region</code>/<code>label</code>; <code>build_atlas_components()</code> derives both. The old paired <code>dk</code>/<code>dk_3d</code> scheme is legacy — <code><a href="https://ggsegverse.github.io/ggseg.formats/reference/convert_legacy_brain_atlas.html" class="external-link">convert_legacy_brain_atlas()</a></code> migrates it, see <code><a href="articles/legacy-conversion.html">vignette("legacy-conversion")</a></code>.</li>
 <li>External binaries: subcortical/tract functions shell out to FreeSurfer. Cortical functions only need FreeSurfer to read annotations. Guard changes that call or parse external tool outputs and add clear error messages if binaries are missing.</li>
-<li>Reporting/progress: code uses <code>cli</code>, <code>progressr</code> and verbose text output. Preserve this behaviour in edits (use <code>cli::cli_*</code> and <code>progressr::progress()</code> patterns).</li>
+<li>Reporting/progress: code uses <code>cli</code>, <code>progressr</code> and verbose text output. Preserve this behaviour in edits (use <code>cli::cli_*</code> and <code><a href="https://progressr.futureverse.org/reference/progressor.html" class="external-link">progressr::progressor()</a></code> patterns).</li>
 </ul></div>
 <div class="section level3">
 <h3 id="developer-workflows-how-to-build--test--debug">Developer workflows (how to build / test / debug)<a class="anchor" aria-label="anchor" href="#developer-workflows-how-to-build--test--debug"></a></h3>
@@ -113,12 +113,12 @@
 <ul><li>Heavy dependencies (<code>freesurfer</code>, <code>terra</code>, <code>RNifti</code>, <code>Rvcg</code>, <code>rgl</code>) are in Suggests, not Imports. They are loaded at runtime via <code><a href="https://rlang.r-lib.org/reference/is_installed.html" class="external-link">rlang::check_installed()</a></code>. The cortical pipeline needs only base Imports (<code>sf</code>, <code>dplyr</code>, <code>cli</code>, <code>ggseg.formats</code>, <code>furrr</code>). Subcortical/tract pipelines need the full set.</li>
 <li>Subcortical/wholebrain pipelines require FreeSurfer as a system tool; CI provides it through the freesurfer-slim container.</li>
 <li>Code uses <code>terra</code> and <code>sf</code> — watch for platform-specific binary issues and prefer high-level R APIs when possible.</li>
-<li>Intermediate files have expected directory layout (e.g. <code>output_dir/&lt;atlas&gt;/{img,regions,masks}</code>). If you change file naming, update all downstream readers (contour extraction, smoothing, vertex reduction).</li>
+<li>Intermediate files have an expected layout, created by <code>setup_atlas_dirs()</code>: <code>output_dir/&lt;atlas&gt;/snapshots/</code> for every type, plus <code>meshes/</code> for subcortical and cerebellar and <code>volumes/</code> for tract. If you change file naming, update all downstream readers (contour extraction, smoothing, vertex reduction).</li>
 </ul></div>
 <div class="section level3">
 <h3 id="example-edits-the-agent-can-safely-make">Example edits the agent can safely make<a class="anchor" aria-label="anchor" href="#example-edits-the-agent-can-safely-make"></a></h3>
 <ul><li>Small refactors inside <code>R/</code> that preserve the step pipeline signatures (<code>steps</code>, <code>output_dir</code>, <code>cleanup</code>) and retain CLI messages and progress reporting.</li>
-<li>Add unit tests under <code>tests/testthat/</code> that run quickly and mock external binaries where possible. Prefer to test pure-R logic (e.g. coordinate transforms, palette creation <code>make_palette_ggseg()</code>), and add <code>skip_on_ci()</code> when tests require heavy system tools.</li>
+<li>Add unit tests under <code>tests/testthat/</code> that run quickly and mock external binaries where possible. Prefer to test pure-R logic (e.g. coordinate transforms, palette generation <code><a href="reference/lut_generate_colors.html">lut_generate_colors()</a></code>), and add <code>skip_on_ci()</code> when tests require heavy system tools.</li>
 </ul></div>
 <div class="section level3">
 <h3 id="when-to-ask-for-human-help">When to ask for human help<a class="anchor" aria-label="anchor" href="#when-to-ask-for-human-help"></a></h3>
@@ -128,7 +128,7 @@
 <div class="section level3">
 <h3 id="updating-newsmd">Updating NEWS.md<a class="anchor" aria-label="anchor" href="#updating-newsmd"></a></h3>
 <p>only add information that is relevant for the R-package to NEWS.md. Any other changes related to workflows, pkgdown etc are not relevant to the R-package releases and thus dont shouldnt be listed in NEWS.</p>
-<p>Organise NEWS by user-facing and developer facing changes, and headings for minor vs breaking changes.</p>
+<p>Organise NEWS under <code>## Breaking changes</code>, <code>## New features</code>, <code>## Minor changes</code>, <code>## Bug fixes</code> and <code>## Documentation</code>, as the entries from 1.9.9.9075 onwards do. Put breaking changes first.</p>
 </div>
 <div class="section level3">
 <h3 id="cache-format-version">Cache format version<a class="anchor" aria-label="anchor" href="#cache-format-version"></a></h3>

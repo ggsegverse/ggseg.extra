@@ -1,5 +1,122 @@
 # Changelog
 
+## ggseg.extra 1.9.9.9086
+
+### Documentation
+
+- Stopped teaching
+  [`ggseg()`](https://ggsegverse.github.io/ggseg/reference/ggseg.html)
+  in the three places 1.9.9.9083 missed. It has called
+  [`lifecycle::deprecate_stop()`](https://lifecycle.r-lib.org/reference/deprecate_soft.html)
+  since ggseg 2.0.0, so it always errors.
+  [`create_wholebrain_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_wholebrain_from_volume.md)’s
+  “Human oversight” section, the cerebellar tutorial and the whole-brain
+  tutorial now point at
+  [`plot()`](https://rdrr.io/r/graphics/plot.default.html) for an
+  overview and `ggplot() + geom_brain()` for a figure. The two remaining
+  mentions in
+  [`vignette("legacy-conversion")`](https://ggsegverse.github.io/ggseg.extra/articles/legacy-conversion.md)
+  describe the old system in the past tense and are correct.
+
+- Corrected two documented defaults that were stated backwards. The
+  whole-brain tutorial named `"mni152"` as the `registration` default
+  when it is `"header"` – in the same paragraph that warns the choice
+  “moves every vertex by about 2 mm, so getting it wrong yields an atlas
+  that looks right and is not”.
+  [`vignette("post-processing")`](https://ggsegverse.github.io/ggseg.extra/articles/post-processing.md)
+  said
+  [`atlas_region_remove()`](https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html)
+  matches labels by default when it matches `region`, so every call in
+  the example pipe matched nothing; the calls now pass
+  `match_on = "label"`.
+
+- Fixed two recipes that silently did nothing.
+  [`vignette("legacy-conversion")`](https://ggsegverse.github.io/ggseg.extra/articles/legacy-conversion.md)
+  showed `save(my_atlas = result, ...)`, which writes an object called
+  `result` – [`save()`](https://rdrr.io/r/base/save.html) takes names
+  from the expression, it does not rename – so a batch conversion
+  produced `.rda` files disagreeing with their own filenames. Its
+  `ggseg3d` test guard tested `my_atlas$geometry$vertices`, and a
+  `ggseg_atlas` has no `geometry` element, so the guard always skipped:
+  exactly what it existed to prevent.
+
+- The whole-brain tutorial no longer teaches `cortical_labels`,
+  `subcortical_labels`, `cerebellar_labels` or a bare `min_vertices`.
+  All four were retired into `labels` and `projection_opts`, and the
+  tutorial was the only long-form place the current forms could be
+  taught.
+
+- The whole-brain tutorial’s step 3 described an 8-step cortical
+  pipeline doing “screenshots, contour extraction, smoothing”. There is
+  no such pipeline and no screenshots; it was the last surviving
+  description of the removed rendering step.
+
+- The neuromaps tutorial passed `exclude = "cortex_"`, which matched
+  nothing on an atlas whose context label is `lh_unknown`. It now uses
+  [`context_pattern()`](https://ggsegverse.github.io/ggseg.extra/reference/context_pattern.md),
+  which
+  [`vignette("post-processing")`](https://ggsegverse.github.io/ggseg.extra/articles/post-processing.md)
+  already says to use in preference to typing the pattern by hand.
+
+- Twelve `create_*()` functions gained `@family atlas creation` and a
+  `@seealso` pointing at
+  [`atlas_polish()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_polish.md).
+  `@family` had been used exactly once in the package, so every creator
+  but one was unreachable from its siblings.
+
+- Eight creators returned “A `ggseg_atlas` object.” and nothing more;
+  they now describe what the object holds, as four of their siblings
+  already did.
+  [`create_wholebrain_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_wholebrain_from_volume.md)
+  and
+  [`create_tract_from_tractography()`](https://ggsegverse.github.io/ggseg.extra/reference/create_tract_from_tractography.md)
+  also document what a partial run returns, which is not a
+  `ggseg_atlas`.
+
+- Removed references to unexported functions from exported
+  documentation: `build_atlas_components()` from
+  [`read_suit_parcellation()`](https://ggsegverse.github.io/ggseg.extra/reference/read_suit_parcellation.md),
+  `detect_hemi()` from
+  [`label_to_region()`](https://ggsegverse.github.io/ggseg.extra/reference/label_to_region.md)
+  (replaced with the rule itself), and
+  `get_cleanup()`/`get_output_dir()` from
+  [`get_verbose()`](https://ggsegverse.github.io/ggseg.extra/reference/get_verbose.md).
+
+- [`mri_surf2surf_rereg()`](https://ggsegverse.github.io/ggseg.extra/reference/mri_surf2surf_rereg.md)
+  documented `output_dir` with the shared template, which describes
+  intermediate files in
+  [`tempdir()`](https://rdrr.io/r/base/tempfile.html). It writes its
+  output annotation into FreeSurfer’s `SUBJECTS_DIR` by default, which
+  now says so. Its `@return nothing` was also wrong – it returned the
+  exit status visibly, and now returns it invisibly.
+
+- [`get_verbose()`](https://ggsegverse.github.io/ggseg.extra/reference/get_verbose.md)’s
+  examples reset `ggseg.extra.verbose` to `NULL` rather than to its
+  previous value, discarding whatever the user had set. They now restore
+  it.
+
+- [`create_cortical_from_labels()`](https://ggsegverse.github.io/ggseg.extra/reference/create_cortical_from_labels.md)
+  described `views` identically to its four siblings while defaulting to
+  two views where they default to four.
+
+- Two `@examples` called
+  [`ggseg3d()`](https://ggsegverse.github.io/ggseg3d/reference/ggseg3d.html)
+  unqualified. It is in Imports, not attached, so a reader copying
+  either one got “could not find function”.
+
+- README gains a four-line first atlas, names
+  [`sitrep()`](https://ggsegverse.github.io/ggseg.extra/reference/sitrep.md),
+  states the `freesurfer >= 1.8.1.902` floor that DESCRIPTION enforces,
+  and carries an `experimental` lifecycle badge rather than `stable` –
+  nearly every function in the package carries an experimental badge.
+
+- The package-level help topic only reprinted the DESCRIPTION. It now
+  maps the five pipeline families to their creators, and points at
+  [`sitrep()`](https://ggsegverse.github.io/ggseg.extra/reference/sitrep.md),
+  [`atlas_polish()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_polish.md)
+  and
+  [`setup_atlas_repo()`](https://ggsegverse.github.io/ggseg.extra/reference/setup_atlas_repo.md).
+
 ## ggseg.extra 1.9.9.9085
 
 ### Breaking changes

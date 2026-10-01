@@ -3,9 +3,9 @@
 **\[experimental\]**
 
 Reads GIFTI label files containing cerebellar parcellations and returns
-a data frame compatible with `build_atlas_components()`. Handles
-SUIT-specific label conventions where regions are prefixed with "Left",
-"Right", or "Vermis".
+a data frame of per-region vertices ready for the cerebellar pipeline.
+Handles SUIT-specific label conventions where regions are prefixed with
+"Left", "Right", or "Vermis".
 
 ## Usage
 

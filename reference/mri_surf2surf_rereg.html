@@ -19,7 +19,7 @@ rendering and speed."><meta property="og:image" content="https://ggsegverse.gith
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9085</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9086</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -124,9 +124,11 @@ rendering and speed.</p>
 
 
 <dt id="arg-output-dir">output_dir<a class="anchor" aria-label="anchor" href="#arg-output-dir"></a></dt>
-<dd><p>Where to put the intermediate files. Defaults to
-<code><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir()</a></code>, from <code>options("ggseg.extra.output_dir")</code> or
-<code>GGSEG_EXTRA_OUTPUT_DIR</code>.</p></dd>
+<dd><p>Where to write the re-registered annotation. Defaults to
+<code>subject</code>'s own <code>label/</code> directory inside FreeSurfer's <code>SUBJECTS_DIR</code>,
+beside the annotation being re-registered - so the default writes into
+your FreeSurfer installation, not a temporary directory. Pass a path of
+your own to write elsewhere.</p></dd>
 
 
 <dt id="arg-verbose">verbose<a class="anchor" aria-label="anchor" href="#arg-verbose"></a></dt>
@@ -142,7 +144,8 @@ Falls back to <code>options("ggseg.extra.verbose")</code>, then
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>nothing</p>
+    <p>The command's exit status, invisibly. Called for the annotation
+file it writes to <code>output_dir</code>.</p>
     </div>
 
     <div class="section level2">

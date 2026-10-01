@@ -11,7 +11,7 @@ Create brain atlas data sets compatible with the 'ggsegverse' plotting packages.
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9085</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9086</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -78,6 +78,34 @@ Create brain atlas data sets compatible with the 'ggsegverse' plotting packages.
     </div>
 
 
+    <div class="section level2">
+    <h2 id="getting-started">Getting started<a class="anchor" aria-label="anchor" href="#getting-started"></a></h2>
+
+
+<p><code><a href="sitrep.html">sitrep()</a></code> reports whether this machine has what each pipeline needs.
+Run it first — most pipelines want FreeSurfer, and some want Connectome
+Workbench or an optional R package.</p>
+<p>Pick the creator that matches the input you have:</p><ul><li><p><strong>Cortical surface</strong> — <code><a href="create_cortical_from_annotation.html">create_cortical_from_annotation()</a></code> for a
+FreeSurfer <code>.annot</code>, <code><a href="create_cortical_from_gifti.html">create_cortical_from_gifti()</a></code> or
+<code><a href="create_cortical_from_cifti.html">create_cortical_from_cifti()</a></code> for surface formats,
+<code><a href="create_cortical_from_labels.html">create_cortical_from_labels()</a></code> for hand-drawn <code>.label</code> files, and
+<code><a href="create_cortical_from_neuromaps.html">create_cortical_from_neuromaps()</a></code> for a neuromaps annotation.</p></li>
+<li><p><strong>Subcortical</strong> — <code><a href="create_subcortical_from_volume.html">create_subcortical_from_volume()</a></code> from a segmentation
+volume such as FreeSurfer's <code>aseg</code>.</p></li>
+<li><p><strong>Cerebellar</strong> — <code><a href="create_cerebellar_from_gifti.html">create_cerebellar_from_gifti()</a></code>,
+<code><a href="create_cerebellar_from_annotation.html">create_cerebellar_from_annotation()</a></code> or
+<code><a href="create_cerebellar_from_volume.html">create_cerebellar_from_volume()</a></code>, all onto the SUIT flatmap.</p></li>
+<li><p><strong>White-matter tract</strong> — <code><a href="create_tract_from_tractography.html">create_tract_from_tractography()</a></code> from
+streamlines, or <code><a href="create_tract_from_volume.html">create_tract_from_volume()</a></code> from a tract label map.</p></li>
+<li><p><strong>Whole brain at once</strong> — <code><a href="create_wholebrain_from_volume.html">create_wholebrain_from_volume()</a></code>, which splits
+one volume across the three pipelines above.</p></li>
+</ul><p>A freshly built atlas usually carries more vertices than a plot needs.
+<code><a href="atlas_polish.html">atlas_polish()</a></code> simplifies and rounds it off in one call;
+<code><a href="atlas_simplify.html">atlas_simplify()</a></code>, <code><a href="atlas_smooth.html">atlas_smooth()</a></code> and <code><a href="atlas_dilate.html">atlas_dilate()</a></code> are the separate
+steps. <code><a href="count_vertices.html">count_vertices()</a></code> is the number to watch.</p>
+<p>To ship an atlas as its own package, <code><a href="setup_atlas_repo.html">setup_atlas_repo()</a></code> scaffolds the
+repository and <code><a href="use_atlas_github_actions.html">use_atlas_github_actions()</a></code> adds its workflows.</p>
+    </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
     <div class="dont-index"><p>Useful links:</p><ul><li><p><a href="https://github.com/ggsegverse/ggseg.extra" class="external-link">https://github.com/ggsegverse/ggseg.extra</a></p></li>

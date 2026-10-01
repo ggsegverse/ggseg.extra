@@ -10,9 +10,7 @@ by providing a dedicated cerebellar surface with a 2D flatmap projection
 ggseg.extra ships both SUIT surfaces (flatmap and 3D pial) and provides
 three creation functions depending on what format your parcellation is
 in. The result is a `ggseg_atlas` of type `"cerebellar"` that works with
-both
-[`ggseg()`](https://ggsegverse.github.io/ggseg/reference/ggseg.html) for
-2D flatmap plots and
+both `ggplot() + geom_brain()` for 2D flatmap plots and
 [`ggseg3d()`](https://ggsegverse.github.io/ggseg3d/reference/ggseg3d.html)
 for interactive 3D views.
 

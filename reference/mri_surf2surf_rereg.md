@@ -39,9 +39,11 @@ mri_surf2surf_rereg(
 
 - output_dir:
 
-  Where to put the intermediate files. Defaults to
-  [`tempdir()`](https://rdrr.io/r/base/tempfile.html), from
-  `options("ggseg.extra.output_dir")` or `GGSEG_EXTRA_OUTPUT_DIR`.
+  Where to write the re-registered annotation. Defaults to `subject`'s
+  own `label/` directory inside FreeSurfer's `SUBJECTS_DIR`, beside the
+  annotation being re-registered - so the default writes into your
+  FreeSurfer installation, not a temporary directory. Pass a path of
+  your own to write elsewhere.
 
 - verbose:
 
@@ -55,7 +57,8 @@ mri_surf2surf_rereg(
 
 ## Value
 
-nothing
+The command's exit status, invisibly. Called for the annotation file it
+writes to `output_dir`.
 
 ## Examples
 

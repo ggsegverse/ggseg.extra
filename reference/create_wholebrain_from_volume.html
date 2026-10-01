@@ -21,7 +21,7 @@ Requires FreeSurfer."><meta property="og:image" content="https://ggsegverse.gith
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9085</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9086</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -246,9 +246,12 @@ interrupted run can resume. Default <code>TRUE</code>, from
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>A named list with elements <code>cortical</code>, <code>subcortical</code>, and
-<code>cerebellar</code>, each a <code>ggseg_atlas</code> object (or NULL if no regions of
-that type exist).</p>
+    <p>For a full run, a named list with elements <code>cortical</code>,
+<code>subcortical</code> and <code>cerebellar</code>, each a <code>ggseg_atlas</code> object (or <code>NULL</code>
+if no regions of that type exist). A run that stops at or before step 2
+instead returns, invisibly, the label split to inspect:
+<code>cortical_labels</code>, <code>subcortical_labels</code>, <code>cerebellar_labels</code> and
+<code>vertex_counts</code>.</p>
     </div>
     <div class="section level2">
     <h2 id="label-classification">Label classification<a class="anchor" aria-label="anchor" href="#label-classification"></a></h2>
@@ -323,7 +326,8 @@ to need manual correction. Recommended workflow:</p><ol><li><p>Run <code>steps =
 If the automatic split is wrong, either add a <code>type</code> column to the
 LUT or name the labels in <code>labels</code>.</p></li>
 <li><p>Run the full pipeline once you are satisfied with the split.</p></li>
-<li><p>Visually inspect the resulting atlas with <code>ggseg()</code> / <code>ggseg3d()</code>.</p></li>
+<li><p>Visually inspect the resulting atlas with <code><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot()</a></code> for a quick
+overview, or <code>ggplot() + geom_brain()</code> and <code>ggseg3d()</code> for a figure.</p></li>
 </ol><p>The cortical surface projection uses FreeSurfer's cortex label
 (<code>{hemi}.cortex.label</code>) to prevent label dilation into the medial wall.
 This file ships with fsaverage5 and is always required. Cortex vertices
@@ -365,6 +369,23 @@ which the <code>fsaverageN</code> subjects do; for any other subject, supply you
 own register.dat or LTA file.</p>
 <p>FreeSurfer's own <code>INFO</code> and <code>WARNING</code> lines about the registration are
 only visible with <code>verbose = TRUE</code>.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
+    <div class="dont-index"><p><code><a href="atlas_polish.html">atlas_polish()</a></code> to simplify and round off the result, which
+most builds want next.</p>
+<p>Other atlas creation:
+<code><a href="create_cerebellar_from_annotation.html">create_cerebellar_from_annotation()</a></code>,
+<code><a href="create_cerebellar_from_gifti.html">create_cerebellar_from_gifti()</a></code>,
+<code><a href="create_cerebellar_from_volume.html">create_cerebellar_from_volume()</a></code>,
+<code><a href="create_cortical_from_annotation.html">create_cortical_from_annotation()</a></code>,
+<code><a href="create_cortical_from_cifti.html">create_cortical_from_cifti()</a></code>,
+<code><a href="create_cortical_from_gifti.html">create_cortical_from_gifti()</a></code>,
+<code><a href="create_cortical_from_labels.html">create_cortical_from_labels()</a></code>,
+<code><a href="create_cortical_from_neuromaps.html">create_cortical_from_neuromaps()</a></code>,
+<code><a href="create_subcortical_from_volume.html">create_subcortical_from_volume()</a></code>,
+<code><a href="create_tract_from_tractography.html">create_tract_from_tractography()</a></code>,
+<code><a href="create_tract_from_volume.html">create_tract_from_volume()</a></code></p></div>
     </div>
 
     <div class="section level2">
