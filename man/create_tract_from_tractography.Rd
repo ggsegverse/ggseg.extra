@@ -108,7 +108,8 @@ Whichever applies is reported at \code{verbose >= 1}.}
 \value{
 A \code{ggseg_atlas} object with type \code{"tract"}, containing region
 metadata, tube meshes for 3D rendering, colours, and optionally sf
-geometry for 2D projection plots.
+geometry for 2D projection plots. A run that stops before the final step
+returns \code{NULL}, invisibly.
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
@@ -145,6 +146,24 @@ atlas <- create_tract_from_tractography(
 )
 
 # View with ggseg3d
-ggseg3d(atlas = atlas)
+ggseg3d::ggseg3d(atlas = atlas)
 }
 }
+\seealso{
+\code{\link[=atlas_polish]{atlas_polish()}} to simplify and round off the result, which
+most builds want next.
+
+Other atlas creation:
+\code{\link[=create_cerebellar_from_annotation]{create_cerebellar_from_annotation()}},
+\code{\link[=create_cerebellar_from_gifti]{create_cerebellar_from_gifti()}},
+\code{\link[=create_cerebellar_from_volume]{create_cerebellar_from_volume()}},
+\code{\link[=create_cortical_from_annotation]{create_cortical_from_annotation()}},
+\code{\link[=create_cortical_from_cifti]{create_cortical_from_cifti()}},
+\code{\link[=create_cortical_from_gifti]{create_cortical_from_gifti()}},
+\code{\link[=create_cortical_from_labels]{create_cortical_from_labels()}},
+\code{\link[=create_cortical_from_neuromaps]{create_cortical_from_neuromaps()}},
+\code{\link[=create_subcortical_from_volume]{create_subcortical_from_volume()}},
+\code{\link[=create_tract_from_volume]{create_tract_from_volume()}},
+\code{\link[=create_wholebrain_from_volume]{create_wholebrain_from_volume()}}
+}
+\concept{atlas creation}

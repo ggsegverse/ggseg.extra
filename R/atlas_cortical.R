@@ -25,6 +25,9 @@
 #' @return A `ggseg_atlas` object containing region metadata (core), vertex
 #'   indices for 3D rendering, a colour palette, and sf geometry for 2D plots.
 #' @template dots_post_creation
+#' @family atlas creation
+#' @seealso [atlas_polish()] to simplify and round off the result, which
+#'   most builds want next.
 #' @export
 #' @importFrom dplyr filter select mutate left_join group_by ungroup
 #' @importFrom dplyr tibble bind_rows distinct
@@ -100,13 +103,21 @@ create_cortical_from_annotation <- function(
 #' @template atlas_name
 #' @template output_dir
 #' @param views Which views to include: "lateral", "medial",
-#'   "superior", "inferior".
+#'   "superior", "inferior". Defaults to the two lateral-facing views,
+#'   unlike the other cortical creators, because a hand-drawn label set is
+#'   usually a few regions on the outer surface rather than a whole-cortex
+#'   parcellation.
 #' @template cleanup
 #' @template verbose
 #' @template skip_existing
 #'
-#' @return A `ggseg_atlas` object.
+#' @return A `ggseg_atlas` object of type "cortical" containing region
+#'   metadata (core), vertex indices for 3D rendering, a colour palette, and
+#'   sf geometry for 2D plots.
 #' @template dots_post_creation
+#' @family atlas creation
+#' @seealso [atlas_polish()] to simplify and round off the result, which
+#'   most builds want next.
 #' @export
 #' @importFrom dplyr tibble bind_rows distinct
 #' @importFrom grDevices rgb
@@ -172,8 +183,13 @@ create_cortical_from_labels <- function(
 #' @template verbose
 #' @template skip_existing
 #'
-#' @return A `ggseg_atlas` object.
+#' @return A `ggseg_atlas` object of type "cortical" containing region
+#'   metadata (core), vertex indices for 3D rendering, a colour palette, and
+#'   sf geometry for 2D plots.
 #' @template dots_post_creation
+#' @family atlas creation
+#' @seealso [atlas_polish()] to simplify and round off the result, which
+#'   most builds want next.
 #' @export
 #'
 #' @examples
@@ -240,8 +256,13 @@ create_cortical_from_gifti <- function(
 #' @template verbose
 #' @template skip_existing
 #'
-#' @return A `ggseg_atlas` object.
+#' @return A `ggseg_atlas` object of type "cortical" containing region
+#'   metadata (core), vertex indices for 3D rendering, a colour palette, and
+#'   sf geometry for 2D plots.
 #' @template dots_post_creation
+#' @family atlas creation
+#' @seealso [atlas_polish()] to simplify and round off the result, which
+#'   most builds want next.
 #' @export
 #'
 #' @examples
@@ -318,8 +339,13 @@ create_cortical_from_cifti <- function(
 #' @template verbose
 #' @template skip_existing
 #'
-#' @return A `ggseg_atlas` object.
+#' @return A `ggseg_atlas` object of type "cortical" containing region
+#'   metadata (core), vertex indices for 3D rendering, a colour palette, and
+#'   sf geometry for 2D plots.
 #' @template dots_post_creation
+#' @family atlas creation
+#' @seealso [atlas_polish()] to simplify and round off the result, which
+#'   most builds want next.
 #' @export
 #'
 #' @examples

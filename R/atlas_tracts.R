@@ -74,8 +74,12 @@
 #'
 #' @return A `ggseg_atlas` object with type `"tract"`, containing region
 #'   metadata, tube meshes for 3D rendering, colours, and optionally sf
-#'   geometry for 2D projection plots.
+#'   geometry for 2D projection plots. A run that stops before the final step
+#'   returns `NULL`, invisibly.
 #' @template dots_post_creation
+#' @family atlas creation
+#' @seealso [atlas_polish()] to simplify and round off the result, which
+#'   most builds want next.
 #' @export
 #' @importFrom dplyr tibble bind_rows distinct
 #' @importFrom furrr future_map2 furrr_options
@@ -103,7 +107,7 @@
 #' )
 #'
 #' # View with ggseg3d
-#' ggseg3d(atlas = atlas)
+#' ggseg3d::ggseg3d(atlas = atlas)
 #' }
 create_tract_from_tractography <- function(
   input_tracts,

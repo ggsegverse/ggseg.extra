@@ -24,9 +24,11 @@ mri_surf2surf_rereg(
 \item{target_subject}{subject to re-register the annotation
 (default fsaverage5)}
 
-\item{output_dir}{Where to put the intermediate files. Defaults to
-\code{\link[=tempdir]{tempdir()}}, from \code{options("ggseg.extra.output_dir")} or
-\code{GGSEG_EXTRA_OUTPUT_DIR}.}
+\item{output_dir}{Where to write the re-registered annotation. Defaults to
+\code{subject}'s own \verb{label/} directory inside FreeSurfer's \code{SUBJECTS_DIR},
+beside the annotation being re-registered - so the default writes into
+your FreeSurfer installation, not a temporary directory. Pass a path of
+your own to write elsewhere.}
 
 \item{verbose}{How much to print: \code{0} silent, \code{1} progress (the default),
 \code{2} adds FreeSurfer's own output. \code{TRUE} and \code{FALSE} mean \code{1} and \code{0}.
@@ -36,7 +38,8 @@ Falls back to \code{options("ggseg.extra.verbose")}, then
 \item{hemi}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} Use \code{hemisphere} instead.}
 }
 \value{
-nothing
+The command's exit status, invisibly. Called for the annotation
+file it writes to \code{output_dir}.
 }
 \description{
 Annotation files are subject specific.

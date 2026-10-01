@@ -57,9 +57,13 @@ as_verbosity <- function(x) {
 #' @examples
 #' get_verbose()
 #' get_verbose(2)
-#' options(ggseg.extra.verbose = 0)
+#'
+#' # The option is read when no explicit level is given. options() returns
+#' # the previous value, so the caller's setting can be put back; resetting
+#' # to NULL instead would discard it.
+#' old <- options(ggseg.extra.verbose = 0)
 #' get_verbose()
-#' options(ggseg.extra.verbose = NULL)
+#' options(old)
 get_verbose <- function(verbose = NULL) {
   if (!is.null(verbose)) {
     return(as_verbosity(verbose))
@@ -81,8 +85,8 @@ get_verbose <- function(verbose = NULL) {
 #' An `is_` prefix on a function returning `0L`, `1L` or `2L` invites
 #' `if (is_verbose())`, which is true at every level but silence.
 #' `is_verbose()` was renamed to [get_verbose()], which takes the same
-#' optional argument and sits with `get_cleanup()` and `get_output_dir()`. To
-#' coerce a value without consulting the option, use [as_verbosity()].
+#' optional argument. To coerce a value without consulting the option, use
+#' [as_verbosity()].
 #' @rdname get_verbose
 #' @export
 is_verbose <- function(verbose = NULL) {

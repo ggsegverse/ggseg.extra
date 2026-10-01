@@ -85,4 +85,18 @@ atlas <- create_tract_from_volume(
 \seealso{
 \code{\link[=create_tract_from_tractography]{create_tract_from_tractography()}} for the streamline-based
 counterpart.
+
+Other atlas creation:
+\code{\link[=create_cerebellar_from_annotation]{create_cerebellar_from_annotation()}},
+\code{\link[=create_cerebellar_from_gifti]{create_cerebellar_from_gifti()}},
+\code{\link[=create_cerebellar_from_volume]{create_cerebellar_from_volume()}},
+\code{\link[=create_cortical_from_annotation]{create_cortical_from_annotation()}},
+\code{\link[=create_cortical_from_cifti]{create_cortical_from_cifti()}},
+\code{\link[=create_cortical_from_gifti]{create_cortical_from_gifti()}},
+\code{\link[=create_cortical_from_labels]{create_cortical_from_labels()}},
+\code{\link[=create_cortical_from_neuromaps]{create_cortical_from_neuromaps()}},
+\code{\link[=create_subcortical_from_volume]{create_subcortical_from_volume()}},
+\code{\link[=create_tract_from_tractography]{create_tract_from_tractography()}},
+\code{\link[=create_wholebrain_from_volume]{create_wholebrain_from_volume()}}
 }
+\concept{atlas creation}

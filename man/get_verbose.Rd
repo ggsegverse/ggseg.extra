@@ -26,8 +26,8 @@ then defaults to \code{1L}.
 An \code{is_} prefix on a function returning \code{0L}, \code{1L} or \code{2L} invites
 \verb{if (is_verbose())}, which is true at every level but silence.
 \code{is_verbose()} was renamed to \code{\link[=get_verbose]{get_verbose()}}, which takes the same
-optional argument and sits with \code{get_cleanup()} and \code{get_output_dir()}. To
-coerce a value without consulting the option, use \code{\link[=as_verbosity]{as_verbosity()}}.
+optional argument. To coerce a value without consulting the option, use
+\code{\link[=as_verbosity]{as_verbosity()}}.
 }
 \details{
 Verbosity levels:
@@ -43,7 +43,11 @@ Logical values are accepted for backward compatibility
 \examples{
 get_verbose()
 get_verbose(2)
-options(ggseg.extra.verbose = 0)
+
+# The option is read when no explicit level is given. options() returns
+# the previous value, so the caller's setting can be put back; resetting
+# to NULL instead would discard it.
+old <- options(ggseg.extra.verbose = 0)
 get_verbose()
-options(ggseg.extra.verbose = NULL)
+options(old)
 }
