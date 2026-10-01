@@ -30,8 +30,8 @@ context. Defaults to \code{"fsaverage5"}.}
 (the default) applies FreeSurfer's \code{mni152.register.dat}, \code{"header"}
 trusts the volume's own xform, or give a path to a register.dat or LTA
 file. The same vocabulary as \code{\link[=create_wholebrain_from_volume]{create_wholebrain_from_volume()}} and
-\code{\link[=project_volume_anatomical]{project_volume_anatomical()}}. \code{NULL} is deprecated; it meant
-\code{"mni152"}.}
+\code{\link[=project_volume_anatomical]{project_volume_anatomical()}}. \code{NULL} is not accepted; name the
+spelling you want.}
 
 \item{subjects_dir}{FreeSurfer subjects directory.}
 

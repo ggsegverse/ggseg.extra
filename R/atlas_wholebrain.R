@@ -110,14 +110,9 @@
 #'   If NULL, generic names and no palette.
 #' @template atlas_name
 #' @template output_dir
-#' @param regheader `r lifecycle::badge("deprecated")` Use
-#'   `projection_opts = list(registration = )` instead. `TRUE` maps to
-#'   `"header"`, `FALSE` to `"mni152"`. Supplying both is an error.
-#' @param ... `r lifecycle::badge("deprecated")` The flat arguments that
-#'   `labels`, `projection_opts` and `cerebellar_opts` replaced. Each is
-#'   folded into the list that now holds it and raises a deprecation warning;
-#'   supplying both the old argument and the list entry it maps to is an
-#'   error rather than a precedence rule.
+#' @param ... Not used. Present so a mistyped or misplaced argument is
+#'   reported against this function, naming the list that should hold it,
+#'   rather than silently ignored; anything passed here is an error.
 #' @param labels Named list routing labels to a sub-pipeline, overriding the
 #'   lookup table's `type` column and the vertex-count heuristic. Entries:
 #'   \itemize{
@@ -127,8 +122,7 @@
 #'       flatmap pipeline, using the bundled surfaces from
 #'       [suit_flatmap_path()] and [suit_3d_path()].
 #'   }
-#'   Unnamed or unknown entries error. Replaces the `cortical_labels`,
-#'   `subcortical_labels` and `cerebellar_labels` arguments.
+#'   Unnamed or unknown entries error.
 #' @param projection_opts Named list of volume-to-surface projection
 #'   settings, with these entries and defaults:
 #'   \itemize{
@@ -144,8 +138,7 @@
 #'       labels that `labels` and a `type` column leave unclassified; see
 #'       **Label classification**.
 #'   }
-#'   Unknown entries error. Replaces the flat `subject`, `registration`,
-#'   `projfrac`, `projfrac_range` and `min_vertices` arguments.
+#'   Unknown entries error.
 #' @param cortical_opts Named list of extra arguments forwarded to the
 #'   cortical sub-pipeline. Allowed entry: `views`. Unknown entries error.
 #'   Leave empty to use defaults.
@@ -154,8 +147,7 @@
 #'   be set here except those managed by the wholebrain pipeline
 #'   (`input_volume`, `input_lut`, `atlas_name`, `output_dir`, `verbose`,
 #'   `cleanup`, `skip_existing`). Use this to tune `vertex_size_limits`,
-#'   `decimate`, `slabs`. The deprecated `dilate`/`tolerance`/`smoothness`
-#'   entries trigger a lifecycle warning and are no longer applied.
+#'   `decimate`, `slabs`.
 #' @param cerebellar_opts Named list of extra arguments forwarded to
 #'   [create_cerebellar_from_volume()]. Any argument of that function may be
 #'   set here except those managed by the wholebrain pipeline
@@ -288,7 +280,6 @@
 create_wholebrain_from_volume <- function(
   input_volume,
   verbose = get_verbose(), # nolint: object_usage_linter
-  regheader = lifecycle::deprecated(),
   ...,
   input_lut = NULL,
   atlas_name = NULL,
@@ -302,31 +293,17 @@ create_wholebrain_from_volume <- function(
   cleanup = NULL,
   skip_existing = NULL
 ) {
-  grouped <- wholebrain_group_dots(
-    labels = labels,
-    projection_opts = projection_opts,
-    cerebellar_opts = cerebellar_opts,
-    dots = list(...)
+  redirect_sub_pipeline_args(...names())
+  rlang::check_dots_empty()
+  labels <- resolve_opts(labels, "labels", WHOLEBRAIN_LABEL_DEFAULTS)
+  projection <- resolve_opts(
+    projection_opts,
+    "projection_opts",
+    WHOLEBRAIN_PROJECTION_DEFAULTS
   )
-  labels <- resolve_labels(grouped$labels)
-  projection <- resolve_projection_opts(grouped$projection_opts)
-  cerebellar <- take_cerebellar_space(grouped$cerebellar_opts)
-
-  if (lifecycle::is_present(regheader)) {
-    # match.call() rather than missing(): goodpractice's tidyverse_no_missing
-    # check rejects missing(), and registration has a real default to fall
-    # back on, so lifecycle::is_present() cannot answer this for it.
-    projection$registration <- registration_from_regheader(
-      regheader,
-      !"registration" %in% names(grouped$projection_opts)
-    )
-  }
+  cerebellar <- take_cerebellar_space(cerebellar_opts)
 
   start_time <- Sys.time()
-  do.call(
-    check_post_creation_dots,
-    c(list("create_wholebrain_from_volume"), grouped$dots)
-  )
   opts <- validate_wholebrain_opts(
     cortical_opts,
     subcortical_opts,
@@ -352,30 +329,6 @@ create_wholebrain_from_volume <- function(
 }
 
 
-#' Map the deprecated regheader argument onto a registration specification
-#' @noRd
-registration_from_regheader <- function(regheader, registration_missing) {
-  if (!registration_missing) {
-    cli::cli_abort(c(
-      "Cannot use both {.arg registration} and {.arg regheader}.",
-      "i" = "{.arg regheader} is deprecated; keep {.arg registration} alone."
-    ))
-  }
-
-  if (!is.logical(regheader) || length(regheader) != 1L || is.na(regheader)) {
-    cli::cli_abort("{.arg regheader} must be {.code TRUE} or {.code FALSE}.")
-  }
-
-  lifecycle::deprecate_warn(
-    "1.9.9.9025",
-    "create_wholebrain_from_volume(regheader = )",
-    "create_wholebrain_from_volume(registration = )"
-  )
-
-  if (regheader) "header" else "mni152"
-}
-
-
 # Argument grouping ----
 
 # nolint start: object_name_linter.
@@ -389,56 +342,14 @@ WHOLEBRAIN_PROJECTION_DEFAULTS <- list(
   min_vertices = 50L
 )
 
-#' Flat arguments retired into `labels`, and the entry each becomes
+#' Entries the grouped `labels` argument accepts
 #' @noRd
-WHOLEBRAIN_RETIRED_LABELS <- c(
-  cortical_labels = "cortical",
-  subcortical_labels = "subcortical",
-  cerebellar_labels = "cerebellar"
-)
-
-#' Every retired flat argument, and the `<list argument>.<entry>` it becomes
-#' @noRd
-WHOLEBRAIN_RETIRED_ARGS <- c(
-  stats::setNames(
-    paste0("labels.", WHOLEBRAIN_RETIRED_LABELS),
-    names(WHOLEBRAIN_RETIRED_LABELS)
-  ),
-  stats::setNames(
-    paste0("projection_opts.", names(WHOLEBRAIN_PROJECTION_DEFAULTS)),
-    names(WHOLEBRAIN_PROJECTION_DEFAULTS)
-  ),
-  c(cerebellar_space = "cerebellar_opts.cerebellar_space")
+WHOLEBRAIN_LABEL_DEFAULTS <- list(
+  cortical = NULL,
+  subcortical = NULL,
+  cerebellar = NULL
 )
 # nolint end
-
-#' Move the retired flat arguments into `labels`, `projection_opts` and
-#' `cerebellar_opts`, leaving the post-creation dots alone
-#'
-#' Every call site found in the ggsegverse atlas repositories names its
-#' arguments, so nothing here has to cope with positional matching.
-#' @noRd
-wholebrain_group_dots <- function(
-  labels,
-  projection_opts,
-  cerebellar_opts,
-  dots
-) {
-  grouped <- group_retired_dots(
-    opts = list(
-      labels = labels,
-      projection_opts = projection_opts,
-      cerebellar_opts = cerebellar_opts
-    ),
-    mapping = WHOLEBRAIN_RETIRED_ARGS,
-    dots = dots,
-    fn = "create_wholebrain_from_volume",
-    when = "1.9.9.9052"
-  )
-  redirect_sub_pipeline_args(names(grouped$dots))
-  c(grouped$opts, list(dots = grouped$dots))
-}
-
 
 #' Point a sub-pipeline option passed at the top level at the list it belongs in
 #'
@@ -451,24 +362,14 @@ redirect_sub_pipeline_args <- function(nms) {
   if (is.null(nms) || !length(nms)) {
     return(invisible(NULL))
   }
-  managed <- c(
-    "input_volume",
-    "volume",
-    "input_lut",
-    "atlas_name",
-    "output_dir",
-    "verbose",
-    "cleanup",
-    "skip_existing"
-  )
   owners <- list(
     subcortical_opts = setdiff(
       names(formals(create_subcortical_from_volume)),
-      c(managed, "...")
+      c(SUB_PIPELINE_MANAGED_ARGS, "...")
     ),
     cerebellar_opts = setdiff(
       names(formals(create_cerebellar_from_volume)),
-      c(managed, "...")
+      c(SUB_PIPELINE_MANAGED_ARGS, "...")
     )
   )
   for (nm in nms) {
@@ -486,30 +387,6 @@ redirect_sub_pipeline_args <- function(nms) {
   invisible(NULL)
 }
 
-#' Fill `projection_opts` out with its defaults after validating the names
-#' @noRd
-resolve_projection_opts <- function(projection_opts) {
-  projection_opts <- validate_pipeline_opts(
-    projection_opts,
-    "projection_opts",
-    names(WHOLEBRAIN_PROJECTION_DEFAULTS)
-  )
-  utils::modifyList(WHOLEBRAIN_PROJECTION_DEFAULTS, projection_opts)
-}
-
-#' Validate `labels` and fill the three entries out with NULL
-#' @noRd
-resolve_labels <- function(labels) {
-  labels <- validate_pipeline_opts(
-    labels,
-    "labels",
-    unname(WHOLEBRAIN_RETIRED_LABELS)
-  )
-  utils::modifyList(
-    list(cortical = NULL, subcortical = NULL, cerebellar = NULL),
-    labels
-  )
-}
 
 #' Split `cerebellar_space` back out of `cerebellar_opts`
 #'
@@ -702,8 +579,8 @@ wholebrain_log_split_inspect <- function(start_time) {
   cli::cli_alert_info(
     "Inspect {.code split$cortical_labels}, {.code split$subcortical_labels},
     and {.code split$cerebellar_labels}. Override with
-    {.arg cortical_labels}/{.arg subcortical_labels}/
-    {.arg cerebellar_labels} if needed, then re-run with all steps.",
+    {.code labels = list(cortical = , subcortical = , cerebellar = )} if
+    needed, then re-run with all steps.",
     wrap = TRUE
   )
   log_elapsed(start_time)
@@ -718,14 +595,8 @@ validate_wholebrain_opts <- function(
   subcortical_opts,
   cerebellar_opts
 ) {
-  # The creators take the retired post-creation tweaks through `...` now, so
-  # the formals no longer name them. Keep accepting them here, and let the
-  # creator issue the deprecation notice.
-  allowed <- function(fn, managed) {
-    c(
-      setdiff(names(formals(fn)), c(managed, "...")),
-      DEPRECATED_POST_CREATION_ARGS
-    )
+  allowed <- function(fn) {
+    setdiff(names(formals(fn)), c(SUB_PIPELINE_MANAGED_ARGS, "..."))
   }
 
   list(
@@ -740,12 +611,12 @@ validate_wholebrain_opts <- function(
     subcortical = validate_pipeline_opts(
       subcortical_opts,
       "subcortical_opts",
-      allowed(create_subcortical_from_volume, SUBCORT_MANAGED_ARGS)
+      allowed(create_subcortical_from_volume)
     ),
     cerebellar = validate_pipeline_opts(
       cerebellar_opts,
       "cerebellar_opts",
-      allowed(create_cerebellar_from_volume, CEREBELLAR_MANAGED_ARGS)
+      allowed(create_cerebellar_from_volume)
     )
   )
 }
@@ -813,14 +684,6 @@ wholebrain_log_summary <- function(
 # Arg names managed by the wholebrain pipeline for each sub-pipeline.
 # Users cannot set these via *_opts; the wholebrain call owns them.
 # nolint start: object_name_linter.
-DEPRECATED_POST_CREATION_ARGS <- c(
-  "dilate",
-  "smoothness",
-  "tolerance",
-  "smooth_refinements"
-)
-
-
 # Index values the subcortical pipeline writes into its own volume to build
 # the grey brain outline: 3/42 are the FreeSurfer cortex labels the cortical
 # hemispheres are remapped to, and 7/8/46/47/16 are the cerebellum and
@@ -831,18 +694,10 @@ DEPRECATED_POST_CREATION_ARGS <- c(
 SUBCORT_RESERVED_IDX <- c(3L, 7L, 8L, 16L, 42L, 46L, 47L)
 
 
-SUBCORT_MANAGED_ARGS <- c(
+# The wholebrain call owns these for every sub-pipeline it drives, so a
+# user cannot set them through a `*_opts` list.
+SUB_PIPELINE_MANAGED_ARGS <- c(
   "input_volume",
-  "input_lut",
-  "atlas_name",
-  "output_dir",
-  "verbose",
-  "cleanup",
-  "skip_existing"
-)
-CEREBELLAR_MANAGED_ARGS <- c(
-  "input_volume",
-  "volume", # deprecated alias for input_volume; also managed, not user-settable
   "input_lut",
   "atlas_name",
   "output_dir",
@@ -1554,8 +1409,7 @@ warn_vertex_count_fallback <- function(n) {
       small cortical parcel and a deep structure look the same to it.",
       "i" = "Declare the labels instead: {.fn lut_classify_anatomy} fills in
       a {.field type} column from FreeSurfer's {.field aparc+aseg}, or pass
-      {.arg cortical_labels}/{.arg subcortical_labels}/
-      {.arg cerebellar_labels}."
+      {.code labels = list(cortical = , subcortical = , cerebellar = )}."
     ),
     wrap = TRUE
   )

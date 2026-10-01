@@ -113,18 +113,6 @@ read_lut <- function(path) {
   result
 }
 
-#' @description
-#' `r lifecycle::badge("deprecated")`
-#'
-#' `read_ctab()` was renamed to [read_lut()] for consistency with
-#' [get_lut()], [write_lut()], [is_lut()], [lut_add()], and [lut_combine()].
-#' @rdname read_lut
-#' @export
-read_ctab <- function(path) {
-  lifecycle::deprecate_warn("1.9.9.9005", "read_ctab()", "read_lut()")
-  read_lut(path)
-}
-
 #' Write FreeSurfer LUT
 #'
 #' Write a LUT to file in FreeSurfer format.
@@ -160,18 +148,6 @@ write_lut <- function(x, path) {
   invisible(lls)
 }
 
-#' @description
-#' `r lifecycle::badge("deprecated")`
-#'
-#' `write_ctab()` was renamed to [write_lut()] for consistency with
-#' [read_lut()], [get_lut()], [is_lut()], [lut_add()], and [lut_combine()].
-#' @rdname write_lut
-#' @export
-write_ctab <- function(x, path) {
-  lifecycle::deprecate_warn("1.9.9.9005", "write_ctab()", "write_lut()")
-  write_lut(x, path)
-}
-
 #' Check if object is a LUT
 #'
 #' @param x Object to check.
@@ -190,18 +166,6 @@ is_lut <- function(x) {
   }
   required <- c("idx", "label", "R", "G", "B", "A") #nolint
   all(required %in% names(x))
-}
-
-#' @description
-#' `r lifecycle::badge("deprecated")`
-#'
-#' `is_ctab()` was renamed to [is_lut()] for consistency with [read_lut()],
-#' [write_lut()], [get_lut()], [lut_add()], and [lut_combine()].
-#' @rdname is_lut
-#' @export
-is_ctab <- function(x) {
-  lifecycle::deprecate_warn("1.9.9.9005", "is_ctab()", "is_lut()")
-  is_lut(x)
 }
 
 #' Read LUT and add hex colours
@@ -244,20 +208,6 @@ get_lut <- function(lut) {
   )
 
   colourtable
-}
-
-#' @description
-#' `r lifecycle::badge("deprecated")`
-#'
-#' `get_ctab()` was renamed to [get_lut()] for consistency with
-#' [read_lut()], [write_lut()], [is_lut()], [lut_add()], and [lut_combine()].
-#' @param color_lut Path to a LUT file, or a data.frame that passes
-#'   [is_lut()].
-#' @rdname get_lut
-#' @export
-get_ctab <- function(color_lut) {
-  lifecycle::deprecate_warn("1.9.9.9005", "get_ctab()", "get_lut()")
-  get_lut(color_lut)
 }
 
 #' Add rows to a FreeSurfer LUT

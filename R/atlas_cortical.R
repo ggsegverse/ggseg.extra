@@ -56,7 +56,7 @@ create_cortical_from_annotation <- function(
   cleanup = NULL,
   skip_existing = NULL
 ) {
-  check_post_creation_dots("create_cortical_from_annotation", ...)
+  rlang::check_dots_empty()
   if (length(input_annot) == 0) {
     cli::cli_abort("{.arg input_annot} must not be empty")
   }
@@ -140,7 +140,7 @@ create_cortical_from_labels <- function(
   cleanup = NULL,
   skip_existing = NULL
 ) {
-  check_post_creation_dots("create_cortical_from_labels", ...)
+  rlang::check_dots_empty()
 
   config <- validate_surface_config(
     output_dir,
@@ -209,7 +209,7 @@ create_cortical_from_gifti <- function(
   cleanup = NULL,
   skip_existing = NULL
 ) {
-  check_post_creation_dots("create_cortical_from_gifti", ...)
+  rlang::check_dots_empty()
   if (length(gifti_files) == 0) {
     cli::cli_abort("{.arg gifti_files} must not be empty")
   }
@@ -282,7 +282,7 @@ create_cortical_from_cifti <- function(
   cleanup = NULL,
   skip_existing = NULL
 ) {
-  check_post_creation_dots("create_cortical_from_cifti", ...)
+  rlang::check_dots_empty()
   if (!file.exists(cifti_file)) {
     cli::cli_abort("CIFTI file not found: {.path {cifti_file}}")
   }
@@ -372,7 +372,7 @@ create_cortical_from_neuromaps <- function(
   cleanup = NULL,
   skip_existing = NULL
 ) {
-  check_post_creation_dots("create_cortical_from_neuromaps", ...)
+  rlang::check_dots_empty()
   rlang::check_installed(
     "neuromapr",
     reason = "to download neuromaps annotations"

@@ -6,7 +6,7 @@
       Warning:
       Classified 2 labels by surface vertex count, not by anatomy.
       ! The vertex count measures how much surface a label covers, so a small cortical parcel and a deep structure look the same to it.
-      i Declare the labels instead: `lut_classify_anatomy()` fills in a type column from FreeSurfer's aparc+aseg, or pass `cortical_labels`/`subcortical_labels`/ `cerebellar_labels`.
+      i Declare the labels instead: `lut_classify_anatomy()` fills in a type column from FreeSurfer's aparc+aseg, or pass `labels = list(cortical = , subcortical = , cerebellar = )`.
     Message
       i 1 cortical, 1 subcortical, 0 cerebellar labels
       > Subcortical: small (10v)
@@ -33,7 +33,7 @@
       Warning:
       Classified 2 labels by surface vertex count, not by anatomy.
       ! The vertex count measures how much surface a label covers, so a small cortical parcel and a deep structure look the same to it.
-      i Declare the labels instead: `lut_classify_anatomy()` fills in a type column from FreeSurfer's aparc+aseg, or pass `cortical_labels`/`subcortical_labels`/ `cerebellar_labels`.
+      i Declare the labels instead: `lut_classify_anatomy()` fills in a type column from FreeSurfer's aparc+aseg, or pass `labels = list(cortical = , subcortical = , cerebellar = )`.
     Message
       i 1 cortical, 1 subcortical, 0 cerebellar labels
       > Subcortical: tiny (5v)
@@ -60,7 +60,7 @@
       Warning:
       Classified 2 labels by surface vertex count, not by anatomy.
       ! The vertex count measures how much surface a label covers, so a small cortical parcel and a deep structure look the same to it.
-      i Declare the labels instead: `lut_classify_anatomy()` fills in a type column from FreeSurfer's aparc+aseg, or pass `cortical_labels`/`subcortical_labels`/ `cerebellar_labels`.
+      i Declare the labels instead: `lut_classify_anatomy()` fills in a type column from FreeSurfer's aparc+aseg, or pass `labels = list(cortical = , subcortical = , cerebellar = )`.
     Message
       i 2 cortical, 0 subcortical, 0 cerebellar labels
     Output
@@ -112,7 +112,7 @@
       Warning:
       Classified 1 label by surface vertex count, not by anatomy.
       ! The vertex count measures how much surface a label covers, so a small cortical parcel and a deep structure look the same to it.
-      i Declare the labels instead: `lut_classify_anatomy()` fills in a type column from FreeSurfer's aparc+aseg, or pass `cortical_labels`/`subcortical_labels`/ `cerebellar_labels`.
+      i Declare the labels instead: `lut_classify_anatomy()` fills in a type column from FreeSurfer's aparc+aseg, or pass `labels = list(cortical = , subcortical = , cerebellar = )`.
     Message
       i 1 cortical, 0 subcortical, 0 cerebellar labels
       i Classifying cortical/subcortical/cerebellar labels
@@ -155,16 +155,15 @@
       Warning:
       Classified 1 label by surface vertex count, not by anatomy.
       ! The vertex count measures how much surface a label covers, so a small cortical parcel and a deep structure look the same to it.
-      i Declare the labels instead: `lut_classify_anatomy()` fills in a type column from FreeSurfer's aparc+aseg, or pass `cortical_labels`/`subcortical_labels`/ `cerebellar_labels`.
+      i Declare the labels instead: `lut_classify_anatomy()` fills in a type column from FreeSurfer's aparc+aseg, or pass `labels = list(cortical = , subcortical = , cerebellar = )`.
     Message
       i 1 cortical, 0 subcortical, 0 cerebellar labels
       i Classifying cortical/subcortical/cerebellar labels
       v Classifying cortical/subcortical/cerebellar labels [<time>]
       
       i Inspect `split$cortical_labels`, `split$subcortical_labels`, and
-      `split$cerebellar_labels`. Override with
-      `cortical_labels`/`subcortical_labels`/ `cerebellar_labels` if needed, then
-      re-run with all steps.
+      `split$cerebellar_labels`. Override with `labels = list(cortical = ,
+      subcortical = , cerebellar = )` if needed, then re-run with all steps.
 
 # wholebrain_resolve_projection cached path / returns cached data and logs when verbose
 
@@ -237,16 +236,15 @@
       Warning:
       Classified 1 label by surface vertex count, not by anatomy.
       ! The vertex count measures how much surface a label covers, so a small cortical parcel and a deep structure look the same to it.
-      i Declare the labels instead: `lut_classify_anatomy()` fills in a type column from FreeSurfer's aparc+aseg, or pass `cortical_labels`/`subcortical_labels`/ `cerebellar_labels`.
+      i Declare the labels instead: `lut_classify_anatomy()` fills in a type column from FreeSurfer's aparc+aseg, or pass `labels = list(cortical = , subcortical = , cerebellar = )`.
     Message
       i 1 cortical, 0 subcortical, 0 cerebellar labels
       i Classifying cortical/subcortical/cerebellar labels
       v Classifying cortical/subcortical/cerebellar labels [<time>]
       
       i Inspect `split$cortical_labels`, `split$subcortical_labels`, and
-      `split$cerebellar_labels`. Override with
-      `cortical_labels`/`subcortical_labels`/ `cerebellar_labels` if needed, then
-      re-run with all steps.
+      `split$cerebellar_labels`. Override with `labels = list(cortical = ,
+      subcortical = , cerebellar = )` if needed, then re-run with all steps.
 
 # create_wholebrain_from_volume verbose LUT path / prints LUT path when verbose and input_lut is not NULL
 
@@ -276,16 +274,15 @@
       Warning:
       Classified 1 label by surface vertex count, not by anatomy.
       ! The vertex count measures how much surface a label covers, so a small cortical parcel and a deep structure look the same to it.
-      i Declare the labels instead: `lut_classify_anatomy()` fills in a type column from FreeSurfer's aparc+aseg, or pass `cortical_labels`/`subcortical_labels`/ `cerebellar_labels`.
+      i Declare the labels instead: `lut_classify_anatomy()` fills in a type column from FreeSurfer's aparc+aseg, or pass `labels = list(cortical = , subcortical = , cerebellar = )`.
     Message
       i 1 cortical, 0 subcortical, 0 cerebellar labels
       i Classifying cortical/subcortical/cerebellar labels
       v Classifying cortical/subcortical/cerebellar labels [<time>]
       
       i Inspect `split$cortical_labels`, `split$subcortical_labels`, and
-      `split$cerebellar_labels`. Override with
-      `cortical_labels`/`subcortical_labels`/ `cerebellar_labels` if needed, then
-      re-run with all steps.
+      `split$cerebellar_labels`. Override with `labels = list(cortical = ,
+      subcortical = , cerebellar = )` if needed, then re-run with all steps.
 
 # wholebrain_project_to_surface / prints verbose fill_surface_labels message
 
@@ -316,7 +313,7 @@
       Warning:
       Classified 1 label by surface vertex count, not by anatomy.
       ! The vertex count measures how much surface a label covers, so a small cortical parcel and a deep structure look the same to it.
-      i Declare the labels instead: `lut_classify_anatomy()` fills in a type column from FreeSurfer's aparc+aseg, or pass `cortical_labels`/`subcortical_labels`/ `cerebellar_labels`.
+      i Declare the labels instead: `lut_classify_anatomy()` fills in a type column from FreeSurfer's aparc+aseg, or pass `labels = list(cortical = , subcortical = , cerebellar = )`.
     Message
       i 1 cortical, 0 subcortical, 1 cerebellar labels
       > Cerebellar: lobule_I (80v)
@@ -376,23 +373,4 @@
       ! FreeSurfer command failed (exit 1).
       i FreeSurfer said:
         ERROR: bad header
-
-# create_wholebrain_from_volume argument groups / lands the retired flat arguments where the lists now hold them
-
-    Code
-      old <- capture_setup(list(cortical_labels = c("a", "b"), subcortical_labels = "c",
-      projfrac = 0.7, subject = "fsaverage6"))
-    Condition
-      Warning:
-      The `cortical_labels` argument of `create_wholebrain_from_volume()` is deprecated as of ggseg.extra 1.9.9.9052.
-      i Please use the `labels` argument instead.
-      Warning:
-      The `subcortical_labels` argument of `create_wholebrain_from_volume()` is deprecated as of ggseg.extra 1.9.9.9052.
-      i Please use the `labels` argument instead.
-      Warning:
-      The `projfrac` argument of `create_wholebrain_from_volume()` is deprecated as of ggseg.extra 1.9.9.9052.
-      i Please use the `projection_opts` argument instead.
-      Warning:
-      The `subject` argument of `create_wholebrain_from_volume()` is deprecated as of ggseg.extra 1.9.9.9052.
-      i Please use the `projection_opts` argument instead.
 

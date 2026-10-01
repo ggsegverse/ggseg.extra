@@ -115,11 +115,3 @@ describe("use_atlas_github_actions", {
     expect_no_match(yaml, "README.Rmd", fixed = TRUE)
   })
 })
-
-
-describe("atlas_github_actions (deprecated)", {
-  it("warns and delegates to the renamed function", {
-    expect_snapshot(result <- atlas_github_actions())
-    expect_identical(result, ggseg_atlas_github_actions())
-  })
-})

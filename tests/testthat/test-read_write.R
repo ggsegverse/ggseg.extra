@@ -250,18 +250,6 @@ describe("read_lut", {
 })
 
 
-describe("read_ctab (deprecated)", {
-  it("warns about deprecation and delegates to read_lut", {
-    lut_file <- test_lut_file()
-    skip_if(!file.exists(lut_file), "Test LUT file not found")
-
-    lifecycle::expect_deprecated(result <- read_ctab(lut_file))
-
-    expect_identical(result, read_lut(lut_file))
-  })
-})
-
-
 describe("write_lut", {
   it("writes color table to file", {
     ctab <- data.frame(
@@ -447,26 +435,6 @@ describe("write_lut", {
 })
 
 
-describe("write_ctab (deprecated)", {
-  it("warns about deprecation and delegates to write_lut", {
-    ctab <- data.frame(
-      stringsAsFactors = FALSE,
-      idx = 1L,
-      label = "Region1",
-      R = 255,
-      G = 0,
-      B = 0,
-      A = 0
-    )
-    tmp <- withr::local_tempfile(fileext = ".txt")
-
-    lifecycle::expect_deprecated(write_ctab(ctab, tmp))
-
-    expect_true(file.exists(tmp))
-  })
-})
-
-
 describe("is_lut", {
   it("returns TRUE for valid color table", {
     ctab <- data.frame(
@@ -496,25 +464,6 @@ describe("is_lut", {
       R = 255
     )
     expect_false(is_lut(partial))
-  })
-})
-
-
-describe("is_ctab (deprecated)", {
-  it("warns about deprecation and delegates to is_lut", {
-    ctab <- data.frame(
-      stringsAsFactors = FALSE,
-      idx = 1,
-      label = "a",
-      R = 255,
-      G = 0,
-      B = 0,
-      A = 0
-    )
-
-    lifecycle::expect_deprecated(result <- is_ctab(ctab))
-
-    expect_true(result)
   })
 })
 
@@ -552,25 +501,6 @@ describe("get_lut", {
     invalid <- data.frame(x = 1, y = 2)
 
     expect_error(get_lut(invalid), "correct format")
-  })
-})
-
-
-describe("get_ctab (deprecated)", {
-  it("warns about deprecation and delegates to get_lut", {
-    ctab <- data.frame(
-      stringsAsFactors = FALSE,
-      idx = 1,
-      label = "Region1",
-      R = 255,
-      G = 0,
-      B = 0,
-      A = 0
-    )
-
-    lifecycle::expect_deprecated(result <- get_ctab(ctab))
-
-    expect_identical(result, get_lut(ctab))
   })
 })
 

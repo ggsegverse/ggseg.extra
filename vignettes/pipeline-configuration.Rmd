@@ -43,8 +43,7 @@ accepted and mean `1` and `0`.
 The `tolerance`, `smoothness`, `smooth_refinements` and `dilate` arguments are
 gone, along with the `ggseg.extra.tolerance` and `ggseg.extra.smoothness`
 options. Geometry shaping happens after the build: see `atlas_polish()` and
-`vignette("post-processing")`. Passing one of the old arguments still warns
-rather than raising an error.
+`vignette("post-processing")`. Passing one of the old arguments is an error.
 
 ## Setting options in R
 

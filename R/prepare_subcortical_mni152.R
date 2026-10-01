@@ -52,8 +52,8 @@ aseg_subcortical_labels <- function() {
 #'   (the default) applies FreeSurfer's `mni152.register.dat`, `"header"`
 #'   trusts the volume's own xform, or give a path to a register.dat or LTA
 #'   file. The same vocabulary as [create_wholebrain_from_volume()] and
-#'   [project_volume_anatomical()]. `NULL` is deprecated; it meant
-#'   `"mni152"`.
+#'   [project_volume_anatomical()]. `NULL` is not accepted; name the
+#'   spelling you want.
 #' @param output_file Optional path for the merged volume; defaults to a
 #'   tempfile.
 #' @param subjects_dir FreeSurfer subjects directory.
@@ -92,7 +92,6 @@ prepare_subcortical_mni152 <- function(
   rlang::check_installed("RNifti", reason = "to read NIfTI volumes")
 
   in_path <- resolve_volume_path(input_volume)
-  registration <- registration_from_null(registration, "mni152")
   registration_opt <- vol2vol_registration_opt(registration)
   aseg_mgz <- as.character(
     fs::path(subjects_dir, target_subject, "mri", "aseg.mgz")

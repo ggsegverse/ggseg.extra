@@ -42,12 +42,3 @@
       v Added 1 workflow to '.github/workflows/'
       * render-readme.yaml
 
-# atlas_github_actions (deprecated) / warns and delegates to the renamed function
-
-    Code
-      result <- atlas_github_actions()
-    Condition
-      Warning:
-      `atlas_github_actions()` was deprecated in ggseg.extra 1.9.9.9075.
-      i Please use `ggseg_atlas_github_actions()` instead.
-

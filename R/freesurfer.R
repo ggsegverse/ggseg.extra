@@ -20,7 +20,6 @@
 #'   your FreeSurfer installation, not a temporary directory. Pass a path of
 #'   your own to write elsewhere.
 #' @template verbose
-#' @param hemi `r lifecycle::badge("deprecated")` Use `hemisphere` instead.
 #' @return The command's exit status, invisibly. Called for the annotation
 #'   file it writes to `output_dir`.
 #' @export
@@ -45,19 +44,9 @@ mri_surf2surf_rereg <- function(
     subject,
     "label"
   )),
-  verbose = get_verbose(), # nolint: object_usage_linter
-  hemi = lifecycle::deprecated()
+  verbose = get_verbose() # nolint: object_usage_linter
 ) {
   check_fs(abort = TRUE)
-
-  if (lifecycle::is_present(hemi)) {
-    lifecycle::deprecate_warn(
-      "1.9.9.9005",
-      "mri_surf2surf_rereg(hemi = )",
-      "mri_surf2surf_rereg(hemisphere = )"
-    )
-    hemisphere <- hemi
-  }
   hemisphere <- match.arg(hemisphere, c("lh", "rh"))
 
   mkdir(output_dir)
@@ -192,27 +181,6 @@ registration_file <- function(registration) {
   }
 
   file
-}
-
-
-#' Map a deprecated `registration = NULL` onto the word it used to mean
-#'
-#' `NULL` meant "apply the MNI152 transform" in one exported function and
-#' "trust the header" in another -- opposite instructions under one spelling.
-#' Each caller names the word its own `NULL` stood for, so existing code keeps
-#' working while the vocabulary converges.
-#' @noRd
-registration_from_null <- function(registration, meant) {
-  if (!is.null(registration)) {
-    return(registration)
-  }
-
-  lifecycle::deprecate_warn(
-    "1.9.9.9038",
-    I("registration = NULL"),
-    details = paste0("Use registration = \"", meant, "\" instead.")
-  )
-  meant
 }
 
 

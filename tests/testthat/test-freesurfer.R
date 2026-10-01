@@ -177,27 +177,6 @@ describe("mni152_register_path", {
 })
 
 
-describe("registration_from_null", {
-  it("leaves a stated registration alone", {
-    expect_identical(registration_from_null("mni152", "header"), "mni152")
-  })
-
-  it("resolves NULL to the word the calling function meant by it", {
-    withr::local_options(lifecycle_verbosity = "warning")
-
-    # The whole point of the deprecation: NULL meant "mni152" in one exported
-    # function and "header" in another, so the replacement is per caller.
-    expect_warning(
-      expect_identical(registration_from_null(NULL, "header"), "header"),
-      "deprecated"
-    )
-    expect_warning(
-      expect_identical(registration_from_null(NULL, "mni152"), "mni152"),
-      "deprecated"
-    )
-  })
-})
-
 describe("vol2vol_registration_opt", {
   it("asks mri_vol2vol to trust the header, or to use a file", {
     reg_file <- withr::local_tempfile(fileext = ".dat")
@@ -433,22 +412,34 @@ describe("mri_surf2surf_rereg", {
     expect_match(cap$cmd, "--hemi lh")
   })
 
-  it("warns about deprecated hemi argument and delegates to hemisphere", {
+  it("builds the right-hemisphere command too", {
     cap <- local_mock_vol2surf()
-
     tmp <- withr::local_tempdir()
 
-    lifecycle::expect_deprecated(
-      mri_surf2surf_rereg(
-        subject = "bert",
-        annot = "aparc.DKTatlas",
-        hemi = "rh",
-        output_dir = tmp,
-        verbose = FALSE
-      )
+    mri_surf2surf_rereg(
+      subject = "bert",
+      annot = "aparc.DKTatlas",
+      hemisphere = "rh",
+      output_dir = tmp,
+      verbose = FALSE
     )
 
     expect_match(cap$cmd, "--hemi rh")
+  })
+
+  it("refuses a hemisphere that is neither lh nor rh", {
+    local_mocked_bindings(check_fs = function(...) invisible(TRUE))
+
+    expect_error(
+      mri_surf2surf_rereg(
+        subject = "bert",
+        annot = "aparc.DKTatlas",
+        hemisphere = "left",
+        output_dir = withr::local_tempdir(),
+        verbose = FALSE
+      ),
+      "should be one of"
+    )
   })
 })
 
@@ -784,6 +775,37 @@ describe("validate_registration without FreeSurfer", {
     expect_error(
       validate_registration(TRUE, "fsaverage5"),
       "single string"
+    )
+  })
+})
+
+
+describe("registration = NULL", {
+  it("is refused by project_volume_anatomical() before any command runs", {
+    local_mocked_bindings(
+      check_fs = function(...) invisible(TRUE),
+      resolve_volume_path = function(...) {
+        cli::cli_abort("should not be reached")
+      }
+    )
+
+    expect_error(
+      project_volume_anatomical("vol.nii.gz", registration = NULL),
+      "must be a single string"
+    )
+  })
+
+  it("is refused by prepare_subcortical_mni152()", {
+    vol <- withr::local_tempfile(fileext = ".nii.gz")
+    file.create(vol)
+    local_mocked_bindings(
+      check_fs = function(...) invisible(TRUE),
+      resolve_volume_path = function(...) vol
+    )
+
+    expect_error(
+      prepare_subcortical_mni152(vol, registration = NULL),
+      "must be a single string"
     )
   })
 })

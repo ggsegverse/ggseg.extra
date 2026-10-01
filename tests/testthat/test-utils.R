@@ -115,22 +115,6 @@ describe("get_verbose", {
 })
 
 
-describe("is_verbose", {
-  it("is deprecated in favour of get_verbose", {
-    expect_snapshot(is_verbose(2))
-  })
-
-  it("still resolves the level it is deprecated for", {
-    withr::local_options(lifecycle_verbosity = "quiet")
-    expect_identical(is_verbose(1), 1L)
-    expect_identical(is_verbose(FALSE), 0L)
-
-    withr::local_options(ggseg.extra.verbose = 2)
-    expect_identical(is_verbose(), 2L)
-  })
-})
-
-
 describe("get_cleanup", {
   it("returns explicit value when provided", {
     expect_true(get_cleanup(TRUE))
@@ -629,51 +613,6 @@ describe("prompt_user", {
     )
     result <- prompt_user("test message")
     expect_identical(result, "echo:test message")
-  })
-})
-
-
-describe("warn_deprecated_sf_smoothing", {
-  it("is a no-op when nothing is supplied", {
-    expect_no_warning(warn_deprecated_sf_smoothing())
-  })
-
-  it("warns when tolerance is supplied", {
-    lifecycle::expect_deprecated(
-      warn_deprecated_sf_smoothing(tolerance = 0.1),
-      "tolerance"
-    )
-  })
-
-  it("warns when smoothness is supplied", {
-    lifecycle::expect_deprecated(
-      warn_deprecated_sf_smoothing(smoothness = 2),
-      "smoothness"
-    )
-  })
-
-  it("warns when smooth_refinements is supplied", {
-    lifecycle::expect_deprecated(
-      warn_deprecated_sf_smoothing(smooth_refinements = 3),
-      "smooth_refinements"
-    )
-  })
-
-  it("warns once per supplied argument when several are passed together", {
-    withr::local_options(lifecycle_verbosity = "warning")
-    expect_snapshot(
-      warn_deprecated_sf_smoothing(tolerance = 0.1, smoothness = 2)
-    )
-  })
-
-  it("includes the calling function name in the message when supplied", {
-    lifecycle::expect_deprecated(
-      warn_deprecated_sf_smoothing(
-        tolerance = 0.1,
-        fn = "create_cortical_from_gifti"
-      ),
-      "create_cortical_from_gifti"
-    )
   })
 })
 

@@ -306,12 +306,3 @@ describe("check_optional_packages minimum versions", {
     expect_true(results$gifti)
   })
 })
-
-
-describe("setup_sitrep (deprecated)", {
-  it("warns and delegates to the renamed function", {
-    local_ready_environment()
-
-    expect_snapshot(invisible(setup_sitrep("minimal")))
-  })
-})

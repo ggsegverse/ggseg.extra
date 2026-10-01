@@ -2,12 +2,9 @@
 % Please edit documentation in R/sitrep.R
 \name{sitrep}
 \alias{sitrep}
-\alias{setup_sitrep}
 \title{Report on the ggseg.extra setup}
 \usage{
 sitrep(detail = c("simple", "minimal", "full"))
-
-setup_sitrep(detail = c("simple", "minimal", "full"))
 }
 \arguments{
 \item{detail}{How much to show, from least to most:
@@ -25,12 +22,6 @@ Invisibly, a list of check results.
 Checks the system dependencies and R packages the creation pipelines need,
 then reports which pipelines are ready and what to install for the ones
 that are not.
-
-\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}}
-
-\code{setup_sitrep()} was renamed to \code{\link[=sitrep]{sitrep()}}. It reports on the setup rather
-than performing any, which put it beside \code{\link[=setup_atlas_repo]{setup_atlas_repo()}} under a
-prefix that creates things.
 }
 \examples{
 sitrep()

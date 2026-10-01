@@ -528,15 +528,6 @@ describe("create_cerebellar_from_volume", {
       "decimate.*must be a single number"
     )
   })
-
-  it("warns about deprecated volume argument and delegates to input_volume", {
-    lifecycle::expect_deprecated(
-      expect_error(
-        create_cerebellar_from_volume(volume = "nonexistent.nii.gz"),
-        "not found"
-      )
-    )
-  })
 })
 
 

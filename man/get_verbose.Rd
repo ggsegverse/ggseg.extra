@@ -2,12 +2,9 @@
 % Please edit documentation in R/utils.R
 \name{get_verbose}
 \alias{get_verbose}
-\alias{is_verbose}
 \title{Get verbose setting}
 \usage{
 get_verbose(verbose = NULL)
-
-is_verbose(verbose = NULL)
 }
 \arguments{
 \item{verbose}{Optional explicit level, which wins over the option and the
@@ -20,14 +17,6 @@ Integer \code{0L}, \code{1L}, or \code{2L}
 Returns the verbosity level from option, environment variable, or default.
 Checks in order: \code{ggseg.extra.verbose} option, \code{GGSEG_EXTRA_VERBOSE} env var,
 then defaults to \code{1L}.
-
-\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}}
-
-An \code{is_} prefix on a function returning \code{0L}, \code{1L} or \code{2L} invites
-\verb{if (is_verbose())}, which is true at every level but silence.
-\code{is_verbose()} was renamed to \code{\link[=get_verbose]{get_verbose()}}, which takes the same
-optional argument. To coerce a value without consulting the option, use
-\code{\link[=as_verbosity]{as_verbosity()}}.
 }
 \details{
 Verbosity levels:

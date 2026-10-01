@@ -166,7 +166,7 @@ coregister_volume <- function(
 #' [create_wholebrain_from_volume()] and [prepare_subcortical_mni152()]. An
 #' LTA must be registered to a volume on the same subject's conformed grid as
 #' `aparc+aseg.mgz`, which any `recon-all` output is; a mismatch is caught and
-#' aborted. `NULL` is deprecated and meant `"header"`.
+#' aborted. `NULL` is not accepted; name the spelling you want.
 #'
 #' # What `protect_cortex` protects
 #'
@@ -208,6 +208,7 @@ project_volume_anatomical <- function(
   rlang::check_installed("RNifti", reason = "to read NIfTI volumes")
 
   validate_projection_args(threshold, id_offset)
+  check_registration_spec(registration)
   id_offset <- as.integer(id_offset)
 
   in_path <- resolve_volume_path(input_volume)
@@ -225,7 +226,6 @@ project_volume_anatomical <- function(
 
   prep <- project_load_volumes(in_path, lut, aparc_mgz, aparc_nii)
 
-  registration <- registration_from_null(registration, "header")
   reg_file <- resolve_registration(registration)$path
   check_registration_grid(reg_file, dim(prep$arr_aparc), dim(prep$arr))
 

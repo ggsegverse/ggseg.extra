@@ -553,3 +553,29 @@ describe("validate_steps", {
     expect_error(validate_steps(NA, 3L), "whole numbers")
   })
 })
+
+
+describe("resolve_opts", {
+  it("keeps an entry the caller explicitly set to NULL as NULL", {
+    # modifyList drops a NULL rather than storing one, so the entry is absent
+    # rather than NULL -- which reads back as NULL and is what the caller
+    # asked for. Pinned because the two routes to NULL are not obviously the
+    # same, and `projfrac_range = NULL` is a documented way to switch off
+    # multi-depth sampling.
+    out <- resolve_opts(
+      list(b = NULL),
+      "opts",
+      list(a = 1, b = c(0, 1, 0.1))
+    )
+
+    expect_null(out$b)
+    expect_identical(out$a, 1)
+  })
+
+  it("fills unset entries from the defaults", {
+    out <- resolve_opts(list(a = 9), "opts", list(a = 1, b = 2))
+
+    expect_identical(out$a, 9)
+    expect_identical(out$b, 2)
+  })
+})

@@ -10,8 +10,7 @@ mri_surf2surf_rereg(
   hemisphere = c("lh", "rh"),
   target_subject = "fsaverage5",
   output_dir = as.character(fs::path(freesurfer::fs_subj_dir(), subject, "label")),
-  verbose = get_verbose(),
-  hemi = lifecycle::deprecated()
+  verbose = get_verbose()
 )
 }
 \arguments{
@@ -34,8 +33,6 @@ your own to write elsewhere.}
 \code{2} adds FreeSurfer's own output. \code{TRUE} and \code{FALSE} mean \code{1} and \code{0}.
 Falls back to \code{options("ggseg.extra.verbose")}, then
 \code{GGSEG_EXTRA_VERBOSE}.}
-
-\item{hemi}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} Use \code{hemisphere} instead.}
 }
 \value{
 The command's exit status, invisibly. Called for the annotation

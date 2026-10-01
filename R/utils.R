@@ -79,25 +79,6 @@ get_verbose <- function(verbose = NULL) {
   1L
 }
 
-#' @description
-#' `r lifecycle::badge("deprecated")`
-#'
-#' An `is_` prefix on a function returning `0L`, `1L` or `2L` invites
-#' `if (is_verbose())`, which is true at every level but silence.
-#' `is_verbose()` was renamed to [get_verbose()], which takes the same
-#' optional argument. To coerce a value without consulting the option, use
-#' [as_verbosity()].
-#' @rdname get_verbose
-#' @export
-is_verbose <- function(verbose = NULL) {
-  lifecycle::deprecate_warn(
-    "1.9.9.9064",
-    "is_verbose()",
-    "get_verbose()"
-  )
-  get_verbose(verbose)
-}
-
 #' Hold a parsed verbosity to 0-2, falling back to the default
 #' @noRd
 clamp_verbosity <- function(n) {
@@ -429,57 +410,6 @@ get_skip_existing <- function(skip_existing = NULL) {
     TRUE
   )
 }
-
-#' Warn when deprecated sf-smoothing parameters are supplied
-#'
-#' Atlas creation no longer smooths or simplifies sf geometry; users
-#' should call [atlas_smooth()] after the atlas is built. Emits a
-#' lifecycle warning for each deprecated parameter passed a non-NULL
-#' value.
-#'
-#' @param tolerance,smoothness,smooth_refinements User-supplied values.
-#'   `NULL` means "not passed" and is silently accepted.
-#' @param fn Name of the calling function for the warning message.
-#' @noRd
-warn_deprecated_sf_smoothing <- function(
-  tolerance = NULL,
-  smoothness = NULL,
-  smooth_refinements = NULL,
-  fn = NULL
-) {
-  args <- list(
-    tolerance = tolerance,
-    smoothness = smoothness,
-    smooth_refinements = smooth_refinements
-  )
-  supplied <- names(args)[!vapply(args, is.null, logical(1))]
-  if (length(supplied) == 0L) {
-    return(invisible(NULL))
-  }
-
-  details <- c(
-    i = paste(
-      "Atlas creation no longer smooths or simplifies sf geometry.",
-      "Call `atlas_simplify(atlas, keep = ...)` on the returned atlas",
-      "instead. Use `exclude = \"cortex_\"` to keep the brain outline",
-      "crisp."
-    )
-  )
-
-  for (arg in supplied) {
-    what <- if (is.null(fn)) {
-      paste0(arg, "()")
-    } else {
-      paste0(fn, "(", arg, " = )")
-    }
-    lifecycle::deprecate_warn(
-      when = "1.9.9.9005",
-      what = what,
-      details = details
-    )
-  }
-}
-
 
 #' Helper to get boolean option with fallback
 #' @noRd

@@ -554,3 +554,11 @@ parse_lut_colours <- function(input_lut) {
 
   list(region_names = region_names, colours = colours)
 }
+
+
+#' Validate a grouped-argument list and fill it out with its defaults
+#' @noRd
+resolve_opts <- function(opts, arg_name, defaults) {
+  opts <- validate_pipeline_opts(opts, arg_name, names(defaults))
+  utils::modifyList(defaults, opts)
+}

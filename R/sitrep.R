@@ -40,20 +40,6 @@ sitrep <- function(detail = c("simple", "minimal", "full")) {
 }
 
 
-#' @description
-#' `r lifecycle::badge("deprecated")`
-#'
-#' `setup_sitrep()` was renamed to [sitrep()]. It reports on the setup rather
-#' than performing any, which put it beside [setup_atlas_repo()] under a
-#' prefix that creates things.
-#' @rdname sitrep
-#' @export
-setup_sitrep <- function(detail = c("simple", "minimal", "full")) {
-  lifecycle::deprecate_warn("1.9.9.9075", "setup_sitrep()", "sitrep()")
-  sitrep(detail = detail)
-}
-
-
 check_freesurfer <- function(detail = "simple") {
   min_version <- freesurfer_min_version()
   if (!rlang::is_installed("freesurfer", version = min_version)) {

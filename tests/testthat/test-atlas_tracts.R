@@ -33,29 +33,6 @@ describe("create_tract_from_tractography", {
     )
   })
 
-  it("warns about deprecated views argument and delegates to slabs", {
-    tracts <- list(
-      cst_left = matrix(c(1:20, rep(0, 40)), ncol = 3),
-      cst_right = matrix(c(1:20, rep(1, 40)), ncol = 3)
-    )
-
-    lifecycle::expect_deprecated(
-      atlas <- create_tract_from_tractography(
-        input_tracts = tracts,
-        steps = 1,
-        views = data.frame(
-          name = "v",
-          type = "coronal",
-          start = 1L,
-          end = 2L
-        ),
-        verbose = FALSE
-      )
-    )
-
-    expect_s3_class(atlas, "ggseg_atlas")
-  })
-
   it("assigns correct labels", {
     tracts <- list(
       cst_left = matrix(c(1:20, rep(0, 40)), ncol = 3),
@@ -645,54 +622,14 @@ describe("create_tract_from_tractography tube_opts", {
     expect_identical(seen$tube_segments, 8)
   })
 
-  it("lands the retired flat arguments where tube_opts now holds them", {
-    withr::local_options(lifecycle_verbosity = "warning")
-
-    expect_snapshot(
-      old <- capture_tube(list(
-        tube_radius = 3,
-        tube_segments = 16,
-        n_points = 25,
-        centerline_method = "medoid"
-      ))
-    )
-    new <- capture_tube(list(
-      tube_opts = list(
-        tube_radius = 3,
-        tube_segments = 16,
-        n_points = 25,
-        centerline_method = "medoid"
-      )
-    ))
-
-    for (entry in names(TRACT_TUBE_DEFAULTS)) {
-      expect_identical(old[[entry]], new[[entry]], info = entry)
-    }
-  })
-
-  it("deprecates each retired argument", {
-    # Errors rather than warnings: lifecycle throttles an indirect warning to
-    # once per session, so a warning assertion would pass or fail according
-    # to what ran first.
-    withr::local_options(lifecycle_verbosity = "error")
-
+  it("rejects the retired flat arguments that tube_opts replaced", {
     for (arg in names(TRACT_TUBE_DEFAULTS)) {
       expect_error(
         capture_tube(stats::setNames(list(1), arg)),
-        class = "lifecycle_error_deprecated",
+        "`...` must be empty",
         info = arg
       )
     }
-  })
-
-  it("refuses a retired argument alongside its tube_opts entry", {
-    expect_error(
-      capture_tube(list(
-        tube_radius = 3,
-        tube_opts = list(tube_radius = 9)
-      )),
-      "Cannot use both"
-    )
   })
 
   it("rejects an unknown tube_opts entry by name", {
