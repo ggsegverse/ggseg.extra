@@ -13,8 +13,10 @@ as_verbosity(x)
 
 - x:
 
-  Value to coerce. Logical `FALSE` becomes `0L`, `TRUE` becomes `1L`.
-  Numeric values are clamped to 0–2. Invalid input defaults to `1L`.
+  Value to coerce. Logical `FALSE` becomes `0L`, `TRUE` becomes `1L`. A
+  number above 2 is capped at `2L`. Anything else - a negative number,
+  an unrecognised string, `NA`, `NULL`, or a value that is not length
+  1 - falls back to the default `1L`.
 
 ## Value
 

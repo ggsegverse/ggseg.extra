@@ -1,5 +1,99 @@
 # Changelog
 
+## ggseg.extra 1.9.9.9084
+
+### Bug fixes
+
+- [`read_lut()`](https://ggsegverse.github.io/ggseg.extra/reference/read_lut.md)
+  silently misread a LUT line whose label contained a space. The label
+  capture was lazy and the pattern anchored, so instead of failing the
+  match backtracked into a different, valid-looking parse and every
+  colour channel shifted one field along: `"1 Region 10 20 30 40 50 60"`
+  read back as label `"Region 10"` with
+  `R = 20, G = 30, B = 40, A = 50`. The label is now matched as a single
+  whitespace-free token, and a line like that falls into the existing
+  “unparseable line” warning.
+  [`read_ctab()`](https://ggsegverse.github.io/ggseg.extra/reference/read_lut.md)
+  and
+  [`lut_classify_anatomy()`](https://ggsegverse.github.io/ggseg.extra/reference/lut_classify_anatomy.md)
+  go through the same reader and were classifying the wrong thing.
+
+- [`write_lut()`](https://ggsegverse.github.io/ggseg.extra/reference/write_lut.md)
+  wrote rows that
+  [`read_lut()`](https://ggsegverse.github.io/ggseg.extra/reference/read_lut.md)
+  then dropped. `check_writable_type()` existed precisely to prevent
+  that kind of silent round-trip loss, but guarded only the `type`
+  column. An `NA`, negative or fractional colour channel wrote a field
+  the reader cannot match, and because the pattern is anchored the whole
+  row vanished – label and colours with it. `label` and the five numeric
+  columns are now held to the same standard.
+
+- Running `steps = 1:4` on a subcortical atlas with an existing cache
+  deleted every snapshot in it. `subcort_resolve_snapshots()` threw away
+  the slab table it had just read whenever no step above 4 was
+  requested, and the expected-filename set then collapsed to the single
+  string `"_.rda"`, so `prune_stale_snapshots()` deleted the lot and
+  reported it as clearing up after an earlier slab configuration.
+  Contour extraction in a later run then traced an empty directory. The
+  cached slab table is now always returned, and naming snapshots without
+  one is an error rather than a silent empty set.
+
+- `tube_radius = "density"` silently produced a uniform tube of 0.6 for
+  a tract given as a single `N x 3` matrix – a documented input form,
+  and what
+  [`create_tract_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_tract_from_volume.md)
+  produces. [`Filter()`](https://rdrr.io/r/base/funprog.html) over a
+  matrix iterates it column by column, so no element was a matrix, the
+  density came out all zero, and `resolve_tube_radius()` fell back to
+  the midpoint of its range, eight times thinner than the default.
+
+- A `.trk` file truncated mid-streamline fabricated coordinates rather
+  than failing: [`matrix()`](https://rdrr.io/r/base/matrix.html)
+  recycled the short read, so the final streamline came back with
+  invented points.
+  [`read_tractography()`](https://ggsegverse.github.io/ggseg.extra/reference/read_tractography.md)
+  now aborts naming how many values were expected and how many were
+  read.
+
+- [`atlas_dilate()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_dilate.md)
+  with a negative `amount` large enough to erode a region away returned
+  an atlas that no longer passed
+  [`ggseg.formats::ggseg_atlas()`](https://ggsegverse.github.io/ggseg.formats/reference/ggseg_atlas.html).
+  The empty geometry was dropped while `core` and `palette` went on
+  claiming the region. It now warns naming the regions lost and removes
+  them from all three, so the result can still be rebuilt and saved.
+
+- [`create_tract_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_tract_from_volume.md)
+  reported dropped tracts only when called with a literal
+  `verbose = TRUE`. The guard was `isTRUE(verbose)`, and `verbose`
+  carries the integer levels `0L`/`1L`/`2L`, none of which
+  [`isTRUE()`](https://rdrr.io/r/base/Logic.html) accepts – so labels
+  dropped for too few voxels or a failed centerline fit were never
+  mentioned at any real verbosity.
+
+### Minor changes
+
+- [`as_verbosity()`](https://ggsegverse.github.io/ggseg.extra/reference/as_verbosity.md)
+  now keeps the contract it documents. A value that is not length 1,
+  including `NULL`, fell through to base R errors
+  (`'length = 2' in coercion to 'logical(1)'`) rather than the
+  documented fallback, and a factor was read by its level index, so
+  `factor("2")` gave `1L` where `"2"` gives `2L`. Both now fall back, or
+  read, as described. The `@param` text also claimed numeric input was
+  clamped to 0–2; negatives have always fallen back to `1L` instead, and
+  it now says so.
+
+- `validate_steps()` aborted with “must be whole numbers” only after
+  [`as.integer()`](https://rdrr.io/r/base/integer.html) had already made
+  them whole. `steps = 2.9` silently ran step 2 and `steps = "2"` was
+  accepted. Both are now refused.
+
+- `check_smoothness()` gained the type and length checks its siblings
+  `check_simplify_args()` and `check_dilate_args()` already had.
+  `smoothness = NA` silently returned the atlas unsmoothed, `"0.5"`
+  passed validation and failed deep inside the smoother, and a length-2
+  value raised a base R condition-length error.
+
 ## ggseg.extra 1.9.9.9083
 
 ### Breaking changes

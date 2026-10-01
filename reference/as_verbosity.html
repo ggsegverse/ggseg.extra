@@ -11,7 +11,7 @@ level: 0L (silent), 1L (standard), or 2L (debug)."><meta property="og:image" con
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9083</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9084</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -88,7 +88,9 @@ level: <code>0L</code> (silent), <code>1L</code> (standard), or <code>2L</code> 
 
 <dl><dt id="arg-x">x<a class="anchor" aria-label="anchor" href="#arg-x"></a></dt>
 <dd><p>Value to coerce. Logical <code>FALSE</code> becomes <code>0L</code>, <code>TRUE</code> becomes
-<code>1L</code>. Numeric values are clamped to 0–2. Invalid input defaults to <code>1L</code>.</p></dd>
+<code>1L</code>. A number above 2 is capped at <code>2L</code>. Anything else - a negative
+number, an unrecognised string, <code>NA</code>, <code>NULL</code>, or a value that is not
+length 1 - falls back to the default <code>1L</code>.</p></dd>
 
 </dl></div>
     <div class="section level2">
