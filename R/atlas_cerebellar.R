@@ -230,7 +230,7 @@ transform_mni_to_suit <- function(
 #' atlas <- create_cerebellar_from_gifti(
 #'   gifti_files = "Lobules-SUIT.label.gii"
 #' )
-#' ggseg(atlas = atlas)
+#' plot(atlas)
 #' }
 create_cerebellar_from_gifti <- function(
   gifti_files,

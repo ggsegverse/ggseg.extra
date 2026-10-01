@@ -1,3 +1,33 @@
+# ggseg.extra 1.9.9.9083
+
+## Breaking changes
+
+- `ggseg` moves from Imports to Suggests. It was imported for
+  `ggseg::ggseg()` and `ggseg::position_brain()`, neither of which this package
+  calls anywhere -- the only reference was the `@importFrom` itself. Plotting an
+  atlas is the caller's business, and the tests and tutorials that do it are
+  what Suggests is for.
+
+## Bug fixes
+
+- Two examples told readers to plot with `ggseg()`, which has called
+  `lifecycle::deprecate_stop()` since ggseg 2.0.0 and therefore errors.
+  `create_cortical_from_annotation()` and `create_cerebellar_from_gifti()` now
+  end in `plot(atlas)`, matching the tract and subcortical examples. Both sat
+  inside `\dontrun{}`, so `R CMD check` never ran them and nothing caught it;
+  anyone copying one got an error.
+
+- The neuromaps tutorial no longer chains ggplot2 onto `plot()`. `plot()` for an
+  atlas is a base-graphics overview -- `par()`, `polygon()`, `mtext()`,
+  returning the atlas invisibly -- so it draws no legend, and
+  `plot(atlas, show.legend = FALSE) + theme_void()` was doing nothing twice
+  over: `show.legend` reached `polygon()` and warned once per polygon, and the
+  chaining evaluated to `NULL`, which the page printed. 1.9.9.9082 replaced the
+  first half with `theme(legend.position = "none")`, which silenced the
+  warnings while remaining just as inert and introduced the stray `NULL`. The
+  call is now `plot(atlas_clean)`, and the section says what the overview is for
+  and points at `ggplot() + geom_brain()` for a figure meant for publication.
+
 # ggseg.extra 1.9.9.9082
 
 ## Documentation

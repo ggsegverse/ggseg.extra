@@ -182,7 +182,6 @@ prompt_user <- function(msg) readline(msg)
 #'
 #' @param atlas A ggseg_atlas object
 #' @return Invisible atlas
-#' @importFrom ggseg ggseg position_brain
 #' @importFrom ggseg3d ggseg3d pan_camera set_legend
 #' @noRd
 preview_atlas <- function(atlas) {

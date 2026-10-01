@@ -205,16 +205,21 @@ atlas_clean <- atlas_full |>
 
 ## Rendering the final atlas
 
+`plot()` is a base-graphics overview: one call, every view, no legend and
+nothing to configure. It is for looking at an atlas while you build it.
+
 ```{r}
 #| label: plot-2d
 #| eval: !expr can_run
 #| fig-width: 10
-#| fig-cap: "2D gene expression atlas plotted with ggseg."
-#| fig-alt: "2D brain atlas plot showing gene expression quantile bins across lateral, medial, inferior, and superior views without legend."
-plot(atlas_clean) +
-  theme_void() +
-  theme(legend.position = "none")
+#| fig-cap: "2D gene expression atlas, drawn by the base-graphics overview."
+#| fig-alt: "2D brain atlas plot showing gene expression quantile bins across lateral, medial, inferior, and superior views."
+plot(atlas_clean)
 ```
+
+For a figure you intend to publish, reach for the ggplot2 layer in ggseg instead ---
+`ggplot() + geom_brain(atlas = atlas_clean)` --- where legends, scales and
+themes are yours to control in the usual way.
 
 ```{r}
 #| label: plot-3d

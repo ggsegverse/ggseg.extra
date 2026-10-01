@@ -69,6 +69,6 @@ inflated mesh triangles to 2D via orthographic projection.
 atlas <- create_cortical_from_annotation(
   input_annot = c("lh.aparc.DKTatlas.annot", "rh.aparc.DKTatlas.annot")
 )
-ggseg(atlas = atlas)
+plot(atlas)
 }
 }
