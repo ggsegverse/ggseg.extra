@@ -295,8 +295,6 @@ atlas_dilate <- function(atlas, amount, labels = NULL, exclude = NULL) {
 }
 
 
-
-
 #' Count the vertices an atlas carries
 #'
 #' Reports how many polygon vertices each region is drawn from. The total is
