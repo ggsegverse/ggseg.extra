@@ -71,18 +71,26 @@ more, which the \code{"preserve"} budget takes back only as far as the floor
 allows. Ask for what you want, then look at what you got.
 }
 \examples{
+\dontshow{if (requireNamespace("ggseg", quietly = TRUE)) withAutoprint(\{ # examplesIf}
+dk <- ggseg::dk()
+sum(count_vertices(dk))
+
+polished <- atlas_polish(dk, keep = 0.2)
+sum(count_vertices(polished))
+
 \dontrun{
 # The usual shape of a build: the context silhouette and the structures
 # want different budgets, so they get a call each.
-atlas <- my_atlas |>
+dk |>
   atlas_polish(
     keep = 0.4,
     smoothness = 0.4,
     method = "chaikin",
-    labels = "^cortex"
+    labels = context_pattern()
   ) |>
-  atlas_polish(keep = 0.1, smoothness = 0.4, exclude = "^cortex")
+  atlas_polish(keep = 0.1, smoothness = 0.4, exclude = context_pattern())
 }
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 \code{\link[=atlas_simplify]{atlas_simplify()}} and \code{\link[=atlas_smooth]{atlas_smooth()}} for the separate steps,

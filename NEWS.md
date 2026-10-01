@@ -1,3 +1,28 @@
+# ggseg.extra 1.9.9.9087
+
+## Documentation
+
+- Six examples now run under `R CMD check` instead of sitting inside
+  `\dontrun{}`: `atlas_simplify()`, `atlas_smooth()`, `atlas_polish()`,
+  `atlas_dilate()`, `count_vertices()` and `context_pattern()`. The five
+  geometry verbs use `ggseg::dk()`, a real 70-region cortical atlas, behind
+  `@examplesIf requireNamespace("ggseg")`; the slowest takes about two
+  seconds. `context_pattern()` is pure string work and needed no fixture, and
+  its example now shows the anchoring that keeps `Left-Cerebral-Cortex` out of
+  the match.
+
+  This is the gap that let the deprecated `ggseg()` calls survive a commit
+  written to remove them: an example inside `\dontrun{}` is never executed, so
+  nothing notices when the API it demonstrates stops working. The
+  `atlas_polish()` and `atlas_simplify()` examples also print the vertex count
+  before and after, so the figures the documentation quotes are now produced
+  by the check rather than asserted.
+
+  One executed call per topic, since three `atlas_polish()` calls on a
+  70-region atlas took 6.3s and earned a "CPU time > 5s" NOTE. The
+  illustrative variations stay in `\dontrun{}`, as do the remaining examples
+  that need an input file, a FreeSurfer installation or a network fetch.
+
 # ggseg.extra 1.9.9.9086
 
 ## Documentation
