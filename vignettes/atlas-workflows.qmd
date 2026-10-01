@@ -218,9 +218,8 @@ Use `steps = 1:3` (subcortical) or `steps = 1` (tract) for fast 3D-only iteratio
 
 ## Where to go from here
 
-If you're new to ggseg.extra, start with the [Getting Started](ggseg.extra.html) guide for installation and basic usage.
-The cortical pipeline has no system dependencies --- it only needs the `freesurferformats` R package to read annotation files.
-Subcortical and whole-brain pipelines need FreeSurfer; see [System Setup](system-setup.html) for details.
+If you're new to ggseg.extra, start with the [Getting Started](ggseg.extra.html) guide, which has the shortest path from an annotation file to a plot and a table of which pipeline reads which format.
+What each pipeline needs installed is in [System Setup](system-setup.html), and `sitrep()` reports what this machine actually has.
 
 The [Pipeline Configuration](pipeline-configuration.html) article covers verbosity, intermediate files and resuming an interrupted run.
 [Post-processing](post-processing.html) covers what to do with the atlas the pipeline hands back: dropping regions you do not need, choosing views, and shaping the geometry.

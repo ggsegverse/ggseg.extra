@@ -1,3 +1,23 @@
+# ggseg.extra 1.9.9.9091
+
+## Documentation
+
+- `vignette("ggseg.extra")` opens with the shortest path from an annotation
+  file to a plot -- create, polish, plot -- which existed nowhere as four
+  consecutive lines, and names `sitrep()` as the thing to run before starting
+  a pipeline that needs FreeSurfer.
+
+- `vignette("ggseg.extra")` and `vignette("atlas-workflows")` both explained
+  the cortical two-step pipeline and the subcortical slicing, in the same
+  order, so a new user met each twice before reaching a tutorial. The detail
+  now lives once, in `atlas-workflows`, which has the diagrams; the getting
+  started guide keeps the format-to-function table and points there.
+  `atlas-workflows` likewise no longer restates which pipelines need
+  FreeSurfer, which `vignette("system-setup")` and `sitrep()` own.
+
+  No content was dropped -- the duplicated prose became cross-references, so
+  each fact still has exactly one home.
+
 # ggseg.extra 1.9.9.9090
 
 ## Minor changes
