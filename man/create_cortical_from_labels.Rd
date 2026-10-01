@@ -21,7 +21,10 @@ create_cortical_from_labels(
 FreeSurfer naming: \verb{\{hemi\}.\{regionname\}.label} (e.g., \code{lh.motor.label}).}
 
 \item{views}{Which views to include: "lateral", "medial",
-"superior", "inferior".}
+"superior", "inferior". Defaults to the two lateral-facing views,
+unlike the other cortical creators, because a hand-drawn label set is
+usually a few regions on the outer surface rather than a whole-cortex
+parcellation.}
 
 \item{verbose}{How much to print: \code{0} silent, \code{1} progress (the default),
 \code{2} adds FreeSurfer's own output. \code{TRUE} and \code{FALSE} mean \code{1} and \code{0}.
@@ -55,7 +58,9 @@ interrupted run can resume. Default \code{TRUE}, from
 \code{options("ggseg.extra.skip_existing")} or \code{GGSEG_EXTRA_SKIP_EXISTING}.}
 }
 \value{
-A \code{ggseg_atlas} object.
+A \code{ggseg_atlas} object of type "cortical" containing region
+metadata (core), vertex indices for 3D rendering, a colour palette, and
+sf geometry for 2D plots.
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
@@ -73,3 +78,21 @@ labels <- c("lh.region1.label", "lh.region2.label", "rh.region1.label")
 atlas <- create_cortical_from_labels(labels)
 }
 }
+\seealso{
+\code{\link[=atlas_polish]{atlas_polish()}} to simplify and round off the result, which
+most builds want next.
+
+Other atlas creation:
+\code{\link[=create_cerebellar_from_annotation]{create_cerebellar_from_annotation()}},
+\code{\link[=create_cerebellar_from_gifti]{create_cerebellar_from_gifti()}},
+\code{\link[=create_cerebellar_from_volume]{create_cerebellar_from_volume()}},
+\code{\link[=create_cortical_from_annotation]{create_cortical_from_annotation()}},
+\code{\link[=create_cortical_from_cifti]{create_cortical_from_cifti()}},
+\code{\link[=create_cortical_from_gifti]{create_cortical_from_gifti()}},
+\code{\link[=create_cortical_from_neuromaps]{create_cortical_from_neuromaps()}},
+\code{\link[=create_subcortical_from_volume]{create_subcortical_from_volume()}},
+\code{\link[=create_tract_from_tractography]{create_tract_from_tractography()}},
+\code{\link[=create_tract_from_volume]{create_tract_from_volume()}},
+\code{\link[=create_wholebrain_from_volume]{create_wholebrain_from_volume()}}
+}
+\concept{atlas creation}

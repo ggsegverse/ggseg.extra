@@ -66,6 +66,9 @@
 #' @return A `ggseg_atlas` object with region metadata (core), 3D meshes,
 #'   a colour palette, and optionally sf geometry for 2D slice plots.
 #' @template dots_post_creation
+#' @family atlas creation
+#' @seealso [atlas_polish()] to simplify and round off the result, which
+#'   most builds want next.
 #' @export
 #' @importFrom dplyr tibble bind_rows left_join filter distinct
 #' @importFrom furrr future_pmap furrr_options
@@ -82,7 +85,7 @@
 #' )
 #'
 #' # View with ggseg3d
-#' ggseg3d(atlas = atlas, hemisphere = "subcort")
+#' ggseg3d::ggseg3d(atlas = atlas, hemisphere = "subcort")
 #'
 #' # Full atlas with 2D slices
 #' atlas <- create_subcortical_from_volume(

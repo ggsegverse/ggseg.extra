@@ -131,9 +131,12 @@ interrupted run can resume. Default \code{TRUE}, from
 \code{options("ggseg.extra.skip_existing")} or \code{GGSEG_EXTRA_SKIP_EXISTING}.}
 }
 \value{
-A named list with elements \code{cortical}, \code{subcortical}, and
-\code{cerebellar}, each a \code{ggseg_atlas} object (or NULL if no regions of
-that type exist).
+For a full run, a named list with elements \code{cortical},
+\code{subcortical} and \code{cerebellar}, each a \code{ggseg_atlas} object (or \code{NULL}
+if no regions of that type exist). A run that stops at or before step 2
+instead returns, invisibly, the label split to inspect:
+\code{cortical_labels}, \code{subcortical_labels}, \code{cerebellar_labels} and
+\code{vertex_counts}.
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
@@ -226,7 +229,8 @@ to need manual correction. Recommended workflow:
 If the automatic split is wrong, either add a \code{type} column to the
 LUT or name the labels in \code{labels}.
 \item Run the full pipeline once you are satisfied with the split.
-\item Visually inspect the resulting atlas with \code{ggseg()} / \code{ggseg3d()}.
+\item Visually inspect the resulting atlas with \code{plot()} for a quick
+overview, or \code{ggplot() + geom_brain()} and \code{ggseg3d()} for a figure.
 }
 
 The cortical surface projection uses FreeSurfer's cortex label
@@ -329,3 +333,21 @@ result <- create_wholebrain_from_volume(
 )
 }
 }
+\seealso{
+\code{\link[=atlas_polish]{atlas_polish()}} to simplify and round off the result, which
+most builds want next.
+
+Other atlas creation:
+\code{\link[=create_cerebellar_from_annotation]{create_cerebellar_from_annotation()}},
+\code{\link[=create_cerebellar_from_gifti]{create_cerebellar_from_gifti()}},
+\code{\link[=create_cerebellar_from_volume]{create_cerebellar_from_volume()}},
+\code{\link[=create_cortical_from_annotation]{create_cortical_from_annotation()}},
+\code{\link[=create_cortical_from_cifti]{create_cortical_from_cifti()}},
+\code{\link[=create_cortical_from_gifti]{create_cortical_from_gifti()}},
+\code{\link[=create_cortical_from_labels]{create_cortical_from_labels()}},
+\code{\link[=create_cortical_from_neuromaps]{create_cortical_from_neuromaps()}},
+\code{\link[=create_subcortical_from_volume]{create_subcortical_from_volume()}},
+\code{\link[=create_tract_from_tractography]{create_tract_from_tractography()}},
+\code{\link[=create_tract_from_volume]{create_tract_from_volume()}}
+}
+\concept{atlas creation}

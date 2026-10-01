@@ -103,7 +103,7 @@ for details.
 
 Step-by-step tutorials that walk through complete atlas creation pipelines,
 one per input format, live on the [package website](https://ggsegverse.github.io/ggseg.extra/)
-under *Articles*. They are not shipped with the installed package because they
+under *Tutorials*. They are not shipped with the installed package because they
 need FreeSurfer subject data and network access to build.
 
 See also `vignette("pipeline-configuration")` for controlling verbosity, parallelism, and output directories.

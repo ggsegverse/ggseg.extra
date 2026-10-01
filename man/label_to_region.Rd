@@ -29,12 +29,10 @@ what the pipeline will actually derive; re-implementing the rule by hand is
 how a key silently stops matching (an underscore handled but a hyphen not,
 and one region joins to \code{NA}).
 
-The affixes stripped here must match the ones \code{detect_hemi()} recognises.
-Where they disagree the hemisphere ends up in \code{region} as well as \code{hemi}:
-\code{detect_hemi()} reads the \code{L_}/\code{R_} convention, so \code{R_Fx} correctly gave
-hemi \code{"right"}, while this function left the prefix in place and produced
-region \code{"r fx"}. Two hemispheres of one structure then look like two
-different structures, since \code{region} is what pairs them.
+The affixes recognised are \code{Left}/\code{Right}, \code{left}/\code{right}, \code{lh}/\code{rh} and
+\code{L}/\code{R}, as a prefix or a suffix, separated by \code{-}, \verb{_}, \code{.} or a space.
+A label is never stripped to nothing, so a structure genuinely named
+"left" keeps its name.
 }
 \examples{
 label_to_region("Left-Thalamus")

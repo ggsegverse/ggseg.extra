@@ -223,6 +223,9 @@ transform_mni_to_suit <- function(
 #'   metadata (core), a colour palette, sf geometry for 2D plots, and
 #'   optionally 3D meshes.
 #' @template dots_post_creation
+#' @family atlas creation
+#' @seealso [atlas_polish()] to simplify and round off the result, which
+#'   most builds want next.
 #' @export
 #'
 #' @examples
@@ -289,8 +292,13 @@ create_cerebellar_from_gifti <- function(
 #' @template verbose
 #' @template skip_existing
 #'
-#' @return A `ggseg_atlas` object of type "cerebellar".
+#' @return A `ggseg_atlas` object of type "cerebellar" containing region
+#'   metadata (core), a colour palette, sf geometry for 2D flatmap plots,
+#'   and optionally 3D meshes when `volume` is given.
 #' @template dots_post_creation
+#' @family atlas creation
+#' @seealso [atlas_polish()] to simplify and round off the result, which
+#'   most builds want next.
 #' @export
 #'
 #' @examples
@@ -364,6 +372,9 @@ create_cerebellar_from_annotation <- function(
 #' @return A `ggseg_atlas` object of type "cerebellar" with both sf geometry
 #'   and 3D meshes.
 #' @template dots_post_creation
+#' @family atlas creation
+#' @seealso [atlas_polish()] to simplify and round off the result, which
+#'   most builds want next.
 #' @export
 #'
 #' @examples
@@ -431,7 +442,8 @@ create_cerebellar_from_volume <- function(
 #' `r lifecycle::badge("experimental")`
 #'
 #' Reads GIFTI label files containing cerebellar parcellations and returns
-#' a data frame compatible with `build_atlas_components()`. Handles
+#' a data frame of per-region vertices ready for the cerebellar pipeline.
+#' Handles
 #' SUIT-specific label conventions where regions are prefixed with
 #' "Left", "Right", or "Vermis".
 #'

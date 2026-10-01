@@ -19,7 +19,7 @@ The cerebellum sits beneath the cortex and behind the brainstem, folded into tig
 The [SUIT template](https://www.diedrichsenlab.org/imaging/suit.htm) solves this by providing a dedicated cerebellar surface with a 2D flatmap projection — the same kind of unfolding that cartographers use to flatten a globe.
 
 ggseg.extra ships both SUIT surfaces (flatmap and 3D pial) and provides three creation functions depending on what format your parcellation is in.
-The result is a `ggseg_atlas` of type `"cerebellar"` that works with both `ggseg()` for 2D flatmap plots and `ggseg3d()` for interactive 3D views.
+The result is a `ggseg_atlas` of type `"cerebellar"` that works with both `ggplot() + geom_brain()` for 2D flatmap plots and `ggseg3d()` for interactive 3D views.
 
 ## What you need
 

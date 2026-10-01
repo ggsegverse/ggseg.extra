@@ -88,7 +88,8 @@
 #'    If the automatic split is wrong, either add a `type` column to the
 #'    LUT or name the labels in `labels`.
 #' 3. Run the full pipeline once you are satisfied with the split.
-#' 4. Visually inspect the resulting atlas with `ggseg()` / `ggseg3d()`.
+#' 4. Visually inspect the resulting atlas with `plot()` for a quick
+#'    overview, or `ggplot() + geom_brain()` and `ggseg3d()` for a figure.
 #'
 #' The cortical surface projection uses FreeSurfer's cortex label
 #' (`{hemi}.cortex.label`) to prevent label dilation into the medial wall.
@@ -217,9 +218,15 @@
 #' FreeSurfer's own `INFO` and `WARNING` lines about the registration are
 #' only visible with `verbose = TRUE`.
 #'
-#' @return A named list with elements `cortical`, `subcortical`, and
-#'   `cerebellar`, each a `ggseg_atlas` object (or NULL if no regions of
-#'   that type exist).
+#' @return For a full run, a named list with elements `cortical`,
+#'   `subcortical` and `cerebellar`, each a `ggseg_atlas` object (or `NULL`
+#'   if no regions of that type exist). A run that stops at or before step 2
+#'   instead returns, invisibly, the label split to inspect:
+#'   `cortical_labels`, `subcortical_labels`, `cerebellar_labels` and
+#'   `vertex_counts`.
+#' @family atlas creation
+#' @seealso [atlas_polish()] to simplify and round off the result, which
+#'   most builds want next.
 #' @export
 #' @importFrom dplyr tibble bind_rows filter
 #' @importFrom grDevices rgb

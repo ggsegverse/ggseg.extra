@@ -14,10 +14,15 @@
 #' @param hemisphere hemisphere (one of "lh" or "rh")
 #' @param target_subject subject to re-register the annotation
 #'   (default fsaverage5)
-#' @template output_dir
+#' @param output_dir Where to write the re-registered annotation. Defaults to
+#'   `subject`'s own `label/` directory inside FreeSurfer's `SUBJECTS_DIR`,
+#'   beside the annotation being re-registered - so the default writes into
+#'   your FreeSurfer installation, not a temporary directory. Pass a path of
+#'   your own to write elsewhere.
 #' @template verbose
 #' @param hemi `r lifecycle::badge("deprecated")` Use `hemisphere` instead.
-#' @return nothing
+#' @return The command's exit status, invisibly. Called for the annotation
+#'   file it writes to `output_dir`.
 #' @export
 #' @examples
 #' \dontrun{
@@ -76,7 +81,7 @@ mri_surf2surf_rereg <- function(
     hemisphere
   )
 
-  run_cmd(cmd, verbose = verbose)
+  invisible(run_cmd(cmd, verbose = verbose))
 }
 
 # The CRAN release lacks what the pipelines use (`fs_sitrep()`,

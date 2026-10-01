@@ -10,6 +10,39 @@
 
 Create brain atlas data sets compatible with the 'ggsegverse' plotting packages. Provides pipelines for building cortical, subcortical, white-matter tract, and cerebellar atlases from 'FreeSurfer' annotation files, 'GIFTI' and 'CIFTI' surface formats, 'neuromaps', cerebellar flatmaps, and volumetric 'NIfTI' images.
 }
+\section{Getting started}{
+
+\code{sitrep()} reports whether this machine has what each pipeline needs.
+Run it first — most pipelines want FreeSurfer, and some want Connectome
+Workbench or an optional R package.
+
+Pick the creator that matches the input you have:
+\itemize{
+\item \strong{Cortical surface} — \code{\link[=create_cortical_from_annotation]{create_cortical_from_annotation()}} for a
+FreeSurfer \code{.annot}, \code{\link[=create_cortical_from_gifti]{create_cortical_from_gifti()}} or
+\code{\link[=create_cortical_from_cifti]{create_cortical_from_cifti()}} for surface formats,
+\code{\link[=create_cortical_from_labels]{create_cortical_from_labels()}} for hand-drawn \code{.label} files, and
+\code{\link[=create_cortical_from_neuromaps]{create_cortical_from_neuromaps()}} for a neuromaps annotation.
+\item \strong{Subcortical} — \code{\link[=create_subcortical_from_volume]{create_subcortical_from_volume()}} from a segmentation
+volume such as FreeSurfer's \code{aseg}.
+\item \strong{Cerebellar} — \code{\link[=create_cerebellar_from_gifti]{create_cerebellar_from_gifti()}},
+\code{\link[=create_cerebellar_from_annotation]{create_cerebellar_from_annotation()}} or
+\code{\link[=create_cerebellar_from_volume]{create_cerebellar_from_volume()}}, all onto the SUIT flatmap.
+\item \strong{White-matter tract} — \code{\link[=create_tract_from_tractography]{create_tract_from_tractography()}} from
+streamlines, or \code{\link[=create_tract_from_volume]{create_tract_from_volume()}} from a tract label map.
+\item \strong{Whole brain at once} — \code{\link[=create_wholebrain_from_volume]{create_wholebrain_from_volume()}}, which splits
+one volume across the three pipelines above.
+}
+
+A freshly built atlas usually carries more vertices than a plot needs.
+\code{\link[=atlas_polish]{atlas_polish()}} simplifies and rounds it off in one call;
+\code{\link[=atlas_simplify]{atlas_simplify()}}, \code{\link[=atlas_smooth]{atlas_smooth()}} and \code{\link[=atlas_dilate]{atlas_dilate()}} are the separate
+steps. \code{\link[=count_vertices]{count_vertices()}} is the number to watch.
+
+To ship an atlas as its own package, \code{\link[=setup_atlas_repo]{setup_atlas_repo()}} scaffolds the
+repository and \code{\link[=use_atlas_github_actions]{use_atlas_github_actions()}} adds its workflows.
+}
+
 \seealso{
 Useful links:
 \itemize{

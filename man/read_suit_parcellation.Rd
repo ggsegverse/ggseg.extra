@@ -17,7 +17,8 @@ A tibble with columns: \code{hemi}, \code{region}, \code{label}, \code{colour},
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
 
 Reads GIFTI label files containing cerebellar parcellations and returns
-a data frame compatible with \code{build_atlas_components()}. Handles
+a data frame of per-region vertices ready for the cerebellar pipeline.
+Handles
 SUIT-specific label conventions where regions are prefixed with
 "Left", "Right", or "Vermis".
 }

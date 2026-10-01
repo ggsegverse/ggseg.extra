@@ -11,8 +11,8 @@
 
 ### Big-picture architecture
 
-- Core R code lives in `R/` (e.g. `R/atlas-cortical.R`,
-  `R/atlas-subcortical.R`, `R/mesh-projection.R`). Cortical pipelines
+- Core R code lives in `R/` (e.g. `R/atlas_cortical.R`,
+  `R/atlas_subcortical.R`, `R/mesh_projection.R`). Cortical pipelines
   use direct mesh-to-polygon projection (no screenshots/external
   rendering). Subcortical and tract pipelines still use multi-step
   disk-based workflows. All return `ggseg_atlas` objects.
@@ -27,18 +27,19 @@
   `steps` numeric vector and write files to an `output_dir`. Cortical
   functions (`create_cortical_from_*()`) do NOT have a `steps`
   parameter — they always read data and project to 2D in one pass.
-- Atlas naming: ggseg3d atlases often use `_3d` suffixes and
-  palettes are created with `make_palette_ggseg()` (see
-  `R/create-ggseg-atlas.R`). When generating atlases, ensure names
-  and palette keys match repository conventions (see usage of
-  `brain_atlas()` in the R code).
+- Atlas objects: one `ggseg_atlas` carries both 2D and 3D data, built
+  with `ggseg.formats::ggseg_atlas()`. The palette is a named character
+  vector keyed by `label`, and `core` carries `hemi`/`region`/`label`;
+  `build_atlas_components()` derives both. The old paired `dk`/`dk_3d`
+  scheme is legacy — `convert_legacy_brain_atlas()` migrates it, see
+  `vignette("legacy-conversion")`.
 - External binaries: subcortical/tract functions shell out to
   FreeSurfer. Cortical functions only need FreeSurfer to read
   annotations. Guard changes that call or parse external tool
   outputs and add clear error messages if binaries are missing.
 - Reporting/progress: code uses `cli`, `progressr` and verbose text
   output. Preserve this behaviour in edits (use `cli::cli_*` and
-  `progressr::progress()` patterns).
+  `progressr::progressor()` patterns).
 
 ### Developer workflows (how to build / test / debug)
 
@@ -77,10 +78,11 @@
   tool; CI provides it through the freesurfer-slim container.
 - Code uses `terra` and `sf` — watch for platform-specific binary
   issues and prefer high-level R APIs when possible.
-- Intermediate files have expected directory layout (e.g.
-  `output_dir/<atlas>/{img,regions,masks}`). If you change file
-  naming, update all downstream readers (contour extraction,
-  smoothing, vertex reduction).
+- Intermediate files have an expected layout, created by
+  `setup_atlas_dirs()`: `output_dir/<atlas>/snapshots/` for every type,
+  plus `meshes/` for subcortical and cerebellar and `volumes/` for tract.
+  If you change file naming, update all downstream readers (contour
+  extraction, smoothing, vertex reduction).
 
 ### Example edits the agent can safely make
 
@@ -89,7 +91,7 @@
   messages and progress reporting.
 - Add unit tests under `tests/testthat/` that run quickly and mock
   external binaries where possible. Prefer to test pure-R logic (e.g.
-  coordinate transforms, palette creation `make_palette_ggseg()`),
+  coordinate transforms, palette generation `lut_generate_colors()`),
   and add `skip_on_ci()` when tests require heavy system tools.
 
 ### When to ask for human help
@@ -106,7 +108,9 @@
 only add information that is relevant for the R-package to NEWS.md. 
 Any other changes related to workflows, pkgdown etc are not relevant to the R-package releases and thus dont shouldnt be listed in NEWS.
 
-Organise NEWS by user-facing and developer facing changes, and headings for minor vs breaking changes.
+Organise NEWS under `## Breaking changes`, `## New features`,
+`## Minor changes`, `## Bug fixes` and `## Documentation`, as the entries
+from 1.9.9.9075 onwards do. Put breaking changes first.
 
 
 ### Cache format version

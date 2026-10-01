@@ -38,6 +38,7 @@
 #'   [create_tract_from_tractography()].
 #' @seealso [create_tract_from_tractography()] for the streamline-based
 #'   counterpart.
+#' @family atlas creation
 #' @export
 #'
 #' @examples

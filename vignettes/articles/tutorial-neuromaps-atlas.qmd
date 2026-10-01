@@ -280,14 +280,22 @@ atlas_full <- create_cortical_from_neuromaps(
 #> 
 #> ℹ Projecting mesh to 2D polygons
 #> ℹ Projecting "rh" "lateral"
-#> ℹ Projecting mesh to 2D polygonsℹ Projecting "rh" "medial"
-#> ℹ Projecting mesh to 2D polygonsℹ Projecting "rh" "superior"
-#> ℹ Projecting mesh to 2D polygonsℹ Projecting "rh" "inferior"
-#> ℹ Projecting mesh to 2D polygonsℹ Projecting "lh" "lateral"
-#> ℹ Projecting mesh to 2D polygonsℹ Projecting "lh" "medial"
-#> ℹ Projecting mesh to 2D polygonsℹ Projecting "lh" "superior"
-#> ℹ Projecting mesh to 2D polygonsℹ Projecting "lh" "inferior"
-#> ℹ Projecting mesh to 2D polygons✔ Projecting mesh to 2D polygons [14s]
+#> ℹ Projecting mesh to 2D polygons
+ℹ Projecting "rh" "medial"
+#> ℹ Projecting mesh to 2D polygons
+ℹ Projecting "rh" "superior"
+#> ℹ Projecting mesh to 2D polygons
+ℹ Projecting "rh" "inferior"
+#> ℹ Projecting mesh to 2D polygons
+ℹ Projecting "lh" "lateral"
+#> ℹ Projecting mesh to 2D polygons
+ℹ Projecting "lh" "medial"
+#> ℹ Projecting mesh to 2D polygons
+ℹ Projecting "lh" "superior"
+#> ℹ Projecting mesh to 2D polygons
+ℹ Projecting "lh" "inferior"
+#> ℹ Projecting mesh to 2D polygons
+✔ Projecting mesh to 2D polygons [14s]
 #> 
 #> ✔ Temporary files removed
 #> ✔ Brain atlas created with 14 regions
@@ -298,8 +306,8 @@ atlas_full <- create_cortical_from_neuromaps(
 #>   it and reduce vertices
 
 atlas_full <- atlas_full |>
-  atlas_simplify(keep = 0.2, exclude = "cortex_") |>
-  atlas_smooth(exclude = "cortex_")
+  atlas_simplify(keep = 0.2, exclude = context_pattern()) |>
+  atlas_smooth(exclude = context_pattern())
 ```
 
 ## Post-processing
