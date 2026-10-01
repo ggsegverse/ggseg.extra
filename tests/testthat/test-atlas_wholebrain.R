@@ -4165,12 +4165,17 @@ describe("create_wholebrain_from_volume argument groups", {
       "cortical_labels",
       "subcortical_labels",
       "cerebellar_labels",
+      "projfrac",
+      "projfrac_range",
+      "subject",
+      "registration",
       "min_vertices",
-      "cerebellar_space"
+      "cerebellar_space",
+      "regheader"
     )) {
       expect_error(
         capture_setup(stats::setNames(list("x"), arg)),
-        "unused argument",
+        "`...` must be empty",
         info = arg
       )
     }

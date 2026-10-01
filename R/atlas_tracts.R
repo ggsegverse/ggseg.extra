@@ -119,7 +119,7 @@ create_tract_from_tractography <- function(
   skip_existing = NULL,
   coord_space = c("infer", "voxel", "mm")
 ) {
-  check_unused_dots("create_tract_from_tractography", ...)
+  rlang::check_dots_empty()
   tube <- resolve_opts(tube_opts, "tube_opts", TRACT_TUBE_DEFAULTS)
 
   start_time <- Sys.time()

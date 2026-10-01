@@ -203,8 +203,8 @@ Roughly three quarters of the vertices are gone and the lobules read more clearl
 For 3D meshes, `decimate` controls quadric edge decimation (0–1, default 0.5).
 A value of 0.5 reduces the mesh to roughly half its original vertex count.
 
-The `tolerance`, `smoothness` and `smooth_refinements` arguments on the `create_*()` functions are deprecated.
-Supplying them emits a lifecycle warning and they are otherwise ignored.
+The `tolerance`, `smoothness` and `smooth_refinements` arguments on the `create_*()` functions are gone.
+Shape the geometry after the build instead: see `atlas_polish()`.
 
 ## Post-processing
 

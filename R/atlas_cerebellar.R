@@ -246,7 +246,7 @@ create_cerebellar_from_gifti <- function(
   cleanup = NULL,
   skip_existing = NULL
 ) {
-  check_unused_dots("create_cerebellar_from_gifti", ...)
+  rlang::check_dots_empty()
   if (length(gifti_files) == 0) {
     cli::cli_abort("{.arg gifti_files} must not be empty")
   }
@@ -319,7 +319,7 @@ create_cerebellar_from_annotation <- function(
   cleanup = NULL,
   skip_existing = NULL
 ) {
-  check_unused_dots("create_cerebellar_from_annotation", ...)
+  rlang::check_dots_empty()
   if (length(input_annot) == 0) {
     cli::cli_abort("{.arg input_annot} must not be empty")
   }
@@ -391,7 +391,7 @@ create_cerebellar_from_volume <- function(
   cleanup = NULL,
   skip_existing = NULL
 ) {
-  check_unused_dots("create_cerebellar_from_volume", ...)
+  rlang::check_dots_empty()
   validate_decimate(decimate)
   volume <- input_volume
 

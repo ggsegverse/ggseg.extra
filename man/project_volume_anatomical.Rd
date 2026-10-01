@@ -100,7 +100,7 @@ it matches the merged volume.
 \code{\link[=create_wholebrain_from_volume]{create_wholebrain_from_volume()}} and \code{\link[=prepare_subcortical_mni152]{prepare_subcortical_mni152()}}. An
 LTA must be registered to a volume on the same subject's conformed grid as
 \code{aparc+aseg.mgz}, which any \code{recon-all} output is; a mismatch is caught and
-aborted. \code{NULL} is deprecated and meant \code{"header"}.
+aborted. \code{NULL} is not accepted; name the spelling you want.
 }
 
 \section{What \code{protect_cortex} protects}{

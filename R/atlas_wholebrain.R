@@ -122,8 +122,7 @@
 #'       flatmap pipeline, using the bundled surfaces from
 #'       [suit_flatmap_path()] and [suit_3d_path()].
 #'   }
-#'   Unnamed or unknown entries error. Replaces the `cortical_labels`,
-#'   `subcortical_labels` and `cerebellar_labels` arguments.
+#'   Unnamed or unknown entries error.
 #' @param projection_opts Named list of volume-to-surface projection
 #'   settings, with these entries and defaults:
 #'   \itemize{
@@ -139,8 +138,7 @@
 #'       labels that `labels` and a `type` column leave unclassified; see
 #'       **Label classification**.
 #'   }
-#'   Unknown entries error. Replaces the flat `subject`, `registration`,
-#'   `projfrac`, `projfrac_range` and `min_vertices` arguments.
+#'   Unknown entries error.
 #' @param cortical_opts Named list of extra arguments forwarded to the
 #'   cortical sub-pipeline. Allowed entry: `views`. Unknown entries error.
 #'   Leave empty to use defaults.
@@ -149,8 +147,7 @@
 #'   be set here except those managed by the wholebrain pipeline
 #'   (`input_volume`, `input_lut`, `atlas_name`, `output_dir`, `verbose`,
 #'   `cleanup`, `skip_existing`). Use this to tune `vertex_size_limits`,
-#'   `decimate`, `slabs`. The deprecated `dilate`/`tolerance`/`smoothness`
-#'   entries trigger a lifecycle warning and are no longer applied.
+#'   `decimate`, `slabs`.
 #' @param cerebellar_opts Named list of extra arguments forwarded to
 #'   [create_cerebellar_from_volume()]. Any argument of that function may be
 #'   set here except those managed by the wholebrain pipeline
@@ -297,9 +294,13 @@ create_wholebrain_from_volume <- function(
   skip_existing = NULL
 ) {
   redirect_sub_pipeline_args(...names())
-  check_unused_dots("create_wholebrain_from_volume", ...)
-  labels <- resolve_labels(labels)
-  projection <- resolve_projection_opts(projection_opts)
+  rlang::check_dots_empty()
+  labels <- resolve_opts(labels, "labels", WHOLEBRAIN_LABEL_DEFAULTS)
+  projection <- resolve_opts(
+    projection_opts,
+    "projection_opts",
+    WHOLEBRAIN_PROJECTION_DEFAULTS
+  )
   cerebellar <- take_cerebellar_space(cerebellar_opts)
 
   start_time <- Sys.time()
@@ -340,6 +341,14 @@ WHOLEBRAIN_PROJECTION_DEFAULTS <- list(
   registration = "header",
   min_vertices = 50L
 )
+
+#' Entries the grouped `labels` argument accepts
+#' @noRd
+WHOLEBRAIN_LABEL_DEFAULTS <- list(
+  cortical = NULL,
+  subcortical = NULL,
+  cerebellar = NULL
+)
 # nolint end
 
 #' Point a sub-pipeline option passed at the top level at the list it belongs in
@@ -353,24 +362,14 @@ redirect_sub_pipeline_args <- function(nms) {
   if (is.null(nms) || !length(nms)) {
     return(invisible(NULL))
   }
-  managed <- c(
-    "input_volume",
-    "volume",
-    "input_lut",
-    "atlas_name",
-    "output_dir",
-    "verbose",
-    "cleanup",
-    "skip_existing"
-  )
   owners <- list(
     subcortical_opts = setdiff(
       names(formals(create_subcortical_from_volume)),
-      c(managed, "...")
+      c(SUB_PIPELINE_MANAGED_ARGS, "...")
     ),
     cerebellar_opts = setdiff(
       names(formals(create_cerebellar_from_volume)),
-      c(managed, "...")
+      c(SUB_PIPELINE_MANAGED_ARGS, "...")
     )
   )
   for (nm in nms) {
@@ -388,30 +387,6 @@ redirect_sub_pipeline_args <- function(nms) {
   invisible(NULL)
 }
 
-#' Fill `projection_opts` out with its defaults after validating the names
-#' @noRd
-resolve_projection_opts <- function(projection_opts) {
-  projection_opts <- validate_pipeline_opts(
-    projection_opts,
-    "projection_opts",
-    names(WHOLEBRAIN_PROJECTION_DEFAULTS)
-  )
-  utils::modifyList(WHOLEBRAIN_PROJECTION_DEFAULTS, projection_opts)
-}
-
-#' Validate `labels` and fill the three entries out with NULL
-#' @noRd
-resolve_labels <- function(labels) {
-  labels <- validate_pipeline_opts(
-    labels,
-    "labels",
-    c("cortical", "subcortical", "cerebellar")
-  )
-  utils::modifyList(
-    list(cortical = NULL, subcortical = NULL, cerebellar = NULL),
-    labels
-  )
-}
 
 #' Split `cerebellar_space` back out of `cerebellar_opts`
 #'
@@ -604,8 +579,8 @@ wholebrain_log_split_inspect <- function(start_time) {
   cli::cli_alert_info(
     "Inspect {.code split$cortical_labels}, {.code split$subcortical_labels},
     and {.code split$cerebellar_labels}. Override with
-    {.arg cortical_labels}/{.arg subcortical_labels}/
-    {.arg cerebellar_labels} if needed, then re-run with all steps.",
+    {.code labels = list(cortical = , subcortical = , cerebellar = )} if
+    needed, then re-run with all steps.",
     wrap = TRUE
   )
   log_elapsed(start_time)
@@ -620,8 +595,8 @@ validate_wholebrain_opts <- function(
   subcortical_opts,
   cerebellar_opts
 ) {
-  allowed <- function(fn, managed) {
-    setdiff(names(formals(fn)), c(managed, "..."))
+  allowed <- function(fn) {
+    setdiff(names(formals(fn)), c(SUB_PIPELINE_MANAGED_ARGS, "..."))
   }
 
   list(
@@ -636,12 +611,12 @@ validate_wholebrain_opts <- function(
     subcortical = validate_pipeline_opts(
       subcortical_opts,
       "subcortical_opts",
-      allowed(create_subcortical_from_volume, SUBCORT_MANAGED_ARGS)
+      allowed(create_subcortical_from_volume)
     ),
     cerebellar = validate_pipeline_opts(
       cerebellar_opts,
       "cerebellar_opts",
-      allowed(create_cerebellar_from_volume, CEREBELLAR_MANAGED_ARGS)
+      allowed(create_cerebellar_from_volume)
     )
   )
 }
@@ -719,18 +694,10 @@ wholebrain_log_summary <- function(
 SUBCORT_RESERVED_IDX <- c(3L, 7L, 8L, 16L, 42L, 46L, 47L)
 
 
-SUBCORT_MANAGED_ARGS <- c(
+# The wholebrain call owns these for every sub-pipeline it drives, so a
+# user cannot set them through a `*_opts` list.
+SUB_PIPELINE_MANAGED_ARGS <- c(
   "input_volume",
-  "input_lut",
-  "atlas_name",
-  "output_dir",
-  "verbose",
-  "cleanup",
-  "skip_existing"
-)
-CEREBELLAR_MANAGED_ARGS <- c(
-  "input_volume",
-  "volume", # deprecated alias for input_volume; also managed, not user-settable
   "input_lut",
   "atlas_name",
   "output_dir",
@@ -1442,8 +1409,7 @@ warn_vertex_count_fallback <- function(n) {
       small cortical parcel and a deep structure look the same to it.",
       "i" = "Declare the labels instead: {.fn lut_classify_anatomy} fills in
       a {.field type} column from FreeSurfer's {.field aparc+aseg}, or pass
-      {.arg cortical_labels}/{.arg subcortical_labels}/
-      {.arg cerebellar_labels}."
+      {.code labels = list(cortical = , subcortical = , cerebellar = )}."
     ),
     wrap = TRUE
   )

@@ -52,8 +52,8 @@ aseg_subcortical_labels <- function() {
 #'   (the default) applies FreeSurfer's `mni152.register.dat`, `"header"`
 #'   trusts the volume's own xform, or give a path to a register.dat or LTA
 #'   file. The same vocabulary as [create_wholebrain_from_volume()] and
-#'   [project_volume_anatomical()]. `NULL` is deprecated; it meant
-#'   `"mni152"`.
+#'   [project_volume_anatomical()]. `NULL` is not accepted; name the
+#'   spelling you want.
 #' @param output_file Optional path for the merged volume; defaults to a
 #'   tempfile.
 #' @param subjects_dir FreeSurfer subjects directory.

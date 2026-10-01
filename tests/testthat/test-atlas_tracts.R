@@ -626,7 +626,7 @@ describe("create_tract_from_tractography tube_opts", {
     for (arg in names(TRACT_TUBE_DEFAULTS)) {
       expect_error(
         capture_tube(stats::setNames(list(1), arg)),
-        "unused argument",
+        "`...` must be empty",
         info = arg
       )
     }

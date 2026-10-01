@@ -58,8 +58,7 @@ lookup table's \code{type} column and the vertex-count heuristic. Entries:
 flatmap pipeline, using the bundled surfaces from
 \code{\link[=suit_flatmap_path]{suit_flatmap_path()}} and \code{\link[=suit_3d_path]{suit_3d_path()}}.
 }
-Unnamed or unknown entries error. Replaces the \code{cortical_labels},
-\code{subcortical_labels} and \code{cerebellar_labels} arguments.}
+Unnamed or unknown entries error.}
 
 \item{projection_opts}{Named list of volume-to-surface projection
 settings, with these entries and defaults:
@@ -76,8 +75,7 @@ the vertex-count heuristic calls it cortical. Only reached for
 labels that \code{labels} and a \code{type} column leave unclassified; see
 \strong{Label classification}.
 }
-Unknown entries error. Replaces the flat \code{subject}, \code{registration},
-\code{projfrac}, \code{projfrac_range} and \code{min_vertices} arguments.}
+Unknown entries error.}
 
 \item{cortical_opts}{Named list of extra arguments forwarded to the
 cortical sub-pipeline. Allowed entry: \code{views}. Unknown entries error.
@@ -88,8 +86,7 @@ Leave empty to use defaults.}
 be set here except those managed by the wholebrain pipeline
 (\code{input_volume}, \code{input_lut}, \code{atlas_name}, \code{output_dir}, \code{verbose},
 \code{cleanup}, \code{skip_existing}). Use this to tune \code{vertex_size_limits},
-\code{decimate}, \code{slabs}. The deprecated \code{dilate}/\code{tolerance}/\code{smoothness}
-entries trigger a lifecycle warning and are no longer applied.}
+\code{decimate}, \code{slabs}.}
 
 \item{cerebellar_opts}{Named list of extra arguments forwarded to
 \code{\link[=create_cerebellar_from_volume]{create_cerebellar_from_volume()}}. Any argument of that function may be

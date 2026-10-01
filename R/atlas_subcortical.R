@@ -112,7 +112,7 @@ create_subcortical_from_volume <- function(
   steps = NULL,
   context = NULL
 ) {
-  check_unused_dots("create_subcortical_from_volume", ...)
+  rlang::check_dots_empty()
   unpacked <- unpack_anatomical_input(input_volume, input_lut)
 
   start_time <- Sys.time()

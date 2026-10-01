@@ -28,10 +28,14 @@ Removed arguments, with their replacements:
 - `create_cerebellar_from_volume(volume = )` -- use `input_volume`.
 - `create_wholebrain_from_volume(regheader = )` -- use
   `projection_opts = list(registration = )`.
-- `mri_surf2surf_rereg(hemi = )` -- use `hemisphere`.
-- `registration = NULL` in `coregister_volume()` and
+- `mri_surf2surf_rereg(hemi = )` -- use `hemisphere`. Existing calls keep
+  working: with the formal gone, `hemi =` partial-matches `hemisphere`.
+- `registration = NULL` in `project_volume_anatomical()` and
   `prepare_subcortical_mni152()` -- name `"header"` or `"mni152"`. `NULL` meant
-  opposite things in the two functions, which is why it was retired.
+  opposite things in the two functions, which is why it was retired. It is
+  now rejected by `check_registration_spec()`, which
+  `project_volume_anatomical()` reaches before it shells out to `mri_convert`
+  rather than after.
 
 Flat arguments that were folded into a list and are no longer accepted at all:
 
@@ -54,13 +58,40 @@ before and now abort with "unused argument", naming the creator.
 
 ## Minor changes
 
-- `check_post_creation_dots()` is now `check_unused_dots()` and lives in
-  `R/check_dots.R`. It still exists, and still catches a mistyped or
-  misplaced argument against the creator's own name rather than letting it be
-  ignored -- there is simply nothing it accepts any more. It also counts
-  correctly: `setdiff()` used to collapse the unnamed arguments so three
-  reported as one, and the `{?s}` had no quantity attached so the plural never
-  fired.
+- `check_post_creation_dots()` is gone; the creators call
+  `rlang::check_dots_empty()` instead. A mistyped or misplaced argument is
+  still caught against the creator rather than ignored -- there is simply
+  nothing accepted any more -- and the message now reports the offending
+  values, not just their names:
+
+  ```
+  Error in create_cortical_from_annotation("lh.aparc.annot", tolerance = 0.1) :
+    `...` must be empty.
+  x Problematic argument:
+  * tolerance = 0.1
+  ```
+
+  rlang was already in Imports, and it takes the creator's name from the
+  condition's `call` rather than from an argument, so there is no parameter
+  for a caller's own dots to collide with and no per-creator name to keep in
+  step with the function it sits in.
+
+- The two cli messages that told users to pass `cortical_labels`,
+  `subcortical_labels` or `cerebellar_labels` -- the step-1:2 inspect
+  guidance and the vertex-count classification warning -- now name
+  `labels = list(cortical = , subcortical = , cerebellar = )`. Following the
+  old advice after this release would have produced a hard error at exactly
+  the moment the user was trying to work out what went wrong.
+
+- `project_volume_anatomical()` validates `registration` before reading any
+  volume or shelling out to `mri_convert`, rather than after.
+
+- `SUBCORT_MANAGED_ARGS` and `CEREBELLAR_MANAGED_ARGS` became identical once
+  the deprecated `volume` alias went, and are now one
+  `SUB_PIPELINE_MANAGED_ARGS`. `resolve_labels()` and
+  `resolve_projection_opts()` were verbatim copies of `resolve_opts()` and are
+  gone; `create_wholebrain_from_volume()` calls the shared helper directly, as
+  the tract creator already did.
 
 - `resolve_opts()` moved to `R/utils_atlas.R` and `R/arg_groups.R` is gone,
   the rest of that file having been the deprecation plumbing.
