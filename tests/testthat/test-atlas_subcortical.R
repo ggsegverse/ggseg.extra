@@ -115,33 +115,6 @@ describe("create_subcortical_from_volume", {
     )
   })
 
-  it("warns about deprecated views argument and delegates to slabs", {
-    local_mocked_bindings(
-      check_fs = function(abort = FALSE) {
-        if (abort) {
-          cli::cli_abort("FreeSurfer not found")
-        }
-        FALSE
-      }
-    )
-
-    lifecycle::expect_deprecated(
-      expect_error(
-        create_subcortical_from_volume(
-          input_volume = "test.mgz",
-          views = data.frame(
-            name = "v",
-            type = "coronal",
-            start = 1L,
-            end = 2L
-          ),
-          verbose = FALSE
-        ),
-        "FreeSurfer"
-      )
-    )
-  })
-
   it("errors when volume file not found", {
     skip_if_no_freesurfer()
 

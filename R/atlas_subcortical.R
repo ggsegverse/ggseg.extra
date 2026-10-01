@@ -61,7 +61,6 @@
 #'   to keep the focus regions coloured on grey anatomical context. `NULL`
 #'   (default) leaves the atlas unchanged. Only applied when the 2D build
 #'   (step 6) runs.
-#' @template views_deprecated
 #'
 #' @return A `ggseg_atlas` object with region metadata (core), 3D meshes,
 #'   a colour palette, and optionally sf geometry for 2D slice plots.
@@ -102,7 +101,6 @@ create_subcortical_from_volume <- function(
   input_volume,
   decimate = 0.5,
   verbose = get_verbose(), # nolint: object_usage_linter
-  views = lifecycle::deprecated(),
   ...,
   input_lut = NULL,
   atlas_name = NULL,
@@ -114,16 +112,7 @@ create_subcortical_from_volume <- function(
   steps = NULL,
   context = NULL
 ) {
-  check_post_creation_dots("create_subcortical_from_volume", ...)
-  if (lifecycle::is_present(views)) {
-    lifecycle::deprecate_warn(
-      "1.9.9.9005",
-      "create_subcortical_from_volume(views = )",
-      "create_subcortical_from_volume(slabs = )"
-    )
-    slabs <- views
-  }
-
+  check_unused_dots("create_subcortical_from_volume", ...)
   unpacked <- unpack_anatomical_input(input_volume, input_lut)
 
   start_time <- Sys.time()

@@ -230,22 +230,3 @@
       i These should be bundled with the package.
       i Try reinstalling: `remotes::install_github("ggsegverse/ggseg.extra")`
 
-# setup_sitrep (deprecated) / warns and delegates to the renamed function
-
-    Code
-      invisible(setup_sitrep("minimal"))
-    Condition
-      Warning:
-      `setup_sitrep()` was deprecated in ggseg.extra 1.9.9.9075.
-      i Please use `sitrep()` instead.
-    Message
-      
-      -- Pipeline readiness (13/13) 
-      v Cortical: all 5 ready
-      v Subcortical: all 1 ready
-      v Tract: all 2 ready
-      v Whole-brain: all 1 ready
-      v Cerebellar: all 4 ready
-      
-      v All 13 pipelines ready
-

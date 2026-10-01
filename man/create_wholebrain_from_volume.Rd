@@ -7,7 +7,6 @@
 create_wholebrain_from_volume(
   input_volume,
   verbose = get_verbose(),
-  regheader = lifecycle::deprecated(),
   ...,
   input_lut = NULL,
   atlas_name = NULL,
@@ -31,15 +30,9 @@ create_wholebrain_from_volume(
 Falls back to \code{options("ggseg.extra.verbose")}, then
 \code{GGSEG_EXTRA_VERBOSE}.}
 
-\item{regheader}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} Use
-\code{projection_opts = list(registration = )} instead. \code{TRUE} maps to
-\code{"header"}, \code{FALSE} to \code{"mni152"}. Supplying both is an error.}
-
-\item{...}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} The flat arguments that
-\code{labels}, \code{projection_opts} and \code{cerebellar_opts} replaced. Each is
-folded into the list that now holds it and raises a deprecation warning;
-supplying both the old argument and the list entry it maps to is an
-error rather than a precedence rule.}
+\item{...}{Not used. Present so a mistyped or misplaced argument is
+reported against this function, naming the list that should hold it,
+rather than silently ignored; anything passed here is an error.}
 
 \item{input_lut}{Path to FreeSurfer-style colour lookup table, or a
 data.frame with columns \code{idx}, \code{label}, \code{R}, \code{G}, \code{B}, \code{A}.

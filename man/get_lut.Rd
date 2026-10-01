@@ -2,18 +2,12 @@
 % Please edit documentation in R/read_write.R
 \name{get_lut}
 \alias{get_lut}
-\alias{get_ctab}
 \title{Read LUT and add hex colours}
 \usage{
 get_lut(lut)
-
-get_ctab(color_lut)
 }
 \arguments{
 \item{lut}{Path to a LUT file, or a data.frame that passes \code{\link[=is_lut]{is_lut()}}.}
-
-\item{color_lut}{Path to a LUT file, or a data.frame that passes
-\code{\link[=is_lut]{is_lut()}}.}
 }
 \value{
 A data.frame with the original columns plus \code{roi} (zero-padded
@@ -22,11 +16,6 @@ index) and \code{color} (hex colour code).
 \description{
 Reads a FreeSurfer color lookup table and adds hex colour codes for
 use in plotting.
-
-\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}}
-
-\code{get_ctab()} was renamed to \code{\link[=get_lut]{get_lut()}} for consistency with
-\code{\link[=read_lut]{read_lut()}}, \code{\link[=write_lut]{write_lut()}}, \code{\link[=is_lut]{is_lut()}}, \code{\link[=lut_add]{lut_add()}}, and \code{\link[=lut_combine]{lut_combine()}}.
 }
 \examples{
 ct <- data.frame(

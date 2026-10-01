@@ -128,19 +128,6 @@ describe("subcortical_slabs", {
 })
 
 
-describe("subcortical_views (deprecated)", {
-  it("warns about deprecation and delegates to subcortical_slabs", {
-    vol <- array(0L, dim = c(20, 20, 20))
-    vol[8:12, 6:14, 9:11] <- 17L
-
-    lifecycle::expect_deprecated(
-      result <- subcortical_views(vol, labels = 17, coronal = 1)
-    )
-
-    expect_identical(result, subcortical_slabs(vol, labels = 17, coronal = 1))
-  })
-})
-
 describe("aseg_context", {
   it("keeps focus as core and demotes everything else", {
     a <- aseg_context(

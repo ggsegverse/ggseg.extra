@@ -109,25 +109,6 @@ ggseg_atlas_github_actions <- function() {
 }
 
 
-#' @description
-#' `r lifecycle::badge("deprecated")`
-#'
-#' `atlas_github_actions()` was renamed to
-#' [ggseg_atlas_github_actions()]. It takes no atlas and returns GitHub
-#' Actions workflow names, so the `atlas_*` prefix put it among the verbs
-#' that reshape an atlas.
-#' @rdname ggseg_atlas_github_actions
-#' @export
-atlas_github_actions <- function() {
-  lifecycle::deprecate_warn(
-    "1.9.9.9075",
-    "atlas_github_actions()",
-    "ggseg_atlas_github_actions()"
-  )
-  ggseg_atlas_github_actions()
-}
-
-
 #' @keywords internal
 #' @noRd
 report_github_actions <- function(written, skipped) {

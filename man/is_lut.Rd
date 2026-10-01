@@ -2,12 +2,9 @@
 % Please edit documentation in R/read_write.R
 \name{is_lut}
 \alias{is_lut}
-\alias{is_ctab}
 \title{Check if object is a LUT}
 \usage{
 is_lut(x)
-
-is_ctab(x)
 }
 \arguments{
 \item{x}{Object to check.}
@@ -16,10 +13,7 @@ is_ctab(x)
 TRUE if x is a data.frame with the required LUT columns.
 }
 \description{
-\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}}
-
-\code{is_ctab()} was renamed to \code{\link[=is_lut]{is_lut()}} for consistency with \code{\link[=read_lut]{read_lut()}},
-\code{\link[=write_lut]{write_lut()}}, \code{\link[=get_lut]{get_lut()}}, \code{\link[=lut_add]{lut_add()}}, and \code{\link[=lut_combine]{lut_combine()}}.
+Check if object is a LUT
 }
 \examples{
 ct <- data.frame(

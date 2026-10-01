@@ -225,7 +225,6 @@ project_volume_anatomical <- function(
 
   prep <- project_load_volumes(in_path, lut, aparc_mgz, aparc_nii)
 
-  registration <- registration_from_null(registration, "header")
   reg_file <- resolve_registration(registration)$path
   check_registration_grid(reg_file, dim(prep$arr_aparc), dim(prep$arr))
 

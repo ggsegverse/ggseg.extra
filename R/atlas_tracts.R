@@ -42,12 +42,7 @@
 #'       around its circumference. `tube_radius` also takes `"density"`, to
 #'       scale thickness by how many streamlines pass through each point.
 #'   }
-#'   Unknown entries error. Replaces the flat `tube_radius`,
-#'   `tube_segments`, `n_points` and `centerline_method` arguments.
-#' @param ... `r lifecycle::badge("deprecated")` The flat arguments that
-#'   `tube_opts` replaced, plus the retired post-creation tweaks. Each is
-#'   folded into the list that now holds it and raises a deprecation warning;
-#'   supplying both the old argument and its list entry is an error.
+#'   Unknown entries error.
 #' @param slabs A data.frame specifying projection slabs. If NULL, a default
 #'   set of tract slabs is derived from the volume dimensions.
 #' @template vertex_size_limits
@@ -70,7 +65,6 @@
 #'   wrong guess does not error -- it places the tract in the wrong space and
 #'   produces a plausible-looking atlas. Declare the space when you know it.
 #'   Whichever applies is reported at `verbose >= 1`.
-#' @template views_deprecated
 #'
 #' @return A `ggseg_atlas` object with type `"tract"`, containing region
 #'   metadata, tube meshes for 3D rendering, colours, and optionally sf
@@ -112,7 +106,6 @@
 create_tract_from_tractography <- function(
   input_tracts,
   verbose = get_verbose(), # nolint: object_usage_linter
-  views = lifecycle::deprecated(),
   ...,
   input_aseg = NULL,
   input_lut = NULL,
@@ -126,27 +119,8 @@ create_tract_from_tractography <- function(
   skip_existing = NULL,
   coord_space = c("infer", "voxel", "mm")
 ) {
-  grouped <- group_retired_dots(
-    opts = list(tube_opts = tube_opts),
-    mapping = TRACT_RETIRED_TUBE,
-    dots = list(...),
-    fn = "create_tract_from_tractography",
-    when = "1.9.9.9053"
-  )
-  tube <- resolve_opts(grouped$opts$tube_opts, "tube_opts", TRACT_TUBE_DEFAULTS)
-
-  do.call(
-    check_post_creation_dots,
-    c(list("create_tract_from_tractography"), grouped$dots)
-  )
-  if (lifecycle::is_present(views)) {
-    lifecycle::deprecate_warn(
-      "1.9.9.9005",
-      "create_tract_from_tractography(views = )",
-      "create_tract_from_tractography(slabs = )"
-    )
-    slabs <- views
-  }
+  check_unused_dots("create_tract_from_tractography", ...)
+  tube <- resolve_opts(tube_opts, "tube_opts", TRACT_TUBE_DEFAULTS)
 
   start_time <- Sys.time()
 
@@ -184,15 +158,6 @@ TRACT_TUBE_DEFAULTS <- list(
   tube_segments = 8,
   n_points = 50,
   centerline_method = c("mean", "medoid")
-)
-
-#' Flat arguments retired into `tube_opts`
-#' @noRd
-TRACT_RETIRED_TUBE <- c(
-  tube_radius = "tube_opts.tube_radius",
-  tube_segments = "tube_opts.tube_segments",
-  n_points = "tube_opts.n_points",
-  centerline_method = "tube_opts.centerline_method"
 )
 # nolint end
 

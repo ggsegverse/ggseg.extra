@@ -377,22 +377,3 @@
       i FreeSurfer said:
         ERROR: bad header
 
-# create_wholebrain_from_volume argument groups / lands the retired flat arguments where the lists now hold them
-
-    Code
-      old <- capture_setup(list(cortical_labels = c("a", "b"), subcortical_labels = "c",
-      projfrac = 0.7, subject = "fsaverage6"))
-    Condition
-      Warning:
-      The `cortical_labels` argument of `create_wholebrain_from_volume()` is deprecated as of ggseg.extra 1.9.9.9052.
-      i Please use the `labels` argument instead.
-      Warning:
-      The `subcortical_labels` argument of `create_wholebrain_from_volume()` is deprecated as of ggseg.extra 1.9.9.9052.
-      i Please use the `labels` argument instead.
-      Warning:
-      The `projfrac` argument of `create_wholebrain_from_volume()` is deprecated as of ggseg.extra 1.9.9.9052.
-      i Please use the `projection_opts` argument instead.
-      Warning:
-      The `subject` argument of `create_wholebrain_from_volume()` is deprecated as of ggseg.extra 1.9.9.9052.
-      i Please use the `projection_opts` argument instead.
-

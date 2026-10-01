@@ -2,20 +2,9 @@
 % Please edit documentation in R/subcortical_builders.R
 \name{subcortical_slabs}
 \alias{subcortical_slabs}
-\alias{subcortical_views}
 \title{Build subcortical slabs from a label bounding box}
 \usage{
 subcortical_slabs(
-  volume,
-  labels,
-  coronal = 0,
-  axial = 0,
-  sagittal = 0,
-  pad = 0,
-  reorient = TRUE
-)
-
-subcortical_views(
   volume,
   labels,
   coronal = 0,
@@ -47,12 +36,6 @@ A data.frame with columns \code{name}, \code{type}, \code{start}, \code{end}.
 Computes evenly spaced coronal, axial and/or sagittal slabs spanning the
 bounding box of the requested labels, ready to pass as the \code{slabs}
 argument of \code{\link[=create_subcortical_from_volume]{create_subcortical_from_volume()}}.
-
-\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}}
-
-\code{subcortical_views()} was renamed to \code{\link[=subcortical_slabs]{subcortical_slabs()}} to match the
-\code{slabs} argument of \code{\link[=create_subcortical_from_volume]{create_subcortical_from_volume()}} and
-\code{\link[=create_tract_from_tractography]{create_tract_from_tractography()}}.
 }
 \details{
 The volume is read with the \strong{same} axis reorientation the builder uses

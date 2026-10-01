@@ -7,7 +7,6 @@
 create_tract_from_tractography(
   input_tracts,
   verbose = get_verbose(),
-  views = lifecycle::deprecated(),
   ...,
   input_aseg = NULL,
   input_lut = NULL,
@@ -32,14 +31,11 @@ columns (x, y, z).}
 Falls back to \code{options("ggseg.extra.verbose")}, then
 \code{GGSEG_EXTRA_VERBOSE}.}
 
-\item{views}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} Use \code{slabs} instead.}
-
-\item{...}{Catches the retired \code{dilate}, \code{smoothness}, \code{tolerance} and
-\code{smooth_refinements} arguments, so a call that still passes one keeps
-working and says so. These are post-creation steps now: see
+\item{...}{Not used. Present so that a mistyped or misplaced argument is
+reported against this function rather than silently ignored; anything
+passed here is an error. Geometry is shaped after the build: see
 \code{\link[=atlas_polish]{atlas_polish()}}, or \code{\link[=atlas_simplify]{atlas_simplify()}}, \code{\link[=atlas_smooth]{atlas_smooth()}} and
-\code{\link[=atlas_dilate]{atlas_dilate()}} individually. Anything else in \code{...} is an error, as an
-unused argument always was.}
+\code{\link[=atlas_dilate]{atlas_dilate()}} individually.}
 
 \item{input_aseg}{Path to a segmentation volume (\code{.mgz}, \code{.nii}) used to
 draw cortex outlines in 2D views. Required for steps 2+.}
@@ -70,8 +66,7 @@ the tube drawn along that centerline, and how many segments go
 around its circumference. \code{tube_radius} also takes \code{"density"}, to
 scale thickness by how many streamlines pass through each point.
 }
-Unknown entries error. Replaces the flat \code{tube_radius},
-\code{tube_segments}, \code{n_points} and \code{centerline_method} arguments.}
+Unknown entries error.}
 
 \item{slabs}{A data.frame specifying projection slabs. If NULL, a default
 set of tract slabs is derived from the volume dimensions.}

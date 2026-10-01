@@ -2,23 +2,15 @@
 % Please edit documentation in R/github_actions.R
 \name{ggseg_atlas_github_actions}
 \alias{ggseg_atlas_github_actions}
-\alias{atlas_github_actions}
 \title{Workflows \code{\link[=use_atlas_github_actions]{use_atlas_github_actions()}} can write}
 \usage{
 ggseg_atlas_github_actions()
-
-atlas_github_actions()
 }
 \value{
 A character vector of workflow names.
 }
 \description{
-\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}}
-
-\code{atlas_github_actions()} was renamed to
-\code{\link[=ggseg_atlas_github_actions]{ggseg_atlas_github_actions()}}. It takes no atlas and returns GitHub
-Actions workflow names, so the \verb{atlas_*} prefix put it among the verbs
-that reshape an atlas.
+Workflows \code{\link[=use_atlas_github_actions]{use_atlas_github_actions()}} can write
 }
 \examples{
 ggseg_atlas_github_actions()

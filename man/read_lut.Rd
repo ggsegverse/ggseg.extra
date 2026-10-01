@@ -2,12 +2,9 @@
 % Please edit documentation in R/read_write.R
 \name{read_lut}
 \alias{read_lut}
-\alias{read_ctab}
 \title{Read FreeSurfer LUT}
 \usage{
 read_lut(path)
-
-read_ctab(path)
 }
 \arguments{
 \item{path}{Path to the LUT file.}
@@ -20,11 +17,6 @@ optionally type when a 7th field is present.
 Read a FreeSurfer color lookup table file (e.g., \code{FreeSurferColorLUT.txt}
 or \code{ASegStatsLUT.txt}). These files map label indices to region names
 and RGBA colours.
-
-\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}}
-
-\code{read_ctab()} was renamed to \code{\link[=read_lut]{read_lut()}} for consistency with
-\code{\link[=get_lut]{get_lut()}}, \code{\link[=write_lut]{write_lut()}}, \code{\link[=is_lut]{is_lut()}}, \code{\link[=lut_add]{lut_add()}}, and \code{\link[=lut_combine]{lut_combine()}}.
 }
 \examples{
 lut_file <- tempfile()

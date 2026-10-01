@@ -92,39 +92,6 @@ subcortical_slabs <- function(
   out
 }
 
-#' @description
-#' `r lifecycle::badge("deprecated")`
-#'
-#' `subcortical_views()` was renamed to [subcortical_slabs()] to match the
-#' `slabs` argument of [create_subcortical_from_volume()] and
-#' [create_tract_from_tractography()].
-#' @rdname subcortical_slabs
-#' @export
-subcortical_views <- function(
-  volume,
-  labels,
-  coronal = 0,
-  axial = 0,
-  sagittal = 0,
-  pad = 0,
-  reorient = TRUE
-) {
-  lifecycle::deprecate_warn(
-    "1.9.9.9005",
-    "subcortical_views()",
-    "subcortical_slabs()"
-  )
-  subcortical_slabs(
-    volume,
-    labels,
-    coronal = coronal,
-    axial = axial,
-    sagittal = sagittal,
-    pad = pad,
-    reorient = reorient
-  )
-}
-
 #' Standard FreeSurfer aseg labels stripped from a subcortical atlas
 #'
 #' The default set of [ggseg.formats::atlas_region_remove()] patterns applied

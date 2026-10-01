@@ -52,25 +52,6 @@
       v Tract atlas created with 1 tracts
       i Pipeline completed [<time>]
 
-# create_tract_from_tractography tube_opts / lands the retired flat arguments where tube_opts now holds them
-
-    Code
-      old <- capture_tube(list(tube_radius = 3, tube_segments = 16, n_points = 25,
-        centerline_method = "medoid"))
-    Condition
-      Warning:
-      The `tube_radius` argument of `create_tract_from_tractography()` is deprecated as of ggseg.extra 1.9.9.9053.
-      i Please use the `tube_opts` argument instead.
-      Warning:
-      The `tube_segments` argument of `create_tract_from_tractography()` is deprecated as of ggseg.extra 1.9.9.9053.
-      i Please use the `tube_opts` argument instead.
-      Warning:
-      The `n_points` argument of `create_tract_from_tractography()` is deprecated as of ggseg.extra 1.9.9.9053.
-      i Please use the `tube_opts` argument instead.
-      Warning:
-      The `centerline_method` argument of `create_tract_from_tractography()` is deprecated as of ggseg.extra 1.9.9.9053.
-      i Please use the `tube_opts` argument instead.
-
 # coord_space_to_voxels / rejects a space it does not know
 
     Code

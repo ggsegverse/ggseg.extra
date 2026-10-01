@@ -246,7 +246,7 @@ create_cerebellar_from_gifti <- function(
   cleanup = NULL,
   skip_existing = NULL
 ) {
-  check_post_creation_dots("create_cerebellar_from_gifti", ...)
+  check_unused_dots("create_cerebellar_from_gifti", ...)
   if (length(gifti_files) == 0) {
     cli::cli_abort("{.arg gifti_files} must not be empty")
   }
@@ -319,7 +319,7 @@ create_cerebellar_from_annotation <- function(
   cleanup = NULL,
   skip_existing = NULL
 ) {
-  check_post_creation_dots("create_cerebellar_from_annotation", ...)
+  check_unused_dots("create_cerebellar_from_annotation", ...)
   if (length(input_annot) == 0) {
     cli::cli_abort("{.arg input_annot} must not be empty")
   }
@@ -366,8 +366,6 @@ create_cerebellar_from_annotation <- function(
 #' @template cleanup
 #' @template verbose
 #' @template skip_existing
-#' @param volume `r lifecycle::badge("deprecated")` Use `input_volume`
-#'   instead.
 #'
 #' @return A `ggseg_atlas` object of type "cerebellar" with both sf geometry
 #'   and 3D meshes.
@@ -386,7 +384,6 @@ create_cerebellar_from_volume <- function(
   input_volume = NULL,
   decimate = 0.5,
   verbose = get_verbose(),
-  volume = lifecycle::deprecated(),
   ...,
   input_lut = NULL,
   atlas_name = NULL,
@@ -394,16 +391,8 @@ create_cerebellar_from_volume <- function(
   cleanup = NULL,
   skip_existing = NULL
 ) {
-  check_post_creation_dots("create_cerebellar_from_volume", ...)
+  check_unused_dots("create_cerebellar_from_volume", ...)
   validate_decimate(decimate)
-  if (lifecycle::is_present(volume)) {
-    lifecycle::deprecate_warn(
-      "1.9.9.9005",
-      "create_cerebellar_from_volume(volume = )",
-      "create_cerebellar_from_volume(input_volume = )"
-    )
-    input_volume <- volume
-  }
   volume <- input_volume
 
   if (is.null(volume)) {

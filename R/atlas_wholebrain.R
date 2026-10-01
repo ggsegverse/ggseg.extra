@@ -110,14 +110,9 @@
 #'   If NULL, generic names and no palette.
 #' @template atlas_name
 #' @template output_dir
-#' @param regheader `r lifecycle::badge("deprecated")` Use
-#'   `projection_opts = list(registration = )` instead. `TRUE` maps to
-#'   `"header"`, `FALSE` to `"mni152"`. Supplying both is an error.
-#' @param ... `r lifecycle::badge("deprecated")` The flat arguments that
-#'   `labels`, `projection_opts` and `cerebellar_opts` replaced. Each is
-#'   folded into the list that now holds it and raises a deprecation warning;
-#'   supplying both the old argument and the list entry it maps to is an
-#'   error rather than a precedence rule.
+#' @param ... Not used. Present so a mistyped or misplaced argument is
+#'   reported against this function, naming the list that should hold it,
+#'   rather than silently ignored; anything passed here is an error.
 #' @param labels Named list routing labels to a sub-pipeline, overriding the
 #'   lookup table's `type` column and the vertex-count heuristic. Entries:
 #'   \itemize{
@@ -288,7 +283,6 @@
 create_wholebrain_from_volume <- function(
   input_volume,
   verbose = get_verbose(), # nolint: object_usage_linter
-  regheader = lifecycle::deprecated(),
   ...,
   input_lut = NULL,
   atlas_name = NULL,
@@ -302,31 +296,13 @@ create_wholebrain_from_volume <- function(
   cleanup = NULL,
   skip_existing = NULL
 ) {
-  grouped <- wholebrain_group_dots(
-    labels = labels,
-    projection_opts = projection_opts,
-    cerebellar_opts = cerebellar_opts,
-    dots = list(...)
-  )
-  labels <- resolve_labels(grouped$labels)
-  projection <- resolve_projection_opts(grouped$projection_opts)
-  cerebellar <- take_cerebellar_space(grouped$cerebellar_opts)
-
-  if (lifecycle::is_present(regheader)) {
-    # match.call() rather than missing(): goodpractice's tidyverse_no_missing
-    # check rejects missing(), and registration has a real default to fall
-    # back on, so lifecycle::is_present() cannot answer this for it.
-    projection$registration <- registration_from_regheader(
-      regheader,
-      !"registration" %in% names(grouped$projection_opts)
-    )
-  }
+  redirect_sub_pipeline_args(...names())
+  check_unused_dots("create_wholebrain_from_volume", ...)
+  labels <- resolve_labels(labels)
+  projection <- resolve_projection_opts(projection_opts)
+  cerebellar <- take_cerebellar_space(cerebellar_opts)
 
   start_time <- Sys.time()
-  do.call(
-    check_post_creation_dots,
-    c(list("create_wholebrain_from_volume"), grouped$dots)
-  )
   opts <- validate_wholebrain_opts(
     cortical_opts,
     subcortical_opts,
@@ -352,30 +328,6 @@ create_wholebrain_from_volume <- function(
 }
 
 
-#' Map the deprecated regheader argument onto a registration specification
-#' @noRd
-registration_from_regheader <- function(regheader, registration_missing) {
-  if (!registration_missing) {
-    cli::cli_abort(c(
-      "Cannot use both {.arg registration} and {.arg regheader}.",
-      "i" = "{.arg regheader} is deprecated; keep {.arg registration} alone."
-    ))
-  }
-
-  if (!is.logical(regheader) || length(regheader) != 1L || is.na(regheader)) {
-    cli::cli_abort("{.arg regheader} must be {.code TRUE} or {.code FALSE}.")
-  }
-
-  lifecycle::deprecate_warn(
-    "1.9.9.9025",
-    "create_wholebrain_from_volume(regheader = )",
-    "create_wholebrain_from_volume(registration = )"
-  )
-
-  if (regheader) "header" else "mni152"
-}
-
-
 # Argument grouping ----
 
 # nolint start: object_name_linter.
@@ -388,57 +340,7 @@ WHOLEBRAIN_PROJECTION_DEFAULTS <- list(
   registration = "header",
   min_vertices = 50L
 )
-
-#' Flat arguments retired into `labels`, and the entry each becomes
-#' @noRd
-WHOLEBRAIN_RETIRED_LABELS <- c(
-  cortical_labels = "cortical",
-  subcortical_labels = "subcortical",
-  cerebellar_labels = "cerebellar"
-)
-
-#' Every retired flat argument, and the `<list argument>.<entry>` it becomes
-#' @noRd
-WHOLEBRAIN_RETIRED_ARGS <- c(
-  stats::setNames(
-    paste0("labels.", WHOLEBRAIN_RETIRED_LABELS),
-    names(WHOLEBRAIN_RETIRED_LABELS)
-  ),
-  stats::setNames(
-    paste0("projection_opts.", names(WHOLEBRAIN_PROJECTION_DEFAULTS)),
-    names(WHOLEBRAIN_PROJECTION_DEFAULTS)
-  ),
-  c(cerebellar_space = "cerebellar_opts.cerebellar_space")
-)
 # nolint end
-
-#' Move the retired flat arguments into `labels`, `projection_opts` and
-#' `cerebellar_opts`, leaving the post-creation dots alone
-#'
-#' Every call site found in the ggsegverse atlas repositories names its
-#' arguments, so nothing here has to cope with positional matching.
-#' @noRd
-wholebrain_group_dots <- function(
-  labels,
-  projection_opts,
-  cerebellar_opts,
-  dots
-) {
-  grouped <- group_retired_dots(
-    opts = list(
-      labels = labels,
-      projection_opts = projection_opts,
-      cerebellar_opts = cerebellar_opts
-    ),
-    mapping = WHOLEBRAIN_RETIRED_ARGS,
-    dots = dots,
-    fn = "create_wholebrain_from_volume",
-    when = "1.9.9.9052"
-  )
-  redirect_sub_pipeline_args(names(grouped$dots))
-  c(grouped$opts, list(dots = grouped$dots))
-}
-
 
 #' Point a sub-pipeline option passed at the top level at the list it belongs in
 #'
@@ -503,7 +405,7 @@ resolve_labels <- function(labels) {
   labels <- validate_pipeline_opts(
     labels,
     "labels",
-    unname(WHOLEBRAIN_RETIRED_LABELS)
+    c("cortical", "subcortical", "cerebellar")
   )
   utils::modifyList(
     list(cortical = NULL, subcortical = NULL, cerebellar = NULL),
@@ -718,14 +620,8 @@ validate_wholebrain_opts <- function(
   subcortical_opts,
   cerebellar_opts
 ) {
-  # The creators take the retired post-creation tweaks through `...` now, so
-  # the formals no longer name them. Keep accepting them here, and let the
-  # creator issue the deprecation notice.
   allowed <- function(fn, managed) {
-    c(
-      setdiff(names(formals(fn)), c(managed, "...")),
-      DEPRECATED_POST_CREATION_ARGS
-    )
+    setdiff(names(formals(fn)), c(managed, "..."))
   }
 
   list(
@@ -813,14 +709,6 @@ wholebrain_log_summary <- function(
 # Arg names managed by the wholebrain pipeline for each sub-pipeline.
 # Users cannot set these via *_opts; the wholebrain call owns them.
 # nolint start: object_name_linter.
-DEPRECATED_POST_CREATION_ARGS <- c(
-  "dilate",
-  "smoothness",
-  "tolerance",
-  "smooth_refinements"
-)
-
-
 # Index values the subcortical pipeline writes into its own volume to build
 # the grey brain outline: 3/42 are the FreeSurfer cortex labels the cortical
 # hemispheres are remapped to, and 7/8/46/47/16 are the cerebellum and

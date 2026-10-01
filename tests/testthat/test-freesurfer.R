@@ -177,27 +177,6 @@ describe("mni152_register_path", {
 })
 
 
-describe("registration_from_null", {
-  it("leaves a stated registration alone", {
-    expect_identical(registration_from_null("mni152", "header"), "mni152")
-  })
-
-  it("resolves NULL to the word the calling function meant by it", {
-    withr::local_options(lifecycle_verbosity = "warning")
-
-    # The whole point of the deprecation: NULL meant "mni152" in one exported
-    # function and "header" in another, so the replacement is per caller.
-    expect_warning(
-      expect_identical(registration_from_null(NULL, "header"), "header"),
-      "deprecated"
-    )
-    expect_warning(
-      expect_identical(registration_from_null(NULL, "mni152"), "mni152"),
-      "deprecated"
-    )
-  })
-})
-
 describe("vol2vol_registration_opt", {
   it("asks mri_vol2vol to trust the header, or to use a file", {
     reg_file <- withr::local_tempfile(fileext = ".dat")
@@ -431,24 +410,6 @@ describe("mri_surf2surf_rereg", {
       paste("--sval-annot", shQuote("aparc.DKTatlas"))
     )
     expect_match(cap$cmd, "--hemi lh")
-  })
-
-  it("warns about deprecated hemi argument and delegates to hemisphere", {
-    cap <- local_mock_vol2surf()
-
-    tmp <- withr::local_tempdir()
-
-    lifecycle::expect_deprecated(
-      mri_surf2surf_rereg(
-        subject = "bert",
-        annot = "aparc.DKTatlas",
-        hemi = "rh",
-        output_dir = tmp,
-        verbose = FALSE
-      )
-    )
-
-    expect_match(cap$cmd, "--hemi rh")
   })
 })
 

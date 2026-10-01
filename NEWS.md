@@ -1,3 +1,74 @@
+# ggseg.extra 1.9.9.9088
+
+## Breaking changes
+
+Everything deprecated during the 1.9.9.90xx dev cycle has been removed rather
+than carried forward. The last release was 1.6 and there are no tags or
+releases in between, so none of it ever shipped: these are deprecations
+against versions no user could have installed, and keeping them only froze
+mistakes made during development.
+
+Removed functions, with their replacements:
+
+| Removed | Use instead |
+|---|---|
+| `read_ctab()` | `read_lut()` |
+| `write_ctab()` | `write_lut()` |
+| `is_ctab()` | `is_lut()` |
+| `get_ctab()` | `get_lut()` |
+| `is_verbose()` | `get_verbose()` |
+| `setup_sitrep()` | `sitrep()` |
+| `subcortical_views()` | `subcortical_slabs()` |
+| `atlas_github_actions()` | `ggseg_atlas_github_actions()` |
+
+Removed arguments, with their replacements:
+
+- `create_subcortical_from_volume(views = )` and
+  `create_tract_from_tractography(views = )` -- use `slabs`.
+- `create_cerebellar_from_volume(volume = )` -- use `input_volume`.
+- `create_wholebrain_from_volume(regheader = )` -- use
+  `projection_opts = list(registration = )`.
+- `mri_surf2surf_rereg(hemi = )` -- use `hemisphere`.
+- `registration = NULL` in `coregister_volume()` and
+  `prepare_subcortical_mni152()` -- name `"header"` or `"mni152"`. `NULL` meant
+  opposite things in the two functions, which is why it was retired.
+
+Flat arguments that were folded into a list and are no longer accepted at all:
+
+- `tube_radius`, `tube_segments`, `n_points` and `centerline_method` in
+  `create_tract_from_tractography()` -- use `tube_opts`. Note
+  `create_tract_from_volume()` keeps its own `n_points` formal; that one is
+  current.
+- `cortical_labels`, `subcortical_labels` and `cerebellar_labels` in
+  `create_wholebrain_from_volume()` -- use `labels`.
+- `projfrac`, `projfrac_range`, `subject`, `registration` and `min_vertices`
+  there -- use `projection_opts`. `cerebellar_space` -- use `cerebellar_opts`.
+- `dilate`, `smoothness`, `tolerance` and `smooth_refinements` in every
+  creator -- these are post-creation steps: `atlas_polish()`, or
+  `atlas_simplify()`, `atlas_smooth()` and `atlas_dilate()` individually.
+
+**Atlas build scripts are the thing most likely to notice.** Around 19 atlas
+repositories still pass one of these spellings from `data-raw/`, most often
+`tolerance` or `smoothness` into a `create_*()` call. Those calls warned
+before and now abort with "unused argument", naming the creator.
+
+## Minor changes
+
+- `check_post_creation_dots()` is now `check_unused_dots()` and lives in
+  `R/check_dots.R`. It still exists, and still catches a mistyped or
+  misplaced argument against the creator's own name rather than letting it be
+  ignored -- there is simply nothing it accepts any more. It also counts
+  correctly: `setdiff()` used to collapse the unnamed arguments so three
+  reported as one, and the `{?s}` had no quantity attached so the plural never
+  fired.
+
+- `resolve_opts()` moved to `R/utils_atlas.R` and `R/arg_groups.R` is gone,
+  the rest of that file having been the deprecation plumbing.
+
+- `lifecycle` stays in Imports and the `experimental` badges are untouched, so
+  deprecations can be done properly once there is a release to deprecate
+  against.
+
 # ggseg.extra 1.9.9.9087
 
 ## Documentation

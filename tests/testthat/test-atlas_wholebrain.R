@@ -2081,11 +2081,22 @@ describe("validate_wholebrain_opts", {
   it("still validates subcortical and cerebellar opts", {
     result <- validate_wholebrain_opts(
       cortical_opts = list(),
-      subcortical_opts = list(dilate = 2),
+      subcortical_opts = list(decimate = 0.4),
       cerebellar_opts = list(decimate = 0.3)
     )
-    expect_identical(result$subcortical$dilate, 2)
+    expect_identical(result$subcortical$decimate, 0.4)
     expect_identical(result$cerebellar$decimate, 0.3)
+  })
+
+  it("no longer accepts the retired post-creation tweaks", {
+    expect_error(
+      validate_wholebrain_opts(
+        cortical_opts = list(),
+        subcortical_opts = list(dilate = 2),
+        cerebellar_opts = list()
+      ),
+      "subcortical_opts"
+    )
   })
 })
 
@@ -3468,97 +3479,6 @@ describe("write_registration_record", {
 })
 
 
-describe("registration_from_regheader", {
-  it("maps TRUE to the header registration", {
-    withr::local_options(lifecycle_verbosity = "quiet")
-
-    expect_identical(
-      registration_from_regheader(TRUE, registration_missing = TRUE),
-      "header"
-    )
-  })
-
-  it("maps FALSE to the MNI152 registration", {
-    withr::local_options(lifecycle_verbosity = "quiet")
-
-    expect_identical(
-      registration_from_regheader(FALSE, registration_missing = TRUE),
-      "mni152"
-    )
-  })
-
-  it("warns that regheader is deprecated", {
-    withr::local_options(lifecycle_verbosity = "warning")
-
-    expect_warning(
-      registration_from_regheader(TRUE, registration_missing = TRUE),
-      class = "lifecycle_warning_deprecated"
-    )
-  })
-
-  it("refuses to override an explicit registration", {
-    expect_error(
-      registration_from_regheader(TRUE, registration_missing = FALSE),
-      "Cannot use both"
-    )
-  })
-
-  it("refuses anything that is not a single TRUE or FALSE", {
-    expect_error(
-      registration_from_regheader(NA, registration_missing = TRUE),
-      "must be"
-    )
-    expect_error(
-      registration_from_regheader("yes", registration_missing = TRUE),
-      "must be"
-    )
-    expect_error(
-      registration_from_regheader(c(TRUE, FALSE), registration_missing = TRUE),
-      "must be"
-    )
-  })
-})
-
-
-describe("create_wholebrain_from_volume(regheader = )", {
-  it("errors when given alongside registration", {
-    local_mocked_bindings(check_fs = function(abort = FALSE) invisible(TRUE))
-
-    expect_error(
-      create_wholebrain_from_volume(
-        input_volume = "missing-volume.nii.gz",
-        output_dir = withr::local_tempdir(),
-        projection_opts = list(registration = "header"),
-        regheader = FALSE,
-        verbose = FALSE
-      ),
-      "Cannot use both"
-    )
-  })
-
-  it("is deprecated in favour of registration", {
-    # Deprecation *errors*, not warnings. lifecycle throttles an indirect
-    # warning - one raised from inside the package rather than by the caller -
-    # to once per session, and `lifecycle_verbosity = "warning"` does not lift
-    # that. The direct call in the registration_from_regheader block above
-    # spends it, so asserting a warning here passes or fails according to what
-    # ran first. Errors carry no such budget.
-    withr::local_options(lifecycle_verbosity = "error")
-    local_mocked_bindings(check_fs = function(abort = FALSE) invisible(TRUE))
-
-    expect_error(
-      create_wholebrain_from_volume(
-        input_volume = "missing-volume.nii.gz",
-        output_dir = withr::local_tempdir(),
-        regheader = TRUE,
-        verbose = FALSE
-      ),
-      class = "lifecycle_error_deprecated"
-    )
-  })
-})
-
-
 describe("create_wholebrain_from_volume without FreeSurfer", {
   it("does not need FreeSurfer's transform when it never projects", {
     captured <- new.env()
@@ -4240,59 +4160,20 @@ describe("create_wholebrain_from_volume argument groups", {
     expect_null(seen$labels$cerebellar)
   })
 
-  it("lands the retired flat arguments where the lists now hold them", {
-    withr::local_options(lifecycle_verbosity = "warning")
-    expect_snapshot(
-      old <- capture_setup(list(
-        cortical_labels = c("a", "b"),
-        subcortical_labels = "c",
-        projfrac = 0.7,
-        subject = "fsaverage6"
-      ))
-    )
-    new <- capture_setup(list(
-      labels = list(cortical = c("a", "b"), subcortical = "c"),
-      projection_opts = list(projfrac = 0.7, subject = "fsaverage6")
-    ))
-
-    expect_identical(old$labels, new$labels)
-    expect_identical(old$config$projfrac, new$config$projfrac)
-    expect_identical(old$config$subject, new$config$subject)
-  })
-
-  it("deprecates each retired argument", {
-    # Errors rather than warnings, for the reason spelled out in the
-    # regheader block below: lifecycle throttles an indirect warning to once
-    # per session, so whether a warning arrives here depends on what ran
-    # first. Errors carry no such budget.
-    withr::local_options(lifecycle_verbosity = "error")
-
+  it("rejects the retired flat arguments the lists replaced", {
     for (arg in c(
       "cortical_labels",
       "subcortical_labels",
       "cerebellar_labels",
-      "projfrac",
-      "subject",
-      "registration",
       "min_vertices",
       "cerebellar_space"
     )) {
       expect_error(
         capture_setup(stats::setNames(list("x"), arg)),
-        class = "lifecycle_error_deprecated",
+        "unused argument",
         info = arg
       )
     }
-  })
-
-  it("refuses a retired argument alongside the list entry replacing it", {
-    expect_error(
-      capture_setup(list(
-        cortical_labels = "a",
-        labels = list(cortical = "b")
-      )),
-      "Cannot use both"
-    )
   })
 
   it("rejects an unknown projection_opts entry by name", {

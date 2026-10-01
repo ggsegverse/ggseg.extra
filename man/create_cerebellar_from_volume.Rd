@@ -8,7 +8,6 @@ create_cerebellar_from_volume(
   input_volume = NULL,
   decimate = 0.5,
   verbose = get_verbose(),
-  volume = lifecycle::deprecated(),
   ...,
   input_lut = NULL,
   atlas_name = NULL,
@@ -30,15 +29,11 @@ to skip decimation. Requires the Rvcg package. Default is 0.5.}
 Falls back to \code{options("ggseg.extra.verbose")}, then
 \code{GGSEG_EXTRA_VERBOSE}.}
 
-\item{volume}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} Use \code{input_volume}
-instead.}
-
-\item{...}{Catches the retired \code{dilate}, \code{smoothness}, \code{tolerance} and
-\code{smooth_refinements} arguments, so a call that still passes one keeps
-working and says so. These are post-creation steps now: see
+\item{...}{Not used. Present so that a mistyped or misplaced argument is
+reported against this function rather than silently ignored; anything
+passed here is an error. Geometry is shaped after the build: see
 \code{\link[=atlas_polish]{atlas_polish()}}, or \code{\link[=atlas_simplify]{atlas_simplify()}}, \code{\link[=atlas_smooth]{atlas_smooth()}} and
-\code{\link[=atlas_dilate]{atlas_dilate()}} individually. Anything else in \code{...} is an error, as an
-unused argument always was.}
+\code{\link[=atlas_dilate]{atlas_dilate()}} individually.}
 
 \item{input_lut}{Optional path to a colour lookup table file, or a
 data.frame with columns \code{idx}, \code{label}, and optionally \code{R}, \code{G}, \code{B}.

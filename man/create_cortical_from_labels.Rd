@@ -31,12 +31,11 @@ parcellation.}
 Falls back to \code{options("ggseg.extra.verbose")}, then
 \code{GGSEG_EXTRA_VERBOSE}.}
 
-\item{...}{Catches the retired \code{dilate}, \code{smoothness}, \code{tolerance} and
-\code{smooth_refinements} arguments, so a call that still passes one keeps
-working and says so. These are post-creation steps now: see
+\item{...}{Not used. Present so that a mistyped or misplaced argument is
+reported against this function rather than silently ignored; anything
+passed here is an error. Geometry is shaped after the build: see
 \code{\link[=atlas_polish]{atlas_polish()}}, or \code{\link[=atlas_simplify]{atlas_simplify()}}, \code{\link[=atlas_smooth]{atlas_smooth()}} and
-\code{\link[=atlas_dilate]{atlas_dilate()}} individually. Anything else in \code{...} is an error, as an
-unused argument always was.}
+\code{\link[=atlas_dilate]{atlas_dilate()}} individually.}
 
 \item{input_lut}{Path to a color lookup table (LUT) file, or a data.frame
 with a \code{region} column (or a FreeSurfer-style \code{label} column) plus
