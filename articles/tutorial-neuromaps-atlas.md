@@ -295,7 +295,7 @@ atlas_full <- create_cortical_from_neuromaps(
 #> ── Creating brain atlas "abagen_genepc1" from neuromaps ────────────────────────
 #> ℹ Input files: '/Users/athanasm/Library/Caches/org.R-project.R/R/neuromapr/annotations/abagen/genepc1/fsaverage//source-abagen_desc-genepc1_space-fsaverage_den-10k_hemi-L_feature.func.gii' and '/Users/athanasm/Library/Caches/org.R-project.R/R/neuromapr/annotations/abagen/genepc1/fsaverage//source-abagen_desc-genepc1_space-fsaverage_den-10k_hemi-R_feature.func.gii'
 #> ℹ Reading neuromaps annotation
-#> ✔ Reading neuromaps annotation [116ms]
+#> ✔ Reading neuromaps annotation [140ms]
 #> 
 #> ℹ Projecting mesh to 2D polygons
 #> ℹ Projecting "rh" "lateral"
@@ -314,11 +314,11 @@ atlas_full <- create_cortical_from_neuromaps(
 #> ℹ Projecting mesh to 2D polygons
 ℹ Projecting "lh" "inferior"
 #> ℹ Projecting mesh to 2D polygons
-✔ Projecting mesh to 2D polygons [15.7s]
+✔ Projecting mesh to 2D polygons [14s]
 #> 
 #> ✔ Temporary files removed
 #> ✔ Brain atlas created with 14 regions
-#> ℹ Pipeline completed [16.1s]
+#> ℹ Pipeline completed [14.3s]
 #> Warning: Atlas has 43679 vertices (threshold: 10000)
 #> ℹ Large atlases may be slow to plot and increase package size
 #> ℹ Call `atlas_simplify(atlas, keep = 0.2)`, then `atlas_smooth(atlas)`, to tidy
@@ -343,20 +343,24 @@ atlas_clean <- atlas_full |>
 
 ## Rendering the final atlas
 
+[`plot()`](https://rdrr.io/r/graphics/plot.default.html) is a
+base-graphics overview: one call, every view, no legend and nothing to
+configure. It is for looking at an atlas while you build it.
+
 ``` r
 
-plot(atlas_clean) +
-  theme_void() +
-  theme(legend.position = "none")
+plot(atlas_clean)
 ```
 
 ![2D brain atlas plot showing gene expression quantile bins across
-lateral, medial, inferior, and superior views without
-legend.](figures/tutorial-neuromaps-atlas-plot-2d-1.png)
+lateral, medial, inferior, and superior
+views.](figures/tutorial-neuromaps-atlas-plot-2d-1.png)
 
-2D gene expression atlas plotted with ggseg.
+2D gene expression atlas, drawn by the base-graphics overview.
 
-    #> NULL
+For a figure you intend to publish, reach for the ggplot2 layer in ggseg
+instead — `ggplot() + geom_brain(atlas = atlas_clean)` — where legends,
+scales and themes are yours to control in the usual way.
 
 ``` r
 

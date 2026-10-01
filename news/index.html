@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9082</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9083</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -69,6 +69,19 @@
       <small>Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.9.9.9083" id="ggsegextra-1999083">ggseg.extra 1.9.9.9083<a class="anchor" aria-label="anchor" href="#ggsegextra-1999083"></a></h2>
+<div class="section level3">
+<h3 id="breaking-changes-1-9-9-9083">Breaking changes<a class="anchor" aria-label="anchor" href="#breaking-changes-1-9-9-9083"></a></h3>
+<ul><li>
+<code>ggseg</code> moves from Imports to Suggests. It was imported for <code><a href="https://ggsegverse.github.io/ggseg/reference/ggseg.html" class="external-link">ggseg::ggseg()</a></code> and <code><a href="https://ggsegverse.github.io/ggseg/reference/position_brain.html" class="external-link">ggseg::position_brain()</a></code>, neither of which this package calls anywhere – the only reference was the <code>@importFrom</code> itself. Plotting an atlas is the caller’s business, and the tests and tutorials that do it are what Suggests is for.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="bug-fixes-1-9-9-9083">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-1-9-9-9083"></a></h3>
+<ul><li><p>Two examples told readers to plot with <code><a href="https://ggsegverse.github.io/ggseg/reference/ggseg.html" class="external-link">ggseg()</a></code>, which has called <code><a href="https://lifecycle.r-lib.org/reference/deprecate_soft.html" class="external-link">lifecycle::deprecate_stop()</a></code> since ggseg 2.0.0 and therefore errors. <code><a href="../reference/create_cortical_from_annotation.html">create_cortical_from_annotation()</a></code> and <code><a href="../reference/create_cerebellar_from_gifti.html">create_cerebellar_from_gifti()</a></code> now end in <code>plot(atlas)</code>, matching the tract and subcortical examples. Both sat inside <code>\dontrun{}</code>, so <code>R CMD check</code> never ran them and nothing caught it; anyone copying one got an error.</p></li>
+<li><p>The neuromaps tutorial no longer chains ggplot2 onto <code><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot()</a></code>. <code><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot()</a></code> for an atlas is a base-graphics overview – <code><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par()</a></code>, <code><a href="https://rdrr.io/r/graphics/polygon.html" class="external-link">polygon()</a></code>, <code><a href="https://rdrr.io/r/graphics/mtext.html" class="external-link">mtext()</a></code>, returning the atlas invisibly – so it draws no legend, and <code>plot(atlas, show.legend = FALSE) + theme_void()</code> was doing nothing twice over: <code>show.legend</code> reached <code><a href="https://rdrr.io/r/graphics/polygon.html" class="external-link">polygon()</a></code> and warned once per polygon, and the chaining evaluated to <code>NULL</code>, which the page printed. 1.9.9.9082 replaced the first half with <code>theme(legend.position = "none")</code>, which silenced the warnings while remaining just as inert and introduced the stray <code>NULL</code>. The call is now <code>plot(atlas_clean)</code>, and the section says what the overview is for and points at <code>ggplot() + geom_brain()</code> for a figure meant for publication.</p></li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9082" id="ggsegextra-1999082">ggseg.extra 1.9.9.9082<a class="anchor" aria-label="anchor" href="#ggsegextra-1999082"></a></h2>
 <div class="section level3">

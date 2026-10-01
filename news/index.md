@@ -1,5 +1,50 @@
 # Changelog
 
+## ggseg.extra 1.9.9.9083
+
+### Breaking changes
+
+- `ggseg` moves from Imports to Suggests. It was imported for
+  [`ggseg::ggseg()`](https://ggsegverse.github.io/ggseg/reference/ggseg.html)
+  and
+  [`ggseg::position_brain()`](https://ggsegverse.github.io/ggseg/reference/position_brain.html),
+  neither of which this package calls anywhere – the only reference was
+  the `@importFrom` itself. Plotting an atlas is the caller’s business,
+  and the tests and tutorials that do it are what Suggests is for.
+
+### Bug fixes
+
+- Two examples told readers to plot with
+  [`ggseg()`](https://ggsegverse.github.io/ggseg/reference/ggseg.html),
+  which has called
+  [`lifecycle::deprecate_stop()`](https://lifecycle.r-lib.org/reference/deprecate_soft.html)
+  since ggseg 2.0.0 and therefore errors.
+  [`create_cortical_from_annotation()`](https://ggsegverse.github.io/ggseg.extra/reference/create_cortical_from_annotation.md)
+  and
+  [`create_cerebellar_from_gifti()`](https://ggsegverse.github.io/ggseg.extra/reference/create_cerebellar_from_gifti.md)
+  now end in `plot(atlas)`, matching the tract and subcortical examples.
+  Both sat inside `\dontrun{}`, so `R CMD check` never ran them and
+  nothing caught it; anyone copying one got an error.
+
+- The neuromaps tutorial no longer chains ggplot2 onto
+  [`plot()`](https://rdrr.io/r/graphics/plot.default.html).
+  [`plot()`](https://rdrr.io/r/graphics/plot.default.html) for an atlas
+  is a base-graphics overview –
+  [`par()`](https://rdrr.io/r/graphics/par.html),
+  [`polygon()`](https://rdrr.io/r/graphics/polygon.html),
+  [`mtext()`](https://rdrr.io/r/graphics/mtext.html), returning the
+  atlas invisibly – so it draws no legend, and
+  `plot(atlas, show.legend = FALSE) + theme_void()` was doing nothing
+  twice over: `show.legend` reached
+  [`polygon()`](https://rdrr.io/r/graphics/polygon.html) and warned once
+  per polygon, and the chaining evaluated to `NULL`, which the page
+  printed. 1.9.9.9082 replaced the first half with
+  `theme(legend.position = "none")`, which silenced the warnings while
+  remaining just as inert and introduced the stray `NULL`. The call is
+  now `plot(atlas_clean)`, and the section says what the overview is for
+  and points at `ggplot() + geom_brain()` for a figure meant for
+  publication.
+
 ## ggseg.extra 1.9.9.9082
 
 ### Documentation

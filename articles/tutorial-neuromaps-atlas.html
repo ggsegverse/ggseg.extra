@@ -28,7 +28,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9082</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9083</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -317,7 +317,7 @@
 <span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ── Creating brain atlas "abagen_genepc1" from neuromaps ────────────────────────</span></span>
 <span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ Input files: '/Users/athanasm/Library/Caches/org.R-project.R/R/neuromapr/annotations/abagen/genepc1/fsaverage//source-abagen_desc-genepc1_space-fsaverage_den-10k_hemi-L_feature.func.gii' and '/Users/athanasm/Library/Caches/org.R-project.R/R/neuromapr/annotations/abagen/genepc1/fsaverage//source-abagen_desc-genepc1_space-fsaverage_den-10k_hemi-R_feature.func.gii'</span></span>
 <span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ Reading neuromaps annotation</span></span>
-<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ✔ Reading neuromaps annotation [116ms]</span></span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ✔ Reading neuromaps annotation [140ms]</span></span>
 <span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ Projecting mesh to 2D polygons</span></span>
 <span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ Projecting "rh" "lateral"</span></span>
@@ -336,11 +336,11 @@
 <span id="cb10-31"><a href="#cb10-31" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ Projecting mesh to 2D polygons</span></span>
 <span id="cb10-32"><a href="#cb10-32" aria-hidden="true" tabindex="-1"></a>ℹ Projecting <span class="st">"lh"</span> <span class="st">"inferior"</span></span>
 <span id="cb10-33"><a href="#cb10-33" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ Projecting mesh to 2D polygons</span></span>
-<span id="cb10-34"><a href="#cb10-34" aria-hidden="true" tabindex="-1"></a>✔ Projecting mesh to <span class="dv">2</span>D polygons [<span class="fl">15.7</span>s]</span>
+<span id="cb10-34"><a href="#cb10-34" aria-hidden="true" tabindex="-1"></a>✔ Projecting mesh to <span class="dv">2</span>D polygons [<span class="dv">14</span>s]</span>
 <span id="cb10-35"><a href="#cb10-35" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb10-36"><a href="#cb10-36" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ✔ Temporary files removed</span></span>
 <span id="cb10-37"><a href="#cb10-37" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ✔ Brain atlas created with 14 regions</span></span>
-<span id="cb10-38"><a href="#cb10-38" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ Pipeline completed [16.1s]</span></span>
+<span id="cb10-38"><a href="#cb10-38" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ Pipeline completed [14.3s]</span></span>
 <span id="cb10-39"><a href="#cb10-39" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Warning: Atlas has 43679 vertices (threshold: 10000)</span></span>
 <span id="cb10-40"><a href="#cb10-40" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ Large atlases may be slow to plot and increase package size</span></span>
 <span id="cb10-41"><a href="#cb10-41" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ Call `atlas_simplify(atlas, keep = 0.2)`, then `atlas_smooth(atlas)`, to tidy</span></span>
@@ -357,17 +357,16 @@
 <span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_contextual</a></span><span class="op">(</span><span class="st">"unknown"</span>, match_on <span class="op">=</span> <span class="st">"label"</span><span class="op">)</span></span></code></pre></div>
 </section><section class="level2"><h2 id="rendering-the-final-atlas">Rendering the final atlas<a class="anchor" aria-label="anchor" href="#rendering-the-final-atlas"></a>
 </h2>
+<p><code><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot()</a></code> is a base-graphics overview: one call, every view, no legend and nothing to configure. It is for looking at an atlas while you build it.</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">atlas_clean</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_void</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span>legend.position <span class="op">=</span> <span class="st">"none"</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">atlas_clean</span><span class="op">)</span></span></code></pre></div>
 <div class="figure">
-<img src="figures/tutorial-neuromaps-atlas-plot-2d-1.png" alt="2D brain atlas plot showing gene expression quantile bins across lateral, medial, inferior, and superior views without legend." width="960"><p class="caption">
-2D gene expression atlas plotted with ggseg.
+<img src="figures/tutorial-neuromaps-atlas-plot-2d-1.png" alt="2D brain atlas plot showing gene expression quantile bins across lateral, medial, inferior, and superior views." width="960"><p class="caption">
+2D gene expression atlas, drawn by the base-graphics overview.
 </p>
 </div>
-<pre><code><span><span class="co">#&gt; NULL</span></span></code></pre>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<p>For a figure you intend to publish, reach for the ggplot2 layer in ggseg instead — <code>ggplot() + geom_brain(atlas = atlas_clean)</code> — where legends, scales and themes are yours to control in the usual way.</p>
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">ggseg3d</span><span class="fu">::</span><span class="fu"><a href="https://ggsegverse.github.io/ggseg3d/reference/ggseg3d.html" class="external-link">ggseg3d</a></span><span class="op">(</span>atlas <span class="op">=</span> <span class="va">atlas_clean</span>, hemisphere <span class="op">=</span> <span class="st">"left"</span><span class="op">)</span></span></code></pre></div>
 <div class="figure">
 <img src="figures/tutorial-neuromaps-atlas-plot-3d-1.png" alt="3D rendering of the left hemisphere showing the final gene expression atlas with 7 quantile bins coloured along a spectral gradient." width="672"><p class="caption">
@@ -378,7 +377,7 @@
 </h2>
 <p>Not all neuromaps annotations are continuous. Some contain integer vertex labels where each value maps to a brain region. The pipeline detects this automatically and skips binning entirely.</p>
 <p>For parcellations, you can provide a <code>label_table</code> to map the numeric IDs to human-readable region names and custom colors. The registry currently ships only continuous maps, so the call below is shown rather than run — substitute a parcellation annotation when one is available:</p>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">labels</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
 <span>  id <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span>, <span class="fl">3</span><span class="op">)</span>,</span>
 <span>  region <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"visual"</span>, <span class="st">"somatomotor"</span>, <span class="st">"dorsal_attention"</span><span class="op">)</span>,</span>
@@ -394,7 +393,7 @@
 </section><section class="level2"><h2 id="volume-annotations">Volume annotations<a class="anchor" aria-label="anchor" href="#volume-annotations"></a>
 </h2>
 <p>Some neuromaps annotations are volumetric NIfTI files in MNI152 space rather than surface GIFTI files. The pipeline detects this from the file extension (<code>.nii</code> or <code>.nii.gz</code>) and projects the volume onto the fsaverage5 surface using FreeSurfer’s <code>mri_vol2surf</code>.</p>
-<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">atlas_vol</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/create_cortical_from_neuromaps.html">create_cortical_from_neuromaps</a></span><span class="op">(</span></span>
 <span>  source <span class="op">=</span> <span class="st">"pet"</span>,</span>
 <span>  desc <span class="op">=</span> <span class="st">"5HT1a"</span>,</span>
@@ -405,7 +404,7 @@
 </section><section class="level2"><h2 id="reading-annotation-files-directly">Reading annotation files directly<a class="anchor" aria-label="anchor" href="#reading-annotation-files-directly"></a>
 </h2>
 <p>If you already have GIFTI files on disk — from neuromaps, Connectome Workbench, or another source — you can bypass the fetching step and read them directly with <code><a href="../reference/read_neuromaps_annotation.html">read_neuromaps_annotation()</a></code>:</p>
-<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">files</span> <span class="op">&lt;-</span> <span class="fu">neuromapr</span><span class="fu">::</span><span class="fu"><a href="https://lcbc-uio.github.io/neuromapr/reference/fetch_neuromaps_annotation.html" class="external-link">fetch_neuromaps_annotation</a></span><span class="op">(</span></span>
 <span>  source <span class="op">=</span> <span class="st">"abagen"</span>,</span>
 <span>  desc <span class="op">=</span> <span class="st">"genepc1"</span>,</span>

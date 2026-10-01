@@ -104,6 +104,6 @@ if (FALSE) { # \dontrun{
 atlas <- create_cerebellar_from_gifti(
   gifti_files = "Lobules-SUIT.label.gii"
 )
-ggseg(atlas = atlas)
+plot(atlas)
 } # }
 ```
