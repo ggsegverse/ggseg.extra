@@ -36,16 +36,6 @@ as_verbosity <- function(x) {
   clamp_verbosity(suppressWarnings(as.integer(x)))
 }
 
-
-#' Hold a parsed verbosity to 0-2, falling back to the default
-#' @noRd
-clamp_verbosity <- function(n) {
-  if (is.na(n) || n < 0L) {
-    return(1L)
-  }
-  min(n, 2L)
-}
-
 #' Get verbose setting
 #'
 #' Returns the verbosity level from option, environment variable, or default.
@@ -103,6 +93,16 @@ is_verbose <- function(verbose = NULL) {
   )
   get_verbose(verbose)
 }
+
+#' Hold a parsed verbosity to 0-2, falling back to the default
+#' @noRd
+clamp_verbosity <- function(n) {
+  if (is.na(n) || n < 0L) {
+    return(1L)
+  }
+  min(n, 2L)
+}
+
 
 #' Cross product of two 3D vectors
 #' @noRd
