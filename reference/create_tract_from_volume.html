@@ -21,7 +21,7 @@ distributed as NIfTI label volumes (e.g. AtlasTrack)."><meta property="og:image"
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9084</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9085</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -124,7 +124,9 @@ names and colours; labels absent from the volume are ignored.</p></dd>
 
 
 <dt id="arg-n-points">n_points<a class="anchor" aria-label="anchor" href="#arg-n-points"></a></dt>
-<dd><p>Number of points along each tract centerline.</p></dd>
+<dd><p>Number of points along each tract centerline. Also sets
+the number of points the tube is built from, unless <code>tube_opts</code> names
+<code>n_points</code> explicitly.</p></dd>
 
 
 <dt id="arg-min-voxels">min_voxels<a class="anchor" aria-label="anchor" href="#arg-min-voxels"></a></dt>

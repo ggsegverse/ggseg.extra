@@ -1,6 +1,87 @@
 # Changelog
 
-## ggseg.extra 1.9.9.9084
+## ggseg.extra 1.9.9.9085
+
+### Breaking changes
+
+- [`create_cerebellar_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_cerebellar_from_volume.md)
+  takes `input_volume` as its first argument. It previously took
+  `decimate` first, with `input_volume` after `...` and therefore
+  name-only, so `create_cerebellar_from_volume("Buckner7.nii.gz")` bound
+  the path to `decimate` and aborted with “`input_volume` is required” –
+  naming the argument the caller had just supplied. Every sibling
+  creator takes its input first. Calls that name `input_volume` are
+  unaffected; a call that passed `decimate` by position must now name
+  it.
+
+- [`read_neuromaps_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/read_neuromaps_volume.md)
+  takes `n_bins` second and `output_dir` last, matching the order its
+  own `@param` block already documented and the order
+  [`read_neuromaps_annotation()`](https://ggsegverse.github.io/ggseg.extra/reference/read_neuromaps_annotation.md)
+  uses. `read_neuromaps_volume(f, 7)` previously set `output_dir` to
+  `7`.
+
+- `cortical_opts` in
+  [`create_wholebrain_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_wholebrain_from_volume.md)
+  now accepts only `views`, which is what its documentation already
+  promised and the only entry the cortical sub-pipeline ever read. Other
+  names passed validation and were then silently discarded – including
+  the deprecated post-creation arguments, which the `subcortical_opts`
+  and `cerebellar_opts` paths do forward.
+
+### Bug fixes
+
+- `volume` is forwarded by
+  [`create_cerebellar_from_gifti()`](https://ggsegverse.github.io/ggseg.extra/reference/create_cerebellar_from_gifti.md)
+  and
+  [`create_cerebellar_from_annotation()`](https://ggsegverse.github.io/ggseg.extra/reference/create_cerebellar_from_annotation.md).
+  Both declared it and neither passed it on, so the documented promise –
+  “per-region meshes are tessellated using FreeSurfer tools and included
+  in the atlas for 3D rendering” – never happened and the atlas came
+  back with no meshes, silently.
+
+- `decimate` is honoured by all three cerebellar creators. All three
+  declared it, none read it, and the one place it applies hardcoded
+  `percent = 0.5`, so neither a different factor nor `NULL` to skip
+  decimation had any effect. It is now validated with
+  `validate_decimate()` before any work starts, as the subcortical
+  pipeline already did.
+
+- `n_points` reaches the tube in
+  [`create_tract_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_tract_from_volume.md).
+  It was honoured when fitting the principal curve and then not passed
+  to
+  [`create_tract_from_tractography()`](https://ggsegverse.github.io/ggseg.extra/reference/create_tract_from_tractography.md),
+  whose own default is 50 – so `n_points = 200` fit a 200-point
+  centerline and threw 150 points away. An explicit
+  `tube_opts = list(n_points = )` still wins.
+
+- [`create_tract_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_tract_from_volume.md)
+  now declares `coord_space = "mm"` rather than leaving it to be
+  inferred. It builds world coordinates itself, so there was nothing to
+  infer, and `detect_coords_are_voxels()` classifies any bundle inside
+  `[0, 300]` – which a unilateral tract usually is – as voxel. The
+  package’s own documentation warns that a wrong guess “places the tract
+  in the wrong space and produces a plausible-looking atlas”.
+
+- `label_table` is honoured for a volumetric neuromaps parcellation.
+  [`create_cortical_from_neuromaps()`](https://ggsegverse.github.io/ggseg.extra/reference/create_cortical_from_neuromaps.md)
+  dropped it on the volume path, so the regions came back as `parcel_1`,
+  `parcel_2` and so on with no warning.
+
+- Two cerebellar warnings fired only when `verbose` was on: deep-nuclei
+  data with no `vol_idx` column, and FreeSurfer being absent when deep
+  nuclei need tessellating. Both drop structures from the finished
+  atlas, which is not progress chatter, and both now warn
+  unconditionally.
+
+### Minor changes
+
+- Removed three arguments that were accepted and never read: `width` and
+  `height` from `snapshot_cortex_slice()` (leftovers from the PNG-canvas
+  era; no caller passed them), and `detail` from
+  `check_pipeline_options()` and `install_hints` from `make_pipeline()`,
+  both internal. \# ggseg.extra 1.9.9.9084
 
 ### Bug fixes
 

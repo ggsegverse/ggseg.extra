@@ -8,7 +8,12 @@ values using the same binning logic as
 ## Usage
 
 ``` r
-read_neuromaps_volume(nifti_file, output_dir = tempdir(), n_bins = NULL)
+read_neuromaps_volume(
+  nifti_file,
+  n_bins = NULL,
+  label_table = NULL,
+  output_dir = tempdir()
+)
 ```
 
 ## Arguments
@@ -17,14 +22,22 @@ read_neuromaps_volume(nifti_file, output_dir = tempdir(), n_bins = NULL)
 
   Path to a `.nii` or `.nii.gz` file in MNI152 space.
 
-- output_dir:
-
-  Directory for intermediate surface overlay files.
-
 - n_bins:
 
   Number of quantile bins for continuous data. When `NULL` (default),
   auto-detected via Sturges' rule. Ignored for integer data.
+
+- label_table:
+
+  Optional data.frame mapping parcel ids to region names and colours, as
+  for
+  [`read_neuromaps_annotation()`](https://ggsegverse.github.io/ggseg.extra/reference/read_neuromaps_annotation.md).
+  Applies to integer (parcellation) volumes only; continuous volumes are
+  binned and the bins named `bin_1`, `bin_2`, and so on.
+
+- output_dir:
+
+  Directory for intermediate surface overlay files.
 
 ## Value
 

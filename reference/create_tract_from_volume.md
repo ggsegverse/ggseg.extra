@@ -42,7 +42,9 @@ create_tract_from_volume(
 
 - n_points:
 
-  Number of points along each tract centerline.
+  Number of points along each tract centerline. Also sets the number of
+  points the tube is built from, unless `tube_opts` names `n_points`
+  explicitly.
 
 - min_voxels:
 

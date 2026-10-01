@@ -11,11 +11,11 @@ from the volume for 3D rendering.
 
 ``` r
 create_cerebellar_from_volume(
+  input_volume = NULL,
   decimate = 0.5,
   verbose = get_verbose(),
   volume = lifecycle::deprecated(),
   ...,
-  input_volume = NULL,
   input_lut = NULL,
   atlas_name = NULL,
   output_dir = NULL,
@@ -25,6 +25,10 @@ create_cerebellar_from_volume(
 ```
 
 ## Arguments
+
+- input_volume:
+
+  Path to a cerebellar segmentation volume (NIfTI).
 
 - decimate:
 
@@ -57,10 +61,6 @@ create_cerebellar_from_volume(
   [`atlas_dilate()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_dilate.md)
   individually. Anything else in `...` is an error, as an unused
   argument always was.
-
-- input_volume:
-
-  Path to a cerebellar segmentation volume (NIfTI).
 
 - input_lut:
 
@@ -98,8 +98,6 @@ meshes.
 
 ``` r
 if (FALSE) { # \dontrun{
-atlas <- create_cerebellar_from_volume(
-  input_volume = "cerebellar_parcellation.nii.gz"
-)
+atlas <- create_cerebellar_from_volume("cerebellar_parcellation.nii.gz")
 } # }
 ```
