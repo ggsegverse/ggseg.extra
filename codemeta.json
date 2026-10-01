@@ -7,7 +7,7 @@
   "codeRepository": "https://github.com/ggsegverse/ggseg.extra",
   "issueTracker": "https://github.com/ggsegverse/ggseg.extra/issues",
   "license": "https://spdx.org/licenses/MIT",
-  "version": "1.9.9.9085",
+  "version": "1.9.9.9086",
   "programmingLanguage": {
     "@type": "ComputerLanguage",
     "name": "R",
@@ -498,7 +498,7 @@
     },
     "SystemRequirements": "FreeSurfer (subcortical/wholebrain pipelines), \n    Connectome Workbench (optional, for CIFTI resampling),\n    GDAL (>= 2.0.1), \n    GEOS (>= 3.4.0), \n    PROJ (>= 4.8.0), \n    sqlite3"
   },
-  "fileSize": "4462.106KB",
+  "fileSize": "4487.736KB",
   "citation": [
     {
       "@type": "CreativeWork",
@@ -521,5 +521,5 @@
   "releaseNotes": "https://github.com/ggsegverse/ggseg.extra/blob/main/NEWS.md",
   "readme": "https://github.com/ggsegverse/ggseg.extra/blob/main/README.md",
   "contIntegration": ["https://github.com/ggsegverse/ggseg.extra/actions/workflows/test-coverage.yaml", "https://github.com/ggsegverse/ggseg.extra/actions"],
-  "developmentStatus": "https://lifecycle.r-lib.org/articles/stages.html"
+  "developmentStatus": "https://lifecycle.r-lib.org/articles/stages.html#experimental"
 }
