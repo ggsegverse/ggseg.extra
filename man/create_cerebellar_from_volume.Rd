@@ -5,11 +5,11 @@
 \title{Create cerebellar atlas from volume segmentation}
 \usage{
 create_cerebellar_from_volume(
+  input_volume = NULL,
   decimate = 0.5,
   verbose = get_verbose(),
   volume = lifecycle::deprecated(),
   ...,
-  input_volume = NULL,
   input_lut = NULL,
   atlas_name = NULL,
   output_dir = NULL,
@@ -18,6 +18,8 @@ create_cerebellar_from_volume(
 )
 }
 \arguments{
+\item{input_volume}{Path to a cerebellar segmentation volume (NIfTI).}
+
 \item{decimate}{Mesh decimation factor between 0 and 1. Reduces the number
 of faces in 3D meshes using quadric edge decimation (via
 \code{\link[Rvcg:vcgQEdecim]{Rvcg::vcgQEdecim()}}). A value of 0.5 reduces faces by 50\%. Set to NULL
@@ -37,8 +39,6 @@ working and says so. These are post-creation steps now: see
 \code{\link[=atlas_polish]{atlas_polish()}}, or \code{\link[=atlas_simplify]{atlas_simplify()}}, \code{\link[=atlas_smooth]{atlas_smooth()}} and
 \code{\link[=atlas_dilate]{atlas_dilate()}} individually. Anything else in \code{...} is an error, as an
 unused argument always was.}
-
-\item{input_volume}{Path to a cerebellar segmentation volume (NIfTI).}
 
 \item{input_lut}{Optional path to a colour lookup table file, or a
 data.frame with columns \code{idx}, \code{label}, and optionally \code{R}, \code{G}, \code{B}.
@@ -72,8 +72,6 @@ volume for 3D rendering.
 }
 \examples{
 \dontrun{
-atlas <- create_cerebellar_from_volume(
-  input_volume = "cerebellar_parcellation.nii.gz"
-)
+atlas <- create_cerebellar_from_volume("cerebellar_parcellation.nii.gz")
 }
 }

@@ -722,10 +722,13 @@ validate_wholebrain_opts <- function(
   }
 
   list(
+    # Only `views` is read by wholebrain_cortical_inputs(). Anything else
+    # passed validation and was then silently discarded, so the allowed set
+    # is the one entry the pipeline actually honours.
     cortical = validate_pipeline_opts(
       cortical_opts,
       "cortical_opts",
-      allowed(create_cortical_from_annotation, CORTICAL_MANAGED_ARGS)
+      CORTICAL_ALLOWED_ARGS
     ),
     subcortical = validate_pipeline_opts(
       subcortical_opts,
@@ -840,20 +843,10 @@ CEREBELLAR_MANAGED_ARGS <- c(
   "cleanup",
   "skip_existing"
 )
-# create_cortical_from_annotation() stands in for the cortical family here
-# (unlike subcortical/cerebellar, wholebrain doesn't call a single public
-# cortical builder directly) purely so the allowed cortical_opts names track
-# that family's shared tail parameters instead of drifting from a hand-kept
-# list.
-CORTICAL_MANAGED_ARGS <- c(
-  "input_annot",
-  "atlas_name",
-  "output_dir",
-  "hemisphere",
-  "cleanup",
-  "verbose",
-  "skip_existing"
-)
+# Unlike subcortical/cerebellar, wholebrain does not call a single public
+# cortical builder, so there are no formals to track: the cortical sub-
+# pipeline reads exactly one option.
+CORTICAL_ALLOWED_ARGS <- "views"
 # nolint end
 
 #' Validate a named-list of extra arguments for a sub-pipeline

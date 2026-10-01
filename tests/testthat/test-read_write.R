@@ -834,6 +834,41 @@ describe("read_neuromaps_volume", {
     )
   })
 
+  it("names parcels from label_table for an integer volume", {
+    local_mock_mni152_path()
+    skip_if_not_installed("RNifti")
+
+    output_dir <- withr::local_tempdir()
+    surf_dir <- file.path(output_dir, "surface_overlays")
+    dir.create(surf_dir, recursive = TRUE)
+
+    n <- 10242L
+    local_mocked_bindings(
+      check_fs = function(...) invisible(TRUE),
+      check_mni152_subject = function(...) invisible(TRUE),
+      mri_vol2surf = function(input_file, output_file, hemisphere, ...) {
+        RNifti::writeNifti(
+          array(c(rep(1, 5000), rep(2, 5242)), dim = c(n, 1, 1)),
+          output_file
+        )
+      }
+    )
+
+    label_table <- data.frame(
+      stringsAsFactors = FALSE,
+      idx = c(1L, 2L),
+      region = c("frontal", "parietal")
+    )
+
+    result <- read_neuromaps_volume(
+      "fake.nii.gz",
+      label_table = label_table,
+      output_dir = output_dir
+    )
+
+    expect_true(all(c("frontal", "parietal") %in% result$region))
+  })
+
   it("projects volume to surface and returns atlas data", {
     local_mock_mni152_path()
     skip_if_not_installed("RNifti")

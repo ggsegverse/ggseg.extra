@@ -25,7 +25,9 @@ create_tract_from_volume(
 \code{label} (or \code{region}) and colour columns (\code{R}, \code{G}, \code{B}). Supplies tract
 names and colours; labels absent from the volume are ignored.}
 
-\item{n_points}{Number of points along each tract centerline.}
+\item{n_points}{Number of points along each tract centerline. Also sets
+the number of points the tube is built from, unless \code{tube_opts} names
+\code{n_points} explicitly.}
 
 \item{min_voxels}{Minimum voxel count for a tract to be kept.}
 

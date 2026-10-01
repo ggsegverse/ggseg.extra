@@ -248,12 +248,14 @@ create_cerebellar_from_gifti <- function(
     cli::cli_abort("{.arg gifti_files} must not be empty")
   }
 
+  validate_decimate(decimate)
   config <- validate_surface_config(
     output_dir,
     verbose,
     cleanup,
     skip_existing
   )
+  config$decimate <- decimate
 
   if (is.null(atlas_name)) {
     atlas_name <- derive_atlas_name(gifti_files[1])
@@ -263,7 +265,8 @@ create_cerebellar_from_gifti <- function(
     atlas_name = atlas_name,
     config = config,
     read_fn = function() read_suit_parcellation(gifti_files),
-    input_files = gifti_files
+    input_files = gifti_files,
+    volume = volume
   )
 }
 
@@ -313,12 +316,14 @@ create_cerebellar_from_annotation <- function(
     cli::cli_abort("{.arg input_annot} must not be empty")
   }
 
+  validate_decimate(decimate)
   config <- validate_surface_config(
     output_dir,
     verbose,
     cleanup,
     skip_existing
   )
+  config$decimate <- decimate
 
   if (is.null(atlas_name)) {
     atlas_name <- derive_atlas_name(input_annot[1])
@@ -328,7 +333,8 @@ create_cerebellar_from_annotation <- function(
     atlas_name = atlas_name,
     config = config,
     read_fn = function() read_cerebellar_annotation(input_annot),
-    input_files = input_annot
+    input_files = input_annot,
+    volume = volume
   )
 }
 
@@ -362,17 +368,15 @@ create_cerebellar_from_annotation <- function(
 #'
 #' @examples
 #' \dontrun{
-#' atlas <- create_cerebellar_from_volume(
-#'   input_volume = "cerebellar_parcellation.nii.gz"
-#' )
+#' atlas <- create_cerebellar_from_volume("cerebellar_parcellation.nii.gz")
 #' }
 # nolint next: object_length_linter.
 create_cerebellar_from_volume <- function(
+  input_volume = NULL,
   decimate = 0.5,
   verbose = get_verbose(),
   volume = lifecycle::deprecated(),
   ...,
-  input_volume = NULL,
   input_lut = NULL,
   atlas_name = NULL,
   output_dir = NULL,
@@ -380,6 +384,7 @@ create_cerebellar_from_volume <- function(
   skip_existing = NULL
 ) {
   check_post_creation_dots("create_cerebellar_from_volume", ...)
+  validate_decimate(decimate)
   if (lifecycle::is_present(volume)) {
     lifecycle::deprecate_warn(
       "1.9.9.9005",
@@ -403,6 +408,7 @@ create_cerebellar_from_volume <- function(
     cleanup,
     skip_existing
   )
+  config$decimate <- decimate
 
   if (is.null(atlas_name)) {
     atlas_name <- derive_atlas_name(volume)
@@ -854,7 +860,8 @@ cerebellar_project_and_build <- function(
       volume = volume,
       deep_data = deep_data,
       dirs = dirs,
-      verbose = config$verbose
+      verbose = config$verbose,
+      decimate = config$decimate
     )
     sf_data <- merge_deep_nuclei_sf(sf_data, deep_result$sf)
     deep_meshes_df <- extract_deep_meshes(deep_result$meshes)
@@ -910,16 +917,15 @@ cerebellar_process_deep_nuclei <- function(
   volume,
   deep_data,
   dirs,
-  verbose = FALSE
+  verbose = FALSE,
+  decimate = 0.5
 ) {
   rlang::check_installed("terra", reason = "to create nuclei projections")
 
   if (!"vol_idx" %in% names(deep_data)) {
-    if (verbose) {
-      cli::cli_warn(
-        "Deep nuclei data has no {.field vol_idx} column; skipping"
-      )
-    }
+    cli::cli_warn(
+      "Deep nuclei data has no {.field vol_idx} column; skipping"
+    )
     return(list(sf = NULL, meshes = NULL))
   }
 
@@ -941,7 +947,13 @@ cerebellar_process_deep_nuclei <- function(
     do.call(rbind, deep_sf_list)
   }
 
-  deep_meshes <- build_deep_nuclei_meshes(volume, deep_data, dirs, verbose)
+  deep_meshes <- build_deep_nuclei_meshes(
+    volume,
+    deep_data,
+    dirs,
+    verbose,
+    decimate
+  )
 
   list(sf = deep_sf, meshes = deep_meshes)
 }
@@ -1018,7 +1030,8 @@ build_deep_nucleus_mesh <- function(
   label,
   mesh_dir,
   tkr_to_world,
-  verbose
+  verbose,
+  decimate
 ) {
   mesh <- tryCatch(
     tessellate_label(
@@ -1040,7 +1053,9 @@ build_deep_nucleus_mesh <- function(
     return(NULL)
   }
 
-  mesh <- decimate_mesh(mesh, percent = 0.5)
+  if (!is.null(decimate) && decimate < 1) {
+    mesh <- decimate_mesh(mesh, percent = decimate)
+  }
   verts <- as.matrix(mesh$vertices)
   verts_h <- cbind(verts, 1)
   world <- verts_h %*% t(tkr_to_world)
@@ -1057,13 +1072,17 @@ build_deep_nucleus_mesh <- function(
 #'
 #' Returns NULL when FreeSurfer is unavailable or no meshes were produced.
 #' @noRd
-build_deep_nuclei_meshes <- function(volume, deep_data, dirs, verbose) {
+build_deep_nuclei_meshes <- function(
+  volume,
+  deep_data,
+  dirs,
+  verbose,
+  decimate
+) {
   if (!check_fs(abort = FALSE)) {
-    if (verbose) {
-      cli::cli_warn(
-        "FreeSurfer not found; skipping 3D mesh tessellation for deep nuclei"
-      )
-    }
+    cli::cli_warn(
+      "FreeSurfer not found; skipping 3D mesh tessellation for deep nuclei"
+    )
     return(NULL)
   }
 
@@ -1082,7 +1101,8 @@ build_deep_nuclei_meshes <- function(volume, deep_data, dirs, verbose) {
       label,
       mesh_dir,
       tkr_to_world,
-      verbose
+      verbose,
+      decimate
     )
     if (!is.null(mesh)) {
       meshes_list[[label]] <- mesh

@@ -511,6 +511,24 @@ describe("create_cerebellar_from_volume", {
     )
   })
 
+  it("takes the volume as its first positional argument", {
+    expect_error(
+      create_cerebellar_from_volume("nonexistent.nii.gz"),
+      "not found"
+    )
+  })
+
+  it("validates decimate before doing any work", {
+    expect_error(
+      create_cerebellar_from_volume("nonexistent.nii.gz", decimate = "half"),
+      "decimate.*must be a single number"
+    )
+    expect_error(
+      create_cerebellar_from_volume("nonexistent.nii.gz", decimate = 2),
+      "decimate.*must be a single number"
+    )
+  })
+
   it("warns about deprecated volume argument and delegates to input_volume", {
     lifecycle::expect_deprecated(
       expect_error(
@@ -1965,11 +1983,14 @@ describe("cerebellar_process_deep_nuclei", {
 
     local_mocked_bindings(check_fs = function(...) FALSE)
 
-    result <- cerebellar_process_deep_nuclei(
-      volume = vol_file,
-      deep_data = deep_data,
-      dirs = dirs,
-      verbose = FALSE
+    expect_warning(
+      result <- cerebellar_process_deep_nuclei(
+        volume = vol_file,
+        deep_data = deep_data,
+        dirs = dirs,
+        verbose = FALSE
+      ),
+      "FreeSurfer not found"
     )
 
     expect_s3_class(result$sf, "sf")
@@ -2002,11 +2023,14 @@ describe("cerebellar_process_deep_nuclei", {
     dirs <- local_atlas_dirs()
     local_mocked_bindings(check_fs = function(...) FALSE)
 
-    result <- cerebellar_process_deep_nuclei(
-      volume = vol_file,
-      deep_data = deep_data,
-      dirs = dirs,
-      verbose = FALSE
+    expect_warning(
+      result <- cerebellar_process_deep_nuclei(
+        volume = vol_file,
+        deep_data = deep_data,
+        dirs = dirs,
+        verbose = FALSE
+      ),
+      "FreeSurfer not found"
     )
 
     expect_identical(nrow(result$sf), 1L)

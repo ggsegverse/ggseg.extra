@@ -543,6 +543,10 @@ read_neuromaps_annotation <- function(
 #' @param nifti_file Path to a `.nii` or `.nii.gz` file in MNI152 space.
 #' @param n_bins Number of quantile bins for continuous data. When `NULL`
 #'   (default), auto-detected via Sturges' rule. Ignored for integer data.
+#' @param label_table Optional data.frame mapping parcel ids to region names
+#'   and colours, as for [read_neuromaps_annotation()]. Applies to integer
+#'   (parcellation) volumes only; continuous volumes are binned and the bins
+#'   named `bin_1`, `bin_2`, and so on.
 #' @param output_dir Directory for intermediate surface overlay files.
 #'
 #' @return A tibble with columns: hemi, region, label, colour, vertices
@@ -555,8 +559,9 @@ read_neuromaps_annotation <- function(
 #' }
 read_neuromaps_volume <- function(
   nifti_file,
-  output_dir = tempdir(),
-  n_bins = NULL
+  n_bins = NULL,
+  label_table = NULL,
+  output_dir = tempdir()
 ) {
   check_fs(abort = TRUE)
   rlang::check_installed("RNifti", reason = "to read NIfTI volume files")
@@ -597,7 +602,7 @@ read_neuromaps_volume <- function(
     values <- read_surface_overlay(output_nii, hemi)
 
     hemi_data <- if (is_integer_valued(values)) {
-      parse_parcellation_values(values, hemi, hemi_short, label_table = NULL)
+      parse_parcellation_values(values, hemi, hemi_short, label_table)
     } else {
       parse_continuous_values(values, hemi, hemi_short, n_bins)
     }

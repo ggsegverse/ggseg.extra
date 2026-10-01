@@ -203,8 +203,6 @@ snapshot_cortex_slice <- function(
   view_name,
   hemi,
   output_dir,
-  width = 400,
-  height = 400,
   skip_existing = get_skip_existing()
 ) {
   outfile <- cortex_slice_file(path.expand(output_dir), view_name, hemi)
