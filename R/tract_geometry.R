@@ -329,6 +329,9 @@ compute_streamline_density <- function(
   centerline,
   search_radius = 2
 ) {
+  if (is.matrix(streamlines)) {
+    streamlines <- list(streamlines)
+  }
   valid_sl <- Filter(function(sl) is.matrix(sl) && nrow(sl) > 0, streamlines)
 
   vapply(

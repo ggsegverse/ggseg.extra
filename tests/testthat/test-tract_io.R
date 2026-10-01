@@ -297,3 +297,22 @@ describe("tck_datatype_byte_size", {
     expect_identical(tck_datatype_byte_size("bogus"), 4)
   })
 })
+
+
+describe("read_trk_streamline", {
+  it("aborts on a streamline truncated mid-record", {
+    path <- withr::local_tempfile(fileext = ".trk")
+    con <- file(path, "wb")
+    writeBin(5L, con, size = 4)
+    writeBin(c(1, 2, 3, 4, 5), con, size = 4)
+    close(con)
+
+    con <- file(path, "rb")
+    withr::defer(close(con))
+
+    expect_error(
+      read_trk_streamline(con, n_scalars = 0L, n_properties = 0L),
+      "Truncated streamline"
+    )
+  })
+})

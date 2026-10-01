@@ -1580,3 +1580,29 @@ describe("pipeline step ceilings", {
     expect_true(tract_total_steps() %in% config$steps)
   })
 })
+
+
+describe("subcort_snapshot_names", {
+  it("refuses a missing slab table rather than naming nothing", {
+    colortable <- data.frame(idx = 1:2, label = c("a", "b"))
+
+    expect_error(
+      subcort_snapshot_names(colortable, NULL),
+      "slab table is required"
+    )
+    expect_error(
+      subcort_snapshot_names(colortable, data.frame(name = character())),
+      "slab table is required"
+    )
+  })
+
+  it("names one snapshot per label and slab", {
+    colortable <- data.frame(idx = 1:2, label = c("a", "b"))
+    slabs <- data.frame(name = c("x", "y"))
+
+    expect_setequal(
+      subcort_snapshot_names(colortable, slabs),
+      c("x_a.rda", "x_b.rda", "y_a.rda", "y_b.rda")
+    )
+  })
+})

@@ -8,7 +8,9 @@ as_verbosity(x)
 }
 \arguments{
 \item{x}{Value to coerce. Logical \code{FALSE} becomes \code{0L}, \code{TRUE} becomes
-\code{1L}. Numeric values are clamped to 0--2. Invalid input defaults to \code{1L}.}
+\code{1L}. A number above 2 is capped at \code{2L}. Anything else - a negative
+number, an unrecognised string, \code{NA}, \code{NULL}, or a value that is not
+length 1 - falls back to the default \code{1L}.}
 }
 \value{
 Integer \code{0L}, \code{1L}, or \code{2L}

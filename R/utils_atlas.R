@@ -456,14 +456,26 @@ validate_steps <- function(steps, max_step) {
   if (is.null(steps)) {
     return(seq_len(max_step))
   }
-  steps <- as.integer(steps)
-  if (anyNA(steps) || any(steps < 1L) || any(steps > max_step)) {
+  if (!all_whole_in_range(steps, 1L, max_step)) {
     cli::cli_abort(c(
       "{.arg steps} must be whole numbers between 1 and {max_step}.",
       "x" = "Got {.val {steps}}."
     ))
   }
-  steps
+  as.integer(steps)
+}
+
+
+#' Whether every element is a whole number within `[lo, hi]`
+#'
+#' Checked before any coercion: `as.integer()` makes a fractional step
+#' whole, so validating afterwards accepts the typo it was meant to catch.
+#' @noRd
+all_whole_in_range <- function(x, lo, hi) {
+  if (!is.numeric(x) || length(x) == 0L || anyNA(x)) {
+    return(FALSE)
+  }
+  all(x == trunc(x) & x >= lo & x <= hi)
 }
 
 

@@ -528,3 +528,28 @@ describe("context_pattern", {
     )))
   })
 })
+
+
+describe("validate_steps", {
+  it("returns all steps when NULL", {
+    expect_identical(validate_steps(NULL, 3L), 1:3)
+  })
+
+  it("accepts whole numbers in range", {
+    expect_identical(validate_steps(c(1, 3), 3L), c(1L, 3L))
+  })
+
+  it("refuses a fractional step rather than truncating it", {
+    expect_error(validate_steps(2.9, 3L), "whole numbers between 1 and 3")
+  })
+
+  it("refuses a character step rather than coercing it", {
+    expect_error(validate_steps("2", 3L), "whole numbers between 1 and 3")
+  })
+
+  it("refuses steps outside the range", {
+    expect_error(validate_steps(0, 3L), "whole numbers")
+    expect_error(validate_steps(4, 3L), "whole numbers")
+    expect_error(validate_steps(NA, 3L), "whole numbers")
+  })
+})

@@ -624,18 +624,15 @@ subcort_resolve_snapshots <- function(config, dirs, colortable, slabs) {
   )
 
   if (!cached$run) {
-    if (any(config$steps > 4L)) {
-      if (config$verbose) {
-        cli::cli_alert_success(
-          "4/{subcort_total_steps()} Loaded existing slabs"
-        )
-      }
-      return(list(
-        slabs = cached$data[["slabs.rds"]],
-        cortex_slices = cached$data[["cortex_slices.rds"]]
-      ))
+    if (any(config$steps > 4L) && config$verbose) {
+      cli::cli_alert_success(
+        "4/{subcort_total_steps()} Loaded existing slabs"
+      )
     }
-    return(list(slabs = NULL, cortex_slices = NULL))
+    return(list(
+      slabs = cached$data[["slabs.rds"]],
+      cortex_slices = cached$data[["cortex_slices.rds"]]
+    ))
   }
 
   if (config$verbose) {

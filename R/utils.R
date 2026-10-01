@@ -8,7 +8,9 @@ fsaverage5_nverts <- 10242L
 #' level: `0L` (silent), `1L` (standard), or `2L` (debug).
 #'
 #' @param x Value to coerce. Logical `FALSE` becomes `0L`, `TRUE` becomes
-#'   `1L`. Numeric values are clamped to 0--2. Invalid input defaults to `1L`.
+#'   `1L`. A number above 2 is capped at `2L`. Anything else - a negative
+#'   number, an unrecognised string, `NA`, `NULL`, or a value that is not
+#'   length 1 - falls back to the default `1L`.
 #' @return Integer `0L`, `1L`, or `2L`
 #' @export
 #' @examples
@@ -16,20 +18,22 @@ fsaverage5_nverts <- 10242L
 #' as_verbosity(TRUE)
 #' as_verbosity(2)
 as_verbosity <- function(x) {
+  if (length(x) != 1L) {
+    return(1L)
+  }
   if (is.logical(x) && !is.na(x)) {
     return(as.integer(x))
   }
-  if (is.character(x)) {
-    word_bool <- match_bool_word(x)
-    if (!is.na(word_bool)) {
-      return(as.integer(word_bool))
-    }
+  # A factor's integer value is its level index, not its label, so read it
+  # as text: factor("2") must mean 2, as "2" does.
+  if (is.factor(x)) {
+    x <- as.character(x)
   }
-  x <- suppressWarnings(as.integer(x))
-  if (is.na(x) || x < 0L) {
-    return(1L)
+  word_bool <- if (is.character(x)) match_bool_word(x) else NA
+  if (!is.na(word_bool)) {
+    return(as.integer(word_bool))
   }
-  min(x, 2L)
+  clamp_verbosity(suppressWarnings(as.integer(x)))
 }
 
 #' Get verbose setting
@@ -89,6 +93,16 @@ is_verbose <- function(verbose = NULL) {
   )
   get_verbose(verbose)
 }
+
+#' Hold a parsed verbosity to 0-2, falling back to the default
+#' @noRd
+clamp_verbosity <- function(n) {
+  if (is.na(n) || n < 0L) {
+    return(1L)
+  }
+  min(n, 2L)
+}
+
 
 #' Cross product of two 3D vectors
 #' @noRd

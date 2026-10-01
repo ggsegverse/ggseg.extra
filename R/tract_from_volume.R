@@ -112,7 +112,7 @@ create_tract_from_volume <- function(
   if (length(centerlines) == 0) {
     cli::cli_abort("No tracts yielded a centerline from {.arg input_volume}.")
   }
-  if (length(dropped) > 0 && isTRUE(verbose)) {
+  if (length(dropped) > 0 && verbose) {
     cli::cli_alert_info(
       "Dropped {length(dropped)} label{?s} (no centerline): {.val {dropped}}"
     )

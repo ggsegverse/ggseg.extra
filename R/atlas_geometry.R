@@ -287,9 +287,11 @@ atlas_dilate <- function(atlas, amount, labels = NULL, exclude = NULL) {
   }
 
   sf_data$geometry[mask] <- sf::st_buffer(sf_data$geometry[mask], amount)
-  sf_data <- sf_data[!sf::st_is_empty(sf_data$geometry), , drop = FALSE]
+  emptied <- sf::st_is_empty(sf_data$geometry)
+  sf_data <- sf_data[!emptied, , drop = FALSE]
 
-  rehydrate_smoothed_atlas(atlas, sf_data, was_polygon)
+  atlas <- rehydrate_smoothed_atlas(atlas, sf_data, was_polygon)
+  drop_eroded_regions(atlas, unique(sf_data$label), emptied)
 }
 
 
@@ -704,6 +706,37 @@ geometry_op_subset <- function(sf_data, labels, exclude, op, what) {
 }
 
 
+#' Keep `core` and `palette` in step with geometry an erosion removed
+#'
+#' A negative `amount` can shrink a region away entirely. Dropping the empty
+#' geometry alone leaves `core` and `palette` still claiming it, and the
+#' atlas no longer passes `ggseg.formats::ggseg_atlas()` - so the erosion
+#' returns an object the caller cannot rebuild or save.
+#' @noRd
+drop_eroded_regions <- function(atlas, surviving_labels, emptied) {
+  if (!any(emptied)) {
+    return(atlas)
+  }
+
+  lost <- setdiff(atlas$core$label, surviving_labels)
+  if (length(lost) == 0L) {
+    return(atlas)
+  }
+
+  cli::cli_warn(c(
+    "Eroded {length(lost)} region{?s} away entirely",
+    "x" = "Removed from the atlas: {.val {lost}}",
+    "i" = "Use a smaller {.arg amount}, or {.arg exclude} these labels."
+  ))
+
+  atlas$core <- atlas$core[!atlas$core$label %in% lost, , drop = FALSE]
+  if (!is.null(atlas$palette)) {
+    atlas$palette <- atlas$palette[!names(atlas$palette) %in% lost]
+  }
+  atlas
+}
+
+
 #' Write smoothed geometry back and restore the atlas representation
 #' @noRd
 rehydrate_smoothed_atlas <- function(atlas, sf_data, was_polygon) {
@@ -813,8 +846,14 @@ smooth_sf_light <- function(sf_data, smoothness = 0, method = "close") {
 #' Validate the normalised smoothness strength
 #' @noRd
 check_smoothness <- function(smoothness) {
-  if (is.null(smoothness) || is.na(smoothness)) {
+  if (is.null(smoothness)) {
     return(invisible(NULL))
+  }
+  bad <- !is.numeric(smoothness) ||
+    length(smoothness) != 1L ||
+    is.na(smoothness)
+  if (bad) {
+    cli::cli_abort("{.arg smoothness} must be a single number between 0 and 1.")
   }
   if (smoothness < 0 || smoothness > 1) {
     cli::cli_abort(c(
