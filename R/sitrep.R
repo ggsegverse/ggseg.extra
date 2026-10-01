@@ -30,7 +30,7 @@ sitrep <- function(detail = c("simple", "minimal", "full")) {
   }
 
   if (detail == "full") {
-    check_pipeline_options(detail)
+    check_pipeline_options()
     cli::cli_text("")
   }
 
@@ -219,7 +219,7 @@ check_suit_surfaces <- function(detail = "simple") {
 }
 
 
-check_pipeline_options <- function(detail = "simple") {
+check_pipeline_options <- function() {
   opts <- list(
     verbose = get_verbose(),
     cleanup = get_cleanup(),
@@ -307,7 +307,7 @@ pipeline_need <- function(ok, label, hint) {
 
 #' Describe one pipeline and which of its requirements are missing
 #' @noRd
-make_pipeline <- function(name, fn, needs, install_hints = NULL) {
+make_pipeline <- function(name, fn, needs) {
   checks <- vapply(needs, function(n) n$ok, logical(1))
   missing <- lapply(needs[!checks], function(n) {
     list(label = n$label, hint = n$hint)
@@ -316,8 +316,7 @@ make_pipeline <- function(name, fn, needs, install_hints = NULL) {
     name = name,
     fn = fn,
     ready = all(checks),
-    missing = missing,
-    install_hints = install_hints
+    missing = missing
   )
 }
 

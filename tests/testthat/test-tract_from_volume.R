@@ -41,6 +41,68 @@ describe("tract_centerline_from_points", {
   })
 })
 
+describe("create_tract_from_volume argument forwarding", {
+  it("passes n_points and coord_space on to the tractography builder", {
+    cap <- new.env()
+    local_mocked_bindings(
+      create_tract_from_tractography = function(...) {
+        cap$args <- list(...)
+        invisible(NULL)
+      }
+    )
+    skip_if_not_installed("princurve")
+    skip_if_not_installed("RNifti")
+
+    arr <- array(0L, dim = c(40L, 40L, 40L))
+    for (i in 5:35) {
+      arr[i, i, 20L] <- 1L
+    }
+    vol <- withr::local_tempfile(fileext = ".nii.gz")
+    RNifti::writeNifti(RNifti::asNifti(arr), vol)
+
+    lut <- data.frame(idx = 1L, label = "tract_a", R = 1L, G = 2L, B = 3L)
+
+    create_tract_from_volume(
+      input_volume = vol,
+      input_lut = lut,
+      n_points = 17L
+    )
+
+    expect_identical(cap$args$tube_opts$n_points, 17L)
+    expect_identical(cap$args$coord_space, "mm")
+  })
+
+  it("lets an explicit tube_opts n_points win", {
+    cap <- new.env()
+    local_mocked_bindings(
+      create_tract_from_tractography = function(...) {
+        cap$args <- list(...)
+        invisible(NULL)
+      }
+    )
+    skip_if_not_installed("princurve")
+    skip_if_not_installed("RNifti")
+
+    arr <- array(0L, dim = c(40L, 40L, 40L))
+    for (i in 5:35) {
+      arr[i, i, 20L] <- 1L
+    }
+    vol <- withr::local_tempfile(fileext = ".nii.gz")
+    RNifti::writeNifti(RNifti::asNifti(arr), vol)
+
+    lut <- data.frame(idx = 1L, label = "tract_a", R = 1L, G = 2L, B = 3L)
+
+    create_tract_from_volume(
+      input_volume = vol,
+      input_lut = lut,
+      n_points = 17L,
+      tube_opts = list(n_points = 99L)
+    )
+
+    expect_identical(cap$args$tube_opts$n_points, 99L)
+  })
+})
+
 describe("create_tract_from_volume", {
   it("builds a type=tract atlas from a label volume (3D)", {
     skip_if_not_installed("princurve")

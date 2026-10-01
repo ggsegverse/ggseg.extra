@@ -466,6 +466,7 @@ run_neuromaps_creation <- function(
       read_neuromaps_volume(
         gifti_files[1],
         n_bins = n_bins,
+        label_table = label_table,
         output_dir = output_base
       )
     }

@@ -22,7 +22,9 @@
 #' @param exclude Integer label ids to drop (for example aggregate whole-brain
 #'   fibre masks). Labels with fewer than `min_voxels` voxels, or for which a
 #'   centerline cannot be fit, are dropped automatically with a message.
-#' @param n_points Number of points along each tract centerline.
+#' @param n_points Number of points along each tract centerline. Also sets
+#'   the number of points the tube is built from, unless `tube_opts` names
+#'   `n_points` explicitly.
 #' @param min_voxels Minimum voxel count for a tract to be kept.
 #' @param smoother Principal-curve smoother, passed to
 #'   [princurve::principal_curve()].
@@ -121,14 +123,31 @@ create_tract_from_volume <- function(
   tract_lut <- do.call(rbind, colours)
   rownames(tract_lut) <- NULL
 
-  create_tract_from_tractography(
-    input_tracts = centerlines,
-    input_lut = tract_lut,
-    input_aseg = input_aseg,
-    atlas_name = atlas_name,
-    output_dir = output_dir,
-    verbose = verbose,
-    ...
+  dots <- list(...)
+  dots$tube_opts <- utils::modifyList(
+    list(n_points = n_points),
+    dots$tube_opts %||% list()
+  )
+
+  do.call(
+    create_tract_from_tractography,
+    c(
+      list(
+        input_tracts = centerlines,
+        input_lut = tract_lut,
+        input_aseg = input_aseg,
+        atlas_name = atlas_name,
+        output_dir = output_dir,
+        verbose = verbose,
+        # The centerlines were built in world/mm coordinates just above, so
+        # there is nothing to infer: detect_coords_are_voxels() classifies
+        # any bundle inside [0, 300] as voxel, which a unilateral tract
+        # usually is, and a wrong guess silently places the tract in the
+        # wrong space.
+        coord_space = "mm"
+      ),
+      dots
+    )
   )
 }
 

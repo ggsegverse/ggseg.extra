@@ -2028,13 +2028,32 @@ describe("validate_pipeline_opts", {
 
 
 describe("validate_wholebrain_opts", {
-  it("derives cortical allowed names from create_cortical_from_annotation()", {
+  it("accepts views, the one cortical entry the pipeline reads", {
     result <- validate_wholebrain_opts(
       cortical_opts = list(views = c("lateral", "medial")),
       subcortical_opts = list(),
       cerebellar_opts = list()
     )
     expect_identical(result$cortical$views, c("lateral", "medial"))
+  })
+
+  it("rejects cortical_opts entries that would be silently discarded", {
+    expect_error(
+      validate_wholebrain_opts(
+        cortical_opts = list(dilate = 2),
+        subcortical_opts = list(),
+        cerebellar_opts = list()
+      ),
+      "cortical_opts"
+    )
+    expect_error(
+      validate_wholebrain_opts(
+        cortical_opts = list(input_lut = "lut.txt"),
+        subcortical_opts = list(),
+        cerebellar_opts = list()
+      ),
+      "cortical_opts"
+    )
   })
 
   it("rejects cortical_opts entries managed by the wholebrain pipeline", {
