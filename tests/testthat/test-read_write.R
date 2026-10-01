@@ -164,6 +164,26 @@ describe("read_volume MGZ reorientation", {
 
 
 describe("read_lut", {
+  it("skips a label with a space rather than shifting its colours", {
+    path <- withr::local_tempfile(fileext = ".txt")
+    writeLines(
+      c(
+        "  1  Region 10 20 30 40 50 60",
+        "  2  Good-Region 1 2 3 4"
+      ),
+      path
+    )
+
+    expect_warning(result <- read_lut(path), "unparseable line")
+
+    expect_equal(nrow(result), 1L)
+    expect_equal(result$label, "Good-Region")
+    expect_equal(result$R, 1L)
+    expect_equal(result$G, 2L)
+    expect_equal(result$B, 3L)
+    expect_equal(result$A, 4L)
+  })
+
   it("reads color table from file", {
     lut_file <- test_lut_file()
     skip_if(!file.exists(lut_file), "Test LUT file not found")
@@ -318,6 +338,46 @@ describe("write_lut", {
     expect_error(
       write_lut(ctab, withr::local_tempfile(fileext = ".txt")),
       "must be a single word"
+    )
+  })
+
+  it("refuses a label that read_lut() would read back shifted", {
+    ctab <- data.frame(
+      stringsAsFactors = FALSE,
+      idx = 1L,
+      label = "Bad Label",
+      R = 255,
+      G = 0,
+      B = 0,
+      A = 0
+    )
+
+    expect_error(
+      write_lut(ctab, withr::local_tempfile(fileext = ".txt")),
+      "must be a single word with no whitespace"
+    )
+  })
+
+  it("refuses a colour channel that read_lut() would drop the row for", {
+    ctab <- data.frame(
+      stringsAsFactors = FALSE,
+      idx = 1L,
+      label = "Region1",
+      R = NA_integer_,
+      G = 0,
+      B = 0,
+      A = 0
+    )
+
+    expect_error(
+      write_lut(ctab, withr::local_tempfile(fileext = ".txt")),
+      "must be a whole number"
+    )
+
+    ctab$R <- -1L
+    expect_error(
+      write_lut(ctab, withr::local_tempfile(fileext = ".txt")),
+      "must be a whole number"
     )
   })
 

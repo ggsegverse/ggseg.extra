@@ -1656,3 +1656,29 @@ describe("atlas_smooth(vertex_budget =)", {
     )
   })
 })
+
+
+describe("check_smoothness", {
+  it("accepts NULL and a single number in range", {
+    expect_no_error(check_smoothness(NULL))
+    expect_no_error(check_smoothness(0))
+    expect_no_error(check_smoothness(0.4))
+    expect_no_error(check_smoothness(1))
+  })
+
+  it("refuses NA rather than silently skipping the smoothing", {
+    expect_error(check_smoothness(NA), "single number between 0 and 1")
+  })
+
+  it("refuses a character rather than failing later in the smoother", {
+    expect_error(check_smoothness("0.5"), "single number between 0 and 1")
+  })
+
+  it("refuses input that is not length 1", {
+    expect_error(check_smoothness(c(0.1, 0.2)), "single number between 0 and 1")
+  })
+
+  it("still refuses a number out of range", {
+    expect_error(check_smoothness(2), "must be between 0 and 1")
+  })
+})

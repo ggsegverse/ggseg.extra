@@ -204,6 +204,12 @@ subcort_create_snapshots <- function(
 #' output from an earlier one's, which only needs the superset.
 #' @noRd
 subcort_snapshot_names <- function(colortable, slabs, cortex_slices = NULL) {
+  if (is.null(slabs) || nrow(slabs) == 0L) {
+    cli::cli_abort(
+      "A slab table is required to name this run's snapshots",
+      .internal = TRUE
+    )
+  }
   grid <- expand.grid(
     label = colortable$label,
     view = slabs$name,

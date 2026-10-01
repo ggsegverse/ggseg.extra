@@ -85,8 +85,18 @@ read_trk_streamline <- function(con, n_scalars, n_properties) {
     return(NULL)
   }
 
+  n_values <- n_pts * (3L + n_scalars)
+  values <- readBin(con, "double", n_values, size = 4)
+  if (length(values) < n_values) {
+    cli::cli_abort(c(
+      "Truncated streamline in TRK file",
+      "x" = "Expected {n_values} value{?s}, read {length(values)}.",
+      "i" = "The file ends part-way through a streamline record."
+    ))
+  }
+
   points <- matrix(
-    readBin(con, "double", n_pts * (3 + n_scalars), size = 4),
+    values,
     ncol = 3 + n_scalars,
     byrow = TRUE
   )[, 1:3, drop = FALSE]

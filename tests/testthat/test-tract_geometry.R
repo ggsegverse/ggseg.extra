@@ -1070,3 +1070,25 @@ describe("snapshot_tract_views", {
     expect_identical(stale_cache_files(stale), stale)
   })
 })
+
+
+describe("compute_streamline_density", {
+  it("counts a bare matrix as one streamline, not one per column", {
+    streamline <- cbind(x = 0:4, y = 0, z = 0)
+    centerline <- cbind(0:4, 0, 0)
+
+    density <- compute_streamline_density(streamline, centerline)
+
+    expect_true(all(density == 1))
+  })
+
+  it("gives the same answer for a matrix and that matrix in a list", {
+    streamline <- cbind(x = 0:4, y = 0, z = 0)
+    centerline <- cbind(0:4, 0, 0)
+
+    expect_identical(
+      compute_streamline_density(streamline, centerline),
+      compute_streamline_density(list(streamline), centerline)
+    )
+  })
+})

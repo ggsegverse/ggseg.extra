@@ -29,6 +29,34 @@ describe("atlas_dilate", {
     as.numeric(sf::st_area(g$geometry[g$label == label]))
   }
 
+  it("warns and drops core and palette when erosion empties a region", {
+    expect_warning(
+      out <- atlas_dilate(mk_atlas(), -0.6, labels = "Thalamus"),
+      "Eroded 1 region away entirely"
+    )
+
+    geom <- ggseg.formats::atlas_geom(out)
+    expect_false("Left-Thalamus" %in% geom$label)
+    expect_false("Left-Thalamus" %in% out$core$label)
+    expect_false("Left-Thalamus" %in% names(out$palette))
+  })
+
+  it("returns an atlas that can still be rebuilt after erosion", {
+    suppressWarnings(
+      out <- atlas_dilate(mk_atlas(), -0.6, labels = "Thalamus")
+    )
+
+    expect_no_error(
+      ggseg.formats::ggseg_atlas(
+        atlas = "demo",
+        type = "subcortical",
+        core = out$core,
+        data = out$data,
+        palette = out$palette
+      )
+    )
+  })
+
   it("grows the regions it is given", {
     out <- atlas_dilate(mk_atlas(), 0.5)
     expect_gt(

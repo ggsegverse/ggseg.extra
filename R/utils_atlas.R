@@ -456,14 +456,20 @@ validate_steps <- function(steps, max_step) {
   if (is.null(steps)) {
     return(seq_len(max_step))
   }
-  steps <- as.integer(steps)
-  if (anyNA(steps) || any(steps < 1L) || any(steps > max_step)) {
+  valid <- is.numeric(steps) &&
+    length(steps) > 0L &&
+    !anyNA(steps) &&
+    all(steps == trunc(steps)) &&
+    all(steps >= 1L) &&
+    all(steps <= max_step)
+
+  if (!valid) {
     cli::cli_abort(c(
       "{.arg steps} must be whole numbers between 1 and {max_step}.",
       "x" = "Got {.val {steps}}."
     ))
   }
-  steps
+  as.integer(steps)
 }
 
 

@@ -76,7 +76,7 @@ read_lut <- function(path) {
   lines <- trimws(readLines(path))
   lines <- lines[nzchar(lines)]
   lut_pattern <- paste0(
-    "^\\s*(\\d+)\\s+(.+?)\\s+(\\d+)\\s+(\\d+)",
+    "^\\s*(\\d+)\\s+(\\S+)\\s+(\\d+)\\s+(\\d+)",
     "\\s+(\\d+)\\s+(\\d+)(?:\\s+(\\w+))?\\s*$"
   )
   parsed <- regmatches(lines, regexec(lut_pattern, lines))
@@ -153,6 +153,8 @@ write_lut <- function(x, path) {
     ))
   }
   type <- check_writable_type(x)
+  check_writable_label(x)
+  check_writable_channels(x)
   lls <- c(lut_line(x$idx, x$label, x$R, x$G, x$B, x$A, type), "")
   writeLines(lls, path)
   invisible(lls)
@@ -1285,6 +1287,59 @@ check_writable_type <- function(x) {
     ))
   }
   type
+}
+
+
+#' Check `label` survives a `read_lut()` round trip
+#'
+#' Same reasoning as `check_writable_type()`: `read_lut()` splits on
+#' whitespace, so a label carrying a space does not lose the label alone. The
+#' pattern backtracks into a different, valid-looking parse and every colour
+#' channel shifts one field along, with no warning. Refuse to write one.
+#' @noRd
+check_writable_label <- function(x) {
+  label <- as.character(x$label)
+  bad <- is.na(label) | !grepl("^\\S+$", label)
+  if (any(bad)) {
+    cli::cli_abort(c(
+      "{.field label} must be a single word with no whitespace, or
+      {.fn read_lut} reads the line back with its colours shifted",
+      "x" = "Not a single word: {.val {unique(label[bad])}}",
+      "i" = "Separate words with {.val -} or {.val _}, as FreeSurfer does."
+    ))
+  }
+  invisible(label)
+}
+
+
+#' Check the colour channels survive a `read_lut()` round trip
+#'
+#' `read_lut()` matches each channel with `\\d+`. An `NA`, a negative or a
+#' fractional value writes a field that does not match, and because the
+#' pattern is anchored the whole row is dropped on read - label and colours
+#' with it.
+#' @noRd
+check_writable_channels <- function(x) {
+  channels <- c("idx", "R", "G", "B", "A")
+  bad <- vapply(
+    channels,
+    function(nm) {
+      value <- x[[nm]]
+      if (!is.numeric(value)) {
+        return(TRUE)
+      }
+      any(is.na(value) | value != trunc(value) | value < 0)
+    },
+    logical(1)
+  )
+  if (any(bad)) {
+    cli::cli_abort(c(
+      "{.field {channels[bad]}} must be {?a/} whole number{?s} of zero or
+      more, or {.fn read_lut} drops the whole row",
+      "i" = "Colour channels run from {.val {0L}} to {.val {255L}}."
+    ))
+  }
+  invisible(x)
 }
 
 

@@ -44,6 +44,18 @@ describe("as_verbosity", {
     expect_identical(as_verbosity("bad"), 1L)
   })
 
+  it("falls back rather than erroring on input that is not length 1", {
+    expect_identical(as_verbosity(c(0, 2)), 1L)
+    expect_identical(as_verbosity(c("true", "false")), 1L)
+    expect_identical(as_verbosity(NULL), 1L)
+    expect_identical(as_verbosity(character()), 1L)
+  })
+
+  it("reads a factor by its label, not its level index", {
+    expect_identical(as_verbosity(factor("2")), 2L)
+    expect_identical(as_verbosity(factor("0")), 0L)
+  })
+
   it("accepts spelled-out boolean strings", {
     expect_identical(as_verbosity("false"), 0L)
     expect_identical(as_verbosity("FALSE"), 0L)
