@@ -14,7 +14,6 @@ create_cerebellar_from_volume(
   input_volume = NULL,
   decimate = 0.5,
   verbose = get_verbose(),
-  volume = lifecycle::deprecated(),
   ...,
   input_lut = NULL,
   atlas_name = NULL,
@@ -44,23 +43,18 @@ create_cerebellar_from_volume(
   FreeSurfer's own output. `TRUE` and `FALSE` mean `1` and `0`. Falls
   back to `options("ggseg.extra.verbose")`, then `GGSEG_EXTRA_VERBOSE`.
 
-- volume:
-
-  **\[deprecated\]** Use `input_volume` instead.
-
 - ...:
 
-  Catches the retired `dilate`, `smoothness`, `tolerance` and
-  `smooth_refinements` arguments, so a call that still passes one keeps
-  working and says so. These are post-creation steps now: see
+  Not used. Present so that a mistyped or misplaced argument is reported
+  against this function rather than silently ignored; anything passed
+  here is an error. Geometry is shaped after the build: see
   [`atlas_polish()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_polish.md),
   or
   [`atlas_simplify()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_simplify.md),
   [`atlas_smooth()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_smooth.md)
   and
   [`atlas_dilate()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_dilate.md)
-  individually. Anything else in `...` is an error, as an unused
-  argument always was.
+  individually.
 
 - input_lut:
 

@@ -3,32 +3,15 @@
 Reads a FreeSurfer color lookup table and adds hex colour codes for use
 in plotting.
 
-**\[deprecated\]**
-
-`get_ctab()` was renamed to `get_lut()` for consistency with
-[`read_lut()`](https://ggsegverse.github.io/ggseg.extra/reference/read_lut.md),
-[`write_lut()`](https://ggsegverse.github.io/ggseg.extra/reference/write_lut.md),
-[`is_lut()`](https://ggsegverse.github.io/ggseg.extra/reference/is_lut.md),
-[`lut_add()`](https://ggsegverse.github.io/ggseg.extra/reference/lut_add.md),
-and
-[`lut_combine()`](https://ggsegverse.github.io/ggseg.extra/reference/lut_combine.md).
-
 ## Usage
 
 ``` r
 get_lut(lut)
-
-get_ctab(color_lut)
 ```
 
 ## Arguments
 
 - lut:
-
-  Path to a LUT file, or a data.frame that passes
-  [`is_lut()`](https://ggsegverse.github.io/ggseg.extra/reference/is_lut.md).
-
-- color_lut:
 
   Path to a LUT file, or a data.frame that passes
   [`is_lut()`](https://ggsegverse.github.io/ggseg.extra/reference/is_lut.md).

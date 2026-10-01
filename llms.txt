@@ -209,33 +209,27 @@ Create and maintain a ggseg atlas package
   : Add ggsegverse GitHub Actions workflows to a package
 
 - [`ggseg_atlas_github_actions()`](https://ggsegverse.github.io/ggseg.extra/reference/ggseg_atlas_github_actions.md)
-  [`atlas_github_actions()`](https://ggsegverse.github.io/ggseg.extra/reference/ggseg_atlas_github_actions.md)
-  **\[deprecated\]** :
+  :
 
   Workflows
   [`use_atlas_github_actions()`](https://ggsegverse.github.io/ggseg.extra/reference/use_atlas_github_actions.md)
   can write
 
 - [`sitrep()`](https://ggsegverse.github.io/ggseg.extra/reference/sitrep.md)
-  [`setup_sitrep()`](https://ggsegverse.github.io/ggseg.extra/reference/sitrep.md)
-  **\[deprecated\]** : Report on the ggseg.extra setup
+  : Report on the ggseg.extra setup
 
 ## Lookup Tables
 
 Read, write and build FreeSurfer-style colour lookup tables
 
 - [`read_lut()`](https://ggsegverse.github.io/ggseg.extra/reference/read_lut.md)
-  [`read_ctab()`](https://ggsegverse.github.io/ggseg.extra/reference/read_lut.md)
-  **\[deprecated\]** : Read FreeSurfer LUT
+  : Read FreeSurfer LUT
 - [`write_lut()`](https://ggsegverse.github.io/ggseg.extra/reference/write_lut.md)
-  [`write_ctab()`](https://ggsegverse.github.io/ggseg.extra/reference/write_lut.md)
-  **\[deprecated\]** : Write FreeSurfer LUT
+  : Write FreeSurfer LUT
 - [`get_lut()`](https://ggsegverse.github.io/ggseg.extra/reference/get_lut.md)
-  [`get_ctab()`](https://ggsegverse.github.io/ggseg.extra/reference/get_lut.md)
-  **\[deprecated\]** : Read LUT and add hex colours
+  : Read LUT and add hex colours
 - [`is_lut()`](https://ggsegverse.github.io/ggseg.extra/reference/is_lut.md)
-  [`is_ctab()`](https://ggsegverse.github.io/ggseg.extra/reference/is_lut.md)
-  **\[deprecated\]** : Check if object is a LUT
+  : Check if object is a LUT
 - [`lut_add()`](https://ggsegverse.github.io/ggseg.extra/reference/lut_add.md)
   : Add rows to a FreeSurfer LUT
 - [`lut_combine()`](https://ggsegverse.github.io/ggseg.extra/reference/lut_combine.md)
@@ -250,8 +244,7 @@ Read, write and build FreeSurfer-style colour lookup tables
 Compose slice views and anatomical context for subcortical atlases
 
 - [`subcortical_slabs()`](https://ggsegverse.github.io/ggseg.extra/reference/subcortical_slabs.md)
-  [`subcortical_views()`](https://ggsegverse.github.io/ggseg.extra/reference/subcortical_slabs.md)
-  **\[deprecated\]** : Build subcortical slabs from a label bounding box
+  : Build subcortical slabs from a label bounding box
 - [`aseg_context()`](https://ggsegverse.github.io/ggseg.extra/reference/aseg_context.md)
   : Reduce a subcortical atlas to focus regions on grey anatomical
   context
@@ -323,8 +316,7 @@ Read the formats the creation pipelines accept
   Derive an atlas `region` from a label
 
 - [`get_verbose()`](https://ggsegverse.github.io/ggseg.extra/reference/get_verbose.md)
-  [`is_verbose()`](https://ggsegverse.github.io/ggseg.extra/reference/get_verbose.md)
-  **\[deprecated\]** : Get verbose setting
+  : Get verbose setting
 
 - [`as_verbosity()`](https://ggsegverse.github.io/ggseg.extra/reference/as_verbosity.md)
   : Coerce a value to a verbosity level

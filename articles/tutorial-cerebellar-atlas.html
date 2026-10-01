@@ -28,7 +28,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9087</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9088</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -248,7 +248,7 @@ Stage 2 — simplified and smoothed.
 </div>
 <p>Roughly three quarters of the vertices are gone and the lobules read more clearly for it — the flatmap is a schematic, so nothing is lost by drawing it as one.</p>
 <p>For 3D meshes, <code>decimate</code> controls quadric edge decimation (0–1, default 0.5). A value of 0.5 reduces the mesh to roughly half its original vertex count.</p>
-<p>The <code>tolerance</code>, <code>smoothness</code> and <code>smooth_refinements</code> arguments on the <code>create_*()</code> functions are deprecated. Supplying them emits a lifecycle warning and they are otherwise ignored.</p>
+<p>The <code>tolerance</code>, <code>smoothness</code> and <code>smooth_refinements</code> arguments on the <code>create_*()</code> functions are gone. Shape the geometry after the build instead: see <code><a href="../reference/atlas_polish.html">atlas_polish()</a></code>.</p>
 </section><section class="level2"><h2 id="post-processing">Post-processing<a class="anchor" aria-label="anchor" href="#post-processing"></a>
 </h2>
 <p>The same post-processing tools from the other tutorials work here. What needs removing depends on the parcellation, so look before you cut:</p>

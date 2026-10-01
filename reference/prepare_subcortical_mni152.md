@@ -60,7 +60,7 @@ prepare_subcortical_mni152(
   [`create_wholebrain_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_wholebrain_from_volume.md)
   and
   [`project_volume_anatomical()`](https://ggsegverse.github.io/ggseg.extra/reference/project_volume_anatomical.md).
-  `NULL` is deprecated; it meant `"mni152"`.
+  `NULL` is not accepted; name the spelling you want.
 
 - subjects_dir:
 

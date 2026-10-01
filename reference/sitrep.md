@@ -4,19 +4,10 @@ Checks the system dependencies and R packages the creation pipelines
 need, then reports which pipelines are ready and what to install for the
 ones that are not.
 
-**\[deprecated\]**
-
-`setup_sitrep()` was renamed to `sitrep()`. It reports on the setup
-rather than performing any, which put it beside
-[`setup_atlas_repo()`](https://ggsegverse.github.io/ggseg.extra/reference/setup_atlas_repo.md)
-under a prefix that creates things.
-
 ## Usage
 
 ``` r
 sitrep(detail = c("simple", "minimal", "full"))
-
-setup_sitrep(detail = c("simple", "minimal", "full"))
 ```
 
 ## Arguments
@@ -113,7 +104,7 @@ sitrep("full")
 #>   verbose: 1
 #>   cleanup: TRUE
 #>   skip_existing: TRUE
-#>   output_dir: /tmp/Rtmpoahv74
+#>   output_dir: /tmp/Rtmp1JoeDN
 #> 
 #> ℹ Set via `options(ggseg.extra.<name> = value)` or environment variables
 #>   `GGSEG_EXTRA_<NAME>`

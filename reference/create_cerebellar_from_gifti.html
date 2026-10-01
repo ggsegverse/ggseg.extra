@@ -27,7 +27,7 @@ already contains 2D coordinates."><meta property="og:image" content="https://ggs
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9087</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9088</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -140,12 +140,11 @@ Falls back to <code>options("ggseg.extra.verbose")</code>, then
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
-<dd><p>Catches the retired <code>dilate</code>, <code>smoothness</code>, <code>tolerance</code> and
-<code>smooth_refinements</code> arguments, so a call that still passes one keeps
-working and says so. These are post-creation steps now: see
+<dd><p>Not used. Present so that a mistyped or misplaced argument is
+reported against this function rather than silently ignored; anything
+passed here is an error. Geometry is shaped after the build: see
 <code><a href="atlas_polish.html">atlas_polish()</a></code>, or <code><a href="atlas_simplify.html">atlas_simplify()</a></code>, <code><a href="atlas_smooth.html">atlas_smooth()</a></code> and
-<code><a href="atlas_dilate.html">atlas_dilate()</a></code> individually. Anything else in <code>...</code> is an error, as an
-unused argument always was.</p></dd>
+<code><a href="atlas_dilate.html">atlas_dilate()</a></code> individually.</p></dd>
 
 
 <dt id="arg-volume">volume<a class="anchor" aria-label="anchor" href="#arg-volume"></a></dt>

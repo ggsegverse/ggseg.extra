@@ -1,5 +1,122 @@
 # Changelog
 
+## ggseg.extra 1.9.9.9088
+
+### Breaking changes
+
+Everything deprecated during the 1.9.9.90xx dev cycle has been removed
+rather than carried forward. The last release was 1.6 and there are no
+tags or releases in between, so none of it ever shipped: these are
+deprecations against versions no user could have installed, and keeping
+them only froze mistakes made during development.
+
+Removed functions, with their replacements:
+
+| Removed | Use instead |
+|----|----|
+| `read_ctab()` | [`read_lut()`](https://ggsegverse.github.io/ggseg.extra/reference/read_lut.md) |
+| `write_ctab()` | [`write_lut()`](https://ggsegverse.github.io/ggseg.extra/reference/write_lut.md) |
+| `is_ctab()` | [`is_lut()`](https://ggsegverse.github.io/ggseg.extra/reference/is_lut.md) |
+| `get_ctab()` | [`get_lut()`](https://ggsegverse.github.io/ggseg.extra/reference/get_lut.md) |
+| `is_verbose()` | [`get_verbose()`](https://ggsegverse.github.io/ggseg.extra/reference/get_verbose.md) |
+| `setup_sitrep()` | [`sitrep()`](https://ggsegverse.github.io/ggseg.extra/reference/sitrep.md) |
+| `subcortical_views()` | [`subcortical_slabs()`](https://ggsegverse.github.io/ggseg.extra/reference/subcortical_slabs.md) |
+| `atlas_github_actions()` | [`ggseg_atlas_github_actions()`](https://ggsegverse.github.io/ggseg.extra/reference/ggseg_atlas_github_actions.md) |
+
+Removed arguments, with their replacements:
+
+- `create_subcortical_from_volume(views = )` and
+  `create_tract_from_tractography(views = )` – use `slabs`.
+- `create_cerebellar_from_volume(volume = )` – use `input_volume`.
+- `create_wholebrain_from_volume(regheader = )` – use
+  `projection_opts = list(registration = )`.
+- `mri_surf2surf_rereg(hemi = )` – use `hemisphere`. Existing calls keep
+  working: with the formal gone, `hemi =` partial-matches `hemisphere`.
+- `registration = NULL` in
+  [`project_volume_anatomical()`](https://ggsegverse.github.io/ggseg.extra/reference/project_volume_anatomical.md)
+  and
+  [`prepare_subcortical_mni152()`](https://ggsegverse.github.io/ggseg.extra/reference/prepare_subcortical_mni152.md)
+  – name `"header"` or `"mni152"`. `NULL` meant opposite things in the
+  two functions, which is why it was retired. It is now rejected by
+  `check_registration_spec()`, which
+  [`project_volume_anatomical()`](https://ggsegverse.github.io/ggseg.extra/reference/project_volume_anatomical.md)
+  reaches before it shells out to `mri_convert` rather than after.
+
+Flat arguments that were folded into a list and are no longer accepted
+at all:
+
+- `tube_radius`, `tube_segments`, `n_points` and `centerline_method` in
+  [`create_tract_from_tractography()`](https://ggsegverse.github.io/ggseg.extra/reference/create_tract_from_tractography.md)
+  – use `tube_opts`. Note
+  [`create_tract_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_tract_from_volume.md)
+  keeps its own `n_points` formal; that one is current.
+- `cortical_labels`, `subcortical_labels` and `cerebellar_labels` in
+  [`create_wholebrain_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_wholebrain_from_volume.md)
+  – use `labels`.
+- `projfrac`, `projfrac_range`, `subject`, `registration` and
+  `min_vertices` there – use `projection_opts`. `cerebellar_space` – use
+  `cerebellar_opts`.
+- `dilate`, `smoothness`, `tolerance` and `smooth_refinements` in every
+  creator – these are post-creation steps:
+  [`atlas_polish()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_polish.md),
+  or
+  [`atlas_simplify()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_simplify.md),
+  [`atlas_smooth()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_smooth.md)
+  and
+  [`atlas_dilate()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_dilate.md)
+  individually.
+
+**Atlas build scripts are the thing most likely to notice.** Around 19
+atlas repositories still pass one of these spellings from `data-raw/`,
+most often `tolerance` or `smoothness` into a `create_*()` call. Those
+calls warned before and now abort with “unused argument”, naming the
+creator.
+
+### Minor changes
+
+- `check_post_creation_dots()` is gone; the creators call
+  [`rlang::check_dots_empty()`](https://rlang.r-lib.org/reference/check_dots_empty.html)
+  instead. A mistyped or misplaced argument is still caught against the
+  creator rather than ignored – there is simply nothing accepted any
+  more – and the message now reports the offending values, not just
+  their names:
+
+      Error in create_cortical_from_annotation("lh.aparc.annot", tolerance = 0.1) :
+        `...` must be empty.
+      x Problematic argument:
+      * tolerance = 0.1
+
+  rlang was already in Imports, and it takes the creator’s name from the
+  condition’s `call` rather than from an argument, so there is no
+  parameter for a caller’s own dots to collide with and no per-creator
+  name to keep in step with the function it sits in.
+
+- The two cli messages that told users to pass `cortical_labels`,
+  `subcortical_labels` or `cerebellar_labels` – the step-1:2 inspect
+  guidance and the vertex-count classification warning – now name
+  `labels = list(cortical = , subcortical = , cerebellar = )`. Following
+  the old advice after this release would have produced a hard error at
+  exactly the moment the user was trying to work out what went wrong.
+
+- [`project_volume_anatomical()`](https://ggsegverse.github.io/ggseg.extra/reference/project_volume_anatomical.md)
+  validates `registration` before reading any volume or shelling out to
+  `mri_convert`, rather than after.
+
+- `SUBCORT_MANAGED_ARGS` and `CEREBELLAR_MANAGED_ARGS` became identical
+  once the deprecated `volume` alias went, and are now one
+  `SUB_PIPELINE_MANAGED_ARGS`. `resolve_labels()` and
+  `resolve_projection_opts()` were verbatim copies of `resolve_opts()`
+  and are gone;
+  [`create_wholebrain_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_wholebrain_from_volume.md)
+  calls the shared helper directly, as the tract creator already did.
+
+- `resolve_opts()` moved to `R/utils_atlas.R` and `R/arg_groups.R` is
+  gone, the rest of that file having been the deprecation plumbing.
+
+- `lifecycle` stays in Imports and the `experimental` badges are
+  untouched, so deprecations can be done properly once there is a
+  release to deprecate against.
+
 ## ggseg.extra 1.9.9.9087
 
 ### Documentation
@@ -251,9 +368,7 @@
   read back as label `"Region 10"` with
   `R = 20, G = 30, B = 40, A = 50`. The label is now matched as a single
   whitespace-free token, and a line like that falls into the existing
-  “unparseable line” warning.
-  [`read_ctab()`](https://ggsegverse.github.io/ggseg.extra/reference/read_lut.md)
-  and
+  “unparseable line” warning. `read_ctab()` and
   [`lut_classify_anatomy()`](https://ggsegverse.github.io/ggseg.extra/reference/lut_classify_anatomy.md)
   go through the same reader and were classifying the wrong thing.
 
@@ -621,16 +736,14 @@
 
 ### Breaking changes
 
-- [`atlas_github_actions()`](https://ggsegverse.github.io/ggseg.extra/reference/ggseg_atlas_github_actions.md)
-  is renamed
+- `atlas_github_actions()` is renamed
   [`ggseg_atlas_github_actions()`](https://ggsegverse.github.io/ggseg.extra/reference/ggseg_atlas_github_actions.md).
   It takes no atlas and returns GitHub Actions workflow names, so the
   `atlas_*` prefix put it among the verbs that reshape an atlas – the
   reference index had to exclude it by hand. The old name warns and
   still works.
 
-- [`setup_sitrep()`](https://ggsegverse.github.io/ggseg.extra/reference/sitrep.md)
-  is renamed
+- `setup_sitrep()` is renamed
   [`sitrep()`](https://ggsegverse.github.io/ggseg.extra/reference/sitrep.md).
   It reports on the setup rather than performing any, which put it
   beside
@@ -663,17 +776,12 @@
   what it is for, grouped by what it changes.
 
 - The reference index lists the `lut_*` names rather than the deprecated
-  [`read_ctab()`](https://ggsegverse.github.io/ggseg.extra/reference/read_lut.md),
-  [`write_ctab()`](https://ggsegverse.github.io/ggseg.extra/reference/write_lut.md),
-  [`is_ctab()`](https://ggsegverse.github.io/ggseg.extra/reference/is_lut.md)
+  `read_ctab()`, `write_ctab()`, `is_ctab()` and `get_ctab()` aliases,
   and
-  [`get_ctab()`](https://ggsegverse.github.io/ggseg.extra/reference/get_lut.md)
-  aliases, and
   [`subcortical_slabs()`](https://ggsegverse.github.io/ggseg.extra/reference/subcortical_slabs.md)
-  rather than the deprecated
-  [`subcortical_views()`](https://ggsegverse.github.io/ggseg.extra/reference/subcortical_slabs.md).
-  The sections are regrouped so geometry shaping, curation and file
-  reading are each their own heading.
+  rather than the deprecated `subcortical_views()`. The sections are
+  regrouped so geometry shaping, curation and file reading are each
+  their own heading.
 
 - [`sitrep()`](https://ggsegverse.github.io/ggseg.extra/reference/sitrep.md)
   reports
@@ -1009,8 +1117,7 @@
 
 ### Deprecations
 
-- [`is_verbose()`](https://ggsegverse.github.io/ggseg.extra/reference/get_verbose.md)
-  is deprecated in favour of
+- `is_verbose()` is deprecated in favour of
   [`get_verbose()`](https://ggsegverse.github.io/ggseg.extra/reference/get_verbose.md).
   An `is_` prefix on a function that returns `0L`, `1L` or `2L` invites
   `if (is_verbose())`, which is true at every level but silence – it
@@ -1143,9 +1250,8 @@
 - Extracting contours no longer attaches terra to your search path,
   where it masked functions such as `describe()` and `extract()`.
 
-- [`setup_sitrep()`](https://ggsegverse.github.io/ggseg.extra/reference/sitrep.md)
-  lists optional packages by name; it printed raw `{.pkg ...}` markup
-  instead.
+- `setup_sitrep()` lists optional packages by name; it printed raw
+  `{.pkg ...}` markup instead.
 
 - Building a subcortical atlas with `verbose = FALSE` no longer reports
   the stale slab images it removes.
@@ -1351,9 +1457,8 @@
 
 - `chromote` is gone. Nothing has rendered through a headless browser
   since contours began being traced from the projection itself, so it
-  leaves Suggests, `find_chrome_path()` goes, and
-  [`setup_sitrep()`](https://ggsegverse.github.io/ggseg.extra/reference/sitrep.md)
-  no longer reports a missing Chrome as a problem or carries a `system`
+  leaves Suggests, `find_chrome_path()` goes, and `setup_sitrep()` no
+  longer reports a missing Chrome as a problem or carries a `system`
   element.
 
 - Snapshots are named `.rda`, which is what they have been on disk since
@@ -1520,9 +1625,8 @@
   not applied.
 
 - ImageMagick is no longer required. It leaves `SystemRequirements`,
-  `magick` leaves `Suggests`, and
-  [`setup_sitrep()`](https://ggsegverse.github.io/ggseg.extra/reference/sitrep.md)
-  no longer reports it or tells anyone to install it.
+  `magick` leaves `Suggests`, and `setup_sitrep()` no longer reports it
+  or tells anyone to install it.
 
 - The `processed/` and `masks/` directories are gone, and with them the
   image-processing step: subcortical builds run 8 steps rather than 9,
@@ -2232,8 +2336,7 @@
   `fs_sitrep()` and `fs_cmd(validate_inputs = )`, so an older install
   used to pass the installed-check and then fail mid-pipeline. Accepting
   the install prompt now installs from the ggsegverse r-universe instead
-  of CRAN, whose release could never satisfy the check.
-  [`setup_sitrep()`](https://ggsegverse.github.io/ggseg.extra/reference/sitrep.md)
+  of CRAN, whose release could never satisfy the check. `setup_sitrep()`
   reports an outdated freesurfer as missing and points at
   `muschellij2/freesurfer`.
 
@@ -2545,8 +2648,7 @@ not cost a rebuild.
 
 - [`use_atlas_github_actions()`](https://ggsegverse.github.io/ggseg.extra/reference/use_atlas_github_actions.md)
   adds the shared ggsegverse GitHub Actions workflows to a package, in
-  the style of `usethis::use_github_action()`.
-  [`atlas_github_actions()`](https://ggsegverse.github.io/ggseg.extra/reference/ggseg_atlas_github_actions.md)
+  the style of `usethis::use_github_action()`. `atlas_github_actions()`
   lists what is available. Run it on a freshly scaffolded atlas package,
   or on an existing one to replace hand-maintained workflows with the
   shared set.
@@ -2824,18 +2926,13 @@ atlas types. Old names/arguments keep working with a
   falls back to `label` when `region` is absent.
 - **Renamed** the colour-table reader/writer family for consistency with
   the already-dominant `input_lut` vocabulary used by every atlas
-  builder:
-  [`read_ctab()`](https://ggsegverse.github.io/ggseg.extra/reference/read_lut.md)
-  -\>
+  builder: `read_ctab()` -\>
   [`read_lut()`](https://ggsegverse.github.io/ggseg.extra/reference/read_lut.md),
-  [`write_ctab()`](https://ggsegverse.github.io/ggseg.extra/reference/write_lut.md)
-  -\>
+  `write_ctab()` -\>
   [`write_lut()`](https://ggsegverse.github.io/ggseg.extra/reference/write_lut.md),
-  [`is_ctab()`](https://ggsegverse.github.io/ggseg.extra/reference/is_lut.md)
-  -\>
+  `is_ctab()` -\>
   [`is_lut()`](https://ggsegverse.github.io/ggseg.extra/reference/is_lut.md),
-  [`get_ctab()`](https://ggsegverse.github.io/ggseg.extra/reference/get_lut.md)
-  -\>
+  `get_ctab()` -\>
   [`get_lut()`](https://ggsegverse.github.io/ggseg.extra/reference/get_lut.md).
   [`lut_add()`](https://ggsegverse.github.io/ggseg.extra/reference/lut_add.md)
   and
@@ -2856,9 +2953,7 @@ atlas types. Old names/arguments keep working with a
   [`create_subcortical_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_subcortical_from_volume.md)
   and
   [`create_tract_from_tractography()`](https://ggsegverse.github.io/ggseg.extra/reference/create_tract_from_tractography.md),
-  and
-  [`subcortical_views()`](https://ggsegverse.github.io/ggseg.extra/reference/subcortical_slabs.md)
-  to
+  and `subcortical_views()` to
   [`subcortical_slabs()`](https://ggsegverse.github.io/ggseg.extra/reference/subcortical_slabs.md)
   to match. This distinguishes it from the cortical builders’ `views` (a
   character vector selecting standard panels), which is unchanged and

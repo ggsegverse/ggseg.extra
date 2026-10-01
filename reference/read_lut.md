@@ -4,22 +4,10 @@ Read a FreeSurfer color lookup table file (e.g.,
 `FreeSurferColorLUT.txt` or `ASegStatsLUT.txt`). These files map label
 indices to region names and RGBA colours.
 
-**\[deprecated\]**
-
-`read_ctab()` was renamed to `read_lut()` for consistency with
-[`get_lut()`](https://ggsegverse.github.io/ggseg.extra/reference/get_lut.md),
-[`write_lut()`](https://ggsegverse.github.io/ggseg.extra/reference/write_lut.md),
-[`is_lut()`](https://ggsegverse.github.io/ggseg.extra/reference/is_lut.md),
-[`lut_add()`](https://ggsegverse.github.io/ggseg.extra/reference/lut_add.md),
-and
-[`lut_combine()`](https://ggsegverse.github.io/ggseg.extra/reference/lut_combine.md).
-
 ## Usage
 
 ``` r
 read_lut(path)
-
-read_ctab(path)
 ```
 
 ## Arguments

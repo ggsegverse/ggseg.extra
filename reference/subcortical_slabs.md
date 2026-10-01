@@ -5,28 +5,10 @@ bounding box of the requested labels, ready to pass as the `slabs`
 argument of
 [`create_subcortical_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_subcortical_from_volume.md).
 
-**\[deprecated\]**
-
-`subcortical_views()` was renamed to `subcortical_slabs()` to match the
-`slabs` argument of
-[`create_subcortical_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_subcortical_from_volume.md)
-and
-[`create_tract_from_tractography()`](https://ggsegverse.github.io/ggseg.extra/reference/create_tract_from_tractography.md).
-
 ## Usage
 
 ``` r
 subcortical_slabs(
-  volume,
-  labels,
-  coronal = 0,
-  axial = 0,
-  sagittal = 0,
-  pad = 0,
-  reorient = TRUE
-)
-
-subcortical_views(
   volume,
   labels,
   coronal = 0,

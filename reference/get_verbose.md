@@ -4,20 +4,10 @@ Returns the verbosity level from option, environment variable, or
 default. Checks in order: `ggseg.extra.verbose` option,
 `GGSEG_EXTRA_VERBOSE` env var, then defaults to `1L`.
 
-**\[deprecated\]**
-
-An `is_` prefix on a function returning `0L`, `1L` or `2L` invites
-`if (is_verbose())`, which is true at every level but silence.
-`is_verbose()` was renamed to `get_verbose()`, which takes the same
-optional argument. To coerce a value without consulting the option, use
-[`as_verbosity()`](https://ggsegverse.github.io/ggseg.extra/reference/as_verbosity.md).
-
 ## Usage
 
 ``` r
 get_verbose(verbose = NULL)
-
-is_verbose(verbose = NULL)
 ```
 
 ## Arguments

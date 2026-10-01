@@ -38,8 +38,7 @@ build: see
 [`atlas_polish()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_polish.md)
 and
 [`vignette("post-processing")`](https://ggsegverse.github.io/ggseg.extra/articles/post-processing.md).
-Passing one of the old arguments still warns rather than raising an
-error.
+Passing one of the old arguments is an error.
 
 ## Setting options in R
 

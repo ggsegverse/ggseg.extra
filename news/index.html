@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9087</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9088</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -70,6 +70,69 @@
     </div>
 
     <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.9.9.9088" id="ggsegextra-1999088">ggseg.extra 1.9.9.9088<a class="anchor" aria-label="anchor" href="#ggsegextra-1999088"></a></h2>
+<div class="section level3">
+<h3 id="breaking-changes-1-9-9-9088">Breaking changes<a class="anchor" aria-label="anchor" href="#breaking-changes-1-9-9-9088"></a></h3>
+<p>Everything deprecated during the 1.9.9.90xx dev cycle has been removed rather than carried forward. The last release was 1.6 and there are no tags or releases in between, so none of it ever shipped: these are deprecations against versions no user could have installed, and keeping them only froze mistakes made during development.</p>
+<p>Removed functions, with their replacements:</p>
+<table class="table"><thead><tr><th>Removed</th>
+<th>Use instead</th>
+</tr></thead><tbody><tr><td><code>read_ctab()</code></td>
+<td><code><a href="../reference/read_lut.html">read_lut()</a></code></td>
+</tr><tr><td><code>write_ctab()</code></td>
+<td><code><a href="../reference/write_lut.html">write_lut()</a></code></td>
+</tr><tr><td><code>is_ctab()</code></td>
+<td><code><a href="../reference/is_lut.html">is_lut()</a></code></td>
+</tr><tr><td><code>get_ctab()</code></td>
+<td><code><a href="../reference/get_lut.html">get_lut()</a></code></td>
+</tr><tr><td><code>is_verbose()</code></td>
+<td><code><a href="../reference/get_verbose.html">get_verbose()</a></code></td>
+</tr><tr><td><code>setup_sitrep()</code></td>
+<td><code><a href="../reference/sitrep.html">sitrep()</a></code></td>
+</tr><tr><td><code>subcortical_views()</code></td>
+<td><code><a href="../reference/subcortical_slabs.html">subcortical_slabs()</a></code></td>
+</tr><tr><td><code>atlas_github_actions()</code></td>
+<td><code><a href="../reference/ggseg_atlas_github_actions.html">ggseg_atlas_github_actions()</a></code></td>
+</tr></tbody></table><p>Removed arguments, with their replacements:</p>
+<ul><li>
+<code>create_subcortical_from_volume(views = )</code> and <code>create_tract_from_tractography(views = )</code> – use <code>slabs</code>.</li>
+<li>
+<code>create_cerebellar_from_volume(volume = )</code> – use <code>input_volume</code>.</li>
+<li>
+<code>create_wholebrain_from_volume(regheader = )</code> – use <code>projection_opts = list(registration = )</code>.</li>
+<li>
+<code>mri_surf2surf_rereg(hemi = )</code> – use <code>hemisphere</code>. Existing calls keep working: with the formal gone, <code>hemi =</code> partial-matches <code>hemisphere</code>.</li>
+<li>
+<code>registration = NULL</code> in <code><a href="../reference/project_volume_anatomical.html">project_volume_anatomical()</a></code> and <code><a href="../reference/prepare_subcortical_mni152.html">prepare_subcortical_mni152()</a></code> – name <code>"header"</code> or <code>"mni152"</code>. <code>NULL</code> meant opposite things in the two functions, which is why it was retired. It is now rejected by <code>check_registration_spec()</code>, which <code><a href="../reference/project_volume_anatomical.html">project_volume_anatomical()</a></code> reaches before it shells out to <code>mri_convert</code> rather than after.</li>
+</ul><p>Flat arguments that were folded into a list and are no longer accepted at all:</p>
+<ul><li>
+<code>tube_radius</code>, <code>tube_segments</code>, <code>n_points</code> and <code>centerline_method</code> in <code><a href="../reference/create_tract_from_tractography.html">create_tract_from_tractography()</a></code> – use <code>tube_opts</code>. Note <code><a href="../reference/create_tract_from_volume.html">create_tract_from_volume()</a></code> keeps its own <code>n_points</code> formal; that one is current.</li>
+<li>
+<code>cortical_labels</code>, <code>subcortical_labels</code> and <code>cerebellar_labels</code> in <code><a href="../reference/create_wholebrain_from_volume.html">create_wholebrain_from_volume()</a></code> – use <code>labels</code>.</li>
+<li>
+<code>projfrac</code>, <code>projfrac_range</code>, <code>subject</code>, <code>registration</code> and <code>min_vertices</code> there – use <code>projection_opts</code>. <code>cerebellar_space</code> – use <code>cerebellar_opts</code>.</li>
+<li>
+<code>dilate</code>, <code>smoothness</code>, <code>tolerance</code> and <code>smooth_refinements</code> in every creator – these are post-creation steps: <code><a href="../reference/atlas_polish.html">atlas_polish()</a></code>, or <code><a href="../reference/atlas_simplify.html">atlas_simplify()</a></code>, <code><a href="../reference/atlas_smooth.html">atlas_smooth()</a></code> and <code><a href="../reference/atlas_dilate.html">atlas_dilate()</a></code> individually.</li>
+</ul><p><strong>Atlas build scripts are the thing most likely to notice.</strong> Around 19 atlas repositories still pass one of these spellings from <code>data-raw/</code>, most often <code>tolerance</code> or <code>smoothness</code> into a <code>create_*()</code> call. Those calls warned before and now abort with “unused argument”, naming the creator.</p>
+</div>
+<div class="section level3">
+<h3 id="minor-changes-1-9-9-9088">Minor changes<a class="anchor" aria-label="anchor" href="#minor-changes-1-9-9-9088"></a></h3>
+<ul><li>
+<p><code>check_post_creation_dots()</code> is gone; the creators call <code><a href="https://rlang.r-lib.org/reference/check_dots_empty.html" class="external-link">rlang::check_dots_empty()</a></code> instead. A mistyped or misplaced argument is still caught against the creator rather than ignored – there is simply nothing accepted any more – and the message now reports the offending values, not just their names:</p>
+<pre><code>Error in create_cortical_from_annotation("lh.aparc.annot", tolerance = 0.1) :
+  `...` must be empty.
+x Problematic argument:
+* tolerance = 0.1</code></pre>
+<p>rlang was already in Imports, and it takes the creator’s name from the condition’s <code>call</code> rather than from an argument, so there is no parameter for a caller’s own dots to collide with and no per-creator name to keep in step with the function it sits in.</p>
+</li>
+<li><p>The two cli messages that told users to pass <code>cortical_labels</code>, <code>subcortical_labels</code> or <code>cerebellar_labels</code> – the step-1:2 inspect guidance and the vertex-count classification warning – now name <code>labels = list(cortical = , subcortical = , cerebellar = )</code>. Following the old advice after this release would have produced a hard error at exactly the moment the user was trying to work out what went wrong.</p></li>
+<li><p><code><a href="../reference/project_volume_anatomical.html">project_volume_anatomical()</a></code> validates <code>registration</code> before reading any volume or shelling out to <code>mri_convert</code>, rather than after.</p></li>
+<li><p><code>SUBCORT_MANAGED_ARGS</code> and <code>CEREBELLAR_MANAGED_ARGS</code> became identical once the deprecated <code>volume</code> alias went, and are now one <code>SUB_PIPELINE_MANAGED_ARGS</code>. <code>resolve_labels()</code> and <code>resolve_projection_opts()</code> were verbatim copies of <code>resolve_opts()</code> and are gone; <code><a href="../reference/create_wholebrain_from_volume.html">create_wholebrain_from_volume()</a></code> calls the shared helper directly, as the tract creator already did.</p></li>
+<li><p><code>resolve_opts()</code> moved to <code>R/utils_atlas.R</code> and <code>R/arg_groups.R</code> is gone, the rest of that file having been the deprecation plumbing.</p></li>
+<li><p><code>lifecycle</code> stays in Imports and the <code>experimental</code> badges are untouched, so deprecations can be done properly once there is a release to deprecate against.</p></li>
+</ul></div>
+</div>
+    <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9087" id="ggsegextra-1999087">ggseg.extra 1.9.9.9087<a class="anchor" aria-label="anchor" href="#ggsegextra-1999087"></a></h2>
 <div class="section level3">
 <h3 id="documentation-1-9-9-9087">Documentation<a class="anchor" aria-label="anchor" href="#documentation-1-9-9-9087"></a></h3>
@@ -124,7 +187,7 @@
 </ul></div>
 <div class="section level3">
 <h3 id="bug-fixes-1-9-9-9085-1">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-1-9-9-9085-1"></a></h3>
-<ul><li><p><code><a href="../reference/read_lut.html">read_lut()</a></code> silently misread a LUT line whose label contained a space. The label capture was lazy and the pattern anchored, so instead of failing the match backtracked into a different, valid-looking parse and every colour channel shifted one field along: <code>"1 Region 10 20 30 40 50 60"</code> read back as label <code>"Region 10"</code> with <code>R = 20, G = 30, B = 40, A = 50</code>. The label is now matched as a single whitespace-free token, and a line like that falls into the existing “unparseable line” warning. <code><a href="../reference/read_lut.html">read_ctab()</a></code> and <code><a href="../reference/lut_classify_anatomy.html">lut_classify_anatomy()</a></code> go through the same reader and were classifying the wrong thing.</p></li>
+<ul><li><p><code><a href="../reference/read_lut.html">read_lut()</a></code> silently misread a LUT line whose label contained a space. The label capture was lazy and the pattern anchored, so instead of failing the match backtracked into a different, valid-looking parse and every colour channel shifted one field along: <code>"1 Region 10 20 30 40 50 60"</code> read back as label <code>"Region 10"</code> with <code>R = 20, G = 30, B = 40, A = 50</code>. The label is now matched as a single whitespace-free token, and a line like that falls into the existing “unparseable line” warning. <code>read_ctab()</code> and <code><a href="../reference/lut_classify_anatomy.html">lut_classify_anatomy()</a></code> go through the same reader and were classifying the wrong thing.</p></li>
 <li><p><code><a href="../reference/write_lut.html">write_lut()</a></code> wrote rows that <code><a href="../reference/read_lut.html">read_lut()</a></code> then dropped. <code>check_writable_type()</code> existed precisely to prevent that kind of silent round-trip loss, but guarded only the <code>type</code> column. An <code>NA</code>, negative or fractional colour channel wrote a field the reader cannot match, and because the pattern is anchored the whole row vanished – label and colours with it. <code>label</code> and the five numeric columns are now held to the same standard.</p></li>
 <li><p>Running <code>steps = 1:4</code> on a subcortical atlas with an existing cache deleted every snapshot in it. <code>subcort_resolve_snapshots()</code> threw away the slab table it had just read whenever no step above 4 was requested, and the expected-filename set then collapsed to the single string <code>"_.rda"</code>, so <code>prune_stale_snapshots()</code> deleted the lot and reported it as clearing up after an earlier slab configuration. Contour extraction in a later run then traced an empty directory. The cached slab table is now always returned, and naming snapshots without one is an error rather than a silent empty set.</p></li>
 <li><p><code>tube_radius = "density"</code> silently produced a uniform tube of 0.6 for a tract given as a single <code>N x 3</code> matrix – a documented input form, and what <code><a href="../reference/create_tract_from_volume.html">create_tract_from_volume()</a></code> produces. <code><a href="https://rdrr.io/r/base/funprog.html" class="external-link">Filter()</a></code> over a matrix iterates it column by column, so no element was a matrix, the density came out all zero, and <code>resolve_tube_radius()</code> fell back to the midpoint of its range, eight times thinner than the default.</p></li>
@@ -227,8 +290,8 @@
 <h2 class="pkg-version" data-toc-text="1.9.9.9076" id="ggsegextra-1999076">ggseg.extra 1.9.9.9076<a class="anchor" aria-label="anchor" href="#ggsegextra-1999076"></a></h2>
 <div class="section level3">
 <h3 id="breaking-changes-1-9-9-9076">Breaking changes<a class="anchor" aria-label="anchor" href="#breaking-changes-1-9-9-9076"></a></h3>
-<ul><li><p><code><a href="../reference/ggseg_atlas_github_actions.html">atlas_github_actions()</a></code> is renamed <code><a href="../reference/ggseg_atlas_github_actions.html">ggseg_atlas_github_actions()</a></code>. It takes no atlas and returns GitHub Actions workflow names, so the <code>atlas_*</code> prefix put it among the verbs that reshape an atlas – the reference index had to exclude it by hand. The old name warns and still works.</p></li>
-<li><p><code><a href="../reference/sitrep.html">setup_sitrep()</a></code> is renamed <code><a href="../reference/sitrep.html">sitrep()</a></code>. It reports on the setup rather than performing any, which put it beside <code><a href="../reference/setup_atlas_repo.html">setup_atlas_repo()</a></code> under a prefix that creates things. The old name warns and still works.</p></li>
+<ul><li><p><code>atlas_github_actions()</code> is renamed <code><a href="../reference/ggseg_atlas_github_actions.html">ggseg_atlas_github_actions()</a></code>. It takes no atlas and returns GitHub Actions workflow names, so the <code>atlas_*</code> prefix put it among the verbs that reshape an atlas – the reference index had to exclude it by hand. The old name warns and still works.</p></li>
+<li><p><code>setup_sitrep()</code> is renamed <code><a href="../reference/sitrep.html">sitrep()</a></code>. It reports on the setup rather than performing any, which put it beside <code><a href="../reference/setup_atlas_repo.html">setup_atlas_repo()</a></code> under a prefix that creates things. The old name warns and still works.</p></li>
 </ul></div>
 <div class="section level3">
 <h3 id="new-features-1-9-9-9076">New features<a class="anchor" aria-label="anchor" href="#new-features-1-9-9-9076"></a></h3>
@@ -238,7 +301,7 @@
 <div class="section level3">
 <h3 id="minor-changes-1-9-9-9076">Minor changes<a class="anchor" aria-label="anchor" href="#minor-changes-1-9-9-9076"></a></h3>
 <ul><li><p>The <code>atlas_*</code> manipulation verbs appear in the reference index. They are re-exports, so they lived on the internal <code>reexports</code> page while the section named “Atlas Manipulation” held six functions, none of them the ones <code><a href="../articles/post-processing.html">vignette("post-processing")</a></code> teaches. <code>?atlas-verbs</code> is now a visible page that names each verb and what it is for, grouped by what it changes.</p></li>
-<li><p>The reference index lists the <code>lut_*</code> names rather than the deprecated <code><a href="../reference/read_lut.html">read_ctab()</a></code>, <code><a href="../reference/write_lut.html">write_ctab()</a></code>, <code><a href="../reference/is_lut.html">is_ctab()</a></code> and <code><a href="../reference/get_lut.html">get_ctab()</a></code> aliases, and <code><a href="../reference/subcortical_slabs.html">subcortical_slabs()</a></code> rather than the deprecated <code><a href="../reference/subcortical_slabs.html">subcortical_views()</a></code>. The sections are regrouped so geometry shaping, curation and file reading are each their own heading.</p></li>
+<li><p>The reference index lists the <code>lut_*</code> names rather than the deprecated <code>read_ctab()</code>, <code>write_ctab()</code>, <code>is_ctab()</code> and <code>get_ctab()</code> aliases, and <code><a href="../reference/subcortical_slabs.html">subcortical_slabs()</a></code> rather than the deprecated <code>subcortical_views()</code>. The sections are regrouped so geometry shaping, curation and file reading are each their own heading.</p></li>
 <li><p><code><a href="../reference/sitrep.html">sitrep()</a></code> reports <code><a href="../reference/create_tract_from_volume.html">create_tract_from_volume()</a></code>, which was missing from the pipeline readiness list – it claimed “12/12” while listing eleven creators and one transform. It is 13 now, and <code>princurve</code> is checked alongside the other optional packages.</p></li>
 </ul></div>
 </div>
@@ -403,7 +466,7 @@
 <div class="section level3">
 <h3 id="deprecations-1-9-9-9064">Deprecations<a class="anchor" aria-label="anchor" href="#deprecations-1-9-9-9064"></a></h3>
 <ul><li>
-<code><a href="../reference/get_verbose.html">is_verbose()</a></code> is deprecated in favour of <code><a href="../reference/get_verbose.html">get_verbose()</a></code>. An <code>is_</code> prefix on a function that returns <code>0L</code>, <code>1L</code> or <code>2L</code> invites <code>if (is_verbose())</code>, which is true at every level but silence – it worked by coercion, which is worse than failing. <code><a href="../reference/get_verbose.html">get_verbose()</a></code> now takes the same optional argument, so it resolves an explicit level or falls back to the option and the environment variable, exactly as <code>get_cleanup()</code> and <code>get_output_dir()</code> do. <code><a href="../reference/as_verbosity.html">as_verbosity()</a></code> remains the way to coerce a value without consulting the option.</li>
+<code>is_verbose()</code> is deprecated in favour of <code><a href="../reference/get_verbose.html">get_verbose()</a></code>. An <code>is_</code> prefix on a function that returns <code>0L</code>, <code>1L</code> or <code>2L</code> invites <code>if (is_verbose())</code>, which is true at every level but silence – it worked by coercion, which is worse than failing. <code><a href="../reference/get_verbose.html">get_verbose()</a></code> now takes the same optional argument, so it resolves an explicit level or falls back to the option and the environment variable, exactly as <code>get_cleanup()</code> and <code>get_output_dir()</code> do. <code><a href="../reference/as_verbosity.html">as_verbosity()</a></code> remains the way to coerce a value without consulting the option.</li>
 </ul></div>
 </div>
     <div class="section level2">
@@ -449,7 +512,7 @@
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9055" id="ggsegextra-1999055">ggseg.extra 1.9.9.9055<a class="anchor" aria-label="anchor" href="#ggsegextra-1999055"></a></h2>
 <ul><li><p>Extracting contours no longer attaches terra to your search path, where it masked functions such as <code>describe()</code> and <code>extract()</code>.</p></li>
-<li><p><code><a href="../reference/sitrep.html">setup_sitrep()</a></code> lists optional packages by name; it printed raw <code>{.pkg ...}</code> markup instead.</p></li>
+<li><p><code>setup_sitrep()</code> lists optional packages by name; it printed raw <code>{.pkg ...}</code> markup instead.</p></li>
 <li><p>Building a subcortical atlas with <code>verbose = FALSE</code> no longer reports the stale slab images it removes.</p></li>
 <li><p>A relative <code>output_dir</code> for a subcortical, tract or whole-brain atlas is now made absolute on every platform. Before, it stayed relative unless the directory already existed, except on Windows.</p></li>
 <li><p>Pipelines report their total run time the way cli reports each step (<code>Pipeline completed [1m 15s]</code>), instead of in minutes rounded to one decimal, which showed anything under three seconds as “0 minutes”.</p></li>
@@ -511,7 +574,7 @@
 </ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9048" id="ggsegextra-1999048">ggseg.extra 1.9.9.9048<a class="anchor" aria-label="anchor" href="#ggsegextra-1999048"></a></h2>
-<ul><li><p><code>chromote</code> is gone. Nothing has rendered through a headless browser since contours began being traced from the projection itself, so it leaves Suggests, <code>find_chrome_path()</code> goes, and <code><a href="../reference/sitrep.html">setup_sitrep()</a></code> no longer reports a missing Chrome as a problem or carries a <code>system</code> element.</p></li>
+<ul><li><p><code>chromote</code> is gone. Nothing has rendered through a headless browser since contours began being traced from the projection itself, so it leaves Suggests, <code>find_chrome_path()</code> goes, and <code>setup_sitrep()</code> no longer reports a missing Chrome as a problem or carries a <code>system</code> element.</p></li>
 <li>
 <p>Snapshots are named <code>.rda</code>, which is what they have been on disk since the PNG round-trip was removed. <code>structure_snapshot_file()</code> still spelled them <code>.png</code>, and three mechanisms keyed on that name had been quietly doing nothing:</p>
 <ul><li>
@@ -560,7 +623,7 @@
 </li>
 <li><p><strong>Distances now mean voxels.</strong> The canvas scaled every atlas by <code>400 / max(dim)</code>, so the same <code>atlas_dilate(0.6)</code> was a different physical distance on every atlas – 1.56 pixels per voxel on a 256-cube, 1.84 on a 182x218 volume. In voxel space <code>0.6</code> is 0.6 voxels everywhere, usually 0.6 mm. Values tuned against the old canvas want dividing by that atlas’s old scale factor; <code>atlas_smooth(smoothness =)</code> is a distance too and moves the same way.</p></li>
 <li><p>The build-time <code>dilate</code> argument is no longer applied. It has been deprecated since 1.9.9.9016 in favour of <code><a href="../reference/atlas_dilate.html">atlas_dilate()</a></code> on the finished atlas, which is where it belongs – retuning it there does not mean rebuilding. Passing it still warns, and now says it is not applied.</p></li>
-<li><p>ImageMagick is no longer required. It leaves <code>SystemRequirements</code>, <code>magick</code> leaves <code>Suggests</code>, and <code><a href="../reference/sitrep.html">setup_sitrep()</a></code> no longer reports it or tells anyone to install it.</p></li>
+<li><p>ImageMagick is no longer required. It leaves <code>SystemRequirements</code>, <code>magick</code> leaves <code>Suggests</code>, and <code>setup_sitrep()</code> no longer reports it or tells anyone to install it.</p></li>
 <li><p>The <code>processed/</code> and <code>masks/</code> directories are gone, and with them the image-processing step: subcortical builds run 8 steps rather than 9, tract builds 5 rather than 6.</p></li>
 </ul></div>
     <div class="section level2">
@@ -740,7 +803,7 @@
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9017" id="ggsegextra-1999017">ggseg.extra 1.9.9.9017<a class="anchor" aria-label="anchor" href="#ggsegextra-1999017"></a></h2>
 <ul><li><p>The README and CI now install freesurfer from <code>muschellij2/freesurfer</code>: the refactor it needed has been merged upstream, so the <code>drmowinckels/freesurfer@refactor</code> fork is no longer required (<a href="https://github.com/ggsegverse/ggseg.extra/issues/72" class="external-link">#72</a>, <a href="https://github.com/ggsegverse/ggseg.extra/issues/98" class="external-link">#98</a>). DESCRIPTION declares <code>Remotes: muschellij2/freesurfer</code>, so <code>pak</code> and <code>remotes</code> resolve the required version without extra steps.</p></li>
-<li><p>freesurfer is now required at <code>&gt;= 1.8.1.902</code>. The CRAN release lacks <code>fs_sitrep()</code> and <code>fs_cmd(validate_inputs = )</code>, so an older install used to pass the installed-check and then fail mid-pipeline. Accepting the install prompt now installs from the ggsegverse r-universe instead of CRAN, whose release could never satisfy the check. <code><a href="../reference/sitrep.html">setup_sitrep()</a></code> reports an outdated freesurfer as missing and points at <code>muschellij2/freesurfer</code>.</p></li>
+<li><p>freesurfer is now required at <code>&gt;= 1.8.1.902</code>. The CRAN release lacks <code>fs_sitrep()</code> and <code>fs_cmd(validate_inputs = )</code>, so an older install used to pass the installed-check and then fail mid-pipeline. Accepting the install prompt now installs from the ggsegverse r-universe instead of CRAN, whose release could never satisfy the check. <code>setup_sitrep()</code> reports an outdated freesurfer as missing and points at <code>muschellij2/freesurfer</code>.</p></li>
 </ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9016" id="ggsegextra-1999016">ggseg.extra 1.9.9.9016<a class="anchor" aria-label="anchor" href="#ggsegextra-1999016"></a></h2>
@@ -831,7 +894,7 @@
 <div class="section level3">
 <h3 id="new-features-1-9-9-9010">New features<a class="anchor" aria-label="anchor" href="#new-features-1-9-9-9010"></a></h3>
 <ul><li>
-<code><a href="../reference/use_atlas_github_actions.html">use_atlas_github_actions()</a></code> adds the shared ggsegverse GitHub Actions workflows to a package, in the style of <code>usethis::use_github_action()</code>. <code><a href="../reference/ggseg_atlas_github_actions.html">atlas_github_actions()</a></code> lists what is available. Run it on a freshly scaffolded atlas package, or on an existing one to replace hand-maintained workflows with the shared set.</li>
+<code><a href="../reference/use_atlas_github_actions.html">use_atlas_github_actions()</a></code> adds the shared ggsegverse GitHub Actions workflows to a package, in the style of <code>usethis::use_github_action()</code>. <code>atlas_github_actions()</code> lists what is available. Run it on a freshly scaffolded atlas package, or on an existing one to replace hand-maintained workflows with the shared set.</li>
 <li>
 <code><a href="../reference/setup_atlas_repo.html">setup_atlas_repo()</a></code> gains <code>github_actions</code>, TRUE by default.</li>
 </ul></div>
@@ -926,7 +989,7 @@
 <div class="section level3">
 <h3 id="sf-smoothing-moves-out-of-atlas-creation-1-9-9-9005">sf smoothing moves out of atlas creation<a class="anchor" aria-label="anchor" href="#sf-smoothing-moves-out-of-atlas-creation-1-9-9-9005"></a></h3>
 <p>Pipeline-time simplification of 2D sf geometry was the most common reason to re-run an otherwise expensive <code>create_*()</code> pipeline (10+ minutes for volumetric atlases). All <code>create_*()</code> functions now return raw, unsmoothed sf polygons. The (cheap) <code><a href="../reference/atlas_smooth.html">atlas_smooth()</a></code> post-processing step is the single place where simplification level is decided, so you can iterate freely on a cached atlas:</p>
-<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">atlas</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/create_cortical_from_annotation.html">create_cortical_from_annotation</a></span><span class="op">(</span><span class="va">...</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/atlas_smooth.html">atlas_smooth</a></span><span class="op">(</span>keep <span class="op">=</span> <span class="fl">0.2</span>, exclude <span class="op">=</span> <span class="st">"cortex_"</span><span class="op">)</span></span></code></pre></div>
 <ul><li>3D mesh smoothing (tessellation, FreeSurfer <code>mris_smooth</code>, decimation) is unchanged.</li>
@@ -946,13 +1009,13 @@
 <ul><li>
 <strong>Fixed:</strong> <code><a href="../reference/create_cortical_from_labels.html">create_cortical_from_labels()</a></code> and <code><a href="../reference/create_tract_from_tractography.html">create_tract_from_tractography()</a></code> silently dropped region names when <code>input_lut</code> was a FreeSurfer-style LUT <strong>file path</strong>, because the parser only looked for a <code>region</code> column and files parse into an <code>idx</code>/<code>label</code> schema instead. It now falls back to <code>label</code> when <code>region</code> is absent.</li>
 <li>
-<strong>Renamed</strong> the colour-table reader/writer family for consistency with the already-dominant <code>input_lut</code> vocabulary used by every atlas builder: <code><a href="../reference/read_lut.html">read_ctab()</a></code> -&gt; <code><a href="../reference/read_lut.html">read_lut()</a></code>, <code><a href="../reference/write_lut.html">write_ctab()</a></code> -&gt; <code><a href="../reference/write_lut.html">write_lut()</a></code>, <code><a href="../reference/is_lut.html">is_ctab()</a></code> -&gt; <code><a href="../reference/is_lut.html">is_lut()</a></code>, <code><a href="../reference/get_lut.html">get_ctab()</a></code> -&gt; <code><a href="../reference/get_lut.html">get_lut()</a></code>. <code><a href="../reference/lut_add.html">lut_add()</a></code> and <code><a href="../reference/lut_combine.html">lut_combine()</a></code> are unchanged.</li>
+<strong>Renamed</strong> the colour-table reader/writer family for consistency with the already-dominant <code>input_lut</code> vocabulary used by every atlas builder: <code>read_ctab()</code> -&gt; <code><a href="../reference/read_lut.html">read_lut()</a></code>, <code>write_ctab()</code> -&gt; <code><a href="../reference/write_lut.html">write_lut()</a></code>, <code>is_ctab()</code> -&gt; <code><a href="../reference/is_lut.html">is_lut()</a></code>, <code>get_ctab()</code> -&gt; <code><a href="../reference/get_lut.html">get_lut()</a></code>. <code><a href="../reference/lut_add.html">lut_add()</a></code> and <code><a href="../reference/lut_combine.html">lut_combine()</a></code> are unchanged.</li>
 <li>
 <strong>Renamed</strong> <code><a href="../reference/create_cerebellar_from_volume.html">create_cerebellar_from_volume()</a></code>’s <code>volume</code> argument to <code>input_volume</code>, matching its <code><a href="../reference/create_subcortical_from_volume.html">create_subcortical_from_volume()</a></code> and <code><a href="../reference/create_wholebrain_from_volume.html">create_wholebrain_from_volume()</a></code> siblings.</li>
 <li>
 <strong>Renamed</strong> <code><a href="../reference/mri_surf2surf_rereg.html">mri_surf2surf_rereg()</a></code>’s <code>hemi</code> argument to <code>hemisphere</code>, matching the cortical builders. The default order (<code>"lh"</code> first) is unchanged.</li>
 <li>
-<strong>Renamed</strong> the volumetric <code>views</code> argument to <code>slabs</code> on <code><a href="../reference/create_subcortical_from_volume.html">create_subcortical_from_volume()</a></code> and <code><a href="../reference/create_tract_from_tractography.html">create_tract_from_tractography()</a></code>, and <code><a href="../reference/subcortical_slabs.html">subcortical_views()</a></code> to <code><a href="../reference/subcortical_slabs.html">subcortical_slabs()</a></code> to match. This distinguishes it from the cortical builders’ <code>views</code> (a character vector selecting standard panels), which is unchanged and unrelated.</li>
+<strong>Renamed</strong> the volumetric <code>views</code> argument to <code>slabs</code> on <code><a href="../reference/create_subcortical_from_volume.html">create_subcortical_from_volume()</a></code> and <code><a href="../reference/create_tract_from_tractography.html">create_tract_from_tractography()</a></code>, and <code>subcortical_views()</code> to <code><a href="../reference/subcortical_slabs.html">subcortical_slabs()</a></code> to match. This distinguishes it from the cortical builders’ <code>views</code> (a character vector selecting standard panels), which is unchanged and unrelated.</li>
 <li>
 <strong>Reordered</strong> arguments across all five builder families onto one shared layout: primary input(s), <code>input_lut</code>, <code>atlas_name</code>, <code>output_dir</code>, type-specific structural arguments, refinement arguments (<code>vertex_size_limits</code>, <code>dilate</code>, <code>decimate</code>), the deprecated <code>tolerance</code>/<code>smoothness</code>/<code>smooth_refinements</code> trio, <code>cleanup</code>, <code>verbose</code>, <code>skip_existing</code>, <code>steps</code>, then any function-specific trailing arguments. Every call site in this package’s own tests, vignettes, and examples already used named arguments for everything but the first one or two positional inputs, so this should be a no-op for callers doing the same; it is a silent behaviour change for any positional call beyond that.</li>
 <li>Internal: <code><a href="../reference/create_wholebrain_from_volume.html">create_wholebrain_from_volume()</a></code>’s <code>cortical_opts</code> allow-list is now derived reflectively from <code><a href="../reference/create_cortical_from_annotation.html">create_cortical_from_annotation()</a></code>’s formals (matching how <code>subcortical_opts</code>/<code>cerebellar_opts</code> already worked) instead of a hand-maintained constant that could drift.</li>

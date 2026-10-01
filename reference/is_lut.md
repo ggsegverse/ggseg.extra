@@ -1,21 +1,11 @@
 # Check if object is a LUT
 
-**\[deprecated\]**
-
-`is_ctab()` was renamed to `is_lut()` for consistency with
-[`read_lut()`](https://ggsegverse.github.io/ggseg.extra/reference/read_lut.md),
-[`write_lut()`](https://ggsegverse.github.io/ggseg.extra/reference/write_lut.md),
-[`get_lut()`](https://ggsegverse.github.io/ggseg.extra/reference/get_lut.md),
-[`lut_add()`](https://ggsegverse.github.io/ggseg.extra/reference/lut_add.md),
-and
-[`lut_combine()`](https://ggsegverse.github.io/ggseg.extra/reference/lut_combine.md).
+Check if object is a LUT
 
 ## Usage
 
 ``` r
 is_lut(x)
-
-is_ctab(x)
 ```
 
 ## Arguments

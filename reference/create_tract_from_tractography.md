@@ -21,7 +21,6 @@ the tube thicker where more streamlines pass through.
 create_tract_from_tractography(
   input_tracts,
   verbose = get_verbose(),
-  views = lifecycle::deprecated(),
   ...,
   input_aseg = NULL,
   input_lut = NULL,
@@ -51,23 +50,18 @@ create_tract_from_tractography(
   FreeSurfer's own output. `TRUE` and `FALSE` mean `1` and `0`. Falls
   back to `options("ggseg.extra.verbose")`, then `GGSEG_EXTRA_VERBOSE`.
 
-- views:
-
-  **\[deprecated\]** Use `slabs` instead.
-
 - ...:
 
-  Catches the retired `dilate`, `smoothness`, `tolerance` and
-  `smooth_refinements` arguments, so a call that still passes one keeps
-  working and says so. These are post-creation steps now: see
+  Not used. Present so that a mistyped or misplaced argument is reported
+  against this function rather than silently ignored; anything passed
+  here is an error. Geometry is shaped after the build: see
   [`atlas_polish()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_polish.md),
   or
   [`atlas_simplify()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_simplify.md),
   [`atlas_smooth()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_smooth.md)
   and
   [`atlas_dilate()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_dilate.md)
-  individually. Anything else in `...` is an error, as an unused
-  argument always was.
+  individually.
 
 - input_aseg:
 
@@ -108,8 +102,7 @@ create_tract_from_tractography(
     its circumference. `tube_radius` also takes `"density"`, to scale
     thickness by how many streamlines pass through each point.
 
-  Unknown entries error. Replaces the flat `tube_radius`,
-  `tube_segments`, `n_points` and `centerline_method` arguments.
+  Unknown entries error.
 
 - slabs:
 

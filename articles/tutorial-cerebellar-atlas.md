@@ -250,8 +250,9 @@ For 3D meshes, `decimate` controls quadric edge decimation (0–1, default
 vertex count.
 
 The `tolerance`, `smoothness` and `smooth_refinements` arguments on the
-`create_*()` functions are deprecated. Supplying them emits a lifecycle
-warning and they are otherwise ignored.
+`create_*()` functions are gone. Shape the geometry after the build
+instead: see
+[`atlas_polish()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_polish.md).
 
 ## Post-processing
 

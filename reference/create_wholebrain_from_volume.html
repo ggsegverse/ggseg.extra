@@ -21,7 +21,7 @@ Requires FreeSurfer."><meta property="og:image" content="https://ggsegverse.gith
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9087</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9088</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -97,7 +97,6 @@ the mesh-based subcortical pipeline.</p>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">create_wholebrain_from_volume</span><span class="op">(</span></span>
 <span>  <span class="va">input_volume</span>,</span>
 <span>  verbose <span class="op">=</span> <span class="fu"><a href="get_verbose.html">get_verbose</a></span><span class="op">(</span><span class="op">)</span>,</span>
-<span>  regheader <span class="op">=</span> <span class="fu">lifecycle</span><span class="fu">::</span><span class="fu"><a href="https://lifecycle.r-lib.org/reference/deprecated.html" class="external-link">deprecated</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  <span class="va">...</span>,</span>
 <span>  input_lut <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  atlas_name <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -129,18 +128,10 @@ Falls back to <code>options("ggseg.extra.verbose")</code>, then
 <code>GGSEG_EXTRA_VERBOSE</code>.</p></dd>
 
 
-<dt id="arg-regheader">regheader<a class="anchor" aria-label="anchor" href="#arg-regheader"></a></dt>
-<dd><p><a href="https://lifecycle.r-lib.org/articles/stages.html#deprecated" class="external-link"><img src="figures/lifecycle-deprecated.svg" alt="[Deprecated]"></a> Use
-<code>projection_opts = list(registration = )</code> instead. <code>TRUE</code> maps to
-<code>"header"</code>, <code>FALSE</code> to <code>"mni152"</code>. Supplying both is an error.</p></dd>
-
-
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
-<dd><p><a href="https://lifecycle.r-lib.org/articles/stages.html#deprecated" class="external-link"><img src="figures/lifecycle-deprecated.svg" alt="[Deprecated]"></a> The flat arguments that
-<code>labels</code>, <code>projection_opts</code> and <code>cerebellar_opts</code> replaced. Each is
-folded into the list that now holds it and raises a deprecation warning;
-supplying both the old argument and the list entry it maps to is an
-error rather than a precedence rule.</p></dd>
+<dd><p>Not used. Present so a mistyped or misplaced argument is
+reported against this function, naming the list that should hold it,
+rather than silently ignored; anything passed here is an error.</p></dd>
 
 
 <dt id="arg-input-lut">input_lut<a class="anchor" aria-label="anchor" href="#arg-input-lut"></a></dt>
@@ -171,8 +162,7 @@ lookup table's <code>type</code> column and the vertex-count heuristic. Entries:
 <li><p><code>cerebellar</code>: label names to send through the cerebellar SUIT
 flatmap pipeline, using the bundled surfaces from
 <code><a href="suit_flatmap_path.html">suit_flatmap_path()</a></code> and <code><a href="suit_3d_path.html">suit_3d_path()</a></code>.</p></li>
-</ul><p>Unnamed or unknown entries error. Replaces the <code>cortical_labels</code>,
-<code>subcortical_labels</code> and <code>cerebellar_labels</code> arguments.</p></dd>
+</ul><p>Unnamed or unknown entries error.</p></dd>
 
 
 <dt id="arg-projection-opts">projection_opts<a class="anchor" aria-label="anchor" href="#arg-projection-opts"></a></dt>
@@ -188,8 +178,7 @@ depth <code>projfrac</code> instead.</p></li>
 the vertex-count heuristic calls it cortical. Only reached for
 labels that <code>labels</code> and a <code>type</code> column leave unclassified; see
 <strong>Label classification</strong>.</p></li>
-</ul><p>Unknown entries error. Replaces the flat <code>subject</code>, <code>registration</code>,
-<code>projfrac</code>, <code>projfrac_range</code> and <code>min_vertices</code> arguments.</p></dd>
+</ul><p>Unknown entries error.</p></dd>
 
 
 <dt id="arg-cortical-opts">cortical_opts<a class="anchor" aria-label="anchor" href="#arg-cortical-opts"></a></dt>
@@ -204,8 +193,7 @@ Leave empty to use defaults.</p></dd>
 be set here except those managed by the wholebrain pipeline
 (<code>input_volume</code>, <code>input_lut</code>, <code>atlas_name</code>, <code>output_dir</code>, <code>verbose</code>,
 <code>cleanup</code>, <code>skip_existing</code>). Use this to tune <code>vertex_size_limits</code>,
-<code>decimate</code>, <code>slabs</code>. The deprecated <code>dilate</code>/<code>tolerance</code>/<code>smoothness</code>
-entries trigger a lifecycle warning and are no longer applied.</p></dd>
+<code>decimate</code>, <code>slabs</code>.</p></dd>
 
 
 <dt id="arg-cerebellar-opts">cerebellar_opts<a class="anchor" aria-label="anchor" href="#arg-cerebellar-opts"></a></dt>

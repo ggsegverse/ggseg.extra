@@ -130,7 +130,7 @@ and
 [`prepare_subcortical_mni152()`](https://ggsegverse.github.io/ggseg.extra/reference/prepare_subcortical_mni152.md).
 An LTA must be registered to a volume on the same subject's conformed
 grid as `aparc+aseg.mgz`, which any `recon-all` output is; a mismatch is
-caught and aborted. `NULL` is deprecated and meant `"header"`.
+caught and aborted. `NULL` is not accepted; name the spelling you want.
 
 ## What `protect_cortex` protects
 

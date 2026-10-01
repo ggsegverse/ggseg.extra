@@ -16,7 +16,6 @@ Requires FreeSurfer.
 create_wholebrain_from_volume(
   input_volume,
   verbose = get_verbose(),
-  regheader = lifecycle::deprecated(),
   ...,
   input_lut = NULL,
   atlas_name = NULL,
@@ -44,19 +43,11 @@ create_wholebrain_from_volume(
   FreeSurfer's own output. `TRUE` and `FALSE` mean `1` and `0`. Falls
   back to `options("ggseg.extra.verbose")`, then `GGSEG_EXTRA_VERBOSE`.
 
-- regheader:
-
-  **\[deprecated\]** Use `projection_opts = list(registration = )`
-  instead. `TRUE` maps to `"header"`, `FALSE` to `"mni152"`. Supplying
-  both is an error.
-
 - ...:
 
-  **\[deprecated\]** The flat arguments that `labels`, `projection_opts`
-  and `cerebellar_opts` replaced. Each is folded into the list that now
-  holds it and raises a deprecation warning; supplying both the old
-  argument and the list entry it maps to is an error rather than a
-  precedence rule.
+  Not used. Present so a mistyped or misplaced argument is reported
+  against this function, naming the list that should hold it, rather
+  than silently ignored; anything passed here is an error.
 
 - input_lut:
 
@@ -92,8 +83,7 @@ create_wholebrain_from_volume(
     and
     [`suit_3d_path()`](https://ggsegverse.github.io/ggseg.extra/reference/suit_3d_path.md).
 
-  Unnamed or unknown entries error. Replaces the `cortical_labels`,
-  `subcortical_labels` and `cerebellar_labels` arguments.
+  Unnamed or unknown entries error.
 
 - projection_opts:
 
@@ -114,8 +104,7 @@ create_wholebrain_from_volume(
     that `labels` and a `type` column leave unclassified; see **Label
     classification**.
 
-  Unknown entries error. Replaces the flat `subject`, `registration`,
-  `projfrac`, `projfrac_range` and `min_vertices` arguments.
+  Unknown entries error.
 
 - cortical_opts:
 
@@ -130,9 +119,7 @@ create_wholebrain_from_volume(
   Any argument of that function may be set here except those managed by
   the wholebrain pipeline (`input_volume`, `input_lut`, `atlas_name`,
   `output_dir`, `verbose`, `cleanup`, `skip_existing`). Use this to tune
-  `vertex_size_limits`, `decimate`, `slabs`. The deprecated
-  `dilate`/`tolerance`/`smoothness` entries trigger a lifecycle warning
-  and are no longer applied.
+  `vertex_size_limits`, `decimate`, `slabs`.
 
 - cerebellar_opts:
 

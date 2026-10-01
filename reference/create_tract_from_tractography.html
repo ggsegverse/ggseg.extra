@@ -27,7 +27,7 @@ the tube thicker where more streamlines pass through.'><meta property="og:image"
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9087</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9088</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -106,7 +106,6 @@ the tube thicker where more streamlines pass through.</p>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">create_tract_from_tractography</span><span class="op">(</span></span>
 <span>  <span class="va">input_tracts</span>,</span>
 <span>  verbose <span class="op">=</span> <span class="fu"><a href="get_verbose.html">get_verbose</a></span><span class="op">(</span><span class="op">)</span>,</span>
-<span>  views <span class="op">=</span> <span class="fu">lifecycle</span><span class="fu">::</span><span class="fu"><a href="https://lifecycle.r-lib.org/reference/deprecated.html" class="external-link">deprecated</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  <span class="va">...</span>,</span>
 <span>  input_aseg <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  input_lut <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -139,17 +138,12 @@ Falls back to <code>options("ggseg.extra.verbose")</code>, then
 <code>GGSEG_EXTRA_VERBOSE</code>.</p></dd>
 
 
-<dt id="arg-views">views<a class="anchor" aria-label="anchor" href="#arg-views"></a></dt>
-<dd><p><a href="https://lifecycle.r-lib.org/articles/stages.html#deprecated" class="external-link"><img src="figures/lifecycle-deprecated.svg" alt="[Deprecated]"></a> Use <code>slabs</code> instead.</p></dd>
-
-
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
-<dd><p>Catches the retired <code>dilate</code>, <code>smoothness</code>, <code>tolerance</code> and
-<code>smooth_refinements</code> arguments, so a call that still passes one keeps
-working and says so. These are post-creation steps now: see
+<dd><p>Not used. Present so that a mistyped or misplaced argument is
+reported against this function rather than silently ignored; anything
+passed here is an error. Geometry is shaped after the build: see
 <code><a href="atlas_polish.html">atlas_polish()</a></code>, or <code><a href="atlas_simplify.html">atlas_simplify()</a></code>, <code><a href="atlas_smooth.html">atlas_smooth()</a></code> and
-<code><a href="atlas_dilate.html">atlas_dilate()</a></code> individually. Anything else in <code>...</code> is an error, as an
-unused argument always was.</p></dd>
+<code><a href="atlas_dilate.html">atlas_dilate()</a></code> individually.</p></dd>
 
 
 <dt id="arg-input-aseg">input_aseg<a class="anchor" aria-label="anchor" href="#arg-input-aseg"></a></dt>
@@ -187,8 +181,7 @@ tubes are consistent.</p></li>
 the tube drawn along that centerline, and how many segments go
 around its circumference. <code>tube_radius</code> also takes <code>"density"</code>, to
 scale thickness by how many streamlines pass through each point.</p></li>
-</ul><p>Unknown entries error. Replaces the flat <code>tube_radius</code>,
-<code>tube_segments</code>, <code>n_points</code> and <code>centerline_method</code> arguments.</p></dd>
+</ul><p>Unknown entries error.</p></dd>
 
 
 <dt id="arg-slabs">slabs<a class="anchor" aria-label="anchor" href="#arg-slabs"></a></dt>
