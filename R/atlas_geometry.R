@@ -295,35 +295,6 @@ atlas_dilate <- function(atlas, amount, labels = NULL, exclude = NULL) {
 }
 
 
-#' Keep `core` and `palette` in step with geometry an erosion removed
-#'
-#' A negative `amount` can shrink a region away entirely. Dropping the empty
-#' geometry alone leaves `core` and `palette` still claiming it, and the
-#' atlas no longer passes `ggseg.formats::ggseg_atlas()` - so the erosion
-#' returns an object the caller cannot rebuild or save.
-#' @noRd
-drop_eroded_regions <- function(atlas, surviving_labels, emptied) {
-  if (!any(emptied)) {
-    return(atlas)
-  }
-
-  lost <- setdiff(atlas$core$label, surviving_labels)
-  if (length(lost) == 0L) {
-    return(atlas)
-  }
-
-  cli::cli_warn(c(
-    "Eroded {length(lost)} region{?s} away entirely",
-    "x" = "Removed from the atlas: {.val {lost}}",
-    "i" = "Use a smaller {.arg amount}, or {.arg exclude} these labels."
-  ))
-
-  atlas$core <- atlas$core[!atlas$core$label %in% lost, , drop = FALSE]
-  if (!is.null(atlas$palette)) {
-    atlas$palette <- atlas$palette[!names(atlas$palette) %in% lost]
-  }
-  atlas
-}
 
 
 #' Count the vertices an atlas carries
@@ -734,6 +705,37 @@ geometry_op_subset <- function(sf_data, labels, exclude, op, what) {
   out <- out[order(out$.op_order), , drop = FALSE]
   out$.op_order <- NULL
   sf::st_make_valid(out)
+}
+
+
+#' Keep `core` and `palette` in step with geometry an erosion removed
+#'
+#' A negative `amount` can shrink a region away entirely. Dropping the empty
+#' geometry alone leaves `core` and `palette` still claiming it, and the
+#' atlas no longer passes `ggseg.formats::ggseg_atlas()` - so the erosion
+#' returns an object the caller cannot rebuild or save.
+#' @noRd
+drop_eroded_regions <- function(atlas, surviving_labels, emptied) {
+  if (!any(emptied)) {
+    return(atlas)
+  }
+
+  lost <- setdiff(atlas$core$label, surviving_labels)
+  if (length(lost) == 0L) {
+    return(atlas)
+  }
+
+  cli::cli_warn(c(
+    "Eroded {length(lost)} region{?s} away entirely",
+    "x" = "Removed from the atlas: {.val {lost}}",
+    "i" = "Use a smaller {.arg amount}, or {.arg exclude} these labels."
+  ))
+
+  atlas$core <- atlas$core[!atlas$core$label %in% lost, , drop = FALSE]
+  if (!is.null(atlas$palette)) {
+    atlas$palette <- atlas$palette[!names(atlas$palette) %in% lost]
+  }
+  atlas
 }
 
 

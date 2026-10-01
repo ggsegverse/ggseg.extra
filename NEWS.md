@@ -2,7 +2,7 @@
 
 ## Bug fixes
 
-- `read_lut()` silently mis-parsed a LUT line whose label contained a space.
+- `read_lut()` silently misread a LUT line whose label contained a space.
   The label capture was lazy and the pattern anchored, so instead of failing
   the match backtracked into a different, valid-looking parse and every
   colour channel shifted one field along: `"1 Region 10 20 30 40 50 60"` read
@@ -23,7 +23,7 @@
   every snapshot in it. `subcort_resolve_snapshots()` threw away the slab
   table it had just read whenever no step above 4 was requested, and the
   expected-filename set then collapsed to the single string `"_.rda"`, so
-  `prune_stale_snapshots()` unlinked the lot and reported it as clearing up
+  `prune_stale_snapshots()` deleted the lot and reported it as clearing up
   after an earlier slab configuration. Contour extraction in a later run then
   traced an empty directory. The cached slab table is now always returned,
   and naming snapshots without one is an error rather than a silent empty

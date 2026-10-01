@@ -24,20 +24,26 @@ as_verbosity <- function(x) {
   if (is.logical(x) && !is.na(x)) {
     return(as.integer(x))
   }
+  # A factor's integer value is its level index, not its label, so read it
+  # as text: factor("2") must mean 2, as "2" does.
   if (is.factor(x)) {
     x <- as.character(x)
   }
-  if (is.character(x)) {
-    word_bool <- match_bool_word(x)
-    if (!is.na(word_bool)) {
-      return(as.integer(word_bool))
-    }
+  word_bool <- if (is.character(x)) match_bool_word(x) else NA
+  if (!is.na(word_bool)) {
+    return(as.integer(word_bool))
   }
-  x <- suppressWarnings(as.integer(x))
-  if (is.na(x) || x < 0L) {
+  clamp_verbosity(suppressWarnings(as.integer(x)))
+}
+
+
+#' Hold a parsed verbosity to 0-2, falling back to the default
+#' @noRd
+clamp_verbosity <- function(n) {
+  if (is.na(n) || n < 0L) {
     return(1L)
   }
-  min(x, 2L)
+  min(n, 2L)
 }
 
 #' Get verbose setting
