@@ -77,8 +77,16 @@ Other atlas geometry:
 ## Examples
 
 ``` r
+dk <- ggseg::dk()
+sum(count_vertices(dk))
+#> [1] 6254
+
+simplified <- atlas_simplify(dk, keep = 0.2)
+sum(count_vertices(simplified))
+#> [1] 4051
+
 if (FALSE) { # \dontrun{
-# Halve the atlas, sparing the structures.
-atlas <- atlas_simplify(my_atlas, keep = 0.5, labels = "^cortex")
+# Simplify the backdrop only, sparing the structures.
+atlas_simplify(dk, keep = 0.5, labels = context_pattern())
 } # }
 ```

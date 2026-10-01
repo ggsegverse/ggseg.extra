@@ -48,11 +48,16 @@ Other atlas geometry:
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
+dk <- ggseg::dk()
+
 # The total is what the large-atlas warning reports.
-sum(count_vertices(my_atlas))
+sum(count_vertices(dk))
+#> [1] 6254
 
 # Which regions are the expensive ones?
-sort(count_vertices(my_atlas), decreasing = TRUE) |> head()
-} # }
+head(sort(count_vertices(dk), decreasing = TRUE))
+#>     lh_inferiortemporal           rh_precentral      rh_superiorfrontal 
+#>                     189                     185                     179 
+#>     rh_inferiortemporal      lh_superiorfrontal lh_rostralmiddlefrontal 
+#>                     174                     162                     160 
 ```

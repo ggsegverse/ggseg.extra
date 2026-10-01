@@ -58,8 +58,41 @@ Other atlas geometry:
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
+dk <- ggseg::dk()
+
 # Grow the structures and leave the grey brain alone
-atlas <- atlas_dilate(atlas, 0.5, exclude = "^cortex")
-} # }
+atlas_dilate(dk, 0.5, exclude = context_pattern())
+#> 
+#> ── dk ggseg atlas ──────────────────────────────────────────────────────────────
+#> Type: cortical
+#> Regions: 35
+#> Hemispheres: left, right
+#> Views: inferior, lateral, superior, medial
+#> Palette: ✔
+#> Rendering: ✔ ggseg
+#> ✔ ggseg3d (vertices)
+#> ────────────────────────────────────────────────────────────────────────────────
+#>    hemi                            region                      label
+#> 1  left banks of superior temporal sulcus                lh_bankssts
+#> 2  left         caudal anterior cingulate lh_caudalanteriorcingulate
+#> 3  left             caudal middle frontal     lh_caudalmiddlefrontal
+#> 4  left                   corpus callosum          lh_corpuscallosum
+#> 5  left                            cuneus                  lh_cuneus
+#> 6  left                        entorhinal              lh_entorhinal
+#> 7  left                          fusiform                lh_fusiform
+#> 8  left                 inferior parietal        lh_inferiorparietal
+#> 9  left                 inferior temporal        lh_inferiortemporal
+#> 10 left                 isthmus cingulate        lh_isthmuscingulate
+#>            lobe
+#> 1      temporal
+#> 2     cingulate
+#> 3       frontal
+#> 4  white matter
+#> 5     occipital
+#> 6      temporal
+#> 7      temporal
+#> 8      parietal
+#> 9      temporal
+#> 10    cingulate
+#> ... with 60 more rows
 ```

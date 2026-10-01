@@ -58,6 +58,14 @@ which take it as `labels` or `exclude`.
 ## Examples
 
 ``` r
+context_pattern()
+#> [1] "^([lr]h_)?cortex|^cerebellum$|(^|_)unknown$|(^|_)[?]{3}$|medial[ _.-]?wall$"
+
+# What it does and does not match: the backdrop, not a cortex structure.
+labels <- c("lh_cortex", "cerebellum", "lh_unknown", "Left-Cerebral-Cortex")
+grepl(context_pattern(), labels, ignore.case = TRUE)
+#> [1]  TRUE  TRUE  TRUE FALSE
+
 # The usual shape of a build: backdrop and structures, each its own way.
 if (FALSE) { # \dontrun{
 atlas <- my_atlas |>

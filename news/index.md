@@ -1,5 +1,46 @@
 # Changelog
 
+## ggseg.extra 1.9.9.9087
+
+### Documentation
+
+- Six examples now run under `R CMD check` instead of sitting inside
+  `\dontrun{}`:
+  [`atlas_simplify()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_simplify.md),
+  [`atlas_smooth()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_smooth.md),
+  [`atlas_polish()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_polish.md),
+  [`atlas_dilate()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_dilate.md),
+  [`count_vertices()`](https://ggsegverse.github.io/ggseg.extra/reference/count_vertices.md)
+  and
+  [`context_pattern()`](https://ggsegverse.github.io/ggseg.extra/reference/context_pattern.md).
+  The five geometry verbs use
+  [`ggseg::dk()`](https://ggsegverse.github.io/ggseg.formats/reference/dk.html),
+  a real 70-region cortical atlas, behind
+  `@examplesIf requireNamespace("ggseg")`; the slowest takes about two
+  seconds.
+  [`context_pattern()`](https://ggsegverse.github.io/ggseg.extra/reference/context_pattern.md)
+  is pure string work and needed no fixture, and its example now shows
+  the anchoring that keeps `Left-Cerebral-Cortex` out of the match.
+
+  This is the gap that let the deprecated
+  [`ggseg()`](https://ggsegverse.github.io/ggseg/reference/ggseg.html)
+  calls survive a commit written to remove them: an example inside
+  `\dontrun{}` is never executed, so nothing notices when the API it
+  demonstrates stops working. The
+  [`atlas_polish()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_polish.md)
+  and
+  [`atlas_simplify()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_simplify.md)
+  examples also print the vertex count before and after, so the figures
+  the documentation quotes are now produced by the check rather than
+  asserted.
+
+  One executed call per topic, since three
+  [`atlas_polish()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_polish.md)
+  calls on a 70-region atlas took 6.3s and earned a “CPU time \> 5s”
+  NOTE. The illustrative variations stay in `\dontrun{}`, as do the
+  remaining examples that need an input file, a FreeSurfer installation
+  or a network fetch.
+
 ## ggseg.extra 1.9.9.9086
 
 ### Documentation

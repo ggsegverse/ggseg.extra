@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9086</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9087</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -69,6 +69,17 @@
       <small>Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.9.9.9087" id="ggsegextra-1999087">ggseg.extra 1.9.9.9087<a class="anchor" aria-label="anchor" href="#ggsegextra-1999087"></a></h2>
+<div class="section level3">
+<h3 id="documentation-1-9-9-9087">Documentation<a class="anchor" aria-label="anchor" href="#documentation-1-9-9-9087"></a></h3>
+<ul><li>
+<p>Six examples now run under <code>R CMD check</code> instead of sitting inside <code>\dontrun{}</code>: <code><a href="../reference/atlas_simplify.html">atlas_simplify()</a></code>, <code><a href="../reference/atlas_smooth.html">atlas_smooth()</a></code>, <code><a href="../reference/atlas_polish.html">atlas_polish()</a></code>, <code><a href="../reference/atlas_dilate.html">atlas_dilate()</a></code>, <code><a href="../reference/count_vertices.html">count_vertices()</a></code> and <code><a href="../reference/context_pattern.html">context_pattern()</a></code>. The five geometry verbs use <code><a href="https://ggsegverse.github.io/ggseg.formats/reference/dk.html" class="external-link">ggseg::dk()</a></code>, a real 70-region cortical atlas, behind <code>@examplesIf requireNamespace("ggseg")</code>; the slowest takes about two seconds. <code><a href="../reference/context_pattern.html">context_pattern()</a></code> is pure string work and needed no fixture, and its example now shows the anchoring that keeps <code>Left-Cerebral-Cortex</code> out of the match.</p>
+<p>This is the gap that let the deprecated <code><a href="https://ggsegverse.github.io/ggseg/reference/ggseg.html" class="external-link">ggseg()</a></code> calls survive a commit written to remove them: an example inside <code>\dontrun{}</code> is never executed, so nothing notices when the API it demonstrates stops working. The <code><a href="../reference/atlas_polish.html">atlas_polish()</a></code> and <code><a href="../reference/atlas_simplify.html">atlas_simplify()</a></code> examples also print the vertex count before and after, so the figures the documentation quotes are now produced by the check rather than asserted.</p>
+<p>One executed call per topic, since three <code><a href="../reference/atlas_polish.html">atlas_polish()</a></code> calls on a 70-region atlas took 6.3s and earned a “CPU time &gt; 5s” NOTE. The illustrative variations stay in <code>\dontrun{}</code>, as do the remaining examples that need an input file, a FreeSurfer installation or a network fetch.</p>
+</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9086" id="ggsegextra-1999086">ggseg.extra 1.9.9.9086<a class="anchor" aria-label="anchor" href="#ggsegextra-1999086"></a></h2>
 <div class="section level3">

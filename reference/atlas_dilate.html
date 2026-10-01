@@ -15,7 +15,7 @@ finished atlas, so a build does not have to be repeated to retune it."><meta pro
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9086</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9087</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -132,10 +132,43 @@ geometry steps.</p>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">dk</span> <span class="op">&lt;-</span> <span class="fu">ggseg</span><span class="fu">::</span><span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/dk.html" class="external-link">dk</a></span><span class="op">(</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Grow the structures and leave the grey brain alone</span></span></span>
-<span class="r-in"><span><span class="va">atlas</span> <span class="op">&lt;-</span> <span class="fu">atlas_dilate</span><span class="op">(</span><span class="va">atlas</span>, <span class="fl">0.5</span>, exclude <span class="op">=</span> <span class="st">"^cortex"</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
+<span class="r-in"><span><span class="fu">atlas_dilate</span><span class="op">(</span><span class="va">dk</span>, <span class="fl">0.5</span>, exclude <span class="op">=</span> <span class="fu"><a href="context_pattern.html">context_pattern</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">──</span> <span style="font-weight: bold;">dk ggseg atlas</span> <span style="color: #00BBBB;">──────────────────────────────────────────────────────────────</span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="font-weight: bold;">Type: cortical</span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="font-weight: bold;">Regions:</span> 35</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="font-weight: bold;">Hemispheres:</span> left, right</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="font-weight: bold;">Views:</span> inferior, lateral, superior, medial</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="font-weight: bold;">Palette:</span> <span style="color: #00BB00;">✔</span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="font-weight: bold;">Rendering:</span> <span style="color: #00BB00;">✔</span> ggseg</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> ggseg3d (vertices)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> ────────────────────────────────────────────────────────────────────────────────</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    hemi                            region                      label</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1  left banks of superior temporal sulcus                lh_bankssts</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2  left         caudal anterior cingulate lh_caudalanteriorcingulate</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3  left             caudal middle frontal     lh_caudalmiddlefrontal</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4  left                   corpus callosum          lh_corpuscallosum</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5  left                            cuneus                  lh_cuneus</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6  left                        entorhinal              lh_entorhinal</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 7  left                          fusiform                lh_fusiform</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 8  left                 inferior parietal        lh_inferiorparietal</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 9  left                 inferior temporal        lh_inferiortemporal</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 10 left                 isthmus cingulate        lh_isthmuscingulate</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>            lobe</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1      temporal</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2     cingulate</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3       frontal</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4  white matter</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5     occipital</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6      temporal</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 7      temporal</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 8      parietal</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 9      temporal</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 10    cingulate</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="font-style: italic;">... with 60 more rows</span></span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
