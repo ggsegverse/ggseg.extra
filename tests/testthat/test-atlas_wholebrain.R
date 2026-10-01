@@ -4205,3 +4205,65 @@ describe("create_wholebrain_from_volume argument groups", {
     expect_false("cerebellar_space" %in% names(seen$opts$cerebellar))
   })
 })
+
+
+describe("wholebrain label stamping", {
+  write_vol <- function(arr) {
+    path <- withr::local_tempfile(
+      fileext = ".nii.gz",
+      .local_envir = parent.frame()
+    )
+    RNifti::writeNifti(RNifti::asNifti(arr), path)
+    path
+  }
+
+  it("keeps only the cerebellar labels, each as its own value", {
+    skip_if_not_installed("RNifti")
+
+    arr <- array(0L, dim = c(4, 4, 2))
+    arr[1, 1, 1] <- 7L
+    arr[2, 2, 1] <- 8L
+    arr[3, 3, 1] <- 17L
+
+    out <- withr::local_tempfile(fileext = ".nii.gz")
+    wholebrain_prepare_cerebellar_volume(
+      write_vol(arr),
+      cerebellar_idx = c(7L, 8L),
+      output_file = out
+    )
+
+    got <- as.array(RNifti::readNifti(out))
+    expect_identical(sum(got == 7L), 1L)
+    expect_identical(sum(got == 8L), 1L)
+    expect_identical(sum(got == 17L), 0L)
+  })
+
+  it("remaps each subcortical label onto its target index", {
+    skip_if_not_installed("RNifti")
+
+    arr <- array(0L, dim = c(4, 4, 2))
+    arr[1, 1, 1] <- 10L
+    arr[2, 2, 1] <- 11L
+    arr[3, 3, 1] <- 99L
+
+    local_mocked_bindings(
+      wholebrain_write_cortex_context = function(result, ...) result
+    )
+
+    out <- withr::local_tempfile(fileext = ".nii.gz")
+    wholebrain_prepare_subcortical_volume(
+      write_vol(arr),
+      subcortical_idx = c(10L, 11L),
+      cortical_idx = integer(0),
+      output_file = out,
+      target_idx = c(500L, 501L),
+      verbose = 0
+    )
+
+    got <- as.array(RNifti::readNifti(out))
+    expect_identical(sum(got == 500L), 1L)
+    expect_identical(sum(got == 501L), 1L)
+    # A label absent from subcortical_idx is dropped, not carried through.
+    expect_identical(sum(got == 99L), 0L)
+  })
+})
