@@ -208,7 +208,6 @@
       invisible(create_wholebrain_from_volume(input_volume = vol_file, steps = 1:2,
       verbose = TRUE))
     Message
-      
       -- Creating whole-brain atlas "wb" ---------------------------------------------
       ! This pipeline combines volume-to-surface projection with automatic
       cortical/subcortical classification. Both steps are heuristic and require
@@ -216,9 +215,7 @@
       before committing to the full pipeline.
       i Volume: 'wb.nii.gz'
       i Setting output directory to '<workdir>/out'
-      
       -- Surface projection --
-      
       i Projecting volume onto surface
     Condition
       Warning:
@@ -227,10 +224,7 @@
       i The atlas will have no palette; plotting picks its own colours
     Message
       v Projecting volume onto surface [<time>]
-      
-      
       -- Label classification --
-      
       i Classifying cortical/subcortical/cerebellar labels
     Condition
       Warning:
@@ -241,7 +235,6 @@
       i 1 cortical, 0 subcortical, 0 cerebellar labels
       i Classifying cortical/subcortical/cerebellar labels
       v Classifying cortical/subcortical/cerebellar labels [<time>]
-      
       i Inspect `split$cortical_labels`, `split$subcortical_labels`, and
       `split$cerebellar_labels`. Override with `labels = list(cortical = ,
       subcortical = , cerebellar = )` if needed, then re-run with all steps.
@@ -359,18 +352,4 @@
       i Refining cortical projection (keeping 1 cortical labels on the surface)
       v Refining cortical projection (keeping 1 cortical labels on the surface) [<t...
       
-
-# aseg_context_volume resampling / warns and falls back when the resampling fails
-
-    Code
-      expect_null(aseg_context_volume("a.nii.gz", "subj", c(2L, 2L, 2L), array(TRUE,
-        c(2, 2, 2))))
-    Condition
-      Warning:
-      Drawing the cortical context as a solid silhouette: `mri_vol2vol` failed.
-      i With a FreeSurfer aseg the context keeps its sulci and gyri instead.
-      Caused by error in `run_cmd()`:
-      ! FreeSurfer command failed (exit 1).
-      i FreeSurfer said:
-        ERROR: bad header
 
