@@ -3677,19 +3677,19 @@ describe("write_subcortical_lut", {
     expect_identical(back$B, c(133L, 140L))
   })
 
-  it("names the labels exactly as the atlas builder would", {
-    # If these diverged, the LUT and the finished atlas would disagree.
-    expect_identical(
-      sanitize_label(miccai_style()$label),
-      read_lut({
-        p <- withr::local_tempfile(fileext = ".txt")
-        write_subcortical_lut(miccai_style(), p)
-        p
-      })$label
-    )
+  it("names the labels the subcortical pipeline will settle on", {
+    # subcort_resolve_labels() sanitises the colortable the moment it reads
+    # this file. Labels that survive that unchanged are labels the LUT and the
+    # finished atlas agree on; anything else and the two would disagree.
+    path <- withr::local_tempfile(fileext = ".txt")
+    write_subcortical_lut(miccai_style(), path)
+
+    written <- read_lut(path)$label
+
+    expect_identical(sanitize_label(written), written)
   })
 
-  it("leaves a already-clean table untouched", {
+  it("leaves an already-clean table untouched", {
     path <- withr::local_tempfile(fileext = ".txt")
     ct <- miccai_style()
     ct$label <- c("Right-Accumbens-Area", "Left-Basal-Forebrain")

@@ -85,7 +85,7 @@
       v Completed step 5
       i Pipeline completed [<time>]
 
-# subcort_resolve_snapshots early-return NULL / runs snapshots and logs progress when the step executes with verbose
+# subcort_resolve_snapshots / runs snapshots and logs progress when the step executes with verbose
 
     Code
       result <- subcort_resolve_snapshots(config, dirs, colortable, NULL)

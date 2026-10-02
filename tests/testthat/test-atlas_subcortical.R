@@ -877,7 +877,7 @@ describe("subcort_assemble_full sf_data as data.frame", {
 })
 
 
-describe("subcort_resolve_snapshots early-return NULL", {
+describe("subcort_resolve_snapshots", {
   it("returns NULL slabs and cortex_slices when step skipped", {
     local_mocked_bindings(
       load_or_run_step = function(step, steps, ...) {
@@ -967,7 +967,7 @@ describe("subcort_resolve_snapshots early-return NULL", {
 
     result <- subcort_resolve_snapshots(config, dirs, colortable, NULL)
 
-    expect_true(isTRUE(seen$called))
+    expect_true(seen$called)
     expect_identical(result$slabs, cached_slabs())
   })
 

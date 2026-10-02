@@ -1687,9 +1687,9 @@ wholebrain_cortical_inputs <- function(config, dirs, projection, split, opts) {
 #' input, so it has to produce something readable instead of giving up.
 #'
 #' Sanitising is what happens to these labels anyway -
-#' `build_atlas_components()` applies `sanitize_label()` to every label it
-#' builds - so the finished atlas is unchanged. What changes is that the
-#' colours now survive the round trip.
+#' `subcort_resolve_labels()` applies `sanitize_label()` to the colortable the
+#' moment it reads this file back - so the finished atlas is unchanged. What
+#' changes is that the colours now survive the round trip.
 #' @noRd
 write_subcortical_lut <- function(colortable, path) {
   colortable$label <- sanitize_label(colortable$label)
