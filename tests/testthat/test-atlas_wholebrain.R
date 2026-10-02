@@ -3637,3 +3637,65 @@ describe("wholebrain label stamping", {
     expect_identical(sum(got == 99L), 0L)
   })
 })
+
+
+describe("write_subcortical_lut", {
+  miccai_style <- function() {
+    data.frame(
+      stringsAsFactors = FALSE,
+      idx = c(23L, 30L),
+      label = c("Right Accumbens Area", "Left Basal Forebrain"),
+      R = c(219L, 100L),
+      G = c(157L, 120L),
+      B = c(133L, 140L),
+      A = c(0L, 0L)
+    )
+  }
+
+  it("writes a label with spaces rather than refusing it", {
+    path <- withr::local_tempfile(fileext = ".txt")
+
+    # write_lut() aborts on these, which is right for a user's table and
+    # wrong for one the pipeline writes for itself.
+    expect_error(write_lut(miccai_style(), path), "single word")
+    expect_no_error(write_subcortical_lut(miccai_style(), path))
+  })
+
+  it("keeps the colours attached to the right label", {
+    path <- withr::local_tempfile(fileext = ".txt")
+    write_subcortical_lut(miccai_style(), path)
+
+    back <- read_lut(path)
+
+    expect_identical(
+      back$label,
+      c("Right_Accumbens_Area", "Left_Basal_Forebrain")
+    )
+    expect_identical(back$idx, c(23L, 30L))
+    expect_identical(back$R, c(219L, 100L))
+    expect_identical(back$G, c(157L, 120L))
+    expect_identical(back$B, c(133L, 140L))
+  })
+
+  it("names the labels exactly as the atlas builder would", {
+    # If these diverged, the LUT and the finished atlas would disagree.
+    expect_identical(
+      sanitize_label(miccai_style()$label),
+      read_lut({
+        p <- withr::local_tempfile(fileext = ".txt")
+        write_subcortical_lut(miccai_style(), p)
+        p
+      })$label
+    )
+  })
+
+  it("leaves a already-clean table untouched", {
+    path <- withr::local_tempfile(fileext = ".txt")
+    ct <- miccai_style()
+    ct$label <- c("Right-Accumbens-Area", "Left-Basal-Forebrain")
+
+    write_subcortical_lut(ct, path)
+
+    expect_identical(read_lut(path)$label, ct$label)
+  })
+})
