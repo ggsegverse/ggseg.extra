@@ -1,8 +1,32 @@
 # Getting started with ggseg.extra
 
 ggseg.extra provides pipelines for creating brain atlas data sets
-compatible with the ggseg and ggseg3d plotting packages. It supports
-multiple neuroimaging input formats:
+compatible with the ggseg and ggseg3d plotting packages.
+
+## The shortest path
+
+From a FreeSurfer annotation to something you can plot:
+
+``` r
+
+atlas <- create_cortical_from_annotation(
+  input_annot = c("lh.aparc.annot", "rh.aparc.annot")
+)
+
+# Fewer vertices, and the voxel staircase rounded off
+atlas <- atlas_polish(atlas, keep = 0.2)
+
+plot(atlas)
+```
+
+That is the whole cortical pipeline.
+[`sitrep()`](https://ggsegverse.github.io/ggseg.extra/reference/sitrep.md)
+reports whether your machine has what the other pipelines need before
+you start one.
+
+## Picking a creation function
+
+Which pipeline you want depends on the format you have:
 
 | Function | Input | Use case |
 |----|----|----|
@@ -34,36 +58,15 @@ Every atlas contains:
   subcortical and tract atlases.
 - **2D geometry** (optional) — sf polygon outlines for flat brain plots.
 
-### Cortical pipeline
+### How each pipeline works
 
-The cortical pipeline reads annotation data and projects inflated mesh
-triangles directly to 2D polygons via orthographic projection. This
-completes in seconds and needs no external rendering dependencies:
-
-``` r
-
-annot_files <- file.path(
-  freesurfer::fs_dir(),
-  "subjects",
-  "fsaverage5",
-  "label",
-  c("lh.aparc.annot", "rh.aparc.annot")
-)
-
-atlas <- create_cortical_from_annotation(
-  input_annot = annot_files,
-  output_dir = "my_atlas"
-)
-```
-
-### Subcortical and tract pipelines
-
-These build 3D meshes from a volume, then get their 2D view by slicing:
-the pipeline cuts the volume along the slabs you choose and traces each
-structure’s outline in each cut. Both are controlled by a `steps`
-argument, so you can stop after the meshes (`steps = 1:3` for
-subcortical, `steps = 1` for tract) while iterating, then run the
-default for the slices as well.
+The cortical pipeline projects inflated mesh triangles straight to 2D
+polygons, so it takes seconds and needs no FreeSurfer installation. The
+subcortical and tract pipelines instead build 3D meshes from a volume
+and get their 2D view by slicing it. Each has its own `steps`, inputs
+and system requirements:
+[`vignette("atlas-workflows")`](https://ggsegverse.github.io/ggseg.extra/articles/atlas-workflows.md)
+walks through all five with diagrams.
 
 ### Post-processing
 

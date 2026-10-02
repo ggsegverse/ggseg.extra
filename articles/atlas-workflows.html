@@ -29,7 +29,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9090</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9091</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -110,11 +110,11 @@
 
 
 
-    <p>You have brain parcellation data sitting on your computer. Maybe it’s a FreeSurfer annotation file from a cortical atlas you want to visualize. Maybe it’s a volumetric segmentation of subcortical structures. Maybe it’s tractography streamlines defining white matter tracts. The question is: how do you turn any of these into something you can actually plot with ggseg?</p>
-<p>The answer depends on what you’re starting with. Neuroimaging data comes in a wild variety of formats, and each format tells you something different about the brain. The common thread is that they all describe regions or structures, and ggseg.extra knows how to extract that information and turn it into atlas objects that work with both 2D and 3D plotting.</p>
+    <p>Five pipelines, each shaped by the kind of data it reads. This article is the map: what flows where, what each pipeline does to get from a file to a <code>ggseg_atlas</code>, and where the result can be plotted.</p>
+<p>For a runnable first atlas see <a href="ggseg.extra.html">Getting Started</a>; for a worked example of any one pipeline, see its tutorial.</p>
 <section class="level2"><h2 id="what-youre-working-with">What you’re working with<a class="anchor" aria-label="anchor" href="#what-youre-working-with"></a>
 </h2>
-<p>Here’s the landscape. Different neuroimaging formats flow through different creation functions, but they all converge on the same destination: a <code>ggseg_atlas</code> object that contains everything needed for visualization.</p>
+<p>Every format converges on one object.</p>
 <div class="cell" data-fig-width="8" data-layout-align="default">
 <div class="cell-output-display">
 <div id="fig-input-formats" class="quarto-float quarto-figure quarto-figure-center">
@@ -135,7 +135,7 @@
     D --&gt; D1[create_cortical_from_gifti]
     E --&gt; E1[create_cortical_from_cifti]
     F --&gt; F1[create_cortical_from_neuromaps]
-    G --&gt; G1[create_subcortical_from_volume&lt;br/&gt;create_wholebrain_from_volume]
+    G --&gt; G1[create_subcortical_from_volume&lt;br/&gt;create_wholebrain_from_volume&lt;br/&gt;create_tract_from_volume]
     H --&gt; H1[create_tract_from_tractography]
     J --&gt; J1[create_cerebellar_from_gifti&lt;br/&gt;create_cerebellar_from_annotation&lt;br/&gt;create_cerebellar_from_volume]
 
@@ -160,16 +160,15 @@ Figure 1: All atlas creation pathways in ggseg.extra
 </div>
 </section><section class="level2"><h2 id="how-cortical-atlases-get-built">How cortical atlases get built<a class="anchor" aria-label="anchor" href="#how-cortical-atlases-get-built"></a>
 </h2>
-<p>Every cortical creation function — whether you’re starting with FreeSurfer annotations, GIFTI labels, CIFTI parcellations, or neuromaps data — follows the same two-step pipeline.</p>
-<p>Step 1 reads your input file and maps it to 3D vertices on the brain surface. Step 2 projects the inflated mesh triangles directly to 2D polygons via orthographic projection. Both steps complete in seconds and need no external rendering dependencies. Reading the annotation files needs the <code>freesurferformats</code> R package, not a FreeSurfer installation.</p>
+<p>Every cortical creation function follows the same two steps, whatever the input format. Neither needs a FreeSurfer installation — reading the files needs the <code>freesurferformats</code> R package.</p>
 <div class="cell" data-fig-width="10" data-layout-align="default">
 <div class="cell-output-display">
 <div id="fig-cortical-fork" class="quarto-float quarto-figure quarto-figure-center">
 <figure class="quarto-float quarto-float-fig"><div aria-describedby="fig-cortical-fork-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 <div>
 <pre class="mermaid mermaid-js" data-label="fig-cortical-fork">flowchart LR
-    A[Input File] --&gt; S1["Step 1&lt;br/&gt;Read annotation&lt;br/&gt;&amp; extract vertices"]
-    S1 --&gt; S2["Step 2&lt;br/&gt;Project mesh to&lt;br/&gt;2D polygons"]
+    A[Input File] --&gt; S1["Read annotation&lt;br/&gt;&amp; extract vertices"]
+    S1 --&gt; S2["Project mesh to&lt;br/&gt;2D polygons"]
     S2 --&gt; F[Complete atlas&lt;br/&gt;3D + 2D ⚡]
 
     style S1 fill:#fff9c4
@@ -187,9 +186,8 @@ Figure 2: Cortical atlas creation pipeline
 <p>The projection uses orthographic cameras placed at standard viewpoints (lateral, medial, superior, inferior), culls back-facing triangles, and unions the front-facing triangles per region into sf polygons. Boundary faces are assigned to the smallest neighbouring region so small parcels stay visible. The pipeline returns the raw polygons; call <code>atlas_simplify(keep = ...)</code> afterwards to balance fidelity against file size.</p>
 </section><section class="level2"><h2 id="subcortical-and-volumetric-atlases-work-differently">Subcortical and volumetric atlases work differently<a class="anchor" aria-label="anchor" href="#subcortical-and-volumetric-atlases-work-differently"></a>
 </h2>
-<p>Cortical atlases are all about surface vertices — mapping regions to points on the brain’s outer layer. Subcortical structures live inside the brain, so the approach changes. Instead of vertex indices, you’re extracting 3D meshes directly from volumetric segmentations.</p>
-<p>The pipeline reads your volume file (typically a <code>.mgz</code> or <code>.nii</code> segmentation) along with its colour table, identifies each unique structure, and generates a mesh for it. Each mesh becomes a distinct 3D object you can rotate and explore.</p>
-<p>2D comes from slices rather than from a surface. A structure buried inside the brain has no outside to project, so the pipeline takes orthogonal cuts through the volume — the slabs you choose with <code><a href="../reference/subcortical_slabs.html">subcortical_slabs()</a></code> — and traces each structure’s outline in each cut. That gives you a flat, multi-panel view in the same <code>ggseg_atlas</code>. Stop at <code>steps = 1:3</code> if you only want the meshes; the default runs all six and gives you both.</p>
+<p>A structure buried inside the brain has no outside to project, so these pipelines read a volume — and its colour table, if it has one — and tessellate a mesh per structure out of the voxels, rather than mapping surface vertices.</p>
+<p>2D comes from slices rather than from a surface: the pipeline takes orthogonal cuts through the volume — the slabs you choose with <code><a href="../reference/subcortical_slabs.html">subcortical_slabs()</a></code> — and traces each structure’s outline in each cut, giving a flat, multi-panel view in the same <code>ggseg_atlas</code>. Stop at <code>steps = 1:3</code> if you only want the meshes; the default runs all six and gives you both.</p>
 <p>You have two functions to choose from: <code><a href="../reference/create_subcortical_from_volume.html">create_subcortical_from_volume()</a></code> if you only want subcortical structures, or <code><a href="../reference/create_wholebrain_from_volume.html">create_wholebrain_from_volume()</a></code> if your segmentation includes both cortical and subcortical regions and you want everything in one atlas.</p>
 <div class="cell" data-fig-width="10" data-layout-align="default">
 <div class="cell-output-display">
@@ -197,7 +195,7 @@ Figure 2: Cortical atlas creation pipeline
 <figure class="quarto-float quarto-float-fig"><div aria-describedby="fig-subcortical-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 <div>
 <pre class="mermaid mermaid-js" data-label="fig-subcortical">flowchart TB
-    A[Volume .mgz/.nii&lt;br/&gt;+ Color Table] --&gt; B[Read segmentation&lt;br/&gt;Extract unique labels]
+    A[Volume .mgz/.nii&lt;br/&gt;+ optional LUT] --&gt; B[Read segmentation&lt;br/&gt;Extract unique labels]
     B --&gt; C{Atlas type?}
     C --&gt;|Subcortical only| D[create_subcortical_from_volume]
     C --&gt;|Whole brain| E[create_wholebrain_from_volume]
@@ -251,7 +249,7 @@ Figure 4: Cerebellar atlas creation pipeline
 <p>The <code><a href="../reference/create_wholebrain_from_volume.html">create_wholebrain_from_volume()</a></code> pipeline can also route cerebellar labels through this pipeline automatically when it detects them in a combined volume.</p>
 </section><section class="level2"><h2 id="tracts-are-a-special-case">Tracts are a special case<a class="anchor" aria-label="anchor" href="#tracts-are-a-special-case"></a>
 </h2>
-<p>White matter tracts don’t fit neatly into the cortical or subcortical categories. They’re defined by tractography — streamlines that trace the paths of white matter fibers through the brain. Your input is a tractography file (<code>.trk</code> or <code>.tck</code>), which contains a collection of 3D curves representing fiber bundles.</p>
+<p>White matter tracts don’t fit neatly into the cortical or subcortical categories. They’re defined by tractography — streamlines that trace the paths of white matter fibers through the brain. <code><a href="../reference/create_tract_from_tractography.html">create_tract_from_tractography()</a></code> takes those streamlines directly, from a <code>.trk</code> or <code>.tck</code> file. <code><a href="../reference/create_tract_from_volume.html">create_tract_from_volume()</a></code> starts from a volumetric tract label map instead, reducing each label’s voxel cloud to one ordered centerline before handing it to the same pipeline — which is what a probabilistic tract atlas distributed as a NIfTI needs.</p>
 <p>The pipeline reads those streamlines and converts them into tube-like meshes that can be rendered in 3D. Like subcortical atlases, the 2D view comes from slicing rather than from a surface: the tubes are cut by the slabs you choose, and each tract’s cross-section is traced into a polygon. Stop at <code>steps = 1</code> if the meshes are all you want; the default runs all four.</p>
 <div class="cell" data-fig-width="10" data-layout-align="default">
 <div class="cell-output-display">
@@ -260,6 +258,8 @@ Figure 4: Cerebellar atlas creation pipeline
 <div>
 <pre class="mermaid mermaid-js" data-label="fig-tracts">flowchart TB
     A[Tractography&lt;br/&gt;.trk or .tck] --&gt; B["Step 1&lt;br/&gt;Read streamlines&lt;br/&gt;Build tube meshes"]
+    V[Volume&lt;br/&gt;tract labels] --&gt; V1[Fit a centerline&lt;br/&gt;per label]
+    V1 --&gt; B
     B --&gt; C{Stop here?}
     C --&gt;|steps = 1| H2[ggseg_atlas&lt;br/&gt;3D tract meshes only]
     C --&gt;|default| S["Steps 2-4&lt;br/&gt;Slice the tubes&lt;br/&gt;Trace contours&lt;br/&gt;Assemble"]
@@ -278,8 +278,7 @@ Figure 5: White matter tract atlas pipeline
 </div>
 </section><section class="level2"><h2 id="where-your-atlas-can-go">Where your atlas can go<a class="anchor" aria-label="anchor" href="#where-your-atlas-can-go"></a>
 </h2>
-<p>Every <code>ggseg_atlas</code> object, regardless of how it was created, works with the ggseg plotting ecosystem. But what you can do with it depends on whether it contains 2D polygon data.</p>
-<p>If your atlas has 2D geometries (cortical atlases from the full pipeline, or cerebellar atlases with SUIT flatmap polygons), you can plot it with both ggseg for flat 2D ggplot2-based visualizations and ggseg3d for interactive 3D rotation and exploration. If it’s 3D-only — because you stopped a pipeline before its 2D steps — then ggseg3d is your only option, but that’s often all you need.</p>
+<p>What you can plot depends on whether the atlas carries 2D geometry. Stopping a pipeline before its 2D steps leaves a 3D-only atlas, which is often all you need.</p>
 <div class="cell" data-fig-width="8" data-layout-align="default">
 <div class="cell-output-display">
 <div id="fig-output-compatibility" class="quarto-float quarto-figure quarto-figure-center">
@@ -287,7 +286,7 @@ Figure 5: White matter tract atlas pipeline
 <div>
 <pre class="mermaid mermaid-js" data-label="fig-output-compatibility">flowchart LR
     A[ggseg_atlas] --&gt; B{Contains 2D?}
-    B --&gt;|Yes| C[ggseg&lt;br/&gt;Flat 2D plots]
+    B --&gt;|Yes| C[ggseg&lt;br/&gt;geom_brain]
     B --&gt;|Yes| D[ggseg3d&lt;br/&gt;Interactive 3D]
     B --&gt;|No&lt;br/&gt;3D only| D
 
@@ -312,7 +311,7 @@ Figure 6: Atlas compatibility with ggseg plotting packages
 <p>For subcortical and tract pipelines, the <code>steps</code> argument controls how much of the pipeline runs. Use <code>steps = 1:3</code> (subcortical) or <code>steps = 1</code> (tract) for fast 3D-only iteration, then run the default when you need the 2D slices.</p>
 </section><section class="level2"><h2 id="where-to-go-from-here">Where to go from here<a class="anchor" aria-label="anchor" href="#where-to-go-from-here"></a>
 </h2>
-<p>If you’re new to ggseg.extra, start with the <a href="ggseg.extra.html">Getting Started</a> guide for installation and basic usage. The cortical pipeline has no system dependencies — it only needs the <code>freesurferformats</code> R package to read annotation files. Subcortical and whole-brain pipelines need FreeSurfer; see <a href="system-setup.html">System Setup</a> for details.</p>
+<p>If you’re new to ggseg.extra, start with the <a href="ggseg.extra.html">Getting Started</a> guide, which has the shortest path from an annotation file to a plot and a table of which pipeline reads which format. What each pipeline needs installed is in <a href="system-setup.html">System Setup</a>, and <code><a href="../reference/sitrep.html">sitrep()</a></code> reports what this machine actually has.</p>
 <p>The <a href="pipeline-configuration.html">Pipeline Configuration</a> article covers verbosity, intermediate files and resuming an interrupted run. <a href="post-processing.html">Post-processing</a> covers what to do with the atlas the pipeline hands back: dropping regions you do not need, choosing views, and shaping the geometry. When you’re ready to build a specific atlas type, the individual tutorials under “Tutorials: Creating Atlases” walk through complete examples with real data.</p>
 </section><script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {

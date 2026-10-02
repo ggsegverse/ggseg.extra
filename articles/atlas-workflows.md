@@ -1,25 +1,16 @@
 # Atlas Creation Workflows
 
-You have brain parcellation data sitting on your computer. Maybe it’s a
-FreeSurfer annotation file from a cortical atlas you want to visualize.
-Maybe it’s a volumetric segmentation of subcortical structures. Maybe
-it’s tractography streamlines defining white matter tracts. The question
-is: how do you turn any of these into something you can actually plot
-with ggseg?
+Five pipelines, each shaped by the kind of data it reads. This article
+is the map: what flows where, what each pipeline does to get from a file
+to a `ggseg_atlas`, and where the result can be plotted.
 
-The answer depends on what you’re starting with. Neuroimaging data comes
-in a wild variety of formats, and each format tells you something
-different about the brain. The common thread is that they all describe
-regions or structures, and ggseg.extra knows how to extract that
-information and turn it into atlas objects that work with both 2D and 3D
-plotting.
+For a runnable first atlas see [Getting
+Started](https://ggsegverse.github.io/ggseg.extra/articles/ggseg.extra.md);
+for a worked example of any one pipeline, see its tutorial.
 
 ## What you’re working with
 
-Here’s the landscape. Different neuroimaging formats flow through
-different creation functions, but they all converge on the same
-destination: a `ggseg_atlas` object that contains everything needed for
-visualization.
+Every format converges on one object.
 
 ``` mermaid
 flowchart TB
@@ -37,7 +28,7 @@ flowchart TB
     D --> D1[create_cortical_from_gifti]
     E --> E1[create_cortical_from_cifti]
     F --> F1[create_cortical_from_neuromaps]
-    G --> G1[create_subcortical_from_volume<br/>create_wholebrain_from_volume]
+    G --> G1[create_subcortical_from_volume<br/>create_wholebrain_from_volume<br/>create_tract_from_volume]
     H --> H1[create_tract_from_tractography]
     J --> J1[create_cerebellar_from_gifti<br/>create_cerebellar_from_annotation<br/>create_cerebellar_from_volume]
 
@@ -57,20 +48,14 @@ Figure 1: All atlas creation pathways in ggseg.extra
 
 ## How cortical atlases get built
 
-Every cortical creation function — whether you’re starting with
-FreeSurfer annotations, GIFTI labels, CIFTI parcellations, or neuromaps
-data — follows the same two-step pipeline.
-
-Step 1 reads your input file and maps it to 3D vertices on the brain
-surface. Step 2 projects the inflated mesh triangles directly to 2D
-polygons via orthographic projection. Both steps complete in seconds and
-need no external rendering dependencies. Reading the annotation files
-needs the `freesurferformats` R package, not a FreeSurfer installation.
+Every cortical creation function follows the same two steps, whatever
+the input format. Neither needs a FreeSurfer installation — reading the
+files needs the `freesurferformats` R package.
 
 ``` mermaid
 flowchart LR
-    A[Input File] --> S1["Step 1<br/>Read annotation<br/>& extract vertices"]
-    S1 --> S2["Step 2<br/>Project mesh to<br/>2D polygons"]
+    A[Input File] --> S1["Read annotation<br/>& extract vertices"]
+    S1 --> S2["Project mesh to<br/>2D polygons"]
     S2 --> F[Complete atlas<br/>3D + 2D ⚡]
 
     style S1 fill:#fff9c4
@@ -90,24 +75,17 @@ size.
 
 ## Subcortical and volumetric atlases work differently
 
-Cortical atlases are all about surface vertices — mapping regions to
-points on the brain’s outer layer. Subcortical structures live inside
-the brain, so the approach changes. Instead of vertex indices, you’re
-extracting 3D meshes directly from volumetric segmentations.
+A structure buried inside the brain has no outside to project, so these
+pipelines read a volume — and its colour table, if it has one — and
+tessellate a mesh per structure out of the voxels, rather than mapping
+surface vertices.
 
-The pipeline reads your volume file (typically a `.mgz` or `.nii`
-segmentation) along with its colour table, identifies each unique
-structure, and generates a mesh for it. Each mesh becomes a distinct 3D
-object you can rotate and explore.
-
-2D comes from slices rather than from a surface. A structure buried
-inside the brain has no outside to project, so the pipeline takes
+2D comes from slices rather than from a surface: the pipeline takes
 orthogonal cuts through the volume — the slabs you choose with
 [`subcortical_slabs()`](https://ggsegverse.github.io/ggseg.extra/reference/subcortical_slabs.md)
-— and traces each structure’s outline in each cut. That gives you a
-flat, multi-panel view in the same `ggseg_atlas`. Stop at `steps = 1:3`
-if you only want the meshes; the default runs all six and gives you
-both.
+— and traces each structure’s outline in each cut, giving a flat,
+multi-panel view in the same `ggseg_atlas`. Stop at `steps = 1:3` if you
+only want the meshes; the default runs all six and gives you both.
 
 You have two functions to choose from:
 [`create_subcortical_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_subcortical_from_volume.md)
@@ -118,7 +96,7 @@ you want everything in one atlas.
 
 ``` mermaid
 flowchart TB
-    A[Volume .mgz/.nii<br/>+ Color Table] --> B[Read segmentation<br/>Extract unique labels]
+    A[Volume .mgz/.nii<br/>+ optional LUT] --> B[Read segmentation<br/>Extract unique labels]
     B --> C{Atlas type?}
     C -->|Subcortical only| D[create_subcortical_from_volume]
     C -->|Whole brain| E[create_wholebrain_from_volume]
@@ -184,9 +162,14 @@ automatically when it detects them in a combined volume.
 
 White matter tracts don’t fit neatly into the cortical or subcortical
 categories. They’re defined by tractography — streamlines that trace the
-paths of white matter fibers through the brain. Your input is a
-tractography file (`.trk` or `.tck`), which contains a collection of 3D
-curves representing fiber bundles.
+paths of white matter fibers through the brain.
+[`create_tract_from_tractography()`](https://ggsegverse.github.io/ggseg.extra/reference/create_tract_from_tractography.md)
+takes those streamlines directly, from a `.trk` or `.tck` file.
+[`create_tract_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_tract_from_volume.md)
+starts from a volumetric tract label map instead, reducing each label’s
+voxel cloud to one ordered centerline before handing it to the same
+pipeline — which is what a probabilistic tract atlas distributed as a
+NIfTI needs.
 
 The pipeline reads those streamlines and converts them into tube-like
 meshes that can be rendered in 3D. Like subcortical atlases, the 2D view
@@ -198,6 +181,8 @@ runs all four.
 ``` mermaid
 flowchart TB
     A[Tractography<br/>.trk or .tck] --> B["Step 1<br/>Read streamlines<br/>Build tube meshes"]
+    V[Volume<br/>tract labels] --> V1[Fit a centerline<br/>per label]
+    V1 --> B
     B --> C{Stop here?}
     C -->|steps = 1| H2[ggseg_atlas<br/>3D tract meshes only]
     C -->|default| S["Steps 2-4<br/>Slice the tubes<br/>Trace contours<br/>Assemble"]
@@ -211,21 +196,14 @@ Figure 5: White matter tract atlas pipeline
 
 ## Where your atlas can go
 
-Every `ggseg_atlas` object, regardless of how it was created, works with
-the ggseg plotting ecosystem. But what you can do with it depends on
-whether it contains 2D polygon data.
-
-If your atlas has 2D geometries (cortical atlases from the full
-pipeline, or cerebellar atlases with SUIT flatmap polygons), you can
-plot it with both ggseg for flat 2D ggplot2-based visualizations and
-ggseg3d for interactive 3D rotation and exploration. If it’s 3D-only —
-because you stopped a pipeline before its 2D steps — then ggseg3d is
-your only option, but that’s often all you need.
+What you can plot depends on whether the atlas carries 2D geometry.
+Stopping a pipeline before its 2D steps leaves a 3D-only atlas, which is
+often all you need.
 
 ``` mermaid
 flowchart LR
     A[ggseg_atlas] --> B{Contains 2D?}
-    B -->|Yes| C[ggseg<br/>Flat 2D plots]
+    B -->|Yes| C[ggseg<br/>geom_brain]
     B -->|Yes| D[ggseg3d<br/>Interactive 3D]
     B -->|No<br/>3D only| D
 
@@ -263,12 +241,13 @@ when you need the 2D slices.
 
 If you’re new to ggseg.extra, start with the [Getting
 Started](https://ggsegverse.github.io/ggseg.extra/articles/ggseg.extra.md)
-guide for installation and basic usage. The cortical pipeline has no
-system dependencies — it only needs the `freesurferformats` R package to
-read annotation files. Subcortical and whole-brain pipelines need
-FreeSurfer; see [System
-Setup](https://ggsegverse.github.io/ggseg.extra/articles/system-setup.md)
-for details.
+guide, which has the shortest path from an annotation file to a plot and
+a table of which pipeline reads which format. What each pipeline needs
+installed is in [System
+Setup](https://ggsegverse.github.io/ggseg.extra/articles/system-setup.md),
+and
+[`sitrep()`](https://ggsegverse.github.io/ggseg.extra/reference/sitrep.md)
+reports what this machine actually has.
 
 The [Pipeline
 Configuration](https://ggsegverse.github.io/ggseg.extra/articles/pipeline-configuration.md)

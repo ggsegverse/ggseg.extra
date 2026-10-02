@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9090</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9091</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -106,8 +106,28 @@
     
     
 <p>ggseg.extra provides pipelines for creating brain atlas data sets
-compatible with the ggseg and ggseg3d plotting packages. It supports
-multiple neuroimaging input formats:</p>
+compatible with the ggseg and ggseg3d plotting packages.</p>
+<div class="section level2">
+<h2 id="the-shortest-path">The shortest path<a class="anchor" aria-label="anchor" href="#the-shortest-path"></a>
+</h2>
+<p>From a FreeSurfer annotation to something you can plot:</p>
+<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">atlas</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/create_cortical_from_annotation.html">create_cortical_from_annotation</a></span><span class="op">(</span></span>
+<span>  input_annot <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"lh.aparc.annot"</span>, <span class="st">"rh.aparc.annot"</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Fewer vertices, and the voxel staircase rounded off</span></span>
+<span><span class="va">atlas</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/atlas_polish.html">atlas_polish</a></span><span class="op">(</span><span class="va">atlas</span>, keep <span class="op">=</span> <span class="fl">0.2</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">atlas</span><span class="op">)</span></span></code></pre></div>
+<p>That is the whole cortical pipeline. <code><a href="../reference/sitrep.html">sitrep()</a></code> reports
+whether your machine has what the other pipelines need before you start
+one.</p>
+</div>
+<div class="section level2">
+<h2 id="picking-a-creation-function">Picking a creation function<a class="anchor" aria-label="anchor" href="#picking-a-creation-function"></a>
+</h2>
+<p>Which pipeline you want depends on the format you have:</p>
 <table style="width:100%;" class="table">
 <colgroup>
 <col width="37%">
@@ -204,34 +224,15 @@ flat brain plots.</li>
 </ul>
 </div>
 <div class="section level3">
-<h3 id="cortical-pipeline">Cortical pipeline<a class="anchor" aria-label="anchor" href="#cortical-pipeline"></a>
+<h3 id="how-each-pipeline-works">How each pipeline works<a class="anchor" aria-label="anchor" href="#how-each-pipeline-works"></a>
 </h3>
-<p>The cortical pipeline reads annotation data and projects inflated
-mesh triangles directly to 2D polygons via orthographic projection. This
-completes in seconds and needs no external rendering dependencies:</p>
-<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">annot_files</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span></span>
-<span>  <span class="fu">freesurfer</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/freesurfer/man/fs_dir.html" class="external-link">fs_dir</a></span><span class="op">(</span><span class="op">)</span>,</span>
-<span>  <span class="st">"subjects"</span>,</span>
-<span>  <span class="st">"fsaverage5"</span>,</span>
-<span>  <span class="st">"label"</span>,</span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"lh.aparc.annot"</span>, <span class="st">"rh.aparc.annot"</span><span class="op">)</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">atlas</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/create_cortical_from_annotation.html">create_cortical_from_annotation</a></span><span class="op">(</span></span>
-<span>  input_annot <span class="op">=</span> <span class="va">annot_files</span>,</span>
-<span>  output_dir <span class="op">=</span> <span class="st">"my_atlas"</span></span>
-<span><span class="op">)</span></span></code></pre></div>
-</div>
-<div class="section level3">
-<h3 id="subcortical-and-tract-pipelines">Subcortical and tract pipelines<a class="anchor" aria-label="anchor" href="#subcortical-and-tract-pipelines"></a>
-</h3>
-<p>These build 3D meshes from a volume, then get their 2D view by
-slicing: the pipeline cuts the volume along the slabs you choose and
-traces each structure’s outline in each cut. Both are controlled by a
-<code>steps</code> argument, so you can stop after the meshes
-(<code>steps = 1:3</code> for subcortical, <code>steps = 1</code> for
-tract) while iterating, then run the default for the slices as well.</p>
+<p>The cortical pipeline projects inflated mesh triangles straight to 2D
+polygons, so it takes seconds and needs no FreeSurfer installation. The
+subcortical and tract pipelines instead build 3D meshes from a volume
+and get their 2D view by slicing it. Each has its own
+<code>steps</code>, inputs and system requirements:
+<code><a href="../articles/atlas-workflows.html">vignette("atlas-workflows")</a></code> walks through all five with
+diagrams.</p>
 </div>
 <div class="section level3">
 <h3 id="post-processing">Post-processing<a class="anchor" aria-label="anchor" href="#post-processing"></a>
@@ -244,6 +245,7 @@ the first two and <code><a href="../reference/atlas_polish.html">atlas_polish()<
 without rebuilding from scratch. See
 <code><a href="../articles/post-processing.html">vignette("post-processing")</a></code> for the full toolkit and
 <code>?atlas-verbs</code> for the vocabulary.</p>
+</div>
 </div>
 <div class="section level2">
 <h2 id="system-requirements">System requirements<a class="anchor" aria-label="anchor" href="#system-requirements"></a>
