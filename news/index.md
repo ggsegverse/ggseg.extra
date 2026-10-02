@@ -1,5 +1,28 @@
 # Changelog
 
+## ggseg.extra 1.9.9.9090
+
+### Minor changes
+
+- `R/atlas_wholebrain.R` was 2556 lines holding three concerns that
+  share almost no state. It is now three files, with no change to any
+  function:
+
+  - `R/atlas_wholebrain.R` (2087 lines) – orchestration, argument
+    grouping, validation and the five pipeline steps.
+  - `R/wholebrain_context.R` (335) – the `aseg` cortical-ribbon
+    subsystem: whether the ribbon is resolved or has been filled solid,
+    and the context volume it becomes. Pure array geometry with its own
+    calibration story.
+  - `R/surface_dilation.R` (141) – reading a cortex mask, masking an
+    overlay to it, and growing labels across vertex adjacency. None of
+    it is whole-brain specific; any surface pipeline that fills
+    unlabelled vertices uses it.
+
+  The 4269-line test file split the same way, into
+  `test-wholebrain_context.R` and `test-surface_dilation.R`, with the
+  three fixtures they share moved to `helper-wholebrain.R`.
+
 ## ggseg.extra 1.9.9.9089
 
 ### Minor changes

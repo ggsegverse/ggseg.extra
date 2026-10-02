@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9089</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9090</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -69,6 +69,22 @@
       <small>Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.9.9.9090" id="ggsegextra-1999090">ggseg.extra 1.9.9.9090<a class="anchor" aria-label="anchor" href="#ggsegextra-1999090"></a></h2>
+<div class="section level3">
+<h3 id="minor-changes-1-9-9-9090">Minor changes<a class="anchor" aria-label="anchor" href="#minor-changes-1-9-9-9090"></a></h3>
+<ul><li>
+<p><code>R/atlas_wholebrain.R</code> was 2556 lines holding three concerns that share almost no state. It is now three files, with no change to any function:</p>
+<ul><li>
+<code>R/atlas_wholebrain.R</code> (2087 lines) – orchestration, argument grouping, validation and the five pipeline steps.</li>
+<li>
+<code>R/wholebrain_context.R</code> (335) – the <code>aseg</code> cortical-ribbon subsystem: whether the ribbon is resolved or has been filled solid, and the context volume it becomes. Pure array geometry with its own calibration story.</li>
+<li>
+<code>R/surface_dilation.R</code> (141) – reading a cortex mask, masking an overlay to it, and growing labels across vertex adjacency. None of it is whole-brain specific; any surface pipeline that fills unlabelled vertices uses it.</li>
+</ul><p>The 4269-line test file split the same way, into <code>test-wholebrain_context.R</code> and <code>test-surface_dilation.R</code>, with the three fixtures they share moved to <code>helper-wholebrain.R</code>.</p>
+</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9089" id="ggsegextra-1999089">ggseg.extra 1.9.9.9089<a class="anchor" aria-label="anchor" href="#ggsegextra-1999089"></a></h2>
 <div class="section level3">
