@@ -549,3 +549,75 @@ describe("build_vertex_label_vector context naming", {
     expect_identical(ggseg.formats:::hemi_from_label(labels[2]), "left")
   })
 })
+
+
+describe("cortical_build_sf_projected", {
+  sq <- function(x, y, s = 2) {
+    sf::st_polygon(list(cbind(
+      c(x, x + s, x + s, x, x),
+      c(y, y, y + s, y + s, y)
+    )))
+  }
+
+  projected_stub <- function() {
+    d <- data.frame(
+      filenm = c(
+        "lh_lateral_lh_a",
+        "lh_lateral_lh_b",
+        "rh_lateral_rh_a",
+        "lh_medial_lh_a"
+      ),
+      hemi_short = c("lh", "lh", "rh", "lh"),
+      hemi = c("left", "left", "right", "left"),
+      view = c("lateral", "lateral", "lateral", "medial"),
+      label = c("lh_a", "lh_b", "rh_a", "lh_a"),
+      stringsAsFactors = FALSE
+    )
+    d$geometry <- sf::st_sfc(sq(0, 0), sq(4, 0), sq(0, 0), sq(0, 0))
+    sf::st_as_sf(d)
+  }
+
+  it("keeps one row per view and label, and only the columns an atlas needs", {
+    local_mocked_bindings(project_mesh_to_polygons = function(...) {
+      projected_stub()
+    })
+
+    out <- cortical_build_sf_projected(list(), c("lh", "rh"), "lateral")
+
+    expect_s3_class(out, "sf")
+    expect_identical(nrow(out), 4L)
+    expect_setequal(names(out), c("label", "view", "geometry"))
+    expect_true(all(table(paste(out$view, out$label)) == 1L))
+  })
+
+  it("normalises every geometry to MULTIPOLYGON", {
+    # A column mixing POLYGON and MULTIPOLYGON breaks st_coordinates() as
+    # soon as anything downstream casts or rbinds it, so the type is part of
+    # this function's contract rather than an accident of st_combine().
+    local_mocked_bindings(project_mesh_to_polygons = function(...) {
+      projected_stub()
+    })
+
+    out <- cortical_build_sf_projected(list(), c("lh", "rh"), "lateral")
+
+    expect_identical(
+      unique(as.character(sf::st_geometry_type(out))),
+      "MULTIPOLYGON"
+    )
+  })
+
+  it("lays the views out side by side rather than stacking them", {
+    local_mocked_bindings(project_mesh_to_polygons = function(...) {
+      projected_stub()
+    })
+
+    out <- cortical_build_sf_projected(list(), c("lh", "rh"), "lateral")
+    spans <- vapply(
+      split(out, out$view),
+      function(d) as.numeric(sf::st_bbox(d)[["xmin"]]),
+      numeric(1)
+    )
+
+    expect_gt(length(unique(spans)), 1L)
+  })
+})

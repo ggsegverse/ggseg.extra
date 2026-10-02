@@ -450,6 +450,13 @@ cortical_build_sf_projected <- function(
     verbose = verbose
   )
 
+  # st_combine() is here for the geometry type, not to merge rows:
+  # assemble_region_sf() already emits one row per hemi/view/label and the
+  # labels carry a hemisphere prefix, so every group holds a single
+  # geometry. Combining one POLYGON yields a MULTIPOLYGON, which is the
+  # point - a column of mixed POLYGON/MULTIPOLYGON breaks st_coordinates()
+  # with "number of columns of matrices must match" once anything downstream
+  # rbinds two atlases or casts the column. Do not delete it as a no-op.
   projected |>
     layout_cortical_views() |>
     dplyr::group_by(view, label) |>

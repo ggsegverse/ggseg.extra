@@ -484,19 +484,23 @@ cortex_snapshot_names <- function(cortex_slices) {
 #' Binary brain-outline volume: cortex plus cerebellum and brainstem
 #' @noRd
 subcort_cortex_volume <- function(vol, dims, cortex_labels) {
-  cortex_vol <- array(0L, dim = dims)
-  for (lbl in c(cortex_labels$left, cortex_labels$right)) {
-    cortex_vol[vol == lbl] <- 1L
-  }
-  # Also include cerebellum and brainstem (FS labels 7,8,46,47 = cerebellum
-  # WM/cortex per hemisphere; 16 = brain-stem). The "brain outline" context
-  # must span the full brain extent — otherwise atlases that label
-  # cerebellar regions (e.g. HOA-2) draw structures that extend below the
-  # cerebrum-only outline, making the structures look oversized.
-  for (lbl in c(7L, 8L, 46L, 47L, 16L)) {
-    cortex_vol[vol == lbl] <- 1L
-  }
+  # Cerebellum and brainstem join the cortex labels (FS 7/8/46/47 =
+  # cerebellum WM/cortex per hemisphere; 16 = brain-stem). The "brain
+  # outline" context must span the full brain extent — otherwise atlases
+  # that label cerebellar regions (e.g. HOA-2) draw structures that extend
+  # below the cerebrum-only outline, making the structures look oversized.
+  outline_labels <- c(
+    cortex_labels$left,
+    cortex_labels$right,
+    7L,
+    8L,
+    46L,
+    47L,
+    16L
+  )
 
+  cortex_vol <- array(0L, dim = dims)
+  cortex_vol[vol %in% outline_labels] <- 1L
   cortex_vol
 }
 

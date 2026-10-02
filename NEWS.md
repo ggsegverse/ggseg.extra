@@ -1,3 +1,32 @@
+# ggseg.extra 1.9.9.9089
+
+## Minor changes
+
+- The three label-stamping loops now make one pass instead of one whole-array
+  scan per label. `wholebrain_prepare_subcortical_volume()`,
+  `wholebrain_prepare_cerebellar_volume()` and `subcort_cortex_volume()` each
+  walked the volume once per label, which is roughly 10^9 comparisons for a
+  400-parcel atlas on a 1 mm grid. On that case the subcortical remap drops
+  from 5.8s to 0.13s, about 44x, with byte-identical output -- checked against
+  the old loops over 600 randomised volumes including `NA` voxels, repeated
+  source indices and empty label sets.
+
+## Documentation
+
+- `cortical_build_sf_projected()` has tests. It was mocked out in all three of
+  its callers' test files, so the function that stitches mesh projection into
+  the cortical pipeline was never run. Its `st_combine()` is now documented as
+  the geometry-type normalisation it is -- combining a single `POLYGON` yields
+  a `MULTIPOLYGON`, and a column mixing the two breaks `st_coordinates()` --
+  because a reviewer reasonably read it as a no-op and proposed deleting it.
+
+- `wholebrain_prepare_subcortical_volume()` and
+  `wholebrain_prepare_cerebellar_volume()` likewise had tests only as mocks;
+  both now have real ones covering the remap, the drop of unlisted labels and
+  the per-label value. `subcort_cortex_volume()` had no tests at all and now
+  covers the cortex labels, the cerebellum and brainstem span, exclusion of
+  everything else, and `NA` voxels.
+
 # ggseg.extra 1.9.9.9088
 
 ## Breaking changes

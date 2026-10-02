@@ -1879,9 +1879,8 @@ wholebrain_prepare_cerebellar_volume <- function(
   vol <- read_volume(input_volume, reorient = FALSE)
   arr <- as.array(vol)
   result <- array(0L, dim = dim(arr))
-  for (idx in cerebellar_idx) {
-    result[arr == idx] <- idx
-  }
+  keep <- arr %in% cerebellar_idx
+  result[keep] <- arr[keep]
   out <- RNifti::asNifti(result, reference = vol)
   if (RNifti::orientation(out) != "RAS") {
     RNifti::orientation(out) <- "RAS"
@@ -1968,9 +1967,14 @@ wholebrain_prepare_subcortical_volume <- function(
   vol <- read_volume(input_volume, reorient = FALSE)
   arr <- as.array(vol)
   result <- array(0L, dim = dim(arr))
-  for (i in seq_along(subcortical_idx)) {
-    result[arr == subcortical_idx[i]] <- target_idx[i]
-  }
+  # One match() pass rather than a whole-array scan per label: a 400-parcel
+  # atlas on a 1 mm grid is ~10^9 comparisons the loop way. match() reports
+  # the first hit while the loop let a later entry win, so a repeated source
+  # index is reduced to its last mapping first to keep that behaviour.
+  last <- !duplicated(subcortical_idx, fromLast = TRUE)
+  hit <- match(arr, subcortical_idx[last])
+  found <- !is.na(hit)
+  result[found] <- target_idx[last][hit[found]]
   result <- wholebrain_write_cortex_context(
     result = result,
     arr = arr,

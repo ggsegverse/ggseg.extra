@@ -1606,3 +1606,49 @@ describe("subcort_snapshot_names", {
     )
   })
 })
+
+
+describe("subcort_cortex_volume", {
+  it("flags the cortex labels it is given", {
+    vol <- array(0L, dim = c(4, 4, 2))
+    vol[1, 1, 1] <- 3L
+    vol[2, 2, 1] <- 42L
+
+    out <- subcort_cortex_volume(vol, dim(vol), list(left = 3L, right = 42L))
+
+    expect_identical(out[1, 1, 1], 1L)
+    expect_identical(out[2, 2, 1], 1L)
+    expect_identical(sum(out), 2L)
+  })
+
+  it("also spans cerebellum and brainstem, so the outline covers them", {
+    vol <- array(0L, dim = c(4, 4, 2))
+    vol[1, 1, 1] <- 7L
+    vol[1, 2, 1] <- 8L
+    vol[1, 3, 1] <- 46L
+    vol[1, 4, 1] <- 47L
+    vol[2, 1, 1] <- 16L
+
+    out <- subcort_cortex_volume(vol, dim(vol), list(left = 3L, right = 42L))
+
+    expect_identical(sum(out), 5L)
+  })
+
+  it("leaves every other label out of the outline", {
+    vol <- array(c(17L, 18L, 53L, 0L), dim = c(2, 2))
+
+    out <- subcort_cortex_volume(vol, dim(vol), list(left = 3L, right = 42L))
+
+    expect_identical(sum(out), 0L)
+  })
+
+  it("is unaffected by NA voxels", {
+    vol <- array(c(3L, NA_integer_, 42L, 0L), dim = c(2, 2))
+
+    out <- subcort_cortex_volume(vol, dim(vol), list(left = 3L, right = 42L))
+
+    expect_identical(sum(out), 2L)
+    # Column-major: the NA sits at [2, 1].
+    expect_identical(out[2, 1], 0L)
+  })
+})
