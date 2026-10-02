@@ -7,20 +7,14 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
-You have brain parcellation data sitting on your computer.
-Maybe it's a FreeSurfer annotation file from a cortical atlas you want to visualize.
-Maybe it's a volumetric segmentation of subcortical structures.
-Maybe it's tractography streamlines defining white matter tracts.
-The question is: how do you turn any of these into something you can actually plot with ggseg?
+Five pipelines, each shaped by the kind of data it reads.
+This article is the map: what flows where, what each pipeline does to get from a file to a `ggseg_atlas`, and where the result can be plotted.
 
-The answer depends on what you're starting with.
-Neuroimaging data comes in a wild variety of formats, and each format tells you something different about the brain.
-The common thread is that they all describe regions or structures, and ggseg.extra knows how to extract that information and turn it into atlas objects that work with both 2D and 3D plotting.
+For a runnable first atlas see [Getting Started](ggseg.extra.html); for a worked example of any one pipeline, see its tutorial.
 
 ## What you're working with
 
-Here's the landscape.
-Different neuroimaging formats flow through different creation functions, but they all converge on the same destination: a `ggseg_atlas` object that contains everything needed for visualization.
+Every format converges on one object.
 
 ```{mermaid}
 %%| label: fig-input-formats
@@ -60,12 +54,8 @@ flowchart TB
 
 ## How cortical atlases get built
 
-Every cortical creation function — whether you're starting with FreeSurfer annotations, GIFTI labels, CIFTI parcellations, or neuromaps data — follows the same two-step pipeline.
-
-Step 1 reads your input file and maps it to 3D vertices on the brain surface.
-Step 2 projects the inflated mesh triangles directly to 2D polygons via orthographic projection.
-Both steps complete in seconds and need no external rendering dependencies.
-Reading the annotation files needs the `freesurferformats` R package, not a FreeSurfer installation.
+Every cortical creation function follows the same two steps, whatever the input format.
+Neither needs a FreeSurfer installation --- reading the files needs the `freesurferformats` R package.
 
 ```{mermaid}
 %%| label: fig-cortical-fork
@@ -88,16 +78,9 @@ The pipeline returns the raw polygons; call `atlas_simplify(keep = ...)` afterwa
 
 ## Subcortical and volumetric atlases work differently
 
-Cortical atlases are all about surface vertices — mapping regions to points on the brain's outer layer.
-Subcortical structures live inside the brain, so the approach changes.
-Instead of vertex indices, you're extracting 3D meshes directly from volumetric segmentations.
+A structure buried inside the brain has no outside to project, so these pipelines read a volume and its colour table and tessellate a mesh per structure out of the voxels, rather than mapping surface vertices.
 
-The pipeline reads your volume file (typically a `.mgz` or `.nii` segmentation) along with its colour table, identifies each unique structure, and generates a mesh for it.
-Each mesh becomes a distinct 3D object you can rotate and explore.
-
-2D comes from slices rather than from a surface.
-A structure buried inside the brain has no outside to project, so the pipeline takes orthogonal cuts through the volume — the slabs you choose with `subcortical_slabs()` — and traces each structure's outline in each cut.
-That gives you a flat, multi-panel view in the same `ggseg_atlas`.
+2D comes from slices rather than from a surface: the pipeline takes orthogonal cuts through the volume — the slabs you choose with `subcortical_slabs()` — and traces each structure's outline in each cut, giving a flat, multi-panel view in the same `ggseg_atlas`.
 Stop at `steps = 1:3` if you only want the meshes; the default runs all six and gives you both.
 
 You have two functions to choose from: `create_subcortical_from_volume()` if you only want subcortical structures, or `create_wholebrain_from_volume()` if your segmentation includes both cortical and subcortical regions and you want everything in one atlas.
@@ -181,11 +164,8 @@ flowchart TB
 
 ## Where your atlas can go
 
-Every `ggseg_atlas` object, regardless of how it was created, works with the ggseg plotting ecosystem.
-But what you can do with it depends on whether it contains 2D polygon data.
-
-If your atlas has 2D geometries (cortical atlases from the full pipeline, or cerebellar atlases with SUIT flatmap polygons), you can plot it with both ggseg for flat 2D ggplot2-based visualizations and ggseg3d for interactive 3D rotation and exploration.
-If it's 3D-only — because you stopped a pipeline before its 2D steps — then ggseg3d is your only option, but that's often all you need.
+What you can plot depends on whether the atlas carries 2D geometry.
+Stopping a pipeline before its 2D steps leaves a 3D-only atlas, which is often all you need.
 
 ```{mermaid}
 %%| label: fig-output-compatibility

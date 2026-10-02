@@ -18,6 +18,18 @@
   No content was dropped -- the duplicated prose became cross-references, so
   each fact still has exactly one home.
 
+- `vignette("atlas-workflows")` now lets its six diagrams carry the
+  structure. The prose that restated them in words is gone: the narrative
+  opening, "different formats flow through different creation functions but
+  converge on a `ggseg_atlas`" (which is the first flowchart), the
+  step-1-then-step-2 narration (the second), the cortical-versus-subcortical
+  framing (the third), and the 2D/3D compatibility walk-through (the sixth).
+  What no diagram shows is kept beside the one it belongs to -- the
+  orthographic camera placement and back-face culling, the boundary-face rule,
+  `subcortical_slabs()` and the `steps` shortcuts, the SUIT entry points, and
+  the whole performance section. All six diagrams are byte-identical and all
+  eight headings remain; the file is 30 lines shorter.
+
 # ggseg.extra 1.9.9.9090
 
 ## Minor changes
