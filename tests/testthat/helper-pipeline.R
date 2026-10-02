@@ -102,3 +102,25 @@ local_test_workdir <- function(env = parent.frame()) {
 scrub_workdir <- function(lines) {
   gsub(as.character(fs::path_abs(".")), "<workdir>", lines, fixed = TRUE)
 }
+
+#' Drop the blank lines cli emits around headings
+#'
+#' cli omits the blank before an app's *first* heading and emits one after
+#' that, and each blank arrives as its own message. Whether a snapshot
+#' records them therefore depends on what printed earlier in the same file --
+#' and a FreeSurfer-gated test sits above some of them, so it prints on a
+#' developer machine and skips on a runner. Verified against the runner's own
+#' `.new.md`: a single blank line was the entire difference.
+#'
+#' This drops blank-only lines, so the snapshot pins the messages, warnings
+#' and info lines and not cli's vertical spacing. Use it only where that
+#' spacing is environment-dependent; `scrub_workdir()` alone is right
+#' elsewhere.
+scrub_cli_spacing <- function(lines) {
+  lines[nzchar(trimws(lines))]
+}
+
+#' `scrub_workdir()` with cli's blank lines dropped
+scrub_snapshot <- function(lines) {
+  scrub_cli_spacing(scrub_workdir(lines))
+}

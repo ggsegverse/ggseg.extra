@@ -1397,7 +1397,7 @@ describe("create_wholebrain_from_volume oversight warning", {
         steps = 1:2,
         verbose = TRUE
       )),
-      transform = scrub_workdir
+      transform = scrub_snapshot
     )
   })
 })
