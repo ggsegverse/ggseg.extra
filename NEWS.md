@@ -27,8 +27,32 @@
   What no diagram shows is kept beside the one it belongs to -- the
   orthographic camera placement and back-face culling, the boundary-face rule,
   `subcortical_slabs()` and the `steps` shortcuts, the SUIT entry points, and
-  the whole performance section. All six diagrams are byte-identical and all
-  eight headings remain; the file is 30 lines shorter.
+  the whole performance section. All eight headings remain and the file is 30
+  lines shorter.
+
+- Six inaccuracies in those diagrams, found by checking them against the code
+  rather than against their previous selves:
+
+  - `fig-input-formats` is captioned "All atlas creation pathways" and drew 11
+    of the 12 creators -- `create_tract_from_volume()` was missing.
+  - its alt text said seven input types where the diagram draws eight.
+  - `fig-subcortical` showed the input as a volume "+ Color Table" as though a
+    lookup table were required; `input_lut` defaults to `NULL`.
+  - `fig-tracts` drew only the `.trk`/`.tck` route, omitting the volumetric
+    tract label map that `create_tract_from_volume()` reads. The prose said
+    "your input is a tractography file" to match.
+  - `fig-output-compatibility` labelled a node `ggseg / Flat 2D plots`, which
+    reads as `ggseg()` -- defunct since ggseg 2.0.0. It names `geom_brain` now.
+  - `fig-cortical-fork` numbered its stages "Step 1" and "Step 2" like the
+    subcortical and tract diagrams, where `steps` is a real argument. The
+    cortical creators have no `steps` formal, so the numbering invited a call
+    that does not exist.
+
+  Verified unchanged in the same pass: the step counts (`subcort_total_steps()`
+  is 6 and `tract_total_steps()` is 4, so "Steps 1-3"/"4-6" and
+  "Step 1"/"Steps 2-4" and the `steps = 1:3` and `steps = 1` shortcuts are all
+  right), and the format table in `vignette("ggseg.extra")`, which lists all
+  twelve creators with nothing stale.
 
 # ggseg.extra 1.9.9.9090
 

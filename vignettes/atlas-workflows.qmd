@@ -20,7 +20,7 @@ Every format converges on one object.
 %%| label: fig-input-formats
 %%| fig-width: 8
 %%| fig-cap: "All atlas creation pathways in ggseg.extra"
-%%| fig-alt: "Flowchart showing seven input file types (FreeSurfer .annot, FreeSurfer .label, GIFTI .label.gii, CIFTI .dlabel.nii, Neuromaps .func.gii/.nii, Volume .mgz/.nii, and Tractography .trk/.tck) flowing through their respective creation functions to produce a unified ggseg_atlas output object"
+%%| fig-alt: "Flowchart showing eight input file types (FreeSurfer .annot, FreeSurfer .label, GIFTI .label.gii, CIFTI .dlabel.nii, Neuromaps .func.gii/.nii, Volume .mgz/.nii, Tractography .trk/.tck, and SUIT .label.gii/.annot) flowing through their respective creation functions to produce a unified ggseg_atlas output object"
 flowchart TB
     A[Input Files] --> B[FreeSurfer .annot]
     A --> C[FreeSurfer .label]
@@ -36,7 +36,7 @@ flowchart TB
     D --> D1[create_cortical_from_gifti]
     E --> E1[create_cortical_from_cifti]
     F --> F1[create_cortical_from_neuromaps]
-    G --> G1[create_subcortical_from_volume<br/>create_wholebrain_from_volume]
+    G --> G1[create_subcortical_from_volume<br/>create_wholebrain_from_volume<br/>create_tract_from_volume]
     H --> H1[create_tract_from_tractography]
     J --> J1[create_cerebellar_from_gifti<br/>create_cerebellar_from_annotation<br/>create_cerebellar_from_volume]
 
@@ -63,8 +63,8 @@ Neither needs a FreeSurfer installation --- reading the files needs the `freesur
 %%| fig-cap: "Cortical atlas creation pipeline"
 %%| fig-alt: "Flowchart showing cortical atlas creation: step 1 reads annotation and extracts vertices, step 2 projects mesh triangles to 2D polygons, producing a complete atlas with both 3D and 2D data in seconds"
 flowchart LR
-    A[Input File] --> S1["Step 1<br/>Read annotation<br/>& extract vertices"]
-    S1 --> S2["Step 2<br/>Project mesh to<br/>2D polygons"]
+    A[Input File] --> S1["Read annotation<br/>& extract vertices"]
+    S1 --> S2["Project mesh to<br/>2D polygons"]
     S2 --> F[Complete atlas<br/>3D + 2D ⚡]
 
     style S1 fill:#fff9c4
@@ -78,7 +78,7 @@ The pipeline returns the raw polygons; call `atlas_simplify(keep = ...)` afterwa
 
 ## Subcortical and volumetric atlases work differently
 
-A structure buried inside the brain has no outside to project, so these pipelines read a volume and its colour table and tessellate a mesh per structure out of the voxels, rather than mapping surface vertices.
+A structure buried inside the brain has no outside to project, so these pipelines read a volume — and its colour table, if it has one — and tessellate a mesh per structure out of the voxels, rather than mapping surface vertices.
 
 2D comes from slices rather than from a surface: the pipeline takes orthogonal cuts through the volume — the slabs you choose with `subcortical_slabs()` — and traces each structure's outline in each cut, giving a flat, multi-panel view in the same `ggseg_atlas`.
 Stop at `steps = 1:3` if you only want the meshes; the default runs all six and gives you both.
@@ -91,7 +91,7 @@ You have two functions to choose from: `create_subcortical_from_volume()` if you
 %%| fig-cap: "Subcortical and whole-brain volumetric atlas pipeline"
 %%| fig-alt: "Flowchart showing volumetric atlas creation from volume files with colour tables, branching between subcortical-only and whole-brain options, extracting voxels and generating a mesh per structure, then either stopping at steps 1 to 3 for a 3D-only atlas or continuing through steps 4 to 6 to slice the volume and trace contours for an atlas with both 3D meshes and 2D slices"
 flowchart TB
-    A[Volume .mgz/.nii<br/>+ Color Table] --> B[Read segmentation<br/>Extract unique labels]
+    A[Volume .mgz/.nii<br/>+ optional LUT] --> B[Read segmentation<br/>Extract unique labels]
     B --> C{Atlas type?}
     C -->|Subcortical only| D[create_subcortical_from_volume]
     C -->|Whole brain| E[create_wholebrain_from_volume]
@@ -140,7 +140,8 @@ The `create_wholebrain_from_volume()` pipeline can also route cerebellar labels 
 
 White matter tracts don't fit neatly into the cortical or subcortical categories.
 They're defined by tractography — streamlines that trace the paths of white matter fibers through the brain.
-Your input is a tractography file (`.trk` or `.tck`), which contains a collection of 3D curves representing fiber bundles.
+`create_tract_from_tractography()` takes those streamlines directly, from a `.trk` or `.tck` file.
+`create_tract_from_volume()` starts from a volumetric tract label map instead, reducing each label's voxel cloud to one ordered centerline before handing it to the same pipeline — which is what a probabilistic tract atlas distributed as a NIfTI needs.
 
 The pipeline reads those streamlines and converts them into tube-like meshes that can be rendered in 3D.
 Like subcortical atlases, the 2D view comes from slicing rather than from a surface: the tubes are cut by the slabs you choose, and each tract's cross-section is traced into a polygon.
@@ -150,9 +151,11 @@ Stop at `steps = 1` if the meshes are all you want; the default runs all four.
 %%| label: fig-tracts
 %%| fig-width: 10
 %%| fig-cap: "White matter tract atlas pipeline"
-%%| fig-alt: "Flowchart showing tractography file processing: step 1 reads streamlines and builds tube meshes, then either stopping there for a 3D-only tract atlas or continuing through steps 2 to 4 to slice the tubes, trace contours and assemble an atlas with both 3D meshes and 2D slices"
+%%| fig-alt: "Flowchart showing tract atlas creation from either a tractography file or a volumetric tract label map, the latter first reduced to one centerline per label: step 1 reads streamlines and builds tube meshes, then either stopping there for a 3D-only tract atlas or continuing through steps 2 to 4 to slice the tubes, trace contours and assemble an atlas with both 3D meshes and 2D slices"
 flowchart TB
     A[Tractography<br/>.trk or .tck] --> B["Step 1<br/>Read streamlines<br/>Build tube meshes"]
+    V[Volume<br/>tract labels] --> V1[Fit a centerline<br/>per label]
+    V1 --> B
     B --> C{Stop here?}
     C -->|steps = 1| H2[ggseg_atlas<br/>3D tract meshes only]
     C -->|default| S["Steps 2-4<br/>Slice the tubes<br/>Trace contours<br/>Assemble"]
@@ -174,7 +177,7 @@ Stopping a pipeline before its 2D steps leaves a 3D-only atlas, which is often a
 %%| fig-alt: "Flowchart showing that atlases with 2D data can use both ggseg for flat ggplot2-based plots and ggseg3d for interactive 3D plotly-based visualizations, while 3D-only atlases can only use ggseg3d"
 flowchart LR
     A[ggseg_atlas] --> B{Contains 2D?}
-    B -->|Yes| C[ggseg<br/>Flat 2D plots]
+    B -->|Yes| C[ggseg<br/>geom_brain]
     B -->|Yes| D[ggseg3d<br/>Interactive 3D]
     B -->|No<br/>3D only| D
 
