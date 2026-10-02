@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9088</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9089</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -69,6 +69,18 @@
       <small>Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.9.9.9089" id="ggsegextra-1999089">ggseg.extra 1.9.9.9089<a class="anchor" aria-label="anchor" href="#ggsegextra-1999089"></a></h2>
+<div class="section level3">
+<h3 id="minor-changes-1-9-9-9089">Minor changes<a class="anchor" aria-label="anchor" href="#minor-changes-1-9-9-9089"></a></h3>
+<ul><li>The three label-stamping loops now make one pass instead of one whole-array scan per label. <code>wholebrain_prepare_subcortical_volume()</code>, <code>wholebrain_prepare_cerebellar_volume()</code> and <code>subcort_cortex_volume()</code> each walked the volume once per label, which is roughly 10^9 comparisons for a 400-parcel atlas on a 1 mm grid. On that case the subcortical remap drops from 5.8s to 0.13s, about 44x, with byte-identical output – checked against the old loops over 600 randomised volumes including <code>NA</code> voxels, repeated source indices and empty label sets.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="documentation-1-9-9-9089">Documentation<a class="anchor" aria-label="anchor" href="#documentation-1-9-9-9089"></a></h3>
+<ul><li><p><code>cortical_build_sf_projected()</code> has tests. It was mocked out in all three of its callers’ test files, so the function that stitches mesh projection into the cortical pipeline was never run. Its <code>st_combine()</code> is now documented as the geometry-type normalisation it is – combining a single <code>POLYGON</code> yields a <code>MULTIPOLYGON</code>, and a column mixing the two breaks <code>st_coordinates()</code> – because a reviewer reasonably read it as a no-op and proposed deleting it.</p></li>
+<li><p><code>wholebrain_prepare_subcortical_volume()</code> and <code>wholebrain_prepare_cerebellar_volume()</code> likewise had tests only as mocks; both now have real ones covering the remap, the drop of unlisted labels and the per-label value. <code>subcort_cortex_volume()</code> had no tests at all and now covers the cortex labels, the cerebellum and brainstem span, exclusion of everything else, and <code>NA</code> voxels.</p></li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9088" id="ggsegextra-1999088">ggseg.extra 1.9.9.9088<a class="anchor" aria-label="anchor" href="#ggsegextra-1999088"></a></h2>
 <div class="section level3">
