@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9091</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9092</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -69,6 +69,24 @@
       <small>Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.9.9.9092" id="ggsegextra-1999092">ggseg.extra 1.9.9.9092<a class="anchor" aria-label="anchor" href="#ggsegextra-1999092"></a></h2>
+<p>Both fixes were found by building the 26 ggsegverse atlas repositories against 1.9.9.9091. Each one stopped a shipped atlas repository from being rebuilt at all.</p>
+<div class="section level3">
+<h3 id="bug-fixes-1-9-9-9092">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-1-9-9-9092"></a></h3>
+<ul><li>
+<p><code><a href="../reference/create_wholebrain_from_volume.html">create_wholebrain_from_volume()</a></code> could not build an atlas whose lookup table carried a label with a space in it – the Neuromorphometrics tables ggsegMiccai uses are full of them (“Right Accumbens Area”). The pipeline writes its own intermediate lookup table for the subcortical pipeline to read straight back, and the <code><a href="../reference/write_lut.html">write_lut()</a></code> guard added in 1.9.9.9084 refused those labels rather than corrupting them. Correct for a table a user asked for; wrong for one the pipeline hands itself. It now sanitises them first, which is what <code>build_atlas_components()</code> does to the same labels further down, so the finished atlas is unchanged.</p>
+<p>The guard was right about the danger. <code><a href="../reference/read_lut.html">read_lut()</a></code> splits on whitespace, so the label and its colour channels came back one field out of step – the previously released ggsegMiccai subcortical atlas was built from a colour-shifted table. The round trip is now lossless.</p>
+<p>The abort also came after the cortical half of the pipeline had finished, so about two minutes of work was discarded for a defect present in the input.</p>
+</li>
+<li>
+<p>A subcortical rebuild reused projection snapshots drawn from a different volume, then failed tracing them with “No contours were extracted from any region” – blaming the regions for a stale cache. This stopped ggsegMars, ggsegHammersmith and ggsegMiccai.</p>
+<p>The volume and lookup table <code><a href="../reference/create_wholebrain_from_volume.html">create_wholebrain_from_volume()</a></code> hands down to the subcortical pipeline are deliberately not cache-stamped, as <code>cache_format_version()</code> documents. Snapshots instead carry a signature of what they were drawn from, which catches a stale one “whether the pipeline changed or only its inputs did” – but that check lives inside the step that draws them, and a reusable <code>slabs.rds</code> made the pipeline skip the step entirely. The machinery was right; it was unreachable.</p>
+<p>Step 4 now short-circuits only when it was excluded from <code>steps</code> on purpose. When it was requested, each snapshot is checked against its signature and only what moved is redrawn: ggsegMiccai’s stale directory is repaired in 3.3s, and a rebuild with nothing to do costs 1.4s rather than 0.</p>
+</li>
+<li><p>A changed <code>slabs</code> argument is honoured on a cached rebuild. It used to be dropped silently, because the step that consumes it was the one being skipped.</p></li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9091" id="ggsegextra-1999091">ggseg.extra 1.9.9.9091<a class="anchor" aria-label="anchor" href="#ggsegextra-1999091"></a></h2>
 <div class="section level3">
