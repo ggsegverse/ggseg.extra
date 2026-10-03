@@ -1,5 +1,26 @@
 # Changelog
 
+## ggseg.extra 1.9.9.9104
+
+### Bug fixes
+
+- `tube_radius = "density"` no longer silently produces a uniform tube
+  at the widest setting. The radius is meant to follow how many
+  streamlines pass each point of the centerline, but a tract derived
+  from a volume has no streamlines – only the centerline pulled out of
+  the volume – so every point counted exactly itself, the density was 1
+  throughout, and the radius collapsed to the *maximum* of
+  `density_radius_range`. The documentation recommends `"density"` for
+  tracts with many streamlines, so a reader following it on a
+  volume-derived atlas got the widest possible tube and no indication of
+  it.
+
+  Uniform density carries no information, so the radius is now the
+  middle of the range, which is what the existing all-zero branch
+  already answered with for the same reason, and the case is reported
+  rather than assumed. A bundle whose streamlines cover different
+  stretches of the centerline is unaffected.
+
 ## ggseg.extra 1.9.9.9103
 
 ### Breaking changes
