@@ -35,13 +35,19 @@ label_to_region <- function(
   region <- label_name
 
   if (remove_hemi) {
+    # vermis and midline are hemisphere values this package itself assigns --
+    # detect_cerebellar_hemi() returns them, and detect_hemi() takes
+    # "midline" as its default for tracts -- so a label carrying one is
+    # carrying a hemisphere, exactly as left/right is, and the region name
+    # should not keep it. Leaving them out is why every cerebellar region in
+    # the ggsegverse was named "midline_<something>".
     stripped <- gsub(
-      "^(Left|Right|left|right|lh|rh|L|R)[- _.]+",
+      "^(Left|Right|left|right|lh|rh|L|R|Vermis|vermis|Midline|midline)[- _.]+",
       "",
       region
     )
     stripped <- gsub(
-      "[- _.]+(left|right|lh|rh|l|r)$",
+      "[- _.]+(left|right|lh|rh|l|r|vermis|midline)$",
       "",
       stripped,
       ignore.case = TRUE

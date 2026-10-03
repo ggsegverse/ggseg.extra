@@ -871,6 +871,7 @@ cerebellar_project_and_build <- function(
   # After the deep nuclei are merged in: their geometry is not on the flatmap,
   # so checking before this would drop every one of them.
   components <- drop_labels_without_geometry(components, sf_data)
+  warn_no_hemisphere_split(components$core$hemi)
 
   atlas <- ggseg_atlas(
     atlas = atlas_name,
@@ -1278,8 +1279,8 @@ build_suit_region_row <- function(pid, region_vertices, label_table) {
   }
 
   hemi <- detect_cerebellar_hemi(region_name)
-  region <- clean_cerebellar_region(region_name)
-  label <- paste(hemi, region, sep = "_")
+  region <- label_to_region(region_name)
+  label <- paste(hemi, sanitize_label(region), sep = "_")
 
   dplyr::tibble(
     hemi = hemi,
@@ -1378,29 +1379,6 @@ detect_cerebellar_hemi <- function(region_name) {
 }
 
 
-#' Clean cerebellar region name
-#'
-#' Removes hemisphere/vermis prefix from SUIT label names to produce
-#' a clean region identifier.
-#'
-#' @param region_name Raw label name from GIFTI.
-#' @return Cleaned region name.
-#' @noRd
-clean_cerebellar_region <- function(region_name) {
-  region <- gsub(
-    "^(Left|Right|Vermis|left|right|vermis)[- _.]\\s*",
-    "",
-    region_name
-  )
-  region <- trimws(region)
-  if (nchar(region) == 0) {
-    region <- region_name
-  }
-  region <- gsub("\\s+", " ", region)
-  region
-}
-
-
 # Cerebellar annotation reader ----
 
 #' Read cerebellar annotation files
@@ -1463,14 +1441,14 @@ read_one_cerebellar_annotation <- function(annot_file) {
   hemi <- unname(vapply(ct$struct_name, detect_cerebellar_hemi, character(1)))
   region <- unname(vapply(
     ct$struct_name,
-    clean_cerebellar_region,
+    label_to_region,
     character(1)
   ))
 
   dplyr::tibble(
     hemi = hemi,
     region = region,
-    label = paste(hemi, region, sep = "_"),
+    label = paste(hemi, sanitize_label(region), sep = "_"),
     colour = ct$hex_color_string_rgb,
     vertices = region_verts
   )
@@ -1552,8 +1530,8 @@ build_cerebellar_volume_row <- function(
   }
 
   hemi <- detect_cerebellar_hemi(region_name)
-  region <- clean_cerebellar_region(region_name)
-  label <- paste(hemi, region, sep = "_")
+  region <- label_to_region(region_name)
+  label <- paste(hemi, sanitize_label(region), sep = "_")
 
   resolved <- resolve_orphan_region(
     region_vertices,
@@ -1941,4 +1919,40 @@ resolve_provided_lut <- function(input_lut, unique_ids) {
   }
 
   NULL
+}
+
+
+#' Say when a cerebellar atlas came out with every region on one side
+#'
+#' `detect_cerebellar_hemi()` reads the hemisphere from the region's name and
+#' falls back to `"midline"`, so a parcellation that encodes the side in a way
+#' the patterns do not match gets `"midline"` for every region -- and nothing
+#' said so. All seven shipped `ggsegCerebellum` atlases are in that state,
+#' `nettekoven32` and `nettekoven68` included, whose names carry the side as
+#' `M1L` and `M1R`: a trailing letter with no separator before it, which the
+#' suffix pattern deliberately does not match, because matching a bare
+#' trailing `L` or `R` would bind any label ending in those letters.
+#'
+#' So this reports rather than guesses harder. An atlas genuinely without a
+#' hemisphere split is fine and common, which is why it is a warning naming
+#' the remedy and not an error.
+#' @noRd
+warn_no_hemisphere_split <- function(hemi) {
+  present <- unique(hemi[!is.na(hemi)])
+  if (length(present) != 1L || !identical(present, "midline")) {
+    return(invisible(NULL))
+  }
+  cli::cli_warn(
+    c(
+      "Every region came out on {.val midline}: no hemisphere was detected
+      for any of them.",
+      "i" = "The hemisphere is read from each region's name. A parcellation
+      that writes it another way -- {.val M1L} and {.val M1R}, with no
+      separator -- is not matched.",
+      "i" = "Declare it with a {.field hemi} column on the lookup table, or
+      name the regions {.val Left_}/{.val Right_}/{.val Vermis_}."
+    ),
+    wrap = TRUE
+  )
+  invisible(NULL)
 }
