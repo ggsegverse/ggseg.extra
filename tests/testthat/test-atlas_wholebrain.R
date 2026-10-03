@@ -271,11 +271,16 @@ describe("wholebrain_classify_labels", {
       label = c("cortex_a", "deep_nucleus"),
       stringsAsFactors = FALSE
     )
+    # Both warnings: the test is named for the volume-only default, which
+    # until now it did not actually assert.
     expect_warning(
-      result <- wholebrain_classify_labels(
-        ad,
-        colortable = ct,
-        min_vertices = 50L
+      expect_warning(
+        result <- wholebrain_classify_labels(
+          ad,
+          colortable = ct,
+          min_vertices = 50L
+        ),
+        "not on the cortical surface"
       ),
       "by surface vertex count"
     )
@@ -1318,13 +1323,18 @@ describe("create_wholebrain_from_volume integration", {
     lut_file <- test_lut_file()
     skip_if(!file.exists(lut_file), "Test LUT file not found")
 
+    # Two warnings, for two different claims: labels that were sized and
+    # found small, and labels that were never on the surface to size.
     expect_warning(
-      result <- create_wholebrain_from_volume(
-        input_volume = vol_file,
-        input_lut = lut_file,
-        projection_opts = list(registration = "header"),
-        steps = 1:2,
-        verbose = FALSE
+      expect_warning(
+        result <- create_wholebrain_from_volume(
+          input_volume = vol_file,
+          input_lut = lut_file,
+          projection_opts = list(registration = "header"),
+          steps = 1:2,
+          verbose = FALSE
+        ),
+        "not on the cortical surface"
       ),
       "by surface vertex count"
     )
@@ -3999,5 +4009,30 @@ describe("declared cortical hemisphere", {
 
     expect_setequal(left$source_label, c("Region_174", "bilateral_thing"))
     expect_setequal(right$source_label, "bilateral_thing")
+  })
+})
+
+
+describe("warn_volume_only_subcortical", {
+  it("names labels that were never on the surface to be measured", {
+    # Separate from the vertex-count warning because the claims differ: that
+    # one says a label was sized and found small, this one says a label was
+    # never measured. Reporting only the first left the rest unaccounted for
+    # -- 31 of them on the shipped aseg.
+    expect_warning(
+      warn_volume_only_subcortical(c("Brain-Stem", "4th-Ventricle")),
+      "Brain-Stem"
+    )
+  })
+
+  it("says it assumed rather than measured", {
+    expect_warning(
+      warn_volume_only_subcortical("Brain-Stem"),
+      "Assumed subcortical"
+    )
+  })
+
+  it("stays quiet when every label reached the surface", {
+    expect_no_warning(warn_volume_only_subcortical(character(0)))
   })
 })
