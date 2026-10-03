@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9101</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9102</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -69,6 +69,17 @@
       <small>Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.9.9.9102" id="ggsegextra-1999102">ggseg.extra 1.9.9.9102<a class="anchor" aria-label="anchor" href="#ggsegextra-1999102"></a></h2>
+<div class="section level3">
+<h3 id="bug-fixes-1-9-9-9102">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-1-9-9-9102"></a></h3>
+<ul><li>
+<p>The large-atlas warning no longer fires on most atlases. Its budget was <code>max(10000, 50 * regions)</code> regardless of what kind of atlas it was, which flagged <strong>76 of the 109 atlases installed here</strong>, shipped and polished ones included – and its advice could not clear it, because polishing a dense subcortical atlas does not bring it under a cortical allowance. A warning that fires on seven atlases in ten teaches the reader to ignore warnings.</p>
+<p>The budget is now per atlas type, because the types differ by about seven times in how many vertices a region naturally needs. Measured across those 109 atlases, the per-region medians are 225 (cerebellar), 293 (cortical), 646 (subcortical) and 1675 (tract). Each budget sits just above its type’s 90th percentile, so the warning flags the heaviest tenth of a family rather than the bulk of it: 9 atlases instead of 76, and the nine are the genuine outliers – <code>aal3_cortical</code> at 207k vertices, <code>schaefer*_100</code> at 106k, <code>yeo7</code> at 85k across fourteen regions.</p>
+<p>The advice now names <code><a href="../reference/atlas_polish.html">atlas_polish()</a></code>, which is the single call that wraps the two the message used to spell out.</p>
+</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9101" id="ggsegextra-1999101">ggseg.extra 1.9.9.9101<a class="anchor" aria-label="anchor" href="#ggsegextra-1999101"></a></h2>
 <div class="section level3">
