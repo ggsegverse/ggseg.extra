@@ -327,15 +327,23 @@ describe("detect_cerebellar_hemi", {
 })
 
 
-describe("clean_cerebellar_region", {
-  it("removes Left/Right/Vermis prefix", {
-    expect_identical(clean_cerebellar_region("Left I-IV"), "I-IV")
-    expect_identical(clean_cerebellar_region("Right Crus I"), "Crus I")
-    expect_identical(clean_cerebellar_region("Vermis VI"), "VI")
+describe("cerebellar region naming", {
+  it("removes a Left/Right/Vermis/midline prefix", {
+    # The cerebellar pipeline now uses the shared label_to_region(), so its
+    # names match the cortical, subcortical and tract pipelines. midline and
+    # vermis are hemisphere values this package assigns, and leaving them
+    # unstripped is why every shipped cerebellar region was called
+    # "midline_<something>".
+    expect_identical(label_to_region("Left I-IV"), "i iv")
+    expect_identical(label_to_region("Right Crus I"), "crus i")
+    expect_identical(label_to_region("Vermis VI"), "vi")
+    expect_identical(label_to_region("midline_M1L"), "m1l")
   })
 
-  it("preserves full name when no prefix", {
-    expect_identical(clean_cerebellar_region("Dentate"), "Dentate")
+  it("never strips a name down to nothing", {
+    expect_identical(label_to_region("Dentate"), "dentate")
+    expect_identical(label_to_region("midline"), "midline")
+    expect_identical(label_to_region("vermis"), "vermis")
   })
 })
 
@@ -355,7 +363,7 @@ describe("build_suit_region_row missing label names", {
     )
 
     expect_identical(row$hemi, "midline")
-    expect_identical(row$region, "region_28")
+    expect_identical(row$region, "region 28")
     expect_identical(row$label, "midline_region_28")
     expect_true(is.na(row$colour))
 
@@ -383,8 +391,8 @@ describe("build_suit_region_row missing label names", {
       data = ggseg.formats::ggseg_data_cerebellar(geom = geom)
     )
 
-    expect_identical(unique(atlas$core$region), "region_28")
-    expect_identical(unique(ggseg.formats::atlas_sf(atlas)$region), "region_28")
+    expect_identical(unique(atlas$core$region), "region 28")
+    expect_identical(unique(ggseg.formats::atlas_sf(atlas)$region), "region 28")
   })
 })
 
@@ -571,7 +579,7 @@ describe("read_cerebellar_annotation", {
     expected_cols <- c("hemi", "region", "label", "colour", "vertices")
     expect_true(all(expected_cols %in% names(result)))
     expect_identical(result$hemi, c("left", "right", "vermis"))
-    expect_identical(result$region, c("I-IV", "Crus I", "VI"))
+    expect_identical(result$region, c("i iv", "crus i", "vi"))
     expect_identical(lengths(result$vertices), c(2L, 2L, 1L))
   })
 
@@ -689,7 +697,7 @@ describe("read_suit_parcellation edge cases", {
     result <- read_suit_parcellation(label_file)
 
     expect_gt(nrow(result), 0)
-    expect_true(all(grepl("^region_", result$region)))
+    expect_true(all(grepl("^region ", result$region)))
     expect_false(anyNA(result$colour))
   })
 
@@ -850,10 +858,10 @@ describe("extract_gifti_label_table edge cases", {
 })
 
 
-describe("clean_cerebellar_region edge cases", {
-  it("returns original name when prefix removal leaves empty string", {
-    expect_identical(clean_cerebellar_region("Left"), "Left")
-    expect_identical(clean_cerebellar_region("Right"), "Right")
+describe("cerebellar region naming edge cases", {
+  it("returns the original name when stripping would leave nothing", {
+    expect_identical(label_to_region("Left"), "left")
+    expect_identical(label_to_region("Right"), "right")
   })
 })
 
@@ -978,22 +986,22 @@ describe("cerebellar pipeline orchestration", {
     )
 
     local_mocked_bindings(
-      cerebellar_build_sf_flatmap = function(...) {
+      # Geometry for whatever labels core declares. Hardcoding them meant the
+      # mock had to be kept in step with the pipeline's naming by hand, and
+      # was not: it still said "left_I-IV" after the regions were normalised.
+      cerebellar_build_sf_flatmap = function(components, ...) {
+        labels <- components$core$label
+        square <- function(x) {
+          sf::st_polygon(list(matrix(
+            c(x, 0, x + 1, 0, x + 1, 1, x, 0),
+            ncol = 2,
+            byrow = TRUE
+          )))
+        }
         sf::st_sf(
-          label = c("left_I-IV", "vermis_VI"),
+          label = labels,
           view = "flatmap",
-          geometry = sf::st_sfc(
-            sf::st_polygon(list(matrix(
-              c(0, 0, 1, 0, 1, 1, 0, 0),
-              ncol = 2,
-              byrow = TRUE
-            ))),
-            sf::st_polygon(list(matrix(
-              c(2, 0, 3, 0, 3, 1, 2, 0),
-              ncol = 2,
-              byrow = TRUE
-            )))
-          )
+          geometry = sf::st_sfc(lapply(seq_along(labels) * 2, square))
         )
       },
       warn_if_large_atlas = function(...) NULL,
@@ -1583,12 +1591,12 @@ describe("read_cerebellar_volume deep nucleus and orphan branches", {
       "deep"
     )
 
-    dentate_row <- result[grepl("Dentate", result$region, fixed = TRUE), ]
+    dentate_row <- result[grepl("dentate", result$region, fixed = TRUE), ]
     expect_identical(nrow(dentate_row), 1L)
     expect_true(dentate_row$deep)
     expect_identical(lengths(dentate_row$vertices), 0L)
 
-    lobule_row <- result[grepl("Lobule", result$region, fixed = TRUE), ]
+    lobule_row <- result[grepl("lobule", result$region, fixed = TRUE), ]
     expect_false(lobule_row$deep)
     expect_gt(lengths(lobule_row$vertices), 0)
   })
@@ -1681,12 +1689,9 @@ describe("read_cerebellar_volume deep nucleus and orphan branches", {
 })
 
 
-describe("clean_cerebellar_region with whitespace collapsing", {
+describe("cerebellar region naming whitespace", {
   it("collapses multiple internal spaces", {
-    expect_identical(
-      clean_cerebellar_region("Left  Crus   I"),
-      "Crus I"
-    )
+    expect_identical(label_to_region("Left  Crus   I"), "crus i")
   })
 })
 
@@ -2765,9 +2770,9 @@ describe("read_cerebellar_annotation no matching vertices", {
 })
 
 
-describe("clean_cerebellar_region prefix-only with separator", {
-  it("restores original when only a prefix plus separator remains", {
-    expect_identical(clean_cerebellar_region("Left_"), "Left_")
+describe("cerebellar region naming prefix-only", {
+  it("restores the original when only a prefix plus separator remains", {
+    expect_identical(label_to_region("Left_"), "left")
   })
 })
 
@@ -2814,5 +2819,37 @@ describe("resolve_provided_lut fallback", {
   it("returns NULL when input_lut is neither a path nor a data.frame", {
     expect_null(resolve_provided_lut(42, c(1L, 2L)))
     expect_null(resolve_provided_lut(list(1, 2), c(1L, 2L)))
+  })
+})
+
+
+describe("warn_no_hemisphere_split", {
+  it("reports an atlas where no region got a hemisphere", {
+    # All seven shipped ggsegCerebellum atlases are in this state, including
+    # nettekoven32/68 whose names carry the side as M1L and M1R.
+    expect_warning(
+      warn_no_hemisphere_split(rep("midline", 5)),
+      "no hemisphere was detected"
+    )
+  })
+
+  it("names both ways to fix it", {
+    expect_warning(warn_no_hemisphere_split("midline"), "hemi")
+  })
+
+  it("stays quiet for an atlas that is split", {
+    expect_no_warning(warn_no_hemisphere_split(c("left", "right")))
+    expect_no_warning(warn_no_hemisphere_split(c("left", "right", "vermis")))
+  })
+
+  it("stays quiet for a single hemisphere that is not the fallback", {
+    # An atlas genuinely confined to one side is fine; only the "midline"
+    # fallback means nothing was detected.
+    expect_no_warning(warn_no_hemisphere_split(rep("vermis", 3)))
+    expect_no_warning(warn_no_hemisphere_split(rep("left", 3)))
+  })
+
+  it("stays quiet when midline is only some of the regions", {
+    expect_no_warning(warn_no_hemisphere_split(c("midline", "left")))
   })
 })
