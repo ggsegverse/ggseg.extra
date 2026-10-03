@@ -1,3 +1,28 @@
+# ggseg.extra 1.9.9.9100
+
+## Bug fixes
+
+- The tract pipelines now name what they dropped, truncated or could not
+  match, instead of leaving a lower count as the only trace.
+
+  A tract whose centerline is degenerate produced no mesh and was filtered
+  away in silence on the tractography path; it is now named. The volume path
+  did report its drops, but only when `verbose` was set, so a quiet run lost
+  the label without a word there too. Neither is gated on `verbose` any more:
+  a tract missing from the atlas is not progress chatter.
+
+  A `.trk` file whose header declares more streamlines than it holds is
+  reported rather than read short in silence. A declared count of `0` means
+  "not recorded, read to end of file" in the TrackVis specification, so it is
+  not a promise and stays quiet.
+
+  A `tract_names` length that does not match the number of tracts is now named
+  where it happens. It used to surface from `furrr` as `Can't recycle length 3
+  and length 2 at location 2`, which mentions neither the tracts, nor
+  `tract_names`, nor the lookup table the names usually come from -- a lookup
+  table with a row per tract it does not have being the normal way to get
+  there.
+
 # ggseg.extra 1.9.9.9099
 
 ## Breaking changes

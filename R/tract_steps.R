@@ -32,8 +32,35 @@ tract_read_input <- function(input_tracts, tract_names) {
   if (length(streamlines_data) == 0) {
     cli::cli_abort("No tract data provided")
   }
+  check_tract_names_length(streamlines_data, tract_names)
 
   list(streamlines_data = streamlines_data, tract_names = tract_names)
+}
+
+
+#' Check there is exactly one name per tract
+#'
+#' The two are walked together by `safe_future_map2()` further down, and furrr
+#' reports a length mismatch as `Can't recycle length 3 and length 2 at
+#' location 2` -- which names neither the tracts, nor `tract_names`, nor the
+#' lookup table the names usually come from. A lookup table with a row per
+#' tract it does not have is the normal way to arrive here, so the mismatch is
+#' named where it is still obvious what caused it.
+#' @noRd
+check_tract_names_length <- function(streamlines_data, tract_names) {
+  n_tracts <- length(streamlines_data)
+  n_names <- length(tract_names)
+  if (n_tracts == n_names) {
+    return(invisible(NULL))
+  }
+  cli::cli_abort(
+    c(
+      "{.arg tract_names} has {n_names} name{?s} for {n_tracts} tract{?s}.",
+      "i" = "There must be exactly one name per tract. When the names come
+      from a lookup table, check it has a row for each tract and no others."
+    ),
+    wrap = TRUE
+  )
 }
 
 
@@ -77,13 +104,40 @@ tract_create_meshes <- function(
     )
   )
   names(meshes_list) <- tract_names
+  dropped <- tract_names[vapply(meshes_list, is.null, logical(1))]
   meshes_list <- Filter(Negate(is.null), meshes_list)
 
   if (length(meshes_list) == 0) {
     cli::cli_abort("No meshes were successfully created")
   }
+  warn_tracts_without_mesh(dropped)
 
   center_meshes(meshes_list)
+}
+
+
+#' Say which tracts produced no mesh and are not in the atlas
+#'
+#' A tract whose centerline is degenerate yields `NULL`, which was filtered
+#' away without a word -- the only trace being a tract count lower than the
+#' input's. Not gated on `verbose`: a tract missing from the atlas is not
+#' progress chatter.
+#' @noRd
+warn_tracts_without_mesh <- function(dropped) {
+  if (length(dropped) == 0) {
+    return(invisible(NULL))
+  }
+  cli::cli_warn(
+    c(
+      "{length(dropped)} tract{?s} produced no mesh and {?is/are} not in the
+      atlas.",
+      "x" = "Dropped: {.val {dropped}}",
+      "i" = "A tube needs a centerline, which needs streamlines that span a
+      distance. Check these tracts have more than a few distinct points."
+    ),
+    wrap = TRUE
+  )
+  invisible(NULL)
 }
 
 

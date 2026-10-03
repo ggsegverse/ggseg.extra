@@ -115,9 +115,16 @@ create_tract_from_volume <- function(
   if (length(centerlines) == 0) {
     cli::cli_abort("No tracts yielded a centerline from {.arg input_volume}.")
   }
-  if (length(dropped) > 0 && verbose) {
-    cli::cli_alert_info(
-      "Dropped {length(dropped)} label{?s} (no centerline): {.val {dropped}}"
+  if (length(dropped) > 0) {
+    # Not gated on `verbose`, as it used to be: a label missing from the
+    # atlas is data loss, and `verbose` silences progress chatter.
+    cli::cli_warn(
+      c(
+        "{length(dropped)} label{?s} yielded no centerline and {?is/are} not
+        in the atlas.",
+        "x" = "Dropped: {.val {dropped}}"
+      ),
+      wrap = TRUE
     )
   }
 
