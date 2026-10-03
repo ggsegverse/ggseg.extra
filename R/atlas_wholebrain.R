@@ -1622,6 +1622,8 @@ warn_split_labels <- function(arrived) {
     return(invisible(NULL))
   }
 
+  # nolint next: object_usage_linter.
+  splits <- describe_hemi_split(sides[both])
   cli::cli_warn(
     c(
       "{length(both)} cortical label{?s} landed on both surfaces, in an atlas
@@ -1629,8 +1631,7 @@ warn_split_labels <- function(arrived) {
       "x" = "Split in two: {.val {both}}",
       "i" = "Each became a separate {.field lh_} and {.field rh_} region.
       Voxels crossing the midline project onto the far surface, so the
-      smaller side is usually spill rather than anatomy:
-      {.val {describe_hemi_split(sides[both])}}"
+      smaller side is usually spill rather than anatomy: {.val {splits}}"
     ),
     wrap = TRUE
   )
