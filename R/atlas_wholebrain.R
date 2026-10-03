@@ -1514,6 +1514,7 @@ classify_labels_auto <- function(assigned, prep, min_vertices) {
   volume_only <- setdiff(assigned$remaining, prep$projected_labels)
 
   warn_vertex_count_fallback(length(projected_remaining))
+  warn_volume_only_subcortical(volume_only)
 
   auto_cortical <- projected_remaining[
     vertex_counts[projected_remaining] >= min_vertices
@@ -1524,6 +1525,39 @@ classify_labels_auto <- function(assigned, prep, min_vertices) {
   )
 
   list(cortical = auto_cortical, subcortical = auto_subcortical)
+}
+
+
+#' Say that labels absent from the surface were taken to be subcortical
+#'
+#' A label in the volume that reached no cortical vertex is put in the
+#' subcortical bucket. That is a reasonable default -- a structure the
+#' cortical surface does not see is usually deep -- but it is a default, not a
+#' measurement, and it was applied in silence.
+#'
+#' Reported separately from the vertex-count fallback because the two are
+#' different claims. That one says a label was sized and found small; this one
+#' says a label was never measured at all. They were easy to confuse when only
+#' the first was reported: a run that put nineteen labels in the subcortical
+#' bucket while announcing fourteen vertex-count guesses left the other five
+#' unaccounted for.
+#' @noRd
+warn_volume_only_subcortical <- function(volume_only) {
+  if (length(volume_only) == 0L) {
+    return(invisible(NULL))
+  }
+  cli::cli_warn(
+    c(
+      "{length(volume_only)} label{?s} {?is/are} in the volume but not on the
+      cortical surface, and {?was/were} taken to be subcortical.",
+      "x" = "Assumed subcortical: {.val {volume_only}}",
+      "i" = "Nothing measured these; a structure the cortical surface does
+      not reach is usually deep, but declare them with a {.field type} column
+      if any is not."
+    ),
+    wrap = TRUE
+  )
+  invisible(NULL)
 }
 
 

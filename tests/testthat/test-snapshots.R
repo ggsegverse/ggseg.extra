@@ -311,3 +311,24 @@ describe("snapshot_partial_projection skip and zero paths", {
     expect_null(result)
   })
 })
+
+
+describe("cortex_slice_label", {
+  it("names a hemisphere's context slice after that hemisphere", {
+    expect_identical(cortex_slice_label("left"), "cortex_left")
+  })
+
+  it("leaves no dangling underscore for a view with no hemisphere", {
+    # extract_hemi_from_view() returns NULL for everything but sagittal, and
+    # paste0("cortex_", NULL) is "cortex_" -- which users saw in atlas_geom().
+    expect_identical(cortex_slice_label(NULL), "cortex")
+    expect_identical(cortex_slice_label(NA_character_), "cortex")
+    expect_identical(cortex_slice_label(""), "cortex")
+  })
+
+  it("is still recognised as context geometry either way", {
+    for (label in c("cortex", "cortex_left")) {
+      expect_match(label, context_pattern())
+    }
+  })
+})

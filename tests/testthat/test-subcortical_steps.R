@@ -1107,7 +1107,10 @@ describe("subcort_snapshot_names", {
 
     names <- subcort_snapshot_names(colortable, slabs, cortex_slices)
 
-    expect_true("axial_1_cortex_.rda" %in% names)
+    # An axial view has no hemisphere, so the context slice is "cortex", not
+    # "cortex_". The trailing underscore used to be asserted here, which made
+    # the test a record of the defect rather than of the intent.
+    expect_true("axial_1_cortex.rda" %in% names)
   })
 })
 
