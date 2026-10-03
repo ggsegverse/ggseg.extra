@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9092</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9093</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -69,6 +69,18 @@
       <small>Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.9.9.9093" id="ggsegextra-1999093">ggseg.extra 1.9.9.9093<a class="anchor" aria-label="anchor" href="#ggsegextra-1999093"></a></h2>
+<div class="section level3">
+<h3 id="bug-fixes-1-9-9-9093">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-1-9-9-9093"></a></h3>
+<ul><li>
+<p><code><a href="../reference/create_wholebrain_from_volume.html">create_wholebrain_from_volume()</a></code> now says when the surface projection did not deliver a cortical parcel it was asked for. Projecting a volume onto a surface loses parcels in two ways, and both used to read as success.</p>
+<p>A parcel can land on no vertex at all. It then has no row in the atlas, and the only trace is a region count lower than the lookup table’s. Rebuilding ggsegShen, 12 of its 214 cortical parcels vanished this way without a word; they are not slivers either – the largest is 621 voxels against a median parcel of 595.</p>
+<p>And a parcel whose voxels cross the midline can land on <em>both</em> surfaces, so one entry in the lookup table becomes an <code>lh_</code> and an <code>rh_</code> region that the parcellation never had. In ggsegShen this happened to one parcel, 96.5% of whose voxels are left of the midline: the right-hemisphere region was built from the 3.5% that spill across.</p>
+<p>Neither is necessarily wrong – a lookup table that names a structure once for both hemispheres is <em>meant</em> to produce <code>lh_</code> and <code>rh_</code> – so both are reported rather than refused, with the names and the per-hemisphere vertex counts. Whether the split report applies is read off the labels themselves, so a bilateral lookup table stays quiet instead of listing every label it has.</p>
+</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9092" id="ggsegextra-1999092">ggseg.extra 1.9.9.9092<a class="anchor" aria-label="anchor" href="#ggsegextra-1999092"></a></h2>
 <p>Both fixes were found by building the 26 ggsegverse atlas repositories against 1.9.9.9091. Each one stopped a shipped atlas repository from being rebuilt at all.</p>
