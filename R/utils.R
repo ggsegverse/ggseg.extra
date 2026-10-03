@@ -545,25 +545,76 @@ get_output_dir <- function(output_dir = NULL) {
 # Atlas validation ----
 
 #' @noRd
-warn_if_large_atlas <- function(atlas, max_vertices = 10000, per_region = 50) {
+warn_if_large_atlas <- function(
+  atlas,
+  max_vertices = 10000,
+  per_region = NULL
+) {
   if (is.null(ggseg.formats::atlas_geom(atlas))) {
     return(invisible(NULL))
   }
 
   n_vertices <- sum(vertices_per_row(ggseg.formats::atlas_sf(atlas)))
   n_regions <- if (is.null(atlas$core)) 0L else nrow(atlas$core)
+  per_region <- per_region %||% atlas_vertex_budget(atlas$type)
   threshold <- max(max_vertices, per_region * n_regions)
 
   if (n_vertices > threshold) {
-    # nolint start
-    cli::cli_warn(c(
-      "Atlas has {.val {n_vertices}} vertices (threshold: {.val {threshold}})",
-      "i" = "Large atlases may be slow to plot and increase package size",
-      "i" = "Call {.code atlas_simplify(atlas, keep = 0.2)}, then
-      {.code atlas_smooth(atlas)}, to tidy it and reduce vertices"
-    ))
-    # nolint end
+    cli::cli_warn(
+      c(
+        "Atlas has {.val {n_vertices}} vertices, against a budget of
+        {.val {threshold}} for {cli::qty(n_regions)}{n_regions}
+        {atlas$type} region{?s}.",
+        "i" = "A large atlas is slow to plot and makes the package that
+        ships it bigger.",
+        "i" = "{.code atlas_polish(atlas)} simplifies and smooths it in one
+        step."
+      ),
+      wrap = TRUE
+    )
   }
 
   invisible(NULL)
+}
+
+
+#' Vertices a region may have before an atlas counts as heavy, by atlas type
+#'
+#' One allowance for every atlas could not work: the geometry types differ in
+#' how many vertices a region naturally needs, by about sevenfold. A single
+#' `50 * regions` budget therefore fired on 76 of the 109 atlases installed
+#' here, including shipped, polished ones -- a warning that fires on seven
+#' atlases in ten teaches the reader to ignore warnings, and its advice could
+#' not clear it, because polishing a dense subcortical atlas does not bring it
+#' under a cortical budget.
+#'
+#' Measured per-region vertex counts across those 109 atlases:
+#'
+#' | type        |  n | median |  p90 |  max |
+#' |-------------|----|--------|------|------|
+#' | cerebellar  | 11 |    225 |  442 |  451 |
+#' | cortical    | 55 |    293 |  914 | 6082 |
+#' | subcortical | 41 |    646 | 1486 | 3456 |
+#' | tract       |  2 |   1675 | 1792 | 1822 |
+#'
+#' Each budget sits just above its type's 90th percentile, so the warning
+#' flags the heaviest tenth of a family rather than the majority of it. That
+#' takes the hit rate from 76 of 109 to 9, and the nine are the genuine
+#' outliers: `aal3_cortical` at 207k vertices, `schaefer*_100` at 106k, and
+#' `yeo7` at 85k for fourteen regions.
+#'
+#' An unknown type gets the cortical budget, the commonest and the stricter of
+#' the two large families.
+#' @noRd
+atlas_vertex_budget <- function(type) {
+  budgets <- c(
+    cerebellar = 500L,
+    cortical = 1000L,
+    subcortical = 1600L,
+    tract = 2000L
+  )
+  if (length(type) != 1L || is.na(type) || !type %in% names(budgets)) {
+    return(budgets[["cortical"]])
+  }
+  budgets[[type]]
 }

@@ -1,3 +1,26 @@
+# ggseg.extra 1.9.9.9102
+
+## Bug fixes
+
+- The large-atlas warning no longer fires on most atlases. Its budget was
+  `max(10000, 50 * regions)` regardless of what kind of atlas it was, which
+  flagged **76 of the 109 atlases installed here**, shipped and polished ones
+  included -- and its advice could not clear it, because polishing a dense
+  subcortical atlas does not bring it under a cortical allowance. A warning
+  that fires on seven atlases in ten teaches the reader to ignore warnings.
+
+  The budget is now per atlas type, because the types differ by about
+  seven times in how many vertices a region naturally needs. Measured across
+  those 109 atlases, the per-region medians are 225 (cerebellar), 293
+  (cortical), 646 (subcortical) and 1675 (tract). Each budget sits just
+  above its type's 90th percentile, so the warning flags the heaviest tenth
+  of a family rather than the bulk of it: 9 atlases instead of 76, and the
+  nine are the genuine outliers -- `aal3_cortical` at 207k vertices,
+  `schaefer*_100` at 106k, `yeo7` at 85k across fourteen regions.
+
+  The advice now names `atlas_polish()`, which is the single call that wraps
+  the two the message used to spell out.
+
 # ggseg.extra 1.9.9.9101
 
 ## Bug fixes

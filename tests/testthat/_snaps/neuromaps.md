@@ -8,7 +8,7 @@
       Non-default space/density: "fsLR" / "32k"
       i The cortical pipeline requires fsaverage5 (space='fsaverage', density='10k'). Other values may cause vertex count mismatches.
       Warning:
-      Atlas has <n> vertices (threshold: 10000)
-      i Large atlases may be slow to plot and increase package size
-      i Call `atlas_simplify(atlas, keep = 0.2)`, then `atlas_smooth(atlas)`, to tidy it and reduce vertices
+      Atlas has <n> vertices, against a budget of 10000 for 2 cortical region.
+      i A large atlas is slow to plot and makes the package that ships it bigger.
+      i `atlas_polish(atlas)` simplifies and smooths it in one step.
 

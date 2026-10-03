@@ -3,7 +3,9 @@ describe("create_cortical_from_annotation on fsaverage5", {
     skip_if_no_freesurfer()
     skip_if_not_installed("freesurferformats")
 
-    expect_warning(
+    # Desikan-Killiany is a sensible atlas and no longer trips the vertex
+    # warning, which used to fire on 7 shipped atlases in 10.
+    expect_no_warning(
       atlas <- create_cortical_from_annotation(
         input_annot = c(
           fsaverage5_file("label", "lh.aparc.annot"),
@@ -12,8 +14,7 @@ describe("create_cortical_from_annotation on fsaverage5", {
         atlas_name = "dk_fsaverage5",
         output_dir = withr::local_tempdir(),
         verbose = FALSE
-      ),
-      "Large atlases"
+      )
     )
 
     expect_s3_class(atlas, "ggseg_atlas")

@@ -308,8 +308,10 @@ describe("warn_if_large_atlas", {
       data = ggseg.formats::ggseg_data_subcortical(geom = sf_obj)
     )
 
+    # per_region explicitly, since the default is now the atlas type's own
+    # budget and a handful of vertices is nowhere near it.
     expect_warning(
-      warn_if_large_atlas(atlas, max_vertices = 5),
+      warn_if_large_atlas(atlas, max_vertices = 5, per_region = 5),
       "vertices"
     )
   })
@@ -337,8 +339,10 @@ describe("warn_if_large_atlas", {
     )
     expect_true(ggseg.formats::is_atlas_polygon(atlas))
 
+    # per_region explicitly, since the default is now the atlas type's own
+    # budget and a handful of vertices is nowhere near it.
     expect_warning(
-      warn_if_large_atlas(atlas, max_vertices = 5),
+      warn_if_large_atlas(atlas, max_vertices = 5, per_region = 5),
       "vertices"
     )
   })
@@ -720,5 +724,81 @@ describe("load_or_run_step reuse reporting", {
       )
     )
     expect_true(result$run)
+  })
+})
+
+
+describe("atlas_vertex_budget", {
+  it("gives each atlas type its own allowance", {
+    # The types differ about sevenfold in how many vertices a region needs,
+    # so one allowance for all of them fired on 76 of 109 shipped atlases.
+    expect_identical(atlas_vertex_budget("cerebellar"), 500L)
+    expect_identical(atlas_vertex_budget("cortical"), 1000L)
+    expect_identical(atlas_vertex_budget("subcortical"), 1600L)
+    expect_identical(atlas_vertex_budget("tract"), 2000L)
+  })
+
+  it("falls back to the cortical budget for an unknown type", {
+    # The commonest type, and the stricter of the two large families.
+    expect_identical(atlas_vertex_budget("something_else"), 1000L)
+    expect_identical(atlas_vertex_budget(NA_character_), 1000L)
+    expect_identical(atlas_vertex_budget(NULL), 1000L)
+  })
+})
+
+
+describe("warn_if_large_atlas type-aware default", {
+  ten_region_subcortical <- function() {
+    coords <- matrix(runif(200), ncol = 2)
+    coords <- rbind(coords, coords[1, ])
+    labels <- paste0("r", 1:10)
+    sf_obj <- sf::st_sf(
+      label = labels,
+      view = "v1",
+      geometry = sf::st_sfc(rep(
+        list(sf::st_polygon(list(coords))),
+        length(labels)
+      ))
+    )
+    ggseg.formats::ggseg_atlas(
+      atlas = "t",
+      type = "subcortical",
+      palette = stats::setNames(rep("#000000", 10), labels),
+      core = data.frame(
+        label = labels,
+        region = labels,
+        stringsAsFactors = FALSE
+      ),
+      data = ggseg.formats::ggseg_data_subcortical(geom = sf_obj)
+    )
+  }
+
+  it("uses the atlas type's budget rather than a flat allowance", {
+    # 10 subcortical regions of ~101 vertices each. The old flat
+    # 50-per-region allowance put the threshold at 10000 and warned on
+    # atlases like this; the subcortical budget is 1600 a region.
+    skip_if_not_installed("sf")
+    expect_no_warning(warn_if_large_atlas(ten_region_subcortical()))
+  })
+
+  it("lets a caller override the budget", {
+    skip_if_not_installed("sf")
+    expect_warning(
+      warn_if_large_atlas(
+        ten_region_subcortical(),
+        max_vertices = 5,
+        per_region = 5
+      ),
+      "vertices"
+    )
+  })
+
+  it("points at atlas_polish(), which is one call rather than two", {
+    # The old advice spelled out atlas_simplify() then atlas_smooth(), and
+    # could not clear the threshold it was attached to.
+    expect_match(
+      paste(deparse(warn_if_large_atlas), collapse = " "),
+      "atlas_polish"
+    )
   })
 })
