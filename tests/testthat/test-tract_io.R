@@ -253,7 +253,11 @@ describe("read_trk early break", {
     writeBin(0L, con, size = 4)
     close(con)
 
-    result <- read_trk(tmp)
+    # The header declares 2 and the file holds 1, which is now reported.
+    expect_warning(
+      result <- read_trk(tmp),
+      "header declares 2"
+    )
 
     expect_length(result, 1)
     expect_identical(nrow(result[[1]]), 3L)
@@ -273,7 +277,11 @@ describe("read_trk early break", {
     writeBin(-1L, con, size = 4)
     close(con)
 
-    result <- read_trk(tmp)
+    # The header declares 2 and the file holds 1, which is now reported.
+    expect_warning(
+      result <- read_trk(tmp),
+      "header declares 2"
+    )
 
     expect_length(result, 1)
     expect_identical(nrow(result[[1]]), 3L)
@@ -314,5 +322,23 @@ describe("read_trk_streamline", {
       read_trk_streamline(con, n_scalars = 0L, n_properties = 0L),
       "Truncated streamline"
     )
+  })
+})
+
+
+describe("warn_short_trk", {
+  it("reports a file that ends before its header's count", {
+    expect_warning(warn_short_trk(10L, 3L), "declares 10")
+  })
+
+  it("says nothing when the header records no count", {
+    # 0 means "not recorded, read to end of file" in the TrackVis spec, so it
+    # is not a promise the file can break.
+    expect_no_warning(warn_short_trk(0L, 3L))
+  })
+
+  it("says nothing when every declared streamline was read", {
+    expect_no_warning(warn_short_trk(3L, 3L))
+    expect_no_warning(warn_short_trk(3L, 4L))
   })
 })

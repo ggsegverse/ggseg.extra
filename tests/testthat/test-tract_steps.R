@@ -204,14 +204,18 @@ describe("tract_create_meshes", {
       t2 = list(matrix(10:18, ncol = 3))
     )
 
-    result <- tract_create_meshes(
-      streamlines_data,
-      c("t1", "t2"),
-      "mean",
-      50,
-      5,
-      8,
-      c(0.2, 1.0)
+    # The filtered-out tract is now named rather than silently absent.
+    expect_warning(
+      result <- tract_create_meshes(
+        streamlines_data,
+        c("t1", "t2"),
+        "mean",
+        50,
+        5,
+        8,
+        c(0.2, 1.0)
+      ),
+      "produced no mesh"
     )
 
     expect_length(result, 1)
@@ -1222,5 +1226,35 @@ describe("finalize_atlas (tract parameters)", {
     )
 
     expect_s3_class(result, "ggseg_atlas")
+  })
+})
+
+
+describe("tract loss reporting", {
+  it("names the tracts that produced no mesh", {
+    # Previously filtered away with Filter(Negate(is.null), ...), leaving a
+    # tract count lower than the input's as the only trace.
+    expect_warning(
+      warn_tracts_without_mesh(c("cst_left", "unc_right")),
+      "cst_left"
+    )
+  })
+
+  it("stays quiet when every tract produced a mesh", {
+    expect_no_warning(warn_tracts_without_mesh(character(0)))
+  })
+
+  it("names a tract_names length mismatch instead of leaving it to furrr", {
+    # furrr reports this as "Can't recycle length 3 and length 2 at location
+    # 2", which names neither the tracts, nor tract_names, nor the lookup
+    # table the names usually come from.
+    expect_error(
+      check_tract_names_length(list(1, 2), c("a", "b", "c")),
+      "3 names for 2 tracts"
+    )
+  })
+
+  it("accepts exactly one name per tract", {
+    expect_null(check_tract_names_length(list(1, 2), c("a", "b")))
   })
 })

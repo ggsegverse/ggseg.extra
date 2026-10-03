@@ -73,8 +73,34 @@ read_trk <- function(file) {
     }
     streamlines[[length(streamlines) + 1L]] <- points
   }
+  warn_short_trk(n_count, length(streamlines))
 
   streamlines
+}
+
+
+#' Say when a TRK file holds fewer streamlines than its header promises
+#'
+#' A count of 0 means "not recorded, read to end of file", so it is not a
+#' promise and nothing is reported. A positive count is one the writer chose
+#' to record, and a file that ends before it is reached is either truncated or
+#' mis-written -- either way the tract is built from less than it should be,
+#' and reading short used to be silent.
+#' @noRd
+warn_short_trk <- function(n_count, n_read) {
+  if (!isTRUE(n_count > 0L) || n_read >= n_count) {
+    return(invisible(NULL))
+  }
+  cli::cli_warn(
+    c(
+      "Read {n_read} streamline{?s} from a TRK file whose header declares
+      {n_count}.",
+      "i" = "The file ends before the count its header records. The tract is
+      built from the streamlines that are there."
+    ),
+    wrap = TRUE
+  )
+  invisible(NULL)
 }
 
 #' Read one TRK streamline's x/y/z coordinates, or `NULL` at end of file
