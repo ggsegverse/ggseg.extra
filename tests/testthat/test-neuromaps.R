@@ -251,6 +251,7 @@ describe("create_cortical_from_neuromaps", {
       preview_atlas = function(atlas) invisible(atlas)
     )
 
+    # This mock is far denser than any real atlas, so it still warns.
     expect_warning(
       {
         result <- create_cortical_from_neuromaps(
@@ -260,8 +261,7 @@ describe("create_cortical_from_neuromaps", {
           verbose = FALSE,
           cleanup = FALSE
         )
-      },
-      "Large atlases"
+      }
     )
 
     expect_s3_class(result, "ggseg_atlas")

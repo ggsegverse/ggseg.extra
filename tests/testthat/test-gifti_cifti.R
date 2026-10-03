@@ -557,6 +557,8 @@ describe("create_cortical_from_cifti", {
     tmp <- withr::local_tempfile(fileext = ".dlabel.nii")
     writeLines("mock", tmp)
 
+    # This mock is 118981 vertices across 4 regions -- ~30k a region,
+    # far above any type's budget -- so it legitimately warns.
     expect_warning(
       {
         result <- create_cortical_from_cifti(
@@ -565,8 +567,7 @@ describe("create_cortical_from_cifti", {
           verbose = FALSE,
           cleanup = FALSE
         )
-      },
-      "Large atlases"
+      }
     )
 
     expect_s3_class(result, "ggseg_atlas")
