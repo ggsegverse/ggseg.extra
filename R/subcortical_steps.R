@@ -69,12 +69,20 @@ subcort_mesh_one <- function(
       skip_existing = skip_existing
     ),
     error = function(cnd) {
-      if (verbose) {
-        cli::cli_warn(
-          "Failed to create mesh for {label_name}",
-          parent = cnd
-        )
-      }
+      # Not gated on `verbose`. A structure failing to tessellate is absent
+      # from the finished atlas, and `verbose` silences progress chatter, not
+      # data loss -- with it off the structure used to vanish with no signal
+      # at all.
+      cli::cli_warn(
+        c(
+          "Failed to create a mesh for {.val {label_name}}, which will not be
+          in the atlas.",
+          "i" = "Tessellation needs a contiguous region of at least a few
+          voxels. Check the label is present in the volume and large enough."
+        ),
+        parent = cnd,
+        wrap = TRUE
+      )
       NULL
     }
   )

@@ -4,11 +4,13 @@
       subcort_create_meshes("fake.mgz", colortable, dirs, FALSE, TRUE)
     Condition
       Warning:
-      Failed to create mesh for Left-Putamen
+      Failed to create a mesh for "Left-Putamen", which will not be in the atlas.
+      i Tessellation needs a contiguous region of at least a few voxels. Check the label is present in the volume and large enough.
       Caused by error in `tessellate_label()`:
       ! mesh error
       Warning:
-      Failed to create mesh for Right-Putamen
+      Failed to create a mesh for "Right-Putamen", which will not be in the atlas.
+      i Tessellation needs a contiguous region of at least a few voxels. Check the label is present in the volume and large enough.
       Caused by error in `tessellate_label()`:
       ! mesh error
       Error in `subcort_create_meshes()`:
