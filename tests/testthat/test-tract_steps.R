@@ -511,10 +511,14 @@ describe("resolve_tube_radius", {
   })
 
   it("computes density-based radius", {
+    # Both streamlines used to span the whole centerline, so the density was
+    # 2 at every point and the radius came out uniform -- this test never
+    # exercised the variation it is named for. They now cover different
+    # stretches, which is what a real bundle looks like.
     centerline <- matrix(c(1:5, rep(0, 10)), ncol = 3)
     streamlines <- list(
       matrix(c(1:5, rep(0, 10)), ncol = 3),
-      matrix(c(1:5, rep(0.5, 10)), ncol = 3)
+      matrix(c(1:3, rep(0.5, 6)), ncol = 3)
     )
 
     result <- resolve_tube_radius(
@@ -525,6 +529,7 @@ describe("resolve_tube_radius", {
     )
 
     expect_length(result, 5)
+    expect_gt(length(unique(result)), 1L)
     expect_true(all(result >= 0.2))
     expect_true(all(result <= 1.0))
   })
@@ -535,11 +540,16 @@ describe("resolve_tube_radius", {
       matrix(c(100:104, rep(100, 10)), ncol = 3)
     )
 
-    result <- resolve_tube_radius(
-      "density",
-      streamlines,
-      centerline,
-      c(0.2, 1.0)
+    # No streamline comes near the centerline, so there is no density to
+    # follow and that is now said rather than assumed.
+    expect_warning(
+      result <- resolve_tube_radius(
+        "density",
+        streamlines,
+        centerline,
+        c(0.2, 1.0)
+      ),
+      "no density to follow"
     )
 
     expect_length(result, 5)
@@ -1256,5 +1266,73 @@ describe("tract loss reporting", {
 
   it("accepts exactly one name per tract", {
     expect_null(check_tract_names_length(list(1, 2), c("a", "b")))
+  })
+})
+
+
+describe("tube_radius = density", {
+  centerline <- function() cbind(1:10, 0, 0)
+
+  it("reports that a lone centerline has no density to follow", {
+    # A volume-derived tract has no streamlines, only the centerline pulled
+    # out of the volume, so every point counts exactly itself: the density is
+    # 1 throughout and the tube came out uniform at the *maximum* of the
+    # range, silently, while the docs recommend "density".
+    expect_warning(
+      radii <- resolve_tube_radius(
+        "density",
+        centerline(),
+        centerline(),
+        c(0.2, 1.0)
+      ),
+      "no density to follow"
+    )
+    # expect_equal, not identical: mean(c(0.4, 0.8)) is not bit-equal to 0.6
+    expect_equal(unique(radii), 0.6)
+  })
+
+  it("uses the middle of the range rather than either end", {
+    # Uniform density carries no information, which is what the existing
+    # all-zero branch already answers with the midpoint.
+    suppressWarnings(
+      radii <- resolve_tube_radius(
+        "density",
+        centerline(),
+        centerline(),
+        c(0.4, 0.8)
+      )
+    )
+    # expect_equal, not identical: mean(c(0.4, 0.8)) is not bit-equal to 0.6
+    expect_equal(unique(radii), 0.6)
+  })
+
+  it("follows the density of a bundle that actually fans out", {
+    # Streamlines covering different stretches of the centerline, which is
+    # what a real bundle looks like.
+    bundle <- list(
+      cbind(1:10, 0, 0),
+      cbind(1:10, 0.1, 0),
+      cbind(1:6, 0, 0),
+      cbind(1:4, 0.1, 0),
+      cbind(7:10, 0, 0)
+    )
+
+    expect_no_warning(
+      radii <- resolve_tube_radius(
+        "density",
+        bundle,
+        centerline(),
+        c(0.2, 1.0)
+      )
+    )
+    expect_gt(length(unique(radii)), 1L)
+    expect_true(all(radii >= 0.2 & radii <= 1.0))
+  })
+
+  it("still takes a numeric radius without complaint", {
+    expect_no_warning(
+      radii <- resolve_tube_radius(5, centerline(), centerline(), c(0.2, 1))
+    )
+    expect_identical(unique(radii), 5)
   })
 })
