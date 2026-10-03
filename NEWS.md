@@ -1,3 +1,51 @@
+# ggseg.extra 1.9.9.9092
+
+Both fixes were found by building the 26 ggsegverse atlas repositories against
+1.9.9.9091. Each one stopped a shipped atlas repository from being rebuilt at
+all.
+
+## Bug fixes
+
+- `create_wholebrain_from_volume()` could not build an atlas whose lookup
+  table carried a label with a space in it -- the Neuromorphometrics tables
+  ggsegMiccai uses are full of them ("Right Accumbens Area"). The pipeline
+  writes its own intermediate lookup table for the subcortical pipeline to
+  read straight back, and the `write_lut()` guard added in 1.9.9.9084 refused
+  those labels rather than corrupting them. Correct for a table a user asked
+  for; wrong for one the pipeline hands itself. It now sanitises them first,
+  which is what `build_atlas_components()` does to the same labels further
+  down, so the finished atlas is unchanged.
+
+  The guard was right about the danger. `read_lut()` splits on whitespace, so
+  the label and its colour channels came back one field out of step -- the
+  previously released ggsegMiccai subcortical atlas was built from a
+  colour-shifted table. The round trip is now lossless.
+
+  The abort also came after the cortical half of the pipeline had finished, so
+  about two minutes of work was discarded for a defect present in the input.
+
+- A subcortical rebuild reused projection snapshots drawn from a different
+  volume, then failed tracing them with "No contours were extracted from any
+  region" -- blaming the regions for a stale cache. This stopped ggsegMars,
+  ggsegHammersmith and ggsegMiccai.
+
+  The volume and lookup table `create_wholebrain_from_volume()` hands down to
+  the subcortical pipeline are deliberately not cache-stamped, as
+  `cache_format_version()` documents. Snapshots instead carry a signature of
+  what they were drawn from, which catches a stale one "whether the pipeline
+  changed or only its inputs did" -- but that check lives inside the step that
+  draws them, and a reusable `slabs.rds` made the pipeline skip the step
+  entirely. The machinery was right; it was unreachable.
+
+  Step 4 now short-circuits only when it was excluded from `steps` on purpose.
+  When it was requested, each snapshot is checked against its signature and
+  only what moved is redrawn: ggsegMiccai's stale directory is repaired in
+  3.3s, and a rebuild with nothing to do costs 1.4s rather than 0.
+
+- A changed `slabs` argument is honoured on a cached rebuild. It used to be
+  dropped silently, because the step that consumes it was the one being
+  skipped.
+
 # ggseg.extra 1.9.9.9091
 
 ## Documentation

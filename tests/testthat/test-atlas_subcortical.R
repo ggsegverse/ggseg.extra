@@ -877,7 +877,7 @@ describe("subcort_assemble_full sf_data as data.frame", {
 })
 
 
-describe("subcort_resolve_snapshots early-return NULL", {
+describe("subcort_resolve_snapshots", {
   it("returns NULL slabs and cortex_slices when step skipped", {
     local_mocked_bindings(
       load_or_run_step = function(step, steps, ...) {
@@ -898,15 +898,17 @@ describe("subcort_resolve_snapshots early-return NULL", {
     expect_null(result$cortex_slices)
   })
 
-  it("returns cached slabs when the step is skipped but later steps run", {
-    cached_slabs <- data.frame(
+  cached_slabs <- function() {
+    data.frame(
       name = "ax_1",
       type = "axial",
       start = 1,
       end = 10,
       stringsAsFactors = FALSE
     )
-    cached_cortex <- data.frame(
+  }
+  cached_cortex <- function() {
+    data.frame(
       x = NA,
       y = NA,
       z = 5,
@@ -914,19 +916,21 @@ describe("subcort_resolve_snapshots early-return NULL", {
       name = "ax_1",
       stringsAsFactors = FALSE
     )
-    local_mocked_bindings(
-      load_or_run_step = function(step, steps, ...) {
-        list(
-          run = FALSE,
-          data = list(
-            "slabs.rds" = cached_slabs,
-            "cortex_slices.rds" = cached_cortex
-          )
-        )
-      }
+  }
+  reuse <- function(step, steps, ...) {
+    list(
+      run = FALSE,
+      data = list(
+        "slabs.rds" = cached_slabs(),
+        "cortex_slices.rds" = cached_cortex()
+      )
     )
+  }
 
-    config <- list(steps = 4L:6L, verbose = TRUE)
+  it("returns cached slabs untouched when step 4 was excluded on purpose", {
+    local_mocked_bindings(load_or_run_step = reuse)
+
+    config <- list(steps = 5L:6L, verbose = TRUE)
     dirs <- list(base = withr::local_tempdir())
     colortable <- data.frame(stringsAsFactors = FALSE, idx = 10, label = "r")
 
@@ -934,8 +938,70 @@ describe("subcort_resolve_snapshots early-return NULL", {
       result <- subcort_resolve_snapshots(config, dirs, colortable, NULL),
       "Loaded existing slabs"
     )
-    expect_identical(result$slabs, cached_slabs)
-    expect_identical(result$cortex_slices, cached_cortex)
+    expect_identical(result$slabs, cached_slabs())
+    expect_identical(result$cortex_slices, cached_cortex())
+  })
+
+  it("still verifies the snapshots when step 4 was requested", {
+    # The volume the wholebrain pipeline hands down is not cache-stamped, so a
+    # reusable slabs.rds is no guarantee the projections match it. Returning
+    # early here is what made step 5 trace stale files and abort with "No
+    # contours were extracted from any region".
+    seen <- new.env(parent = emptyenv())
+    local_mocked_bindings(
+      load_or_run_step = reuse,
+      subcort_create_snapshots = function(...) {
+        seen$called <- TRUE
+        list(slabs = cached_slabs(), cortex_slices = cached_cortex())
+      }
+    )
+
+    config <- list(
+      steps = 4L:6L,
+      verbose = FALSE,
+      input_volume = "fake.mgz",
+      skip_existing = TRUE
+    )
+    dirs <- list(base = withr::local_tempdir())
+    colortable <- data.frame(stringsAsFactors = FALSE, idx = 10, label = "r")
+
+    result <- subcort_resolve_snapshots(config, dirs, colortable, NULL)
+
+    expect_true(seen$called)
+    expect_identical(result$slabs, cached_slabs())
+  })
+
+  it("passes the requested slabs through, not the cached table", {
+    # A changed `slabs` argument used to be silently ignored on a cached
+    # rebuild, because the step that consumes it was never reached.
+    seen <- new.env(parent = emptyenv())
+    local_mocked_bindings(
+      load_or_run_step = reuse,
+      subcort_create_snapshots = function(volume, colortable, slabs, ...) {
+        seen$slabs <- slabs
+        list(slabs = cached_slabs(), cortex_slices = NULL)
+      }
+    )
+
+    config <- list(
+      steps = 4L:6L,
+      verbose = FALSE,
+      input_volume = "fake.mgz",
+      skip_existing = TRUE
+    )
+    dirs <- list(base = withr::local_tempdir())
+    colortable <- data.frame(stringsAsFactors = FALSE, idx = 10, label = "r")
+    requested <- data.frame(
+      name = "cor_1",
+      type = "coronal",
+      start = 2,
+      end = 7,
+      stringsAsFactors = FALSE
+    )
+
+    subcort_resolve_snapshots(config, dirs, colortable, requested)
+
+    expect_identical(seen$slabs, requested)
   })
 
   it("runs snapshots and logs progress when the step executes with verbose", {

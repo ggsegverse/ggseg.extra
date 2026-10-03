@@ -615,8 +615,18 @@ subcort_resolve_snapshots <- function(config, dirs, colortable, slabs) {
     "Step 4 (Create snapshots)"
   )
 
-  if (!cached$run) {
-    if (any(config$steps > 4L) && config$verbose) {
+  # Reuse without looking at the snapshots only when step 4 was excluded on
+  # purpose. When it was requested, its `.rds` cache being reusable is not
+  # enough: the volume and lookup table the wholebrain pipeline hands down to
+  # this one are not stamped (see `cache_format_version()`), so a changed
+  # volume leaves a directory of projections drawn from the old one. Step 5
+  # then traces them as though they were current and aborts with "No contours
+  # were extracted from any region", blaming the regions for a stale cache.
+  # subcort_create_snapshots() already checks each snapshot against a
+  # signature of what it was drawn from and redraws only what moved, so
+  # calling it here costs a volume read rather than a full redraw.
+  if (!cached$run && !(4L %in% config$steps)) {
+    if (config$verbose) {
       cli::cli_alert_success(
         "4/{subcort_total_steps()} Loaded existing slabs"
       )

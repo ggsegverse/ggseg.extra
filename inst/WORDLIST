@@ -117,9 +117,13 @@ furrr
 GDAL
 ggplot
 ggseg
+ggsegHammersmith
 ggsegHO
 ggsegHO's
 ggsegJHU's
+ggsegMars
+ggsegMiccai
+ggsegMiccai's
 ggsegverse
 GH
 GIFTI
@@ -273,6 +277,7 @@ Rvcg
 Sagittal
 sagittal
 sanitised
+sanitises
 sawtooth
 scaffolded
 scannable

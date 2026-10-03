@@ -1677,6 +1677,26 @@ wholebrain_cortical_inputs <- function(config, dirs, projection, split, opts) {
 
 # Step 4: Run subcortical pipeline ----
 
+#' Write the lookup table the subcortical pipeline reads straight back
+#'
+#' `read_lut()` splits a LUT line on whitespace, so a label carrying a space -
+#' "Right Accumbens Area", as the Neuromorphometrics tables do - reads back
+#' with its colour channels shifted one field along. `write_lut()` refuses to
+#' write one rather than corrupt it, which is right for a table a user asked
+#' for and wrong here: this table is the pipeline handing itself its own
+#' input, so it has to produce something readable instead of giving up.
+#'
+#' Sanitising is what happens to these labels anyway -
+#' `subcort_resolve_labels()` applies `sanitize_label()` to the colortable the
+#' moment it reads this file back - so the finished atlas is unchanged. What
+#' changes is that the colours now survive the round trip.
+#' @noRd
+write_subcortical_lut <- function(colortable, path) {
+  colortable$label <- sanitize_label(colortable$label)
+  write_lut(colortable[, c("idx", "label", "R", "G", "B", "A")], path)
+}
+
+
 #' @noRd
 wholebrain_run_subcortical <- function(
   config,
@@ -1696,10 +1716,9 @@ wholebrain_run_subcortical <- function(
   ]
 
   subcort_lut <- as.character(fs::path(dirs$base, "subcort_lut.txt"))
-  required_cols <- c("idx", "label", "R", "G", "B", "A")
   subcort_ct <- fill_missing_rgb(subcort_ct, "subcort")
   subcort_ct <- reindex_reserved_subcort_idx(subcort_ct, config$verbose)
-  write_lut(subcort_ct[, required_cols], subcort_lut)
+  write_subcortical_lut(subcort_ct, subcort_lut)
 
   cortical_idx <- colortable$idx[
     colortable$label %in% split$cortical_labels
