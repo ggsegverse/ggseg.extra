@@ -528,3 +528,113 @@ describe("tessellate_smooth_mesh", {
     expect_match(conditionMessage(warning), "FreeSurfer command failed")
   })
 })
+
+
+describe("tessellate_remap_label", {
+  a_volume <- function(label_id) {
+    arr <- array(0L, dim = c(12L, 12L, 12L))
+    arr[4:8, 4:8, 4:8] <- label_id
+    arr
+  }
+  affine <- function() {
+    matrix(
+      c(-1, 0, 0, 6, 0, 0, 1, -7, 0, -1, 0, 8, 0, 0, 0, 1),
+      nrow = 4,
+      byrow = TRUE
+    )
+  }
+
+  it("leaves a label at or below 255 to be tessellated in place", {
+    # Nothing is written: mri_tessellate takes the label value directly, and
+    # both formats are already readable by it.
+    result <- tessellate_remap_label("aseg.mgz", 17L, "base", FALSE)
+
+    expect_identical(result$pretess_input, "aseg.mgz")
+    expect_identical(result$tess_label, 17L)
+  })
+
+  it("isolates an above-255 label from a NIfTI as a NIfTI", {
+    dir <- withr::local_tempdir()
+    vol <- file.path(dir, "v.nii.gz")
+    RNifti::writeNifti(RNifti::asNifti(a_volume(8203L)), vol)
+
+    result <- tessellate_remap_label(vol, 8203L, file.path(dir, "b"), FALSE)
+
+    expect_identical(result$tess_label, 1L)
+    expect_match(result$pretess_input, "\\.nii\\.gz$")
+    expect_identical(
+      sum(
+        as.array(RNifti::readNifti(
+          result$pretess_input
+        )) ==
+          1L
+      ),
+      125L
+    )
+  })
+
+  it("isolates an above-255 label from an MGZ as an MGZ", {
+    # RNifti cannot read .mgz, so this used to throw and the structure
+    # vanished from the atlas. .mgz is a documented input, and FreeSurfer
+    # thalamic nuclei and hippocampal subfields all use ids above 255.
+    skip_if_not_installed("freesurferformats")
+    dir <- withr::local_tempdir()
+    vol <- file.path(dir, "v.mgz")
+    freesurferformats::write.fs.mgh(
+      vol,
+      a_volume(8203L),
+      vox2ras_matrix = affine()
+    )
+
+    result <- tessellate_remap_label(vol, 8203L, file.path(dir, "b"), FALSE)
+
+    expect_identical(result$tess_label, 1L)
+    expect_match(result$pretess_input, "\\.mgz$")
+
+    back <- freesurferformats::read.fs.mgh(
+      result$pretess_input,
+      with_header = TRUE
+    )
+    expect_identical(sum(drop(back$data) == 1L), 125L)
+  })
+
+  it("keeps the affine, so the mesh is tessellated where the label is", {
+    # Reading through read_volume() would hand back a bare array for .mgz,
+    # leaving asNifti() no header to inherit: the mask would be written with a
+    # default affine and the structure would move.
+    skip_if_not_installed("freesurferformats")
+    dir <- withr::local_tempdir()
+    vol <- file.path(dir, "v.mgz")
+    freesurferformats::write.fs.mgh(
+      vol,
+      a_volume(8203L),
+      vox2ras_matrix = affine()
+    )
+
+    result <- tessellate_remap_label(vol, 8203L, file.path(dir, "b"), FALSE)
+    back <- freesurferformats::read.fs.mgh(
+      result$pretess_input,
+      with_header = TRUE
+    )
+
+    expect_equal(
+      freesurferformats::mghheader.vox2ras(back$header),
+      affine(),
+      tolerance = 1e-6
+    )
+  })
+
+  it("reuses an isolated label it already wrote when skip_existing", {
+    skip_if_not_installed("freesurferformats")
+    dir <- withr::local_tempdir()
+    vol <- file.path(dir, "v.mgz")
+    freesurferformats::write.fs.mgh(vol, a_volume(8203L))
+
+    first <- tessellate_remap_label(vol, 8203L, file.path(dir, "b"), TRUE)
+    mtime <- file.info(first$pretess_input)$mtime
+    second <- tessellate_remap_label(vol, 8203L, file.path(dir, "b"), TRUE)
+
+    expect_identical(second$pretess_input, first$pretess_input)
+    expect_identical(file.info(second$pretess_input)$mtime, mtime)
+  })
+})
