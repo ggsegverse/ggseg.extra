@@ -1,3 +1,32 @@
+# ggseg.extra 1.9.9.9098
+
+## New features
+
+- A lookup table can now declare which hemisphere a cortical parcel belongs
+  to, with a `hemi` column alongside the existing optional `type` column, and
+  `create_wholebrain_from_volume()` honours it.
+
+  This fixes a parcel being emitted for both hemispheres. A cortical label
+  carries no hemisphere of its own -- the prefix in `lh_bankssts` comes from
+  whichever surface the vertices landed on -- so a parcel whose voxels cross
+  the midline is sampled onto both surfaces and becomes two regions the
+  parcellation never had. ggsegShen has one: 96.5% of `Region_174`'s 826
+  voxels are left of the midline, and the right-hemisphere region was built
+  from the 3.5% that spill across.
+
+  Hemisphere is taken from what the table declares, never inferred from the
+  voxels. A voxel majority would be a guess made silently on every build; a
+  column is a fact the atlas author can see and correct, which is the same
+  reasoning behind `type` and `lut_classify_anatomy()`. Where no column is
+  given the label's own name is read, covering the `Left-`, `lh.`, `_L` and
+  FreeSurfer `ctx-lh-` spellings. A label that declares nothing is left alone,
+  so a table naming each structure once for both hemispheres keeps producing
+  `lh_` and `rh_` as it should.
+
+  Atlases must declare it to benefit. ggsegShen, for instance, already
+  computes the hemisphere from each parcel's centroid and then drops it for
+  cortical labels; passing it as a `hemi` column is all that is needed there.
+
 # ggseg.extra 1.9.9.9097
 
 ## Bug fixes
