@@ -353,3 +353,17 @@
       v Refining cortical projection (keeping 1 cortical labels on the surface) [<t...
       
 
+# report_projection_losses / names what the projection dropped and what it split in two
+
+    Code
+      report_projection_losses(declared(), one_sided())
+    Condition
+      Warning:
+      1 cortical label reached no surface vertex and is not in the atlas.
+      x Dropped: "Region_101"
+      i A label the parcellation placed off the cortical ribbon - in white matter or a subcortical structure - has nowhere on the surface to land. Check these are meant to be cortical.
+      Warning:
+      1 cortical label landed on both surfaces, in an atlas whose labels are otherwise one hemisphere each.
+      x Split in two: "Region_174"
+      i Each became a separate lh_ and rh_ region. Voxels crossing the midline project onto the far surface, so the smaller side is usually spill rather than anatomy: "Region_174 lh 826 / rh 30"
+

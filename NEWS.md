@@ -1,3 +1,30 @@
+# ggseg.extra 1.9.9.9093
+
+## Bug fixes
+
+- `create_wholebrain_from_volume()` now says when the surface projection did
+  not deliver a cortical parcel it was asked for. Projecting a volume onto a
+  surface loses parcels in two ways, and both used to read as success.
+
+  A parcel can land on no vertex at all. It then has no row in the atlas, and
+  the only trace is a region count lower than the lookup table's. Rebuilding
+  ggsegShen, 12 of its 214 cortical parcels vanished this way without a word;
+  they are not slivers either -- the largest is 621 voxels against a median
+  parcel of 595.
+
+  And a parcel whose voxels cross the midline can land on *both* surfaces, so
+  one entry in the lookup table becomes an `lh_` and an `rh_` region that the
+  parcellation never had. In ggsegShen this happened to one parcel, 96.5% of
+  whose voxels are left of the midline: the right-hemisphere region was built
+  from the 3.5% that spill across.
+
+  Neither is necessarily wrong -- a lookup table that names a structure once
+  for both hemispheres is *meant* to produce `lh_` and `rh_` -- so both are
+  reported rather than refused, with the names and the per-hemisphere vertex
+  counts. Whether the split report applies is read off the labels themselves,
+  so a bilateral lookup table stays quiet instead of listing every label it
+  has.
+
 # ggseg.extra 1.9.9.9092
 
 Both fixes were found by building the 26 ggsegverse atlas repositories against

@@ -1998,7 +1998,13 @@ describe("wholebrain_refine_cortical_projection", {
     config <- list(verbose = FALSE, subject = "fsaverage5")
     dirs <- list(base = withr::local_tempdir())
     projection <- list(
-      atlas_data = tibble(),
+      # A real projection has the columns overlay_to_atlas_data() emits. An
+      # empty tibble let report_projection_losses() read a missing column.
+      atlas_data = tibble(
+        hemi = "left",
+        source_label = "a",
+        vertices = list(0:9)
+      ),
       colortable = data.frame(stringsAsFactors = FALSE, idx = 1L, label = "a")
     )
     split <- list(
@@ -2019,7 +2025,11 @@ describe("wholebrain_refine_cortical_projection", {
     config <- list(verbose = FALSE, subject = "fsaverage5")
     dirs <- list(base = withr::local_tempdir())
     projection <- list(
-      atlas_data = tibble(),
+      atlas_data = tibble(
+        hemi = "left",
+        source_label = "cortical_only",
+        vertices = list(0:9)
+      ),
       colortable = data.frame(
         idx = 1L,
         label = "cortical_only",
@@ -3697,5 +3707,96 @@ describe("write_subcortical_lut", {
     write_subcortical_lut(ct, path)
 
     expect_identical(read_lut(path)$label, ct$label)
+  })
+})
+
+
+describe("report_projection_losses", {
+  one_sided <- function() {
+    tibble(
+      hemi = c("left", "left", "right", "right", "left", "right"),
+      source_label = c(
+        "Region_174",
+        "Region_002",
+        "Region_174",
+        "Region_003",
+        "Region_004",
+        "unknown"
+      ),
+      vertices = list(1:826, 1:500, 1:30, 1:410, 1:390, 1:9)
+    )
+  }
+  declared <- function() {
+    data.frame(
+      stringsAsFactors = FALSE,
+      label = c(
+        "Region_101",
+        "Region_174",
+        "Region_002",
+        "Region_003",
+        "Region_004"
+      )
+    )
+  }
+
+  it("names what the projection dropped and what it split in two", {
+    # Both losses at once, which is what a real run hits: Shen declares 214
+    # cortical parcels, 12 reach no vertex, and one lands on both surfaces.
+    expect_snapshot(
+      report_projection_losses(declared(), one_sided())
+    )
+  })
+
+  it("reports the vertex split so the smaller side is recognisable as spill", {
+    expect_warning(
+      report_projection_losses(
+        declared()[declared()$label != "Region_101", , drop = FALSE],
+        one_sided()
+      ),
+      "lh 826 / rh 30"
+    )
+  })
+
+  it("stays quiet for a table that names each structure once for both", {
+    bilateral <- tibble(
+      hemi = c("left", "right", "left", "right"),
+      source_label = c("bankssts", "bankssts", "cuneus", "cuneus"),
+      vertices = list(1:100, 1:98, 1:50, 1:52)
+    )
+
+    expect_no_warning(
+      report_projection_losses(
+        data.frame(stringsAsFactors = FALSE, label = c("bankssts", "cuneus")),
+        bilateral
+      )
+    )
+  })
+
+  it("stays quiet when every declared label arrived on one surface", {
+    expect_no_warning(
+      report_projection_losses(
+        data.frame(stringsAsFactors = FALSE, label = c("a", "b")),
+        tibble(
+          hemi = c("left", "right"),
+          source_label = c("a", "b"),
+          vertices = list(1:10, 1:12)
+        )
+      )
+    )
+  })
+
+  it("does not count the backdrop as a dropped cortical label", {
+    # overlay_to_atlas_data() adds an "unknown" row that is in no lookup
+    # table; counting it would report a loss on every atlas ever built.
+    expect_no_warning(
+      report_projection_losses(
+        data.frame(stringsAsFactors = FALSE, label = "a"),
+        tibble(
+          hemi = c("left", "left"),
+          source_label = c("a", "unknown"),
+          vertices = list(1:10, 1:9)
+        )
+      )
+    )
   })
 })

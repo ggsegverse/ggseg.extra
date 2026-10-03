@@ -1531,15 +1531,126 @@ wholebrain_refine_cortical_projection <- function(
     projection$colortable$label %in% split$cortical_labels,
   ]
   if (nrow(colortable) == nrow(projection$colortable)) {
+    report_projection_losses(colortable, projection$atlas_data)
     return(projection)
   }
 
   surf_dir <- as.character(fs::path(dirs$base, "surface_overlays"))
   atlas_data <- refine_cortical_overlays(config, surf_dir, colortable)
+  report_projection_losses(colortable, atlas_data)
 
   list(
     atlas_data = atlas_data,
     colortable = colortable
+  )
+}
+
+
+#' Say which declared cortical labels the surface projection did not deliver
+#'
+#' Projecting a volume onto a surface is lossy in two ways that both read as
+#' success. A parcel can land on no vertex at all, and it then has no row in
+#' `atlas_data` and no row in the finished atlas -- the region count is simply
+#' lower than the lookup table, with nothing saying which parcels went or
+#' that any did. And a parcel whose voxels cross the midline can land on both
+#' surfaces, and each fragment becomes a region of its own, so one entry in
+#' the lookup table turns into `lh_` and `rh_` parcels that the parcellation
+#' never had.
+#'
+#' Neither is reported anywhere else, and neither is necessarily wrong:
+#' a lookup table that names a structure once for both hemispheres is
+#' *supposed* to produce `lh_` and `rh_`, and a label the parcellation put
+#' outside the cortical ribbon has nowhere on the surface to go. So this
+#' reports rather than aborts, and names what it found so the numbers can be
+#' checked against the parcellation.
+#'
+#' The both-hemispheres report is only worth making for a parcellation that
+#' gives each hemisphere its own entry, where a label on both surfaces is a
+#' label in the wrong place. Whether this is such a parcellation is read off
+#' the labels themselves -- whether most of them came back on one surface
+#' only -- rather than configured, so a bilateral lookup table stays quiet
+#' instead of listing every label it has.
+#'
+#' @param colortable The cortical rows of the lookup table: what was asked
+#'   for.
+#' @param atlas_data The projected surface data: what arrived.
+#' @noRd
+report_projection_losses <- function(colortable, atlas_data) {
+  arrived <- atlas_data[atlas_data$source_label %in% colortable$label, ]
+
+  warn_unprojected_labels(
+    setdiff(colortable$label, arrived$source_label)
+  )
+  warn_split_labels(arrived)
+  invisible(NULL)
+}
+
+
+#' Warn that a declared cortical label reached no vertex on either surface
+#' @noRd
+warn_unprojected_labels <- function(missing) {
+  if (length(missing) == 0L) {
+    return(invisible(NULL))
+  }
+  cli::cli_warn(
+    c(
+      "{length(missing)} cortical label{?s} reached no surface vertex and
+      {?is/are} not in the atlas.",
+      "x" = "Dropped: {.val {missing}}",
+      "i" = "A label the parcellation placed off the cortical ribbon -
+      in white matter or a subcortical structure - has nowhere on the
+      surface to land. Check these are meant to be cortical."
+    ),
+    wrap = TRUE
+  )
+}
+
+
+#' Warn that a cortical label landed on both surfaces in a one-sided atlas
+#' @noRd
+warn_split_labels <- function(arrived) {
+  sides <- split(arrived, arrived$source_label)
+  hemis <- vapply(sides, function(rows) length(unique(rows$hemi)), integer(1))
+  if (length(hemis) == 0L || mean(hemis == 1L) <= 0.5) {
+    # Most labels are on both surfaces, so this lookup table names each
+    # structure once for both hemispheres and is behaving as intended.
+    return(invisible(NULL))
+  }
+
+  both <- names(hemis)[hemis > 1L]
+  if (length(both) == 0L) {
+    return(invisible(NULL))
+  }
+
+  # nolint next: object_usage_linter.
+  splits <- describe_hemi_split(sides[both])
+  cli::cli_warn(
+    c(
+      "{length(both)} cortical label{?s} landed on both surfaces, in an atlas
+      whose labels are otherwise one hemisphere each.",
+      "x" = "Split in two: {.val {both}}",
+      "i" = "Each became a separate {.field lh_} and {.field rh_} region.
+      Voxels crossing the midline project onto the far surface, so the
+      smaller side is usually spill rather than anatomy: {.val {splits}}"
+    ),
+    wrap = TRUE
+  )
+}
+
+
+#' Vertex counts per hemisphere, for a label that landed on both
+#' @noRd
+describe_hemi_split <- function(sides) {
+  vapply(
+    names(sides),
+    function(label) {
+      rows <- sides[[label]]
+      counts <- vapply(rows$vertices, length, integer(1))
+      short <- vapply(rows$hemi, hemi_to_short, character(1), USE.NAMES = FALSE)
+      paste0(label, " ", paste0(short, " ", counts, collapse = " / "))
+    },
+    character(1),
+    USE.NAMES = FALSE
   )
 }
 
