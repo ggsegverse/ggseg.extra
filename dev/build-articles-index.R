@@ -1,6 +1,6 @@
 #!/usr/bin/env Rscript
-# Write pkgdown/assets/articles.json: a machine-readable index of every
-# article the pkgdown site publishes.
+# Write pkgdown/assets/articles.json: a machine-readable index of the pkgdown
+# tutorials that are not included in the package tarball.
 #
 # Why this exists: `vignettes/articles/` is Rbuildignored, so the pre-knit
 # tutorials never reach the tarball and r-universe's package metadata never
@@ -11,9 +11,9 @@
 # alongside the pages it describes.
 #
 # Sections, order and membership come from the `articles:` index in
-# _pkgdown.yml -- the same source pkgdown renders articles/index.html from --
-# so the JSON cannot disagree with the site. Titles come from each source
-# file's YAML front matter.
+# _pkgdown.yml -- the same source pkgdown renders articles/index.html from.
+# Shipped vignettes are left to r-universe's package metadata. Titles come
+# from each source file's YAML front matter.
 #
 #   Rscript dev/build-articles-index.R            # write the file
 #   Rscript dev/build-articles-index.R --check    # fail if it is out of date
@@ -108,6 +108,9 @@ for (section in config$articles) {
 
   for (slug in section$contents) {
     path <- source_for(slug)
+    if (!startsWith(section$title, "Tutorials:") || !build_ignored(path)) {
+      next
+    }
     articles[[length(articles) + 1]] <- list(
       slug = slug,
       title = front_matter_title(path),

@@ -4,46 +4,6 @@
   "source": "_pkgdown.yml",
   "articles": [
     {
-      "slug": "ggseg.extra",
-      "title": "Getting started with ggseg.extra",
-      "href": "articles/ggseg.extra.html",
-      "section": "Getting Started",
-      "section_desc": null,
-      "vignette": true
-    },
-    {
-      "slug": "atlas-workflows",
-      "title": "Atlas Creation Workflows",
-      "href": "articles/atlas-workflows.html",
-      "section": "Getting Started",
-      "section_desc": null,
-      "vignette": false
-    },
-    {
-      "slug": "system-setup",
-      "title": "System setup",
-      "href": "articles/system-setup.html",
-      "section": "Getting Started",
-      "section_desc": null,
-      "vignette": true
-    },
-    {
-      "slug": "pipeline-configuration",
-      "title": "Pipeline configuration",
-      "href": "articles/pipeline-configuration.html",
-      "section": "How-To",
-      "section_desc": "Understanding package functionality",
-      "vignette": true
-    },
-    {
-      "slug": "post-processing",
-      "title": "Post-processing atlases",
-      "href": "articles/post-processing.html",
-      "section": "How-To",
-      "section_desc": "Understanding package functionality",
-      "vignette": true
-    },
-    {
       "slug": "articles/tutorial-cortical-atlas",
       "title": "Tutorial: Creating a cortical atlas",
       "href": "articles/tutorial-cortical-atlas.html",
@@ -114,22 +74,6 @@
       "section": "Tutorials: Working with Atlases",
       "section_desc": "Preparing the inputs an atlas needs, and shipping the result",
       "vignette": false
-    },
-    {
-      "slug": "contributing",
-      "title": "Contributing an atlas package",
-      "href": "articles/contributing.html",
-      "section": "Tutorials: Working with Atlases",
-      "section_desc": "Preparing the inputs an atlas needs, and shipping the result",
-      "vignette": true
-    },
-    {
-      "slug": "legacy-conversion",
-      "title": "Converting legacy atlases",
-      "href": "articles/legacy-conversion.html",
-      "section": "Legacy",
-      "section_desc": null,
-      "vignette": true
     }
   ]
 }
