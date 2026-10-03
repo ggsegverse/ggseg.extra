@@ -3898,3 +3898,106 @@ describe("classify_labels_manual", {
     expect_identical(result$cerebellar, character(0))
   })
 })
+
+
+describe("declared cortical hemisphere", {
+  ct <- function(label, ...) {
+    data.frame(stringsAsFactors = FALSE, idx = 1L, label = label, ...)
+  }
+
+  it("confines a parcel to the hemisphere its lookup table declares", {
+    # Without this, a parcel whose voxels cross the midline is sampled onto
+    # both surfaces and becomes two regions the parcellation never had.
+    row <- ct("Region_174", hemi = "left")
+
+    expect_true(label_belongs_to_hemi(row, "Region_174", "left"))
+    expect_false(label_belongs_to_hemi(row, "Region_174", "right"))
+  })
+
+  it("keeps a parcel that declares nothing on both surfaces", {
+    # A lookup table naming each structure once for both hemispheres is
+    # supposed to produce lh_ and rh_. Breaking this would delete half of
+    # every bilateral atlas.
+    row <- ct("bankssts")
+
+    expect_true(label_belongs_to_hemi(row, "bankssts", "left"))
+    expect_true(label_belongs_to_hemi(row, "bankssts", "right"))
+  })
+
+  it("lets the column override what the name says", {
+    row <- ct("Left-Thing", hemi = "right")
+
+    expect_false(label_belongs_to_hemi(row, "Left-Thing", "left"))
+    expect_true(label_belongs_to_hemi(row, "Left-Thing", "right"))
+  })
+
+  it("treats an unrecognised column value as declaring nothing", {
+    # Rather than aborting: the column says nothing usable about this label,
+    # which is the situation of a table without the column at all.
+    row <- ct("Region_1", hemi = "banana")
+
+    expect_true(label_belongs_to_hemi(row, "Region_1", "left"))
+    expect_true(label_belongs_to_hemi(row, "Region_1", "right"))
+  })
+
+  it("reads a hemisphere the label declares in its own name", {
+    row <- ct("Left-Thalamus")
+
+    expect_true(label_belongs_to_hemi(row, "Left-Thalamus", "left"))
+    expect_false(label_belongs_to_hemi(row, "Left-Thalamus", "right"))
+  })
+
+  it("reads FreeSurfer's embedded lh/rh token", {
+    # ctx-lh-* is the commonest declared form the volume path sees, and
+    # detect_hemi()'s prefix and suffix patterns both miss it.
+    expect_false(label_belongs_to_hemi(
+      ct("ctx-lh-superiorfrontal"),
+      "ctx-lh-superiorfrontal",
+      "right"
+    ))
+    expect_true(label_belongs_to_hemi(
+      ct("ctx-rh-precuneus"),
+      "ctx-rh-precuneus",
+      "right"
+    ))
+  })
+
+  it("does not read a token out of a label that merely contains it", {
+    # detect_hemi()'s non-strict mode would: it searches for "lh" anywhere.
+    # One bilateral label containing those letters would lose half itself.
+    for (label in c("Thalamus", "Cerebellum-Cortex", "bankssts")) {
+      expect_true(
+        label_belongs_to_hemi(ct(label), label, "right"),
+        info = label
+      )
+    }
+  })
+
+  it("accepts the usual spellings of a declared hemisphere", {
+    expect_identical(normalise_hemi("LH"), "left")
+    expect_identical(normalise_hemi(" Right "), "right")
+    expect_identical(normalise_hemi("l"), "left")
+    expect_identical(normalise_hemi(NA), NA_character_)
+    expect_identical(normalise_hemi(""), NA_character_)
+  })
+
+  it("drops the wrong-hemisphere row when building the atlas data", {
+    # The end the user sees: one lookup table entry, one region, not two.
+    colortable <- data.frame(
+      stringsAsFactors = FALSE,
+      idx = c(1L, 2L),
+      label = c("Region_174", "bilateral_thing"),
+      hemi = c("left", NA),
+      R = 1L,
+      G = 2L,
+      B = 3L
+    )
+    overlay <- c(1L, 1L, 2L, 2L, 0L)
+
+    left <- overlay_to_atlas_data(overlay, "lh", colortable)
+    right <- overlay_to_atlas_data(overlay, "rh", colortable)
+
+    expect_setequal(left$source_label, c("Region_174", "bilateral_thing"))
+    expect_setequal(right$source_label, "bilateral_thing")
+  })
+})

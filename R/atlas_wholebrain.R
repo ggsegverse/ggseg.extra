@@ -99,12 +99,37 @@
 #' medial wall, which the cortical atlas keeps as grey context geometry
 #' rather than as a region.
 #'
+#' @section Declared hemisphere:
+#'
+#' A cortical label carries no hemisphere of its own. The `lh_`/`rh_` prefix on
+#' a finished region comes from whichever surface its vertices landed on, so a
+#' parcel whose voxels cross the midline is sampled onto *both* surfaces and
+#' becomes two regions the parcellation never had -- the larger one real, the
+#' smaller one built from the spill.
+#'
+#' Give the lookup table a `hemi` column (`"left"` or `"right"`, or `lh`/`rh`)
+#' and the parcel is kept only on the surface it belongs to. Where there is no
+#' column the label's own name is read, which covers `Left-Thalamus`,
+#' `lh.something`, `region_L` and FreeSurfer's `ctx-lh-superiorfrontal`.
+#'
+#' A label that declares nothing is left alone, on purpose: a lookup table that
+#' names each structure once for both hemispheres is *meant* to produce `lh_`
+#' and `rh_`. So this is opt-in, and a table without the column behaves exactly
+#' as before.
+#'
+#' Hemisphere is never inferred from the voxels. The volume does know which side
+#' a parcel sits on, but a majority vote is a guess made silently on every
+#' build, whereas a column is a fact you can see and correct -- the same
+#' reasoning as the `type` column and [lut_classify_anatomy()].
+#'
 #' @param input_volume Path to volumetric parcellation in MNI152 space
 #'   (.mgz, .nii, .nii.gz).
 #' @param input_lut Path to FreeSurfer-style colour lookup table, or a
 #'   data.frame with columns `idx`, `label`, `R`, `G`, `B`, `A`.
 #'   An optional `type` column with values `"cortical"` or `"subcortical"`
-#'   controls label classification (see **Label classification**). Voxel IDs
+#'   controls label classification (see **Label classification**). An optional
+#'   `hemi` column with values `"left"` or `"right"` says which hemisphere a
+#'   parcel belongs to (see **Declared hemisphere**). Voxel IDs
 #'   not listed in the LUT are automatically zeroed out before surface
 #'   projection (see **Volume pre-processing**).
 #'   If NULL, generic names and no palette.
@@ -950,6 +975,10 @@ overlay_label_row <- function(
   }
 
   label_name <- ct_row$label[1]
+  if (!label_belongs_to_hemi(ct_row, label_name, hemi)) {
+    return(NULL)
+  }
+
   safe_name <- sanitize_label(label_name)
   colour <- if ("color" %in% names(ct_row)) {
     ct_row$color[1]
@@ -967,6 +996,108 @@ overlay_label_row <- function(
     vertices = list(which(overlay == label_val) - 1L),
     source_label = label_name,
     source_idx = label_val
+  )
+}
+
+
+#' Does a parcel belong to the surface it has just been found on?
+#'
+#' Nothing else in the package can answer this. A cortical label carries no
+#' hemisphere in its own right -- the prefix in `lh_bankssts` comes from
+#' whichever surface the vertices landed on, not from the lookup table -- so a
+#' parcel whose voxels cross the midline is sampled onto *both* surfaces and
+#' becomes two regions the parcellation never had. ggsegShen has one: 96.5% of
+#' `Region_174`'s 826 voxels are left of the midline, and the right-hemisphere
+#' region was built from the 3.5% that spill across.
+#'
+#' The answer is taken from what the lookup table *declares*, never inferred
+#' from the voxels. A `hemi` column says it outright, as `type` does for
+#' cortical/subcortical/cerebellar; failing that, the label's own name is read
+#' with [detect_hemi()], which covers the `Left-`/`lh.`/`_L` spellings
+#' parcellations already use. A label that declares nothing is left alone, so a
+#' lookup table naming each structure once for both hemispheres keeps
+#' producing `lh_` and `rh_` as it should.
+#'
+#' Declaring beats measuring here even though the volume knows: a voxel
+#' majority is a guess made silently on every build, and a column is a fact the
+#' atlas author can see and correct. [lut_classify_anatomy()] already sets this
+#' precedent for `type`.
+#'
+#' @param ct_row The label's lookup table row.
+#' @param label_name The label's source name.
+#' @param hemi Long hemisphere name of the surface being read.
+#' @return `TRUE` to keep the parcel on this surface.
+#' @noRd
+label_belongs_to_hemi <- function(ct_row, label_name, hemi) {
+  declared <- declared_hemi(ct_row, label_name)
+  is.na(declared) || identical(declared, hemi)
+}
+
+
+#' The hemisphere a lookup table row declares, or `NA` if it declares none
+#'
+#' The column wins over the name: it is the more explicit of the two, and an
+#' author who adds it is overriding what the name happens to say.
+#' @noRd
+declared_hemi <- function(ct_row, label_name) {
+  if ("hemi" %in% names(ct_row)) {
+    from_column <- normalise_hemi(ct_row$hemi[1])
+    if (!is.na(from_column)) {
+      return(from_column)
+    }
+  }
+  embedded <- embedded_hemi_token(label_name)
+  if (!is.na(embedded)) {
+    return(embedded)
+  }
+  detect_hemi(label_name, strict = TRUE)
+}
+
+
+#' Hemisphere from an `lh`/`rh` token in the middle of a label
+#'
+#' FreeSurfer's own cortical labels put it there -- `ctx-lh-superiorfrontal` --
+#' and a wholebrain build from `aparc+aseg` is full of them, so
+#' [detect_hemi()]'s prefix and suffix patterns miss the commonest declared
+#' form the volume path sees.
+#'
+#' Separators are required on both sides. [detect_hemi()]'s non-strict mode
+#' would answer this with a bare substring search for `lh`, which is not safe
+#' to use here: one bilateral label that happens to contain those letters
+#' would be assigned to a hemisphere and half of it would vanish from the
+#' atlas. A bounded token cannot do that.
+#' @noRd
+embedded_hemi_token <- function(label_name) {
+  if (grepl("[-_. ]lh[-_. ]", label_name, ignore.case = TRUE)) {
+    return("left")
+  }
+  if (grepl("[-_. ]rh[-_. ]", label_name, ignore.case = TRUE)) {
+    return("right")
+  }
+  NA_character_
+}
+
+
+#' Read a declared hemisphere in any of its usual spellings
+#'
+#' `NA` for anything unrecognised rather than an error: an unexpected value
+#' means the column says nothing usable about this label, and the label is
+#' then treated as undeclared, which is the behaviour of a table without the
+#' column at all.
+#' @noRd
+normalise_hemi <- function(x) {
+  if (length(x) != 1L || is.na(x) || !nzchar(trimws(x))) {
+    return(NA_character_)
+  }
+  switch(
+    tolower(trimws(x)),
+    "left" = ,
+    "lh" = ,
+    "l" = "left",
+    "right" = ,
+    "rh" = ,
+    "r" = "right",
+    NA_character_
   )
 }
 
