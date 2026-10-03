@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9096</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9097</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -69,6 +69,18 @@
       <small>Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.9.9.9097" id="ggsegextra-1999097">ggseg.extra 1.9.9.9097<a class="anchor" aria-label="anchor" href="#ggsegextra-1999097"></a></h2>
+<div class="section level3">
+<h3 id="bug-fixes-1-9-9-9097">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-1-9-9-9097"></a></h3>
+<ul><li>
+<p>A <code>.mgz</code> volume no longer loses every structure whose label id is above 255. <code>tessellate_remap_label()</code> exists precisely to handle those ids – FreeSurfer caps <code>mri_tessellate</code>’s label argument at 255, so the label is isolated into a volume of its own and tessellated as 1 – but it isolated it with <code><a href="https://rdrr.io/pkg/RNifti/man/readNifti.html" class="external-link">RNifti::readNifti()</a></code>, which cannot read <code>.mgz</code>. The structure then failed to tessellate and was absent from the atlas.</p>
+<p>This is the normal case for FreeSurfer thalamic nuclei, hippocampal subfields and brainstem substructures, and <code>.mgz</code> is a documented input whose own examples use <code>aseg.mgz</code>.</p>
+<p>The isolated label is now written back as <code>.mgz</code>, carrying the original volume’s voxel-to-world affine. Keeping the format matters twice over: the FreeSurfer tools read <code>.mgz</code> natively – a label at or below 255 is already handed the <code>.mgz</code> untouched – and reading through <code>read_volume()</code> instead would hand back a plain array with no header to inherit, so the mask would be written with a default affine and the structure would be tessellated somewhere other than where it is.</p>
+<p>Verified against a real <code>aseg.mgz</code>: an above-255 label now produces a mesh identical to the one built from the same volume as NIfTI, 4058 vertices and 8112 faces about the same centroid, where before it produced none.</p>
+</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9096" id="ggsegextra-1999096">ggseg.extra 1.9.9.9096<a class="anchor" aria-label="anchor" href="#ggsegextra-1999096"></a></h2>
 <div class="section level3">

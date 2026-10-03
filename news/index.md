@@ -1,5 +1,35 @@
 # Changelog
 
+## ggseg.extra 1.9.9.9097
+
+### Bug fixes
+
+- A `.mgz` volume no longer loses every structure whose label id is
+  above 255. `tessellate_remap_label()` exists precisely to handle those
+  ids – FreeSurfer caps `mri_tessellate`’s label argument at 255, so the
+  label is isolated into a volume of its own and tessellated as 1 – but
+  it isolated it with
+  [`RNifti::readNifti()`](https://rdrr.io/pkg/RNifti/man/readNifti.html),
+  which cannot read `.mgz`. The structure then failed to tessellate and
+  was absent from the atlas.
+
+  This is the normal case for FreeSurfer thalamic nuclei, hippocampal
+  subfields and brainstem substructures, and `.mgz` is a documented
+  input whose own examples use `aseg.mgz`.
+
+  The isolated label is now written back as `.mgz`, carrying the
+  original volume’s voxel-to-world affine. Keeping the format matters
+  twice over: the FreeSurfer tools read `.mgz` natively – a label at or
+  below 255 is already handed the `.mgz` untouched – and reading through
+  `read_volume()` instead would hand back a plain array with no header
+  to inherit, so the mask would be written with a default affine and the
+  structure would be tessellated somewhere other than where it is.
+
+  Verified against a real `aseg.mgz`: an above-255 label now produces a
+  mesh identical to the one built from the same volume as NIfTI, 4058
+  vertices and 8112 faces about the same centroid, where before it
+  produced none.
+
 ## ggseg.extra 1.9.9.9096
 
 ### Bug fixes
