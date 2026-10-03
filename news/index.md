@@ -1,5 +1,27 @@
 # Changelog
 
+## ggseg.extra 1.9.9.9095
+
+### Bug fixes
+
+- A mistyped label in `labels$cortical` or `labels$cerebellar` is no
+  longer ignored in silence.
+  [`create_wholebrain_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_wholebrain_from_volume.md)
+  checked only `labels$subcortical`; the other two were
+  [`intersect()`](https://generics.r-lib.org/reference/setops.html)ed
+  against the atlas and whatever did not match was dropped without a
+  word.
+
+  That is worse than it sounds. The override does not merely fail – the
+  label it was meant to classify is left unclaimed and falls through to
+  automatic classification, so an explicit instruction is quietly
+  replaced by a guess from the surface vertex count.
+
+  All three are now checked through one path, which is also the point:
+  three near-identical branches are how only one of them came to be
+  validated. The warning names the argument and the labels it could not
+  find.
+
 ## ggseg.extra 1.9.9.9094
 
 ### Bug fixes
