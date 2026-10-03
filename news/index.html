@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9100</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9101</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -69,6 +69,17 @@
       <small>Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.9.9.9101" id="ggsegextra-1999101">ggseg.extra 1.9.9.9101<a class="anchor" aria-label="anchor" href="#ggsegextra-1999101"></a></h2>
+<div class="section level3">
+<h3 id="bug-fixes-1-9-9-9101">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-1-9-9-9101"></a></h3>
+<ul><li>
+<p><code><a href="../reference/create_wholebrain_from_volume.html">create_wholebrain_from_volume()</a></code> now says when it assumed a label is subcortical. A label in the volume that reached no cortical vertex is put in the subcortical bucket, which is a reasonable default – a structure the cortical surface does not see is usually deep – but it is a default, not a measurement, and it was applied in silence.</p>
+<p>Reported separately from the existing vertex-count warning, because the two are different claims: that one says a label was sized and found small, this one says a label was never measured at all. With only the first reported, a run could announce fourteen vertex-count guesses while nineteen labels ended up subcortical, leaving the other five unaccounted for. On FreeSurfer’s own shipped <code>aseg</code> there are 31 such labels.</p>
+</li>
+<li><p>The context silhouette of an axial or coronal slice is labelled <code>cortex</code> rather than <code>cortex_</code>. <code>extract_hemi_from_view()</code> returns <code>NULL</code> for every view but sagittal, and <code>paste0("cortex_", NULL)</code> left a trailing underscore that users saw in <code><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_geom.html" class="external-link">atlas_geom()</a></code>. Both spellings match <code><a href="../reference/context_pattern.html">context_pattern()</a></code>, so nothing downstream changes; existing cortex snapshots are renamed on the next build and redrawn once.</p></li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9100" id="ggsegextra-1999100">ggseg.extra 1.9.9.9100<a class="anchor" aria-label="anchor" href="#ggsegextra-1999100"></a></h2>
 <div class="section level3">

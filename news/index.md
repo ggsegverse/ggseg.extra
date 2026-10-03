@@ -1,5 +1,34 @@
 # Changelog
 
+## ggseg.extra 1.9.9.9101
+
+### Bug fixes
+
+- [`create_wholebrain_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_wholebrain_from_volume.md)
+  now says when it assumed a label is subcortical. A label in the volume
+  that reached no cortical vertex is put in the subcortical bucket,
+  which is a reasonable default – a structure the cortical surface does
+  not see is usually deep – but it is a default, not a measurement, and
+  it was applied in silence.
+
+  Reported separately from the existing vertex-count warning, because
+  the two are different claims: that one says a label was sized and
+  found small, this one says a label was never measured at all. With
+  only the first reported, a run could announce fourteen vertex-count
+  guesses while nineteen labels ended up subcortical, leaving the other
+  five unaccounted for. On FreeSurfer’s own shipped `aseg` there are 31
+  such labels.
+
+- The context silhouette of an axial or coronal slice is labelled
+  `cortex` rather than `cortex_`. `extract_hemi_from_view()` returns
+  `NULL` for every view but sagittal, and `paste0("cortex_", NULL)` left
+  a trailing underscore that users saw in
+  [`atlas_geom()`](https://ggsegverse.github.io/ggseg.formats/reference/atlas_geom.html).
+  Both spellings match
+  [`context_pattern()`](https://ggsegverse.github.io/ggseg.extra/reference/context_pattern.md),
+  so nothing downstream changes; existing cortex snapshots are renamed
+  on the next build and redrawn once.
+
 ## ggseg.extra 1.9.9.9100
 
 ### Bug fixes
