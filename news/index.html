@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9102</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9103</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -69,6 +69,33 @@
       <small>Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.9.9.9103" id="ggsegextra-1999103">ggseg.extra 1.9.9.9103<a class="anchor" aria-label="anchor" href="#ggsegextra-1999103"></a></h2>
+<div class="section level3">
+<h3 id="breaking-changes-1-9-9-9103">Breaking changes<a class="anchor" aria-label="anchor" href="#breaking-changes-1-9-9-9103"></a></h3>
+<ul><li>
+<p>Cerebellar region names are normalised the way every other pipeline does it. The cerebellar pipeline had its own <code>clean_cerebellar_region()</code> instead of the shared <code><a href="../reference/label_to_region.html">label_to_region()</a></code>, so within a single built package the three pipelines disagreed:</p>
+<table class="table"><thead><tr><th>pipeline</th>
+<th>region</th>
+<th>label</th>
+</tr></thead><tbody><tr><td>cortical</td>
+<td><code>region 174</code></td>
+<td><code>lh_Region_174</code></td>
+</tr><tr><td>subcortical</td>
+<td><code>region 099</code></td>
+<td><code>Right_Region_099</code></td>
+</tr><tr><td>cerebellar</td>
+<td><code>Region_100</code></td>
+<td><code>right_Region_100</code></td>
+</tr></tbody></table><p>Worse, neither function stripped <code>midline</code>, which is a hemisphere value this package itself assigns – so <strong>every</strong> cerebellar region in the ggsegverse was named <code>midline_&lt;something&gt;</code>, with the hemisphere leaking into the region name. <code><a href="../reference/label_to_region.html">label_to_region()</a></code> now strips <code>vermis</code> and <code>midline</code> alongside <code>left</code>/<code>right</code>, and the cerebellar pipeline uses it.</p>
+<p>Region names in the seven <code>ggsegCerebellum</code> atlases change on their next rebuild: <code>midline_M1L</code> becomes <code>m1l</code>, <code>Vermis_VIIAt</code> becomes <code>viiat</code>. The <code>label</code> column is unchanged, because labels are built from <code>sanitize_label()</code> rather than from the normalised region – which is also how the other pipelines do it, and was the remaining inconsistency.</p>
+</li>
+</ul></div>
+<div class="section level3">
+<h3 id="bug-fixes-1-9-9-9103">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-1-9-9-9103"></a></h3>
+<ul><li>A cerebellar atlas where no region got a hemisphere now says so. The hemisphere is read from each region’s name, falling back to <code>midline</code>, so a parcellation that writes the side another way gets <code>midline</code> throughout in silence. All seven shipped atlases are in that state, <code>nettekoven32</code> and <code>nettekoven68</code> included, whose names carry the side as <code>M1L</code> and <code>M1R</code> – a trailing letter with no separator, which the suffix pattern deliberately does not match, since matching a bare trailing <code>L</code> or <code>R</code> would bind any label ending in those letters. The remedy named is a <code>hemi</code> column or <code>Left_</code>/<code>Right_</code>/<code>Vermis_</code> naming.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9102" id="ggsegextra-1999102">ggseg.extra 1.9.9.9102<a class="anchor" aria-label="anchor" href="#ggsegextra-1999102"></a></h2>
 <div class="section level3">

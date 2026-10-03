@@ -1,5 +1,48 @@
 # Changelog
 
+## ggseg.extra 1.9.9.9103
+
+### Breaking changes
+
+- Cerebellar region names are normalised the way every other pipeline
+  does it. The cerebellar pipeline had its own
+  `clean_cerebellar_region()` instead of the shared
+  [`label_to_region()`](https://ggsegverse.github.io/ggseg.extra/reference/label_to_region.md),
+  so within a single built package the three pipelines disagreed:
+
+  | pipeline    | region       | label              |
+  |-------------|--------------|--------------------|
+  | cortical    | `region 174` | `lh_Region_174`    |
+  | subcortical | `region 099` | `Right_Region_099` |
+  | cerebellar  | `Region_100` | `right_Region_100` |
+
+  Worse, neither function stripped `midline`, which is a hemisphere
+  value this package itself assigns – so **every** cerebellar region in
+  the ggsegverse was named `midline_<something>`, with the hemisphere
+  leaking into the region name.
+  [`label_to_region()`](https://ggsegverse.github.io/ggseg.extra/reference/label_to_region.md)
+  now strips `vermis` and `midline` alongside `left`/`right`, and the
+  cerebellar pipeline uses it.
+
+  Region names in the seven `ggsegCerebellum` atlases change on their
+  next rebuild: `midline_M1L` becomes `m1l`, `Vermis_VIIAt` becomes
+  `viiat`. The `label` column is unchanged, because labels are built
+  from `sanitize_label()` rather than from the normalised region – which
+  is also how the other pipelines do it, and was the remaining
+  inconsistency.
+
+### Bug fixes
+
+- A cerebellar atlas where no region got a hemisphere now says so. The
+  hemisphere is read from each region’s name, falling back to `midline`,
+  so a parcellation that writes the side another way gets `midline`
+  throughout in silence. All seven shipped atlases are in that state,
+  `nettekoven32` and `nettekoven68` included, whose names carry the side
+  as `M1L` and `M1R` – a trailing letter with no separator, which the
+  suffix pattern deliberately does not match, since matching a bare
+  trailing `L` or `R` would bind any label ending in those letters. The
+  remedy named is a `hemi` column or `Left_`/`Right_`/`Vermis_` naming.
+
 ## ggseg.extra 1.9.9.9102
 
 ### Bug fixes
