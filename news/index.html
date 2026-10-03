@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9099</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9100</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -69,6 +69,18 @@
       <small>Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.9.9.9100" id="ggsegextra-1999100">ggseg.extra 1.9.9.9100<a class="anchor" aria-label="anchor" href="#ggsegextra-1999100"></a></h2>
+<div class="section level3">
+<h3 id="bug-fixes-1-9-9-9100">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-1-9-9-9100"></a></h3>
+<ul><li>
+<p>The tract pipelines now name what they dropped, truncated or could not match, instead of leaving a lower count as the only trace.</p>
+<p>A tract whose centerline is degenerate produced no mesh and was filtered away in silence on the tractography path; it is now named. The volume path did report its drops, but only when <code>verbose</code> was set, so a quiet run lost the label without a word there too. Neither is gated on <code>verbose</code> any more: a tract missing from the atlas is not progress chatter.</p>
+<p>A <code>.trk</code> file whose header declares more streamlines than it holds is reported rather than read short in silence. A declared count of <code>0</code> means “not recorded, read to end of file” in the TrackVis specification, so it is not a promise and stays quiet.</p>
+<p>A <code>tract_names</code> length that does not match the number of tracts is now named where it happens. It used to surface from <code>furrr</code> as <code>Can't recycle length 3 and length 2 at location 2</code>, which mentions neither the tracts, nor <code>tract_names</code>, nor the lookup table the names usually come from – a lookup table with a row per tract it does not have being the normal way to get there.</p>
+</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9099" id="ggsegextra-1999099">ggseg.extra 1.9.9.9099<a class="anchor" aria-label="anchor" href="#ggsegextra-1999099"></a></h2>
 <div class="section level3">
