@@ -79,16 +79,21 @@ describe("create_wholebrain_from_volume on fsaverage5", {
     # FreeSurferColorLUT.txt carries no type column, so the pipeline falls
     # back to the vertex count for whatever the explicit vectors leave over.
     result <- NULL
+    # The shipped aseg has 31 labels the cortical surface never sees, which
+    # the pipeline defaults to subcortical and now says so.
     expect_warning(
-      result <- create_wholebrain_from_volume(
-        input_volume = fsaverage5_file("mri", "aseg.mgz"),
-        input_lut = file.path(freesurfer::fs_dir(), "FreeSurferColorLUT.txt"),
-        atlas_name = "aseg_fsaverage5",
-        output_dir = withr::local_tempdir(),
-        projection_opts = list(registration = "header"),
-        labels = list(cerebellar = cerebellum),
-        steps = 1:2,
-        verbose = FALSE
+      expect_warning(
+        result <- create_wholebrain_from_volume(
+          input_volume = fsaverage5_file("mri", "aseg.mgz"),
+          input_lut = file.path(freesurfer::fs_dir(), "FreeSurferColorLUT.txt"),
+          atlas_name = "aseg_fsaverage5",
+          output_dir = withr::local_tempdir(),
+          projection_opts = list(registration = "header"),
+          labels = list(cerebellar = cerebellum),
+          steps = 1:2,
+          verbose = FALSE
+        ),
+        "not on the cortical surface"
       ),
       "by surface vertex count"
     )

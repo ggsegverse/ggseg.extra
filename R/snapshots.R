@@ -229,6 +229,14 @@ cortex_slice_file <- function(output_dir, view_name, hemi) {
 
 #' @noRd
 cortex_slice_label <- function(hemi) {
+  # extract_hemi_from_view() returns NULL for every view but sagittal, and
+  # paste0("cortex_", NULL) is "cortex_" -- a trailing underscore the user
+  # then sees in atlas_geom(). An axial or coronal context slice has no
+  # hemisphere to name, so it is just "cortex". context_pattern() matches
+  # either, so nothing downstream changes.
+  if (length(hemi) == 0L || is.na(hemi) || !nzchar(hemi)) {
+    return("cortex")
+  }
   paste0("cortex_", hemi)
 }
 
