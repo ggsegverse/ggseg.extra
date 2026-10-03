@@ -868,6 +868,10 @@ cerebellar_project_and_build <- function(
     deep_meshes_df <- extract_deep_meshes(deep_result$meshes)
   }
 
+  # After the deep nuclei are merged in: their geometry is not on the flatmap,
+  # so checking before this would drop every one of them.
+  components <- drop_labels_without_geometry(components, sf_data)
+
   atlas <- ggseg_atlas(
     atlas = atlas_name,
     type = "cerebellar",

@@ -1,3 +1,32 @@
+# ggseg.extra 1.9.9.9094
+
+## Bug fixes
+
+- The cerebellar and cortical pipelines could ship a region that has no shape.
+  `core` names an atlas's regions and the geometry holds their shapes, and a
+  label in one but not the other is an atlas that claims a region it cannot
+  draw. Nothing complained at build time -- `print()` still counted the region
+  -- so it surfaced much later as `geom_brain()` warning that some data was not
+  merged properly.
+
+  The cerebellar case is reachable through `rescue_orphaned_region()`, which
+  hands a region with no surface vertices the five nearest ones and reports
+  success; five vertices do not survive polygon building, so the row stayed in
+  `core` and never reached the geometry. A 2362-voxel region was lost this way
+  in two atlas repositories.
+
+  Only the subcortical pipeline reconciled the two, which is why the other two
+  could do this at all. That check is now shared
+  (`drop_labels_without_geometry()`) and runs in all three. It also prunes the
+  fields the subcortical version left behind -- `vertices_df` and `vol_idx`
+  alongside `core`, `palette` and `meshes_df` -- so a dropped region cannot
+  leave a palette entry or a mesh without a `core` row. For the cerebellar
+  pipeline it runs after the deep nuclei are merged in, whose geometry is not on
+  the flatmap.
+
+  Dropped labels are named, not silently removed, and a build left with no
+  region it can draw aborts rather than produce an empty atlas.
+
 # ggseg.extra 1.9.9.9093
 
 ## Bug fixes

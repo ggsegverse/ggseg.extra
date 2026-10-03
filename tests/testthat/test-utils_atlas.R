@@ -579,3 +579,99 @@ describe("resolve_opts", {
     expect_identical(out$b, 2)
   })
 })
+
+
+describe("drop_labels_without_geometry", {
+  make_components <- function() {
+    list(
+      core = data.frame(
+        hemi = c("left", "right"),
+        region = c("a", "b"),
+        label = c("region_a", "region_b"),
+        stringsAsFactors = FALSE
+      ),
+      palette = c(region_a = "#FF0000", region_b = "#00FF00"),
+      meshes_df = tibble(
+        label = c("region_a", "region_b"),
+        mesh = list(NULL, NULL)
+      ),
+      vertices_df = tibble(
+        label = c("region_a", "region_b"),
+        vertices = list(0:4, 5:9)
+      ),
+      vol_idx = c(region_a = 10L, region_b = 11L)
+    )
+  }
+  drawn <- function(...) {
+    data.frame(stringsAsFactors = FALSE, label = c(...))
+  }
+
+  it("drops a label the geometry does not have, and names it", {
+    expect_warning(
+      result <- drop_labels_without_geometry(
+        make_components(),
+        drawn("region_a", NA)
+      ),
+      "region_b"
+    )
+    expect_identical(result$core$label, "region_a")
+  })
+
+  it("prunes every label-keyed field together", {
+    # A palette entry or mesh left behind for a dropped region is the same
+    # inconsistency in a new place.
+    suppressWarnings(
+      result <- drop_labels_without_geometry(
+        make_components(),
+        drawn("region_a")
+      )
+    )
+
+    expect_named(result$palette, "region_a")
+    expect_identical(result$meshes_df$label, "region_a")
+    expect_identical(result$vertices_df$label, "region_a")
+    expect_named(result$vol_idx, "region_a")
+  })
+
+  it("keeps everything and stays quiet when all labels have geometry", {
+    expect_no_warning(
+      result <- drop_labels_without_geometry(
+        make_components(),
+        drawn("region_a", "region_b")
+      )
+    )
+    expect_setequal(result$core$label, c("region_a", "region_b"))
+  })
+
+  it("tolerates components carrying only core and palette", {
+    bare <- make_components()
+    bare$meshes_df <- NULL
+    bare$vertices_df <- NULL
+    bare$vol_idx <- NULL
+
+    suppressWarnings(
+      result <- drop_labels_without_geometry(bare, drawn("region_a"))
+    )
+
+    expect_identical(result$core$label, "region_a")
+    expect_null(result$meshes_df)
+  })
+
+  it("tolerates an atlas built without a palette", {
+    none <- make_components()
+    none$palette <- NULL
+
+    suppressWarnings(
+      result <- drop_labels_without_geometry(none, drawn("region_a"))
+    )
+
+    expect_null(result$palette)
+  })
+
+  it("aborts rather than build an atlas with no drawable region", {
+    expect_snapshot(
+      drop_labels_without_geometry(make_components(), NULL),
+      error = TRUE
+    )
+  })
+})
