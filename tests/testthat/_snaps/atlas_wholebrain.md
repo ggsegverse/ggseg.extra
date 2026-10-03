@@ -367,3 +367,17 @@
       x Split in two: "Region_174"
       i Each became a separate lh_ and rh_ region. Voxels crossing the midline project onto the far surface, so the smaller side is usually spill rather than anatomy: "Region_174 lh 826 / rh 30"
 
+# warn_unmatched_overrides / names every argument that has an unmatched label, in one warning
+
+    Code
+      warn_unmatched_overrides(list(cortical = c("real", "cortical_typo"),
+      subcortical = "subcortical_typo", cerebellar = c("cerebellar_typo",
+        "another_typo")), all_labels = "real")
+    Condition
+      Warning:
+      4 manually classified labels are not in this atlas, so those overrides had no effect.
+      x `cortical_labels`: "cortical_typo"
+      x `subcortical_labels`: "subcortical_typo"
+      x `cerebellar_labels`: "cerebellar_typo" and "another_typo"
+      i Check the spelling against the lookup table. A label named here that the atlas does not have leaves the one you meant to be classified automatically instead.
+

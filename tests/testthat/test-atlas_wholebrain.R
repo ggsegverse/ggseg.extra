@@ -1959,7 +1959,7 @@ describe("wholebrain_classify_labels additional verbose branches", {
     bind_rows(rows)
   }
 
-  it("warns for subcortical_labels not found in data", {
+  it("warns for an override label the atlas does not have", {
     ad <- make_atlas_data_v("region_a", 10)
     expect_warning(
       wholebrain_classify_labels(
@@ -1967,7 +1967,40 @@ describe("wholebrain_classify_labels additional verbose branches", {
         min_vertices = 50L,
         subcortical_labels = c("region_a", "nonexistent")
       ),
-      "not found in data"
+      "nonexistent"
+    )
+  })
+
+  it("checks cortical_labels and cerebellar_labels too", {
+    # Only subcortical_labels used to be checked, so a typo in either of the
+    # other two was intersect()ed away and the label the caller meant went to
+    # automatic classification instead -- the override replaced by a guess.
+    ad <- make_atlas_data_v("region_a", 10)
+
+    # The second warning is the harm itself: with the override not matching,
+    # the label it was meant to classify falls through to the vertex-count
+    # guess. Asserting both says the typo is reported *and* what it costs.
+    expect_warning(
+      expect_warning(
+        wholebrain_classify_labels(
+          ad,
+          min_vertices = 50L,
+          cortical_labels = "cortical_typo"
+        ),
+        "cortical_typo"
+      ),
+      "by surface vertex count"
+    )
+    expect_warning(
+      expect_warning(
+        wholebrain_classify_labels(
+          ad,
+          min_vertices = 50L,
+          cerebellar_labels = "cerebellar_typo"
+        ),
+        "cerebellar_typo"
+      ),
+      "by surface vertex count"
     )
   })
 
@@ -3798,5 +3831,70 @@ describe("report_projection_losses", {
         )
       )
     )
+  })
+})
+
+
+describe("warn_unmatched_overrides", {
+  it("names every argument that has an unmatched label, in one warning", {
+    expect_snapshot(
+      warn_unmatched_overrides(
+        list(
+          cortical = c("real", "cortical_typo"),
+          subcortical = "subcortical_typo",
+          cerebellar = c("cerebellar_typo", "another_typo")
+        ),
+        all_labels = "real"
+      )
+    )
+  })
+
+  it("stays silent when every named label exists", {
+    expect_no_warning(
+      warn_unmatched_overrides(
+        list(cortical = "a", subcortical = "b", cerebellar = NULL),
+        all_labels = c("a", "b")
+      )
+    )
+  })
+
+  it("ignores the arguments that were not supplied", {
+    expect_no_warning(
+      warn_unmatched_overrides(
+        list(cortical = NULL, subcortical = NULL, cerebellar = NULL),
+        all_labels = character(0)
+      )
+    )
+  })
+})
+
+
+describe("classify_labels_manual", {
+  it("returns character(0) per group rather than NULL", {
+    # Callers c() these together and take their length; a NULL where a
+    # character(0) belongs is a type that works by accident.
+    expect_identical(
+      classify_labels_manual(c("a", "b"), NULL, NULL, NULL),
+      list(
+        cortical = character(0),
+        subcortical = character(0),
+        cerebellar = character(0)
+      )
+    )
+  })
+
+  it("keeps the labels the atlas has and drops the ones it does not", {
+    expect_warning(
+      result <- classify_labels_manual(
+        all_labels = c("a", "b"),
+        cortical_labels = c("a", "nope"),
+        subcortical_labels = "b",
+        cerebellar_labels = NULL
+      )
+    )
+
+    expect_identical(result$cortical, "a")
+    expect_identical(result$subcortical, "b")
+    expect_identical(result$cerebellar, character(0))
   })
 })

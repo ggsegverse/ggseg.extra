@@ -1428,27 +1428,70 @@ classify_labels_manual <- function(
   subcortical_labels,
   cerebellar_labels
 ) {
-  cortical <- character(0)
-  subcortical <- character(0)
-  cerebellar <- character(0)
+  requested <- list(
+    cortical = cortical_labels,
+    subcortical = subcortical_labels,
+    cerebellar = cerebellar_labels
+  )
 
-  if (!is.null(cortical_labels)) {
-    cortical <- intersect(cortical_labels, all_labels)
+  warn_unmatched_overrides(requested, all_labels)
+
+  lapply(requested, function(labels) {
+    if (is.null(labels)) character(0) else intersect(labels, all_labels)
+  })
+}
+
+
+#' Say which manually classified labels the atlas does not have
+#'
+#' An override names labels the caller knows better than the pipeline does.
+#' One that matches nothing is almost always a typo or a spelling from another
+#' parcellation, and `intersect()` drops it without a word -- so the label the
+#' caller meant is never overridden and goes to automatic classification
+#' instead. The override does not fail; it is quietly replaced by a guess,
+#' which is worse than being refused.
+#'
+#' All three arguments are checked through one path. Three near-identical
+#' branches are how only `subcortical_labels` came to be checked: the other
+#' two were written by copying the branch that did the work and dropping the
+#' part that validates.
+#'
+#' @param requested Named list of the three override arguments, `NULL` where
+#'   not supplied.
+#' @param all_labels Every label the volume and the projection have between
+#'   them.
+#' @noRd
+warn_unmatched_overrides <- function(requested, all_labels) {
+  unmatched <- lapply(requested, setdiff, y = all_labels)
+  unmatched <- unmatched[lengths(unmatched) > 0L]
+  if (length(unmatched) == 0L) {
+    return(invisible(NULL))
   }
-  if (!is.null(cerebellar_labels)) {
-    cerebellar <- intersect(cerebellar_labels, all_labels)
-  }
-  if (!is.null(subcortical_labels)) {
-    unmatched <- setdiff(subcortical_labels, all_labels)
-    if (length(unmatched) > 0) {
-      cli::cli_warn(
-        "Subcortical labels not found in data: {.val {unmatched}}"
+
+  bullets <- vapply(
+    names(unmatched),
+    function(group) {
+      cli::format_inline(
+        "{.arg {paste0(group, '_labels')}}: {.val {unmatched[[group]]}}"
       )
-    }
-    subcortical <- intersect(subcortical_labels, all_labels)
-  }
+    },
+    character(1),
+    USE.NAMES = FALSE
+  )
+  total <- sum(lengths(unmatched)) # nolint: object_usage_linter.
 
-  list(cortical = cortical, subcortical = subcortical, cerebellar = cerebellar)
+  cli::cli_warn(
+    c(
+      "{total} manually classified label{?s} {?is/are} not in this atlas, so
+      {?that override/those overrides} had no effect.",
+      stats::setNames(bullets, rep("x", length(bullets))),
+      "i" = "Check the spelling against the lookup table. A label named here
+      that the atlas does not have leaves the one you meant to be classified
+      automatically instead."
+    ),
+    wrap = TRUE
+  )
+  invisible(NULL)
 }
 
 
