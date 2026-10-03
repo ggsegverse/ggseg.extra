@@ -212,12 +212,16 @@ drop_labels_without_geometry <- function(components, sf_data) {
 #' a palette entry for a region that is gone, or a mesh with no `core` row.
 #' @noRd
 prune_component_labels <- function(components, drop) {
-  components$core <- components$core[!components$core$label %in% drop, ]
+  components$core <- components$core[
+    !components$core$label %in% drop,
+    ,
+    drop = FALSE
+  ]
 
   for (field in c("vertices_df", "meshes_df")) {
     rows <- components[[field]]
     if (!is.null(rows)) {
-      components[[field]] <- rows[!rows$label %in% drop, ]
+      components[[field]] <- rows[!rows$label %in% drop, , drop = FALSE]
     }
   }
 
