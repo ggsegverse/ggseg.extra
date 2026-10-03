@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9098</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9099</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -69,6 +69,22 @@
       <small>Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.9.9.9099" id="ggsegextra-1999099">ggseg.extra 1.9.9.9099<a class="anchor" aria-label="anchor" href="#ggsegextra-1999099"></a></h2>
+<div class="section level3">
+<h3 id="breaking-changes-1-9-9-9099">Breaking changes<a class="anchor" aria-label="anchor" href="#breaking-changes-1-9-9-9099"></a></h3>
+<ul><li>
+<p><code>skip_existing</code> now defaults to <code>FALSE</code>. A step cache is stamped with the pipeline’s format version, which says which ggseg.extra wrote it and nothing about what it was built from, so reusing one could not tell that the volume or lookup table had changed. Running a step costs time; reusing it can cost correctness, so the default is now the expensive one and reuse is asked for.</p>
+<p>Resuming an interrupted build still works, either by passing <code>skip_existing = TRUE</code> or by leaving the finished steps out of <code>steps</code>.</p>
+</li>
+<li><p>Reuse is now reported. Both ways a cache is reused – <code>skip_existing</code>, and a step left out of <code>steps</code> – say so, naming the step and that it was not checked against the current inputs. The second is the path <code>skip_existing = FALSE</code> does not close, because a step that was never requested reuses its cache regardless, and it is how the documented two-phase workflow continues a build.</p></li>
+</ul></div>
+<div class="section level3">
+<h3 id="bug-fixes-1-9-9-9099">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-1-9-9-9099"></a></h3>
+<ul><li>
+<code>cleanup</code> no longer deletes a cache the next run needs. It and <code>skip_existing</code> used to contradict each other: a run that stopped early wrote a stamped cache and then deleted the directory holding it, so the continuation run aborted with “Step 1 was not run but required files are missing”. This broke the package’s own advice – <code><a href="../reference/create_wholebrain_from_volume.html">create_wholebrain_from_volume()</a></code> tells callers to run the first steps and inspect the label split before continuing – and every subcortical atlas repository already passed <code>cleanup = FALSE</code> to work around it. A run that stops short of the last step now keeps its working directory, and says which steps can reuse it.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9098" id="ggsegextra-1999098">ggseg.extra 1.9.9.9098<a class="anchor" aria-label="anchor" href="#ggsegextra-1999098"></a></h2>
 <div class="section level3">

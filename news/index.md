@@ -1,5 +1,41 @@
 # Changelog
 
+## ggseg.extra 1.9.9.9099
+
+### Breaking changes
+
+- `skip_existing` now defaults to `FALSE`. A step cache is stamped with
+  the pipeline’s format version, which says which ggseg.extra wrote it
+  and nothing about what it was built from, so reusing one could not
+  tell that the volume or lookup table had changed. Running a step costs
+  time; reusing it can cost correctness, so the default is now the
+  expensive one and reuse is asked for.
+
+  Resuming an interrupted build still works, either by passing
+  `skip_existing = TRUE` or by leaving the finished steps out of
+  `steps`.
+
+- Reuse is now reported. Both ways a cache is reused – `skip_existing`,
+  and a step left out of `steps` – say so, naming the step and that it
+  was not checked against the current inputs. The second is the path
+  `skip_existing = FALSE` does not close, because a step that was never
+  requested reuses its cache regardless, and it is how the documented
+  two-phase workflow continues a build.
+
+### Bug fixes
+
+- `cleanup` no longer deletes a cache the next run needs. It and
+  `skip_existing` used to contradict each other: a run that stopped
+  early wrote a stamped cache and then deleted the directory holding it,
+  so the continuation run aborted with “Step 1 was not run but required
+  files are missing”. This broke the package’s own advice –
+  [`create_wholebrain_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_wholebrain_from_volume.md)
+  tells callers to run the first steps and inspect the label split
+  before continuing – and every subcortical atlas repository already
+  passed `cleanup = FALSE` to work around it. A run that stops short of
+  the last step now keeps its working directory, and says which steps
+  can reuse it.
+
 ## ggseg.extra 1.9.9.9098
 
 ### New features

@@ -27,7 +27,7 @@ already contains 2D coordinates."><meta property="og:image" content="https://ggs
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9098</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9099</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -170,9 +170,14 @@ from <code>options("ggseg.extra.cleanup")</code> or <code>GGSEG_EXTRA_CLEANUP</c
 
 
 <dt id="arg-skip-existing">skip_existing<a class="anchor" aria-label="anchor" href="#arg-skip-existing"></a></dt>
-<dd><p>Reuse intermediate files that already exist, so an
-interrupted run can resume. Default <code>TRUE</code>, from
-<code>options("ggseg.extra.skip_existing")</code> or <code>GGSEG_EXTRA_SKIP_EXISTING</code>.</p></dd>
+<dd><p>Reuse a step's intermediate files when they already
+exist, instead of running the step. Default <code>FALSE</code>, from
+<code>options("ggseg.extra.skip_existing")</code> or <code>GGSEG_EXTRA_SKIP_EXISTING</code>.</p>
+<p>A cache records which ggseg.extra wrote it, not what it was built from, so
+reuse cannot tell that the volume or lookup table has changed. Reuse is
+therefore asked for rather than assumed, and is reported when it happens.
+To continue an interrupted build, either pass <code>TRUE</code> or leave the finished
+steps out of <code>steps</code>.</p></dd>
 
 </dl></div>
     <div class="section level2">
