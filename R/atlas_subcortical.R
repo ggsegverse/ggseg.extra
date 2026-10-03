@@ -693,7 +693,7 @@ subcort_assemble_full <- function(
   }
 
   sf_data <- build_contour_sf(contours_file, slabs, cortex_slices)
-  components <- subcort_drop_missing_labels(components, sf_data)
+  components <- drop_labels_without_geometry(components, sf_data)
 
   atlas <- ggseg_atlas(
     atlas = atlas_name,
@@ -708,39 +708,4 @@ subcort_assemble_full <- function(
   warn_if_large_atlas(atlas)
   preview_atlas(atlas)
   atlas
-}
-
-
-#' Drop core/palette/mesh entries that have no contour geometry
-#' @noRd
-subcort_drop_missing_labels <- function(components, sf_data) {
-  sf_labels <- if (is.data.frame(sf_data)) {
-    unique(sf_data$label[!is.na(sf_data$label)])
-  } else {
-    character(0)
-  }
-  core_labels <- components$core$label[!is.na(components$core$label)]
-  missing <- setdiff(core_labels, sf_labels)
-
-  if (length(missing) > 0) {
-    cli::cli_warn(c(
-      "Dropping {length(missing)} label{?s} with no valid contour data.",
-      "i" = "Dropped: {.val {missing}}."
-    ))
-    keep <- !components$core$label %in% missing
-    components$core <- components$core[keep, ]
-    components$palette <- components$palette[
-      !names(components$palette) %in% missing
-    ]
-    components$meshes_df <- components$meshes_df[
-      !components$meshes_df$label %in% missing,
-    ]
-  }
-
-  if (nrow(components$core) == 0) {
-    cli::cli_abort(
-      "No labels with valid contour data remain. Cannot build atlas."
-    )
-  }
-  components
 }

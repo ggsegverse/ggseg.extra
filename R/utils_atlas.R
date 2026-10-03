@@ -154,6 +154,88 @@ derive_atlas_name <- function(filepath) {
 }
 
 
+#' Drop labels the geometry stage produced no geometry for
+#'
+#' `core` names an atlas's regions; the geometry holds their shapes. A label in
+#' one and not the other is an atlas that claims a region it cannot draw.
+#' Nothing complains at build time -- `print()` still counts the region -- so
+#' the user meets it much later, as `geom_brain()` warning that some data was
+#' not merged properly.
+#'
+#' A region can lose its geometry for honest reasons: too few vertices to close
+#' a polygon, a contour below threshold, a structure lying off the surface being
+#' drawn. So the row is dropped and named rather than the build refused. What is
+#' not acceptable is keeping it.
+#'
+#' Every pipeline needs this, because every pipeline builds `core` and its
+#' geometry in separate passes over the same labels. This lived in the
+#' subcortical pipeline alone, which is why the cerebellar and cortical ones
+#' could ship a region with no shape.
+#'
+#' @param components Components list from [build_atlas_components()].
+#' @param sf_data The geometry, carrying a `label` column. Anything that is not
+#'   a data.frame counts as no geometry at all.
+#' @return `components`, with every label-keyed field pruned in step.
+#' @noRd
+drop_labels_without_geometry <- function(components, sf_data) {
+  drawn <- if (is.data.frame(sf_data)) {
+    unique(sf_data$label[!is.na(sf_data$label)])
+  } else {
+    character(0)
+  }
+  named <- components$core$label[!is.na(components$core$label)]
+  missing <- setdiff(named, drawn)
+
+  if (length(missing) > 0) {
+    cli::cli_warn(
+      c(
+        "Dropping {length(missing)} label{?s} with no geometry.",
+        "x" = "Dropped: {.val {missing}}",
+        "i" = "A label kept in {.field core} without a shape counts towards
+        the region total and cannot be drawn."
+      ),
+      wrap = TRUE
+    )
+    components <- prune_component_labels(components, missing)
+  }
+
+  if (nrow(components$core) == 0) {
+    cli::cli_abort("No labels with geometry remain. Cannot build atlas.")
+  }
+  components
+}
+
+
+#' Remove labels from every label-keyed field of a components list
+#'
+#' The fields are pruned together or the atlas is inconsistent in a new way:
+#' a palette entry for a region that is gone, or a mesh with no `core` row.
+#' @noRd
+prune_component_labels <- function(components, drop) {
+  components$core <- components$core[
+    !components$core$label %in% drop,
+    ,
+    drop = FALSE
+  ]
+
+  for (field in c("vertices_df", "meshes_df")) {
+    rows <- components[[field]]
+    if (!is.null(rows)) {
+      components[[field]] <- rows[!rows$label %in% drop, , drop = FALSE]
+    }
+  }
+
+  for (field in c("palette", "vol_idx")) {
+    keyed <- components[[field]]
+    if (!is.null(keyed)) {
+      components[[field]] <- keyed[!names(keyed) %in% drop]
+    }
+  }
+
+  components
+}
+
+
 # Hemisphere utilities ----
 
 #' Detect hemisphere from label name

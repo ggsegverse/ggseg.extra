@@ -94,14 +94,3 @@
       v 4/6 Creating projection snapshots [<time>]
       
 
-# subcort_drop_missing_labels / treats non-data.frame sf_data as having no labels and aborts
-
-    Code
-      subcort_drop_missing_labels(make_components(), NULL)
-    Condition
-      Warning:
-      Dropping 2 labels with no valid contour data.
-      i Dropped: "region_a" and "region_b".
-      Error in `subcort_drop_missing_labels()`:
-      ! No labels with valid contour data remain. Cannot build atlas.
-

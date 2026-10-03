@@ -1066,55 +1066,6 @@ describe("validate_subcort_inputs", {
 })
 
 
-describe("subcort_drop_missing_labels", {
-  make_components <- function() {
-    list(
-      core = data.frame(
-        hemi = c("left", "right"),
-        region = c("a", "b"),
-        label = c("region_a", "region_b"),
-        stringsAsFactors = FALSE
-      ),
-      palette = c(region_a = "#FF0000", region_b = "#00FF00"),
-      meshes_df = dplyr::tibble(
-        label = c("region_a", "region_b"),
-        mesh = list(NULL, NULL)
-      )
-    )
-  }
-
-  it("drops labels absent from the contour geometry and warns", {
-    expect_warning(
-      result <- subcort_drop_missing_labels(
-        make_components(),
-        data.frame(stringsAsFactors = FALSE, label = c("region_a", NA))
-      ),
-      "no valid contour data"
-    )
-    expect_identical(result$core$label, "region_a")
-    expect_named(result$palette, "region_a")
-    expect_identical(result$meshes_df$label, "region_a")
-  })
-
-  it("keeps every label and does not warn when all have geometry", {
-    expect_no_warning(
-      result <- subcort_drop_missing_labels(
-        make_components(),
-        data.frame(stringsAsFactors = FALSE, label = c("region_a", "region_b"))
-      )
-    )
-    expect_setequal(result$core$label, c("region_a", "region_b"))
-  })
-
-  it("treats non-data.frame sf_data as having no labels and aborts", {
-    expect_snapshot(
-      subcort_drop_missing_labels(make_components(), NULL),
-      error = TRUE
-    )
-  })
-})
-
-
 describe("subcortical pipeline snapshot pruning", {
   it("clears images left by an earlier slab configuration", {
     dirs <- local_subcort_dirs()

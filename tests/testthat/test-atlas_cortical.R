@@ -3,7 +3,13 @@
 # nolint next: object_length_linter.
 mock_cortical_pipeline_bindings <- function() {
   list(
-    cortical_build_sf_projected = function(...) mock_sf_polygon(),
+    # Geometry for the labels core actually declares. A real build cannot
+    # produce a polygon for a region absent from core, so a mock with a fixed
+    # label hides anything that reconciles the two -- and drifts the moment a
+    # test passes different components.
+    cortical_build_sf_projected = function(components, ...) {
+      do.call(rbind, lapply(components$core$label, mock_sf_polygon))
+    },
     ggseg_atlas = function(...) structure(list(...), class = "ggseg_atlas"),
     ggseg_data_cortical = function(...) list(...),
     warn_if_large_atlas = function(...) NULL,

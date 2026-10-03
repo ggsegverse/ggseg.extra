@@ -711,6 +711,8 @@ cortical_project_and_build <- function(
     cli::cli_progress_done()
   }
 
+  components <- drop_labels_without_geometry(components, sf_data)
+
   atlas <- ggseg_atlas(
     atlas = atlas_name,
     type = "cortical",
