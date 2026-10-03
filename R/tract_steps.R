@@ -1,5 +1,38 @@
 # Tract step functions ----
 
+#' Say that `tube_radius = "density"` had no density to work with
+#'
+#' The radius is meant to follow how many streamlines pass each point of the
+#' centerline. A volume-derived tract has no streamlines -- it has the one
+#' centerline extracted from the volume -- so every point counts exactly
+#' itself, the density is 1 throughout, and the tube came out uniform at the
+#' *maximum* of `density_radius_range`. Silently, and while the documentation
+#' recommends `"density"` for tracts with many streamlines.
+#'
+#' Uniform density carries no information, so the radius is the middle of the
+#' range rather than either end, which is what the existing all-zero branch
+#' already does for the same reason.
+#' @noRd
+warn_density_cannot_vary <- function(streamlines, density) {
+  # nolint next: object_usage_linter.
+  n <- if (is.matrix(streamlines)) 1L else length(streamlines)
+  # nolint next: object_usage_linter.
+  radius <- "density_radius_range"
+  cli::cli_warn(
+    c(
+      "{.code tube_radius = \"density\"} has no density to follow: every
+      centerline point counts {.val {unique(density)[1]}}
+      streamline{?s}, from {n} given.",
+      "i" = "The radius follows how many streamlines pass each point, so it
+      needs a bundle. A tract derived from a volume has only its centerline.",
+      "i" = "Using the middle of {.field {radius}} throughout. Pass a numeric
+      {.arg tube_radius} to choose the width yourself."
+    ),
+    wrap = TRUE
+  )
+  invisible(NULL)
+}
+
 #' @noRd
 tract_read_input <- function(input_tracts, tract_names) {
   if (is.list(input_tracts) && !is.character(input_tracts)) {
@@ -407,7 +440,8 @@ resolve_tube_radius <- function(
       centerline,
       search_radius = 2
     )
-    if (max(density) == 0) {
+    if (length(unique(density)) < 2L) {
+      warn_density_cannot_vary(streamlines, density)
       return(rep(mean(density_range), n_points))
     }
     normalized <- density / max(density)
