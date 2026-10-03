@@ -70,16 +70,69 @@ tessellate_remap_label <- function(
   if (label_id <= 255L) {
     return(list(pretess_input = volume_file, tess_label = label_id))
   }
-  remapped_file <- paste0(base_name, "_remap.nii.gz")
+
+  mgz <- identical(volume_ext(volume_file), "mgz")
+  remapped_file <- paste0(base_name, if (mgz) "_remap.mgz" else "_remap.nii.gz")
+
   if (!skip_existing || !file.exists(remapped_file)) {
-    vol <- RNifti::readNifti(volume_file)
-    arr <- as.array(vol)
-    mask <- array(0L, dim = dim(arr))
-    mask[arr == label_id] <- 1L
-    out <- RNifti::asNifti(mask, reference = vol)
-    RNifti::writeNifti(out, remapped_file)
+    if (mgz) {
+      write_mgz_label_mask(volume_file, label_id, remapped_file)
+    } else {
+      write_nifti_label_mask(volume_file, label_id, remapped_file)
+    }
   }
   list(pretess_input = remapped_file, tess_label = 1L)
+}
+
+
+#' Isolate one label of an `.mgz` into a mask of its own
+#'
+#' Kept as `.mgz` rather than converted. The FreeSurfer tools read it
+#' natively -- a label at or below 255 is already handed the `.mgz` untouched
+#' -- so converting buys nothing and is another chance to lose the affine.
+#'
+#' The affine is the whole point here. Reading through [read_volume()] instead
+#' would hand back a plain array for `.mgz`, with no header for
+#' `RNifti::asNifti()` to inherit, so the mask would be written with a default
+#' affine and the structure would be tessellated somewhere other than where it
+#' is. A volume whose header carries no usable affine has none to preserve, and
+#' writes without one exactly as it was read.
+#' @noRd
+write_mgz_label_mask <- function(volume_file, label_id, out_file) {
+  rlang::check_installed(
+    "freesurferformats",
+    reason = "to read FreeSurfer MGZ files"
+  )
+  mgh <- freesurferformats::read.fs.mgh(volume_file, with_header = TRUE)
+  vox2ras <- tryCatch(
+    freesurferformats::mghheader.vox2ras(mgh$header),
+    error = function(cnd) NULL
+  )
+  freesurferformats::write.fs.mgh(
+    out_file,
+    label_mask(drop(mgh$data), label_id),
+    vox2ras_matrix = vox2ras
+  )
+  invisible(out_file)
+}
+
+
+#' Isolate one label of a NIfTI into a mask of its own
+#' @noRd
+write_nifti_label_mask <- function(volume_file, label_id, out_file) {
+  vol <- RNifti::readNifti(volume_file)
+  mask <- label_mask(as.array(vol), label_id)
+  RNifti::writeNifti(RNifti::asNifti(mask, reference = vol), out_file)
+  invisible(out_file)
+}
+
+
+#' A 0/1 array marking where a volume holds one label
+#' @noRd
+label_mask <- function(arr, label_id) {
+  mask <- array(0L, dim = dim(arr))
+  mask[arr == label_id] <- 1L
+  mask
 }
 
 
