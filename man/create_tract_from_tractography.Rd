@@ -89,9 +89,15 @@ not during it: see \code{\link[=atlas_polish]{atlas_polish()}}.}
 \item{cleanup}{Remove the intermediate files afterwards. Default \code{TRUE},
 from \code{options("ggseg.extra.cleanup")} or \code{GGSEG_EXTRA_CLEANUP}.}
 
-\item{skip_existing}{Reuse intermediate files that already exist, so an
-interrupted run can resume. Default \code{TRUE}, from
-\code{options("ggseg.extra.skip_existing")} or \code{GGSEG_EXTRA_SKIP_EXISTING}.}
+\item{skip_existing}{Reuse a step's intermediate files when they already
+exist, instead of running the step. Default \code{FALSE}, from
+\code{options("ggseg.extra.skip_existing")} or \code{GGSEG_EXTRA_SKIP_EXISTING}.
+
+A cache records which ggseg.extra wrote it, not what it was built from, so
+reuse cannot tell that the volume or lookup table has changed. Reuse is
+therefore asked for rather than assumed, and is reported when it happens.
+To continue an interrupted build, either pass \code{TRUE} or leave the finished
+steps out of \code{steps}.}
 
 \item{coord_space}{The space the streamline coordinates are in. One of
 \code{"infer"} (the default), \code{"voxel"} for voxel indices, or \code{"mm"} for RAS

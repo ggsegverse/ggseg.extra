@@ -177,10 +177,13 @@ describe("get_skip_existing", {
     expect_false(get_skip_existing())
   })
 
-  it("returns default of TRUE when nothing is set", {
+  it("defaults to not reusing a cache", {
+    # A step cache records which ggseg.extra wrote it, not what it was built
+    # from, so reuse cannot tell that the volume has changed. Running the step
+    # costs time; reusing it can cost correctness.
     withr::local_options(ggseg.extra.skip_existing = NULL)
     withr::local_envvar(GGSEG_EXTRA_SKIP_EXISTING = NA)
-    expect_true(get_skip_existing())
+    expect_false(get_skip_existing())
   })
 })
 
@@ -202,12 +205,16 @@ describe("load_or_run_step", {
   it("loads data when files exist and skip_existing=TRUE", {
     tmp <- local_cache_file(list(a = 1))
 
-    result <- load_or_run_step(
-      1L,
-      1L:3L,
-      files = tmp,
-      skip_existing = TRUE,
-      step_name = "Test step"
+    # Reuse is reported: the cache was not checked against current inputs.
+    expect_warning(
+      result <- load_or_run_step(
+        1L,
+        1L:3L,
+        files = tmp,
+        skip_existing = TRUE,
+        step_name = "Test step"
+      ),
+      "without checking it"
     )
 
     expect_false(result$run)
@@ -230,12 +237,15 @@ describe("load_or_run_step", {
   it("loads data when step not requested but files exist", {
     tmp <- local_cache_file(list(b = 2))
 
-    result <- load_or_run_step(
-      1L,
-      2L:3L,
-      files = tmp,
-      skip_existing = FALSE,
-      step_name = "Test step"
+    expect_warning(
+      result <- load_or_run_step(
+        1L,
+        2L:3L,
+        files = tmp,
+        skip_existing = FALSE,
+        step_name = "Test step"
+      ),
+      "without checking it"
     )
 
     expect_false(result$run)
@@ -659,5 +669,56 @@ describe("load_rda", {
 
   it("errors when the file does not exist", {
     expect_error(load_rda("/no/such/file.rda"), "not found")
+  })
+})
+
+
+describe("load_or_run_step reuse reporting", {
+  a_cache <- function() {
+    dir <- withr::local_tempdir(.local_envir = parent.frame(2))
+    file <- file.path(dir, "step.rds")
+    saveRDS(list(1), file)
+    stamp_cache_files(file)
+    file
+  }
+
+  it("reports a reuse the caller asked for with skip_existing", {
+    # The pipeline tests all mock load_or_run_step, so this is the only level
+    # at which the reporting is exercised at all.
+    expect_warning(
+      result <- load_or_run_step(1L, 1L:3L, a_cache(), TRUE, "Step 1"),
+      "without checking it against the current inputs"
+    )
+    expect_false(result$run)
+  })
+
+  it("reports a reuse that happened because the step was left out", {
+    # How the documented two-phase workflow continues a build, and the one
+    # reuse path that skip_existing = FALSE does not close.
+    expect_warning(
+      result <- load_or_run_step(1L, 2L:3L, a_cache(), FALSE, "Step 1"),
+      "without checking it against the current inputs"
+    )
+    expect_false(result$run)
+  })
+
+  it("stays quiet when it runs the step instead of reusing", {
+    expect_no_warning(
+      result <- load_or_run_step(1L, 1L:3L, a_cache(), FALSE, "Step 1")
+    )
+    expect_true(result$run)
+  })
+
+  it("stays quiet when there is no cache to reuse", {
+    expect_no_warning(
+      result <- load_or_run_step(
+        1L,
+        1L:3L,
+        file.path(withr::local_tempdir(), "absent.rds"),
+        TRUE,
+        "Step 1"
+      )
+    )
+    expect_true(result$run)
   })
 })

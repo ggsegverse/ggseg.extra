@@ -382,13 +382,17 @@ describe("cortical_read_data", {
       components.rds = mock_components
     )
 
-    result <- cortical_read_data(
-      config = list(steps = 1:2, skip_existing = TRUE, verbose = FALSE),
-      dirs = list(base = tmp_dir),
-      atlas_name = "test",
-      read_fn = function() stop("should not be called"),
-      step_label = "test",
-      cache_label = "test"
+    # Reusing a cache is reported: it was not checked against current inputs.
+    expect_warning(
+      result <- cortical_read_data(
+        config = list(steps = 1:2, skip_existing = TRUE, verbose = FALSE),
+        dirs = list(base = tmp_dir),
+        atlas_name = "test",
+        read_fn = function() stop("should not be called"),
+        step_label = "test",
+        cache_label = "test"
+      ),
+      "without checking it"
     )
 
     expect_s3_class(result$atlas_3d, "ggseg_atlas")
@@ -707,14 +711,14 @@ describe("cortical_read_data verbose paths", {
     )
 
     expect_message(
-      cortical_read_data(
+      suppressWarnings(cortical_read_data(
         config = list(steps = 1:2, skip_existing = TRUE, verbose = TRUE),
         dirs = list(base = tmp_dir),
         atlas_name = "test",
         read_fn = function() stop("should not be called"),
         step_label = "test",
         cache_label = "test"
-      ),
+      )),
       "Loaded cached atlas data"
     )
   })

@@ -527,8 +527,59 @@ resolve_common_config <- function(
     verbose = get_verbose(verbose),
     cleanup = get_cleanup(cleanup),
     skip_existing = get_skip_existing(skip_existing),
-    steps = validate_steps(steps, max_step)
+    steps = validate_steps(steps, max_step),
+    max_step = max_step
   )
+}
+
+
+#' Did the caller stop short of the pipeline's last step?
+#'
+#' A run that stops early is a run whose cache is the input to the next one.
+#' @noRd
+run_stopped_early <- function(config) {
+  !is.null(config$max_step) && max(config$steps) < config$max_step
+}
+
+
+#' Remove the working directory, unless a later run still needs it
+#'
+#' `cleanup` and the documented two-phase workflow used to contradict each
+#' other. `create_wholebrain_from_volume()` tells callers to run the first
+#' steps and inspect the label split before continuing, and following that
+#' with `cleanup = TRUE` wrote the cache and then deleted the directory
+#' holding it, so the continuation run aborted with "Step 1 was not run but
+#' required files are missing". Every subcortical atlas repository already
+#' passes `cleanup = FALSE` to work around it.
+#'
+#' `cleanup` means the build is finished with its scratch space. A run that
+#' stopped short of the last step is not finished, so it keeps it.
+#'
+#' A config with no `max_step` -- hand-built, as in tests -- says nothing
+#' about the ceiling, and the previous behaviour stands.
+#' @noRd
+cleanup_working_dir <- function(config, dirs) {
+  if (!config$cleanup) {
+    return(invisible(NULL))
+  }
+  if (run_stopped_early(config)) {
+    if (config$verbose) {
+      # nolint next: object_usage_linter.
+      remaining <- seq.int(max(config$steps) + 1L, config$max_step)
+      cli::cli_alert_info(
+        "Keeping the working directory so {cli::qty(length(remaining))}step{?s}
+        {.val {remaining}} can reuse it. The run that finishes the atlas
+        removes it.",
+        wrap = TRUE
+      )
+    }
+    return(invisible(NULL))
+  }
+  unlink(dirs$base, recursive = TRUE)
+  if (config$verbose) {
+    cli::cli_alert_success("Temporary files removed")
+  }
+  invisible(NULL)
 }
 
 
@@ -575,10 +626,7 @@ finalize_atlas <- function(
   unit = "regions",
   early_step = 1L
 ) {
-  if (config$cleanup) {
-    unlink(dirs$base, recursive = TRUE)
-    if (config$verbose) cli::cli_alert_success("Temporary files removed")
-  }
+  cleanup_working_dir(config, dirs)
 
   steps <- config$steps
 

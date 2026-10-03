@@ -754,10 +754,7 @@ mark_unknown_as_context <- function(atlas) {
 
 #' @noRd
 cortical_finalize <- function(atlas, config, dirs, start_time) {
-  if (config$cleanup) {
-    unlink(dirs$base, recursive = TRUE)
-    if (config$verbose) cli::cli_alert_success("Temporary files removed")
-  }
+  cleanup_working_dir(config, dirs)
 
   if (config$verbose) {
     cli::cli_alert_success(
