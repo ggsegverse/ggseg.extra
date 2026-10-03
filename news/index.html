@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9095</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9096</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -69,6 +69,13 @@
       <small>Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.9.9.9096" id="ggsegextra-1999096">ggseg.extra 1.9.9.9096<a class="anchor" aria-label="anchor" href="#ggsegextra-1999096"></a></h2>
+<div class="section level3">
+<h3 id="bug-fixes-1-9-9-9096">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-1-9-9-9096"></a></h3>
+<ul><li>A structure that fails to tessellate is now reported whether or not <code>verbose</code> is set. <code>subcort_mesh_one()</code> caught the error and warned only when <code>verbose = TRUE</code>, so with it off the structure was simply absent from the finished atlas with no signal at all. A verbosity flag should silence progress chatter, not data loss. The warning now also says what to check.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9095" id="ggsegextra-1999095">ggseg.extra 1.9.9.9095<a class="anchor" aria-label="anchor" href="#ggsegextra-1999095"></a></h2>
 <div class="section level3">
