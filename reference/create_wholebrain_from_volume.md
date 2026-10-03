@@ -54,8 +54,10 @@ create_wholebrain_from_volume(
   Path to FreeSurfer-style colour lookup table, or a data.frame with
   columns `idx`, `label`, `R`, `G`, `B`, `A`. An optional `type` column
   with values `"cortical"` or `"subcortical"` controls label
-  classification (see **Label classification**). Voxel IDs not listed in
-  the LUT are automatically zeroed out before surface projection (see
+  classification (see **Label classification**). An optional `hemi`
+  column with values `"left"` or `"right"` says which hemisphere a
+  parcel belongs to (see **Declared hemisphere**). Voxel IDs not listed
+  in the LUT are automatically zeroed out before surface projection (see
   **Volume pre-processing**). If NULL, generic names and no palette.
 
 - atlas_name:
@@ -269,6 +271,31 @@ left without a listed label take the most common label of their
 neighbours. Everything outside the cortex label becomes the `unknown`
 medial wall, which the cortical atlas keeps as grey context geometry
 rather than as a region.
+
+## Declared hemisphere
+
+A cortical label carries no hemisphere of its own. The `lh_`/`rh_`
+prefix on a finished region comes from whichever surface its vertices
+landed on, so a parcel whose voxels cross the midline is sampled onto
+*both* surfaces and becomes two regions the parcellation never had – the
+larger one real, the smaller one built from the spill.
+
+Give the lookup table a `hemi` column (`"left"` or `"right"`, or
+`lh`/`rh`) and the parcel is kept only on the surface it belongs to.
+Where there is no column the label's own name is read, which covers
+`Left-Thalamus`, `lh.something`, `region_L` and FreeSurfer's
+`ctx-lh-superiorfrontal`.
+
+A label that declares nothing is left alone, on purpose: a lookup table
+that names each structure once for both hemispheres is *meant* to
+produce `lh_` and `rh_`. So this is opt-in, and a table without the
+column behaves exactly as before.
+
+Hemisphere is never inferred from the voxels. The volume does know which
+side a parcel sits on, but a majority vote is a guess made silently on
+every build, whereas a column is a fact you can see and correct – the
+same reasoning as the `type` column and
+[`lut_classify_anatomy()`](https://ggsegverse.github.io/ggseg.extra/reference/lut_classify_anatomy.md).
 
 ## Registration
 

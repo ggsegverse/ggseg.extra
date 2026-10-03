@@ -21,7 +21,7 @@ Requires FreeSurfer."><meta property="og:image" content="https://ggsegverse.gith
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9097</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9098</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -138,7 +138,9 @@ rather than silently ignored; anything passed here is an error.</p></dd>
 <dd><p>Path to FreeSurfer-style colour lookup table, or a
 data.frame with columns <code>idx</code>, <code>label</code>, <code>R</code>, <code>G</code>, <code>B</code>, <code>A</code>.
 An optional <code>type</code> column with values <code>"cortical"</code> or <code>"subcortical"</code>
-controls label classification (see <strong>Label classification</strong>). Voxel IDs
+controls label classification (see <strong>Label classification</strong>). An optional
+<code>hemi</code> column with values <code>"left"</code> or <code>"right"</code> says which hemisphere a
+parcel belongs to (see <strong>Declared hemisphere</strong>). Voxel IDs
 not listed in the LUT are automatically zeroed out before surface
 projection (see <strong>Volume pre-processing</strong>).
 If NULL, generic names and no palette.</p></dd>
@@ -323,6 +325,29 @@ left without a listed label take the most common label of their
 neighbours. Everything outside the cortex label becomes the <code>unknown</code>
 medial wall, which the cortical atlas keeps as grey context geometry
 rather than as a region.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="declared-hemisphere">Declared hemisphere<a class="anchor" aria-label="anchor" href="#declared-hemisphere"></a></h2>
+
+
+
+<p>A cortical label carries no hemisphere of its own. The <code>lh_</code>/<code>rh_</code> prefix on
+a finished region comes from whichever surface its vertices landed on, so a
+parcel whose voxels cross the midline is sampled onto <em>both</em> surfaces and
+becomes two regions the parcellation never had – the larger one real, the
+smaller one built from the spill.</p>
+<p>Give the lookup table a <code>hemi</code> column (<code>"left"</code> or <code>"right"</code>, or <code>lh</code>/<code>rh</code>)
+and the parcel is kept only on the surface it belongs to. Where there is no
+column the label's own name is read, which covers <code>Left-Thalamus</code>,
+<code>lh.something</code>, <code>region_L</code> and FreeSurfer's <code>ctx-lh-superiorfrontal</code>.</p>
+<p>A label that declares nothing is left alone, on purpose: a lookup table that
+names each structure once for both hemispheres is <em>meant</em> to produce <code>lh_</code>
+and <code>rh_</code>. So this is opt-in, and a table without the column behaves exactly
+as before.</p>
+<p>Hemisphere is never inferred from the voxels. The volume does know which side
+a parcel sits on, but a majority vote is a guess made silently on every
+build, whereas a column is a fact you can see and correct – the same
+reasoning as the <code>type</code> column and <code><a href="lut_classify_anatomy.html">lut_classify_anatomy()</a></code>.</p>
     </div>
     <div class="section level2">
     <h2 id="registration">Registration<a class="anchor" aria-label="anchor" href="#registration"></a></h2>
