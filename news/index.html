@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9093</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9094</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -69,6 +69,18 @@
       <small>Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.9.9.9094" id="ggsegextra-1999094">ggseg.extra 1.9.9.9094<a class="anchor" aria-label="anchor" href="#ggsegextra-1999094"></a></h2>
+<div class="section level3">
+<h3 id="bug-fixes-1-9-9-9094">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-1-9-9-9094"></a></h3>
+<ul><li>
+<p>The cerebellar and cortical pipelines could ship a region that has no shape. <code>core</code> names an atlas’s regions and the geometry holds their shapes, and a label in one but not the other is an atlas that claims a region it cannot draw. Nothing complained at build time – <code><a href="https://rdrr.io/r/base/print.html" class="external-link">print()</a></code> still counted the region – so it surfaced much later as <code><a href="https://ggsegverse.github.io/ggseg/reference/ggbrain.html" class="external-link">geom_brain()</a></code> warning that some data was not merged properly.</p>
+<p>The cerebellar case is reachable through <code>rescue_orphaned_region()</code>, which hands a region with no surface vertices the five nearest ones and reports success; five vertices do not survive polygon building, so the row stayed in <code>core</code> and never reached the geometry. A 2362-voxel region was lost this way in two atlas repositories.</p>
+<p>Only the subcortical pipeline reconciled the two, which is why the other two could do this at all. That check is now shared (<code>drop_labels_without_geometry()</code>) and runs in all three. It also prunes the fields the subcortical version left behind – <code>vertices_df</code> and <code>vol_idx</code> alongside <code>core</code>, <code>palette</code> and <code>meshes_df</code> – so a dropped region cannot leave a palette entry or a mesh without a <code>core</code> row. For the cerebellar pipeline it runs after the deep nuclei are merged in, whose geometry is not on the flatmap.</p>
+<p>Dropped labels are named, not silently removed, and a build left with no region it can draw aborts rather than produce an empty atlas.</p>
+</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9093" id="ggsegextra-1999093">ggseg.extra 1.9.9.9093<a class="anchor" aria-label="anchor" href="#ggsegextra-1999093"></a></h2>
 <div class="section level3">
