@@ -20,7 +20,8 @@
       i 3/6 Building atlas data
       v 3/6 Building atlas data [<time>]
       
-      v Temporary files removed
+      i Keeping the working directory so steps 4, 5, and 6 can reuse it. The run that
+      finishes the atlas removes it.
       v 3D atlas created with 2 structures
       i Pipeline completed [<time>]
 
@@ -39,7 +40,8 @@
       v 2/6 Loaded existing meshes
       v 3/6 Loaded existing components
       v 4/6 Loaded existing slabs
-      v Temporary files removed
+      i Keeping the working directory so step 6 can reuse it. The run that finishes
+      the atlas removes it.
       v Completed step 5
       i Pipeline completed [<time>]
 
@@ -81,7 +83,8 @@
       v 2/6 Loaded existing meshes
       v 3/6 Loaded existing components
       v 4/6 Loaded existing slabs
-      v Temporary files removed
+      i Keeping the working directory so step 6 can reuse it. The run that finishes
+      the atlas removes it.
       v Completed step 5
       i Pipeline completed [<time>]
 

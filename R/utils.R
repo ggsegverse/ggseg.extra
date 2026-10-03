@@ -320,6 +320,7 @@ load_or_run_step <- function(
   }
 
   if (files_exist && skip_existing) {
+    warn_unverified_reuse(step_name)
     return(list(run = FALSE, data = read_step_cache(files)))
   }
 
@@ -331,7 +332,36 @@ load_or_run_step <- function(
     abort_missing_step_files(files, step_num, step_name)
   }
 
+  warn_unverified_reuse(step_name)
   list(run = FALSE, data = read_step_cache(files))
+}
+
+
+#' Say that a step's cached output was reused without being re-checked
+#'
+#' A step cache carries [cache_format_version()], which says it was written by
+#' this ggseg.extra and nothing about what it was built from. So reuse is
+#' always reuse-on-trust: if the volume or lookup table has changed since, the
+#' atlas is built from the old one.
+#'
+#' Reported for both ways a cache is reused -- `skip_existing`, and a step left
+#' out of `steps` -- because the exposure is the same either way, and the
+#' second is how the documented two-phase workflow continues a build. Not
+#' gated on `verbose`: which data an atlas was built from is not progress
+#' chatter.
+#' @noRd
+warn_unverified_reuse <- function(step_name) {
+  cli::cli_warn(
+    c(
+      "{step_name}: reused cached output without checking it against the
+      current inputs.",
+      "i" = "The cache records which ggseg.extra wrote it, not what it was
+      built from. If the volume or lookup table has changed, rerun this step
+      to rebuild it."
+    ),
+    wrap = TRUE
+  )
+  invisible(NULL)
 }
 
 
@@ -395,19 +425,31 @@ get_cleanup <- function(cleanup = NULL) {
 
 #' Get skip_existing setting
 #'
-#' Returns the skip_existing setting from options or environment variable.
-#' Controls whether to reuse existing intermediate files.
+#' Whether a step whose cache already exists may reuse it instead of running.
+#'
+#' Defaults to `FALSE`. A step cache is stamped with
+#' [cache_format_version()] -- a format version, not a signature of what it
+#' was built from -- so reusing one says the cache was written by this
+#' ggseg.extra, and nothing about whether the volume or lookup table has
+#' changed since. Defaulting to reuse therefore meant a changed input could
+#' yield an atlas built from the old one, with nothing said. Running the step
+#' costs time; reusing it can cost correctness, so the default is the
+#' expensive one and reuse is asked for.
+#'
+#' Resuming an interrupted run still works: pass `skip_existing = TRUE`, or
+#' exclude the finished steps from `steps`, which reuses their cache because
+#' they were not requested.
 #'
 #' @param skip_existing Optional explicit value.
 #'   If NULL, reads from options/env.
-#' @return Logical TRUE to skip existing files
+#' @return Logical, `TRUE` to reuse an existing cache.
 #' @noRd
 get_skip_existing <- function(skip_existing = NULL) {
   get_bool_option(
     skip_existing,
     "ggseg.extra.skip_existing",
     "GGSEG_EXTRA_SKIP_EXISTING",
-    TRUE
+    FALSE
   )
 }
 

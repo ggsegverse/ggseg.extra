@@ -10,7 +10,8 @@
       i Anatomical reference: 'aseg.mgz'
       v 1/4 Loaded existing tract data
       v 2/4 Loaded existing snapshots
-      v Temporary files removed
+      i Keeping the working directory so step 4 can reuse it. The run that finishes
+      the atlas removes it.
       v Completed step 3
       i Pipeline completed [<time>]
 
@@ -28,7 +29,8 @@
       i 1/4 Creating tube meshes for 1 tracts
       v 1/4 Creating tube meshes for 1 tracts [<time>]
       
-      v Temporary files removed
+      i Keeping the working directory so steps 2, 3, and 4 can reuse it. The run that
+      finishes the atlas removes it.
       v 3D atlas created with 1 tracts
       i Pipeline completed [<time>]
 

@@ -71,7 +71,14 @@ describe("validate_surface_config", {
     expect_type(result, "list")
     expect_named(
       result,
-      c("output_dir", "verbose", "cleanup", "skip_existing", "steps")
+      c(
+        "output_dir",
+        "verbose",
+        "cleanup",
+        "skip_existing",
+        "steps",
+        "max_step"
+      )
     )
   })
 })
