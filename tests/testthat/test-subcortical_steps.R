@@ -138,13 +138,18 @@ describe("subcort_create_meshes", {
     )
     dirs <- list(meshes = withr::local_tempdir())
 
-    result <- subcort_create_meshes(
-      "fake.mgz",
-      colortable,
-      dirs,
-      FALSE,
-      FALSE,
-      decimate = NULL
+    # verbose = FALSE here, and the failure is still reported: the structure
+    # is missing from the result, which is the very thing a silent run hid.
+    expect_warning(
+      result <- subcort_create_meshes(
+        "fake.mgz",
+        colortable,
+        dirs,
+        FALSE,
+        FALSE,
+        decimate = NULL
+      ),
+      "Left-Putamen"
     )
 
     expect_length(result, 1)
@@ -1650,5 +1655,30 @@ describe("subcort_cortex_volume", {
     expect_identical(sum(out), 2L)
     # Column-major: the NA sits at [2, 1].
     expect_identical(out[2, 1], 0L)
+  })
+})
+
+
+describe("subcort_mesh_one", {
+  it("reports a structure lost to tessellation even when not verbose", {
+    # `verbose` silences progress chatter. A structure that fails to
+    # tessellate is absent from the finished atlas, which is data loss, and it
+    # used to vanish with no signal at all whenever verbose was FALSE.
+    local_mocked_bindings(
+      tessellate_label = function(...) stop("tessellation blew up")
+    )
+
+    expect_warning(
+      result <- subcort_mesh_one(
+        input_volume = "volume.nii.gz",
+        label_id = 17L,
+        label_name = "Left-Hippocampus",
+        dirs = list(meshes = withr::local_tempdir()),
+        skip_existing = FALSE,
+        verbose = FALSE
+      ),
+      "Left-Hippocampus"
+    )
+    expect_null(result)
   })
 })

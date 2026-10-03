@@ -1,3 +1,13 @@
+# ggseg.extra 1.9.9.9096
+
+## Bug fixes
+
+- A structure that fails to tessellate is now reported whether or not
+  `verbose` is set. `subcort_mesh_one()` caught the error and warned only when
+  `verbose = TRUE`, so with it off the structure was simply absent from the
+  finished atlas with no signal at all. A verbosity flag should silence
+  progress chatter, not data loss. The warning now also says what to check.
+
 # ggseg.extra 1.9.9.9095
 
 ## Bug fixes
