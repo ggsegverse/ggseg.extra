@@ -203,7 +203,7 @@ report_anatomy_split <- function(type) {
   # nolint next: object_usage_linter.
   counts <- table(factor(
     type[!is.na(type)],
-    levels = c("cortical", "subcortical", "cerebellar")
+    levels = lut_type_values
   ))
   cli::cli_alert_info(
     "{counts[['cortical']]} cortical, {counts[['subcortical']]} subcortical,
@@ -613,6 +613,35 @@ resampled_overlap <- function(inside, brain_mask) {
     return(NA_real_)
   }
   sum(inside & brain_mask) / n
+}
+
+
+#' The values a lookup table's `type` column may hold
+#' @noRd
+lut_type_values <- c("cortical", "subcortical", "cerebellar")
+
+
+#' Abort on a `type` value no pipeline recognises
+#'
+#' `NA` is allowed: it declares nothing and leaves the label to be classified
+#' some other way. A lookup table without a `type` column passes untouched.
+#' @noRd
+check_lut_type <- function(lut) {
+  if (!is.data.frame(lut) || !"type" %in% names(lut)) {
+    return(invisible(lut))
+  }
+  type <- as.character(lut$type)
+  unrecognised <- !is.na(type) & !type %in% lut_type_values
+  if (any(unrecognised)) {
+    cli::cli_abort(c(
+      "{.arg input_lut} has {sum(unrecognised)} label{?s} with an unrecognised
+      {.field type}",
+      "x" = "Not a type: {.val {unique(type[unrecognised])}}",
+      "i" = "Allowed: {.val {lut_type_values}}, or {.code NA} to leave a
+      label undeclared."
+    ))
+  }
+  invisible(lut)
 }
 
 

@@ -36,8 +36,10 @@ rather than silently ignored; anything passed here is an error.}
 
 \item{input_lut}{Path to FreeSurfer-style colour lookup table, or a
 data.frame with columns \code{idx}, \code{label}, \code{R}, \code{G}, \code{B}, \code{A}.
-An optional \code{type} column with values \code{"cortical"} or \code{"subcortical"}
-controls label classification (see \strong{Label classification}). An optional
+An optional \code{type} column with values \code{"cortical"}, \code{"subcortical"} or
+\code{"cerebellar"} controls label classification (see \strong{Label
+classification}); any other value is an error, and \code{NA} leaves the
+label to the other classification steps. An optional
 \code{hemi} column with values \code{"left"} or \code{"right"} says which hemisphere a
 parcel belongs to (see \strong{Declared hemisphere}). Voxel IDs
 not listed in the LUT are automatically zeroed out before surface

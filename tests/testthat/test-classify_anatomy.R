@@ -543,3 +543,22 @@ describe("resample_volume_to_grid()", {
     )
   })
 })
+
+
+describe("check_lut_type()", {
+  it("names the values that are not a type", {
+    lut <- data.frame(
+      idx = 1:4,
+      label = c("A", "B", "C", "D"),
+      type = c("Cortical", "cortex", lut_type_values[1], NA)
+    )
+    expect_snapshot(check_lut_type(lut), error = TRUE)
+  })
+
+  it("accepts every allowed value, NA, and a table with no type column", {
+    lut <- data.frame(idx = 1:4, label = c("A", "B", "C", "D"))
+    expect_no_error(check_lut_type(lut))
+    lut$type <- c(lut_type_values, NA)
+    expect_no_error(check_lut_type(lut))
+  })
+})

@@ -1,3 +1,17 @@
+# ggseg.extra 1.9.9.9105
+
+## Bug fixes
+
+- `create_wholebrain_from_volume()` now stops on a lookup table whose `type`
+  column holds anything other than `"cortical"`, `"subcortical"`,
+  `"cerebellar"` or `NA`. A mistyped value -- `"Cortical"`, `"cortex"`,
+  `"cerebellum"` -- matched nothing, so the label was treated as undeclared
+  and classified by the vertex-count fallback or assumed subcortical. The
+  warnings that followed described the fallback, not the typo, and the label
+  could land in the wrong sub-atlas. The check runs before any projection, so
+  the error arrives in seconds rather than after the surface work. `NA` still
+  means "not declared" and is classified as before.
+
 # ggseg.extra 1.9.9.9104
 
 ## Bug fixes

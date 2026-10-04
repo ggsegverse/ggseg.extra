@@ -126,8 +126,10 @@
 #'   (.mgz, .nii, .nii.gz).
 #' @param input_lut Path to FreeSurfer-style colour lookup table, or a
 #'   data.frame with columns `idx`, `label`, `R`, `G`, `B`, `A`.
-#'   An optional `type` column with values `"cortical"` or `"subcortical"`
-#'   controls label classification (see **Label classification**). An optional
+#'   An optional `type` column with values `"cortical"`, `"subcortical"` or
+#'   `"cerebellar"` controls label classification (see **Label
+#'   classification**); any other value is an error, and `NA` leaves the
+#'   label to the other classification steps. An optional
 #'   `hemi` column with values `"left"` or `"right"` says which hemisphere a
 #'   parcel belongs to (see **Declared hemisphere**). Voxel IDs
 #'   not listed in the LUT are automatically zeroed out before surface
@@ -812,6 +814,8 @@ validate_wholebrain_config <- function(
   ) {
     cli::cli_abort("Color lookup table not found: {.path {input_lut}}")
   }
+  lut <- if (is.character(input_lut)) read_lut(input_lut) else input_lut
+  check_lut_type(lut)
 
   validate_registration(registration, subject, input_volume)
 
@@ -829,6 +833,7 @@ validate_wholebrain_config <- function(
 
   config$input_volume <- input_volume
   config$input_lut <- input_lut
+  config$lut <- lut
   config$atlas_name <- atlas_name
   config$projfrac <- projfrac
   config$projfrac_range <- projfrac_range
@@ -883,7 +888,7 @@ wholebrain_compute_projection <- function(config, dirs) {
   }
 
   colortable <- load_volume_colortable(
-    config$input_lut,
+    config$lut,
     config$input_volume,
     config$verbose
   )$colortable
@@ -1477,6 +1482,7 @@ classify_labels_assign <- function(
     c(classified_cortical, classified_subcortical, classified_cerebellar)
   )
 
+  check_lut_type(colortable)
   has_type <- !is.null(colortable) && "type" %in% names(colortable)
   if (has_type && length(remaining) > 0) {
     by_type <- classify_labels_by_type(colortable, remaining)
