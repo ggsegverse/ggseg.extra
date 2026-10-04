@@ -96,6 +96,7 @@ front_matter_title <- function(path) {
 }
 
 articles <- list()
+listed <- character()
 for (section in config$articles) {
   selectors <- grep("[()]", section$contents, value = TRUE)
   if (length(selectors)) {
@@ -108,7 +109,10 @@ for (section in config$articles) {
 
   for (slug in section$contents) {
     path <- source_for(slug)
-    if (!startsWith(section$title, "Tutorials:") || !build_ignored(path)) {
+    # Every article is checked against the site index, but only the ones the
+    # tarball drops are indexed here; the rest reach r-universe as vignettes.
+    listed <- c(listed, slug)
+    if (!build_ignored(path)) {
       next
     }
     articles[[length(articles) + 1]] <- list(
@@ -116,15 +120,11 @@ for (section in config$articles) {
       title = front_matter_title(path),
       href = paste0("articles/", basename(slug), ".html"),
       section = if (length(section$title)) section$title else NULL,
-      section_desc = if (length(section$desc)) trimws(section$desc) else NULL,
-      # The point of the index: which articles a consumer reading the
-      # installed package or r-universe metadata cannot see.
-      vignette = !build_ignored(path)
+      section_desc = if (length(section$desc)) trimws(section$desc) else NULL
     )
   }
 }
 
-listed <- vapply(articles, function(a) a$slug, character(1))
 duplicated_slugs <- unique(listed[duplicated(listed)])
 if (length(duplicated_slugs)) {
   stop(
@@ -141,8 +141,14 @@ missing <- setdiff(on_disk, listed)
 if (length(missing)) {
   stop(
     "these articles exist but are absent from the `articles:` index in ",
-    "_pkgdown.yml, so neither the site nor this index lists them: ",
+    "_pkgdown.yml, so the site's article index does not list them: ",
     paste(missing, collapse = ", ")
+  )
+}
+if (!length(articles)) {
+  stop(
+    "no article in the `articles:` index is excluded from the tarball, so ",
+    "there is nothing this index can add to r-universe's metadata"
   )
 }
 
