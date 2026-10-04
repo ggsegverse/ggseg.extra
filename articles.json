@@ -1,0 +1,77 @@
+{
+  "package": "ggseg.extra",
+  "url": "https://ggsegverse.github.io/ggseg.extra/",
+  "source": "_pkgdown.yml",
+  "articles": [
+    {
+      "slug": "atlas-workflows",
+      "title": "Atlas Creation Workflows",
+      "href": "articles/atlas-workflows.html",
+      "section": "Getting Started",
+      "section_desc": null
+    },
+    {
+      "slug": "articles/tutorial-cortical-atlas",
+      "title": "Tutorial: Creating a cortical atlas",
+      "href": "articles/tutorial-cortical-atlas.html",
+      "section": "Tutorials: Creating Atlases",
+      "section_desc": "Step-by-step atlas creation with full pipelines"
+    },
+    {
+      "slug": "articles/tutorial-neuromaps-atlas",
+      "title": "Tutorial: Creating an atlas from neuromaps",
+      "href": "articles/tutorial-neuromaps-atlas.html",
+      "section": "Tutorials: Creating Atlases",
+      "section_desc": "Step-by-step atlas creation with full pipelines"
+    },
+    {
+      "slug": "articles/tutorial-subcortical-atlas",
+      "title": "Tutorial: Creating a subcortical atlas",
+      "href": "articles/tutorial-subcortical-atlas.html",
+      "section": "Tutorials: Creating Atlases",
+      "section_desc": "Step-by-step atlas creation with full pipelines"
+    },
+    {
+      "slug": "articles/tutorial-wholebrain-atlas",
+      "title": "Tutorial: Creating a whole-brain atlas",
+      "href": "articles/tutorial-wholebrain-atlas.html",
+      "section": "Tutorials: Creating Atlases",
+      "section_desc": "Step-by-step atlas creation with full pipelines"
+    },
+    {
+      "slug": "articles/tutorial-cerebellar-atlas",
+      "title": "Tutorial: Creating a cerebellar atlas",
+      "href": "articles/tutorial-cerebellar-atlas.html",
+      "section": "Tutorials: Creating Atlases",
+      "section_desc": "Step-by-step atlas creation with full pipelines"
+    },
+    {
+      "slug": "articles/tutorial-tract-atlas",
+      "title": "Tutorial: Creating a tract atlas",
+      "href": "articles/tutorial-tract-atlas.html",
+      "section": "Tutorials: Creating Atlases",
+      "section_desc": "Step-by-step atlas creation with full pipelines"
+    },
+    {
+      "slug": "articles/tutorial-label-atlas",
+      "title": "Tutorial: Creating an atlas from label files",
+      "href": "articles/tutorial-label-atlas.html",
+      "section": "Tutorials: Creating Atlases",
+      "section_desc": "Step-by-step atlas creation with full pipelines"
+    },
+    {
+      "slug": "articles/tutorial-lookup-tables",
+      "title": "Tutorial: Lookup tables and colours",
+      "href": "articles/tutorial-lookup-tables.html",
+      "section": "Tutorials: Working with Atlases",
+      "section_desc": "Preparing the inputs an atlas needs, and shipping the result"
+    },
+    {
+      "slug": "articles/tutorial-publishing-an-atlas",
+      "title": "Tutorial: Publishing an atlas as a package",
+      "href": "articles/tutorial-publishing-an-atlas.html",
+      "section": "Tutorials: Working with Atlases",
+      "section_desc": "Preparing the inputs an atlas needs, and shipping the result"
+    }
+  ]
+}
