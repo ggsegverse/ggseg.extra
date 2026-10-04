@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9105</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9106</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -69,6 +69,17 @@
       <small>Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.9.9.9106" id="ggsegextra-1999106">ggseg.extra 1.9.9.9106<a class="anchor" aria-label="anchor" href="#ggsegextra-1999106"></a></h2>
+<div class="section level3">
+<h3 id="new-features-1-9-9-9106">New features<a class="anchor" aria-label="anchor" href="#new-features-1-9-9-9106"></a></h3>
+<ul><li>A lookup table’s <code>hemi</code> column now sets the hemisphere in <code><a href="../reference/create_subcortical_from_volume.html">create_subcortical_from_volume()</a></code> and <code><a href="../reference/create_cerebellar_from_volume.html">create_cerebellar_from_volume()</a></code>, not only for cortical parcels in <code><a href="../reference/create_wholebrain_from_volume.html">create_wholebrain_from_volume()</a></code>. A row the column leaves <code>NA</code>, or a table without the column, has the hemisphere read from the label’s name as before. The whole-brain pipeline passes the column on to its subcortical and cerebellar builds; it used to write them a lookup table file, which has no field for it.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="bug-fixes-1-9-9-9106">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-1-9-9-9106"></a></h3>
+<ul><li>A label is no longer given a hemisphere because the letters <code>lh</code> or <code>rh</code> occur inside a word. <code>Entorhinal</code> and <code>area-rhinal</code> came out as right and any label containing <code>lh</code> as left, in subcortical, cerebellar and tract atlases. <code>lh</code> and <code>rh</code> are now read only as a prefix, a suffix, or a token between separators, as in <code>ctx-lh-entorhinal</code>. Labels that relied on the loose match now get no hemisphere; declare it with a <code>hemi</code> column.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9105" id="ggsegextra-1999105">ggseg.extra 1.9.9.9105<a class="anchor" aria-label="anchor" href="#ggsegextra-1999105"></a></h2>
 <div class="section level3">

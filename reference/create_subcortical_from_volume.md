@@ -79,8 +79,11 @@ create_subcortical_from_volume(
   `ASegStatsLUT.txt`), or a data.frame with columns `idx`, `label`, `R`,
   `G`, `B` and `A` (see
   [`is_lut()`](https://ggsegverse.github.io/ggseg.extra/reference/is_lut.md)).
-  If NULL, region names will be generic (e.g., "region_0010") and the
-  atlas will have no palette.
+  A data.frame may also carry a `hemi` column (`"left"`, `"right"` or
+  `"midline"`) that sets each region's hemisphere; a row left `NA`, or a
+  table without the column, has it read from the label's name. If NULL,
+  region names will be generic (e.g., "region_0010") and the atlas will
+  have no palette.
 
 - atlas_name:
 
