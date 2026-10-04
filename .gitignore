@@ -9,7 +9,8 @@ data-raw/fsaverage*
 README.html
 .claude/
 docs/
-pkgdown/
+pkgdown/*
+!pkgdown/assets/
 *.pdf
 /doc/
 /Meta/
