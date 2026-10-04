@@ -359,6 +359,9 @@ create_cerebellar_from_annotation <- function(
 #' @param input_volume Path to a cerebellar segmentation volume (NIfTI).
 #' @param input_lut Optional path to a colour lookup table file, or a
 #'   data.frame with columns `idx`, `label`, and optionally `R`, `G`, `B`.
+#'   A data.frame may also carry a `hemi` column (`"left"`, `"right"`,
+#'   `"vermis"` or `"midline"`) that sets each region's hemisphere; a row left
+#'   `NA`, or a table without the column, has it read from the label's name.
 #'   If NULL, labels are auto-generated from volume values.
 #' @template atlas_name
 #' @template output_dir
@@ -1529,7 +1532,7 @@ build_cerebellar_volume_row <- function(
     return(list(row = NULL, vertex_labels = vertex_labels))
   }
 
-  hemi <- detect_cerebellar_hemi(region_name)
+  hemi <- lut_hemi(colortable[i, ], region_name, detect_cerebellar_hemi)
   region <- label_to_region(region_name)
   label <- paste(hemi, sanitize_label(region), sep = "_")
 

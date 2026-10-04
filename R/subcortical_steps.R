@@ -131,7 +131,7 @@ subcort_build_components <- function(colortable, meshes_list) {
   all_data <- lapply(names(meshes_list), function(label_name) {
     ct_row <- colortable[colortable$label == label_name, ]
     tibble(
-      hemi = detect_hemi(label_name),
+      hemi = lut_hemi(ct_row, label_name),
       region = label_to_region(label_name),
       label = label_name,
       colour = ct_row$color[1],

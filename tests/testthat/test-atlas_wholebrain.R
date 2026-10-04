@@ -1234,14 +1234,11 @@ describe("wholebrain_run_subcortical verbose logging", {
     )
 
     local_mocked_bindings(
-      write_lut = function(ct, ...) {
-        .cap$captured_lut <- ct
-        invisible(NULL)
-      },
       wholebrain_prepare_subcortical_volume = function(...) {
         invisible("filtered.nii.gz")
       },
-      create_subcortical_from_volume = function(...) {
+      create_subcortical_from_volume = function(input_lut, ...) {
+        .cap$captured_lut <- input_lut
         structure(
           list(
             core = data.frame(
@@ -1304,15 +1301,12 @@ describe("wholebrain_run_subcortical verbose logging", {
     )
 
     local_mocked_bindings(
-      write_lut = function(ct, ...) {
-        .cap$captured_lut <- ct
-        invisible(NULL)
-      },
       wholebrain_prepare_subcortical_volume = function(...) {
         .cap$captured <- list(...)
         invisible("filtered.nii.gz")
       },
-      create_subcortical_from_volume = function(...) {
+      create_subcortical_from_volume = function(input_lut, ...) {
+        .cap$captured_lut <- input_lut
         structure(
           list(
             core = data.frame(stringsAsFactors = FALSE, region = "amygdala")
@@ -3720,7 +3714,7 @@ describe("wholebrain label stamping", {
 })
 
 
-describe("write_subcortical_lut", {
+describe("sub_pipeline_lut", {
   miccai_style <- function() {
     data.frame(
       stringsAsFactors = FALSE,
@@ -3733,51 +3727,22 @@ describe("write_subcortical_lut", {
     )
   }
 
-  it("writes a label with spaces rather than refusing it", {
-    path <- withr::local_tempfile(fileext = ".txt")
-
-    # write_lut() aborts on these, which is right for a user's table and
-    # wrong for one the pipeline writes for itself.
-    expect_error(write_lut(miccai_style(), path), "single word")
-    expect_no_error(write_subcortical_lut(miccai_style(), path))
+  it("hands over a label with spaces and its colours as they are", {
+    # A LUT file cannot hold these labels; a data frame can, and the
+    # subcortical pipeline sanitises them itself when it loads the table.
+    expect_identical(sub_pipeline_lut(miccai_style()), miccai_style())
   })
 
-  it("keeps the colours attached to the right label", {
-    path <- withr::local_tempfile(fileext = ".txt")
-    write_subcortical_lut(miccai_style(), path)
-
-    back <- read_lut(path)
-
-    expect_identical(
-      back$label,
-      c("Right_Accumbens_Area", "Left_Basal_Forebrain")
-    )
-    expect_identical(back$idx, c(23L, 30L))
-    expect_identical(back$R, c(219L, 100L))
-    expect_identical(back$G, c(157L, 120L))
-    expect_identical(back$B, c(133L, 140L))
-  })
-
-  it("names the labels the subcortical pipeline will settle on", {
-    # subcort_resolve_labels() sanitises the colortable the moment it reads
-    # this file. Labels that survive that unchanged are labels the LUT and the
-    # finished atlas agree on; anything else and the two would disagree.
-    path <- withr::local_tempfile(fileext = ".txt")
-    write_subcortical_lut(miccai_style(), path)
-
-    written <- read_lut(path)$label
-
-    expect_identical(sanitize_label(written), written)
-  })
-
-  it("leaves an already-clean table untouched", {
-    path <- withr::local_tempfile(fileext = ".txt")
+  it("carries a declared hemisphere and nothing else the pipeline added", {
     ct <- miccai_style()
-    ct$label <- c("Right-Accumbens-Area", "Left-Basal-Forebrain")
+    ct$hemi <- c("right", "left")
+    ct$type <- lut_type_values[2]
+    ct$source_idx <- ct$idx
 
-    write_subcortical_lut(ct, path)
+    handed_over <- sub_pipeline_lut(ct)
 
-    expect_identical(read_lut(path)$label, ct$label)
+    expect_identical(handed_over$hemi, ct$hemi)
+    expect_named(handed_over, c(names(miccai_style()), "hemi"))
   })
 })
 
@@ -4000,8 +3965,15 @@ describe("declared cortical hemisphere", {
     ))
   })
 
+  it("keeps a parcel declared midline or vermis on both surfaces", {
+    for (declared in c("midline", "vermis")) {
+      row <- ct("Region_1", hemi = declared)
+      expect_true(label_belongs_to_hemi(row, "Region_1", "left"))
+      expect_true(label_belongs_to_hemi(row, "Region_1", "right"))
+    }
+  })
+
   it("does not read a token out of a label that merely contains it", {
-    # detect_hemi()'s non-strict mode would: it searches for "lh" anywhere.
     # One bilateral label containing those letters would lose half itself.
     for (label in c("Thalamus", "Cerebellum-Cortex", "bankssts")) {
       expect_true(

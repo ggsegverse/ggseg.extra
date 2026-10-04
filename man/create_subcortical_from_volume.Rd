@@ -48,7 +48,10 @@ passed here is an error. Geometry is shaped after the build: see
 \item{input_lut}{Path to a FreeSurfer-style colour lookup table that maps
 label IDs to region names and colours (e.g., \code{FreeSurferColorLUT.txt}
 or \code{ASegStatsLUT.txt}), or a data.frame with columns \code{idx}, \code{label},
-\code{R}, \code{G}, \code{B} and \code{A} (see \code{\link[=is_lut]{is_lut()}}). If NULL, region names will be
+\code{R}, \code{G}, \code{B} and \code{A} (see \code{\link[=is_lut]{is_lut()}}). A data.frame may also carry a
+\code{hemi} column (\code{"left"}, \code{"right"} or \code{"midline"}) that sets each
+region's hemisphere; a row left \code{NA}, or a table without the column, has
+it read from the label's name. If NULL, region names will be
 generic (e.g., "region_0010") and the atlas will have no palette.}
 
 \item{atlas_name}{Name for the atlas. If NULL, derived from the input

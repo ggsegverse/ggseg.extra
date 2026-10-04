@@ -26,6 +26,26 @@ describe("subcort_build_components", {
     expect_true("palette" %in% names(result))
     expect_identical(nrow(result$core), 2L)
   })
+
+  it("puts the hemisphere a lookup table declares into core", {
+    mesh <- list(
+      vertices = list(x = 1:3, y = 1:3, z = 1:3),
+      faces = list(i = 1, j = 2, k = 3)
+    )
+    colortable <- data.frame(
+      idx = c(1, 2),
+      label = c("Region_1", "Region_2"),
+      color = c("#FF0000", "#00FF00"),
+      hemi = c("left", "right")
+    )
+
+    result <- subcort_build_components(
+      colortable,
+      list(Region_1 = mesh, Region_2 = mesh)
+    )
+
+    expect_identical(result$core$hemi, colortable$hemi)
+  })
 })
 
 

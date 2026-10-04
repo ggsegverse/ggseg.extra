@@ -261,6 +261,10 @@ names each structure once for both hemispheres is \emph{meant} to produce \code{
 and \code{rh_}. So this is opt-in, and a table without the column behaves exactly
 as before.
 
+The column is passed on to the subcortical and cerebellar pipelines, where
+it sets the region's hemisphere instead of the label's name doing so. There
+it may also say \code{"midline"} or \code{"vermis"}.
+
 Hemisphere is never inferred from the voxels. The volume does know which side
 a parcel sits on, but a majority vote is a guess made silently on every
 build, whereas a column is a fact you can see and correct -- the same

@@ -24,7 +24,10 @@
 #' @param input_lut Path to a FreeSurfer-style colour lookup table that maps
 #'   label IDs to region names and colours (e.g., `FreeSurferColorLUT.txt`
 #'   or `ASegStatsLUT.txt`), or a data.frame with columns `idx`, `label`,
-#'   `R`, `G`, `B` and `A` (see [is_lut()]). If NULL, region names will be
+#'   `R`, `G`, `B` and `A` (see [is_lut()]). A data.frame may also carry a
+#'   `hemi` column (`"left"`, `"right"` or `"midline"`) that sets each
+#'   region's hemisphere; a row left `NA`, or a table without the column, has
+#'   it read from the label's name. If NULL, region names will be
 #'   generic (e.g., "region_0010") and the atlas will have no palette.
 #' @template atlas_name
 #' @template output_dir

@@ -40,9 +40,41 @@ describe("detect_hemi", {
     expect_true(is.na(detect_hemi("corpus_callosum")))
   })
 
+  it("reads lh and rh as tokens, not as letters inside a word", {
+    expect_identical(detect_hemi("ctx-lh-entorhinal"), "left")
+    expect_identical(detect_hemi("7Networks_RH_Vis_1"), "right")
+    expect_true(is.na(detect_hemi("Entorhinal")))
+    expect_true(is.na(detect_hemi("Alhambra")))
+  })
+
   it("handles NA and empty input", {
     expect_true(is.na(detect_hemi(NA)))
     expect_true(is.na(detect_hemi("")))
+  })
+})
+
+
+describe("lut_hemi", {
+  it("takes a declared hemisphere over what the name says", {
+    row <- data.frame(label = "Left-Thalamus", hemi = "rh")
+    expect_identical(lut_hemi(row, row$label), "right")
+  })
+
+  it("falls back to the name for a row that declares nothing", {
+    row <- data.frame(label = "Left-Thalamus", hemi = NA_character_)
+    expect_identical(lut_hemi(row, row$label), detect_hemi(row$label))
+    expect_identical(
+      lut_hemi(data.frame(label = "Left-Thalamus"), "Left-Thalamus"),
+      detect_hemi("Left-Thalamus")
+    )
+  })
+
+  it("reads the name with the reader it is given", {
+    row <- data.frame(label = "Vermis_VI")
+    expect_identical(
+      lut_hemi(row, row$label, from_name = detect_cerebellar_hemi),
+      detect_cerebellar_hemi(row$label)
+    )
   })
 })
 
