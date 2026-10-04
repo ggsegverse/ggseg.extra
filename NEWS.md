@@ -1,3 +1,24 @@
+# ggseg.extra 1.9.9.9106
+
+## New features
+
+- A lookup table's `hemi` column now sets the hemisphere in
+  `create_subcortical_from_volume()` and `create_cerebellar_from_volume()`,
+  not only for cortical parcels in `create_wholebrain_from_volume()`. A row
+  the column leaves `NA`, or a table without the column, has the hemisphere
+  read from the label's name as before. The whole-brain pipeline passes the
+  column on to its subcortical and cerebellar builds; it used to write them a
+  lookup table file, which has no field for it.
+
+## Bug fixes
+
+- A label is no longer given a hemisphere because the letters `lh` or `rh`
+  occur inside a word. `Entorhinal` and `area-rhinal` came out as right and
+  any label containing `lh` as left, in subcortical, cerebellar and tract
+  atlases. `lh` and `rh` are now read only as a prefix, a suffix, or a token
+  between separators, as in `ctx-lh-entorhinal`. Labels that relied on the
+  loose match now get no hemisphere; declare it with a `hemi` column.
+
 # ggseg.extra 1.9.9.9105
 
 ## Bug fixes

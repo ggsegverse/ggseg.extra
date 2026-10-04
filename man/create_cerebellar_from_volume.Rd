@@ -37,6 +37,9 @@ passed here is an error. Geometry is shaped after the build: see
 
 \item{input_lut}{Optional path to a colour lookup table file, or a
 data.frame with columns \code{idx}, \code{label}, and optionally \code{R}, \code{G}, \code{B}.
+A data.frame may also carry a \code{hemi} column (\code{"left"}, \code{"right"},
+\code{"vermis"} or \code{"midline"}) that sets each region's hemisphere; a row left
+\code{NA}, or a table without the column, has it read from the label's name.
 If NULL, labels are auto-generated from volume values.}
 
 \item{atlas_name}{Name for the atlas. If NULL, derived from the input

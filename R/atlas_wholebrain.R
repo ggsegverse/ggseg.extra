@@ -117,6 +117,10 @@
 #' and `rh_`. So this is opt-in, and a table without the column behaves exactly
 #' as before.
 #'
+#' The column is passed on to the subcortical and cerebellar pipelines, where
+#' it sets the region's hemisphere instead of the label's name doing so. There
+#' it may also say `"midline"` or `"vermis"`.
+#'
 #' Hemisphere is never inferred from the voxels. The volume does know which side
 #' a parcel sits on, but a majority vote is a guess made silently on every
 #' build, whereas a column is a fact you can see and correct -- the same
@@ -1035,27 +1039,24 @@ overlay_label_row <- function(
 #' @noRd
 label_belongs_to_hemi <- function(ct_row, label_name, hemi) {
   declared <- declared_hemi(ct_row, label_name)
-  is.na(declared) || identical(declared, hemi)
+  !declared %in% c("left", "right") || identical(declared, hemi)
 }
 
 
 #' The hemisphere a lookup table row declares, or `NA` if it declares none
 #'
-#' The column wins over the name: it is the more explicit of the two, and an
-#' author who adds it is overriding what the name happens to say.
+#' The name is read strictly here: a parcel is dropped from the surface it
+#' does not belong to, so a loose match on the word "left" inside a bilateral
+#' label would delete half of it.
 #' @noRd
 declared_hemi <- function(ct_row, label_name) {
-  if ("hemi" %in% names(ct_row)) {
-    from_column <- normalise_hemi(ct_row$hemi[1])
-    if (!is.na(from_column)) {
-      return(from_column)
+  lut_hemi(ct_row, label_name, from_name = function(label_name) {
+    embedded <- embedded_hemi_token(label_name)
+    if (!is.na(embedded)) {
+      return(embedded)
     }
-  }
-  embedded <- embedded_hemi_token(label_name)
-  if (!is.na(embedded)) {
-    return(embedded)
-  }
-  detect_hemi(label_name, strict = TRUE)
+    detect_hemi(label_name, strict = TRUE)
+  })
 }
 
 
@@ -1066,11 +1067,10 @@ declared_hemi <- function(ct_row, label_name) {
 #' [detect_hemi()]'s prefix and suffix patterns miss the commonest declared
 #' form the volume path sees.
 #'
-#' Separators are required on both sides. [detect_hemi()]'s non-strict mode
-#' would answer this with a bare substring search for `lh`, which is not safe
-#' to use here: one bilateral label that happens to contain those letters
-#' would be assigned to a hemisphere and half of it would vanish from the
-#' atlas. A bounded token cannot do that.
+#' Separators are required on both sides. A bare substring search for `lh` or
+#' `rh` assigns a hemisphere to any label that happens to contain those
+#' letters -- `Entorhinal` reads as right -- and a bounded token cannot do
+#' that.
 #' @noRd
 embedded_hemi_token <- function(label_name) {
   if (grepl("[-_. ]lh[-_. ]", label_name, ignore.case = TRUE)) {
@@ -1102,6 +1102,8 @@ normalise_hemi <- function(x) {
     "right" = ,
     "rh" = ,
     "r" = "right",
+    "midline" = "midline",
+    "vermis" = "vermis",
     NA_character_
   )
 }
@@ -2002,23 +2004,26 @@ wholebrain_cortical_inputs <- function(config, dirs, projection, split, opts) {
 
 # Step 4: Run subcortical pipeline ----
 
-#' Write the lookup table the subcortical pipeline reads straight back
+#' The lookup table a sub-pipeline is handed
 #'
-#' `read_lut()` splits a LUT line on whitespace, so a label carrying a space -
-#' "Right Accumbens Area", as the Neuromorphometrics tables do - reads back
-#' with its colour channels shifted one field along. `write_lut()` refuses to
-#' write one rather than corrupt it, which is right for a table a user asked
-#' for and wrong here: this table is the pipeline handing itself its own
-#' input, so it has to produce something readable instead of giving up.
-#'
-#' Sanitising is what happens to these labels anyway -
-#' `subcort_resolve_labels()` applies `sanitize_label()` to the colortable the
-#' moment it reads this file back - so the finished atlas is unchanged. What
-#' changes is that the colours now survive the round trip.
+#' Passed as a data frame rather than written to a LUT file, because the file
+#' format has no field for what the author declared: a `hemi` column would be
+#' dropped on the way, and the sub-pipeline would go back to reading the
+#' hemisphere out of the label's name.
 #' @noRd
-write_subcortical_lut <- function(colortable, path) {
-  colortable$label <- sanitize_label(colortable$label)
-  write_lut(colortable[, c("idx", "label", "R", "G", "B", "A")], path)
+sub_pipeline_lut <- function(colortable) {
+  columns <- c(
+    "idx",
+    "label",
+    "R",
+    "G",
+    "B",
+    "A",
+    intersect("hemi", names(colortable))
+  )
+  lut <- as.data.frame(colortable[, columns, drop = FALSE])
+  rownames(lut) <- NULL
+  lut
 }
 
 
@@ -2040,10 +2045,9 @@ wholebrain_run_subcortical <- function(
     colortable$label %in% split$subcortical_labels,
   ]
 
-  subcort_lut <- as.character(fs::path(dirs$base, "subcort_lut.txt"))
   subcort_ct <- fill_missing_rgb(subcort_ct, "subcort")
   subcort_ct <- reindex_reserved_subcort_idx(subcort_ct, config$verbose)
-  write_subcortical_lut(subcort_ct, subcort_lut)
+  subcort_lut <- sub_pipeline_lut(subcort_ct)
 
   cortical_idx <- colortable$idx[
     colortable$label %in% split$cortical_labels
@@ -2101,15 +2105,7 @@ wholebrain_run_cerebellar <- function(
   ]
   cer_ct <- fill_missing_rgb(cer_ct, "cerebellar")
 
-  cer_lut <- data.frame(
-    idx = cer_ct$idx,
-    label = cer_ct$label,
-    R = cer_ct$R,
-    G = cer_ct$G,
-    B = cer_ct$B,
-    A = cer_ct$A,
-    stringsAsFactors = FALSE
-  )
+  cer_lut <- sub_pipeline_lut(cer_ct)
 
   filtered_vol <- as.character(fs::path(dirs$base, "cerebellar_volume.nii.gz"))
   wholebrain_prepare_cerebellar_volume(

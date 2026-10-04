@@ -300,13 +300,40 @@ detect_hemi_affix <- function(label_name) {
 #' Detect hemisphere from substring anywhere in the label
 #' @noRd
 detect_hemi_contains <- function(label_name) {
-  if (grepl("left|lh", label_name, ignore.case = TRUE)) {
+  embedded <- embedded_hemi_token(label_name)
+  if (!is.na(embedded)) {
+    return(embedded)
+  }
+  if (grepl("left", label_name, ignore.case = TRUE)) {
     return("left")
   }
-  if (grepl("right|rh", label_name, ignore.case = TRUE)) {
+  if (grepl("right", label_name, ignore.case = TRUE)) {
     return("right")
   }
   NULL
+}
+
+
+#' The hemisphere of a lookup table row
+#'
+#' A `hemi` column wins over the name: it is the more explicit of the two, and
+#' an author who adds it is overriding what the name happens to say. A row
+#' whose column declares nothing falls back to its name, so a partly filled
+#' column behaves like a table without one for the rows it leaves empty.
+#'
+#' @param lut_row The label's lookup table row.
+#' @param label_name The label's source name.
+#' @param from_name Function reading a hemisphere out of a label name.
+#' @return The declared hemisphere, or whatever `from_name` makes of the name.
+#' @noRd
+lut_hemi <- function(lut_row, label_name, from_name = detect_hemi) {
+  if ("hemi" %in% names(lut_row)) {
+    declared <- normalise_hemi(lut_row$hemi[1])
+    if (!is.na(declared)) {
+      return(declared)
+    }
+  }
+  from_name(label_name)
 }
 
 
