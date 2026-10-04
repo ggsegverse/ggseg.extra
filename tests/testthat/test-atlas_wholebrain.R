@@ -381,6 +381,21 @@ describe("create_wholebrain_from_volume validation", {
     )
   })
 
+  it("rejects an unrecognised LUT hemi before doing any work", {
+    local_mocked_bindings(check_fs = function(...) TRUE)
+    vol_file <- withr::local_tempfile(fileext = ".nii.gz")
+    file.create(vol_file)
+    lut <- data.frame(idx = 1:2, label = c("A", "B"), hemi = c("left", "rigth"))
+    expect_error(
+      create_wholebrain_from_volume(
+        input_volume = vol_file,
+        input_lut = lut,
+        verbose = FALSE
+      ),
+      "unrecognised"
+    )
+  })
+
   it("derives atlas_name from volume filename", {
     .cap$captured_name <- NULL
     test_dir <- withr::local_tempdir()
@@ -3934,13 +3949,13 @@ describe("declared cortical hemisphere", {
     expect_true(label_belongs_to_hemi(row, "Left-Thing", "right"))
   })
 
-  it("treats an unrecognised column value as declaring nothing", {
-    # Rather than aborting: the column says nothing usable about this label,
-    # which is the situation of a table without the column at all.
+  it("rejects an unrecognised column value rather than ignoring it", {
     row <- ct("Region_1", hemi = "banana")
 
-    expect_true(label_belongs_to_hemi(row, "Region_1", "left"))
-    expect_true(label_belongs_to_hemi(row, "Region_1", "right"))
+    expect_error(
+      label_belongs_to_hemi(row, "Region_1", "left"),
+      "unrecognised"
+    )
   })
 
   it("reads a hemisphere the label declares in its own name", {

@@ -1,3 +1,13 @@
+# check_lut_hemi / names the values that are not a hemisphere
+
+    Code
+      check_lut_hemi(lut)
+    Condition
+      Error in `check_lut_hemi()`:
+      ! `input_lut` has 2 labels with an unrecognised hemi
+      x Not a hemisphere: "rigth" and "both"
+      i Allowed: "left", "right", "midline", and "vermis", or `NA` to read it from the label's name.
+
 # drop_labels_without_geometry / aborts rather than build an atlas with no drawable region
 
     Code

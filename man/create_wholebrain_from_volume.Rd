@@ -254,7 +254,9 @@ smaller one built from the spill.
 Give the lookup table a \code{hemi} column (\code{"left"} or \code{"right"}, or \code{lh}/\code{rh})
 and the parcel is kept only on the surface it belongs to. Where there is no
 column the label's own name is read, which covers \code{Left-Thalamus},
-\code{lh.something}, \code{region_L} and FreeSurfer's \code{ctx-lh-superiorfrontal}.
+\code{lh.something}, \code{region_L} and FreeSurfer's \code{ctx-lh-superiorfrontal}. A
+value the column cannot mean -- a misspelling, say -- is an error rather
+than a row quietly treated as undeclared.
 
 A label that declares nothing is left alone, on purpose: a lookup table that
 names each structure once for both hemispheres is \emph{meant} to produce \code{lh_}
