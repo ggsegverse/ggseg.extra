@@ -53,12 +53,14 @@ create_wholebrain_from_volume(
 
   Path to FreeSurfer-style colour lookup table, or a data.frame with
   columns `idx`, `label`, `R`, `G`, `B`, `A`. An optional `type` column
-  with values `"cortical"` or `"subcortical"` controls label
-  classification (see **Label classification**). An optional `hemi`
-  column with values `"left"` or `"right"` says which hemisphere a
-  parcel belongs to (see **Declared hemisphere**). Voxel IDs not listed
-  in the LUT are automatically zeroed out before surface projection (see
-  **Volume pre-processing**). If NULL, generic names and no palette.
+  with values `"cortical"`, `"subcortical"` or `"cerebellar"` controls
+  label classification (see **Label classification**); any other value
+  is an error, and `NA` leaves the label to the other classification
+  steps. An optional `hemi` column with values `"left"` or `"right"`
+  says which hemisphere a parcel belongs to (see **Declared
+  hemisphere**). Voxel IDs not listed in the LUT are automatically
+  zeroed out before surface projection (see **Volume pre-processing**).
+  If NULL, generic names and no palette.
 
 - atlas_name:
 

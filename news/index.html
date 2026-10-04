@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9104</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9105</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -69,6 +69,14 @@
       <small>Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.9.9.9105" id="ggsegextra-1999105">ggseg.extra 1.9.9.9105<a class="anchor" aria-label="anchor" href="#ggsegextra-1999105"></a></h2>
+<div class="section level3">
+<h3 id="bug-fixes-1-9-9-9105">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-1-9-9-9105"></a></h3>
+<ul><li>
+<code><a href="../reference/create_wholebrain_from_volume.html">create_wholebrain_from_volume()</a></code> now stops on a lookup table whose <code>type</code> column holds anything other than <code>"cortical"</code>, <code>"subcortical"</code>, <code>"cerebellar"</code> or <code>NA</code>. A mistyped value – <code>"Cortical"</code>, <code>"cortex"</code>, <code>"cerebellum"</code> – matched nothing, so the label was treated as undeclared and classified by the vertex-count fallback or assumed subcortical. The warnings that followed described the fallback, not the typo, and the label could land in the wrong sub-atlas. The check runs before any projection, so the error arrives in seconds rather than after the surface work. <code>NA</code> still means “not declared” and is classified as before.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9104" id="ggsegextra-1999104">ggseg.extra 1.9.9.9104<a class="anchor" aria-label="anchor" href="#ggsegextra-1999104"></a></h2>
 <div class="section level3">

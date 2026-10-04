@@ -21,7 +21,7 @@ Requires FreeSurfer."><meta property="og:image" content="https://ggsegverse.gith
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9104</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9105</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -137,8 +137,10 @@ rather than silently ignored; anything passed here is an error.</p></dd>
 <dt id="arg-input-lut">input_lut<a class="anchor" aria-label="anchor" href="#arg-input-lut"></a></dt>
 <dd><p>Path to FreeSurfer-style colour lookup table, or a
 data.frame with columns <code>idx</code>, <code>label</code>, <code>R</code>, <code>G</code>, <code>B</code>, <code>A</code>.
-An optional <code>type</code> column with values <code>"cortical"</code> or <code>"subcortical"</code>
-controls label classification (see <strong>Label classification</strong>). An optional
+An optional <code>type</code> column with values <code>"cortical"</code>, <code>"subcortical"</code> or
+<code>"cerebellar"</code> controls label classification (see <strong>Label
+classification</strong>); any other value is an error, and <code>NA</code> leaves the
+label to the other classification steps. An optional
 <code>hemi</code> column with values <code>"left"</code> or <code>"right"</code> says which hemisphere a
 parcel belongs to (see <strong>Declared hemisphere</strong>). Voxel IDs
 not listed in the LUT are automatically zeroed out before surface
