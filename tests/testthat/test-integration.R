@@ -9,7 +9,7 @@ describe("integration tests", {
     skip_if_no_freesurfer()
 
     lut <- read_lut(test_path("testdata", "volumetric", "lut.txt"))
-    lut$type <- c("unknown", rep("subcortical", nrow(lut) - 1))
+    lut$type <- c(NA, rep("subcortical", nrow(lut) - 1))
 
     result <- create_wholebrain_from_volume(
       input_volume = test_path("testdata", "volumetric", "aseg.mgz"),

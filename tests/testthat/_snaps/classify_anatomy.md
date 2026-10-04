@@ -12,3 +12,13 @@
       i FreeSurfer said:
         ERROR: bad header
 
+# check_lut_type() / names the values that are not a type
+
+    Code
+      check_lut_type(lut)
+    Condition
+      Error in `check_lut_type()`:
+      ! `input_lut` has 2 labels with an unrecognised type
+      x Not a type: "Cortical" and "cortex"
+      i Allowed: "cortical", "subcortical", and "cerebellar", or `NA` to leave a label undeclared.
+

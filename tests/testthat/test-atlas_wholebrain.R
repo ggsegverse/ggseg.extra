@@ -264,6 +264,15 @@ describe("wholebrain_classify_labels", {
     expect_identical(result$cerebellar_labels, "lobule_I")
   })
 
+  it("rejects an unrecognised type in a colortable it did not validate", {
+    atlas_data <- tibble(source_label = "A", vertices = list(1:100))
+    stale_colortable <- data.frame(idx = 1L, label = "A", type = "cortex")
+    expect_error(
+      wholebrain_classify_labels(atlas_data, colortable = stale_colortable),
+      "unrecognised"
+    )
+  })
+
   it("defaults volume-only labels without type to subcortical", {
     ad <- make_atlas_data("cortex_a", 100)
     ct <- data.frame(
@@ -350,6 +359,25 @@ describe("create_wholebrain_from_volume validation", {
         verbose = FALSE
       ),
       "not found"
+    )
+  })
+
+  it("rejects an unrecognised LUT type before doing any work", {
+    local_mocked_bindings(check_fs = function(...) TRUE)
+    vol_file <- withr::local_tempfile(fileext = ".nii.gz")
+    file.create(vol_file)
+    lut <- data.frame(
+      idx = 1:2,
+      label = c("A", "B"),
+      type = c(lut_type_values[1], "Cortical")
+    )
+    expect_error(
+      create_wholebrain_from_volume(
+        input_volume = vol_file,
+        input_lut = lut,
+        verbose = FALSE
+      ),
+      "unrecognised"
     )
   })
 
@@ -1422,7 +1450,7 @@ describe("create_wholebrain_from_volume verbose LUT path", {
     vol_file <- "wb.nii.gz"
     file.create(vol_file)
     lut_file <- "lut.txt"
-    file.create(lut_file)
+    writeLines("1 a 255 0 0 0", lut_file)
 
     local_mocked_bindings(
       check_fs = function(...) TRUE,
