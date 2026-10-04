@@ -1032,8 +1032,8 @@ overlay_label_row <- function(
 #' atlas author can see and correct. [lut_classify_anatomy()] already sets this
 #' precedent for `type`.
 #'
+#' @inheritParams lut_hemi
 #' @param ct_row The label's lookup table row.
-#' @param label_name The label's source name.
 #' @param hemi Long hemisphere name of the surface being read.
 #' @return `TRUE` to keep the parcel on this surface.
 #' @noRd
