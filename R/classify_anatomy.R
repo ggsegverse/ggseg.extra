@@ -626,7 +626,7 @@ lut_type_values <- c("cortical", "subcortical", "cerebellar")
 #' `NA` is allowed: it declares nothing and leaves the label to be classified
 #' some other way. A lookup table without a `type` column passes untouched.
 #' @noRd
-check_lut_type <- function(lut, arg = "input_lut") {
+check_lut_type <- function(lut) {
   if (!is.data.frame(lut) || !"type" %in% names(lut)) {
     return(invisible(lut))
   }
@@ -634,7 +634,7 @@ check_lut_type <- function(lut, arg = "input_lut") {
   unrecognised <- !is.na(type) & !type %in% lut_type_values
   if (any(unrecognised)) {
     cli::cli_abort(c(
-      "{.arg {arg}} has {sum(unrecognised)} label{?s} with an unrecognised
+      "{.arg input_lut} has {sum(unrecognised)} label{?s} with an unrecognised
       {.field type}",
       "x" = "Not a type: {.val {unique(type[unrecognised])}}",
       "i" = "Allowed: {.val {lut_type_values}}, or {.code NA} to leave a
