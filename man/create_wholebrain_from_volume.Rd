@@ -158,9 +158,11 @@ mechanisms are available, applied in priority order:
 \item \strong{The \code{labels} argument} (highest priority): \code{labels = list(cortical = ..., subcortical = ..., cerebellar = ...)} overrides everything for the
 labels it names.
 \item \strong{LUT \code{type} column}: If the colour lookup table has a \code{type} column
-with values \code{"cortical"} or \code{"subcortical"}, that classification is
-used for any labels \code{labels} does not name. This is the recommended
-approach for reproducible atlas creation.
+with values \code{"cortical"}, \code{"subcortical"} or \code{"cerebellar"}, that
+classification is used for any labels \code{labels} does not name. This is
+the recommended approach for reproducible atlas creation. Any other
+value is an error, raised before the projection starts; \code{NA} leaves a
+label to the next step.
 \item \strong{Vertex-count heuristic} (fallback): Labels with at least
 \code{projection_opts$min_vertices} vertices on the surface projection are
 classified as cortical; the rest as subcortical. It measures how much
@@ -266,6 +268,9 @@ as before.
 The column is passed on to the subcortical and cerebellar pipelines, where
 it sets the region's hemisphere instead of the label's name doing so. There
 it may also say \code{"midline"} or \code{"vermis"}.
+
+The column can arrive in a data.frame or in a lookup table file:
+\code{\link[=write_lut]{write_lut()}} stores it and \code{\link[=read_lut]{read_lut()}} brings it back.
 
 Hemisphere is never inferred from the voxels. The volume does know which side
 a parcel sits on, but a majority vote is a guess made silently on every
