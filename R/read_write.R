@@ -512,12 +512,18 @@ read_neuromaps_annotation <- function(
 #' FreeSurfer's `mri_vol2surf`, then discretizes the projected per-vertex
 #' values using the same binning logic as [read_neuromaps_annotation()].
 #'
+#' A volume whose voxels are all whole numbers, or one given a `label_table`,
+#' is treated as a parcellation and sampled with nearest-neighbour
+#' interpolation, so every vertex takes the id of a parcel in the volume.
+#' Any other volume is treated as a continuous map and sampled with
+#' trilinear interpolation.
+#'
 #' @param nifti_file Path to a `.nii` or `.nii.gz` file in MNI152 space.
 #' @param n_bins Number of quantile bins for continuous data. When `NULL`
 #'   (default), auto-detected via Sturges' rule. Ignored for integer data.
 #' @param label_table Optional data.frame mapping parcel ids to region names
-#'   and colours, as for [read_neuromaps_annotation()]. Applies to integer
-#'   (parcellation) volumes only; continuous volumes are binned and the bins
+#'   and colours, as for [read_neuromaps_annotation()]. Supplying one declares
+#'   the volume a parcellation. Continuous volumes are binned and the bins
 #'   named `bin_1`, `bin_2`, and so on.
 #' @param output_dir Directory for intermediate surface overlay files.
 #'
@@ -537,6 +543,11 @@ read_neuromaps_volume <- function(
 ) {
   check_fs(abort = TRUE)
   rlang::check_installed("RNifti", reason = "to read NIfTI volume files")
+  if (!file.exists(nifti_file)) {
+    cli::cli_abort("Volume not found: {.path {nifti_file}}")
+  }
+  holds_labels <- neuromaps_volume_holds_labels(nifti_file, label_table)
+  interpolation <- if (holds_labels) "nearest" else "trilinear"
 
   surf_dir <- as.character(fs::path(output_dir, "surface_overlays"))
   mkdir(surf_dir)
@@ -561,7 +572,12 @@ read_neuromaps_volume <- function(
       reg = reg$reg,
       srcsubject = reg$srcsubject,
       regheader = reg$regheader,
-      opts = paste("--interp trilinear --trgsubject", shQuote(subject))
+      opts = paste(
+        "--interp",
+        interpolation,
+        "--trgsubject",
+        shQuote(subject)
+      )
     )
 
     if (!file.exists(output_nii)) {
@@ -573,7 +589,7 @@ read_neuromaps_volume <- function(
 
     values <- read_surface_overlay(output_nii, hemi)
 
-    hemi_data <- if (is_integer_valued(values)) {
+    hemi_data <- if (holds_labels) {
       parse_parcellation_values(values, hemi, hemi_short, label_table)
     } else {
       parse_continuous_values(values, hemi, hemi_short, n_bins)
@@ -1089,6 +1105,21 @@ detect_hemi_from_neuromaps_filename <- function(filename) {
 # CIFTI annotation reading ----
 
 # Neuromaps annotation reading ----
+
+#' Decide whether a volume holds parcel labels rather than a continuous map
+#'
+#' Asked of the volume itself, before projection, because the answer picks
+#' the interpolation: averaging neighbouring voxels is right for a continuous
+#' map and turns label ids into ids of parcels that are not there. A lookup
+#' table is a declaration that the values are labels.
+#' @noRd
+neuromaps_volume_holds_labels <- function(nifti_file, label_table) {
+  if (!is.null(label_table)) {
+    return(TRUE)
+  }
+  is_integer_valued(c(RNifti::readNifti(nifti_file)))
+}
+
 
 #' @noRd
 is_integer_valued <- function(values) {
