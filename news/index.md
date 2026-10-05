@@ -1,5 +1,23 @@
 # Changelog
 
+## ggseg.extra 1.9.9.9108
+
+### New features
+
+- [`write_lut()`](https://ggsegverse.github.io/ggseg.extra/reference/write_lut.md)
+  now writes a lookup table’s `hemi` column, and
+  [`read_lut()`](https://ggsegverse.github.io/ggseg.extra/reference/read_lut.md)
+  reads it back. Until now only `type` survived a trip through a file,
+  so a declared hemisphere had to live in the build script. A table
+  carrying `hemi` is written with a comment line naming its fields,
+  `# idx label R G B A type hemi`, and each row then holds every field,
+  with `NA` where it declares nothing. FreeSurfer skips the comment and
+  reads only the first six fields, so the file is still a colour table
+  to it.
+
+  A table whose only extra column is `type` is written exactly as
+  before, so existing lookup table files do not change.
+
 ## ggseg.extra 1.9.9.9107
 
 ### Bug fixes

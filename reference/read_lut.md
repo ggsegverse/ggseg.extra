@@ -19,7 +19,16 @@ read_lut(path)
 ## Value
 
 A data.frame with columns: idx, label, R, G, B, A, and optionally type
-when a 7th field is present.
+and hemi when the file carries them.
+
+## Details
+
+A file written by
+[`write_lut()`](https://ggsegverse.github.io/ggseg.extra/reference/write_lut.md)
+can carry declared columns after the colours. With a single extra field
+it is read as `type`. With more, a comment line naming the fields –
+`# idx label R G B A type hemi` – says which is which, and a field
+holding `NA` is read as missing.
 
 ## See also
 

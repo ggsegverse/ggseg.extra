@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9107</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9108</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -69,6 +69,16 @@
       <small>Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.9.9.9108" id="ggsegextra-1999108">ggseg.extra 1.9.9.9108<a class="anchor" aria-label="anchor" href="#ggsegextra-1999108"></a></h2>
+<div class="section level3">
+<h3 id="new-features-1-9-9-9108">New features<a class="anchor" aria-label="anchor" href="#new-features-1-9-9-9108"></a></h3>
+<ul><li>
+<p><code><a href="../reference/write_lut.html">write_lut()</a></code> now writes a lookup table’s <code>hemi</code> column, and <code><a href="../reference/read_lut.html">read_lut()</a></code> reads it back. Until now only <code>type</code> survived a trip through a file, so a declared hemisphere had to live in the build script. A table carrying <code>hemi</code> is written with a comment line naming its fields, <code># idx label R G B A type hemi</code>, and each row then holds every field, with <code>NA</code> where it declares nothing. FreeSurfer skips the comment and reads only the first six fields, so the file is still a colour table to it.</p>
+<p>A table whose only extra column is <code>type</code> is written exactly as before, so existing lookup table files do not change.</p>
+</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9107" id="ggsegextra-1999107">ggseg.extra 1.9.9.9107<a class="anchor" aria-label="anchor" href="#ggsegextra-1999107"></a></h2>
 <div class="section level3">
