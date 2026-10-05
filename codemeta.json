@@ -7,7 +7,7 @@
   "codeRepository": "https://github.com/ggsegverse/ggseg.extra",
   "issueTracker": "https://github.com/ggsegverse/ggseg.extra/issues",
   "license": "https://spdx.org/licenses/MIT",
-  "version": "1.9.9.9109",
+  "version": "1.9.9.9110",
   "programmingLanguage": {
     "@type": "ComputerLanguage",
     "name": "R",
@@ -119,18 +119,6 @@
     },
     {
       "@type": "SoftwareApplication",
-      "identifier": "ggplot2",
-      "name": "ggplot2",
-      "provider": {
-        "@id": "https://cran.r-project.org",
-        "@type": "Organization",
-        "name": "Comprehensive R Archive Network (CRAN)",
-        "url": "https://cran.r-project.org"
-      },
-      "sameAs": "https://CRAN.R-project.org/package=ggplot2"
-    },
-    {
-      "@type": "SoftwareApplication",
       "identifier": "ggseg",
       "name": "ggseg",
       "provider": {
@@ -188,6 +176,18 @@
         "url": "https://cran.r-project.org"
       },
       "sameAs": "https://CRAN.R-project.org/package=rgl"
+    },
+    {
+      "@type": "SoftwareApplication",
+      "identifier": "rmarkdown",
+      "name": "rmarkdown",
+      "provider": {
+        "@id": "https://cran.r-project.org",
+        "@type": "Organization",
+        "name": "Comprehensive R Archive Network (CRAN)",
+        "url": "https://cran.r-project.org"
+      },
+      "sameAs": "https://CRAN.R-project.org/package=rmarkdown"
     },
     {
       "@type": "SoftwareApplication",
@@ -273,42 +273,6 @@
         "url": "https://cran.r-project.org"
       },
       "sameAs": "https://CRAN.R-project.org/package=testthat"
-    },
-    {
-      "@type": "SoftwareApplication",
-      "identifier": "tibble",
-      "name": "tibble",
-      "provider": {
-        "@id": "https://cran.r-project.org",
-        "@type": "Organization",
-        "name": "Comprehensive R Archive Network (CRAN)",
-        "url": "https://cran.r-project.org"
-      },
-      "sameAs": "https://CRAN.R-project.org/package=tibble"
-    },
-    {
-      "@type": "SoftwareApplication",
-      "identifier": "tidyr",
-      "name": "tidyr",
-      "provider": {
-        "@id": "https://cran.r-project.org",
-        "@type": "Organization",
-        "name": "Comprehensive R Archive Network (CRAN)",
-        "url": "https://cran.r-project.org"
-      },
-      "sameAs": "https://CRAN.R-project.org/package=tidyr"
-    },
-    {
-      "@type": "SoftwareApplication",
-      "identifier": "quarto",
-      "name": "quarto",
-      "provider": {
-        "@id": "https://cran.r-project.org",
-        "@type": "Organization",
-        "name": "Comprehensive R Archive Network (CRAN)",
-        "url": "https://cran.r-project.org"
-      },
-      "sameAs": "https://CRAN.R-project.org/package=quarto"
     },
     {
       "@type": "SoftwareApplication",
@@ -498,7 +462,7 @@
     },
     "SystemRequirements": "FreeSurfer (subcortical/wholebrain pipelines), \n    Connectome Workbench (optional, for CIFTI resampling),\n    GDAL (>= 2.0.1), \n    GEOS (>= 3.4.0), \n    PROJ (>= 4.8.0), \n    sqlite3"
   },
-  "fileSize": "4574.424KB",
+  "fileSize": "4441.889KB",
   "citation": [
     {
       "@type": "CreativeWork",
