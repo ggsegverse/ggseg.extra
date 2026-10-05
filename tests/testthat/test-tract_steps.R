@@ -917,23 +917,42 @@ describe("resolve_tract_coord_space", {
 
 
 describe("tract_check_aseg", {
-  it("aborts when aseg is NULL and steps include 2-7", {
-    expect_error(
-      tract_check_aseg(NULL, 2L:4L),
-      "input_aseg.*required"
+  it("aborts when a 2D step is asked for without a segmentation", {
+    expect_snapshot(tract_check_aseg(NULL, 1L:4L), error = TRUE)
+  })
+
+  it("aborts when the segmentation file does not exist", {
+    expect_error(tract_check_aseg("absent_aseg.mgz", 2L:4L), "not found")
+  })
+
+  it("passes when the segmentation exists", {
+    aseg <- withr::local_tempfile(fileext = ".mgz")
+    file.create(aseg)
+
+    expect_no_error(tract_check_aseg(aseg, 2L:4L))
+  })
+
+  it("needs no segmentation for a 3D-only build", {
+    expect_no_error(tract_check_aseg(NULL, 1L))
+  })
+})
+
+
+describe("default_tract_atlas_name", {
+  it("names the atlas after its one tract", {
+    expect_identical(
+      default_tract_atlas_name("bundles/cst_left.trk"),
+      "cst_left"
+    )
+    expect_identical(
+      default_tract_atlas_name(list(cst_left = matrix(0, 2, 3))),
+      "cst_left"
     )
   })
 
-  it("passes when aseg is provided", {
-    expect_no_error(
-      tract_check_aseg("some_aseg.mgz", 2L:4L)
-    )
-  })
-
-  it("passes when only step 1", {
-    expect_no_error(
-      tract_check_aseg(NULL, 1L)
-    )
+  it("falls back to a fixed name for several tracts or none named", {
+    expect_identical(default_tract_atlas_name(c("a.trk", "b.trk")), "tracts")
+    expect_identical(default_tract_atlas_name(list(matrix(0, 2, 3))), "tracts")
   })
 })
 

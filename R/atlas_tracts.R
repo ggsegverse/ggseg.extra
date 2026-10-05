@@ -21,7 +21,8 @@
 #'   named list of coordinate matrices where each matrix has N rows and 3
 #'   columns (x, y, z).
 #' @param input_aseg Path to a segmentation volume (`.mgz`, `.nii`) used to
-#'   draw cortex outlines in 2D views. Required for steps 2+.
+#'   draw cortex outlines in 2D views. Required unless `steps = 1`; the build
+#'   stops before reading any tract when it is missing.
 #' @param input_lut Path to a color lookup table (LUT) file, or a data.frame
 #'   with a `region` column (or a FreeSurfer-style `label` column) plus
 #'   colour columns (R, G, B or hex). Rows must be in the same order as
@@ -90,20 +91,23 @@
 #' \dontrun{
 #' # From TRK files (names derived from filenames)
 #' atlas <- create_tract_from_tractography(
-#'   input_tracts = c("cst_left.trk", "cst_right.trk")
+#'   input_tracts = c("cst_left.trk", "cst_right.trk"),
+#'   input_aseg = "aparc+aseg.mgz"
 #' )
 #'
 #' # With custom names and colours via LUT
 #' atlas <- create_tract_from_tractography(
 #'   input_tracts = c("cst_left.trk", "cst_right.trk"),
+#'   input_aseg = "aparc+aseg.mgz",
 #'   input_lut = "tract_colors.txt"
 #' )
 #'
-#' # Coordinate matrices: declare their space rather than letting it be
-#' # inferred
+#' # A 3D-only atlas from coordinate matrices, which needs no segmentation.
+#' # Declare their space rather than letting it be inferred
 #' atlas <- create_tract_from_tractography(
 #'   input_tracts = list(cst_left = cst_left_points),
-#'   coord_space = "mm"
+#'   coord_space = "mm",
+#'   steps = 1
 #' )
 #'
 #' # View with ggseg3d
@@ -197,8 +201,10 @@ tract_setup_pipeline <- function(
     n_points
   )
 
+  tract_check_aseg(input_aseg, config$steps)
+
   if (is.null(atlas_name)) {
-    atlas_name <- basename(config$output_dir)
+    atlas_name <- default_tract_atlas_name(input_tracts)
   }
 
   dirs <- setup_atlas_dirs(
@@ -246,8 +252,6 @@ tract_run_pipeline <- function(
     atlas <- tract_assemble_3d(step1)
     return(tract_finalize(atlas, config, dirs, start_time))
   }
-
-  tract_check_aseg(config$input_aseg, config$steps)
 
   snaps <- tract_resolve_snapshots(
     config,
@@ -538,12 +542,36 @@ tract_step1_data <- function(config, prepared, built) {
 
 #' @noRd
 tract_check_aseg <- function(input_aseg, steps) {
-  if (any(2L:7L %in% steps) && is.null(input_aseg)) {
+  if (all(steps == 1L)) {
+    return(invisible(NULL))
+  }
+  if (is.null(input_aseg)) {
     cli::cli_abort(c(
-      "{.arg input_aseg} is required for steps 2-7",
-      "i" = "Provide a segmentation volume (e.g., aparc+aseg.nii.gz)"
+      "{.arg input_aseg} is required for steps 2-{tract_total_steps()}.",
+      "i" = "The 2D views are drawn against a segmentation volume, such as
+      {.file aparc+aseg.mgz}.",
+      "i" = "Pass {.code steps = 1} for a 3D-only atlas, which needs none."
     ))
   }
+  if (!file.exists(input_aseg)) {
+    cli::cli_abort("{.arg input_aseg} not found: {.path {input_aseg}}")
+  }
+  invisible(NULL)
+}
+
+
+#' Name a tract atlas after its one tract, or `"tracts"` for several
+#' @noRd
+default_tract_atlas_name <- function(input_tracts) {
+  tract_names <- if (is.character(input_tracts)) {
+    file_path_sans_ext(basename(input_tracts))
+  } else {
+    names(input_tracts)
+  }
+  if (length(tract_names) == 1L && nzchar(tract_names)) {
+    return(sanitize_label(tract_names))
+  }
+  "tracts"
 }
 
 

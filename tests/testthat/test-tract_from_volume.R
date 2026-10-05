@@ -65,7 +65,8 @@ describe("create_tract_from_volume argument forwarding", {
     create_tract_from_volume(
       input_volume = vol,
       input_lut = lut,
-      n_points = 17L
+      n_points = 17L,
+      steps = 1
     )
 
     expect_identical(cap$args$tube_opts$n_points, 17L)
@@ -96,10 +97,26 @@ describe("create_tract_from_volume argument forwarding", {
       input_volume = vol,
       input_lut = lut,
       n_points = 17L,
-      tube_opts = list(n_points = 99L)
+      tube_opts = list(n_points = 99L),
+      steps = 1
     )
 
     expect_identical(cap$args$tube_opts$n_points, 99L)
+  })
+})
+
+describe("create_tract_from_volume segmentation check", {
+  it("aborts before reading the volume when 2D steps lack a segmentation", {
+    skip_if_not_installed("princurve")
+    skip_if_not_installed("RNifti")
+
+    expect_error(
+      create_tract_from_volume(
+        input_volume = "never_read.nii.gz",
+        input_lut = data.frame(idx = 1L, label = "tract_a")
+      ),
+      "input_aseg.*required for steps 2-4"
+    )
   })
 })
 
