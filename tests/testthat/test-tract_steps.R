@@ -1149,7 +1149,7 @@ describe("finalize_atlas (tract parameters)", {
   it("deletes dir when cleanup is TRUE", {
     test_dir <- withr::local_tempdir()
     sub_dir <- file.path(test_dir, "atlas_work")
-    dir.create(sub_dir)
+    mark_working_dir(sub_dir)
     file.create(file.path(sub_dir, "temp.rds"))
 
     config <- list(verbose = FALSE, cleanup = TRUE, steps = 1L)

@@ -397,23 +397,126 @@ hemi_to_short <- function(hemi_long) {
 
 # Directory setup ----
 
+working_dir_marker <- ".ggseg.extra-workdir"
+
+#' Check an atlas name can only name a directory inside `output_dir`
+#'
+#' The name becomes a path component of the working directory, and that
+#' directory is removed recursively when the build finishes. An empty name
+#' resolves to `output_dir` itself and `..` to its parent.
+#' @noRd
+check_atlas_name <- function(atlas_name) {
+  usable <- rlang::is_string(atlas_name) &&
+    !is.na(atlas_name) &&
+    nzchar(trimws(atlas_name)) &&
+    !grepl("[/\\\\]", atlas_name) &&
+    !atlas_name %in% c(".", "..")
+  if (usable) {
+    return(invisible(atlas_name))
+  }
+  cli::cli_abort(c(
+    "{.arg atlas_name} must be a single name, not {.val {atlas_name}}.",
+    "i" = "It names the working directory inside {.arg output_dir}, so it
+    cannot be empty, {.val .} or {.val ..}, or contain a path separator."
+  ))
+}
+
+
+#' Mark a directory as a ggseg.extra working directory
+#' @noRd
+mark_working_dir <- function(dir) {
+  mkdir(dir)
+  file.create(as.character(fs::path(dir, working_dir_marker)))
+  invisible(dir)
+}
+
+
+#' Could removing this directory delete files no build wrote?
+#'
+#' True for a directory that has content but neither the working-directory
+#' marker nor a cache manifest, which working directories from before the
+#' marker existed still carry. The one definition serves the check before the
+#' build and the one before removal.
+#' @noRd
+holds_foreign_files <- function(dir) {
+  if (!dir.exists(dir)) {
+    return(FALSE)
+  }
+  contents <- list.files(dir, all.files = TRUE, no.. = TRUE)
+  length(contents) > 0 &&
+    !working_dir_marker %in% contents &&
+    !cache_manifest_name %in% contents
+}
+
+
+#' @noRd
+abort_foreign_working_dir <- function(dir) {
+  cli::cli_abort(
+    c(
+      "The working directory already holds files this build did not write:
+      {.path {dir}}",
+      "x" = "{.code cleanup = TRUE} removes that directory when the build
+      finishes, and would take those files with it.",
+      "i" = "Use another {.arg output_dir} or {.arg atlas_name}, or pass
+      {.code cleanup = FALSE} to build there and keep everything."
+    )
+  )
+}
+
+
+#' Remove a working directory, unless it holds files no build wrote
+#' @return `TRUE` if the directory was removed.
+#' @noRd
+remove_working_dir <- function(dir) {
+  if (holds_foreign_files(dir)) {
+    cli::cli_warn(
+      c(
+        "Not removing {.path {dir}}: it holds files this build did not
+        write.",
+        "i" = "Remove the build's files yourself if you no longer need them."
+      ),
+      wrap = TRUE
+    )
+    return(FALSE)
+  }
+  unlink(dir, recursive = TRUE)
+  TRUE
+}
+
+
 #' Setup standard atlas directory structure
 #'
 #' Also claims the cache manifests for this process. Every pipeline calls this
 #' from the main thread before doing any work, which is what makes a later
 #' stamp from inside a worker fail rather than silently drop manifest rows.
+#'
+#' The working directory is the one `cleanup` removes when the build is done,
+#' so it is refused here, before any work, if removing it could take files
+#' the build did not write. A directory this function creates is marked, which
+#' is how a later run recognises it as safe to reuse and remove.
 #' @param output_dir Base output directory
 #' @param atlas_name Name of the atlas
 #' @param type Type of atlas: "cortical", "subcortical", or "tract"
+#' @param cleanup Whether the build will remove the working directory.
 #' @return Named list of directory paths
 #' @noRd
-setup_atlas_dirs <- function(output_dir, type = "cortical", atlas_name = NULL) {
+setup_atlas_dirs <- function(
+  output_dir,
+  type = "cortical",
+  atlas_name = NULL,
+  cleanup = FALSE
+) {
   claim_cache_manifests()
   base <- if (is.null(atlas_name)) {
     output_dir
   } else {
+    check_atlas_name(atlas_name)
     as.character(fs::path(output_dir, atlas_name))
   }
+  if (cleanup && holds_foreign_files(base)) {
+    abort_foreign_working_dir(base)
+  }
+  mark_working_dir(base)
 
   dirs <- list(
     base = base,
@@ -641,8 +744,7 @@ cleanup_working_dir <- function(config, dirs) {
     }
     return(invisible(NULL))
   }
-  unlink(dirs$base, recursive = TRUE)
-  if (config$verbose) {
+  if (remove_working_dir(dirs$base) && config$verbose) {
     cli::cli_alert_success("Temporary files removed")
   }
   invisible(NULL)

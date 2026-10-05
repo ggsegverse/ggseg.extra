@@ -480,7 +480,8 @@ wholebrain_setup <- function(
   dirs <- setup_atlas_dirs(
     config$output_dir,
     atlas_name = config$atlas_name,
-    type = "cortical"
+    type = "cortical",
+    cleanup = config$cleanup
   )
 
   if (config$verbose) {
@@ -534,9 +535,8 @@ wholebrain_run_pipeline <- function(setup, opts, labels, start_time) {
 #' Remove temporary files and log the final wholebrain summary
 #' @noRd
 wholebrain_finalize <- function(config, dirs, result, start_time) {
-  if (config$cleanup) {
-    unlink(dirs$base, recursive = TRUE)
-    if (config$verbose) cli::cli_alert_success("Temporary files removed")
+  if (config$cleanup && remove_working_dir(dirs$base) && config$verbose) {
+    cli::cli_alert_success("Temporary files removed")
   }
 
   if (config$verbose) {

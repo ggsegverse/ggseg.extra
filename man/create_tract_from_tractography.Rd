@@ -48,7 +48,8 @@ names are derived from filenames or list names, and colours will be
 auto-generated.}
 
 \item{atlas_name}{Name for the atlas. If NULL, derived from the input
-filename.}
+filename. It also names the folder of intermediate files inside
+\code{output_dir}, so it must be a single name without path separators.}
 
 \item{output_dir}{Where to put the intermediate files. Defaults to
 \code{\link[=tempdir]{tempdir()}}, from \code{options("ggseg.extra.output_dir")} or
@@ -87,7 +88,13 @@ Use \code{steps = 1} for a 3D-only atlas. Geometry is shaped after the build,
 not during it: see \code{\link[=atlas_polish]{atlas_polish()}}.}
 
 \item{cleanup}{Remove the intermediate files afterwards. Default \code{TRUE},
-from \code{options("ggseg.extra.cleanup")} or \code{GGSEG_EXTRA_CLEANUP}.}
+from \code{options("ggseg.extra.cleanup")} or \code{GGSEG_EXTRA_CLEANUP}.
+
+The intermediate files live in a folder named after the atlas inside
+\code{output_dir}, and the whole folder is removed. A build therefore refuses
+to start if that folder already holds files it did not write, since
+removing it would take them too. Choose another \code{output_dir} or
+\code{atlas_name}, or pass \code{FALSE} to build there and keep everything.}
 
 \item{skip_existing}{Reuse a step's intermediate files when they already
 exist, instead of running the step. Default \code{FALSE}, from

@@ -51,7 +51,8 @@ fibre masks). Labels with fewer than \code{min_voxels} voxels, or for which a
 centerline cannot be fit, are dropped automatically with a message.}
 
 \item{atlas_name}{Name for the atlas. If NULL, derived from the input
-filename.}
+filename. It also names the folder of intermediate files inside
+\code{output_dir}, so it must be a single name without path separators.}
 
 \item{output_dir}{Where to put the intermediate files. Defaults to
 \code{\link[=tempdir]{tempdir()}}, from \code{options("ggseg.extra.output_dir")} or
