@@ -99,12 +99,17 @@ therefore asked for rather than assumed, and is reported when it happens.
 To continue an interrupted build, either pass \code{TRUE} or leave the finished
 steps out of \code{steps}.}
 
-\item{coord_space}{The space the streamline coordinates are in. One of
-\code{"infer"} (the default), \code{"voxel"} for voxel indices, or \code{"mm"} for RAS
-world millimetres. Inference is a heuristic: it cannot always tell, and a
+\item{coord_space}{The space the streamline coordinates are in, when
+\code{input_tracts} is a list of coordinate matrices. One of \code{"infer"} (the
+default), \code{"voxel"} for voxel indices, or \code{"mm"} for RAS world
+millimetres. Inference is a heuristic: it cannot always tell, and a
 wrong guess does not error -- it places the tract in the wrong space and
 produces a plausible-looking atlas. Declare the space when you know it.
-Whichever applies is reported at \code{verbose >= 1}.}
+Whichever applies is reported at \code{verbose >= 1}.
+
+Tractography files need no declaration: \code{.trk} and \code{.tck} files are
+always read into RAS world millimetres, and \code{"voxel"} is an error for
+them.}
 }
 \value{
 A \code{ggseg_atlas} object with type \code{"tract"}, containing region
@@ -140,10 +145,11 @@ atlas <- create_tract_from_tractography(
   input_lut = "tract_colors.txt"
 )
 
-# Declare the coordinate space rather than letting it be inferred
+# Coordinate matrices: declare their space rather than letting it be
+# inferred
 atlas <- create_tract_from_tractography(
-  input_tracts = c("cst_left.trk", "cst_right.trk"),
-  coord_space = "voxel"
+  input_tracts = list(cst_left = cst_left_points),
+  coord_space = "mm"
 )
 
 # View with ggseg3d
