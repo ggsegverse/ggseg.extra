@@ -1,3 +1,27 @@
+# ggseg.extra 1.9.9.9110
+
+## Minor changes
+
+- `README.md` is part of the built package again. A `.Rbuildignore` pattern
+  meant for the rendered `README.html` also matched `README.md`, so the
+  package had no README once built.
+
+- Help pages show their lifecycle badge. Eighteen pages referenced a badge
+  image the package did not contain.
+
+- The getting started and legacy conversion vignettes link to the tutorials
+  and the atlas workflows article on the package website. They pointed at
+  pages that exist only there, so the links were dead in an installed
+  package.
+
+- Dependencies match what the built package uses: `rmarkdown` is declared,
+  since every vignette is built with it, and `ggplot2`, `quarto`, `tibble`
+  and `tidyr` are no longer suggested, as only the website articles used
+  them.
+
+- Removed `inst/README_cit.bib` and `inst/sticker.png`, which nothing
+  referenced.
+
 # ggseg.extra 1.9.9.9109
 
 ## Documentation
