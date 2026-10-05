@@ -1,3 +1,18 @@
+# ggseg.extra 1.9.9.9111
+
+## Bug fixes
+
+- `read_tractography()` reads a `.tck` file from where its header says the
+  track data starts. It used to start straight after the header's `END` line,
+  but the `file:` field can place the data a few bytes further on, behind
+  padding. For such a file every coordinate came back shifted by one column,
+  streamline boundaries were lost and the result held `NaN` and `Inf`, with no
+  error or warning. Files whose data begins directly after `END` are read as
+  before.
+
+  The reader also loads the coordinates in one pass instead of one point at a
+  time, which is considerably faster on large files.
+
 # ggseg.extra 1.9.9.9110
 
 ## Minor changes
