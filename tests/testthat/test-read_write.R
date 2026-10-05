@@ -826,7 +826,10 @@ describe("read_neuromaps_volume", {
       }
     )
 
-    result <- read_neuromaps_volume("fake.nii.gz", output_dir = output_dir)
+    result <- read_neuromaps_volume(
+      local_nifti_volume(),
+      output_dir = output_dir
+    )
 
     expect_s3_class(result, "tbl_df")
     expect_identical(cap$args$reg, reg_file)
@@ -866,7 +869,7 @@ describe("read_neuromaps_volume", {
     )
 
     result <- read_neuromaps_volume(
-      "fake.nii.gz",
+      local_nifti_volume(),
       label_table = label_table,
       output_dir = output_dir
     )
@@ -896,7 +899,10 @@ describe("read_neuromaps_volume", {
       }
     )
 
-    result <- read_neuromaps_volume("fake.nii.gz", output_dir = output_dir)
+    result <- read_neuromaps_volume(
+      local_nifti_volume(),
+      output_dir = output_dir
+    )
 
     expect_s3_class(result, "tbl_df")
     expect_named(result, c("hemi", "region", "label", "colour", "vertices"))
@@ -922,7 +928,10 @@ describe("read_neuromaps_volume", {
       }
     )
 
-    result <- read_neuromaps_volume("fake.nii.gz", output_dir = output_dir)
+    result <- read_neuromaps_volume(
+      local_nifti_volume(),
+      output_dir = output_dir
+    )
 
     named_regions <- result[result$region != "unknown", ]
     expect_false(anyNA(named_regions$colour))
@@ -947,7 +956,7 @@ describe("read_neuromaps_volume", {
     )
 
     result <- read_neuromaps_volume(
-      "fake.nii.gz",
+      local_nifti_volume(c(0.25, 1.5, 2.75)),
       n_bins = 5,
       output_dir = output_dir
     )
@@ -971,7 +980,7 @@ describe("read_neuromaps_volume", {
     )
 
     expect_error(
-      read_neuromaps_volume("fake.nii.gz", output_dir = output_dir),
+      read_neuromaps_volume(local_nifti_volume(), output_dir = output_dir),
       "mri_vol2surf failed"
     )
   })
@@ -994,7 +1003,10 @@ describe("read_neuromaps_volume", {
       }
     )
 
-    result <- read_neuromaps_volume("fake.nii.gz", output_dir = output_dir)
+    result <- read_neuromaps_volume(
+      local_nifti_volume(),
+      output_dir = output_dir
+    )
 
     expect_true("unknown" %in% result$region)
   })
@@ -1126,6 +1138,73 @@ describe("parse_continuous_values", {
 })
 
 
+describe("read_neuromaps_volume interpolation", {
+  projected_with <- function(volume, label_table = NULL, overlay = c(1, 2)) {
+    local_mock_mni152_path()
+    output_dir <- withr::local_tempdir()
+    cap <- new.env()
+    local_mocked_bindings(
+      check_fs = function(...) invisible(TRUE),
+      check_mni152_subject = function(...) invisible(TRUE),
+      mri_vol2surf = function(input_file, output_file, hemisphere, ...) {
+        cap$opts <- list(...)$opts
+        RNifti::writeNifti(
+          array(rep_len(overlay, 10242L), dim = c(10242L, 1, 1)),
+          output_file
+        )
+      }
+    )
+    read_neuromaps_volume(
+      volume,
+      label_table = label_table,
+      output_dir = output_dir
+    )
+    cap$opts
+  }
+
+  it("samples a label volume with nearest-neighbour interpolation", {
+    skip_if_not_installed("RNifti")
+
+    expect_match(
+      projected_with(local_nifti_volume(c(0, 1, 2))),
+      "--interp nearest",
+      fixed = TRUE
+    )
+  })
+
+  it("samples a continuous volume with trilinear interpolation", {
+    skip_if_not_installed("RNifti")
+
+    expect_match(
+      projected_with(
+        local_nifti_volume(c(0.25, 1.5, 2.75)),
+        overlay = seq(0.1, 10, length.out = 10242L)
+      ),
+      "--interp trilinear",
+      fixed = TRUE
+    )
+  })
+
+  it("takes a label_table as a declaration that the volume holds labels", {
+    skip_if_not_installed("RNifti")
+    label_table <- data.frame(idx = 1:2, region = c("frontal", "parietal"))
+
+    expect_match(
+      projected_with(local_nifti_volume(c(0.25, 1.5, 2.75)), label_table),
+      "--interp nearest",
+      fixed = TRUE
+    )
+  })
+
+  it("aborts before projecting when the volume does not exist", {
+    skip_if_not_installed("RNifti")
+    local_mocked_bindings(check_fs = function(...) invisible(TRUE))
+
+    expect_error(read_neuromaps_volume("absent.nii.gz"), "Volume not found")
+  })
+})
+
+
 describe("read_neuromaps_volume vertex count mismatch", {
   it("aborts when projected surface has wrong vertex count", {
     local_mock_mni152_path()
@@ -1146,7 +1225,7 @@ describe("read_neuromaps_volume vertex count mismatch", {
     )
 
     expect_error(
-      read_neuromaps_volume("fake.nii.gz", output_dir = output_dir),
+      read_neuromaps_volume(local_nifti_volume(), output_dir = output_dir),
       "expected.*10242"
     )
   })

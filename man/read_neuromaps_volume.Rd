@@ -18,8 +18,8 @@ read_neuromaps_volume(
 (default), auto-detected via Sturges' rule. Ignored for integer data.}
 
 \item{label_table}{Optional data.frame mapping parcel ids to region names
-and colours, as for \code{\link[=read_neuromaps_annotation]{read_neuromaps_annotation()}}. Applies to integer
-(parcellation) volumes only; continuous volumes are binned and the bins
+and colours, as for \code{\link[=read_neuromaps_annotation]{read_neuromaps_annotation()}}. Supplying one declares
+the volume a parcellation. Continuous volumes are binned and the bins
 named \code{bin_1}, \code{bin_2}, and so on.}
 
 \item{output_dir}{Directory for intermediate surface overlay files.}
@@ -31,6 +31,13 @@ A tibble with columns: hemi, region, label, colour, vertices
 Projects an MNI152-space NIfTI volume onto the fsaverage5 surface via
 FreeSurfer's \code{mri_vol2surf}, then discretizes the projected per-vertex
 values using the same binning logic as \code{\link[=read_neuromaps_annotation]{read_neuromaps_annotation()}}.
+}
+\details{
+A volume whose voxels are all whole numbers, or one given a \code{label_table},
+is treated as a parcellation and sampled with nearest-neighbour
+interpolation, so every vertex takes the id of a parcel in the volume.
+Any other volume is treated as a continuous map and sampled with
+trilinear interpolation.
 }
 \examples{
 \dontrun{

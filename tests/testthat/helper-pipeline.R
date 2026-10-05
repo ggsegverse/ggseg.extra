@@ -124,3 +124,17 @@ scrub_cli_spacing <- function(lines) {
 scrub_snapshot <- function(lines) {
   scrub_cli_spacing(scrub_workdir(lines))
 }
+
+#' A small NIfTI volume holding `values`, removed with the calling test
+#'
+#' On a 1 mm left-handed (LAS) grid, which is what the MNI152 registration
+#' check accepts.
+local_nifti_volume <- function(values = c(0, 1, 2), env = parent.frame()) {
+  path <- withr::local_tempfile(fileext = ".nii.gz", .local_envir = env)
+  image <- RNifti::asNifti(array(rep_len(values, 8L), dim = c(2L, 2L, 2L)))
+  las_grid <- structure(diag(c(-1, 1, 1, 1)), code = 2L)
+  RNifti::sform(image) <- las_grid
+  RNifti::qform(image) <- las_grid
+  RNifti::writeNifti(image, path)
+  path
+}
