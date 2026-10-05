@@ -28,7 +28,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9108</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9109</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -117,7 +117,7 @@
 </div>
 <section class="level2"><h2 id="what-counts-as-a-lookup-table">What counts as a lookup table<a class="anchor" aria-label="anchor" href="#what-counts-as-a-lookup-table"></a>
 </h2>
-<p>A LUT is a plain data frame with six columns. <code>idx</code> is the integer in the volume, <code>label</code> is the name, and <code>R</code>, <code>G</code>, <code>B</code> and <code>A</code> are the colour, each 0–255.</p>
+<p>A LUT is a plain data frame with six columns. <code>idx</code> is the integer in the volume, <code>label</code> is the name, and <code>R</code>, <code>G</code>, <code>B</code> and <code>A</code> are the colour, each 0–255. Two optional columns, <code>type</code> and <code>hemi</code>, are covered <a href="#declaring-what-the-name-doesnt-say">further down</a>.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">lut</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
@@ -317,14 +317,64 @@
 <span><span class="op">)</span></span></code></pre></div>
 </div>
 <p>Passing the data frame is the better habit. It means the table you inspected is the table the pipeline used, with no chance of editing one file and reading another.</p>
-<p>For whole-brain volumes there is one more column to fill in. <code><a href="../reference/create_wholebrain_from_volume.html">create_wholebrain_from_volume()</a></code> needs to know which labels are cortical, subcortical and cerebellar, and it will guess from surface coverage if you don’t tell it — noisily, but it will guess. <code><a href="../reference/lut_classify_anatomy.html">lut_classify_anatomy()</a></code> works the column out properly by overlaying the volume on FreeSurfer’s <code>aparc+aseg</code>:</p>
+</section><section class="level2"><h2 id="declaring-what-the-name-doesnt-say">Declaring what the name doesn’t say<a class="anchor" aria-label="anchor" href="#declaring-what-the-name-doesnt-say"></a>
+</h2>
+<p>The six columns are the minimum. A lookup table can also carry columns that <em>declare</em> something about a label, and a pipeline that finds one uses it instead of working the answer out for itself. There are two, and both follow the same rule: a value the column cannot mean is an error before any work starts, and <code>NA</code> means “I’m not saying”, which sends that one label back to the fallback.</p>
+<section class="level3"><h3 id="type-cortical-subcortical-or-cerebellar">
+<code>type</code>: cortical, subcortical or cerebellar<a class="anchor" aria-label="anchor" href="#type-cortical-subcortical-or-cerebellar"></a>
+</h3>
+<p>For whole-brain volumes there is one more column to fill in. <code><a href="../reference/create_wholebrain_from_volume.html">create_wholebrain_from_volume()</a></code> needs to know which labels are cortical, subcortical and cerebellar, and it will guess from surface coverage if you don’t tell it — noisily, but it will guess. The column takes exactly <code>"cortical"</code>, <code>"subcortical"</code> or <code>"cerebellar"</code>. <code>"Cortical"</code> or <code>"cortex"</code> stops the build with the offending values named, rather than quietly dropping the label into the guess you were trying to avoid. <code><a href="../reference/lut_classify_anatomy.html">lut_classify_anatomy()</a></code> works the column out properly by overlaying the volume on FreeSurfer’s <code>aparc+aseg</code>:</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">lut</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/lut_classify_anatomy.html">lut_classify_anatomy</a></span><span class="op">(</span><span class="st">"my_parcellation.nii.gz"</span>, <span class="st">"my_LUT.txt"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/write_lut.html">write_lut</a></span><span class="op">(</span><span class="va">lut</span>, <span class="st">"my_LUT.txt"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <p>Run it once and commit the result. It needs FreeSurfer installed, and there is no reason to pay for it on every build.</p>
-</section><section class="level2"><h2 id="where-to-go-next">Where to go next<a class="anchor" aria-label="anchor" href="#where-to-go-next"></a>
+</section><section class="level3"><h3 id="hemi-which-side-a-label-is-on">
+<code>hemi</code>: which side a label is on<a class="anchor" aria-label="anchor" href="#hemi-which-side-a-label-is-on"></a>
+</h3>
+<p>By default a label’s hemisphere is read from its name: <code>Left-Thalamus</code>, <code>lh.something</code>, <code>region_L</code>, <code>ctx-rh-precuneus</code>. That works until the names don’t say — a parcellation numbered <code>Region_1</code> to <code>Region_268</code> has no side in its labels at all. A <code>hemi</code> column says it outright:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb17"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">numbered</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
+<span>  idx <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">3</span>,</span>
+<span>  label <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Region_1"</span>, <span class="st">"Region_2"</span>, <span class="st">"Region_3"</span><span class="op">)</span>,</span>
+<span>  R <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0L</span>, <span class="fl">0L</span>, <span class="fl">236L</span><span class="op">)</span>, G <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">118L</span>, <span class="fl">118L</span>, <span class="fl">13L</span><span class="op">)</span>, B <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">14L</span>, <span class="fl">14L</span>, <span class="fl">176L</span><span class="op">)</span>, A <span class="op">=</span> <span class="fl">0L</span>,</span>
+<span>  hemi <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"left"</span>, <span class="st">"right"</span>, <span class="cn">NA</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="../reference/is_lut.html">is_lut</a></span><span class="op">(</span><span class="va">numbered</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] TRUE</span></span></code></pre></div>
+</div>
+<p>It takes <code>"left"</code> or <code>"right"</code> (<code>lh</code>/<code>rh</code> and <code>l</code>/<code>r</code> are read too), plus <code>"midline"</code> and, for the cerebellum, <code>"vermis"</code>. The third row above declares nothing, so its hemisphere is still read from its name.</p>
+<p>All three volumetric builders honour the column. In <code><a href="../reference/create_subcortical_from_volume.html">create_subcortical_from_volume()</a></code> and <code><a href="../reference/create_cerebellar_from_volume.html">create_cerebellar_from_volume()</a></code> it sets the region’s hemisphere. In <code><a href="../reference/create_wholebrain_from_volume.html">create_wholebrain_from_volume()</a></code> it also decides which cortical surface a parcel is kept on, so a parcel whose voxels spill across the midline doesn’t become two regions.</p>
+</section><section class="level3"><h3 id="keeping-the-declarations-in-the-file">Keeping the declarations in the file<a class="anchor" aria-label="anchor" href="#keeping-the-declarations-in-the-file"></a>
+</h3>
+<p>Both columns survive a trip through a file, so the table you commit is the whole declaration. <code><a href="../reference/write_lut.html">write_lut()</a></code> puts them after the colours, and when <code>hemi</code> is there it adds a comment line naming the fields, with <code>NA</code> wherever a row declares nothing:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb18"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">numbered</span><span class="op">$</span><span class="va">type</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"cortical"</span>, <span class="st">"cortical"</span>, <span class="st">"subcortical"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">path</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span>, <span class="st">"numbered_LUT.txt"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/write_lut.html">write_lut</a></span><span class="op">(</span><span class="va">numbered</span>, <span class="va">path</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/readLines.html" class="external-link">readLines</a></span><span class="op">(</span><span class="va">path</span><span class="op">)</span>, sep <span class="op">=</span> <span class="st">"\n"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; # idx label R G B A type hemi</span></span>
+<span><span class="co">#&gt;   1  Region_1                          0 118  14   0  cortical  left</span></span>
+<span><span class="co">#&gt;   2  Region_2                          0 118  14   0  cortical  right</span></span>
+<span><span class="co">#&gt;   3  Region_3                        236  13 176   0  subcortical  NA</span></span></code></pre></div>
+</div>
+<p>FreeSurfer skips the comment and reads only the first six fields of each line, so this is still a colour table as far as it is concerned. <code><a href="../reference/read_lut.html">read_lut()</a></code> reads all of it back:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb19"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/read_lut.html">read_lut</a></span><span class="op">(</span><span class="va">path</span><span class="op">)</span></span>
+<span><span class="co">#&gt;   idx    label   R   G   B A        type  hemi</span></span>
+<span><span class="co">#&gt; 1   1 Region_1   0 118  14 0    cortical  left</span></span>
+<span><span class="co">#&gt; 2   2 Region_2   0 118  14 0    cortical right</span></span>
+<span><span class="co">#&gt; 3   3 Region_3 236  13 176 0 subcortical  &lt;NA&gt;</span></span></code></pre></div>
+</div>
+<p>A table with <code>type</code> alone is written the older way — no comment line, <code>type</code> as a seventh field — so lookup table files you already have don’t change. Columns that declare nothing a pipeline reads, like the <code>roi</code> and <code>color</code> that <code><a href="../reference/get_lut.html">get_lut()</a></code> adds, stay out of the file.</p>
+</section></section><section class="level2"><h2 id="where-to-go-next">Where to go next<a class="anchor" aria-label="anchor" href="#where-to-go-next"></a>
 </h2>
 <p>The LUT is the least glamorous file in an atlas build and the one that most often explains a broken result. When a region comes out the wrong colour, missing, or merged with its neighbour, read the table first.</p>
 <p>From here, <a href="post-processing.html">Post-processing atlases</a> covers renaming and curating regions once the atlas exists, and the volumetric tutorials — <a href="tutorial-subcortical-atlas.html">subcortical</a>, <a href="tutorial-wholebrain-atlas.html">whole-brain</a> and <a href="tutorial-cerebellar-atlas.html">cerebellar</a> — put the table to work.</p>

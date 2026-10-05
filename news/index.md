@@ -1,5 +1,23 @@
 # Changelog
 
+## ggseg.extra 1.9.9.9109
+
+### Documentation
+
+- The documentation now describes the lookup table’s two declaring
+  columns in one place and the same way everywhere. The lookup tables
+  tutorial has a section on `type` and `hemi`: the values each takes,
+  that anything else is an error, that `NA` leaves a label to the
+  fallback, and how
+  [`write_lut()`](https://ggsegverse.github.io/ggseg.extra/reference/write_lut.md)
+  stores both in a lookup table file. The whole-brain, subcortical and
+  cerebellar tutorials point to it from where they introduce the table.
+
+- [`create_wholebrain_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_wholebrain_from_volume.md)
+  listed only `"cortical"` and `"subcortical"` as `type` values in its
+  classification section, though `"cerebellar"` has been accepted
+  throughout.
+
 ## ggseg.extra 1.9.9.9108
 
 ### New features

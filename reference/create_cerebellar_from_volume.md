@@ -59,11 +59,14 @@ create_cerebellar_from_volume(
 - input_lut:
 
   Optional path to a colour lookup table file, or a data.frame with
-  columns `idx`, `label`, and optionally `R`, `G`, `B`. A data.frame may
-  also carry a `hemi` column (`"left"`, `"right"`, `"vermis"` or
-  `"midline"`) that sets each region's hemisphere; a row left `NA`, or a
-  table without the column, has it read from the label's name. If NULL,
-  labels are auto-generated from volume values.
+  columns `idx`, `label`, and optionally `R`, `G`, `B`. Either may also
+  carry a `hemi` column (`"left"`, `"right"`, `"vermis"` or `"midline"`)
+  that sets each region's hemisphere; a row left `NA`, or a table
+  without the column, has it read from the label's name, and any other
+  value is an error.
+  [`write_lut()`](https://ggsegverse.github.io/ggseg.extra/reference/write_lut.md)
+  stores the column in a file. If NULL, labels are auto-generated from
+  volume values.
 
 - atlas_name:
 

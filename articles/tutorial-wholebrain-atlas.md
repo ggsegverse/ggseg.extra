@@ -154,7 +154,21 @@ label covers after volume-to-surface projection — which works for
 clear-cut cases but gets unreliable for regions near the
 cortical/subcortical boundary. It warns whenever it runs, and you should
 treat that warning as a request to declare the labels instead. If you
-know which labels belong where (and you usually do), spell it out.
+know which labels belong where (and you usually do), spell it out. The
+column takes exactly `"cortical"`, `"subcortical"` or `"cerebellar"`;
+anything else — `"Cortical"`, `"cortex"` — stops the build before the
+projection starts, naming the values it could not read, and `NA` leaves
+that one label to the fallback.
+
+A second optional column, `hemi`, does the same job for hemisphere. Add
+it when your labels don’t carry a side in their names, or when a
+parcel’s voxels spill across the midline and it turns up as a region on
+both surfaces: `"left"` or `"right"` keeps a cortical parcel on the
+surface it belongs to, and the column is passed on to the subcortical
+and cerebellar builds, where it sets the region’s hemisphere. [Lookup
+tables and
+colours](https://ggsegverse.github.io/ggseg.extra/articles/tutorial-lookup-tables.md)
+covers both columns.
 
 When you don’t — a fine-grained parcellation with hundreds of numbered
 parcels is the usual case —

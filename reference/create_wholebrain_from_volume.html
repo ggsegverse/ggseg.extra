@@ -21,7 +21,7 @@ Requires FreeSurfer."><meta property="og:image" content="https://ggsegverse.gith
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9108</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9109</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -259,9 +259,11 @@ and which are subcortical (rendered as 3D meshes / 2D slices). Three
 mechanisms are available, applied in priority order:</p><ol><li><p><strong>The <code>labels</code> argument</strong> (highest priority): <code>labels = list(cortical = ..., subcortical = ..., cerebellar = ...)</code> overrides everything for the
 labels it names.</p></li>
 <li><p><strong>LUT <code>type</code> column</strong>: If the colour lookup table has a <code>type</code> column
-with values <code>"cortical"</code> or <code>"subcortical"</code>, that classification is
-used for any labels <code>labels</code> does not name. This is the recommended
-approach for reproducible atlas creation.</p></li>
+with values <code>"cortical"</code>, <code>"subcortical"</code> or <code>"cerebellar"</code>, that
+classification is used for any labels <code>labels</code> does not name. This is
+the recommended approach for reproducible atlas creation. Any other
+value is an error, raised before the projection starts; <code>NA</code> leaves a
+label to the next step.</p></li>
 <li><p><strong>Vertex-count heuristic</strong> (fallback): Labels with at least
 <code>projection_opts$min_vertices</code> vertices on the surface projection are
 classified as cortical; the rest as subcortical. It measures how much
@@ -356,6 +358,8 @@ as before.</p>
 <p>The column is passed on to the subcortical and cerebellar pipelines, where
 it sets the region's hemisphere instead of the label's name doing so. There
 it may also say <code>"midline"</code> or <code>"vermis"</code>.</p>
+<p>The column can arrive in a data.frame or in a lookup table file:
+<code><a href="write_lut.html">write_lut()</a></code> stores it and <code><a href="read_lut.html">read_lut()</a></code> brings it back.</p>
 <p>Hemisphere is never inferred from the voxels. The volume does know which side
 a parcel sits on, but a majority vote is a guess made silently on every
 build, whereas a column is a fact you can see and correct – the same

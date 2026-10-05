@@ -196,9 +196,11 @@ Three mechanisms are available, applied in priority order:
     overrides everything for the labels it names.
 
 2.  **LUT `type` column**: If the colour lookup table has a `type`
-    column with values `"cortical"` or `"subcortical"`, that
-    classification is used for any labels `labels` does not name. This
-    is the recommended approach for reproducible atlas creation.
+    column with values `"cortical"`, `"subcortical"` or `"cerebellar"`,
+    that classification is used for any labels `labels` does not name.
+    This is the recommended approach for reproducible atlas creation.
+    Any other value is an error, raised before the projection starts;
+    `NA` leaves a label to the next step.
 
 3.  **Vertex-count heuristic** (fallback): Labels with at least
     `projection_opts$min_vertices` vertices on the surface projection
@@ -304,6 +306,12 @@ column behaves exactly as before.
 The column is passed on to the subcortical and cerebellar pipelines,
 where it sets the region's hemisphere instead of the label's name doing
 so. There it may also say `"midline"` or `"vermis"`.
+
+The column can arrive in a data.frame or in a lookup table file:
+[`write_lut()`](https://ggsegverse.github.io/ggseg.extra/reference/write_lut.md)
+stores it and
+[`read_lut()`](https://ggsegverse.github.io/ggseg.extra/reference/read_lut.md)
+brings it back.
 
 Hemisphere is never inferred from the voxels. The volume does know which
 side a parcel sits on, but a majority vote is a guess made silently on

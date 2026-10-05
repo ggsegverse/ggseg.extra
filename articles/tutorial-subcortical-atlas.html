@@ -28,7 +28,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9108</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9109</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -132,7 +132,7 @@
 <span><span class="op">}</span></span></code></pre></div>
 </section><section class="level2"><h2 id="creating-the-atlas">Creating the atlas<a class="anchor" aria-label="anchor" href="#creating-the-atlas"></a>
 </h2>
-<p><code><a href="../reference/create_subcortical_from_volume.html">create_subcortical_from_volume()</a></code> takes a segmentation volume and a colour lookup table. The pipeline tessellates each labelled region into a 3D mesh, then creates 2D projection views:</p>
+<p><code><a href="../reference/create_subcortical_from_volume.html">create_subcortical_from_volume()</a></code> takes a segmentation volume and a colour lookup table. Each structure’s hemisphere is read from its label (<code>Left-Thalamus</code>, <code>Right-Putamen</code>); if your labels don’t carry one, pass the table as a data.frame with a <code>hemi</code> column, as <a href="tutorial-lookup-tables.html">Lookup tables and colours</a> describes. The pipeline tessellates each labelled region into a 3D mesh, then creates 2D projection views:</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">aseg_raw</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/create_subcortical_from_volume.html">create_subcortical_from_volume</a></span><span class="op">(</span></span>
 <span>  input_volume <span class="op">=</span> <span class="va">aseg_volume</span>,</span>

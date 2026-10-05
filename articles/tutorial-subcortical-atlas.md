@@ -38,9 +38,13 @@ if (!file.exists(color_lut)) {
 ## Creating the atlas
 
 [`create_subcortical_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_subcortical_from_volume.md)
-takes a segmentation volume and a colour lookup table. The pipeline
-tessellates each labelled region into a 3D mesh, then creates 2D
-projection views:
+takes a segmentation volume and a colour lookup table. Each structure’s
+hemisphere is read from its label (`Left-Thalamus`, `Right-Putamen`); if
+your labels don’t carry one, pass the table as a data.frame with a
+`hemi` column, as [Lookup tables and
+colours](https://ggsegverse.github.io/ggseg.extra/articles/tutorial-lookup-tables.md)
+describes. The pipeline tessellates each labelled region into a 3D mesh,
+then creates 2D projection views:
 
 ``` r
 

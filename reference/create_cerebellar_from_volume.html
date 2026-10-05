@@ -17,7 +17,7 @@ volume for 3D rendering."><meta property="og:image" content="https://ggsegverse.
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9108</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9109</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -134,10 +134,11 @@ passed here is an error. Geometry is shaped after the build: see
 <dt id="arg-input-lut">input_lut<a class="anchor" aria-label="anchor" href="#arg-input-lut"></a></dt>
 <dd><p>Optional path to a colour lookup table file, or a
 data.frame with columns <code>idx</code>, <code>label</code>, and optionally <code>R</code>, <code>G</code>, <code>B</code>.
-A data.frame may also carry a <code>hemi</code> column (<code>"left"</code>, <code>"right"</code>,
+Either may also carry a <code>hemi</code> column (<code>"left"</code>, <code>"right"</code>,
 <code>"vermis"</code> or <code>"midline"</code>) that sets each region's hemisphere; a row left
-<code>NA</code>, or a table without the column, has it read from the label's name.
-If NULL, labels are auto-generated from volume values.</p></dd>
+<code>NA</code>, or a table without the column, has it read from the label's name,
+and any other value is an error. <code><a href="write_lut.html">write_lut()</a></code> stores the column in a
+file. If NULL, labels are auto-generated from volume values.</p></dd>
 
 
 <dt id="arg-atlas-name">atlas_name<a class="anchor" aria-label="anchor" href="#arg-atlas-name"></a></dt>

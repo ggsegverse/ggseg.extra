@@ -28,7 +28,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9108</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9109</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -204,7 +204,7 @@ Stage 1 — straight out of the pipeline, at flatmap mesh resolution.
 <span>  input_lut <span class="op">=</span> <span class="st">"cerebellar_lut.txt"</span>,</span>
 <span>  atlas_name <span class="op">=</span> <span class="st">"cerebellar_vol"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-<p>The <code>input_lut</code> argument accepts a FreeSurfer-style colour lookup table file or a data.frame with columns <code>idx</code>, <code>label</code>, and optionally <code>R</code>, <code>G</code>, <code>B</code>. If omitted, labels are auto-generated from the unique non-zero values in the volume.</p>
+<p>The <code>input_lut</code> argument accepts a FreeSurfer-style colour lookup table file or a data.frame with columns <code>idx</code>, <code>label</code>, and optionally <code>R</code>, <code>G</code>, <code>B</code>. A data.frame can also carry a <code>hemi</code> column, covered below. If omitted, labels are auto-generated from the unique non-zero values in the volume.</p>
 <p>Under the hood, the pipeline samples the volume onto the SUIT 3D pial surface, fills any unlabelled vertices using a two-stage neighbour search (voxel neighbours first, then mesh neighbours via majority vote), and projects the result onto the flatmap. The 3D meshes are tessellated from the volume using FreeSurfer tools, so this pathway requires a FreeSurfer installation.</p>
 </section><section class="level2"><h2 id="transforming-mni-volumes-to-suit-space">Transforming MNI volumes to SUIT space<a class="anchor" aria-label="anchor" href="#transforming-mni-volumes-to-suit-space"></a>
 </h2>
@@ -259,7 +259,7 @@ Stage 2 — simplified and smoothed.
 <p><code>region_28</code> is the giveaway — a midline strip the parcellation numbers but does not name. Drop it:</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">atlas</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_remove</a></span><span class="op">(</span><span class="va">atlas</span>, <span class="st">"region_28"</span><span class="op">)</span></span></code></pre></div>
-<p>Cerebellar atlases use hemisphere values <code>"left"</code>, <code>"right"</code>, and <code>"vermis"</code> — the pipeline detects these from region name prefixes like “Left I-IV”, “Right Crus I”, or “Vermis VI”. The <code>region</code> column has the hemisphere prefix stripped and the remainder sanitised, so you get <code>I_IV</code> and <code>CrusI</code> rather than “Left I-IV” and “Right Crus I”.</p>
+<p>Cerebellar atlases use hemisphere values <code>"left"</code>, <code>"right"</code>, and <code>"vermis"</code> — the pipeline detects these from region name prefixes like “Left I-IV”, “Right Crus I”, or “Vermis VI”. A label whose name says none of these is filed under <code>"midline"</code>. When the names can’t be relied on, pass <code>input_lut</code> as a data.frame with a <code>hemi</code> column: a value there (<code>"left"</code>, <code>"right"</code>, <code>"vermis"</code> or <code>"midline"</code>) is used instead of the name, a row left <code>NA</code> is still read from its name, and anything else is an error. The <code>region</code> column has the hemisphere prefix stripped and the remainder sanitised, so you get <code>I_IV</code> and <code>CrusI</code> rather than “Left I-IV” and “Right Crus I”.</p>
 </section><section class="level2"><h2 id="visualization">Visualization<a class="anchor" aria-label="anchor" href="#visualization"></a>
 </h2>
 <div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">

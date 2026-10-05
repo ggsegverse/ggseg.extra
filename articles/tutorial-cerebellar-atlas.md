@@ -166,8 +166,9 @@ atlas <- create_cerebellar_from_volume(
 
 The `input_lut` argument accepts a FreeSurfer-style colour lookup table
 file or a data.frame with columns `idx`, `label`, and optionally `R`,
-`G`, `B`. If omitted, labels are auto-generated from the unique non-zero
-values in the volume.
+`G`, `B`. A data.frame can also carry a `hemi` column, covered below. If
+omitted, labels are auto-generated from the unique non-zero values in
+the volume.
 
 Under the hood, the pipeline samples the volume onto the SUIT 3D pial
 surface, fills any unlabelled vertices using a two-stage neighbour
@@ -276,9 +277,14 @@ atlas <- atlas_region_remove(atlas, "region_28")
 
 Cerebellar atlases use hemisphere values `"left"`, `"right"`, and
 `"vermis"` — the pipeline detects these from region name prefixes like
-“Left I-IV”, “Right Crus I”, or “Vermis VI”. The `region` column has the
-hemisphere prefix stripped and the remainder sanitised, so you get
-`I_IV` and `CrusI` rather than “Left I-IV” and “Right Crus I”.
+“Left I-IV”, “Right Crus I”, or “Vermis VI”. A label whose name says
+none of these is filed under `"midline"`. When the names can’t be relied
+on, pass `input_lut` as a data.frame with a `hemi` column: a value there
+(`"left"`, `"right"`, `"vermis"` or `"midline"`) is used instead of the
+name, a row left `NA` is still read from its name, and anything else is
+an error. The `region` column has the hemisphere prefix stripped and the
+remainder sanitised, so you get `I_IV` and `CrusI` rather than “Left
+I-IV” and “Right Crus I”.
 
 ## Visualization
 

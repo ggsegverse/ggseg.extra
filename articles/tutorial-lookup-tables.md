@@ -20,7 +20,8 @@ library(ggseg.extra)
 
 A LUT is a plain data frame with six columns. `idx` is the integer in
 the volume, `label` is the name, and `R`, `G`, `B` and `A` are the
-colour, each 0–255.
+colour, each 0–255. Two optional columns, `type` and `hemi`, are covered
+[further down](#declaring-what-the-name-doesnt-say).
 
 ``` r
 
@@ -320,11 +321,25 @@ Passing the data frame is the better habit. It means the table you
 inspected is the table the pipeline used, with no chance of editing one
 file and reading another.
 
+## Declaring what the name doesn’t say
+
+The six columns are the minimum. A lookup table can also carry columns
+that *declare* something about a label, and a pipeline that finds one
+uses it instead of working the answer out for itself. There are two, and
+both follow the same rule: a value the column cannot mean is an error
+before any work starts, and `NA` means “I’m not saying”, which sends
+that one label back to the fallback.
+
+### `type`: cortical, subcortical or cerebellar
+
 For whole-brain volumes there is one more column to fill in.
 [`create_wholebrain_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_wholebrain_from_volume.md)
 needs to know which labels are cortical, subcortical and cerebellar, and
 it will guess from surface coverage if you don’t tell it — noisily, but
-it will guess.
+it will guess. The column takes exactly `"cortical"`, `"subcortical"` or
+`"cerebellar"`. `"Cortical"` or `"cortex"` stops the build with the
+offending values named, rather than quietly dropping the label into the
+guess you were trying to avoid.
 [`lut_classify_anatomy()`](https://ggsegverse.github.io/ggseg.extra/reference/lut_classify_anatomy.md)
 works the column out properly by overlaying the volume on FreeSurfer’s
 `aparc+aseg`:
@@ -337,6 +352,82 @@ write_lut(lut, "my_LUT.txt")
 
 Run it once and commit the result. It needs FreeSurfer installed, and
 there is no reason to pay for it on every build.
+
+### `hemi`: which side a label is on
+
+By default a label’s hemisphere is read from its name: `Left-Thalamus`,
+`lh.something`, `region_L`, `ctx-rh-precuneus`. That works until the
+names don’t say — a parcellation numbered `Region_1` to `Region_268` has
+no side in its labels at all. A `hemi` column says it outright:
+
+``` r
+
+numbered <- data.frame(
+  idx = 1:3,
+  label = c("Region_1", "Region_2", "Region_3"),
+  R = c(0L, 0L, 236L), G = c(118L, 118L, 13L), B = c(14L, 14L, 176L), A = 0L,
+  hemi = c("left", "right", NA)
+)
+
+is_lut(numbered)
+#> [1] TRUE
+```
+
+It takes `"left"` or `"right"` (`lh`/`rh` and `l`/`r` are read too),
+plus `"midline"` and, for the cerebellum, `"vermis"`. The third row
+above declares nothing, so its hemisphere is still read from its name.
+
+All three volumetric builders honour the column. In
+[`create_subcortical_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_subcortical_from_volume.md)
+and
+[`create_cerebellar_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_cerebellar_from_volume.md)
+it sets the region’s hemisphere. In
+[`create_wholebrain_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_wholebrain_from_volume.md)
+it also decides which cortical surface a parcel is kept on, so a parcel
+whose voxels spill across the midline doesn’t become two regions.
+
+### Keeping the declarations in the file
+
+Both columns survive a trip through a file, so the table you commit is
+the whole declaration.
+[`write_lut()`](https://ggsegverse.github.io/ggseg.extra/reference/write_lut.md)
+puts them after the colours, and when `hemi` is there it adds a comment
+line naming the fields, with `NA` wherever a row declares nothing:
+
+``` r
+
+numbered$type <- c("cortical", "cortical", "subcortical")
+
+path <- file.path(tempdir(), "numbered_LUT.txt")
+write_lut(numbered, path)
+
+cat(readLines(path), sep = "\n")
+#> # idx label R G B A type hemi
+#>   1  Region_1                          0 118  14   0  cortical  left
+#>   2  Region_2                          0 118  14   0  cortical  right
+#>   3  Region_3                        236  13 176   0  subcortical  NA
+```
+
+FreeSurfer skips the comment and reads only the first six fields of each
+line, so this is still a colour table as far as it is concerned.
+[`read_lut()`](https://ggsegverse.github.io/ggseg.extra/reference/read_lut.md)
+reads all of it back:
+
+``` r
+
+read_lut(path)
+#>   idx    label   R   G   B A        type  hemi
+#> 1   1 Region_1   0 118  14 0    cortical  left
+#> 2   2 Region_2   0 118  14 0    cortical right
+#> 3   3 Region_3 236  13 176 0 subcortical  <NA>
+```
+
+A table with `type` alone is written the older way — no comment line,
+`type` as a seventh field — so lookup table files you already have don’t
+change. Columns that declare nothing a pipeline reads, like the `roi`
+and `color` that
+[`get_lut()`](https://ggsegverse.github.io/ggseg.extra/reference/get_lut.md)
+adds, stay out of the file.
 
 ## Where to go next
 

@@ -28,7 +28,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9108</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9109</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -212,7 +212,8 @@
 <span>  <span class="op">)</span>,</span>
 <span>  stringsAsFactors <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-<p>The <code>type</code> column is the key piece. Without it, the pipeline falls back to a vertex-count heuristic — counting how many surface vertices each label covers after volume-to-surface projection — which works for clear-cut cases but gets unreliable for regions near the cortical/subcortical boundary. It warns whenever it runs, and you should treat that warning as a request to declare the labels instead. If you know which labels belong where (and you usually do), spell it out.</p>
+<p>The <code>type</code> column is the key piece. Without it, the pipeline falls back to a vertex-count heuristic — counting how many surface vertices each label covers after volume-to-surface projection — which works for clear-cut cases but gets unreliable for regions near the cortical/subcortical boundary. It warns whenever it runs, and you should treat that warning as a request to declare the labels instead. If you know which labels belong where (and you usually do), spell it out. The column takes exactly <code>"cortical"</code>, <code>"subcortical"</code> or <code>"cerebellar"</code>; anything else — <code>"Cortical"</code>, <code>"cortex"</code> — stops the build before the projection starts, naming the values it could not read, and <code>NA</code> leaves that one label to the fallback.</p>
+<p>A second optional column, <code>hemi</code>, does the same job for hemisphere. Add it when your labels don’t carry a side in their names, or when a parcel’s voxels spill across the midline and it turns up as a region on both surfaces: <code>"left"</code> or <code>"right"</code> keeps a cortical parcel on the surface it belongs to, and the column is passed on to the subcortical and cerebellar builds, where it sets the region’s hemisphere. <a href="tutorial-lookup-tables.html">Lookup tables and colours</a> covers both columns.</p>
 <p>When you don’t — a fine-grained parcellation with hundreds of numbered parcels is the usual case — <code><a href="../reference/lut_classify_anatomy.html">lut_classify_anatomy()</a></code> works the column out for you, from where each label sits in FreeSurfer’s <code>aparc+aseg</code> rather than from its name:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">lut</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/lut_classify_anatomy.html">lut_classify_anatomy</a></span><span class="op">(</span><span class="st">"data-raw/ho_combined_remapped.nii.gz"</span>, <span class="va">lut</span><span class="op">)</span></span>
