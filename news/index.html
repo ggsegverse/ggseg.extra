@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9106</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9107</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -69,6 +69,13 @@
       <small>Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.9.9.9107" id="ggsegextra-1999107">ggseg.extra 1.9.9.9107<a class="anchor" aria-label="anchor" href="#ggsegextra-1999107"></a></h2>
+<div class="section level3">
+<h3 id="bug-fixes-1-9-9-9107">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-1-9-9-9107"></a></h3>
+<ul><li>A lookup table whose <code>hemi</code> column holds a value that is not a hemisphere is now an error in <code><a href="../reference/create_wholebrain_from_volume.html">create_wholebrain_from_volume()</a></code>, <code><a href="../reference/create_subcortical_from_volume.html">create_subcortical_from_volume()</a></code> and <code><a href="../reference/create_cerebellar_from_volume.html">create_cerebellar_from_volume()</a></code>. A mistyped value used to be treated as though the row declared nothing, so the hemisphere was read from the label’s name instead and the column was ignored without a word. <code>NA</code> and an empty string still mean “not declared”. The check runs before any other work, as the one on <code>type</code> does.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9106" id="ggsegextra-1999106">ggseg.extra 1.9.9.9106<a class="anchor" aria-label="anchor" href="#ggsegextra-1999106"></a></h2>
 <div class="section level3">

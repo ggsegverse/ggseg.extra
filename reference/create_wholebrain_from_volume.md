@@ -292,7 +292,9 @@ Give the lookup table a `hemi` column (`"left"` or `"right"`, or
 `lh`/`rh`) and the parcel is kept only on the surface it belongs to.
 Where there is no column the label's own name is read, which covers
 `Left-Thalamus`, `lh.something`, `region_L` and FreeSurfer's
-`ctx-lh-superiorfrontal`.
+`ctx-lh-superiorfrontal`. A value the column cannot mean – a
+misspelling, say – is an error rather than a row quietly treated as
+undeclared.
 
 A label that declares nothing is left alone, on purpose: a lookup table
 that names each structure once for both hemispheres is *meant* to

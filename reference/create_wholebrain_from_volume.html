@@ -21,7 +21,7 @@ Requires FreeSurfer."><meta property="og:image" content="https://ggsegverse.gith
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9106</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9107</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -346,7 +346,9 @@ smaller one built from the spill.</p>
 <p>Give the lookup table a <code>hemi</code> column (<code>"left"</code> or <code>"right"</code>, or <code>lh</code>/<code>rh</code>)
 and the parcel is kept only on the surface it belongs to. Where there is no
 column the label's own name is read, which covers <code>Left-Thalamus</code>,
-<code>lh.something</code>, <code>region_L</code> and FreeSurfer's <code>ctx-lh-superiorfrontal</code>.</p>
+<code>lh.something</code>, <code>region_L</code> and FreeSurfer's <code>ctx-lh-superiorfrontal</code>. A
+value the column cannot mean – a misspelling, say – is an error rather
+than a row quietly treated as undeclared.</p>
 <p>A label that declares nothing is left alone, on purpose: a lookup table that
 names each structure once for both hemispheres is <em>meant</em> to produce <code>lh_</code>
 and <code>rh_</code>. So this is opt-in, and a table without the column behaves exactly
