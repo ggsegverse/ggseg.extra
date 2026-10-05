@@ -58,9 +58,14 @@ read_annotation_data <- function(annot_files) {
 #' or `ASegStatsLUT.txt`). These files map label indices to region names
 #' and RGBA colours.
 #'
+#' A file written by [write_lut()] can carry declared columns after the
+#' colours. With a single extra field it is read as `type`. With more, a
+#' comment line naming the fields -- `# idx label R G B A type hemi` -- says
+#' which is which, and a field holding `NA` is read as missing.
+#'
 #' @param path Path to the LUT file.
 #' @return A data.frame with columns: idx, label, R, G, B, A, and
-#'   optionally type when a 7th field is present.
+#'   optionally type and hemi when the file carries them.
 #' @seealso [get_lut()] to read and add hex colours, [write_lut()] to write,
 #'   [lut_add()] and [lut_combine()] to build one up
 #' @export
@@ -75,9 +80,12 @@ read_annotation_data <- function(annot_files) {
 read_lut <- function(path) {
   lines <- trimws(readLines(path))
   lines <- lines[nzchar(lines)]
+  declared <- lut_header_columns(lines)
+  extras <- declared %||% "type"
   lut_pattern <- paste0(
-    "^\\s*(\\d+)\\s+(\\S+)\\s+(\\d+)\\s+(\\d+)",
-    "\\s+(\\d+)\\s+(\\d+)(?:\\s+(\\w+))?\\s*$"
+    "^\\s*(\\d+)\\s+(\\S+)\\s+(\\d+)\\s+(\\d+)\\s+(\\d+)\\s+(\\d+)",
+    strrep("(?:\\s+(\\w+))?", length(extras)),
+    "\\s*$"
   )
   parsed <- regmatches(lines, regexec(lut_pattern, lines))
   matched <- lengths(parsed) > 0
@@ -91,23 +99,24 @@ read_lut <- function(path) {
   }
 
   rows <- lapply(parsed[matched], function(m) {
-    data.frame(
+    row <- data.frame(
       idx = as.integer(m[2]),
       label = trimws(m[3]),
       R = as.integer(m[4]),
       G = as.integer(m[5]),
       B = as.integer(m[6]),
       A = as.integer(m[7]),
-      type = if (nzchar(m[8])) m[8] else NA_character_,
       stringsAsFactors = FALSE
     )
+    row[extras] <- as.list(lut_extra_values(m[7 + seq_along(extras)]))
+    row
   })
   if (length(rows) == 0) {
     cli::cli_abort("No valid LUT entries found in {.path {path}}")
   }
 
   result <- do.call(rbind, rows)
-  if (all(is.na(result$type))) {
+  if (is.null(declared) && all(is.na(result$type))) {
     result$type <- NULL
   }
   result
@@ -117,9 +126,18 @@ read_lut <- function(path) {
 #'
 #' Write a LUT to file in FreeSurfer format.
 #'
+#' The declared columns `type` and `hemi` are written after the colours, so
+#' that [read_lut()] reads them back. FreeSurfer reads only the first six
+#' fields of a line and skips comments, so the file stays a valid colour
+#' table for it.
+#'
+#' A table with `type` alone gets it as a 7th field, left off rows that have
+#' none. A table with `hemi` gets a comment line naming the fields, and every
+#' row then carries each one, written as `NA` where it declares nothing.
+#' Other columns are not written.
+#'
 #' @param x A data.frame with columns: idx, label, R, G, B, A, and
-#'   optionally type, which is written as a 7th field so that [read_lut()]
-#'   reads it back.
+#'   optionally type and hemi. Their values must be single words.
 #' @param path Path to write to.
 #' @return Invisibly returns the lines written.
 #' @seealso [read_lut()], [is_lut()], [lut_classify_anatomy()] to fill in
@@ -140,10 +158,14 @@ write_lut <- function(x, path) {
              {.field G}, {.field B}, {.field A}"
     ))
   }
-  type <- check_writable_type(x)
+  extras <- lut_extra_fields(x)
   check_writable_label(x)
   check_writable_channels(x)
-  lls <- c(lut_line(x$idx, x$label, x$R, x$G, x$B, x$A, type), "")
+  lls <- c(
+    extras$header,
+    paste0(lut_line(x$idx, x$label, x$R, x$G, x$B, x$A), extras$fields),
+    ""
+  )
   writeLines(lls, path)
   invisible(lls)
 }
@@ -1201,13 +1223,13 @@ parse_continuous_values <- function(values, hemi, hemi_short, n_bins) {
 
 
 #' @noRd
-lut_line <- function(idx, name, red, green, blue, alpha, type) {
+lut_line <- function(idx, name, red, green, blue, alpha) {
   # Names are padded to 30 characters for readability but never truncated.
   # FreeSurfer parses the LUT on whitespace, and its own
   # FreeSurferColorLUT.txt carries names up to 47 characters, so a cap here
   # only corrupted long labels -- and silently merged any two that shared a
   # prefix once cut.
-  line <- sprintf(
+  sprintf(
     "% 3s  % -30s  % 3s % 3s % 3s % 3s",
     idx,
     name,
@@ -1216,38 +1238,107 @@ lut_line <- function(idx, name, red, green, blue, alpha, type) {
     blue,
     alpha
   )
-  ifelse(is.na(type), line, paste0(line, "  ", type))
 }
 
 
-#' The `type` column as a writable character vector, or all `NA`
+#' The columns a LUT file carries after its six colour-table fields
 #'
-#' `read_lut()` matches the 7th field with `\\w+`, and its pattern is
-#' anchored, so a type carrying anything else does not make that field
+#' In the order they are written. These are the columns a pipeline reads a
+#' declaration from; anything else in the table stays out of the file.
+#' @noRd
+lut_declared_columns <- c("type", "hemi")
+
+
+#' The comment line naming a LUT file's fields
+#'
+#' A comment, so FreeSurfer and every other reader of the format skips it.
+#' @noRd
+lut_header <- function(extras) {
+  paste(
+    "#",
+    paste(c("idx", "label", "R", "G", "B", "A", extras), collapse = " ")
+  )
+}
+
+
+#' The declared columns a LUT file's header names, or `NULL` without a header
+#' @noRd
+lut_header_columns <- function(lines) {
+  pattern <- "^#\\s*idx\\s+label\\s+R\\s+G\\s+B\\s+A((?:\\s+\\w+)*)$"
+  header <- grep(pattern, lines, value = TRUE)
+  if (length(header) == 0) {
+    return(NULL)
+  }
+  declared <- strsplit(trimws(sub(pattern, "\\1", header[1])), "\\s+")[[1]]
+  declared[nzchar(declared)]
+}
+
+
+#' Declared fields as read from a LUT line: absent or `NA` is missing
+#' @noRd
+lut_extra_values <- function(fields) {
+  fields[!nzchar(fields) | fields == "NA"] <- NA_character_
+  fields
+}
+
+
+#' The header and per-row text for a LUT's declared columns
+#'
+#' A table whose only declared column is `type` is written the way it always
+#' was -- no header, the field left off rows that have none -- so the file is
+#' unchanged for a reader that predates the header. Any other declared column
+#' needs the header to say which field is which, and then every row carries
+#' every field, `NA` where it declares nothing.
+#' @noRd
+lut_extra_fields <- function(x) {
+  extras <- intersect(lut_declared_columns, names(x))
+  values <- lapply(extras, function(column) check_writable_field(x, column))
+  names(values) <- extras
+
+  if (length(extras) == 0) {
+    return(list(header = NULL, fields = rep("", nrow(x))))
+  }
+  if (identical(extras, "type")) {
+    type <- values$type
+    return(list(
+      header = NULL,
+      fields = ifelse(is.na(type), "", paste0("  ", type))
+    ))
+  }
+
+  filled <- lapply(values, function(value) ifelse(is.na(value), "NA", value))
+  list(
+    header = lut_header(extras),
+    fields = paste0("  ", do.call(paste, c(unname(filled), sep = "  ")))
+  )
+}
+
+
+#' A declared column as a writable character vector
+#'
+#' `read_lut()` matches each declared field with `\\w+`, and its pattern is
+#' anchored, so a value carrying anything else does not make that field
 #' unreadable - it makes the whole line unreadable, silently losing the
 #' label and its colours too. Refuse to write one.
 #' @noRd
-check_writable_type <- function(x) {
-  if (!"type" %in% names(x)) {
-    return(rep(NA_character_, nrow(x)))
-  }
-  type <- as.character(x$type)
-  bad <- !is.na(type) & !grepl("^\\w+$", type)
+check_writable_field <- function(x, column) {
+  value <- as.character(x[[column]])
+  bad <- !is.na(value) & !grepl("^\\w+$", value)
   if (any(bad)) {
     cli::cli_abort(c(
-      "{.field type} must be a single word, or {.fn read_lut} cannot read
+      "{.field {column}} must be a single word, or {.fn read_lut} cannot read
       the line back",
-      "x" = "Not a single word: {.val {unique(type[bad])}}",
+      "x" = "Not a single word: {.val {unique(value[bad])}}",
       "i" = "Allowed: letters, digits and underscores."
     ))
   }
-  type
+  value
 }
 
 
 #' Check `label` survives a `read_lut()` round trip
 #'
-#' Same reasoning as `check_writable_type()`: `read_lut()` splits on
+#' Same reasoning as `check_writable_field()`: `read_lut()` splits on
 #' whitespace, so a label carrying a space does not lose the label alone. The
 #' pattern backtracks into a different, valid-looking parse and every colour
 #' channel shifts one field along, with no warning. Refuse to write one.

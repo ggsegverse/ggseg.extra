@@ -2008,10 +2008,10 @@ wholebrain_cortical_inputs <- function(config, dirs, projection, split, opts) {
 
 #' The lookup table a sub-pipeline is handed
 #'
-#' Passed as a data frame rather than written to a LUT file, because the file
-#' format has no field for what the author declared: a `hemi` column would be
-#' dropped on the way, and the sub-pipeline would go back to reading the
-#' hemisphere out of the label's name.
+#' Passed as a data frame rather than written to a LUT file. This table is the
+#' pipeline handing itself its own input, and a file would refuse what a data
+#' frame carries without complaint -- a label with a space in it, as the
+#' Neuromorphometrics tables have.
 #' @noRd
 sub_pipeline_lut <- function(colortable) {
   columns <- c(
