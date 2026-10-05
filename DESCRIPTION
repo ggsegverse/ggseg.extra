@@ -1,6 +1,6 @@
 Package: ggseg.extra
 Title: Create Brain Atlases for the 'ggsegverse' Plotting Ecosystem
-Version: 1.9.9.9109
+Version: 1.9.9.9110
 Authors@R: c(
     person(
         given = "Athanasia Mo",
@@ -56,12 +56,12 @@ Suggests:
     freesurfer (>= 1.8.1.902),
     freesurferformats,
     future,
-    ggplot2,
     ggseg,
     gifti,
     knitr,
     neuromapr,
     rgl,
+    rmarkdown,
     RNifti,
     rstudioapi,
     Rvcg,
@@ -69,16 +69,13 @@ Suggests:
     spelling,
     terra,
     testthat (>= 3.0.0),
-    tibble,
-    tidyr,
-    quarto,
     withr,
     princurve
 Remotes:
     muschellij2/freesurfer
 VignetteBuilder:
     knitr,
-    quarto
+    rmarkdown
 Encoding: UTF-8
 Language: en-US
 Roxygen: list(markdown = TRUE)

@@ -212,7 +212,7 @@ if you have access to the original neuroimaging files:
 - `create_tract_from_tractography()` --- from tractography files
 - `create_cortical_from_labels()` --- from individual label files
 
-See the [cortical](tutorial-cortical-atlas.html),
-[subcortical](tutorial-subcortical-atlas.html),
-[tract](tutorial-tract-atlas.html), and
-[label-based](tutorial-label-atlas.html) atlas tutorials.
+See the [cortical](https://ggsegverse.github.io/ggseg.extra/articles/tutorial-cortical-atlas.html),
+[subcortical](https://ggsegverse.github.io/ggseg.extra/articles/tutorial-subcortical-atlas.html),
+[tract](https://ggsegverse.github.io/ggseg.extra/articles/tutorial-tract-atlas.html), and
+[label-based](https://ggsegverse.github.io/ggseg.extra/articles/tutorial-label-atlas.html) atlas tutorials.

@@ -5,7 +5,7 @@
 ^README_files$
 ^codecov\.yml$
 ^data-raw$
-^README*
+^README\.html$
 ^appveyor\.yml$
 ^\.travis\.yml$
 ^LICENSE\.md$
