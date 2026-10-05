@@ -54,6 +54,26 @@ describe("detect_hemi", {
 })
 
 
+describe("check_lut_hemi", {
+  it("names the values that are not a hemisphere", {
+    lut <- data.frame(
+      idx = 1:5,
+      label = c("A", "B", "C", "D", "E"),
+      hemi = c("rigth", "both", "LH", NA, "")
+    )
+    expect_snapshot(check_lut_hemi(lut), error = TRUE)
+  })
+
+  it("accepts every spelling normalise_hemi() reads, and undeclared rows", {
+    spellings <- c("left", "lh", "L", "Right", "rh", "r", "midline", "vermis")
+    lut <- data.frame(hemi = c(spellings, NA, ""))
+    expect_no_error(check_lut_hemi(lut))
+    expect_no_error(check_lut_hemi(data.frame(idx = 1L)))
+    expect_false(anyNA(vapply(spellings, normalise_hemi, character(1))))
+  })
+})
+
+
 describe("lut_hemi", {
   it("takes a declared hemisphere over what the name says", {
     row <- data.frame(label = "Left-Thalamus", hemi = "rh")

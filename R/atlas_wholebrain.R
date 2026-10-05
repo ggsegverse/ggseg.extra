@@ -110,7 +110,9 @@
 #' Give the lookup table a `hemi` column (`"left"` or `"right"`, or `lh`/`rh`)
 #' and the parcel is kept only on the surface it belongs to. Where there is no
 #' column the label's own name is read, which covers `Left-Thalamus`,
-#' `lh.something`, `region_L` and FreeSurfer's `ctx-lh-superiorfrontal`.
+#' `lh.something`, `region_L` and FreeSurfer's `ctx-lh-superiorfrontal`. A
+#' value the column cannot mean -- a misspelling, say -- is an error rather
+#' than a row quietly treated as undeclared.
 #'
 #' A label that declares nothing is left alone, on purpose: a lookup table that
 #' names each structure once for both hemispheres is *meant* to produce `lh_`
@@ -820,6 +822,7 @@ validate_wholebrain_config <- function(
   }
   lut <- if (is.character(input_lut)) read_lut(input_lut) else input_lut
   check_lut_type(lut)
+  check_lut_hemi(lut)
 
   validate_registration(registration, subject, input_volume)
 
@@ -1085,10 +1088,9 @@ embedded_hemi_token <- function(label_name) {
 
 #' Read a declared hemisphere in any of its usual spellings
 #'
-#' `NA` for anything unrecognised rather than an error: an unexpected value
-#' means the column says nothing usable about this label, and the label is
-#' then treated as undeclared, which is the behaviour of a table without the
-#' column at all.
+#' `NA` for anything unrecognised. Whether that is an error is not decided
+#' here: `check_lut_hemi()` aborts on a value that declares something this
+#' cannot read, and lets `NA` and an empty string through as undeclared.
 #' @noRd
 normalise_hemi <- function(x) {
   if (length(x) != 1L || is.na(x) || !nzchar(trimws(x))) {

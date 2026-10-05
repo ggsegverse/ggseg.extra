@@ -404,6 +404,7 @@ create_cerebellar_from_volume <- function(
   if (!file.exists(volume)) {
     cli::cli_abort("Volume file not found: {.path {volume}}")
   }
+  check_lut_hemi(input_lut)
 
   config <- validate_surface_config(
     output_dir,

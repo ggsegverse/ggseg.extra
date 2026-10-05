@@ -1063,6 +1063,15 @@ describe("validate_subcort_inputs", {
     expect_null(validate_subcort_inputs(vol_file, NULL))
     expect_null(validate_subcort_inputs(vol_file, data.frame(idx = 1)))
   })
+
+  it("rejects a LUT with an unrecognised hemi", {
+    vol_file <- withr::local_tempfile(fileext = ".mgz")
+    file.create(vol_file)
+    expect_error(
+      validate_subcort_inputs(vol_file, data.frame(idx = 1, hemi = "rigth")),
+      "unrecognised"
+    )
+  })
 })
 
 

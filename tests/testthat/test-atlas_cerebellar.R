@@ -526,6 +526,18 @@ describe("create_cerebellar_from_volume", {
     )
   })
 
+  it("rejects a LUT with an unrecognised hemi before doing any work", {
+    vol_file <- withr::local_tempfile(fileext = ".nii.gz")
+    file.create(vol_file)
+    expect_error(
+      create_cerebellar_from_volume(
+        vol_file,
+        input_lut = data.frame(idx = 1L, label = "A", hemi = "rigth")
+      ),
+      "unrecognised"
+    )
+  })
+
   it("validates decimate before doing any work", {
     expect_error(
       create_cerebellar_from_volume("nonexistent.nii.gz", decimate = "half"),

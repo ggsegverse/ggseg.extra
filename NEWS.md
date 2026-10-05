@@ -1,3 +1,15 @@
+# ggseg.extra 1.9.9.9107
+
+## Bug fixes
+
+- A lookup table whose `hemi` column holds a value that is not a hemisphere
+  is now an error in `create_wholebrain_from_volume()`,
+  `create_subcortical_from_volume()` and `create_cerebellar_from_volume()`.
+  A mistyped value used to be treated as though the row declared nothing, so
+  the hemisphere was read from the label's name instead and the column was
+  ignored without a word. `NA` and an empty string still mean "not declared".
+  The check runs before any other work, as the one on `type` does.
+
 # ggseg.extra 1.9.9.9106
 
 ## New features

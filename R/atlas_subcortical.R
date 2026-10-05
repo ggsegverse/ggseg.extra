@@ -440,6 +440,7 @@ validate_subcort_inputs <- function(input_volume, input_lut) {
   ) {
     cli::cli_abort("Color lookup table not found: {.path {input_lut}}")
   }
+  check_lut_hemi(input_lut)
   invisible(NULL)
 }
 

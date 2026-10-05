@@ -314,6 +314,33 @@ detect_hemi_contains <- function(label_name) {
 }
 
 
+#' Abort on a `hemi` value no pipeline recognises
+#'
+#' `NA` and an empty string are allowed: they declare nothing and leave the
+#' hemisphere to be read from the label's name. A lookup table without a
+#' `hemi` column passes untouched.
+#' @noRd
+check_lut_hemi <- function(lut) {
+  if (!is.data.frame(lut) || !"hemi" %in% names(lut)) {
+    return(invisible(lut))
+  }
+  declared <- trimws(as.character(lut$hemi))
+  declares_something <- !is.na(declared) & nzchar(declared)
+  recognised <- !is.na(vapply(declared, normalise_hemi, character(1)))
+  unrecognised <- declares_something & !recognised
+  if (any(unrecognised)) {
+    cli::cli_abort(c(
+      "{.arg input_lut} has {sum(unrecognised)} label{?s} with an
+      unrecognised {.field hemi}",
+      "x" = "Not a hemisphere: {.val {unique(declared[unrecognised])}}",
+      "i" = "Allowed: {.val {c('left', 'right', 'midline', 'vermis')}}, or
+      {.code NA} to read it from the label's name."
+    ))
+  }
+  invisible(lut)
+}
+
+
 #' The hemisphere of a lookup table row
 #'
 #' A `hemi` column wins over the name: it is the more explicit of the two, and
@@ -328,6 +355,7 @@ detect_hemi_contains <- function(label_name) {
 #' @noRd
 lut_hemi <- function(lut_row, label_name, from_name = detect_hemi) {
   if ("hemi" %in% names(lut_row)) {
+    check_lut_hemi(lut_row)
     declared <- normalise_hemi(lut_row$hemi[1])
     if (!is.na(declared)) {
       return(declared)
