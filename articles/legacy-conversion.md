@@ -213,9 +213,9 @@ functions if you have access to the original neuroimaging files:
   — from individual label files
 
 See the
-[cortical](https://ggsegverse.github.io/ggseg.extra/articles/tutorial-cortical-atlas.md),
-[subcortical](https://ggsegverse.github.io/ggseg.extra/articles/tutorial-subcortical-atlas.md),
-[tract](https://ggsegverse.github.io/ggseg.extra/articles/tutorial-tract-atlas.md),
+[cortical](https://ggsegverse.github.io/ggseg.extra/articles/tutorial-cortical-atlas.html),
+[subcortical](https://ggsegverse.github.io/ggseg.extra/articles/tutorial-subcortical-atlas.html),
+[tract](https://ggsegverse.github.io/ggseg.extra/articles/tutorial-tract-atlas.html),
 and
-[label-based](https://ggsegverse.github.io/ggseg.extra/articles/tutorial-label-atlas.md)
+[label-based](https://ggsegverse.github.io/ggseg.extra/articles/tutorial-label-atlas.html)
 atlas tutorials.

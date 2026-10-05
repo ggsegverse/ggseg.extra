@@ -64,8 +64,8 @@ The cortical pipeline projects inflated mesh triangles straight to 2D
 polygons, so it takes seconds and needs no FreeSurfer installation. The
 subcortical and tract pipelines instead build 3D meshes from a volume
 and get their 2D view by slicing it. Each has its own `steps`, inputs
-and system requirements:
-[`vignette("atlas-workflows")`](https://ggsegverse.github.io/ggseg.extra/articles/atlas-workflows.md)
+and system requirements: the [atlas workflows
+article](https://ggsegverse.github.io/ggseg.extra/articles/atlas-workflows.html)
 walks through all five with diagrams.
 
 ### Post-processing

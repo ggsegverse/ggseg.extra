@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9109</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9110</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -69,6 +69,17 @@
       <small>Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.9.9.9110" id="ggsegextra-1999110">ggseg.extra 1.9.9.9110<a class="anchor" aria-label="anchor" href="#ggsegextra-1999110"></a></h2>
+<div class="section level3">
+<h3 id="minor-changes-1-9-9-9110">Minor changes<a class="anchor" aria-label="anchor" href="#minor-changes-1-9-9-9110"></a></h3>
+<ul><li><p><code>README.md</code> is part of the built package again. A <code>.Rbuildignore</code> pattern meant for the rendered <code>README.html</code> also matched <code>README.md</code>, so the package had no README once built.</p></li>
+<li><p>Help pages show their lifecycle badge. Eighteen pages referenced a badge image the package did not contain.</p></li>
+<li><p>The getting started and legacy conversion vignettes link to the tutorials and the atlas workflows article on the package website. They pointed at pages that exist only there, so the links were dead in an installed package.</p></li>
+<li><p>Dependencies match what the built package uses: <code>rmarkdown</code> is declared, since every vignette is built with it, and <code>ggplot2</code>, <code>quarto</code>, <code>tibble</code> and <code>tidyr</code> are no longer suggested, as only the website articles used them.</p></li>
+<li><p>Removed <code>inst/README_cit.bib</code> and <code>inst/sticker.png</code>, which nothing referenced.</p></li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9109" id="ggsegextra-1999109">ggseg.extra 1.9.9.9109<a class="anchor" aria-label="anchor" href="#ggsegextra-1999109"></a></h2>
 <div class="section level3">
