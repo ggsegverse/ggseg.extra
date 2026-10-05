@@ -592,7 +592,7 @@ describe("validate_subcort_config", {
     vol_file <- withr::local_tempfile(fileext = ".mgz")
     file.create(vol_file)
     lut_file <- withr::local_tempfile(fileext = ".txt")
-    file.create(lut_file)
+    writeLines("1 a 255 0 0 0", lut_file)
     withr::local_options(ggseg.extra.output_dir = tempdir())
 
     result <- validate_subcort_config(

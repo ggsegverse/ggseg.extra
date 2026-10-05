@@ -64,6 +64,22 @@ describe("check_lut_hemi", {
     expect_snapshot(check_lut_hemi(lut), error = TRUE)
   })
 
+  it("checks a lookup table file as it does a data frame", {
+    lut <- data.frame(
+      idx = 1L,
+      label = "A",
+      R = 1L,
+      G = 2L,
+      B = 3L,
+      A = 0L,
+      hemi = "rigth"
+    )
+    path <- withr::local_tempfile(fileext = ".txt")
+    write_lut(lut, path)
+
+    expect_error(check_lut_hemi(path), "unrecognised")
+  })
+
   it("accepts every spelling normalise_hemi() reads, and undeclared rows", {
     spellings <- c("left", "lh", "L", "Right", "rh", "r", "midline", "vermis")
     lut <- data.frame(hemi = c(spellings, NA, ""))

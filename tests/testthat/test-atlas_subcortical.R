@@ -353,7 +353,7 @@ describe("create_subcortical_from_volume pipeline flow", {
     vol_file <- "aseg.mgz"
     file.create(vol_file)
     lut_file <- "lut.txt"
-    file.create(lut_file)
+    writeLines("1 a 255 0 0 0", lut_file)
 
     expect_snapshot(
       atlas <- create_subcortical_from_volume(
@@ -395,7 +395,7 @@ describe("create_subcortical_from_volume pipeline flow", {
     vol_file <- withr::local_tempfile(fileext = ".mgz")
     file.create(vol_file)
     lut_file <- withr::local_tempfile(fileext = ".txt")
-    file.create(lut_file)
+    writeLines("1 a 255 0 0 0", lut_file)
     withr::local_options(ggseg.extra.output_dir = withr::local_tempdir())
 
     expect_error(
@@ -476,7 +476,7 @@ describe("create_subcortical_from_volume pipeline flow", {
     vol_file <- "aseg.mgz"
     file.create(vol_file)
     lut_file <- "lut.txt"
-    file.create(lut_file)
+    writeLines("1 a 255 0 0 0", lut_file)
 
     expect_snapshot(
       result <- create_subcortical_from_volume(
@@ -550,7 +550,7 @@ describe("create_subcortical_from_volume pipeline flow", {
     vol_file <- withr::local_tempfile(fileext = ".mgz")
     file.create(vol_file)
     lut_file <- withr::local_tempfile(fileext = ".txt")
-    file.create(lut_file)
+    writeLines("1 a 255 0 0 0", lut_file)
     withr::local_options(ggseg.extra.output_dir = withr::local_tempdir())
 
     expect_error(
@@ -624,7 +624,7 @@ describe("create_subcortical_from_volume pipeline flow", {
     vol_file <- withr::local_tempfile(fileext = ".mgz")
     file.create(vol_file)
     lut_file <- withr::local_tempfile(fileext = ".txt")
-    file.create(lut_file)
+    writeLines("1 a 255 0 0 0", lut_file)
     withr::local_options(ggseg.extra.output_dir = withr::local_tempdir())
 
     result <- create_subcortical_from_volume(
@@ -705,7 +705,7 @@ describe("create_subcortical_from_volume pipeline flow", {
     vol_file <- "aseg.mgz"
     file.create(vol_file)
     lut_file <- "lut.txt"
-    file.create(lut_file)
+    writeLines("1 a 255 0 0 0", lut_file)
 
     expect_snapshot(
       atlas <- create_subcortical_from_volume(
@@ -765,7 +765,7 @@ describe("create_subcortical_from_volume pipeline flow", {
     vol_file <- "aseg.mgz"
     file.create(vol_file)
     lut_file <- "lut.txt"
-    file.create(lut_file)
+    writeLines("1 a 255 0 0 0", lut_file)
 
     expect_snapshot(
       result <- create_subcortical_from_volume(
@@ -1120,7 +1120,7 @@ describe("subcortical pipeline snapshot pruning", {
     vol_file <- withr::local_tempfile(fileext = ".mgz")
     file.create(vol_file)
     lut_file <- withr::local_tempfile(fileext = ".txt")
-    file.create(lut_file)
+    writeLines("1 a 255 0 0 0", lut_file)
     withr::local_options(ggseg.extra.output_dir = withr::local_tempdir())
 
     expect_error(

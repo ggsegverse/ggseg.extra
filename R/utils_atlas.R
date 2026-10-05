@@ -319,8 +319,13 @@ detect_hemi_contains <- function(label_name) {
 #' `NA` and an empty string are allowed: they declare nothing and leave the
 #' hemisphere to be read from the label's name. A lookup table without a
 #' `hemi` column passes untouched.
+#'
+#' @param lut A lookup table, or the path to a lookup table file.
 #' @noRd
 check_lut_hemi <- function(lut) {
+  if (rlang::is_string(lut) && file.exists(lut)) {
+    lut <- read_lut(lut)
+  }
   if (!is.data.frame(lut) || !"hemi" %in% names(lut)) {
     return(invisible(lut))
   }
