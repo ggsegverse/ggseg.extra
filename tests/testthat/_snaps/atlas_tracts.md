@@ -24,8 +24,7 @@
       
       -- Creating tractography atlas -------------------------------------------------
       i Tract files: 'tract.trk'
-      i Auto-detected coordinate space: "voxel"
-      i Set `coord_space` to declare it instead of relying on the heuristic.
+      i Coordinate space (from the tractography files): "mm"
       i 1/4 Creating tube meshes for 1 tracts
       v 1/4 Creating tube meshes for 1 tracts [<time>]
       
@@ -61,4 +60,14 @@
     Condition
       Error in `coord_space_to_voxels()`:
       ! `coord_space` must be one of "infer", "voxel", or "mm", not "ras".
+
+# coord_space_to_voxels / rejects voxel space for tractography files
+
+    Code
+      coord_space_to_voxels("voxel", from_files = TRUE)
+    Condition
+      Error in `coord_space_to_voxels()`:
+      ! `coord_space` cannot be "voxel" for tractography files.
+      i '.trk' and '.tck' files are read into RAS world millimetres, whatever space they store.
+      i `coord_space` describes streamlines passed as coordinate matrices. Leave it out for files.
 

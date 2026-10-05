@@ -664,4 +664,16 @@ describe("coord_space_to_voxels", {
   it("rejects a space it does not know", {
     expect_snapshot(coord_space_to_voxels("ras"), error = TRUE)
   })
+
+  it("treats tractography files as world millimetres", {
+    expect_false(coord_space_to_voxels("infer", from_files = TRUE))
+    expect_false(coord_space_to_voxels("mm", from_files = TRUE))
+  })
+
+  it("rejects voxel space for tractography files", {
+    expect_snapshot(
+      coord_space_to_voxels("voxel", from_files = TRUE),
+      error = TRUE
+    )
+  })
 })

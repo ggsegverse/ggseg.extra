@@ -544,8 +544,8 @@ read_vox2ras <- function(template_file) {
 #' Convert world coordinate to voxel index
 #'
 #' Maps 3D coordinates to 1-based voxel array indices.
-#' When coords_are_voxels is TRUE, assumes 0-based voxel indices
-#' (TrackVis convention) and adds 1 for R indexing.
+#' When coords_are_voxels is TRUE, assumes 0-based voxel indices and adds 1
+#' for R indexing.
 #' @noRd
 coord_to_voxel <- function(
   coord,

@@ -59,12 +59,17 @@
 #'   }
 #'   Use `steps = 1` for a 3D-only atlas. Geometry is shaped after the build,
 #'   not during it: see [atlas_polish()].
-#' @param coord_space The space the streamline coordinates are in. One of
-#'   `"infer"` (the default), `"voxel"` for voxel indices, or `"mm"` for RAS
-#'   world millimetres. Inference is a heuristic: it cannot always tell, and a
+#' @param coord_space The space the streamline coordinates are in, when
+#'   `input_tracts` is a list of coordinate matrices. One of `"infer"` (the
+#'   default), `"voxel"` for voxel indices, or `"mm"` for RAS world
+#'   millimetres. Inference is a heuristic: it cannot always tell, and a
 #'   wrong guess does not error -- it places the tract in the wrong space and
 #'   produces a plausible-looking atlas. Declare the space when you know it.
 #'   Whichever applies is reported at `verbose >= 1`.
+#'
+#'   Tractography files need no declaration: `.trk` and `.tck` files are
+#'   always read into RAS world millimetres, and `"voxel"` is an error for
+#'   them.
 #'
 #' @return A `ggseg_atlas` object with type `"tract"`, containing region
 #'   metadata, tube meshes for 3D rendering, colours, and optionally sf
@@ -94,10 +99,11 @@
 #'   input_lut = "tract_colors.txt"
 #' )
 #'
-#' # Declare the coordinate space rather than letting it be inferred
+#' # Coordinate matrices: declare their space rather than letting it be
+#' # inferred
 #' atlas <- create_tract_from_tractography(
-#'   input_tracts = c("cst_left.trk", "cst_right.trk"),
-#'   coord_space = "voxel"
+#'   input_tracts = list(cst_left = cst_left_points),
+#'   coord_space = "mm"
 #' )
 #'
 #' # View with ggseg3d
@@ -205,7 +211,10 @@ tract_setup_pipeline <- function(
 
   config$input_tracts <- input_tracts
   config$input_aseg <- input_aseg
-  config$coords_are_voxels <- coord_space_to_voxels(coord_space)
+  config$coords_are_voxels <- coord_space_to_voxels(
+    coord_space,
+    from_files = is.character(input_tracts)
+  )
   # Carried through so the finished atlas is named what the caller asked for,
   # not the name derived from the tract labels.
   config$atlas_name <- atlas_name
@@ -422,9 +431,21 @@ tract_resolve_step1 <- function(
 #' used, so a misspelled space fails before the pipeline spends its first hour
 #' reading streamlines.
 #' @noRd
-coord_space_to_voxels <- function(coord_space) {
+coord_space_to_voxels <- function(coord_space, from_files = FALSE) {
   coord_space <- rlang::arg_match(coord_space, c("infer", "voxel", "mm"))
-  switch(coord_space, infer = NULL, voxel = TRUE, mm = FALSE)
+  if (!from_files) {
+    return(switch(coord_space, infer = NULL, voxel = TRUE, mm = FALSE))
+  }
+  if (coord_space == "voxel") {
+    cli::cli_abort(c(
+      "{.arg coord_space} cannot be {.val voxel} for tractography files.",
+      "i" = "{.file .trk} and {.file .tck} files are read into RAS world
+      millimetres, whatever space they store.",
+      "i" = "{.arg coord_space} describes streamlines passed as coordinate
+      matrices. Leave it out for files."
+    ))
+  }
+  FALSE
 }
 
 
@@ -442,11 +463,20 @@ tract_prepare_inputs <- function(
   tract_names <- sanitize_label(input_result$tract_names)
   names(streamlines_data) <- tract_names
 
-  coords_are_voxels <- resolve_tract_coord_space(
-    streamlines_data,
-    verbose,
-    coords_are_voxels
-  )
+  if (is.character(input_tracts)) {
+    coords_are_voxels <- FALSE
+    if (verbose) {
+      cli::cli_alert_info(
+        "Coordinate space (from the tractography files): {.val mm}"
+      )
+    }
+  } else {
+    coords_are_voxels <- resolve_tract_coord_space(
+      streamlines_data,
+      verbose,
+      coords_are_voxels
+    )
+  }
 
   if (is.null(colours)) {
     colours <- rep(NA_character_, length(streamlines_data))

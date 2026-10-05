@@ -9,11 +9,11 @@ describe("read_tractography", {
   it("dispatches to read_trk for .trk files", {
     tmp <- withr::local_tempfile(fileext = ".trk")
     con <- file(tmp, "wb")
-    header <- raw(1000)
-    header[1:6] <- c(charToRaw("TRACK"), as.raw(0))
-    header[37:38] <- writeBin(0L, raw(), size = 2)
-    header[239:240] <- writeBin(0L, raw(), size = 2)
-    header[989:992] <- writeBin(1L, raw(), size = 4)
+    header <- trk_header(
+      n_count = 1L,
+      n_scalars = 0L,
+      n_properties = 0L
+    )
     writeBin(header, con)
     writeBin(3L, con, size = 4)
     writeBin(as.numeric(c(1, 2, 3, 4, 5, 6, 7, 8, 9)), con, size = 4)
@@ -51,11 +51,11 @@ describe("read_trk", {
   it("reads valid TRK file with one streamline", {
     tmp <- withr::local_tempfile(fileext = ".trk")
     con <- file(tmp, "wb")
-    header <- raw(1000)
-    header[1:6] <- c(charToRaw("TRACK"), as.raw(0))
-    header[37:38] <- writeBin(0L, raw(), size = 2)
-    header[239:240] <- writeBin(0L, raw(), size = 2)
-    header[989:992] <- writeBin(1L, raw(), size = 4)
+    header <- trk_header(
+      n_count = 1L,
+      n_scalars = 0L,
+      n_properties = 0L
+    )
     writeBin(header, con)
     writeBin(3L, con, size = 4)
     writeBin(as.numeric(c(1, 2, 3, 4, 5, 6, 7, 8, 9)), con, size = 4)
@@ -72,11 +72,11 @@ describe("read_trk", {
   it("reads TRK file with multiple streamlines", {
     tmp <- withr::local_tempfile(fileext = ".trk")
     con <- file(tmp, "wb")
-    header <- raw(1000)
-    header[1:6] <- c(charToRaw("TRACK"), as.raw(0))
-    header[37:38] <- writeBin(0L, raw(), size = 2)
-    header[239:240] <- writeBin(0L, raw(), size = 2)
-    header[989:992] <- writeBin(2L, raw(), size = 4)
+    header <- trk_header(
+      n_count = 2L,
+      n_scalars = 0L,
+      n_properties = 0L
+    )
     writeBin(header, con)
     writeBin(2L, con, size = 4)
     writeBin(as.numeric(c(1, 2, 3, 4, 5, 6)), con, size = 4)
@@ -94,11 +94,11 @@ describe("read_trk", {
   it("reads to EOF when the header track count is 0 (spec-valid)", {
     tmp <- withr::local_tempfile(fileext = ".trk")
     con <- file(tmp, "wb")
-    header <- raw(1000)
-    header[1:6] <- c(charToRaw("TRACK"), as.raw(0))
-    header[37:38] <- writeBin(0L, raw(), size = 2)
-    header[239:240] <- writeBin(0L, raw(), size = 2)
-    header[989:992] <- writeBin(0L, raw(), size = 4)
+    header <- trk_header(
+      n_count = 0L,
+      n_scalars = 0L,
+      n_properties = 0L
+    )
     writeBin(header, con)
     writeBin(2L, con, size = 4)
     writeBin(as.numeric(c(1, 2, 3, 4, 5, 6)), con, size = 4)
@@ -116,11 +116,11 @@ describe("read_trk", {
   it("handles TRK with scalars", {
     tmp <- withr::local_tempfile(fileext = ".trk")
     con <- file(tmp, "wb")
-    header <- raw(1000)
-    header[1:6] <- c(charToRaw("TRACK"), as.raw(0))
-    header[37:38] <- writeBin(1L, raw(), size = 2)
-    header[239:240] <- writeBin(0L, raw(), size = 2)
-    header[989:992] <- writeBin(1L, raw(), size = 4)
+    header <- trk_header(
+      n_count = 1L,
+      n_scalars = 1L,
+      n_properties = 0L
+    )
     writeBin(header, con)
     writeBin(2L, con, size = 4)
     writeBin(as.numeric(c(1, 2, 3, 0.5, 4, 5, 6, 0.8)), con, size = 4)
@@ -135,11 +135,11 @@ describe("read_trk", {
   it("handles TRK with properties", {
     tmp <- withr::local_tempfile(fileext = ".trk")
     con <- file(tmp, "wb")
-    header <- raw(1000)
-    header[1:6] <- c(charToRaw("TRACK"), as.raw(0))
-    header[37:38] <- writeBin(0L, raw(), size = 2)
-    header[239:240] <- writeBin(1L, raw(), size = 2)
-    header[989:992] <- writeBin(1L, raw(), size = 4)
+    header <- trk_header(
+      n_count = 1L,
+      n_scalars = 0L,
+      n_properties = 1L
+    )
     writeBin(header, con)
     writeBin(2L, con, size = 4)
     writeBin(as.numeric(c(1, 2, 3, 4, 5, 6)), con, size = 4)
@@ -150,6 +150,71 @@ describe("read_trk", {
 
     expect_length(result, 1)
     expect_identical(nrow(result[[1]]), 2L)
+  })
+})
+
+
+describe("read_trk world coordinates", {
+  it("converts voxmm points to RAS millimetres with the header transform", {
+    vox_to_ras <- diag(c(2, 2, 2, 1))
+    vox_to_ras[1:3, 4] <- c(-10, -20, -30)
+    path <- local_trk_file(
+      trk_header(voxel_size = c(2, 2, 2), vox_to_ras = vox_to_ras),
+      matrix(c(3, 5, 7), ncol = 3)
+    )
+
+    expect_identical(unname(read_trk(path)[[1]][1, ]), c(-8, -16, -24))
+  })
+
+  it("flips axes whose stored order differs from the transform's", {
+    path <- local_trk_file(
+      trk_header(dims = c(10L, 12L, 14L), voxel_order = "LPS"),
+      matrix(c(1.5, 2.5, 3.5), ncol = 3)
+    )
+
+    expect_identical(unname(read_trk(path)[[1]][1, ]), c(8, 9, 3))
+  })
+
+  it("places a big-endian file where its little-endian twin lands", {
+    points <- matrix(c(3, 5, 7, 4, 6, 8), ncol = 3, byrow = TRUE)
+    little <- local_trk_file(trk_header(voxel_size = c(2, 1, 4)), points)
+    big <- local_trk_file(
+      trk_header(voxel_size = c(2, 1, 4), endian = "big"),
+      points
+    )
+
+    expect_identical(read_trk(big), read_trk(little))
+  })
+
+  it("warns that placement is untrusted without a recorded transform", {
+    path <- local_trk_file(
+      trk_header(vox_to_ras = matrix(0, 4, 4)),
+      matrix(c(1.5, 2.5, 3.5), ncol = 3)
+    )
+
+    expect_warning(
+      result <- read_trk(path),
+      "does not record a voxel-to-world transform"
+    )
+    expect_identical(unname(result[[1]][1, ]), c(1, 2, 3))
+  })
+
+  it("aborts on a header that cannot place the points", {
+    no_size <- local_trk_file(
+      trk_header(voxel_size = c(0, 0, 0)),
+      matrix(c(1, 2, 3), ncol = 3)
+    )
+    bad_order <- local_trk_file(
+      trk_header(voxel_order = "RRS"),
+      matrix(c(1, 2, 3), ncol = 3)
+    )
+    wrong_size <- trk_header()
+    wrong_size[997:1000] <- writeBin(999L, raw(), size = 4)
+    not_trk <- local_trk_file(wrong_size, matrix(c(1, 2, 3), ncol = 3))
+
+    expect_error(read_trk(no_size), "no usable voxel size")
+    expect_error(read_trk(bad_order), "unusable voxel order")
+    expect_error(read_trk(not_trk), "Invalid TRK")
   })
 })
 
@@ -304,11 +369,11 @@ describe("read_trk early break", {
   it("breaks when n_pts is zero", {
     tmp <- withr::local_tempfile(fileext = ".trk")
     con <- file(tmp, "wb")
-    header <- raw(1000)
-    header[1:6] <- c(charToRaw("TRACK"), as.raw(0))
-    header[37:38] <- writeBin(0L, raw(), size = 2)
-    header[239:240] <- writeBin(0L, raw(), size = 2)
-    header[989:992] <- writeBin(2L, raw(), size = 4)
+    header <- trk_header(
+      n_count = 2L,
+      n_scalars = 0L,
+      n_properties = 0L
+    )
     writeBin(header, con)
     writeBin(3L, con, size = 4)
     writeBin(as.numeric(c(1, 2, 3, 4, 5, 6, 7, 8, 9)), con, size = 4)
@@ -328,11 +393,11 @@ describe("read_trk early break", {
   it("breaks when n_pts is negative", {
     tmp <- withr::local_tempfile(fileext = ".trk")
     con <- file(tmp, "wb")
-    header <- raw(1000)
-    header[1:6] <- c(charToRaw("TRACK"), as.raw(0))
-    header[37:38] <- writeBin(0L, raw(), size = 2)
-    header[239:240] <- writeBin(0L, raw(), size = 2)
-    header[989:992] <- writeBin(2L, raw(), size = 4)
+    header <- trk_header(
+      n_count = 2L,
+      n_scalars = 0L,
+      n_properties = 0L
+    )
     writeBin(header, con)
     writeBin(3L, con, size = 4)
     writeBin(as.numeric(c(1, 2, 3, 4, 5, 6, 7, 8, 9)), con, size = 4)

@@ -11,7 +11,8 @@ read_tractography(file)
 }
 \value{
 A list of matrices, one per streamline. Each matrix has N rows
-(points along the streamline) and 3 columns (x, y, z coordinates).
+(points along the streamline) and 3 columns (x, y, z coordinates), in
+RAS world millimetres.
 }
 \description{
 Load streamlines from a tractography file. Supports TrackVis (\code{.trk}) and
