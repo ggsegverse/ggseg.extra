@@ -1,6 +1,6 @@
 Package: ggseg.extra
 Title: Create Brain Atlases for the 'ggsegverse' Plotting Ecosystem
-Version: 1.9.9.9123
+Version: 2.0.0
 Authors@R: c(
     person(
         given = "Athanasia Mo",
@@ -8,8 +8,7 @@ Authors@R: c(
         email = "a.m.mowinckel@psykologi.uio.no",
         role = c("aut", "cre"),
         comment = c(
-            ORCID = "0000-0002-5756-0223",
-            Github = "drmowinckels")),
+            ORCID = "0000-0002-5756-0223")),
     person(
         given = "Didac",
         family = "Vidal-Piñeiro",
@@ -29,8 +28,10 @@ Description: Create brain atlas data sets compatible with the 'ggsegverse' plott
     cortical, subcortical, white-matter tract, and cerebellar atlases from
     'FreeSurfer' annotation files, 'GIFTI' and 'CIFTI' surface formats,
     'neuromaps', cerebellar flatmaps, and volumetric 'NIfTI' images.
+    Mowinckel & Vidal-Piñeiro (2020) <doi:10.1177/2515245920928009>.
 License: MIT + file LICENSE
-URL: https://github.com/ggsegverse/ggseg.extra
+URL: https://ggsegverse.github.io/ggseg.extra/,
+    https://github.com/ggsegverse/ggseg.extra
 BugReports: https://github.com/ggsegverse/ggseg.extra/issues
 Depends:
     R (>= 4.2.0)
@@ -81,6 +82,7 @@ Language: en-US
 Roxygen: list(markdown = TRUE)
 SystemRequirements: FreeSurfer (subcortical/wholebrain pipelines), 
     Connectome Workbench (optional, for CIFTI resampling),
+    V8 (>= 6.0.0, required by the 'rmapshaper' dependency), 
     GDAL (>= 2.0.1), 
     GEOS (>= 3.4.0), 
     PROJ (>= 4.8.0), 
