@@ -27,9 +27,9 @@ Before changing anything, understand what you have:
 ```{r}
 #| label: inspect
 #| eval: false
-atlas_labels(atlas)
+sort(atlas_labels(atlas))
 
-atlas_regions(atlas)
+sort(unique(atlas_regions(atlas)))
 
 atlas_views(atlas)
 
@@ -39,7 +39,9 @@ atlas_meshes(atlas)
 ```
 
 `atlas_labels()` returns the annotation-level identifiers.
-`atlas_regions()` returns the display names stored in `$core`.
+`atlas_regions()` returns the region keys stored in `$core`.
+Both return one element per `$core` row, in row order, so wrap them in
+`unique()` when you want the distinct set.
 `atlas_views()` lists the available 2D views.
 `atlas_sf()` returns the sf geometry used for 2D plotting.
 `atlas_meshes()` returns the 3D mesh data for each region.

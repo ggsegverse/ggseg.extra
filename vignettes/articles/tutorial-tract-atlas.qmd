@@ -336,7 +336,7 @@ tracula
 
 
 ``` r
-atlas_labels(tracula)
+sort(atlas_labels(tracula))
 #>  [1] "acomm.bbr.prep"       "cc.bodyc.bbr.prep"    "cc.bodyp.bbr.prep"   
 #>  [4] "cc.bodypf.bbr.prep"   "cc.bodypm.bbr.prep"   "cc.bodyt.bbr.prep"   
 #>  [7] "cc.genu.bbr.prep"     "cc.rostrum.bbr.prep"  "cc.splenium.bbr.prep"
