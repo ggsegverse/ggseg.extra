@@ -238,6 +238,68 @@ describe("read_tck", {
 })
 
 
+describe("read_tck data offset", {
+  it("starts reading at the offset the header declares, not after END", {
+    tmp <- withr::local_tempfile(fileext = ".tck")
+    header <- c("mrtrix tracks", "datatype: Float32LE", "file: . 64", "END")
+    header_bytes <- charToRaw(paste0(paste(header, collapse = "\n"), "\n"))
+    padding <- raw(64L - length(header_bytes))
+    con <- file(tmp, "wb")
+    writeBin(c(header_bytes, padding), con)
+    writeBin(c(1, 2, 3, 4, 5, 6, NaN, NaN, NaN, Inf, Inf, Inf), con, size = 4)
+    close(con)
+
+    result <- read_tck(tmp)
+
+    expect_length(result, 1)
+    expect_identical(
+      result[[1]],
+      matrix(
+        c(1, 2, 3, 4, 5, 6),
+        ncol = 3,
+        byrow = TRUE,
+        dimnames = list(NULL, c("x", "y", "z"))
+      )
+    )
+  })
+
+  it("ignores everything after the end-of-file triplet", {
+    tmp <- withr::local_tempfile(fileext = ".tck")
+    con <- file(tmp, "wb")
+    writeLines(c("mrtrix tracks", "datatype: Float32LE", "END"), con)
+    writeBin(c(1, 2, 3, Inf, Inf, Inf, 7, 8, 9), con, size = 4)
+    close(con)
+
+    result <- read_tck(tmp)
+
+    expect_length(result, 1)
+    expect_identical(unname(result[[1]][1, ]), c(1, 2, 3))
+  })
+
+  it("returns no streamlines for a file with no points", {
+    tmp <- withr::local_tempfile(fileext = ".tck")
+    con <- file(tmp, "wb")
+    writeLines(c("mrtrix tracks", "datatype: Float32LE", "END"), con)
+    writeBin(c(Inf, Inf, Inf), con, size = 4)
+    close(con)
+
+    expect_identical(read_tck(tmp), list())
+  })
+})
+
+
+describe("parse_tck_data_offset", {
+  it("reads the byte offset from the file field", {
+    expect_identical(parse_tck_data_offset(c("count: 1", "file: . 337")), 337)
+  })
+
+  it("is NA when the header declares no usable offset", {
+    expect_identical(parse_tck_data_offset("datatype: Float32LE"), NA_real_)
+    expect_identical(parse_tck_data_offset("file: . soon"), NA_real_)
+  })
+})
+
+
 describe("read_trk early break", {
   it("breaks when n_pts is zero", {
     tmp <- withr::local_tempfile(fileext = ".trk")

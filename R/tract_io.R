@@ -155,35 +155,68 @@ read_tck <- function(file) {
   byte_size <- tck_datatype_byte_size(datatype)
   endian <- if (grepl("BE$", datatype)) "big" else "little"
 
-  streamlines <- list()
-  points <- list()
-
-  while (TRUE) {
-    coords <- readBin(con, "double", 3, size = byte_size, endian = endian)
-    if (length(coords) < 3) {
-      break
-    }
-
-    if (all(is.infinite(coords))) {
-      break
-    }
-
-    if (all(is.nan(coords))) {
-      if (length(points) > 0) {
-        streamlines[[length(streamlines) + 1L]] <- tck_points_to_matrix(points)
-        points <- list()
-      }
-      next
-    }
-
-    points[[length(points) + 1L]] <- coords
+  data_offset <- parse_tck_data_offset(header_lines)
+  if (!is.na(data_offset)) {
+    seek(con, data_offset)
   }
 
-  if (length(points) > 0) {
-    streamlines[[length(streamlines) + 1L]] <- tck_points_to_matrix(points)
+  n_values <- (file.size(file) - seek(con)) %/% byte_size
+  values <- readBin(con, "double", n_values, size = byte_size, endian = endian)
+
+  split_tck_streamlines(values)
+}
+
+
+#' Split a TCK coordinate stream into streamlines
+#'
+#' An all-NaN triplet ends a streamline and the first all-Inf triplet ends the
+#' file. Values after a trailing incomplete triplet are dropped.
+#'
+#' @param values Numeric vector of consecutive x, y, z values.
+#' @return A list of matrices with columns x, y, z.
+#' @noRd
+split_tck_streamlines <- function(values) {
+  n_points <- length(values) %/% 3L
+  points <- matrix(
+    values[seq_len(n_points * 3L)],
+    ncol = 3,
+    byrow = TRUE,
+    dimnames = list(NULL, c("x", "y", "z"))
+  )
+
+  end_of_file <- which(rowSums(is.infinite(points)) == 3L)
+  if (length(end_of_file) > 0) {
+    points <- points[seq_len(end_of_file[1] - 1L), , drop = FALSE]
   }
 
-  streamlines
+  is_separator <- rowSums(is.nan(points)) == 3L
+  streamline_id <- cumsum(is_separator)[!is_separator]
+  points <- points[!is_separator, , drop = FALSE]
+
+  unname(lapply(
+    split(seq_len(nrow(points)), streamline_id),
+    function(rows) points[rows, , drop = FALSE]
+  ))
+}
+
+
+#' Extract the byte offset of the track data from TCK header lines
+#'
+#' The `file: . <offset>` field says where the data starts, which can be past
+#' the `END` line when the writer pads the header.
+#'
+#' @return The offset in bytes, or `NA` when the header does not declare one.
+#' @noRd
+parse_tck_data_offset <- function(header_lines) {
+  field <- grep("^file:", header_lines, value = TRUE)
+  if (length(field) == 0) {
+    return(NA_real_)
+  }
+  offset <- sub("^file:\\s*\\S+\\s+", "", field[length(field)])
+  if (!grepl("^[0-9]+$", offset)) {
+    return(NA_real_)
+  }
+  as.numeric(offset)
 }
 
 
@@ -226,13 +259,4 @@ tck_datatype_byte_size <- function(datatype) {
     "Float64BE" = 8,
     4
   )
-}
-
-
-#' Bind collected TCK points into an x/y/z coordinate matrix
-#' @noRd
-tck_points_to_matrix <- function(points) {
-  sl <- do.call(rbind, points)
-  colnames(sl) <- c("x", "y", "z")
-  sl
 }
