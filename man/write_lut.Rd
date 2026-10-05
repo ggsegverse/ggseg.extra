@@ -8,8 +8,7 @@ write_lut(x, path)
 }
 \arguments{
 \item{x}{A data.frame with columns: idx, label, R, G, B, A, and
-optionally type, which is written as a 7th field so that \code{\link[=read_lut]{read_lut()}}
-reads it back.}
+optionally type and hemi. Their values must be single words.}
 
 \item{path}{Path to write to.}
 }
@@ -18,6 +17,17 @@ Invisibly returns the lines written.
 }
 \description{
 Write a LUT to file in FreeSurfer format.
+}
+\details{
+The declared columns \code{type} and \code{hemi} are written after the colours, so
+that \code{\link[=read_lut]{read_lut()}} reads them back. FreeSurfer reads only the first six
+fields of a line and skips comments, so the file stays a valid colour
+table for it.
+
+A table with \code{type} alone gets it as a 7th field, left off rows that have
+none. A table with \code{hemi} gets a comment line naming the fields, and every
+row then carries each one, written as \code{NA} where it declares nothing.
+Other columns are not written.
 }
 \examples{
 ct <- data.frame(

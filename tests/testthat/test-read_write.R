@@ -229,6 +229,24 @@ describe("read_lut", {
     expect_named(result, c("idx", "label", "R", "G", "B", "A"))
   })
 
+  it("reads the fields a header names, in the order it names them", {
+    tmp <- withr::local_tempfile(fileext = ".txt")
+    writeLines(
+      c(
+        "# idx label R G B A hemi type",
+        "  1  Region1  205 130 176   0  left  NA",
+        "  2  Region2  100  50  25   0  NA    cortical",
+        "  3  Region3  100  50  25   0"
+      ),
+      tmp
+    )
+
+    result <- read_lut(tmp)
+
+    expect_identical(result$hemi, c("left", NA, NA))
+    expect_identical(result$type, c(NA, "cortical", NA))
+  })
+
   it("warns about unparseable data lines but keeps comments silent", {
     tmp <- withr::local_tempfile(fileext = ".txt")
     writeLines(
@@ -309,6 +327,63 @@ describe("write_lut", {
     expect_match(lines[1], "cortical$")
     expect_match(lines[2], "0$")
     expect_identical(read_lut(tmp)$type, ctab$type)
+  })
+
+  it("writes every declared column so read_lut() reads the table back", {
+    ctab <- data.frame(
+      stringsAsFactors = FALSE,
+      idx = c(1L, 2L, 3L),
+      label = c("Region1", "Region2", "Region3"),
+      R = c(255L, 0L, 0L),
+      G = c(0L, 255L, 0L),
+      B = c(0L, 0L, 255L),
+      A = c(0L, 0L, 0L),
+      type = c(NA, "subcortical", "cerebellar"),
+      hemi = c("left", NA, "vermis")
+    )
+    tmp <- withr::local_tempfile(fileext = ".txt")
+
+    write_lut(ctab, tmp)
+    expect_identical(read_lut(tmp), ctab)
+
+    ctab$type <- NULL
+    write_lut(ctab, tmp)
+    expect_identical(read_lut(tmp), ctab)
+  })
+
+  it("names its fields in a comment only when type is not the one extra", {
+    ctab <- data.frame(
+      stringsAsFactors = FALSE,
+      idx = 1L,
+      label = "Region1",
+      R = 255L,
+      G = 0L,
+      B = 0L,
+      A = 0L,
+      type = "cortical"
+    )
+    tmp <- withr::local_tempfile(fileext = ".txt")
+
+    expect_false(any(startsWith(write_lut(ctab, tmp), "#")))
+
+    ctab$hemi <- "left"
+    expect_identical(write_lut(ctab, tmp)[1], lut_header(c("type", "hemi")))
+  })
+
+  it("leaves out columns that declare nothing a pipeline reads", {
+    ctab <- get_lut(data.frame(
+      stringsAsFactors = FALSE,
+      idx = 1L,
+      label = "Region1",
+      R = 255L,
+      G = 0L,
+      B = 0L,
+      A = 0L
+    ))
+    tmp <- withr::local_tempfile(fileext = ".txt")
+    write_lut(ctab, tmp)
+
+    expect_named(read_lut(tmp), c("idx", "label", "R", "G", "B", "A"))
   })
 
   it("refuses a type that read_lut() could not parse back", {
