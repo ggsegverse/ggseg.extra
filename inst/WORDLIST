@@ -60,6 +60,7 @@ coloured
 colouring
 colourless
 colours
+Colours
 commissural
 Connectome
 contextualise
@@ -85,6 +86,7 @@ Diedrichsen
 discretizing
 DK
 DKT
+doi
 dropdown
 DTI
 entorhinal
@@ -117,6 +119,7 @@ furrr
 GDAL
 ggplot
 ggseg
+ggsegExtra
 ggsegHammersmith
 ggsegHO
 ggsegHO's
@@ -126,6 +129,7 @@ ggsegMiccai
 ggsegMiccai's
 ggsegShen
 ggsegverse
+ggsegverse's
 GH
 GIFTI
 github
@@ -150,6 +154,7 @@ hemi
 hippocampal
 honour
 honoured
+honours
 idx
 ImageMagick
 inferiorly
@@ -166,12 +171,14 @@ LCBC
 letterboxed
 lh
 LIA
+licence
 Lifebrain
 Lifecycle
 lifecycle
 lintr
 lobular
 lobule
+lobules
 LTA
 luminances
 LUT
@@ -184,6 +191,7 @@ MGZ
 Miccai
 midline
 millimetre
+millimetres
 minimises
 misattributed
 misclassified
@@ -222,6 +230,7 @@ octant
 ORCID
 organisation
 pallidum
+parallelise
 parcellate
 parcellation
 parcellation's
@@ -281,7 +290,9 @@ Sagittal
 sagittal
 sanitised
 sanitises
+sanitising
 sawtooth
+sawtoothed
 scaffolded
 scannable
 Schaefer
@@ -323,6 +334,7 @@ tractography
 Tractography
 TRACULA
 trilinear
+Trilinear
 TRK
 TSV
 uncomment
