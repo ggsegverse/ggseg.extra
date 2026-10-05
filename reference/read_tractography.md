@@ -19,7 +19,8 @@ read_tractography(file)
 ## Value
 
 A list of matrices, one per streamline. Each matrix has N rows (points
-along the streamline) and 3 columns (x, y, z coordinates).
+along the streamline) and 3 columns (x, y, z coordinates), in RAS world
+millimetres.
 
 ## Details
 

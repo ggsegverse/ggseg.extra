@@ -150,12 +150,17 @@ create_tract_from_tractography(
 
 - coord_space:
 
-  The space the streamline coordinates are in. One of `"infer"` (the
-  default), `"voxel"` for voxel indices, or `"mm"` for RAS world
-  millimetres. Inference is a heuristic: it cannot always tell, and a
-  wrong guess does not error – it places the tract in the wrong space
-  and produces a plausible-looking atlas. Declare the space when you
-  know it. Whichever applies is reported at `verbose >= 1`.
+  The space the streamline coordinates are in, when `input_tracts` is a
+  list of coordinate matrices. One of `"infer"` (the default), `"voxel"`
+  for voxel indices, or `"mm"` for RAS world millimetres. Inference is a
+  heuristic: it cannot always tell, and a wrong guess does not error –
+  it places the tract in the wrong space and produces a
+  plausible-looking atlas. Declare the space when you know it. Whichever
+  applies is reported at `verbose >= 1`.
+
+  Tractography files need no declaration: `.trk` and `.tck` files are
+  always read into RAS world millimetres, and `"voxel"` is an error for
+  them.
 
 ## Value
 
@@ -197,10 +202,11 @@ atlas <- create_tract_from_tractography(
   input_lut = "tract_colors.txt"
 )
 
-# Declare the coordinate space rather than letting it be inferred
+# Coordinate matrices: declare their space rather than letting it be
+# inferred
 atlas <- create_tract_from_tractography(
-  input_tracts = c("cst_left.trk", "cst_right.trk"),
-  coord_space = "voxel"
+  input_tracts = list(cst_left = cst_left_points),
+  coord_space = "mm"
 )
 
 # View with ggseg3d

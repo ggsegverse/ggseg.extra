@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9111</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9112</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -69,6 +69,21 @@
       <small>Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.9.9.9112" id="ggsegextra-1999112">ggseg.extra 1.9.9.9112<a class="anchor" aria-label="anchor" href="#ggsegextra-1999112"></a></h2>
+<div class="section level3">
+<h3 id="breaking-changes-1-9-9-9112">Breaking changes<a class="anchor" aria-label="anchor" href="#breaking-changes-1-9-9-9112"></a></h3>
+<ul><li>
+<p><code><a href="../reference/read_tractography.html">read_tractography()</a></code> returns <code>.trk</code> streamlines in RAS world millimetres. It used to return the numbers as stored, which are in the space TrackVis uses: voxel coordinates multiplied by the voxel size, measured from the corner of the first voxel, with axes in the order the header’s <code>voxel_order</code> names. That is neither voxel indices nor world millimetres, so <code><a href="../reference/create_tract_from_tractography.html">create_tract_from_tractography()</a></code> misplaced <code>.trk</code> tracts whichever <code>coord_space</code> it was given: by the voxel size and half a voxel as <code>"voxel"</code>, and by the volume’s origin and any flipped axis as <code>"mm"</code>. Two files holding the same bundle in different voxel orders came back at different coordinates.</p>
+<p>The reader now applies the header’s voxel size, voxel order and voxel-to-world transform, and agrees with ‘nibabel’ on its reference files. Big-endian files are read too; they used to fail.</p>
+</li>
+<li><p><code><a href="../reference/create_tract_from_tractography.html">create_tract_from_tractography()</a></code> no longer accepts <code>coord_space = "voxel"</code> for tractography files. <code>.trk</code> and <code>.tck</code> files are always read into world millimetres, so there is nothing to declare, and <code>"voxel"</code> is now an error rather than a way to misplace the tract. <code>coord_space</code> still applies to streamlines passed as coordinate matrices.</p></li>
+</ul></div>
+<div class="section level3">
+<h3 id="minor-changes-1-9-9-9112">Minor changes<a class="anchor" aria-label="anchor" href="#minor-changes-1-9-9-9112"></a></h3>
+<ul><li>A <code>.trk</code> file whose header has no voxel size, an unusable voxel order, or the wrong header size is rejected with a message naming the problem. A file with no voxel-to-world transform is read with a warning that its placement cannot be trusted.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9111" id="ggsegextra-1999111">ggseg.extra 1.9.9.9111<a class="anchor" aria-label="anchor" href="#ggsegextra-1999111"></a></h2>
 <div class="section level3">

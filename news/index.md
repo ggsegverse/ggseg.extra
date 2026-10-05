@@ -1,5 +1,39 @@
 # Changelog
 
+## ggseg.extra 1.9.9.9112
+
+### Breaking changes
+
+- [`read_tractography()`](https://ggsegverse.github.io/ggseg.extra/reference/read_tractography.md)
+  returns `.trk` streamlines in RAS world millimetres. It used to return
+  the numbers as stored, which are in the space TrackVis uses: voxel
+  coordinates multiplied by the voxel size, measured from the corner of
+  the first voxel, with axes in the order the header’s `voxel_order`
+  names. That is neither voxel indices nor world millimetres, so
+  [`create_tract_from_tractography()`](https://ggsegverse.github.io/ggseg.extra/reference/create_tract_from_tractography.md)
+  misplaced `.trk` tracts whichever `coord_space` it was given: by the
+  voxel size and half a voxel as `"voxel"`, and by the volume’s origin
+  and any flipped axis as `"mm"`. Two files holding the same bundle in
+  different voxel orders came back at different coordinates.
+
+  The reader now applies the header’s voxel size, voxel order and
+  voxel-to-world transform, and agrees with ‘nibabel’ on its reference
+  files. Big-endian files are read too; they used to fail.
+
+- [`create_tract_from_tractography()`](https://ggsegverse.github.io/ggseg.extra/reference/create_tract_from_tractography.md)
+  no longer accepts `coord_space = "voxel"` for tractography files.
+  `.trk` and `.tck` files are always read into world millimetres, so
+  there is nothing to declare, and `"voxel"` is now an error rather than
+  a way to misplace the tract. `coord_space` still applies to
+  streamlines passed as coordinate matrices.
+
+### Minor changes
+
+- A `.trk` file whose header has no voxel size, an unusable voxel order,
+  or the wrong header size is rejected with a message naming the
+  problem. A file with no voxel-to-world transform is read with a
+  warning that its placement cannot be trusted.
+
 ## ggseg.extra 1.9.9.9111
 
 ### Bug fixes
