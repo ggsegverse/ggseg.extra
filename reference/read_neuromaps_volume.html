@@ -13,7 +13,7 @@ values using the same binning logic as read_neuromaps_annotation()."><meta prope
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9112</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9113</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -105,8 +105,8 @@ values using the same binning logic as <code><a href="read_neuromaps_annotation.
 
 <dt id="arg-label-table">label_table<a class="anchor" aria-label="anchor" href="#arg-label-table"></a></dt>
 <dd><p>Optional data.frame mapping parcel ids to region names
-and colours, as for <code><a href="read_neuromaps_annotation.html">read_neuromaps_annotation()</a></code>. Applies to integer
-(parcellation) volumes only; continuous volumes are binned and the bins
+and colours, as for <code><a href="read_neuromaps_annotation.html">read_neuromaps_annotation()</a></code>. Supplying one declares
+the volume a parcellation. Continuous volumes are binned and the bins
 named <code>bin_1</code>, <code>bin_2</code>, and so on.</p></dd>
 
 
@@ -117,6 +117,14 @@ named <code>bin_1</code>, <code>bin_2</code>, and so on.</p></dd>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A tibble with columns: hemi, region, label, colour, vertices</p>
+    </div>
+    <div class="section level2">
+    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
+    <p>A volume whose voxels are all whole numbers, or one given a <code>label_table</code>,
+is treated as a parcellation and sampled with nearest-neighbour
+interpolation, so every vertex takes the id of a parcel in the volume.
+Any other volume is treated as a continuous map and sampled with
+trilinear interpolation.</p>
     </div>
 
     <div class="section level2">

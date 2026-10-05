@@ -1,5 +1,29 @@
 # Changelog
 
+## ggseg.extra 1.9.9.9113
+
+### Bug fixes
+
+- [`read_neuromaps_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/read_neuromaps_volume.md),
+  and
+  [`create_cortical_from_neuromaps()`](https://ggsegverse.github.io/ggseg.extra/reference/create_cortical_from_neuromaps.md)
+  for a volume, keep a parcellation a parcellation. Every volume was
+  projected to the surface with trilinear interpolation, which blends
+  neighbouring voxels. That is right for a continuous map, but it turns
+  label ids into fractions between them, so a label volume no longer
+  looked like one and was cut into quantile bins of its own ids, named
+  `bin_1`, `bin_2` and so on. A `label_table` could not help, because it
+  only applied once the projected values were whole numbers.
+
+  Whether a volume holds labels is now decided from the volume itself,
+  before projection: all voxels whole numbers, or a `label_table`
+  supplied. Label volumes are sampled with nearest-neighbour
+  interpolation, so every vertex takes the id of a parcel that exists in
+  the volume. Continuous maps are projected as before.
+
+- [`read_neuromaps_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/read_neuromaps_volume.md)
+  reports a volume that does not exist before it starts projecting.
+
 ## ggseg.extra 1.9.9.9112
 
 ### Breaking changes

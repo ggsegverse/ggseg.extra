@@ -32,8 +32,8 @@ read_neuromaps_volume(
   Optional data.frame mapping parcel ids to region names and colours, as
   for
   [`read_neuromaps_annotation()`](https://ggsegverse.github.io/ggseg.extra/reference/read_neuromaps_annotation.md).
-  Applies to integer (parcellation) volumes only; continuous volumes are
-  binned and the bins named `bin_1`, `bin_2`, and so on.
+  Supplying one declares the volume a parcellation. Continuous volumes
+  are binned and the bins named `bin_1`, `bin_2`, and so on.
 
 - output_dir:
 
@@ -42,6 +42,14 @@ read_neuromaps_volume(
 ## Value
 
 A tibble with columns: hemi, region, label, colour, vertices
+
+## Details
+
+A volume whose voxels are all whole numbers, or one given a
+`label_table`, is treated as a parcellation and sampled with
+nearest-neighbour interpolation, so every vertex takes the id of a
+parcel in the volume. Any other volume is treated as a continuous map
+and sampled with trilinear interpolation.
 
 ## Examples
 
