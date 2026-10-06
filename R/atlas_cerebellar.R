@@ -713,7 +713,8 @@ run_cerebellar_creation <- function(
   dirs <- setup_atlas_dirs(
     config$output_dir,
     atlas_name = atlas_name,
-    type = "cerebellar"
+    type = "cerebellar",
+    cleanup = config$cleanup
   )
 
   if (config$verbose) {

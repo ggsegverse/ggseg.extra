@@ -490,6 +490,92 @@ describe("derive_atlas_name", {
 })
 
 
+describe("setup_atlas_dirs working directory safety", {
+  it("rejects an atlas name that is not one directory name", {
+    output_dir <- withr::local_tempdir()
+
+    expect_snapshot(setup_atlas_dirs(output_dir, atlas_name = ""), error = TRUE)
+    for (unusable in list("..", ".", "a/b", "a\\b", " ", NA_character_)) {
+      expect_error(
+        setup_atlas_dirs(output_dir, atlas_name = unusable),
+        "must be a single name"
+      )
+    }
+  })
+
+  it("aborts before building when cleanup would remove someone's files", {
+    output_dir <- withr::local_tempdir()
+    sources <- file.path(output_dir, "dkt")
+    dir.create(sources)
+    file.create(file.path(sources, "lh.dkt.annot"))
+
+    expect_error(
+      setup_atlas_dirs(output_dir, atlas_name = "dkt", cleanup = TRUE),
+      "already holds files this build did not write"
+    )
+    expect_identical(
+      list.files(sources, all.files = TRUE, no.. = TRUE),
+      "lh.dkt.annot"
+    )
+  })
+
+  it("builds in a directory holding other files when cleanup is off", {
+    output_dir <- withr::local_tempdir()
+    sources <- file.path(output_dir, "dkt")
+    dir.create(sources)
+    file.create(file.path(sources, "lh.dkt.annot"))
+
+    dirs <- setup_atlas_dirs(output_dir, atlas_name = "dkt", cleanup = FALSE)
+
+    expect_true(dir.exists(dirs$snapshots))
+    expect_true(file.exists(file.path(sources, "lh.dkt.annot")))
+  })
+
+  it("reuses the working directory an earlier build left behind", {
+    output_dir <- withr::local_tempdir()
+    first <- setup_atlas_dirs(output_dir, atlas_name = "dkt", cleanup = TRUE)
+    file.create(file.path(first$base, "step1.rds"))
+
+    expect_no_error(
+      setup_atlas_dirs(output_dir, atlas_name = "dkt", cleanup = TRUE)
+    )
+  })
+
+  it("recognises a working directory from before the marker by its manifest", {
+    output_dir <- withr::local_tempdir()
+    legacy <- file.path(output_dir, "dkt")
+    dir.create(legacy)
+    file.create(file.path(legacy, cache_manifest_name))
+    file.create(file.path(legacy, "step1.rds"))
+
+    expect_false(holds_foreign_files(legacy))
+  })
+})
+
+
+describe("remove_working_dir", {
+  it("removes a directory the build marked as its own", {
+    work <- mark_working_dir(file.path(withr::local_tempdir(), "work"))
+    file.create(file.path(work, "step1.rds"))
+
+    expect_true(remove_working_dir(work))
+    expect_false(dir.exists(work))
+  })
+
+  it("keeps a directory holding files no build wrote, and says so", {
+    sources <- withr::local_tempdir()
+    file.create(file.path(sources, "lh.dkt.annot"))
+
+    expect_warning(
+      removed <- remove_working_dir(sources),
+      "holds files this build did not write"
+    )
+    expect_false(removed)
+    expect_true(file.exists(file.path(sources, "lh.dkt.annot")))
+  })
+})
+
+
 describe("finalize_atlas", {
   it("converts an sf-backed atlas to a polygon atlas", {
     sf_obj <- sf::st_sf(

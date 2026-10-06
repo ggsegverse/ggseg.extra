@@ -173,7 +173,8 @@ subcort_setup_pipeline <- function(
   dirs <- setup_atlas_dirs(
     config$output_dir,
     atlas_name = config$atlas_name,
-    type = "subcortical"
+    type = "subcortical",
+    cleanup = config$cleanup
   )
   subcort_log_header(config)
 

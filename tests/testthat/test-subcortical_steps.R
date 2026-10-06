@@ -918,7 +918,7 @@ describe("finalize_atlas (subcort parameters)", {
   it("cleanup deletes directory", {
     test_dir <- withr::local_tempdir()
     sub_dir <- file.path(test_dir, "atlas_work")
-    dir.create(sub_dir)
+    mark_working_dir(sub_dir)
     file.create(file.path(sub_dir, "temp.rds"))
 
     config <- list(

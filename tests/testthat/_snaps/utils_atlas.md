@@ -8,6 +8,15 @@
       x Not a hemisphere: "rigth" and "both"
       i Allowed: "left", "right", "midline", and "vermis", or `NA` to read it from the label's name.
 
+# setup_atlas_dirs working directory safety / rejects an atlas name that is not one directory name
+
+    Code
+      setup_atlas_dirs(output_dir, atlas_name = "")
+    Condition
+      Error in `check_atlas_name()`:
+      ! `atlas_name` must be a single name, not "".
+      i It names the working directory inside `output_dir`, so it cannot be empty, "." or "..", or contain a path separator.
+
 # drop_labels_without_geometry / aborts rather than build an atlas with no drawable region
 
     Code
