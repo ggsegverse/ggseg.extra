@@ -273,7 +273,7 @@ atlas_full <- create_cortical_from_neuromaps(
 #> ℹ Using cached 'source-abagen_desc-genepc1_space-fsaverage_den-10k_hemi-R_feature.func.gii'
 #> 
 #> ── Creating brain atlas "abagen_genepc1" from neuromaps ────────────────────────
-#> ℹ Input files: '/Users/athanasm/Library/Caches/org.R-project.R/R/neuromapr/annotations/abagen/genepc1/fsaverage//source-abagen_desc-genepc1_space-fsaverage_den-10k_hemi-L_feature.func.gii' and '/Users/athanasm/Library/Caches/org.R-project.R/R/neuromapr/annotations/abagen/genepc1/fsaverage//source-abagen_desc-genepc1_space-fsaverage_den-10k_hemi-R_feature.func.gii'
+#> ℹ Input files: '~/Library/Caches/org.R-project.R/R/neuromapr/annotations/abagen/genepc1/fsaverage//source-abagen_desc-genepc1_space-fsaverage_den-10k_hemi-L_feature.func.gii' and '~/Library/Caches/org.R-project.R/R/neuromapr/annotations/abagen/genepc1/fsaverage//source-abagen_desc-genepc1_space-fsaverage_den-10k_hemi-R_feature.func.gii'
 #> ℹ Reading neuromaps annotation
 #> ✔ Reading neuromaps annotation [155ms]
 #> 
