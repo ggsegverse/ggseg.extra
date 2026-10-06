@@ -42,6 +42,7 @@ extract_centerline <- function(
   if (length(resampled) == 0) {
     return(NULL)
   }
+  resampled <- align_streamline_directions(resampled)
 
   switch(
     method,
@@ -74,6 +75,35 @@ centerline_mean <- function(resampled) {
   centerline <- Reduce(`+`, resampled) / length(resampled)
   colnames(centerline) <- c("x", "y", "z")
   centerline
+}
+
+
+#' Make every streamline in a bundle run the same way
+#'
+#' Tractography stores each streamline in whichever direction it was traced,
+#' so a bundle is a mix of both. Averaging point by point across that mix
+#' pulls every point towards the middle of the bundle, and a medoid compares
+#' streamlines end to opposite end. Each streamline is reversed when that
+#' brings it closer to the reference: first to the first streamline, then to
+#' the mean of the result, which stops one stray first streamline from
+#' deciding the direction for all.
+#'
+#' @param resampled List of point matrices with the same number of rows.
+#' @return The list, with some matrices reversed row-wise.
+#' @noRd
+align_streamline_directions <- function(resampled) {
+  for (pass in 1:2) {
+    reference <- if (pass == 1L) resampled[[1]] else centerline_mean(resampled)
+    resampled <- lapply(resampled, function(streamline) {
+      reversed <- streamline[rev(seq_len(nrow(streamline))), , drop = FALSE]
+      if (sum((reversed - reference)^2) < sum((streamline - reference)^2)) {
+        reversed
+      } else {
+        streamline
+      }
+    })
+  }
+  resampled
 }
 
 

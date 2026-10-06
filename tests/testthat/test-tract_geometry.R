@@ -547,6 +547,57 @@ describe("resolve_tract_coord_space", {
 })
 
 
+describe("extract_centerline streamline direction", {
+  forward <- cbind(x = as.numeric(1:10), y = 0, z = 0)
+  backward <- forward[10:1, ]
+
+  it("keeps the bundle's length when streamlines run both ways", {
+    centerline <- extract_centerline(
+      list(forward, backward, forward, backward),
+      method = "mean",
+      n_points = 10
+    )
+
+    expect_identical(range(centerline[, "x"]), c(1, 10))
+  })
+
+  it("gives the same line whichever way each streamline was stored", {
+    one_way <- extract_centerline(
+      list(forward, forward, forward),
+      method = "mean",
+      n_points = 10
+    )
+    mixed <- extract_centerline(
+      list(forward, backward, forward),
+      method = "mean",
+      n_points = 10
+    )
+
+    expect_identical(mixed, one_way)
+  })
+
+  it("picks a medoid by shape, not by storage direction", {
+    offset <- forward
+    offset[, "y"] <- 5
+    centerline <- extract_centerline(
+      list(forward, backward, forward, offset[10:1, ]),
+      method = "medoid",
+      n_points = 10
+    )
+
+    expect_identical(unique(centerline[, "y"]), 0)
+  })
+
+  it("does not let one reversed first streamline decide alone", {
+    aligned <- align_streamline_directions(
+      list(backward, forward, forward, forward)
+    )
+
+    expect_true(all(vapply(aligned, identical, logical(1), aligned[[1]])))
+  })
+})
+
+
 describe("extract_centerline medoid", {
   it("selects the most representative streamline", {
     streamlines <- list(
