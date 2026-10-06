@@ -1,5 +1,27 @@
 # Changelog
 
+## ggseg.extra 1.9.9.9114
+
+### Bug fixes
+
+- A build with `cleanup = TRUE`, the default, can no longer delete files
+  it did not write. The intermediate files live in
+  `output_dir/atlas_name`, and that whole folder was removed when the
+  build finished, whatever else was in it. With
+  `output_dir = "data-raw"` and source files kept in
+  `data-raw/<atlas_name>/`, a successful build deleted the sources.
+
+  Every `create_*()` function now stops before doing any work when that
+  folder already holds files and was not made by an earlier build, and
+  says so. Use another `output_dir` or `atlas_name`, or pass
+  `cleanup = FALSE` to build there and keep everything. Continuing an
+  interrupted build in its own folder works as before.
+
+- `atlas_name` must be a single name. An empty name resolved to
+  `output_dir` itself and `".."` to its parent, so cleanup removed that
+  directory instead; both are now errors, as is a name containing a path
+  separator.
+
 ## ggseg.extra 1.9.9.9113
 
 ### Bug fixes

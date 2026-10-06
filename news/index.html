@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9113</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9114</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -69,6 +69,17 @@
       <small>Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.9.9.9114" id="ggsegextra-1999114">ggseg.extra 1.9.9.9114<a class="anchor" aria-label="anchor" href="#ggsegextra-1999114"></a></h2>
+<div class="section level3">
+<h3 id="bug-fixes-1-9-9-9114">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-1-9-9-9114"></a></h3>
+<ul><li>
+<p>A build with <code>cleanup = TRUE</code>, the default, can no longer delete files it did not write. The intermediate files live in <code>output_dir/atlas_name</code>, and that whole folder was removed when the build finished, whatever else was in it. With <code>output_dir = "data-raw"</code> and source files kept in <code>data-raw/&lt;atlas_name&gt;/</code>, a successful build deleted the sources.</p>
+<p>Every <code>create_*()</code> function now stops before doing any work when that folder already holds files and was not made by an earlier build, and says so. Use another <code>output_dir</code> or <code>atlas_name</code>, or pass <code>cleanup = FALSE</code> to build there and keep everything. Continuing an interrupted build in its own folder works as before.</p>
+</li>
+<li><p><code>atlas_name</code> must be a single name. An empty name resolved to <code>output_dir</code> itself and <code>".."</code> to its parent, so cleanup removed that directory instead; both are now errors, as is a name containing a path separator.</p></li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9113" id="ggsegextra-1999113">ggseg.extra 1.9.9.9113<a class="anchor" aria-label="anchor" href="#ggsegextra-1999113"></a></h2>
 <div class="section level3">

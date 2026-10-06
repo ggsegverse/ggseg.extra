@@ -101,7 +101,11 @@ options(ggseg.extra.skip_existing = TRUE)
 ### Output directory
 
 Intermediate files — meshes, projections, traced contours — are written
-under `output_dir`, and removed again unless `cleanup = FALSE`. It
+to a folder named after the atlas under `output_dir`, and that folder is
+removed again unless `cleanup = FALSE`. A build will not start if the
+folder already holds files it did not write, because removing it would
+delete them: keep source files somewhere other than
+`output_dir/atlas_name`, or pass `cleanup = FALSE`. `output_dir`
 defaults to [`tempdir()`](https://rdrr.io/r/base/tempfile.html), so a
 build leaves nothing behind. Set it when you want the intermediates to
 survive the session, which is what makes `skip_existing` useful:

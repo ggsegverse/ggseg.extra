@@ -21,7 +21,7 @@ distributed as NIfTI label volumes (e.g. AtlasTrack)."><meta property="og:image"
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9113</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9114</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -164,7 +164,8 @@ centerline cannot be fit, are dropped automatically with a message.</p></dd>
 
 <dt id="arg-atlas-name">atlas_name<a class="anchor" aria-label="anchor" href="#arg-atlas-name"></a></dt>
 <dd><p>Name for the atlas. If NULL, derived from the input
-filename.</p></dd>
+filename. It also names the folder of intermediate files inside
+<code>output_dir</code>, so it must be a single name without path separators.</p></dd>
 
 
 <dt id="arg-output-dir">output_dir<a class="anchor" aria-label="anchor" href="#arg-output-dir"></a></dt>
