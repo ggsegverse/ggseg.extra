@@ -1293,3 +1293,33 @@ describe("cortical_finalize", {
     )
   })
 })
+
+
+describe("check_cortical_views", {
+  it("accepts any of the four views and either hemisphere", {
+    expect_no_error(check_cortical_views(c("lateral", "inferior")))
+    expect_no_error(check_cortical_views("medial", c("lh", "rh")))
+  })
+
+  it("names the view or hemisphere it does not know", {
+    expect_snapshot(error = TRUE, {
+      check_cortical_views(c("lateral", "medal"))
+      check_cortical_views(character(0))
+      check_cortical_views("lateral", hemisphere = "left")
+    })
+  })
+
+  it("stops a creator before it reads any input", {
+    local_mocked_bindings(
+      read_annotation_data = function(...) cli::cli_abort("input was read")
+    )
+
+    expect_error(
+      create_cortical_from_annotation(
+        input_annot = c("lh.aparc.annot", "rh.aparc.annot"),
+        views = c("lateral", "medal")
+      ),
+      "views.*must be one or more of"
+    )
+  })
+})

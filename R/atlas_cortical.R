@@ -57,6 +57,7 @@ create_cortical_from_annotation <- function(
   skip_existing = NULL
 ) {
   rlang::check_dots_empty()
+  check_cortical_views(views, hemisphere)
   if (length(input_annot) == 0) {
     cli::cli_abort("{.arg input_annot} must not be empty")
   }
@@ -141,6 +142,7 @@ create_cortical_from_labels <- function(
   skip_existing = NULL
 ) {
   rlang::check_dots_empty()
+  check_cortical_views(views)
 
   config <- validate_surface_config(
     output_dir,
@@ -210,6 +212,7 @@ create_cortical_from_gifti <- function(
   skip_existing = NULL
 ) {
   rlang::check_dots_empty()
+  check_cortical_views(views, hemisphere)
   if (length(gifti_files) == 0) {
     cli::cli_abort("{.arg gifti_files} must not be empty")
   }
@@ -283,6 +286,7 @@ create_cortical_from_cifti <- function(
   skip_existing = NULL
 ) {
   rlang::check_dots_empty()
+  check_cortical_views(views, hemisphere)
   if (!file.exists(cifti_file)) {
     cli::cli_abort("CIFTI file not found: {.path {cifti_file}}")
   }
@@ -373,6 +377,7 @@ create_cortical_from_neuromaps <- function(
   skip_existing = NULL
 ) {
   rlang::check_dots_empty()
+  check_cortical_views(views, hemisphere)
   rlang::check_installed(
     "neuromapr",
     reason = "to download neuromaps annotations"
@@ -570,6 +575,50 @@ detect_neuromaps_volume <- function(gifti_files, config) {
   }
 
   is_volume
+}
+
+
+#' Check the requested cortical views and hemispheres exist
+#'
+#' An unknown view has no camera, and the projection used to skip it without
+#' a word: a misspelt view simply was not in the atlas.
+#' @noRd
+check_cortical_views <- function(
+  views,
+  hemisphere = NULL,
+  call = rlang::caller_env()
+) {
+  check_known_values(
+    views,
+    c("lateral", "medial", "superior", "inferior"),
+    "views",
+    call
+  )
+  if (!is.null(hemisphere)) {
+    check_known_values(hemisphere, c("lh", "rh"), "hemisphere", call)
+  }
+  invisible(NULL)
+}
+
+
+#' Abort unless `x` is a non-empty character vector drawn from `known`
+#' @noRd
+check_known_values <- function(x, known, arg, call) {
+  unknown <- setdiff(as.character(x), known)
+  if (is.character(x) && length(x) > 0 && length(unknown) == 0) {
+    return(invisible(x))
+  }
+  cli::cli_abort(
+    c(
+      "{.arg {arg}} must be one or more of {.val {known}}.",
+      "x" = if (length(unknown) > 0) {
+        "Got {.val {unknown}}."
+      } else {
+        "Got nothing."
+      }
+    ),
+    call = call
+  )
 }
 
 

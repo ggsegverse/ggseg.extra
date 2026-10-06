@@ -479,6 +479,11 @@ describe("derive_atlas_name", {
     expect_identical(derive_atlas_name("lh.myatlas.label.gii"), "myatlas")
   })
 
+  it("drops the compression suffix along with the format's", {
+    expect_identical(derive_atlas_name("/data/thalamus.nii.gz"), "thalamus")
+    expect_identical(derive_atlas_name("/data/thalamus.nii"), "thalamus")
+  })
+
   it("aborts for missing or non-scalar input", {
     expect_error(derive_atlas_name(character(0)), "single input file")
     expect_error(derive_atlas_name(NA), "single input file")
