@@ -75,13 +75,14 @@ When the pipeline reads the annotation data, it first checks whether the vertex 
 This detection is automatic.
 If you have a parcellation map from neuromaps (like Schaefer parcels), the pipeline will handle it as discrete regions without binning.
 
-### The `n_bins` parameter
+### The `breaks` argument
 
-`n_bins` controls how many quantile bins continuous data is split into.
+`breaks` controls how continuous data is cut into bins.
+Both hemispheres are cut on the same bin edges, so a bin covers the same range of values on the left and on the right.
 
-**NULL (the default)** uses Sturges' rule to auto-detect the bin count.
-The formula is `1 + log2(n)` where *n* is the number of valid (non-NaN) vertices, clamped to the range 5--20.
-For fsaverage5 with 10,242 vertices per hemisphere, this gives `1 + log2(10242) ≈ 14` bins.
+**NULL (the default)** makes quantile bins and uses Sturges' rule to choose how many.
+The formula is `1 + log2(n)`, rounded up, where *n* is the number of valid (non-NaN) vertices across both hemispheres, clamped to the range 5--20.
+For fsaverage5 with 10,242 vertices per hemisphere, this gives about 16 bins.
 
 ```{r}
 #| label: the-nbins-parameter
@@ -90,7 +91,7 @@ nrow(atlas_auto$core)
 atlas_auto$core |> filter(region != "unknown") |> distinct(region)
 ```
 
-**An explicit integer** overrides auto-detection.
+**A single number** asks for that many quantile bins.
 Use fewer bins for a cleaner, more schematic look; more bins for finer spatial resolution.
 
 ```{r}
@@ -99,7 +100,7 @@ Use fewer bins for a cleaner, more schematic look; more bins for finer spatial r
 atlas_5 <- create_cortical_from_neuromaps(
   source = "abagen",
   desc = "genepc1",
-  n_bins = 5,
+  breaks = 5,
   atlas_name = "abagen_5bin"
 )
 
@@ -112,7 +113,7 @@ atlas_5$core |> filter(region != "unknown") |> distinct(region)
 atlas_20 <- create_cortical_from_neuromaps(
   source = "abagen",
   desc = "genepc1",
-  n_bins = 20,
+  breaks = 20,
   atlas_name = "abagen_20bin"
 )
 
@@ -121,7 +122,7 @@ atlas_20$core |> filter(region != "unknown") |> distinct(region)
 
 ### Quantile-based breaks
 
-Bins are created using quantile breaks, not equal-width intervals.
+Unless you supply the edges yourself, bins are created using quantile breaks, not equal-width intervals.
 This means each bin contains approximately the same number of vertices.
 
 Equal-width bins would leave most vertices in a few central bins when the distribution is skewed, which is common for brain maps.
@@ -181,7 +182,7 @@ We start with 7 bins and then simplify to roughly 20% of vertices:
 atlas_full <- create_cortical_from_neuromaps(
   source = "abagen",
   desc = "genepc1",
-  n_bins = 7,
+  breaks = 7,
   atlas_name = "abagen_genepc1",
   verbose = TRUE
 )
@@ -269,7 +270,7 @@ atlas_vol <- create_cortical_from_neuromaps(
   source = "pet",
   desc = "5HT1a",
   atlas_name = "serotonin_5ht1a",
-  n_bins = 10
+  breaks = 10
 )
 ```
 
@@ -291,7 +292,7 @@ files <- neuromapr::fetch_neuromaps_annotation(
   verbose = FALSE
 )
 
-annot_data <- read_neuromaps_annotation(files, n_bins = 7)
+annot_data <- read_neuromaps_annotation(files, breaks = 7)
 annot_data
 ```
 
@@ -299,15 +300,40 @@ For volume files in MNI152 space, use `read_neuromaps_volume()` instead.
 
 ## Choosing the right number of bins
 
-| n_bins | Use case |
+| breaks | Use case |
 |--------|----------|
 | 3--5 | High-level overview, schematic figures, publication thumbnails |
 | 7--10 | Balanced detail, good for most visualizations |
-| ~14 (auto) | Default; maximum spatial detail from Sturges' rule |
+| ~16 (auto) | Default; maximum spatial detail from Sturges' rule |
 | 15--20 | Dense gradients where fine differences matter |
 
 More bins means more regions and larger atlas objects.
 The pipeline is fast regardless of bin count, so experiment freely.
+
+### Choosing the bin edges yourself
+
+Quantile bins are not the only option.
+Give `breaks` the edges of the bins as increasing numbers, or a function that takes the map's values and returns the edges:
+
+```{r}
+#| label: custom-breaks
+#| eval: false
+# Fixed edges, for example to share one scale across several maps
+create_cortical_from_neuromaps(
+  source = "abagen",
+  desc = "genepc1",
+  breaks = c(-3, -1, 0, 1, 3)
+)
+
+# Round, equal-width bins
+create_cortical_from_neuromaps(
+  source = "abagen",
+  desc = "genepc1",
+  breaks = function(x) pretty(x, 6)
+)
+```
+
+Vertices whose value falls outside the edges you give are left in `unknown`, and the pipeline warns about how many.
 
 ## Saving
 

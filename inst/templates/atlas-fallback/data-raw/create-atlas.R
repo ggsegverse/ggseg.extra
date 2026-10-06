@@ -82,14 +82,14 @@ progressr::handlers(global = TRUE)
 # Uncomment this section for parcellations available via neuromaps.
 # `source` and `desc` identify the annotation; see the neuromapr package for
 # the available combinations. Continuous brain maps are discretised into
-# `n_bins` quantile bins, each becoming a plottable region.
+# `breaks` quantile bins, each becoming a plottable region.
 
 # ATLASNAME <- create_cortical_from_neuromaps(
 #   source = "ATLASNAME",
 #   desc = "TODO-descriptor",
 #   space = "fsaverage",
 #   density = "10k",
-#   n_bins = 10,
+#   breaks = 10,
 #   atlas_name = "ATLASNAME",
 #   output_dir = here::here("data-raw"),
 #   verbose = TRUE

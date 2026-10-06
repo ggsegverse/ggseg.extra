@@ -7,7 +7,7 @@ progressr::handlers(global = TRUE)
 atlas <- create_cortical_from_neuromaps(
   source = "abagen",
   desc = "genepc1",
-  n_bins = NULL,
+  breaks = NULL,
   atlas_name = "abagen_genepc1",
   output_dir = "data-raw",
   skip_existing = TRUE,

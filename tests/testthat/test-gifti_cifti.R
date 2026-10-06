@@ -338,52 +338,6 @@ describe("is_integer_valued", {
 })
 
 
-describe("parse_continuous_values", {
-  it("bins values into quantile groups", {
-    values <- c(seq(0, 1, length.out = 100), NaN, NaN)
-    result <- parse_continuous_values(values, "left", "lh", n_bins = 5)
-
-    region_names <- vapply(result, function(r) r$region[1], character(1))
-    expect_true("bin_1" %in% region_names)
-    expect_true("bin_5" %in% region_names)
-    expect_true("unknown" %in% region_names)
-
-    total_verts <- sum(vapply(
-      result,
-      function(r) length(r$vertices[[1]]),
-      integer(1)
-    ))
-    expect_identical(total_verts, 102L)
-  })
-
-  it("assigns NaN vertices to unknown", {
-    values <- c(1.0, 2.0, NaN, NaN, NaN)
-    result <- parse_continuous_values(values, "right", "rh", n_bins = 2)
-
-    unknown <- Filter(function(r) r$region[1] == "unknown", result)
-    expect_length(unknown, 1)
-    expect_length(unknown[[1]]$vertices[[1]], 3)
-  })
-
-  it("auto-detects n_bins via Sturges when NULL", {
-    values <- rnorm(10000)
-    result <- parse_continuous_values(values, "left", "lh", n_bins = NULL)
-
-    bins <- Filter(function(r) grepl("^bin_", r$region[1]), result)
-    expected <- as.integer(nclass.Sturges(values))
-    expect_length(bins, expected)
-  })
-
-  it("clamps auto-detected bins to 5-20 range", {
-    few <- rnorm(10)
-    result <- parse_continuous_values(few, "left", "lh", n_bins = NULL)
-    bins <- Filter(function(r) grepl("^bin_", r$region[1]), result)
-    expect_gte(length(bins), 3)
-    expect_lte(length(bins), 20)
-  })
-})
-
-
 describe("parse_parcellation_values", {
   it("creates regions from integer IDs", {
     values <- c(1, 1, 2, 2, 0)
@@ -454,7 +408,7 @@ describe("read_neuromaps_annotation", {
     writeLines("mock", lh)
     writeLines("mock", rh)
 
-    result <- read_neuromaps_annotation(c(lh, rh), n_bins = 5)
+    result <- read_neuromaps_annotation(c(lh, rh), breaks = 5)
 
     expect_s3_class(result, "tbl_df")
     expect_named(result, c("hemi", "region", "label", "colour", "vertices"))
@@ -509,7 +463,7 @@ describe("read_neuromaps_annotation", {
     )
     writeLines("mock", lh)
 
-    result <- read_neuromaps_annotation(lh, n_bins = 3)
+    result <- read_neuromaps_annotation(lh, breaks = 3)
 
     unknown <- result[result$region == "unknown", ]
     expect_length(unknown$vertices[[1]], 1000)

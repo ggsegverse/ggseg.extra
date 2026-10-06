@@ -6,7 +6,7 @@
 \usage{
 read_neuromaps_volume(
   nifti_file,
-  n_bins = NULL,
+  breaks = NULL,
   label_table = NULL,
   output_dir = tempdir()
 )
@@ -14,8 +14,20 @@ read_neuromaps_volume(
 \arguments{
 \item{nifti_file}{Path to a \code{.nii} or \code{.nii.gz} file in MNI152 space.}
 
-\item{n_bins}{Number of quantile bins for continuous data. When \code{NULL}
-(default), auto-detected via Sturges' rule. Ignored for integer data.}
+\item{breaks}{How to cut a continuous map into bins. One of:
+\itemize{
+\item \code{NULL}, the default: quantile bins, as many as Sturges' rule gives for
+the number of vertices (\code{1 + log2(n)}), kept between 5 and 20.
+\item A single number: that many quantile bins.
+\item Increasing numbers: the edges of the bins.
+\item A function that takes the map's finite values and returns the edges,
+such as \code{function(x) pretty(x, 6)} for round, equal-width bins.
+}
+
+Quantile bins each hold about the same number of vertices. Both
+hemispheres are cut on the same edges, so a bin covers the same range of
+values on the left and on the right. Values outside edges you supply are
+left \code{unknown}, with a warning. Ignored for parcellation data.}
 
 \item{label_table}{Optional data.frame mapping parcel ids to region names
 and colours, as for \code{\link[=read_neuromaps_annotation]{read_neuromaps_annotation()}}. Supplying one declares
@@ -41,6 +53,6 @@ trilinear interpolation.
 }
 \examples{
 \dontrun{
-atlas_data <- read_neuromaps_volume("map.nii.gz", n_bins = 7)
+atlas_data <- read_neuromaps_volume("map.nii.gz", breaks = 7)
 }
 }

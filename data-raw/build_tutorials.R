@@ -96,11 +96,19 @@ scrub_machine_paths <- function() {
   temp_paths <- temp_paths[nzchar(temp_paths)]
   temp_paths <- temp_paths[order(nchar(temp_paths), decreasing = TRUE)]
 
+  # The home directory comes last and is the catch-all: anything a tutorial
+  # reads from a per-user cache, such as the files neuromapr downloads, is
+  # printed with the name of whoever knitted it.
   replacements <- c(
     stats::setNames("$FREESURFER_HOME", fs_home_path()),
-    stats::setNames(rep("<tempdir>", length(temp_paths)), temp_paths)
+    stats::setNames(rep("<tempdir>", length(temp_paths)), temp_paths),
+    stats::setNames("~", normalize_existing(path.expand("~")))
   )
   replacements <- replacements[nzchar(names(replacements))]
+  replacements <- replacements[order(
+    nchar(names(replacements)),
+    decreasing = TRUE
+  )]
 
   # cli writes progress and alerts to the message stream, so hooking `output`
   # alone leaves most of the paths in place.
