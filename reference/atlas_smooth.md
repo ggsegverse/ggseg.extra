@@ -107,7 +107,7 @@ Other atlas geometry:
 ## Examples
 
 ``` r
-dk <- ggseg::dk()
+dk <- ggseg.formats::dk()
 
 # Round off the voxel staircase.
 atlas_smooth(dk, smoothness = 0.4)

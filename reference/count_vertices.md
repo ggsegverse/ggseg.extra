@@ -48,7 +48,7 @@ Other atlas geometry:
 ## Examples
 
 ``` r
-dk <- ggseg::dk()
+dk <- ggseg.formats::dk()
 
 # The total is what the large-atlas warning reports.
 sum(count_vertices(dk))

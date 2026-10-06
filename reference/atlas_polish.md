@@ -110,7 +110,7 @@ Other atlas geometry:
 ## Examples
 
 ``` r
-dk <- ggseg::dk()
+dk <- ggseg.formats::dk()
 sum(count_vertices(dk))
 #> [1] 6254
 

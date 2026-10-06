@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9117</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9118</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -69,6 +69,15 @@
       <small>Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.9.9.9118" id="ggsegextra-1999118">ggseg.extra 1.9.9.9118<a class="anchor" aria-label="anchor" href="#ggsegextra-1999118"></a></h2>
+<div class="section level3">
+<h3 id="minor-changes-1-9-9-9118">Minor changes<a class="anchor" aria-label="anchor" href="#minor-changes-1-9-9-9118"></a></h3>
+<ul><li><p>The examples for <code><a href="../reference/atlas_smooth.html">atlas_smooth()</a></code>, <code><a href="../reference/atlas_polish.html">atlas_polish()</a></code>, <code><a href="../reference/atlas_dilate.html">atlas_dilate()</a></code>, <code><a href="../reference/atlas_simplify.html">atlas_simplify()</a></code> and <code><a href="../reference/count_vertices.html">count_vertices()</a></code> always run. They took their atlas from the suggested package ggseg and were skipped without it; they now take it from ggseg.formats, which is always installed.</p></li>
+<li><p>ggseg.formats 0.0.4 or later is required, the first release to ship the example atlases those examples and one test use.</p></li>
+<li><p>The test suite passes when the suggested packages are not installed. It attached ggseg at start-up, so every test file failed without it, and 45 tests reached code needing <code>RNifti</code>, <code>freesurferformats</code>, <code>gifti</code>, <code>freesurfer</code>, <code>smoothr</code> or <code>terra</code> without first checking it was there. Those tests are now skipped when their package is missing, and the one test that contacts GitHub is skipped offline.</p></li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9117" id="ggsegextra-1999117">ggseg.extra 1.9.9.9117<a class="anchor" aria-label="anchor" href="#ggsegextra-1999117"></a></h2>
 <div class="section level3">

@@ -58,7 +58,7 @@ Other atlas geometry:
 ## Examples
 
 ``` r
-dk <- ggseg::dk()
+dk <- ggseg.formats::dk()
 
 # Grow the structures and leave the grey brain alone
 atlas_dilate(dk, 0.5, exclude = context_pattern())
