@@ -143,7 +143,7 @@ atlas <- create_subcortical_from_volume(
 )
 
 # View with ggseg3d
-ggseg3d::ggseg3d(atlas = atlas, hemisphere = "subcort")
+ggseg3d::ggseg3d(atlas = atlas)
 
 # Full atlas with 2D slices
 atlas <- create_subcortical_from_volume(
@@ -153,8 +153,8 @@ atlas <- create_subcortical_from_volume(
 
 # Post-process to remove/modify regions (functions from ggseg.formats)
 atlas <- atlas |>
-  atlas_region_remove("White-Matter") |>
-  atlas_region_contextual("Cortex")
+  atlas_region_remove("White-Matter", match_on = "label") |>
+  atlas_region_contextual("Cortex", match_on = "label")
 }
 }
 \seealso{

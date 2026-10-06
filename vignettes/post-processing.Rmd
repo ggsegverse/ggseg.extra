@@ -128,9 +128,8 @@ The pipeline generates both from the source annotation, but the defaults are rar
 #| label: rename
 #| eval: false
 atlas <- atlas |>
-  atlas_region_rename("Left-", "") |>
-  atlas_region_rename("Right-", "") |>
-  atlas_region_rename("-", " ")
+  atlas_region_rename("brain stem", "brainstem") |>
+  atlas_region_rename("cerebellum cortex", "cerebellum")
 ```
 
 ## Adding metadata columns
@@ -244,7 +243,7 @@ Four functions. Start with the first one:
 | `atlas_polish()` | Fewer vertices *and* rounder, in the right order | `keep = 0.05`--`0.5` |
 | `atlas_simplify()` | How many vertices does this cost? | `keep = 0.05`--`0.5` |
 | `atlas_smooth()` | How round is the outline? | `smoothness = 0.4`--`0.6` |
-| `atlas_dilate()` | How big is the region? | `0.5`--`1` voxels |
+| `atlas_dilate()` | How big is the region? | `0.5`--`1`, in the atlas's own geometry units |
 
 ### Start with atlas_polish()
 
