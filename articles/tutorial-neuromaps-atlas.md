@@ -43,16 +43,15 @@ atlas_auto <- create_cortical_from_neuromaps(
   desc = "genepc1",
   atlas_name = "abagen_genepc1"
 )
-#> Warning: Atlas has 87312 vertices (threshold: 10000)
-#> ℹ Large atlases may be slow to plot and increase package size
-#> ℹ Call `atlas_simplify(atlas, keep = 0.2)`, then `atlas_smooth(atlas)`, to tidy
-#>   it and reduce vertices
+#> Warning: Atlas has 91189 vertices, against a budget of 32000 for 32 cortical region.
+#> ℹ A large atlas is slow to plot and makes the package that ships it bigger.
+#> ℹ `atlas_polish(atlas)` simplifies and smooths it in one step.
 
 atlas_auto
 #> 
 #> ── abagen_genepc1 ggseg atlas ──────────────────────────────────────────────────
 #> Type: cortical
-#> Regions: 15
+#> Regions: 16
 #> Hemispheres: left, right
 #> Views: inferior, lateral, medial, superior
 #> Palette: ✔
@@ -70,7 +69,7 @@ atlas_auto
 #> 8  left  bin_8  lh_bin_8
 #> 9  left  bin_9  lh_bin_9
 #> 10 left bin_10 lh_bin_10
-#> ... with 20 more rows
+#> ... with 22 more rows
 ```
 
 The pipeline reads the annotation, bins the values, and projects the
@@ -102,21 +101,24 @@ This detection is automatic. If you have a parcellation map from
 neuromaps (like Schaefer parcels), the pipeline will handle it as
 discrete regions without binning.
 
-### The `n_bins` parameter
+### The `breaks` argument
 
-`n_bins` controls how many quantile bins continuous data is split into.
+`breaks` controls how continuous data is cut into bins. Both hemispheres
+are cut on the same bin edges, so a bin covers the same range of values
+on the left and on the right.
 
-**NULL (the default)** uses Sturges’ rule to auto-detect the bin count.
-The formula is `1 + log2(n)` where *n* is the number of valid (non-NaN)
-vertices, clamped to the range 5–20. For fsaverage5 with 10,242 vertices
-per hemisphere, this gives `1 + log2(10242) ≈ 14` bins.
+**NULL (the default)** makes quantile bins and uses Sturges’ rule to
+choose how many. The formula is `1 + log2(n)`, rounded up, where *n* is
+the number of valid (non-NaN) vertices across both hemispheres, clamped
+to the range 5–20. For fsaverage5 with 10,242 vertices per hemisphere,
+this gives about 16 bins.
 
 ``` r
 
 nrow(atlas_auto$core)
-#> [1] 30
+#> [1] 32
 atlas_auto$core |> filter(region != "unknown") |> distinct(region)
-#> # A tibble: 15 × 1
+#> # A tibble: 16 × 1
 #>    region
 #>    <chr> 
 #>  1 bin_1 
@@ -134,23 +136,23 @@ atlas_auto$core |> filter(region != "unknown") |> distinct(region)
 #> 13 bin_13
 #> 14 bin_14
 #> 15 bin_15
+#> 16 bin_16
 ```
 
-**An explicit integer** overrides auto-detection. Use fewer bins for a
-cleaner, more schematic look; more bins for finer spatial resolution.
+**A single number** asks for that many quantile bins. Use fewer bins for
+a cleaner, more schematic look; more bins for finer spatial resolution.
 
 ``` r
 
 atlas_5 <- create_cortical_from_neuromaps(
   source = "abagen",
   desc = "genepc1",
-  n_bins = 5,
+  breaks = 5,
   atlas_name = "abagen_5bin"
 )
-#> Warning: Atlas has 29534 vertices (threshold: 10000)
-#> ℹ Large atlases may be slow to plot and increase package size
-#> ℹ Call `atlas_simplify(atlas, keep = 0.2)`, then `atlas_smooth(atlas)`, to tidy
-#>   it and reduce vertices
+#> Warning: Atlas has 29333 vertices, against a budget of 10000 for 10 cortical region.
+#> ℹ A large atlas is slow to plot and makes the package that ships it bigger.
+#> ℹ `atlas_polish(atlas)` simplifies and smooths it in one step.
 
 atlas_5$core |> filter(region != "unknown") |> distinct(region)
 #> # A tibble: 5 × 1
@@ -168,13 +170,12 @@ atlas_5$core |> filter(region != "unknown") |> distinct(region)
 atlas_20 <- create_cortical_from_neuromaps(
   source = "abagen",
   desc = "genepc1",
-  n_bins = 20,
+  breaks = 20,
   atlas_name = "abagen_20bin"
 )
-#> Warning: Atlas has 113589 vertices (threshold: 10000)
-#> ℹ Large atlases may be slow to plot and increase package size
-#> ℹ Call `atlas_simplify(atlas, keep = 0.2)`, then `atlas_smooth(atlas)`, to tidy
-#>   it and reduce vertices
+#> Warning: Atlas has 112946 vertices, against a budget of 40000 for 40 cortical region.
+#> ℹ A large atlas is slow to plot and makes the package that ships it bigger.
+#> ℹ `atlas_polish(atlas)` simplifies and smooths it in one step.
 
 atlas_20$core |> filter(region != "unknown") |> distinct(region)
 #> # A tibble: 20 × 1
@@ -204,8 +205,9 @@ atlas_20$core |> filter(region != "unknown") |> distinct(region)
 
 ### Quantile-based breaks
 
-Bins are created using quantile breaks, not equal-width intervals. This
-means each bin contains approximately the same number of vertices.
+Unless you supply the edges yourself, bins are created using quantile
+breaks, not equal-width intervals. This means each bin contains
+approximately the same number of vertices.
 
 Equal-width bins would leave most vertices in a few central bins when
 the distribution is skewed, which is common for brain maps. Quantile
@@ -224,13 +226,13 @@ labeled “unknown.”
 
 atlas_auto$palette
 #>  lh_bin_1  lh_bin_2  lh_bin_3  lh_bin_4  lh_bin_5  lh_bin_6  lh_bin_7  lh_bin_8 
-#> "#A71B4B" "#C84040" "#E5610A" "#EF8913" "#F6AD3E" "#FBCC6B" "#FDE896" "#FEFDBE" 
-#>  lh_bin_9 lh_bin_10 lh_bin_11 lh_bin_12 lh_bin_13 lh_bin_14 lh_bin_15  rh_bin_1 
-#> "#D0F4B1" "#96E4AD" "#52CFB0" "#00B6B5" "#0099B5" "#2275AF" "#584B9F" "#A71B4B" 
-#>  rh_bin_2  rh_bin_3  rh_bin_4  rh_bin_5  rh_bin_6  rh_bin_7  rh_bin_8  rh_bin_9 
-#> "#C84040" "#E5610A" "#EF8913" "#F6AD3E" "#FBCC6B" "#FDE896" "#FEFDBE" "#D0F4B1" 
-#> rh_bin_10 rh_bin_11 rh_bin_12 rh_bin_13 rh_bin_14 rh_bin_15 
-#> "#96E4AD" "#52CFB0" "#00B6B5" "#0099B5" "#2275AF" "#584B9F"
+#> "#A71B4B" "#C53E41" "#E15D1C" "#ED820A" "#F5A433" "#F9C25C" "#FCDE85" "#FEF5AD" 
+#>  lh_bin_9 lh_bin_10 lh_bin_11 lh_bin_12 lh_bin_13 lh_bin_14 lh_bin_15 lh_bin_16 
+#> "#EAFAB7" "#BAEEAE" "#81DEAD" "#3BC9B2" "#00B1B5" "#0094B5" "#2873AE" "#584B9F" 
+#>  rh_bin_1  rh_bin_2  rh_bin_3  rh_bin_4  rh_bin_5  rh_bin_6  rh_bin_7  rh_bin_8 
+#> "#A71B4B" "#C53E41" "#E15D1C" "#ED820A" "#F5A433" "#F9C25C" "#FCDE85" "#FEF5AD" 
+#>  rh_bin_9 rh_bin_10 rh_bin_11 rh_bin_12 rh_bin_13 rh_bin_14 rh_bin_15 rh_bin_16 
+#> "#EAFAB7" "#BAEEAE" "#81DEAD" "#3BC9B2" "#00B1B5" "#0094B5" "#2873AE" "#584B9F"
 ```
 
 ## Visualizing the effect of bin count
@@ -284,7 +286,7 @@ then simplify to roughly 20% of vertices:
 atlas_full <- create_cortical_from_neuromaps(
   source = "abagen",
   desc = "genepc1",
-  n_bins = 7,
+  breaks = 7,
   atlas_name = "abagen_genepc1",
   verbose = TRUE
 )
@@ -293,9 +295,9 @@ atlas_full <- create_cortical_from_neuromaps(
 #> ℹ Using cached 'source-abagen_desc-genepc1_space-fsaverage_den-10k_hemi-R_feature.func.gii'
 #> 
 #> ── Creating brain atlas "abagen_genepc1" from neuromaps ────────────────────────
-#> ℹ Input files: '/Users/athanasm/Library/Caches/org.R-project.R/R/neuromapr/annotations/abagen/genepc1/fsaverage//source-abagen_desc-genepc1_space-fsaverage_den-10k_hemi-L_feature.func.gii' and '/Users/athanasm/Library/Caches/org.R-project.R/R/neuromapr/annotations/abagen/genepc1/fsaverage//source-abagen_desc-genepc1_space-fsaverage_den-10k_hemi-R_feature.func.gii'
+#> ℹ Input files: '~/Library/Caches/org.R-project.R/R/neuromapr/annotations/abagen/genepc1/fsaverage//source-abagen_desc-genepc1_space-fsaverage_den-10k_hemi-L_feature.func.gii' and '~/Library/Caches/org.R-project.R/R/neuromapr/annotations/abagen/genepc1/fsaverage//source-abagen_desc-genepc1_space-fsaverage_den-10k_hemi-R_feature.func.gii'
 #> ℹ Reading neuromaps annotation
-#> ✔ Reading neuromaps annotation [140ms]
+#> ✔ Reading neuromaps annotation [155ms]
 #> 
 #> ℹ Projecting mesh to 2D polygons
 #> ℹ Projecting "rh" "lateral"
@@ -314,15 +316,14 @@ atlas_full <- create_cortical_from_neuromaps(
 #> ℹ Projecting mesh to 2D polygons
 ℹ Projecting "lh" "inferior"
 #> ℹ Projecting mesh to 2D polygons
-✔ Projecting mesh to 2D polygons [14s]
+✔ Projecting mesh to 2D polygons [17.5s]
 #> 
 #> ✔ Temporary files removed
 #> ✔ Brain atlas created with 14 regions
-#> ℹ Pipeline completed [14.3s]
-#> Warning: Atlas has 43679 vertices (threshold: 10000)
-#> ℹ Large atlases may be slow to plot and increase package size
-#> ℹ Call `atlas_simplify(atlas, keep = 0.2)`, then `atlas_smooth(atlas)`, to tidy
-#>   it and reduce vertices
+#> ℹ Pipeline completed [17.9s]
+#> Warning: Atlas has 44167 vertices, against a budget of 14000 for 14 cortical region.
+#> ℹ A large atlas is slow to plot and makes the package that ships it bigger.
+#> ℹ `atlas_polish(atlas)` simplifies and smooths it in one step.
 
 atlas_full <- atlas_full |>
   atlas_simplify(keep = 0.2, exclude = context_pattern()) |>
@@ -339,6 +340,8 @@ default. Convert it to a background outline with
 
 atlas_clean <- atlas_full |>
   atlas_region_contextual("unknown", match_on = "label")
+#> Warning in atlas_region_contextual(atlas_full, "unknown", match_on = "label"): No regions matched "unknown".
+#> ℹ No region was made contextual.
 ```
 
 ## Rendering the final atlas
@@ -415,7 +418,7 @@ atlas_vol <- create_cortical_from_neuromaps(
   source = "pet",
   desc = "5HT1a",
   atlas_name = "serotonin_5ht1a",
-  n_bins = 10
+  breaks = 10
 )
 ```
 
@@ -441,26 +444,26 @@ files <- neuromapr::fetch_neuromaps_annotation(
   verbose = FALSE
 )
 
-annot_data <- read_neuromaps_annotation(files, n_bins = 7)
+annot_data <- read_neuromaps_annotation(files, breaks = 7)
 annot_data
 #> # A tibble: 16 × 5
 #>    hemi  region  label      colour  vertices     
 #>    <chr> <chr>   <chr>      <chr>   <list>       
-#>  1 left  bin_1   lh_bin_1   #A71B4B <int [1,315]>
-#>  2 left  bin_2   lh_bin_2   #E96F02 <int [1,315]>
-#>  3 left  bin_3   lh_bin_3   #F9C25C <int [1,315]>
-#>  4 left  bin_4   lh_bin_4   #FEFDBE <int [1,314]>
-#>  5 left  bin_5   lh_bin_5   #81DEAD <int [1,315]>
-#>  6 left  bin_6   lh_bin_6   #00A3B6 <int [1,315]>
-#>  7 left  bin_7   lh_bin_7   #584B9F <int [1,315]>
+#>  1 left  bin_1   lh_bin_1   #A71B4B <int [1,261]>
+#>  2 left  bin_2   lh_bin_2   #E96F02 <int [1,318]>
+#>  3 left  bin_3   lh_bin_3   #F9C25C <int [1,288]>
+#>  4 left  bin_4   lh_bin_4   #FEFDBE <int [1,293]>
+#>  5 left  bin_5   lh_bin_5   #81DEAD <int [1,337]>
+#>  6 left  bin_6   lh_bin_6   #00A3B6 <int [1,299]>
+#>  7 left  bin_7   lh_bin_7   #584B9F <int [1,408]>
 #>  8 left  unknown lh_unknown #BEBEBE <int [1,038]>
-#>  9 right bin_1   rh_bin_1   #A71B4B <int [1,318]>
-#> 10 right bin_2   rh_bin_2   #E96F02 <int [1,317]>
-#> 11 right bin_3   rh_bin_3   #F9C25C <int [1,317]>
-#> 12 right bin_4   rh_bin_4   #FEFDBE <int [1,318]>
-#> 13 right bin_5   rh_bin_5   #81DEAD <int [1,317]>
-#> 14 right bin_6   rh_bin_6   #00A3B6 <int [1,317]>
-#> 15 right bin_7   rh_bin_7   #584B9F <int [1,318]>
+#>  9 right bin_1   rh_bin_1   #A71B4B <int [1,372]>
+#> 10 right bin_2   rh_bin_2   #E96F02 <int [1,314]>
+#> 11 right bin_3   rh_bin_3   #F9C25C <int [1,344]>
+#> 12 right bin_4   rh_bin_4   #FEFDBE <int [1,339]>
+#> 13 right bin_5   rh_bin_5   #81DEAD <int [1,295]>
+#> 14 right bin_6   rh_bin_6   #00A3B6 <int [1,333]>
+#> 15 right bin_7   rh_bin_7   #584B9F <int [1,225]>
 #> 16 right unknown rh_unknown #BEBEBE <int [1,020]>
 ```
 
@@ -470,15 +473,41 @@ instead.
 
 ## Choosing the right number of bins
 
-| n_bins     | Use case                                                       |
+| breaks     | Use case                                                       |
 |------------|----------------------------------------------------------------|
 | 3–5        | High-level overview, schematic figures, publication thumbnails |
 | 7–10       | Balanced detail, good for most visualizations                  |
-| ~14 (auto) | Default; maximum spatial detail from Sturges’ rule             |
+| ~16 (auto) | Default; maximum spatial detail from Sturges’ rule             |
 | 15–20      | Dense gradients where fine differences matter                  |
 
 More bins means more regions and larger atlas objects. The pipeline is
 fast regardless of bin count, so experiment freely.
+
+### Choosing the bin edges yourself
+
+Quantile bins are not the only option. Give `breaks` the edges of the
+bins as increasing numbers, or a function that takes the map’s values
+and returns the edges:
+
+``` r
+
+# Fixed edges, for example to share one scale across several maps
+create_cortical_from_neuromaps(
+  source = "abagen",
+  desc = "genepc1",
+  breaks = c(-3, -1, 0, 1, 3)
+)
+
+# Round, equal-width bins
+create_cortical_from_neuromaps(
+  source = "abagen",
+  desc = "genepc1",
+  breaks = function(x) pretty(x, 6)
+)
+```
+
+Vertices whose value falls outside the edges you give are left in
+`unknown`, and the pipeline warns about how many.
 
 ## Saving
 

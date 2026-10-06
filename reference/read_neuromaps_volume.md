@@ -10,7 +10,7 @@ values using the same binning logic as
 ``` r
 read_neuromaps_volume(
   nifti_file,
-  n_bins = NULL,
+  breaks = NULL,
   label_table = NULL,
   output_dir = tempdir()
 )
@@ -22,10 +22,25 @@ read_neuromaps_volume(
 
   Path to a `.nii` or `.nii.gz` file in MNI152 space.
 
-- n_bins:
+- breaks:
 
-  Number of quantile bins for continuous data. When `NULL` (default),
-  auto-detected via Sturges' rule. Ignored for integer data.
+  How to cut a continuous map into bins. One of:
+
+  - `NULL`, the default: quantile bins, as many as Sturges' rule gives
+    for the number of vertices (`1 + log2(n)`), kept between 5 and 20.
+
+  - A single number: that many quantile bins.
+
+  - Increasing numbers: the edges of the bins.
+
+  - A function that takes the map's finite values and returns the edges,
+    such as `function(x) pretty(x, 6)` for round, equal-width bins.
+
+  Quantile bins each hold about the same number of vertices. Both
+  hemispheres are cut on the same edges, so a bin covers the same range
+  of values on the left and on the right. Values outside edges you
+  supply are left `unknown`, with a warning. Ignored for parcellation
+  data.
 
 - label_table:
 
@@ -55,6 +70,6 @@ and sampled with trilinear interpolation.
 
 ``` r
 if (FALSE) { # \dontrun{
-atlas_data <- read_neuromaps_volume("map.nii.gz", n_bins = 7)
+atlas_data <- read_neuromaps_volume("map.nii.gz", breaks = 7)
 } # }
 ```

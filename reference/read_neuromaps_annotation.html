@@ -11,7 +11,7 @@ the standard annotation format used by the cortical atlas pipeline."><meta prope
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9115</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9116</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -79,7 +79,7 @@ the standard annotation format used by the cortical atlas pipeline.</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">read_neuromaps_annotation</span><span class="op">(</span><span class="va">gifti_files</span>, label_table <span class="op">=</span> <span class="cn">NULL</span>, n_bins <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">read_neuromaps_annotation</span><span class="op">(</span><span class="va">gifti_files</span>, label_table <span class="op">=</span> <span class="cn">NULL</span>, breaks <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -99,10 +99,17 @@ named <code>parcel_1</code>, <code>parcel_2</code>, etc. (parcellation) or
 <code>bin_1</code>, <code>bin_2</code>, etc. (continuous).</p></dd>
 
 
-<dt id="arg-n-bins">n_bins<a class="anchor" aria-label="anchor" href="#arg-n-bins"></a></dt>
-<dd><p>Number of quantile bins for continuous data. When <code>NULL</code>
-(default), auto-detected via Sturges' rule (<code>1 + log2(n)</code>, clamped
-to 5–20). Ignored for integer parcellation data.</p></dd>
+<dt id="arg-breaks">breaks<a class="anchor" aria-label="anchor" href="#arg-breaks"></a></dt>
+<dd><p>How to cut a continuous map into bins. One of:</p><ul><li><p><code>NULL</code>, the default: quantile bins, as many as Sturges' rule gives for
+the number of vertices (<code>1 + log2(n)</code>), kept between 5 and 20.</p></li>
+<li><p>A single number: that many quantile bins.</p></li>
+<li><p>Increasing numbers: the edges of the bins.</p></li>
+<li><p>A function that takes the map's finite values and returns the edges,
+such as <code>function(x) pretty(x, 6)</code> for round, equal-width bins.</p></li>
+</ul><p>Quantile bins each hold about the same number of vertices. Both
+hemispheres are cut on the same edges, so a bin covers the same range of
+values on the left and on the right. Values outside edges you supply are
+left <code>unknown</code>, with a warning. Ignored for parcellation data.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -114,8 +121,8 @@ to 5–20). Ignored for integer parcellation data.</p></dd>
     <p>Automatically detects whether data contains integer parcel IDs
 (parcellation) or continuous values (brain map). For parcellations,
 vertex value 0 is treated as medial wall. For continuous data, NaN
-vertices are medial wall and values are discretized into quantile
-bins via <code>n_bins</code>.</p>
+vertices are medial wall and values are discretized into bins, which
+<code>breaks</code> controls. Both hemispheres share one set of bin edges.</p>
 <p>Files must be in fsaverage5 space (10,242 vertices per hemisphere).
 Use <code>space = "fsaverage"</code> with <code>density = "10k"</code> when fetching from
 neuromaps.</p>
@@ -127,7 +134,7 @@ neuromaps.</p>
 <span class="r-in"><span><span class="va">files</span> <span class="op">&lt;-</span> <span class="fu">neuromapr</span><span class="fu">::</span><span class="fu"><a href="https://lcbc-uio.github.io/neuromapr/reference/fetch_neuromaps_annotation.html" class="external-link">fetch_neuromaps_annotation</a></span><span class="op">(</span></span></span>
 <span class="r-in"><span>  <span class="st">"abagen"</span>, <span class="st">"genepc1"</span>, <span class="st">"fsaverage"</span>, density <span class="op">=</span> <span class="st">"10k"</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">atlas_data</span> <span class="op">&lt;-</span> <span class="fu">read_neuromaps_annotation</span><span class="op">(</span><span class="va">files</span>, n_bins <span class="op">=</span> <span class="fl">7</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">atlas_data</span> <span class="op">&lt;-</span> <span class="fu">read_neuromaps_annotation</span><span class="op">(</span><span class="va">files</span>, breaks <span class="op">=</span> <span class="fl">7</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
 </code></pre></div>
     </div>

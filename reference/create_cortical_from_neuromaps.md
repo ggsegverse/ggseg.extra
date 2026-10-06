@@ -24,7 +24,7 @@ create_cortical_from_neuromaps(
   verbose = get_verbose(),
   ...,
   label_table = NULL,
-  n_bins = NULL,
+  breaks = NULL,
   atlas_name = NULL,
   output_dir = NULL,
   cleanup = NULL,
@@ -81,9 +81,25 @@ create_cortical_from_neuromaps(
 
   Optional data.frame mapping parcel IDs to region names.
 
-- n_bins:
+- breaks:
 
-  Number of quantile bins for continuous brain maps.
+  How to cut a continuous map into bins. One of:
+
+  - `NULL`, the default: quantile bins, as many as Sturges' rule gives
+    for the number of vertices (`1 + log2(n)`), kept between 5 and 20.
+
+  - A single number: that many quantile bins.
+
+  - Increasing numbers: the edges of the bins.
+
+  - A function that takes the map's finite values and returns the edges,
+    such as `function(x) pretty(x, 6)` for round, equal-width bins.
+
+  Quantile bins each hold about the same number of vertices. Both
+  hemispheres are cut on the same edges, so a bin covers the same range
+  of values on the left and on the right. Values outside edges you
+  supply are left `unknown`, with a warning. Ignored for parcellation
+  data.
 
 - atlas_name:
 
@@ -151,7 +167,7 @@ if (FALSE) { # \dontrun{
 atlas <- create_cortical_from_neuromaps(
   source = "abagen",
   desc = "genepc1",
-  n_bins = 7
+  breaks = 7
 )
 } # }
 ```

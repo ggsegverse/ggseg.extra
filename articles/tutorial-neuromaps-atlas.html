@@ -28,7 +28,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9115</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9116</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -132,16 +132,15 @@
 <span>  desc <span class="op">=</span> <span class="st">"genepc1"</span>,</span>
 <span>  atlas_name <span class="op">=</span> <span class="st">"abagen_genepc1"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; Warning: Atlas has 87312 vertices (threshold: 10000)</span></span>
-<span><span class="co">#&gt; ℹ Large atlases may be slow to plot and increase package size</span></span>
-<span><span class="co">#&gt; ℹ Call `atlas_simplify(atlas, keep = 0.2)`, then `atlas_smooth(atlas)`, to tidy</span></span>
-<span><span class="co">#&gt;   it and reduce vertices</span></span>
+<span><span class="co">#&gt; Warning: Atlas has 91189 vertices, against a budget of 32000 for 32 cortical region.</span></span>
+<span><span class="co">#&gt; ℹ A large atlas is slow to plot and makes the package that ships it bigger.</span></span>
+<span><span class="co">#&gt; ℹ `atlas_polish(atlas)` simplifies and smooths it in one step.</span></span>
 <span></span>
 <span><span class="va">atlas_auto</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── abagen_genepc1 ggseg atlas ──────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; Type: cortical</span></span>
-<span><span class="co">#&gt; Regions: 15</span></span>
+<span><span class="co">#&gt; Regions: 16</span></span>
 <span><span class="co">#&gt; Hemispheres: left, right</span></span>
 <span><span class="co">#&gt; Views: inferior, lateral, medial, superior</span></span>
 <span><span class="co">#&gt; Palette: ✔</span></span>
@@ -159,7 +158,7 @@
 <span><span class="co">#&gt; 8  left  bin_8  lh_bin_8</span></span>
 <span><span class="co">#&gt; 9  left  bin_9  lh_bin_9</span></span>
 <span><span class="co">#&gt; 10 left bin_10 lh_bin_10</span></span>
-<span><span class="co">#&gt; ... with 20 more rows</span></span></code></pre></div>
+<span><span class="co">#&gt; ... with 22 more rows</span></span></code></pre></div>
 <p>The pipeline reads the annotation, bins the values, and projects the mesh to 2D polygons — all in seconds.</p>
 <p>The regions listed are the quantile bins the pipeline created automatically. Each bin corresponds to a range of gene expression values and covers roughly the same number of vertices.</p>
 </section><section class="level2"><h2 id="how-binning-works">How binning works<a class="anchor" aria-label="anchor" href="#how-binning-works"></a>
@@ -175,15 +174,15 @@
 <strong>Floating-point values</strong> → treated as a continuous brain map. NaN vertices are the medial wall. Remaining values are binned.</li>
 </ul>
 <p>This detection is automatic. If you have a parcellation map from neuromaps (like Schaefer parcels), the pipeline will handle it as discrete regions without binning.</p>
-</section><section class="level3"><h3 id="the-n_bins-parameter">The <code>n_bins</code> parameter<a class="anchor" aria-label="anchor" href="#the-n_bins-parameter"></a>
+</section><section class="level3"><h3 id="the-breaks-argument">The <code>breaks</code> argument<a class="anchor" aria-label="anchor" href="#the-breaks-argument"></a>
 </h3>
-<p><code>n_bins</code> controls how many quantile bins continuous data is split into.</p>
-<p><strong>NULL (the default)</strong> uses Sturges’ rule to auto-detect the bin count. The formula is <code>1 + log2(n)</code> where <em>n</em> is the number of valid (non-NaN) vertices, clamped to the range 5–20. For fsaverage5 with 10,242 vertices per hemisphere, this gives <code>1 + log2(10242) ≈ 14</code> bins.</p>
+<p><code>breaks</code> controls how continuous data is cut into bins. Both hemispheres are cut on the same bin edges, so a bin covers the same range of values on the left and on the right.</p>
+<p><strong>NULL (the default)</strong> makes quantile bins and uses Sturges’ rule to choose how many. The formula is <code>1 + log2(n)</code>, rounded up, where <em>n</em> is the number of valid (non-NaN) vertices across both hemispheres, clamped to the range 5–20. For fsaverage5 with 10,242 vertices per hemisphere, this gives about 16 bins.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">atlas_auto</span><span class="op">$</span><span class="va">core</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] 30</span></span>
+<span><span class="co">#&gt; [1] 32</span></span>
 <span><span class="va">atlas_auto</span><span class="op">$</span><span class="va">core</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">region</span> <span class="op">!=</span> <span class="st">"unknown"</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/distinct.html" class="external-link">distinct</a></span><span class="op">(</span><span class="va">region</span><span class="op">)</span></span>
-<span><span class="co">#&gt; # A tibble: 15 × 1</span></span>
+<span><span class="co">#&gt; # A tibble: 16 × 1</span></span>
 <span><span class="co">#&gt;    region</span></span>
 <span><span class="co">#&gt;    &lt;chr&gt; </span></span>
 <span><span class="co">#&gt;  1 bin_1 </span></span>
@@ -200,19 +199,19 @@
 <span><span class="co">#&gt; 12 bin_12</span></span>
 <span><span class="co">#&gt; 13 bin_13</span></span>
 <span><span class="co">#&gt; 14 bin_14</span></span>
-<span><span class="co">#&gt; 15 bin_15</span></span></code></pre></div>
-<p><strong>An explicit integer</strong> overrides auto-detection. Use fewer bins for a cleaner, more schematic look; more bins for finer spatial resolution.</p>
+<span><span class="co">#&gt; 15 bin_15</span></span>
+<span><span class="co">#&gt; 16 bin_16</span></span></code></pre></div>
+<p><strong>A single number</strong> asks for that many quantile bins. Use fewer bins for a cleaner, more schematic look; more bins for finer spatial resolution.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">atlas_5</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/create_cortical_from_neuromaps.html">create_cortical_from_neuromaps</a></span><span class="op">(</span></span>
 <span>  source <span class="op">=</span> <span class="st">"abagen"</span>,</span>
 <span>  desc <span class="op">=</span> <span class="st">"genepc1"</span>,</span>
-<span>  n_bins <span class="op">=</span> <span class="fl">5</span>,</span>
+<span>  breaks <span class="op">=</span> <span class="fl">5</span>,</span>
 <span>  atlas_name <span class="op">=</span> <span class="st">"abagen_5bin"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; Warning: Atlas has 29534 vertices (threshold: 10000)</span></span>
-<span><span class="co">#&gt; ℹ Large atlases may be slow to plot and increase package size</span></span>
-<span><span class="co">#&gt; ℹ Call `atlas_simplify(atlas, keep = 0.2)`, then `atlas_smooth(atlas)`, to tidy</span></span>
-<span><span class="co">#&gt;   it and reduce vertices</span></span>
+<span><span class="co">#&gt; Warning: Atlas has 29333 vertices, against a budget of 10000 for 10 cortical region.</span></span>
+<span><span class="co">#&gt; ℹ A large atlas is slow to plot and makes the package that ships it bigger.</span></span>
+<span><span class="co">#&gt; ℹ `atlas_polish(atlas)` simplifies and smooths it in one step.</span></span>
 <span></span>
 <span><span class="va">atlas_5</span><span class="op">$</span><span class="va">core</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">region</span> <span class="op">!=</span> <span class="st">"unknown"</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/distinct.html" class="external-link">distinct</a></span><span class="op">(</span><span class="va">region</span><span class="op">)</span></span>
 <span><span class="co">#&gt; # A tibble: 5 × 1</span></span>
@@ -227,13 +226,12 @@
 <code class="sourceCode R"><span><span class="va">atlas_20</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/create_cortical_from_neuromaps.html">create_cortical_from_neuromaps</a></span><span class="op">(</span></span>
 <span>  source <span class="op">=</span> <span class="st">"abagen"</span>,</span>
 <span>  desc <span class="op">=</span> <span class="st">"genepc1"</span>,</span>
-<span>  n_bins <span class="op">=</span> <span class="fl">20</span>,</span>
+<span>  breaks <span class="op">=</span> <span class="fl">20</span>,</span>
 <span>  atlas_name <span class="op">=</span> <span class="st">"abagen_20bin"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; Warning: Atlas has 113589 vertices (threshold: 10000)</span></span>
-<span><span class="co">#&gt; ℹ Large atlases may be slow to plot and increase package size</span></span>
-<span><span class="co">#&gt; ℹ Call `atlas_simplify(atlas, keep = 0.2)`, then `atlas_smooth(atlas)`, to tidy</span></span>
-<span><span class="co">#&gt;   it and reduce vertices</span></span>
+<span><span class="co">#&gt; Warning: Atlas has 112946 vertices, against a budget of 40000 for 40 cortical region.</span></span>
+<span><span class="co">#&gt; ℹ A large atlas is slow to plot and makes the package that ships it bigger.</span></span>
+<span><span class="co">#&gt; ℹ `atlas_polish(atlas)` simplifies and smooths it in one step.</span></span>
 <span></span>
 <span><span class="va">atlas_20</span><span class="op">$</span><span class="va">core</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">region</span> <span class="op">!=</span> <span class="st">"unknown"</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/distinct.html" class="external-link">distinct</a></span><span class="op">(</span><span class="va">region</span><span class="op">)</span></span>
 <span><span class="co">#&gt; # A tibble: 20 × 1</span></span>
@@ -261,7 +259,7 @@
 <span><span class="co">#&gt; 20 bin_20</span></span></code></pre></div>
 </section><section class="level3"><h3 id="quantile-based-breaks">Quantile-based breaks<a class="anchor" aria-label="anchor" href="#quantile-based-breaks"></a>
 </h3>
-<p>Bins are created using quantile breaks, not equal-width intervals. This means each bin contains approximately the same number of vertices.</p>
+<p>Unless you supply the edges yourself, bins are created using quantile breaks, not equal-width intervals. This means each bin contains approximately the same number of vertices.</p>
 <p>Equal-width bins would leave most vertices in a few central bins when the distribution is skewed, which is common for brain maps. Quantile binning ensures every bin contributes visible surface area to the atlas, making the resulting plot informative regardless of the data distribution.</p>
 </section><section class="level3"><h3 id="color-palette">Color palette<a class="anchor" aria-label="anchor" href="#color-palette"></a>
 </h3>
@@ -269,13 +267,13 @@
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">atlas_auto</span><span class="op">$</span><span class="va">palette</span></span>
 <span><span class="co">#&gt;  lh_bin_1  lh_bin_2  lh_bin_3  lh_bin_4  lh_bin_5  lh_bin_6  lh_bin_7  lh_bin_8 </span></span>
-<span><span class="co">#&gt; "#A71B4B" "#C84040" "#E5610A" "#EF8913" "#F6AD3E" "#FBCC6B" "#FDE896" "#FEFDBE" </span></span>
-<span><span class="co">#&gt;  lh_bin_9 lh_bin_10 lh_bin_11 lh_bin_12 lh_bin_13 lh_bin_14 lh_bin_15  rh_bin_1 </span></span>
-<span><span class="co">#&gt; "#D0F4B1" "#96E4AD" "#52CFB0" "#00B6B5" "#0099B5" "#2275AF" "#584B9F" "#A71B4B" </span></span>
-<span><span class="co">#&gt;  rh_bin_2  rh_bin_3  rh_bin_4  rh_bin_5  rh_bin_6  rh_bin_7  rh_bin_8  rh_bin_9 </span></span>
-<span><span class="co">#&gt; "#C84040" "#E5610A" "#EF8913" "#F6AD3E" "#FBCC6B" "#FDE896" "#FEFDBE" "#D0F4B1" </span></span>
-<span><span class="co">#&gt; rh_bin_10 rh_bin_11 rh_bin_12 rh_bin_13 rh_bin_14 rh_bin_15 </span></span>
-<span><span class="co">#&gt; "#96E4AD" "#52CFB0" "#00B6B5" "#0099B5" "#2275AF" "#584B9F"</span></span></code></pre></div>
+<span><span class="co">#&gt; "#A71B4B" "#C53E41" "#E15D1C" "#ED820A" "#F5A433" "#F9C25C" "#FCDE85" "#FEF5AD" </span></span>
+<span><span class="co">#&gt;  lh_bin_9 lh_bin_10 lh_bin_11 lh_bin_12 lh_bin_13 lh_bin_14 lh_bin_15 lh_bin_16 </span></span>
+<span><span class="co">#&gt; "#EAFAB7" "#BAEEAE" "#81DEAD" "#3BC9B2" "#00B1B5" "#0094B5" "#2873AE" "#584B9F" </span></span>
+<span><span class="co">#&gt;  rh_bin_1  rh_bin_2  rh_bin_3  rh_bin_4  rh_bin_5  rh_bin_6  rh_bin_7  rh_bin_8 </span></span>
+<span><span class="co">#&gt; "#A71B4B" "#C53E41" "#E15D1C" "#ED820A" "#F5A433" "#F9C25C" "#FCDE85" "#FEF5AD" </span></span>
+<span><span class="co">#&gt;  rh_bin_9 rh_bin_10 rh_bin_11 rh_bin_12 rh_bin_13 rh_bin_14 rh_bin_15 rh_bin_16 </span></span>
+<span><span class="co">#&gt; "#EAFAB7" "#BAEEAE" "#81DEAD" "#3BC9B2" "#00B1B5" "#0094B5" "#2873AE" "#584B9F"</span></span></code></pre></div>
 </section></section><section class="level2"><h2 id="visualizing-the-effect-of-bin-count">Visualizing the effect of bin count<a class="anchor" aria-label="anchor" href="#visualizing-the-effect-of-bin-count"></a>
 </h2>
 <p>Comparing the 3D rendering across different bin counts makes it easy to choose the right level of detail:</p>
@@ -306,7 +304,7 @@
 <div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>atlas_full <span class="ot">&lt;-</span> <span class="fu">create_cortical_from_neuromaps</span>(</span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">source =</span> <span class="st">"abagen"</span>,</span>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">desc =</span> <span class="st">"genepc1"</span>,</span>
-<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">n_bins =</span> <span class="dv">7</span>,</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">breaks =</span> <span class="dv">7</span>,</span>
 <span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">atlas_name =</span> <span class="st">"abagen_genepc1"</span>,</span>
 <span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">verbose =</span> <span class="cn">TRUE</span></span>
 <span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>)</span>
@@ -315,9 +313,9 @@
 <span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ Using cached 'source-abagen_desc-genepc1_space-fsaverage_den-10k_hemi-R_feature.func.gii'</span></span>
 <span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ── Creating brain atlas "abagen_genepc1" from neuromaps ────────────────────────</span></span>
-<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ Input files: '/Users/athanasm/Library/Caches/org.R-project.R/R/neuromapr/annotations/abagen/genepc1/fsaverage//source-abagen_desc-genepc1_space-fsaverage_den-10k_hemi-L_feature.func.gii' and '/Users/athanasm/Library/Caches/org.R-project.R/R/neuromapr/annotations/abagen/genepc1/fsaverage//source-abagen_desc-genepc1_space-fsaverage_den-10k_hemi-R_feature.func.gii'</span></span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ Input files: '~/Library/Caches/org.R-project.R/R/neuromapr/annotations/abagen/genepc1/fsaverage//source-abagen_desc-genepc1_space-fsaverage_den-10k_hemi-L_feature.func.gii' and '~/Library/Caches/org.R-project.R/R/neuromapr/annotations/abagen/genepc1/fsaverage//source-abagen_desc-genepc1_space-fsaverage_den-10k_hemi-R_feature.func.gii'</span></span>
 <span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ Reading neuromaps annotation</span></span>
-<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ✔ Reading neuromaps annotation [140ms]</span></span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ✔ Reading neuromaps annotation [155ms]</span></span>
 <span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ Projecting mesh to 2D polygons</span></span>
 <span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ Projecting "rh" "lateral"</span></span>
@@ -336,25 +334,26 @@
 <span id="cb10-31"><a href="#cb10-31" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ Projecting mesh to 2D polygons</span></span>
 <span id="cb10-32"><a href="#cb10-32" aria-hidden="true" tabindex="-1"></a>ℹ Projecting <span class="st">"lh"</span> <span class="st">"inferior"</span></span>
 <span id="cb10-33"><a href="#cb10-33" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ Projecting mesh to 2D polygons</span></span>
-<span id="cb10-34"><a href="#cb10-34" aria-hidden="true" tabindex="-1"></a>✔ Projecting mesh to <span class="dv">2</span>D polygons [<span class="dv">14</span>s]</span>
+<span id="cb10-34"><a href="#cb10-34" aria-hidden="true" tabindex="-1"></a>✔ Projecting mesh to <span class="dv">2</span>D polygons [<span class="fl">17.5</span>s]</span>
 <span id="cb10-35"><a href="#cb10-35" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb10-36"><a href="#cb10-36" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ✔ Temporary files removed</span></span>
 <span id="cb10-37"><a href="#cb10-37" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ✔ Brain atlas created with 14 regions</span></span>
-<span id="cb10-38"><a href="#cb10-38" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ Pipeline completed [14.3s]</span></span>
-<span id="cb10-39"><a href="#cb10-39" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Warning: Atlas has 43679 vertices (threshold: 10000)</span></span>
-<span id="cb10-40"><a href="#cb10-40" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ Large atlases may be slow to plot and increase package size</span></span>
-<span id="cb10-41"><a href="#cb10-41" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ Call `atlas_simplify(atlas, keep = 0.2)`, then `atlas_smooth(atlas)`, to tidy</span></span>
-<span id="cb10-42"><a href="#cb10-42" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   it and reduce vertices</span></span>
-<span id="cb10-43"><a href="#cb10-43" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-44"><a href="#cb10-44" aria-hidden="true" tabindex="-1"></a>atlas_full <span class="ot">&lt;-</span> atlas_full <span class="sc">|&gt;</span></span>
-<span id="cb10-45"><a href="#cb10-45" aria-hidden="true" tabindex="-1"></a>  <span class="fu">atlas_simplify</span>(<span class="at">keep =</span> <span class="fl">0.2</span>, <span class="at">exclude =</span> <span class="fu">context_pattern</span>()) <span class="sc">|&gt;</span></span>
-<span id="cb10-46"><a href="#cb10-46" aria-hidden="true" tabindex="-1"></a>  <span class="fu">atlas_smooth</span>(<span class="at">exclude =</span> <span class="fu">context_pattern</span>())</span></code></pre></div>
+<span id="cb10-38"><a href="#cb10-38" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ Pipeline completed [17.9s]</span></span>
+<span id="cb10-39"><a href="#cb10-39" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Warning: Atlas has 44167 vertices, against a budget of 14000 for 14 cortical region.</span></span>
+<span id="cb10-40"><a href="#cb10-40" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ A large atlas is slow to plot and makes the package that ships it bigger.</span></span>
+<span id="cb10-41"><a href="#cb10-41" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ `atlas_polish(atlas)` simplifies and smooths it in one step.</span></span>
+<span id="cb10-42"><a href="#cb10-42" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-43"><a href="#cb10-43" aria-hidden="true" tabindex="-1"></a>atlas_full <span class="ot">&lt;-</span> atlas_full <span class="sc">|&gt;</span></span>
+<span id="cb10-44"><a href="#cb10-44" aria-hidden="true" tabindex="-1"></a>  <span class="fu">atlas_simplify</span>(<span class="at">keep =</span> <span class="fl">0.2</span>, <span class="at">exclude =</span> <span class="fu">context_pattern</span>()) <span class="sc">|&gt;</span></span>
+<span id="cb10-45"><a href="#cb10-45" aria-hidden="true" tabindex="-1"></a>  <span class="fu">atlas_smooth</span>(<span class="at">exclude =</span> <span class="fu">context_pattern</span>())</span></code></pre></div>
 </section><section class="level2"><h2 id="post-processing">Post-processing<a class="anchor" aria-label="anchor" href="#post-processing"></a>
 </h2>
 <p>The “unknown” region (medial wall) renders as a filled region by default. Convert it to a background outline with <code><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_contextual()</a></code>:</p>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">atlas_clean</span> <span class="op">&lt;-</span> <span class="va">atlas_full</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_contextual</a></span><span class="op">(</span><span class="st">"unknown"</span>, match_on <span class="op">=</span> <span class="st">"label"</span><span class="op">)</span></span></code></pre></div>
+<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_contextual</a></span><span class="op">(</span><span class="st">"unknown"</span>, match_on <span class="op">=</span> <span class="st">"label"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Warning in atlas_region_contextual(atlas_full, "unknown", match_on = "label"): No regions matched "unknown".</span></span>
+<span><span class="co">#&gt; ℹ No region was made contextual.</span></span></code></pre></div>
 </section><section class="level2"><h2 id="rendering-the-final-atlas">Rendering the final atlas<a class="anchor" aria-label="anchor" href="#rendering-the-final-atlas"></a>
 </h2>
 <p><code><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot()</a></code> is a base-graphics overview: one call, every view, no legend and nothing to configure. It is for looking at an atlas while you build it.</p>
@@ -398,7 +397,7 @@
 <span>  source <span class="op">=</span> <span class="st">"pet"</span>,</span>
 <span>  desc <span class="op">=</span> <span class="st">"5HT1a"</span>,</span>
 <span>  atlas_name <span class="op">=</span> <span class="st">"serotonin_5ht1a"</span>,</span>
-<span>  n_bins <span class="op">=</span> <span class="fl">10</span></span>
+<span>  breaks <span class="op">=</span> <span class="fl">10</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 <p>The volume-to-surface projection samples across cortical depth (0% to 100% in 10% steps) and takes the maximum value at each vertex, giving robust coverage even for thin cortical signals. FreeSurfer is always required for volume annotations.</p>
 </section><section class="level2"><h2 id="reading-annotation-files-directly">Reading annotation files directly<a class="anchor" aria-label="anchor" href="#reading-annotation-files-directly"></a>
@@ -413,26 +412,26 @@
 <span>  verbose <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">annot_data</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/read_neuromaps_annotation.html">read_neuromaps_annotation</a></span><span class="op">(</span><span class="va">files</span>, n_bins <span class="op">=</span> <span class="fl">7</span><span class="op">)</span></span>
+<span><span class="va">annot_data</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/read_neuromaps_annotation.html">read_neuromaps_annotation</a></span><span class="op">(</span><span class="va">files</span>, breaks <span class="op">=</span> <span class="fl">7</span><span class="op">)</span></span>
 <span><span class="va">annot_data</span></span>
 <span><span class="co">#&gt; # A tibble: 16 × 5</span></span>
 <span><span class="co">#&gt;    hemi  region  label      colour  vertices     </span></span>
 <span><span class="co">#&gt;    &lt;chr&gt; &lt;chr&gt;   &lt;chr&gt;      &lt;chr&gt;   &lt;list&gt;       </span></span>
-<span><span class="co">#&gt;  1 left  bin_1   lh_bin_1   #A71B4B &lt;int [1,315]&gt;</span></span>
-<span><span class="co">#&gt;  2 left  bin_2   lh_bin_2   #E96F02 &lt;int [1,315]&gt;</span></span>
-<span><span class="co">#&gt;  3 left  bin_3   lh_bin_3   #F9C25C &lt;int [1,315]&gt;</span></span>
-<span><span class="co">#&gt;  4 left  bin_4   lh_bin_4   #FEFDBE &lt;int [1,314]&gt;</span></span>
-<span><span class="co">#&gt;  5 left  bin_5   lh_bin_5   #81DEAD &lt;int [1,315]&gt;</span></span>
-<span><span class="co">#&gt;  6 left  bin_6   lh_bin_6   #00A3B6 &lt;int [1,315]&gt;</span></span>
-<span><span class="co">#&gt;  7 left  bin_7   lh_bin_7   #584B9F &lt;int [1,315]&gt;</span></span>
+<span><span class="co">#&gt;  1 left  bin_1   lh_bin_1   #A71B4B &lt;int [1,261]&gt;</span></span>
+<span><span class="co">#&gt;  2 left  bin_2   lh_bin_2   #E96F02 &lt;int [1,318]&gt;</span></span>
+<span><span class="co">#&gt;  3 left  bin_3   lh_bin_3   #F9C25C &lt;int [1,288]&gt;</span></span>
+<span><span class="co">#&gt;  4 left  bin_4   lh_bin_4   #FEFDBE &lt;int [1,293]&gt;</span></span>
+<span><span class="co">#&gt;  5 left  bin_5   lh_bin_5   #81DEAD &lt;int [1,337]&gt;</span></span>
+<span><span class="co">#&gt;  6 left  bin_6   lh_bin_6   #00A3B6 &lt;int [1,299]&gt;</span></span>
+<span><span class="co">#&gt;  7 left  bin_7   lh_bin_7   #584B9F &lt;int [1,408]&gt;</span></span>
 <span><span class="co">#&gt;  8 left  unknown lh_unknown #BEBEBE &lt;int [1,038]&gt;</span></span>
-<span><span class="co">#&gt;  9 right bin_1   rh_bin_1   #A71B4B &lt;int [1,318]&gt;</span></span>
-<span><span class="co">#&gt; 10 right bin_2   rh_bin_2   #E96F02 &lt;int [1,317]&gt;</span></span>
-<span><span class="co">#&gt; 11 right bin_3   rh_bin_3   #F9C25C &lt;int [1,317]&gt;</span></span>
-<span><span class="co">#&gt; 12 right bin_4   rh_bin_4   #FEFDBE &lt;int [1,318]&gt;</span></span>
-<span><span class="co">#&gt; 13 right bin_5   rh_bin_5   #81DEAD &lt;int [1,317]&gt;</span></span>
-<span><span class="co">#&gt; 14 right bin_6   rh_bin_6   #00A3B6 &lt;int [1,317]&gt;</span></span>
-<span><span class="co">#&gt; 15 right bin_7   rh_bin_7   #584B9F &lt;int [1,318]&gt;</span></span>
+<span><span class="co">#&gt;  9 right bin_1   rh_bin_1   #A71B4B &lt;int [1,372]&gt;</span></span>
+<span><span class="co">#&gt; 10 right bin_2   rh_bin_2   #E96F02 &lt;int [1,314]&gt;</span></span>
+<span><span class="co">#&gt; 11 right bin_3   rh_bin_3   #F9C25C &lt;int [1,344]&gt;</span></span>
+<span><span class="co">#&gt; 12 right bin_4   rh_bin_4   #FEFDBE &lt;int [1,339]&gt;</span></span>
+<span><span class="co">#&gt; 13 right bin_5   rh_bin_5   #81DEAD &lt;int [1,295]&gt;</span></span>
+<span><span class="co">#&gt; 14 right bin_6   rh_bin_6   #00A3B6 &lt;int [1,333]&gt;</span></span>
+<span><span class="co">#&gt; 15 right bin_7   rh_bin_7   #584B9F &lt;int [1,225]&gt;</span></span>
 <span><span class="co">#&gt; 16 right unknown rh_unknown #BEBEBE &lt;int [1,020]&gt;</span></span></code></pre></div>
 <p>For volume files in MNI152 space, use <code><a href="../reference/read_neuromaps_volume.html">read_neuromaps_volume()</a></code> instead.</p>
 </section><section class="level2"><h2 id="choosing-the-right-number-of-bins">Choosing the right number of bins<a class="anchor" aria-label="anchor" href="#choosing-the-right-number-of-bins"></a>
@@ -443,7 +442,7 @@
 <col style="width: 55%">
 </colgroup>
 <thead><tr class="header">
-<th>n_bins</th>
+<th>breaks</th>
 <th>Use case</th>
 </tr></thead>
 <tbody>
@@ -456,7 +455,7 @@
 <td>Balanced detail, good for most visualizations</td>
 </tr>
 <tr class="odd">
-<td>~14 (auto)</td>
+<td>~16 (auto)</td>
 <td>Default; maximum spatial detail from Sturges’ rule</td>
 </tr>
 <tr class="even">
@@ -466,10 +465,28 @@
 </tbody>
 </table>
 <p>More bins means more regions and larger atlas objects. The pipeline is fast regardless of bin count, so experiment freely.</p>
-</section><section class="level2"><h2 id="saving">Saving<a class="anchor" aria-label="anchor" href="#saving"></a>
+<section class="level3"><h3 id="choosing-the-bin-edges-yourself">Choosing the bin edges yourself<a class="anchor" aria-label="anchor" href="#choosing-the-bin-edges-yourself"></a>
+</h3>
+<p>Quantile bins are not the only option. Give <code>breaks</code> the edges of the bins as increasing numbers, or a function that takes the map’s values and returns the edges:</p>
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Fixed edges, for example to share one scale across several maps</span></span>
+<span><span class="fu"><a href="../reference/create_cortical_from_neuromaps.html">create_cortical_from_neuromaps</a></span><span class="op">(</span></span>
+<span>  source <span class="op">=</span> <span class="st">"abagen"</span>,</span>
+<span>  desc <span class="op">=</span> <span class="st">"genepc1"</span>,</span>
+<span>  breaks <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">3</span>, <span class="op">-</span><span class="fl">1</span>, <span class="fl">0</span>, <span class="fl">1</span>, <span class="fl">3</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Round, equal-width bins</span></span>
+<span><span class="fu"><a href="../reference/create_cortical_from_neuromaps.html">create_cortical_from_neuromaps</a></span><span class="op">(</span></span>
+<span>  source <span class="op">=</span> <span class="st">"abagen"</span>,</span>
+<span>  desc <span class="op">=</span> <span class="st">"genepc1"</span>,</span>
+<span>  breaks <span class="op">=</span> <span class="kw">function</span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/base/pretty.html" class="external-link">pretty</a></span><span class="op">(</span><span class="va">x</span>, <span class="fl">6</span><span class="op">)</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p>Vertices whose value falls outside the edges you give are left in <code>unknown</code>, and the pipeline warns about how many.</p>
+</section></section><section class="level2"><h2 id="saving">Saving<a class="anchor" aria-label="anchor" href="#saving"></a>
 </h2>
 <p>Once you’re happy with the atlas, save it as package data:</p>
-<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">usethis</span><span class="fu">::</span><span class="fu">use_data</span><span class="op">(</span><span class="va">abagen_genepc1</span>, overwrite <span class="op">=</span> <span class="cn">TRUE</span>, compress <span class="op">=</span> <span class="st">"xz"</span><span class="op">)</span></span></code></pre></div>
 <p>The <code>compress = "xz"</code> flag gives the best compression for sf geometry data.</p>
 </section><script id="quarto-html-after-body" type="application/javascript">

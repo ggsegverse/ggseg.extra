@@ -19,7 +19,7 @@ projected to fsaverage5 via FreeSurfer's mri_vol2surf."><meta property="og:image
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9115</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9116</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -101,7 +101,7 @@ projected to fsaverage5 via FreeSurfer's <code>mri_vol2surf</code>.</p>
 <span>  verbose <span class="op">=</span> <span class="fu"><a href="get_verbose.html">get_verbose</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  <span class="va">...</span>,</span>
 <span>  label_table <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  n_bins <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  breaks <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  atlas_name <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  output_dir <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  cleanup <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -157,8 +157,17 @@ passed here is an error. Geometry is shaped after the build: see
 <dd><p>Optional data.frame mapping parcel IDs to region names.</p></dd>
 
 
-<dt id="arg-n-bins">n_bins<a class="anchor" aria-label="anchor" href="#arg-n-bins"></a></dt>
-<dd><p>Number of quantile bins for continuous brain maps.</p></dd>
+<dt id="arg-breaks">breaks<a class="anchor" aria-label="anchor" href="#arg-breaks"></a></dt>
+<dd><p>How to cut a continuous map into bins. One of:</p><ul><li><p><code>NULL</code>, the default: quantile bins, as many as Sturges' rule gives for
+the number of vertices (<code>1 + log2(n)</code>), kept between 5 and 20.</p></li>
+<li><p>A single number: that many quantile bins.</p></li>
+<li><p>Increasing numbers: the edges of the bins.</p></li>
+<li><p>A function that takes the map's finite values and returns the edges,
+such as <code>function(x) pretty(x, 6)</code> for round, equal-width bins.</p></li>
+</ul><p>Quantile bins each hold about the same number of vertices. Both
+hemispheres are cut on the same edges, so a bin covers the same range of
+values on the left and on the right. Values outside edges you supply are
+left <code>unknown</code>, with a warning. Ignored for parcellation data.</p></dd>
 
 
 <dt id="arg-atlas-name">atlas_name<a class="anchor" aria-label="anchor" href="#arg-atlas-name"></a></dt>
@@ -224,7 +233,7 @@ most builds want next.</p>
 <span class="r-in"><span><span class="va">atlas</span> <span class="op">&lt;-</span> <span class="fu">create_cortical_from_neuromaps</span><span class="op">(</span></span></span>
 <span class="r-in"><span>  source <span class="op">=</span> <span class="st">"abagen"</span>,</span></span>
 <span class="r-in"><span>  desc <span class="op">=</span> <span class="st">"genepc1"</span>,</span></span>
-<span class="r-in"><span>  n_bins <span class="op">=</span> <span class="fl">7</span></span></span>
+<span class="r-in"><span>  breaks <span class="op">=</span> <span class="fl">7</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
 </code></pre></div>
