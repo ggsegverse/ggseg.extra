@@ -73,8 +73,7 @@ voxel tracing, keeps some of the growth.
 }
 
 \examples{
-\dontshow{if (requireNamespace("ggseg", quietly = TRUE)) withAutoprint(\{ # examplesIf}
-dk <- ggseg::dk()
+dk <- ggseg.formats::dk()
 
 # Round off the voxel staircase.
 atlas_smooth(dk, smoothness = 0.4)
@@ -91,7 +90,6 @@ atlas_smooth(
   labels = context_pattern()
 )
 }
-\dontshow{\}) # examplesIf}
 }
 \seealso{
 \code{\link[=atlas_polish]{atlas_polish()}}, which simplifies and smooths in one call and is

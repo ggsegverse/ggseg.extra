@@ -27,15 +27,13 @@ Counts are summed across views, so a region that appears on the lateral
 and medial views is reported once.
 }
 \examples{
-\dontshow{if (requireNamespace("ggseg", quietly = TRUE)) withAutoprint(\{ # examplesIf}
-dk <- ggseg::dk()
+dk <- ggseg.formats::dk()
 
 # The total is what the large-atlas warning reports.
 sum(count_vertices(dk))
 
 # Which regions are the expensive ones?
 head(sort(count_vertices(dk), decreasing = TRUE))
-\dontshow{\}) # examplesIf}
 }
 \seealso{
 \code{\link[=atlas_simplify]{atlas_simplify()}} to bring the count down, and \code{\link[=atlas_smooth]{atlas_smooth()}},

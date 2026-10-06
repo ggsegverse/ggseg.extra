@@ -16,6 +16,7 @@ local_mock_vol2surf <- function(env = parent.frame()) {
 
 describe("check_fs", {
   it("returns logical", {
+    skip_if_not_installed("freesurfer")
     result <- check_fs()
     expect_type(result, "logical")
   })
@@ -40,6 +41,7 @@ describe("check_fs", {
   })
 
   it("does not abort when abort = FALSE", {
+    skip_if_not_installed("freesurfer")
     result <- check_fs(abort = FALSE)
     expect_type(result, "logical")
   })
@@ -782,6 +784,7 @@ describe("validate_registration without FreeSurfer", {
 
 describe("registration = NULL", {
   it("is refused by project_volume_anatomical() before any command runs", {
+    skip_if_not_installed("RNifti")
     local_mocked_bindings(
       check_fs = function(...) invisible(TRUE),
       resolve_volume_path = function(...) {
@@ -796,6 +799,7 @@ describe("registration = NULL", {
   })
 
   it("is refused by prepare_subcortical_mni152()", {
+    skip_if_not_installed("RNifti")
     vol <- withr::local_tempfile(fileext = ".nii.gz")
     file.create(vol)
     local_mocked_bindings(

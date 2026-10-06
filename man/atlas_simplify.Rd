@@ -49,8 +49,7 @@ worth simplifying; tiny deep structures have few to spare. Use \code{labels} or
 \code{exclude} to say which.
 }
 \examples{
-\dontshow{if (requireNamespace("ggseg", quietly = TRUE)) withAutoprint(\{ # examplesIf}
-dk <- ggseg::dk()
+dk <- ggseg.formats::dk()
 sum(count_vertices(dk))
 
 simplified <- atlas_simplify(dk, keep = 0.2)
@@ -60,7 +59,6 @@ sum(count_vertices(simplified))
 # Simplify the backdrop only, sparing the structures.
 atlas_simplify(dk, keep = 0.5, labels = context_pattern())
 }
-\dontshow{\}) # examplesIf}
 }
 \seealso{
 \code{\link[=atlas_smooth]{atlas_smooth()}} to round shapes off, and \code{\link[=atlas_dilate]{atlas_dilate()}} to

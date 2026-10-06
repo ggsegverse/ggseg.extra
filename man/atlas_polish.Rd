@@ -71,8 +71,7 @@ more, which the \code{"preserve"} budget takes back only as far as the floor
 allows. Ask for what you want, then look at what you got.
 }
 \examples{
-\dontshow{if (requireNamespace("ggseg", quietly = TRUE)) withAutoprint(\{ # examplesIf}
-dk <- ggseg::dk()
+dk <- ggseg.formats::dk()
 sum(count_vertices(dk))
 
 polished <- atlas_polish(dk, keep = 0.2)
@@ -90,7 +89,6 @@ dk |>
   ) |>
   atlas_polish(keep = 0.1, smoothness = 0.4, exclude = context_pattern())
 }
-\dontshow{\}) # examplesIf}
 }
 \seealso{
 \code{\link[=atlas_simplify]{atlas_simplify()}} and \code{\link[=atlas_smooth]{atlas_smooth()}} for the separate steps,
