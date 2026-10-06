@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9116</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9117</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -69,6 +69,16 @@
       <small>Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.9.9.9117" id="ggsegextra-1999117">ggseg.extra 1.9.9.9117<a class="anchor" aria-label="anchor" href="#ggsegextra-1999117"></a></h2>
+<div class="section level3">
+<h3 id="bug-fixes-1-9-9-9117">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-1-9-9-9117"></a></h3>
+<ul><li>
+<p><code><a href="../reference/create_tract_from_tractography.html">create_tract_from_tractography()</a></code> no longer shortens or collapses a tract whose streamlines are stored in both directions. Tractography files keep each streamline in whichever direction it was traced, so a bundle is usually a mix. The default centerline averaged the streamlines point by point without lining them up first, which pulled every point towards the middle of the bundle: a bundle split evenly between the two directions collapsed to a single point, and a tube was then built on it. The <code>"medoid"</code> method compared streamlines end to opposite end for the same reason.</p>
+<p>Streamlines are now turned to run the same way before either method is applied, so the result no longer depends on how each one was stored.</p>
+</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9116" id="ggsegextra-1999116">ggseg.extra 1.9.9.9116<a class="anchor" aria-label="anchor" href="#ggsegextra-1999116"></a></h2>
 <div class="section level3">

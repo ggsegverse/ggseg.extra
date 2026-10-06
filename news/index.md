@@ -1,5 +1,22 @@
 # Changelog
 
+## ggseg.extra 1.9.9.9117
+
+### Bug fixes
+
+- [`create_tract_from_tractography()`](https://ggsegverse.github.io/ggseg.extra/reference/create_tract_from_tractography.md)
+  no longer shortens or collapses a tract whose streamlines are stored
+  in both directions. Tractography files keep each streamline in
+  whichever direction it was traced, so a bundle is usually a mix. The
+  default centerline averaged the streamlines point by point without
+  lining them up first, which pulled every point towards the middle of
+  the bundle: a bundle split evenly between the two directions collapsed
+  to a single point, and a tube was then built on it. The `"medoid"`
+  method compared streamlines end to opposite end for the same reason.
+
+  Streamlines are now turned to run the same way before either method is
+  applied, so the result no longer depends on how each one was stored.
+
 ## ggseg.extra 1.9.9.9116
 
 ### Breaking changes
