@@ -1,5 +1,6 @@
 describe("labels_read_files", {
   it("reads label files and builds atlas data tibble", {
+    skip_if_not_installed("freesurferformats")
     labels <- unlist(test_label_files())
     default_colours <- rep(NA_character_, length(labels))
 
@@ -16,6 +17,7 @@ describe("labels_read_files", {
   })
 
   it("uses custom region_names when provided", {
+    skip_if_not_installed("freesurferformats")
     labels <- unlist(test_label_files())
     default_colours <- rep(NA_character_, length(labels))
     custom_names <- c("Motor", "Visual", "Motor")
@@ -29,6 +31,7 @@ describe("labels_read_files", {
 
 describe("labels_read_files hemisphere-less filenames", {
   it("assigns region without hemi prefix for unknown hemisphere", {
+    skip_if_not_installed("freesurferformats")
     tmp <- withr::local_tempdir()
     nohemi_file <- file.path(tmp, "some_region.label")
     writeLines(

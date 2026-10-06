@@ -1,3 +1,22 @@
+# ggseg.extra 1.9.9.9118
+
+## Minor changes
+
+- The examples for `atlas_smooth()`, `atlas_polish()`, `atlas_dilate()`,
+  `atlas_simplify()` and `count_vertices()` always run. They took their atlas
+  from the suggested package ggseg and were skipped without it; they now take
+  it from ggseg.formats, which is always installed.
+
+- ggseg.formats 0.0.4 or later is required, the first release to ship the
+  example atlases those examples and one test use.
+
+- The test suite passes when the suggested packages are not installed. It
+  attached ggseg at start-up, so every test file failed without it, and 45
+  tests reached code needing `RNifti`, `freesurferformats`, `gifti`,
+  `freesurfer`, `smoothr` or `terra` without first checking it was there. Those tests are now
+  skipped when their package is missing, and the one test that contacts
+  GitHub is skipped offline.
+
 # ggseg.extra 1.9.9.9117
 
 ## Bug fixes

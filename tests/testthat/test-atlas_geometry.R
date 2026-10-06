@@ -1218,6 +1218,7 @@ describe("atlas_smooth(method =)", {
   })
 
   it("keeps holes open with chaikin", {
+    skip_if_not_installed("smoothr")
     result <- atlas_smooth(
       ring_atlas(),
       smoothness = 0.6,

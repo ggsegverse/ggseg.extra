@@ -669,6 +669,7 @@ describe("projection_raster", {
   })
 
   it("runs y upward, so a region high in the matrix lands high in y", {
+    skip_if_not_installed("terra")
     proj <- matrix(0L, nrow = 10, ncol = 10)
     proj[, 8:10] <- 1L
 

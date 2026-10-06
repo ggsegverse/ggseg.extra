@@ -60,8 +60,8 @@
 #' @export
 #' @importFrom sf st_make_valid
 #'
-#' @examplesIf requireNamespace("ggseg", quietly = TRUE)
-#' dk <- ggseg::dk()
+#' @examples
+#' dk <- ggseg.formats::dk()
 #'
 #' # Round off the voxel staircase.
 #' atlas_smooth(dk, smoothness = 0.4)
@@ -192,8 +192,8 @@ atlas_smooth <- function(
 #'   when a build needs to interleave them differently.
 #' @export
 #'
-#' @examplesIf requireNamespace("ggseg", quietly = TRUE)
-#' dk <- ggseg::dk()
+#' @examples
+#' dk <- ggseg.formats::dk()
 #' sum(count_vertices(dk))
 #'
 #' polished <- atlas_polish(dk, keep = 0.2)
@@ -269,8 +269,8 @@ atlas_polish <- function(
 #' @seealso [atlas_smooth()] and [atlas_simplify()], the other post-creation
 #'   geometry steps.
 #' @export
-#' @examplesIf requireNamespace("ggseg", quietly = TRUE)
-#' dk <- ggseg::dk()
+#' @examples
+#' dk <- ggseg.formats::dk()
 #'
 #' # Grow the structures and leave the grey brain alone
 #' atlas_dilate(dk, 0.5, exclude = context_pattern())
@@ -323,8 +323,8 @@ atlas_dilate <- function(atlas, amount, labels = NULL, exclude = NULL) {
 #' @seealso [atlas_simplify()] to bring the count down, and [atlas_smooth()],
 #'   which raises it again -- rounding a corner off means inserting points.
 #' @export
-#' @examplesIf requireNamespace("ggseg", quietly = TRUE)
-#' dk <- ggseg::dk()
+#' @examples
+#' dk <- ggseg.formats::dk()
 #'
 #' # The total is what the large-atlas warning reports.
 #' sum(count_vertices(dk))
@@ -384,8 +384,8 @@ count_vertices <- function(atlas) {
 #'   grow or shrink them. Simplify first and smooth afterwards, so the
 #'   smoothing has the last word on the outline.
 #' @export
-#' @examplesIf requireNamespace("ggseg", quietly = TRUE)
-#' dk <- ggseg::dk()
+#' @examples
+#' dk <- ggseg.formats::dk()
 #' sum(count_vertices(dk))
 #'
 #' simplified <- atlas_simplify(dk, keep = 0.2)

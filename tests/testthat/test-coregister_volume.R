@@ -2,6 +2,7 @@
 
 describe("coregister_volume validation", {
   it("errors for invalid dof", {
+    skip_if_not_installed("RNifti")
     local_mocked_bindings(check_fs = function(...) TRUE)
     vol_file <- withr::local_tempfile(fileext = ".nii.gz")
     file.create(vol_file)
@@ -13,6 +14,7 @@ describe("coregister_volume validation", {
   })
 
   it("errors when input volume does not exist", {
+    skip_if_not_installed("RNifti")
     local_mocked_bindings(check_fs = function(...) TRUE)
     expect_error(
       coregister_volume("does/not/exist.nii.gz", verbose = FALSE),
@@ -21,6 +23,7 @@ describe("coregister_volume validation", {
   })
 
   it("errors when input is neither path nor RNifti", {
+    skip_if_not_installed("RNifti")
     local_mocked_bindings(check_fs = function(...) TRUE)
     expect_error(
       coregister_volume(123, verbose = FALSE),
@@ -29,6 +32,7 @@ describe("coregister_volume validation", {
   })
 
   it("errors when target subject volume is missing", {
+    skip_if_not_installed("RNifti")
     local_mocked_bindings(check_fs = function(...) TRUE)
     vol_file <- withr::local_tempfile(fileext = ".nii.gz")
     file.create(vol_file)
@@ -48,6 +52,7 @@ describe("coregister_volume validation", {
 
 describe("project_volume_anatomical validation", {
   it("errors for threshold outside [0, 1]", {
+    skip_if_not_installed("RNifti")
     local_mocked_bindings(check_fs = function(...) TRUE)
     vol_file <- withr::local_tempfile(fileext = ".nii.gz")
     file.create(vol_file)
@@ -65,6 +70,7 @@ describe("project_volume_anatomical validation", {
   })
 
   it("errors for invalid id_offset", {
+    skip_if_not_installed("RNifti")
     local_mocked_bindings(check_fs = function(...) TRUE)
     vol_file <- withr::local_tempfile(fileext = ".nii.gz")
     file.create(vol_file)
@@ -82,6 +88,7 @@ describe("project_volume_anatomical validation", {
   })
 
   it("errors when target aparc+aseg is missing", {
+    skip_if_not_installed("RNifti")
     local_mocked_bindings(check_fs = function(...) TRUE)
     vol_file <- withr::local_tempfile(fileext = ".nii.gz")
     file.create(vol_file)
@@ -99,6 +106,7 @@ describe("project_volume_anatomical validation", {
   })
 
   it("errors when a shifted label id collides with surviving context", {
+    skip_if_not_installed("RNifti")
     fake_dir <- withr::local_tempdir()
     subj_dir <- fs::path(fake_dir, "cvs_avg35_inMNI152", "mri")
     fs::dir_create(subj_dir)
@@ -589,6 +597,7 @@ describe("coregister_volume execution", {
   }
 
   it("reuses an existing LTA when skip_existing and the file exists", {
+    skip_if_not_installed("RNifti")
     fake_dir <- withr::local_tempdir()
     make_subject(fake_dir)
     vol_file <- withr::local_tempfile(fileext = ".nii.gz")
@@ -609,6 +618,7 @@ describe("coregister_volume execution", {
   })
 
   it("binarises both volumes, defaults the LTA path, then runs mri_coreg", {
+    skip_if_not_installed("RNifti")
     fake_dir <- withr::local_tempdir()
     make_subject(fake_dir)
     vol_file <- withr::local_tempfile(fileext = ".nii.gz")
@@ -644,6 +654,7 @@ describe("coregister_volume execution", {
   })
 
   it("passes raw volumes to mri_coreg when binarise is FALSE", {
+    skip_if_not_installed("RNifti")
     fake_dir <- withr::local_tempdir()
     make_subject(fake_dir)
     vol_file <- withr::local_tempfile(fileext = ".nii.gz")
@@ -967,6 +978,7 @@ describe("protected_context_ids", {
 
 describe("project_volume_anatomical early collision check", {
   it("aborts before registration when a shifted id hits protected cortex", {
+    skip_if_not_installed("RNifti")
     fake_dir <- withr::local_tempdir()
     subj_dir <- fs::path(fake_dir, "cvs_avg35_inMNI152", "mri")
     fs::dir_create(subj_dir)
@@ -1005,6 +1017,7 @@ describe("project_volume_anatomical early collision check", {
   })
 
   it("leaves the late check to catch what protection does not shield", {
+    skip_if_not_installed("RNifti")
     fake_dir <- withr::local_tempdir()
     subj_dir <- fs::path(fake_dir, "cvs_avg35_inMNI152", "mri")
     fs::dir_create(subj_dir)

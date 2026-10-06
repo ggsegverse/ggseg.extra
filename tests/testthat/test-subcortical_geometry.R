@@ -83,7 +83,7 @@ describe("decimate_mesh", {
     skip_if_not_installed("Rvcg")
     skip_if_not_installed("rgl")
 
-    mesh <- aseg()$data$meshes$mesh[[1]]
+    mesh <- ggseg.formats::aseg()$data$meshes$mesh[[1]]
 
     result <- decimate_mesh(mesh, percent = 0.5)
 
@@ -155,6 +155,7 @@ describe("tessellate_label", {
   })
 
   it("runs full pipeline when no cached files", {
+    skip_if_not_installed("RNifti")
     tmp_dir <- withr::local_tempdir()
 
     local_mocked_bindings(
@@ -181,6 +182,7 @@ describe("tessellate_label", {
   })
 
   it("errors when pretess fails", {
+    skip_if_not_installed("RNifti")
     tmp_dir <- withr::local_tempdir()
     local_mocked_bindings(
       check_fs = function(abort = FALSE) invisible(TRUE),
@@ -194,6 +196,7 @@ describe("tessellate_label", {
   })
 
   it("errors when tessellation fails", {
+    skip_if_not_installed("RNifti")
     tmp_dir <- withr::local_tempdir()
     local_mocked_bindings(
       check_fs = function(abort = FALSE) invisible(TRUE),
@@ -210,6 +213,7 @@ describe("tessellate_label", {
   })
 
   it("falls back to unsmoothed mesh when smoothing fails", {
+    skip_if_not_installed("RNifti")
     tmp_dir <- withr::local_tempdir()
     local_mocked_bindings(
       check_fs = function(abort = FALSE) invisible(TRUE),
@@ -404,6 +408,7 @@ describe("generate_region_palette", {
 
 describe("ensure_fs_compatible_nifti", {
   it("returns the input unchanged when the header cannot be read", {
+    skip_if_not_installed("RNifti")
     expect_identical(
       ensure_fs_compatible_nifti("/no/such/volume.nii.gz", tempdir()),
       "/no/such/volume.nii.gz"

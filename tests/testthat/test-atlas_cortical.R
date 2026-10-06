@@ -20,6 +20,7 @@ mock_cortical_pipeline_bindings <- function() {
 
 describe("create_cortical_from_annotation", {
   it("validates annotation files exist", {
+    skip_if_not_installed("freesurferformats")
     expect_error(
       create_cortical_from_annotation(
         input_annot = "nonexistent.annot",
@@ -230,6 +231,7 @@ describe("read_annotation_data", {
   })
 
   it("errors when files not found", {
+    skip_if_not_installed("freesurferformats")
     expect_error(
       read_annotation_data("nonexistent.annot"),
       "not found"
@@ -333,6 +335,7 @@ describe("create_cortical_from_labels", {
 
 describe("read_label_vertices", {
   it("reads vertex indices from label file", {
+    skip_if_not_installed("freesurferformats")
     label_file <- test_label_files()$lh_region1
     vertices <- read_label_vertices(label_file)
 
@@ -342,6 +345,7 @@ describe("read_label_vertices", {
   })
 
   it("handles different label files", {
+    skip_if_not_installed("freesurferformats")
     label_file <- test_label_files()$lh_region2
     vertices <- read_label_vertices(label_file)
 
@@ -350,6 +354,7 @@ describe("read_label_vertices", {
   })
 
   it("handles right hemisphere labels", {
+    skip_if_not_installed("freesurferformats")
     label_file <- test_label_files()$rh_region1
     vertices <- read_label_vertices(label_file)
 
@@ -727,6 +732,7 @@ describe("cortical_read_data verbose paths", {
 
 describe("create_cortical_from_labels verbose and LUT paths", {
   it("prints verbose output when verbose is TRUE", {
+    skip_if_not_installed("freesurferformats")
     local_mocked_bindings(
       ggseg_atlas = function(...) structure(list(...), class = "ggseg_atlas"),
       ggseg_data_cortical = function(...) list(...),
@@ -745,6 +751,7 @@ describe("create_cortical_from_labels verbose and LUT paths", {
   })
 
   it("extracts colours from RGB columns in LUT", {
+    skip_if_not_installed("freesurferformats")
     labels <- unlist(test_label_files())
     rgb_lut <- data.frame(
       stringsAsFactors = FALSE,
@@ -784,6 +791,7 @@ describe("create_cortical_from_labels verbose and LUT paths", {
   })
 
   it("sets NULL colour when LUT lacks hex and RGB columns", {
+    skip_if_not_installed("freesurferformats")
     labels <- unlist(test_label_files())
     bad_lut <- data.frame(
       stringsAsFactors = FALSE,
@@ -820,6 +828,7 @@ describe("create_cortical_from_labels verbose and LUT paths", {
   })
 
   it("passes correct atlas_name and components to cortical_project_and_build", {
+    skip_if_not_installed("freesurferformats")
     .cap$captured_args <- NULL
     local_mocked_bindings(
       check_fs = function(abort = FALSE) invisible(TRUE),
@@ -849,6 +858,7 @@ describe("create_cortical_from_labels verbose and LUT paths", {
 
 describe("create_cortical_from_labels hemi fallback", {
   it("defaults to both hemispheres when all hemi values are NA", {
+    skip_if_not_installed("freesurferformats")
     .cap$captured_hemisphere <- NULL
     local_mocked_bindings(
       check_fs = function(abort = FALSE) invisible(TRUE),

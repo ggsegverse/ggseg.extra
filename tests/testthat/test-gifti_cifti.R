@@ -44,6 +44,7 @@ describe("detect_hemi_from_gifti_filename", {
 
 describe("read_gifti_annotation", {
   it("errors when file does not exist", {
+    skip_if_not_installed("freesurferformats")
     expect_error(
       read_gifti_annotation("nonexistent.label.gii"),
       "not found"

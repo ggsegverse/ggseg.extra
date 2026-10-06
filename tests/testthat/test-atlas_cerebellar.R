@@ -121,6 +121,7 @@ describe("read_suit_flatmap", {
   })
 
   it("errors on missing file", {
+    skip_if_not_installed("gifti")
     expect_error(
       read_suit_flatmap("nonexistent.surf.gii"),
       "not found"
@@ -399,6 +400,7 @@ describe("build_suit_region_row missing label names", {
 
 describe("read_suit_parcellation", {
   it("errors on missing files", {
+    skip_if_not_installed("gifti")
     expect_error(
       read_suit_parcellation("nonexistent.label.gii"),
       "not found"
@@ -553,6 +555,7 @@ describe("create_cerebellar_from_volume", {
 
 describe("read_cerebellar_annotation", {
   it("errors on missing files", {
+    skip_if_not_installed("freesurferformats")
     expect_error(
       read_cerebellar_annotation("nonexistent.annot"),
       "not found"
@@ -1082,6 +1085,7 @@ describe("cerebellar_build_sf_flatmap", {
 
 describe("transform_mni_to_suit", {
   it("errors on missing input volume", {
+    skip_if_not_installed("RNifti")
     expect_error(
       transform_mni_to_suit("nonexistent.nii.gz", "xfm.nii"),
       "not found"
@@ -1316,10 +1320,10 @@ describe("download_suit_xfm", {
 
 
 describe("can_reach_github", {
-  it("returns TRUE or FALSE", {
-    result <- can_reach_github()
-    expect_type(result, "logical")
-    expect_length(result, 1)
+  it("reaches GitHub when the machine is online", {
+    skip_if_offline("raw.githubusercontent.com")
+
+    expect_true(can_reach_github())
   })
 })
 
@@ -1899,6 +1903,7 @@ describe("cerebellar_read_data", {
 
 describe("cerebellar_project_and_build", {
   it("builds atlas without deep nuclei when deep_data is NULL", {
+    skip_if_not_installed("gifti")
     components <- list(
       core = data.frame(
         hemi = "left",

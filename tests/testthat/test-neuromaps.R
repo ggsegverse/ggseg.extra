@@ -42,6 +42,7 @@ describe("detect_hemi_from_neuromaps_filename", {
 
 describe("read_neuromaps_annotation", {
   it("errors when file does not exist", {
+    skip_if_not_installed("gifti")
     expect_error(
       read_neuromaps_annotation("nonexistent.func.gii"),
       "not found"
@@ -49,6 +50,7 @@ describe("read_neuromaps_annotation", {
   })
 
   it("errors for volume files", {
+    skip_if_not_installed("gifti")
     tmp <- withr::local_tempfile(fileext = ".nii.gz")
     writeLines("mock", tmp)
 
