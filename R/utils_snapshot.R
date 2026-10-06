@@ -166,32 +166,6 @@ projection_raster <- function(proj) {
 
 # View generation utilities ----
 
-#' Create chunked view ranges for projections
-#'
-#' Generates a data.frame of view specifications by dividing a range into
-#' chunks. Used by both subcortical and tract atlas pipelines.
-#'
-#' @param lo Start of range
-#' @param hi End of range
-#' @param chunk_size Size of each chunk
-#' @param type View type: "axial", "coronal", or "sagittal"
-#'
-#' @return data.frame with columns: name, type, start, end
-#' @noRd
-make_view_chunks <- function(lo, hi, chunk_size, type) {
-  starts <- seq(lo, hi, by = chunk_size)
-  ends <- pmin(starts + chunk_size - 1, hi)
-  n <- length(starts)
-  data.frame(
-    name = paste0(type, "_", seq_len(n)),
-    type = type,
-    start = starts,
-    end = ends,
-    stringsAsFactors = FALSE
-  )
-}
-
-
 #' Create cortex reference slices from slabs
 #'
 #' Generates cortex slice positions that match the slab specifications.
@@ -199,7 +173,7 @@ make_view_chunks <- function(lo, hi, chunk_size, type) {
 #' For axial/coronal slabs, uses the midpoint of the projection range.
 #'
 #' @param slabs data.frame with columns: name, type, start, end
-#' @inheritParams default_tract_slabs
+#' @param dims Volume dimensions (3-element vector)
 #' @param cortex_x X coordinate for non-hemisphere-specific sagittal slices
 #'
 #' @return data.frame with columns: x, y, z, view, name
@@ -279,10 +253,10 @@ sagittal_cortex_x <- function(v, dims, cortex_x, vol, cortex_ids, mid_pos) {
     return(thinnest)
   }
   if (grepl("left", v$name, ignore.case = TRUE)) {
-    return(round(dims[1] * 0.55))
+    return(round(dims[1] * 0.45))
   }
   if (grepl("right", v$name, ignore.case = TRUE)) {
-    return(round(dims[1] * 0.45))
+    return(round(dims[1] * 0.55))
   }
   mid_pos
 }
