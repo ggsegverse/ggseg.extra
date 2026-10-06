@@ -432,8 +432,9 @@ read_cifti_annotation <- function(cifti_file) {
 #' Automatically detects whether data contains integer parcel IDs
 #' (parcellation) or continuous values (brain map). For parcellations,
 #' vertex value 0 is treated as medial wall. For continuous data, NaN
-#' vertices are medial wall and values are discretized into quantile
-#' bins via `n_bins`.
+#' vertices are medial wall and values are discretized into bins: quantile
+#' bins via `n_bins`, or bins of your own via `breaks`. Either way both
+#' hemispheres share one set of bin edges.
 #'
 #' Files must be in fsaverage5 space (10,242 vertices per hemisphere).
 #' Use `space = "fsaverage"` with `density = "10k"` when fetching from
@@ -448,7 +449,15 @@ read_cifti_annotation <- function(cifti_file) {
 #'   `bin_1`, `bin_2`, etc. (continuous).
 #' @param n_bins Number of quantile bins for continuous data. When `NULL`
 #'   (default), auto-detected via Sturges' rule (`1 + log2(n)`, clamped
-#'   to 5--20). Ignored for integer parcellation data.
+#'   to 5--20). The quantiles are taken over both hemispheres together, so a
+#'   bin covers the same range of values on the left and on the right.
+#'   Ignored for integer parcellation data.
+#' @param breaks How to cut a continuous map into bins yourself, instead of
+#'   by quantiles. Either the bin edges, as increasing numbers, or a function
+#'   that takes the map's finite values from both hemispheres and returns the
+#'   edges -- for example `function(x) pretty(x, 6)` for round, equal-width
+#'   bins. Values outside the edges are left `unknown`, with a warning. Use
+#'   `n_bins` or `breaks`, not both. Ignored for parcellation data.
 #'
 #' @return A tibble with columns: hemi, region, label, colour, vertices
 #' @export
@@ -465,13 +474,15 @@ read_cifti_annotation <- function(cifti_file) {
 read_neuromaps_annotation <- function(
   gifti_files,
   label_table = NULL,
-  n_bins = NULL
+  n_bins = NULL,
+  breaks = NULL
 ) {
   rlang::check_installed("gifti", reason = "to read GIFTI metric files")
 
   validate_neuromaps_inputs(gifti_files, label_table)
+  check_bin_args(n_bins, breaks)
 
-  all_data <- list()
+  hemi_values <- list()
 
   for (gifti_file in gifti_files) {
     filename <- basename(gifti_file)
@@ -483,27 +494,20 @@ read_neuromaps_annotation <- function(
       )
       next
     }
-    hemi <- hemi_to_long(hemi_short)
-
-    values <- read_neuromaps_values(gifti_file, hemi)
-    is_parcellation <- is_integer_valued(values)
-
-    hemi_data <- if (is_parcellation) {
-      parse_parcellation_values(values, hemi, hemi_short, label_table)
-    } else {
-      parse_continuous_values(values, hemi, hemi_short, n_bins)
-    }
-
-    all_data <- c(all_data, hemi_data)
+    hemi_values[[hemi_short]] <- read_neuromaps_values(
+      gifti_file,
+      hemi_to_long(hemi_short)
+    )
   }
 
-  result <- bind_rows(all_data)
-
-  if (nrow(result) == 0) {
-    return(result)
-  }
-
-  result
+  holds_labels <- all(vapply(hemi_values, is_integer_valued, logical(1)))
+  bind_rows(neuromaps_hemi_regions(
+    hemi_values,
+    holds_labels,
+    label_table,
+    n_bins,
+    breaks
+  ))
 }
 
 #' Read neuromaps volume annotation via surface projection
@@ -520,7 +524,9 @@ read_neuromaps_annotation <- function(
 #'
 #' @param nifti_file Path to a `.nii` or `.nii.gz` file in MNI152 space.
 #' @param n_bins Number of quantile bins for continuous data. When `NULL`
-#'   (default), auto-detected via Sturges' rule. Ignored for integer data.
+#'   (default), auto-detected via Sturges' rule. The quantiles are taken over
+#'   both hemispheres together. Ignored for integer data.
+#' @inheritParams read_neuromaps_annotation
 #' @param label_table Optional data.frame mapping parcel ids to region names
 #'   and colours, as for [read_neuromaps_annotation()]. Supplying one declares
 #'   the volume a parcellation. Continuous volumes are binned and the bins
@@ -539,10 +545,12 @@ read_neuromaps_volume <- function(
   nifti_file,
   n_bins = NULL,
   label_table = NULL,
-  output_dir = tempdir()
+  output_dir = tempdir(),
+  breaks = NULL
 ) {
   check_fs(abort = TRUE)
   rlang::check_installed("RNifti", reason = "to read NIfTI volume files")
+  check_bin_args(n_bins, breaks)
   if (!file.exists(nifti_file)) {
     cli::cli_abort("Volume not found: {.path {nifti_file}}")
   }
@@ -552,7 +560,7 @@ read_neuromaps_volume <- function(
   surf_dir <- as.character(fs::path(output_dir, "surface_overlays"))
   mkdir(surf_dir)
 
-  all_data <- list()
+  hemi_values <- list()
   subject <- "fsaverage5"
   validate_registration("mni152", subject, nifti_file)
   reg <- resolve_vol2surf_registration("mni152", subject)
@@ -587,17 +595,16 @@ read_neuromaps_volume <- function(
       ))
     }
 
-    values <- read_surface_overlay(output_nii, hemi)
-
-    hemi_data <- if (holds_labels) {
-      parse_parcellation_values(values, hemi, hemi_short, label_table)
-    } else {
-      parse_continuous_values(values, hemi, hemi_short, n_bins)
-    }
-    all_data <- c(all_data, hemi_data)
+    hemi_values[[hemi_short]] <- read_surface_overlay(output_nii, hemi)
   }
 
-  result <- bind_rows(all_data)
+  result <- bind_rows(neuromaps_hemi_regions(
+    hemi_values,
+    holds_labels,
+    label_table,
+    n_bins,
+    breaks
+  ))
   fill_missing_colours(result)
 }
 
@@ -1184,40 +1191,160 @@ parse_parcellation_values <- function(values, hemi, hemi_short, label_table) {
 }
 
 
+#' Check the binning arguments of the neuromaps readers
+#'
+#' Run before any file is fetched or projected, so a bad bin specification
+#' does not cost a download or a FreeSurfer call to discover.
 #' @noRd
-parse_continuous_values <- function(values, hemi, hemi_short, n_bins) {
-  medial_wall <- !is.finite(values)
-  valid <- values[!medial_wall]
-
-  if (length(valid) == 0) {
-    cli::cli_abort(c(
-      "No finite values to bin for the {hemi} hemisphere",
-      "i" = "Every projected vertex was medial wall or non-finite"
-    ))
+check_bin_args <- function(n_bins, breaks, call = rlang::caller_env()) {
+  if (!is.null(n_bins) && !is.null(breaks)) {
+    cli::cli_abort(
+      c(
+        "Supply {.arg n_bins} or {.arg breaks}, not both.",
+        "i" = "{.arg breaks} already fixes how many bins there are."
+      ),
+      call = call
+    )
   }
+  if (!is.null(n_bins) && !rlang::is_scalar_integerish(n_bins, finite = TRUE)) {
+    cli::cli_abort(
+      "{.arg n_bins} must be a single whole number, not {.val {n_bins}}.",
+      call = call
+    )
+  }
+  if (!is.null(n_bins) && n_bins < 1) {
+    cli::cli_abort(
+      "{.arg n_bins} must be at least 1, not {.val {n_bins}}.",
+      call = call
+    )
+  }
+  if (!is.null(breaks) && !is.function(breaks)) {
+    check_break_points(breaks, call = call)
+  }
+  invisible(NULL)
+}
 
+
+#' Check a vector of bin edges can be handed to `cut()`
+#' @noRd
+check_break_points <- function(breaks, call = rlang::caller_env()) {
+  usable <- is.numeric(breaks) &&
+    length(breaks) >= 2L &&
+    !anyNA(breaks) &&
+    all(diff(breaks) > 0)
+  if (usable) {
+    return(invisible(breaks))
+  }
+  cli::cli_abort(
+    c(
+      "{.arg breaks} must give at least two increasing numbers, the edges of
+      the bins.",
+      "x" = "Got {.obj_type_friendly {breaks}}{if (is.numeric(breaks))
+      paste0(': ', toString(utils::head(breaks, 6)))}.",
+      "i" = "A function passed as {.arg breaks} must return such a vector."
+    ),
+    call = call
+  )
+}
+
+
+#' Settle the bin edges for a continuous map, once for both hemispheres
+#'
+#' The edges are worked out on the finite values of every hemisphere pooled.
+#' Working them out per hemisphere gave the left and right `bin_3` different
+#' value ranges under one name and one colour.
+#'
+#' @param hemi_values Named list of per-vertex value vectors, one per
+#'   hemisphere, named by long hemisphere name.
+#' @param n_bins Number of quantile bins, or `NULL` for Sturges' rule clamped
+#'   to 5--20.
+#' @param breaks `NULL`, bin edges, or a function of the pooled finite values
+#'   returning bin edges.
+#' @return Increasing numeric vector of bin edges.
+#' @noRd
+neuromaps_bin_breaks <- function(
+  hemi_values,
+  n_bins = NULL,
+  breaks = NULL,
+  call = rlang::caller_env()
+) {
+  finite <- lapply(hemi_values, function(values) values[is.finite(values)])
+  empty <- names(finite)[lengths(finite) == 0L] # nolint: object_usage_linter.
+  if (length(empty) > 0) {
+    cli::cli_abort(
+      c(
+        "No finite values to bin for the {empty} hemisphere{?s}",
+        "i" = "Every projected vertex was medial wall or non-finite"
+      ),
+      call = call
+    )
+  }
+  pooled <- unlist(finite, use.names = FALSE)
+
+  if (is.function(breaks)) {
+    return(check_break_points(breaks(pooled), call = call))
+  }
+  if (!is.null(breaks)) {
+    return(breaks)
+  }
+  quantile_bin_breaks(pooled, n_bins)
+}
+
+
+#' Quantile bin edges, with tied quantiles collapsed
+#' @noRd
+quantile_bin_breaks <- function(values, n_bins = NULL) {
   if (is.null(n_bins)) {
-    n_bins <- as.integer(grDevices::nclass.Sturges(valid))
+    n_bins <- as.integer(grDevices::nclass.Sturges(values))
     n_bins <- max(5L, min(n_bins, 20L))
   }
-
-  breaks <- stats::quantile(valid, probs = seq(0, 1, length.out = n_bins + 1))
-  breaks[1] <- breaks[1] - 1
 
   # Tied values (thresholded maps, many zeros, or n_bins larger than the number
   # of distinct values) collapse adjacent quantiles; cut() aborts on duplicate
   # breaks, so drop them and shrink the bin count to match.
-  breaks <- unique(breaks)
+  breaks <- unique(unname(
+    stats::quantile(values, probs = seq(0, 1, length.out = n_bins + 1))
+  ))
   if (length(breaks) - 1L < n_bins) {
     cli::cli_warn(
-      "Using {length(breaks) - 1L} bin{?s} instead of {n_bins}: the data has \\
-       fewer distinct values than requested bins."
+      "Using {max(length(breaks) - 1L, 1L)} bin{?s} instead of {n_bins}: the \\
+       data has fewer distinct values than requested bins."
     )
-    n_bins <- length(breaks) - 1L
   }
+  if (length(breaks) == 1L) {
+    breaks <- c(breaks, breaks)
+  }
+  breaks
+}
 
-  bin_ids <- cut(values, breaks = breaks, labels = FALSE)
-  bin_ids[medial_wall] <- NA_integer_
+
+#' Bin one hemisphere's continuous values on shared bin edges
+#'
+#' Non-finite vertices are the medial wall. A finite vertex outside the edges,
+#' which only caller-supplied `breaks` can produce, joins it as `unknown`
+#' and is reported.
+#' @noRd
+bin_continuous_values <- function(values, hemi, hemi_short, breaks) {
+  n_bins <- length(breaks) - 1L
+  bin_ids <- if (breaks[1] == breaks[length(breaks)]) {
+    ifelse(is.finite(values), 1L, NA_integer_)
+  } else {
+    cut(values, breaks = breaks, labels = FALSE, include.lowest = TRUE)
+  }
+  unbinned <- is.na(bin_ids)
+
+  outside <- sum(unbinned & is.finite(values))
+  if (outside > 0) {
+    cli::cli_warn(
+      c(
+        "In the {hemi} hemisphere, {outside} vert{?ex/ices} fall{?s/} outside
+        {.arg breaks} and {?is/are} left in {.val unknown}.",
+        "i" = "The edges run from {.val {breaks[1]}} to
+        {.val {breaks[length(breaks)]}}."
+      ),
+      wrap = TRUE
+    )
+  }
 
   palette <- hcl.colors(n_bins, palette = "Spectral")
   data <- list()
@@ -1238,7 +1365,7 @@ parse_continuous_values <- function(values, hemi, hemi_short, n_bins) {
     )
   }
 
-  wall_vertices <- which(medial_wall) - 1L
+  wall_vertices <- which(unbinned) - 1L
   if (length(wall_vertices) > 0) {
     data[[length(data) + 1]] <- tibble(
       hemi = hemi,
@@ -1250,6 +1377,54 @@ parse_continuous_values <- function(values, hemi, hemi_short, n_bins) {
   }
 
   data
+}
+
+
+#' Turn per-hemisphere vertex values into region rows
+#'
+#' @param hemi_values Named list of value vectors, named by short hemisphere
+#'   name (`lh`, `rh`).
+#' @param holds_labels Whether the values are parcel ids rather than a
+#'   continuous map.
+#' @return A list of one-row tibbles.
+#' @noRd
+neuromaps_hemi_regions <- function(
+  hemi_values,
+  holds_labels,
+  label_table,
+  n_bins,
+  breaks
+) {
+  long_names <- vapply(names(hemi_values), hemi_to_long, character(1))
+  if (!holds_labels) {
+    cut_points <- neuromaps_bin_breaks(
+      stats::setNames(hemi_values, long_names),
+      n_bins,
+      breaks
+    )
+  }
+
+  regions <- list()
+  for (i in seq_along(hemi_values)) {
+    hemi_short <- names(hemi_values)[i]
+    hemi_regions <- if (holds_labels) {
+      parse_parcellation_values(
+        hemi_values[[i]],
+        long_names[[i]],
+        hemi_short,
+        label_table
+      )
+    } else {
+      bin_continuous_values(
+        hemi_values[[i]],
+        long_names[[i]],
+        hemi_short,
+        cut_points
+      )
+    }
+    regions <- c(regions, hemi_regions)
+  }
+  regions
 }
 
 

@@ -15,6 +15,7 @@ create_cortical_from_neuromaps(
   ...,
   label_table = NULL,
   n_bins = NULL,
+  breaks = NULL,
   atlas_name = NULL,
   output_dir = NULL,
   cleanup = NULL,
@@ -48,7 +49,16 @@ passed here is an error. Geometry is shaped after the build: see
 
 \item{label_table}{Optional data.frame mapping parcel IDs to region names.}
 
-\item{n_bins}{Number of quantile bins for continuous brain maps.}
+\item{n_bins}{Number of quantile bins for continuous brain maps. The
+quantiles are taken over both hemispheres together, so a bin covers the
+same range of values on the left and on the right.}
+
+\item{breaks}{How to cut a continuous map into bins yourself, instead of
+by quantiles. Either the bin edges, as increasing numbers, or a function
+that takes the map's finite values from both hemispheres and returns the
+edges -- for example \code{function(x) pretty(x, 6)} for round, equal-width
+bins. Values outside the edges are left \code{unknown}, with a warning. Use
+\code{n_bins} or \code{breaks}, not both. Ignored for parcellation data.}
 
 \item{atlas_name}{Name for the atlas. If NULL, derived from the input
 filename. It also names the folder of intermediate files inside

@@ -4,7 +4,12 @@
 \alias{read_neuromaps_annotation}
 \title{Read neuromaps annotation files}
 \usage{
-read_neuromaps_annotation(gifti_files, label_table = NULL, n_bins = NULL)
+read_neuromaps_annotation(
+  gifti_files,
+  label_table = NULL,
+  n_bins = NULL,
+  breaks = NULL
+)
 }
 \arguments{
 \item{gifti_files}{Character vector of paths to \code{.func.gii} files.
@@ -18,7 +23,16 @@ named \code{parcel_1}, \code{parcel_2}, etc. (parcellation) or
 
 \item{n_bins}{Number of quantile bins for continuous data. When \code{NULL}
 (default), auto-detected via Sturges' rule (\code{1 + log2(n)}, clamped
-to 5--20). Ignored for integer parcellation data.}
+to 5--20). The quantiles are taken over both hemispheres together, so a
+bin covers the same range of values on the left and on the right.
+Ignored for integer parcellation data.}
+
+\item{breaks}{How to cut a continuous map into bins yourself, instead of
+by quantiles. Either the bin edges, as increasing numbers, or a function
+that takes the map's finite values from both hemispheres and returns the
+edges -- for example \code{function(x) pretty(x, 6)} for round, equal-width
+bins. Values outside the edges are left \code{unknown}, with a warning. Use
+\code{n_bins} or \code{breaks}, not both. Ignored for parcellation data.}
 }
 \value{
 A tibble with columns: hemi, region, label, colour, vertices
@@ -31,8 +45,9 @@ the standard annotation format used by the cortical atlas pipeline.
 Automatically detects whether data contains integer parcel IDs
 (parcellation) or continuous values (brain map). For parcellations,
 vertex value 0 is treated as medial wall. For continuous data, NaN
-vertices are medial wall and values are discretized into quantile
-bins via \code{n_bins}.
+vertices are medial wall and values are discretized into bins: quantile
+bins via \code{n_bins}, or bins of your own via \code{breaks}. Either way both
+hemispheres share one set of bin edges.
 
 Files must be in fsaverage5 space (10,242 vertices per hemisphere).
 Use \code{space = "fsaverage"} with \code{density = "10k"} when fetching from

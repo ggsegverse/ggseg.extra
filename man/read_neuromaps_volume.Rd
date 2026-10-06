@@ -8,14 +8,16 @@ read_neuromaps_volume(
   nifti_file,
   n_bins = NULL,
   label_table = NULL,
-  output_dir = tempdir()
+  output_dir = tempdir(),
+  breaks = NULL
 )
 }
 \arguments{
 \item{nifti_file}{Path to a \code{.nii} or \code{.nii.gz} file in MNI152 space.}
 
 \item{n_bins}{Number of quantile bins for continuous data. When \code{NULL}
-(default), auto-detected via Sturges' rule. Ignored for integer data.}
+(default), auto-detected via Sturges' rule. The quantiles are taken over
+both hemispheres together. Ignored for integer data.}
 
 \item{label_table}{Optional data.frame mapping parcel ids to region names
 and colours, as for \code{\link[=read_neuromaps_annotation]{read_neuromaps_annotation()}}. Supplying one declares
@@ -23,6 +25,13 @@ the volume a parcellation. Continuous volumes are binned and the bins
 named \code{bin_1}, \code{bin_2}, and so on.}
 
 \item{output_dir}{Directory for intermediate surface overlay files.}
+
+\item{breaks}{How to cut a continuous map into bins yourself, instead of
+by quantiles. Either the bin edges, as increasing numbers, or a function
+that takes the map's finite values from both hemispheres and returns the
+edges -- for example \code{function(x) pretty(x, 6)} for round, equal-width
+bins. Values outside the edges are left \code{unknown}, with a warning. Use
+\code{n_bins} or \code{breaks}, not both. Ignored for parcellation data.}
 }
 \value{
 A tibble with columns: hemi, region, label, colour, vertices

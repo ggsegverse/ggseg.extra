@@ -1,3 +1,25 @@
+# ggseg.extra 1.9.9.9116
+
+## Minor changes
+
+- `create_cortical_from_neuromaps()`, `read_neuromaps_annotation()` and
+  `read_neuromaps_volume()` gain `breaks`, for cutting a continuous map into
+  bins of your own choosing instead of by quantiles. Give the bin edges, or a
+  function that takes the map's values and returns them:
+  `breaks = function(x) pretty(x, 6)` gives round, equal-width bins. Values
+  outside the edges are left `unknown`, with a warning. `n_bins` and `breaks`
+  cannot be combined, and a bad specification is rejected before anything is
+  downloaded or projected.
+
+## Bug fixes
+
+- A continuous neuromaps map is binned on one set of edges for both
+  hemispheres. Each hemisphere used to get its own quantiles, so `bin_3` on
+  the left and `bin_3` on the right covered different ranges of values while
+  sharing a name and a colour, and the two hemispheres could end up with
+  different numbers of bins. A map whose left and right values differ in
+  range now shows that difference instead of hiding it.
+
 # ggseg.extra 1.9.9.9115
 
 ## Bug fixes

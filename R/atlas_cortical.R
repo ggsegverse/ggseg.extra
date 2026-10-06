@@ -329,7 +329,15 @@ create_cortical_from_cifti <- function(
 #' @param space Coordinate space. Defaults to `"fsaverage"`.
 #' @param density Surface vertex density. Defaults to `"10k"`.
 #' @param label_table Optional data.frame mapping parcel IDs to region names.
-#' @param n_bins Number of quantile bins for continuous brain maps.
+#' @param n_bins Number of quantile bins for continuous brain maps. The
+#'   quantiles are taken over both hemispheres together, so a bin covers the
+#'   same range of values on the left and on the right.
+#' @param breaks How to cut a continuous map into bins yourself, instead of
+#'   by quantiles. Either the bin edges, as increasing numbers, or a function
+#'   that takes the map's finite values from both hemispheres and returns the
+#'   edges -- for example `function(x) pretty(x, 6)` for round, equal-width
+#'   bins. Values outside the edges are left `unknown`, with a warning. Use
+#'   `n_bins` or `breaks`, not both. Ignored for parcellation data.
 #' @template atlas_name
 #' @template output_dir
 #' @param hemisphere Which hemispheres to include: "lh", "rh", or both.
@@ -367,6 +375,7 @@ create_cortical_from_neuromaps <- function(
   ...,
   label_table = NULL,
   n_bins = NULL,
+  breaks = NULL,
   atlas_name = NULL,
   output_dir = NULL,
   cleanup = NULL,
@@ -377,6 +386,7 @@ create_cortical_from_neuromaps <- function(
     "neuromapr",
     reason = "to download neuromaps annotations"
   )
+  check_bin_args(n_bins, breaks)
 
   config <- validate_surface_config(
     output_dir,
@@ -392,6 +402,7 @@ create_cortical_from_neuromaps <- function(
     density = density,
     label_table = label_table,
     n_bins = n_bins,
+    breaks = breaks,
     atlas_name = atlas_name,
     config = config,
     hemisphere = hemisphere,
@@ -463,6 +474,7 @@ run_neuromaps_creation <- function(
   density,
   label_table,
   n_bins,
+  breaks,
   atlas_name,
   config,
   hemisphere,
@@ -493,11 +505,14 @@ run_neuromaps_creation <- function(
         gifti_files[1],
         n_bins = n_bins,
         label_table = label_table,
-        output_dir = output_base
+        output_dir = output_base,
+        breaks = breaks
       )
     }
   } else {
-    function() read_neuromaps_annotation(gifti_files, label_table, n_bins)
+    function() {
+      read_neuromaps_annotation(gifti_files, label_table, n_bins, breaks)
+    }
   }
 
   run_cortical_creation(

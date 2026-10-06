@@ -1099,41 +1099,175 @@ describe("parse_parcellation_values", {
 })
 
 
-describe("parse_continuous_values", {
-  it("skips bins with zero vertices", {
-    values <- c(rep(NaN, 10240), 0.5, 9.5)
-    result <- parse_continuous_values(values, "left", "lh", n_bins = 10)
-    bin_regions <- vapply(
-      result[vapply(
-        result,
-        function(x) grepl("^bin_", x$region[1]),
-        logical(1)
-      )],
-      function(x) x$region[1],
-      character(1)
+describe("neuromaps_hemi_regions binning", {
+  bins_by_hemi <- function(regions) {
+    rows <- dplyr::bind_rows(regions)
+    rows <- rows[grepl("^bin_", rows$region), ]
+    split(rows$region, rows$hemi)
+  }
+
+  it("cuts both hemispheres on one set of bin edges", {
+    left <- seq(0, 1, length.out = 100)
+    right <- seq(5, 10, length.out = 100)
+
+    regions <- neuromaps_hemi_regions(
+      list(lh = left, rh = right),
+      holds_labels = FALSE,
+      label_table = NULL,
+      n_bins = 4,
+      breaks = NULL
     )
-    expect_lte(length(bin_regions), 10)
-    expect_gte(length(bin_regions), 1)
+
+    expect_identical(
+      bins_by_hemi(regions),
+      list(left = c("bin_1", "bin_2"), right = c("bin_3", "bin_4"))
+    )
   })
 
-  it("handles tied values without a 'breaks are not unique' error", {
-    values <- c(rep(NaN, 10000), rep(0, 200), rep(1, 42))
+  it("gives a bin one colour whichever hemisphere it is in", {
+    values <- seq(0, 1, length.out = 200)
+
+    rows <- dplyr::bind_rows(neuromaps_hemi_regions(
+      list(lh = values, rh = rev(values)),
+      holds_labels = FALSE,
+      label_table = NULL,
+      n_bins = 5,
+      breaks = NULL
+    ))
+
+    colours_per_bin <- tapply(rows$colour, rows$region, function(x) {
+      length(unique(x))
+    })
+    expect_true(all(colours_per_bin == 1L))
+  })
+
+  it("uses the bin edges it is given", {
+    regions <- neuromaps_hemi_regions(
+      list(lh = c(0.1, 0.4, 0.9), rh = c(0.2, 0.6, 0.7)),
+      holds_labels = FALSE,
+      label_table = NULL,
+      n_bins = NULL,
+      breaks = c(0, 0.5, 1)
+    )
+
+    expect_identical(
+      bins_by_hemi(regions),
+      list(left = c("bin_1", "bin_2"), right = c("bin_1", "bin_2"))
+    )
+  })
+
+  it("hands a breaks function the finite values of both hemispheres", {
+    seen <- NULL
+    regions <- neuromaps_hemi_regions(
+      list(lh = c(1, 2, NaN), rh = c(3, 4, NaN)),
+      holds_labels = FALSE,
+      label_table = NULL,
+      n_bins = NULL,
+      breaks = function(values) {
+        seen <<- values
+        c(0, 2.5, 5)
+      }
+    )
+
+    expect_identical(seen, c(1, 2, 3, 4))
+    expect_identical(
+      bins_by_hemi(regions),
+      list(left = "bin_1", right = "bin_2")
+    )
+  })
+
+  it("rejects a breaks function that does not return bin edges", {
+    expect_error(
+      neuromaps_hemi_regions(
+        list(lh = c(1, 2), rh = c(3, 4)),
+        holds_labels = FALSE,
+        label_table = NULL,
+        n_bins = NULL,
+        breaks = function(values) "quartiles"
+      ),
+      "at least two increasing numbers"
+    )
+  })
+
+  it("leaves values outside the given edges unknown, and says so", {
     expect_warning(
-      result <- parse_continuous_values(values, "left", "lh", n_bins = 10),
+      regions <- neuromaps_hemi_regions(
+        list(lh = c(0.2, 0.7, 20)),
+        holds_labels = FALSE,
+        label_table = NULL,
+        n_bins = NULL,
+        breaks = c(0, 0.5, 1)
+      ),
+      "1 vertex falls outside"
+    )
+
+    rows <- dplyr::bind_rows(regions)
+    expect_identical(rows$vertices[[which(rows$region == "unknown")]], 2L)
+  })
+
+  it("puts non-finite vertices in unknown", {
+    rows <- dplyr::bind_rows(neuromaps_hemi_regions(
+      list(lh = c(1, 2, NaN, NaN, NaN)),
+      holds_labels = FALSE,
+      label_table = NULL,
+      n_bins = 2,
+      breaks = NULL
+    ))
+
+    expect_length(rows$vertices[[which(rows$region == "unknown")]], 3)
+  })
+
+  it("names the hemisphere that has no finite values", {
+    expect_error(
+      neuromaps_hemi_regions(
+        list(lh = c(1, 2), rh = rep(NaN, 3)),
+        holds_labels = FALSE,
+        label_table = NULL,
+        n_bins = 2,
+        breaks = NULL
+      ),
+      "No finite values to bin for the right hemisphere"
+    )
+  })
+})
+
+
+describe("quantile_bin_breaks", {
+  it("returns one more edge than the bins asked for", {
+    expect_length(quantile_bin_breaks(seq(0, 1, length.out = 100), 5), 6)
+  })
+
+  it("chooses the bin count by Sturges' rule, kept between 5 and 20", {
+    expect_length(quantile_bin_breaks(seq(0, 1, length.out = 10000)), 16)
+    expect_length(quantile_bin_breaks(seq(0, 1, length.out = 10)), 6)
+  })
+
+  it("collapses tied quantiles and warns instead of failing", {
+    expect_warning(
+      edges <- quantile_bin_breaks(c(rep(0, 200), rep(1, 42)), 10),
       "fewer distinct values"
     )
-    bin_regions <- Filter(
-      function(x) grepl("^bin_", x$region[1]),
-      result
-    )
-    expect_gte(length(bin_regions), 1)
+    expect_identical(edges, c(0, 1))
+  })
+})
+
+
+describe("check_bin_args", {
+  it("accepts either way of binning, or neither", {
+    expect_no_error(check_bin_args(NULL, NULL))
+    expect_no_error(check_bin_args(7, NULL))
+    expect_no_error(check_bin_args(NULL, c(0, 1, 2)))
+    expect_no_error(check_bin_args(NULL, function(x) pretty(x)))
   })
 
-  it("aborts clearly when no finite values remain", {
-    expect_error(
-      parse_continuous_values(rep(NaN, 100), "left", "lh", n_bins = 10),
-      "No finite values"
-    )
+  it("rejects conflicting or unusable bin specifications", {
+    expect_snapshot(error = TRUE, {
+      check_bin_args(5, c(0, 1, 2))
+      check_bin_args(2.5, NULL)
+      check_bin_args(0, NULL)
+      check_bin_args(NULL, c(2, 1))
+      check_bin_args(NULL, 4)
+    })
   })
 })
 
@@ -1233,6 +1367,44 @@ describe("read_neuromaps_volume vertex count mismatch", {
 
 
 describe("read_neuromaps_annotation", {
+  it("rejects a bad bin specification before reading any file", {
+    skip_if_not_installed("gifti")
+    gii_file <- file.path(
+      withr::local_tempdir(),
+      "source_hemi-L_feature.func.gii"
+    )
+    file.create(gii_file)
+    local_mocked_bindings(
+      read_gifti = function(...) cli::cli_abort("a file was read"),
+      .package = "gifti"
+    )
+
+    expect_error(
+      read_neuromaps_annotation(gii_file, n_bins = 5, breaks = c(0, 1)),
+      "not both"
+    )
+  })
+
+  it("bins a continuous map on the edges given as breaks", {
+    skip_if_not_installed("gifti")
+    gii_file <- file.path(
+      withr::local_tempdir(),
+      "source_hemi-L_feature.func.gii"
+    )
+    file.create(gii_file)
+    local_mocked_bindings(
+      read_gifti = function(...) {
+        list(data = list(rep_len(c(0.25, 0.75), 10242L)))
+      },
+      .package = "gifti"
+    )
+
+    result <- read_neuromaps_annotation(gii_file, breaks = c(0, 0.5, 1))
+
+    expect_identical(result$region, c("bin_1", "bin_2"))
+    expect_identical(lengths(result$vertices), c(5121L, 5121L))
+  })
+
   it("skips label_table entries with zero matching vertices", {
     skip_if_not_installed("gifti")
 
