@@ -408,7 +408,7 @@ describe("read_neuromaps_annotation", {
     writeLines("mock", lh)
     writeLines("mock", rh)
 
-    result <- read_neuromaps_annotation(c(lh, rh), n_bins = 5)
+    result <- read_neuromaps_annotation(c(lh, rh), breaks = 5)
 
     expect_s3_class(result, "tbl_df")
     expect_named(result, c("hemi", "region", "label", "colour", "vertices"))
@@ -463,7 +463,7 @@ describe("read_neuromaps_annotation", {
     )
     writeLines("mock", lh)
 
-    result <- read_neuromaps_annotation(lh, n_bins = 3)
+    result <- read_neuromaps_annotation(lh, breaks = 3)
 
     unknown <- result[result$region == "unknown", ]
     expect_length(unknown$vertices[[1]], 1000)

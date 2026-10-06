@@ -14,7 +14,6 @@ create_cortical_from_neuromaps(
   verbose = get_verbose(),
   ...,
   label_table = NULL,
-  n_bins = NULL,
   breaks = NULL,
   atlas_name = NULL,
   output_dir = NULL,
@@ -49,16 +48,20 @@ passed here is an error. Geometry is shaped after the build: see
 
 \item{label_table}{Optional data.frame mapping parcel IDs to region names.}
 
-\item{n_bins}{Number of quantile bins for continuous brain maps. The
-quantiles are taken over both hemispheres together, so a bin covers the
-same range of values on the left and on the right.}
+\item{breaks}{How to cut a continuous map into bins. One of:
+\itemize{
+\item \code{NULL}, the default: quantile bins, as many as Sturges' rule gives for
+the number of vertices (\code{1 + log2(n)}), kept between 5 and 20.
+\item A single number: that many quantile bins.
+\item Increasing numbers: the edges of the bins.
+\item A function that takes the map's finite values and returns the edges,
+such as \code{function(x) pretty(x, 6)} for round, equal-width bins.
+}
 
-\item{breaks}{How to cut a continuous map into bins yourself, instead of
-by quantiles. Either the bin edges, as increasing numbers, or a function
-that takes the map's finite values from both hemispheres and returns the
-edges -- for example \code{function(x) pretty(x, 6)} for round, equal-width
-bins. Values outside the edges are left \code{unknown}, with a warning. Use
-\code{n_bins} or \code{breaks}, not both. Ignored for parcellation data.}
+Quantile bins each hold about the same number of vertices. Both
+hemispheres are cut on the same edges, so a bin covers the same range of
+values on the left and on the right. Values outside edges you supply are
+left \code{unknown}, with a warning. Ignored for parcellation data.}
 
 \item{atlas_name}{Name for the atlas. If NULL, derived from the input
 filename. It also names the folder of intermediate files inside
@@ -107,7 +110,7 @@ projected to fsaverage5 via FreeSurfer's \code{mri_vol2surf}.
 atlas <- create_cortical_from_neuromaps(
   source = "abagen",
   desc = "genepc1",
-  n_bins = 7
+  breaks = 7
 )
 }
 }

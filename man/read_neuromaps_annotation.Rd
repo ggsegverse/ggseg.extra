@@ -4,12 +4,7 @@
 \alias{read_neuromaps_annotation}
 \title{Read neuromaps annotation files}
 \usage{
-read_neuromaps_annotation(
-  gifti_files,
-  label_table = NULL,
-  n_bins = NULL,
-  breaks = NULL
-)
+read_neuromaps_annotation(gifti_files, label_table = NULL, breaks = NULL)
 }
 \arguments{
 \item{gifti_files}{Character vector of paths to \code{.func.gii} files.
@@ -21,18 +16,20 @@ Optionally include \code{colour} (hex string). When \code{NULL}, regions are
 named \code{parcel_1}, \code{parcel_2}, etc. (parcellation) or
 \code{bin_1}, \code{bin_2}, etc. (continuous).}
 
-\item{n_bins}{Number of quantile bins for continuous data. When \code{NULL}
-(default), auto-detected via Sturges' rule (\code{1 + log2(n)}, clamped
-to 5--20). The quantiles are taken over both hemispheres together, so a
-bin covers the same range of values on the left and on the right.
-Ignored for integer parcellation data.}
+\item{breaks}{How to cut a continuous map into bins. One of:
+\itemize{
+\item \code{NULL}, the default: quantile bins, as many as Sturges' rule gives for
+the number of vertices (\code{1 + log2(n)}), kept between 5 and 20.
+\item A single number: that many quantile bins.
+\item Increasing numbers: the edges of the bins.
+\item A function that takes the map's finite values and returns the edges,
+such as \code{function(x) pretty(x, 6)} for round, equal-width bins.
+}
 
-\item{breaks}{How to cut a continuous map into bins yourself, instead of
-by quantiles. Either the bin edges, as increasing numbers, or a function
-that takes the map's finite values from both hemispheres and returns the
-edges -- for example \code{function(x) pretty(x, 6)} for round, equal-width
-bins. Values outside the edges are left \code{unknown}, with a warning. Use
-\code{n_bins} or \code{breaks}, not both. Ignored for parcellation data.}
+Quantile bins each hold about the same number of vertices. Both
+hemispheres are cut on the same edges, so a bin covers the same range of
+values on the left and on the right. Values outside edges you supply are
+left \code{unknown}, with a warning. Ignored for parcellation data.}
 }
 \value{
 A tibble with columns: hemi, region, label, colour, vertices
@@ -45,9 +42,8 @@ the standard annotation format used by the cortical atlas pipeline.
 Automatically detects whether data contains integer parcel IDs
 (parcellation) or continuous values (brain map). For parcellations,
 vertex value 0 is treated as medial wall. For continuous data, NaN
-vertices are medial wall and values are discretized into bins: quantile
-bins via \code{n_bins}, or bins of your own via \code{breaks}. Either way both
-hemispheres share one set of bin edges.
+vertices are medial wall and values are discretized into bins, which
+\code{breaks} controls. Both hemispheres share one set of bin edges.
 
 Files must be in fsaverage5 space (10,242 vertices per hemisphere).
 Use \code{space = "fsaverage"} with \code{density = "10k"} when fetching from
@@ -58,6 +54,6 @@ neuromaps.
 files <- neuromapr::fetch_neuromaps_annotation(
   "abagen", "genepc1", "fsaverage", density = "10k"
 )
-atlas_data <- read_neuromaps_annotation(files, n_bins = 7)
+atlas_data <- read_neuromaps_annotation(files, breaks = 7)
 }
 }

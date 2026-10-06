@@ -1,15 +1,20 @@
 # ggseg.extra 1.9.9.9116
 
-## Minor changes
+## Breaking changes
 
 - `create_cortical_from_neuromaps()`, `read_neuromaps_annotation()` and
-  `read_neuromaps_volume()` gain `breaks`, for cutting a continuous map into
-  bins of your own choosing instead of by quantiles. Give the bin edges, or a
-  function that takes the map's values and returns them:
-  `breaks = function(x) pretty(x, 6)` gives round, equal-width bins. Values
-  outside the edges are left `unknown`, with a warning. `n_bins` and `breaks`
-  cannot be combined, and a bad specification is rejected before anything is
-  downloaded or projected.
+  `read_neuromaps_volume()` take `breaks` in place of `n_bins`. A call with
+  `n_bins = 7` becomes `breaks = 7` and means the same thing: seven quantile
+  bins. `breaks` also accepts what `n_bins` could not:
+
+  - increasing numbers, as the edges of the bins, for example to put several
+    maps on one scale;
+  - a function that takes the map's values and returns the edges, such as
+    `function(x) pretty(x, 6)` for round, equal-width bins.
+
+  Left out, it gives quantile bins counted by Sturges' rule, as before.
+  Values outside edges you supply are left `unknown`, with a warning, and an
+  unusable `breaks` is rejected before anything is downloaded or projected.
 
 ## Bug fixes
 
@@ -19,6 +24,10 @@
   sharing a name and a colour, and the two hemispheres could end up with
   different numbers of bins. A map whose left and right values differ in
   range now shows that difference instead of hiding it.
+
+  Because the default bin count now comes from both hemispheres together, a
+  map binned with the default gets one more bin than before on fsaverage5
+  (16 instead of 15).
 
 # ggseg.extra 1.9.9.9115
 

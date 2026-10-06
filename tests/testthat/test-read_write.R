@@ -957,7 +957,7 @@ describe("read_neuromaps_volume", {
 
     result <- read_neuromaps_volume(
       local_nifti_volume(c(0.25, 1.5, 2.75)),
-      n_bins = 5,
+      breaks = 5,
       output_dir = output_dir
     )
 
@@ -1114,8 +1114,7 @@ describe("neuromaps_hemi_regions binning", {
       list(lh = left, rh = right),
       holds_labels = FALSE,
       label_table = NULL,
-      n_bins = 4,
-      breaks = NULL
+      breaks = 4
     )
 
     expect_identical(
@@ -1131,8 +1130,7 @@ describe("neuromaps_hemi_regions binning", {
       list(lh = values, rh = rev(values)),
       holds_labels = FALSE,
       label_table = NULL,
-      n_bins = 5,
-      breaks = NULL
+      breaks = 5
     ))
 
     colours_per_bin <- tapply(rows$colour, rows$region, function(x) {
@@ -1146,7 +1144,6 @@ describe("neuromaps_hemi_regions binning", {
       list(lh = c(0.1, 0.4, 0.9), rh = c(0.2, 0.6, 0.7)),
       holds_labels = FALSE,
       label_table = NULL,
-      n_bins = NULL,
       breaks = c(0, 0.5, 1)
     )
 
@@ -1162,7 +1159,6 @@ describe("neuromaps_hemi_regions binning", {
       list(lh = c(1, 2, NaN), rh = c(3, 4, NaN)),
       holds_labels = FALSE,
       label_table = NULL,
-      n_bins = NULL,
       breaks = function(values) {
         seen <<- values
         c(0, 2.5, 5)
@@ -1182,7 +1178,6 @@ describe("neuromaps_hemi_regions binning", {
         list(lh = c(1, 2), rh = c(3, 4)),
         holds_labels = FALSE,
         label_table = NULL,
-        n_bins = NULL,
         breaks = function(values) "quartiles"
       ),
       "at least two increasing numbers"
@@ -1195,7 +1190,6 @@ describe("neuromaps_hemi_regions binning", {
         list(lh = c(0.2, 0.7, 20)),
         holds_labels = FALSE,
         label_table = NULL,
-        n_bins = NULL,
         breaks = c(0, 0.5, 1)
       ),
       "1 vertex falls outside"
@@ -1210,8 +1204,7 @@ describe("neuromaps_hemi_regions binning", {
       list(lh = c(1, 2, NaN, NaN, NaN)),
       holds_labels = FALSE,
       label_table = NULL,
-      n_bins = 2,
-      breaks = NULL
+      breaks = 2
     ))
 
     expect_length(rows$vertices[[which(rows$region == "unknown")]], 3)
@@ -1223,8 +1216,7 @@ describe("neuromaps_hemi_regions binning", {
         list(lh = c(1, 2), rh = rep(NaN, 3)),
         holds_labels = FALSE,
         label_table = NULL,
-        n_bins = 2,
-        breaks = NULL
+        breaks = 2
       ),
       "No finite values to bin for the right hemisphere"
     )
@@ -1252,21 +1244,20 @@ describe("quantile_bin_breaks", {
 })
 
 
-describe("check_bin_args", {
-  it("accepts either way of binning, or neither", {
-    expect_no_error(check_bin_args(NULL, NULL))
-    expect_no_error(check_bin_args(7, NULL))
-    expect_no_error(check_bin_args(NULL, c(0, 1, 2)))
-    expect_no_error(check_bin_args(NULL, function(x) pretty(x)))
+describe("check_breaks", {
+  it("accepts a bin count, bin edges, a function, or nothing", {
+    expect_no_error(check_breaks(NULL))
+    expect_no_error(check_breaks(7))
+    expect_no_error(check_breaks(c(0, 1, 2)))
+    expect_no_error(check_breaks(function(x) pretty(x)))
   })
 
-  it("rejects conflicting or unusable bin specifications", {
+  it("rejects what is neither a bin count nor bin edges", {
     expect_snapshot(error = TRUE, {
-      check_bin_args(5, c(0, 1, 2))
-      check_bin_args(2.5, NULL)
-      check_bin_args(0, NULL)
-      check_bin_args(NULL, c(2, 1))
-      check_bin_args(NULL, 4)
+      check_breaks(2.5)
+      check_breaks(0)
+      check_breaks(c(2, 1))
+      check_breaks("quartiles")
     })
   })
 })
@@ -1367,7 +1358,7 @@ describe("read_neuromaps_volume vertex count mismatch", {
 
 
 describe("read_neuromaps_annotation", {
-  it("rejects a bad bin specification before reading any file", {
+  it("rejects unusable breaks before reading any file", {
     skip_if_not_installed("gifti")
     gii_file <- file.path(
       withr::local_tempdir(),
@@ -1380,9 +1371,29 @@ describe("read_neuromaps_annotation", {
     )
 
     expect_error(
-      read_neuromaps_annotation(gii_file, n_bins = 5, breaks = c(0, 1)),
-      "not both"
+      read_neuromaps_annotation(gii_file, breaks = c(1, 0)),
+      "number of bins, or at least two increasing numbers"
     )
+  })
+
+  it("takes a single number as that many quantile bins", {
+    skip_if_not_installed("gifti")
+    gii_file <- file.path(
+      withr::local_tempdir(),
+      "source_hemi-L_feature.func.gii"
+    )
+    file.create(gii_file)
+    local_mocked_bindings(
+      read_gifti = function(...) {
+        list(data = list(seq(0.01, 1, length.out = 10242L)))
+      },
+      .package = "gifti"
+    )
+
+    result <- read_neuromaps_annotation(gii_file, breaks = 3)
+
+    expect_identical(result$region, c("bin_1", "bin_2", "bin_3"))
+    expect_identical(lengths(result$vertices), c(3414L, 3414L, 3414L))
   })
 
   it("bins a continuous map on the edges given as breaks", {

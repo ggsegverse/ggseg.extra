@@ -329,9 +329,6 @@ create_cortical_from_cifti <- function(
 #' @param space Coordinate space. Defaults to `"fsaverage"`.
 #' @param density Surface vertex density. Defaults to `"10k"`.
 #' @param label_table Optional data.frame mapping parcel IDs to region names.
-#' @param n_bins Number of quantile bins for continuous brain maps. The
-#'   quantiles are taken over both hemispheres together, so a bin covers the
-#'   same range of values on the left and on the right.
 #' @inheritParams read_neuromaps_annotation
 #' @template atlas_name
 #' @template output_dir
@@ -356,7 +353,7 @@ create_cortical_from_cifti <- function(
 #' atlas <- create_cortical_from_neuromaps(
 #'   source = "abagen",
 #'   desc = "genepc1",
-#'   n_bins = 7
+#'   breaks = 7
 #' )
 #' }
 create_cortical_from_neuromaps <- function(
@@ -369,7 +366,6 @@ create_cortical_from_neuromaps <- function(
   verbose = get_verbose(),
   ...,
   label_table = NULL,
-  n_bins = NULL,
   breaks = NULL,
   atlas_name = NULL,
   output_dir = NULL,
@@ -381,7 +377,7 @@ create_cortical_from_neuromaps <- function(
     "neuromapr",
     reason = "to download neuromaps annotations"
   )
-  check_bin_args(n_bins, breaks)
+  check_breaks(breaks)
 
   config <- validate_surface_config(
     output_dir,
@@ -396,7 +392,6 @@ create_cortical_from_neuromaps <- function(
     space = space,
     density = density,
     label_table = label_table,
-    n_bins = n_bins,
     breaks = breaks,
     atlas_name = atlas_name,
     config = config,
@@ -468,7 +463,6 @@ run_neuromaps_creation <- function(
   space,
   density,
   label_table,
-  n_bins,
   breaks,
   atlas_name,
   config,
@@ -498,15 +492,14 @@ run_neuromaps_creation <- function(
     function() {
       read_neuromaps_volume(
         gifti_files[1],
-        n_bins = n_bins,
+        breaks = breaks,
         label_table = label_table,
-        output_dir = output_base,
-        breaks = breaks
+        output_dir = output_base
       )
     }
   } else {
     function() {
-      read_neuromaps_annotation(gifti_files, label_table, n_bins, breaks)
+      read_neuromaps_annotation(gifti_files, label_table, breaks)
     }
   }
 
