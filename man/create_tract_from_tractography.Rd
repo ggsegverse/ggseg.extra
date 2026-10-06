@@ -38,7 +38,8 @@ passed here is an error. Geometry is shaped after the build: see
 \code{\link[=atlas_dilate]{atlas_dilate()}} individually.}
 
 \item{input_aseg}{Path to a segmentation volume (\code{.mgz}, \code{.nii}) used to
-draw cortex outlines in 2D views. Required for steps 2+.}
+draw cortex outlines in 2D views. Required unless \code{steps = 1}; the build
+stops before reading any tract when it is missing.}
 
 \item{input_lut}{Path to a color lookup table (LUT) file, or a data.frame
 with a \code{region} column (or a FreeSurfer-style \code{label} column) plus
@@ -143,20 +144,23 @@ the tube thicker where more streamlines pass through.
 \dontrun{
 # From TRK files (names derived from filenames)
 atlas <- create_tract_from_tractography(
-  input_tracts = c("cst_left.trk", "cst_right.trk")
+  input_tracts = c("cst_left.trk", "cst_right.trk"),
+  input_aseg = "aparc+aseg.mgz"
 )
 
 # With custom names and colours via LUT
 atlas <- create_tract_from_tractography(
   input_tracts = c("cst_left.trk", "cst_right.trk"),
+  input_aseg = "aparc+aseg.mgz",
   input_lut = "tract_colors.txt"
 )
 
-# Coordinate matrices: declare their space rather than letting it be
-# inferred
+# A 3D-only atlas from coordinate matrices, which needs no segmentation.
+# Declare their space rather than letting it be inferred
 atlas <- create_tract_from_tractography(
   input_tracts = list(cst_left = cst_left_points),
-  coord_space = "mm"
+  coord_space = "mm",
+  steps = 1
 )
 
 # View with ggseg3d

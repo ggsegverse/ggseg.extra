@@ -650,6 +650,28 @@ describe("create_tract_from_tractography tube_opts", {
 })
 
 
+describe("create_tract_from_tractography segmentation check", {
+  it("aborts before reading any tract when 2D steps lack a segmentation", {
+    local_mocked_bindings(
+      read_tractography = function(...) {
+        cli::cli_abort("a tract was read before the segmentation check")
+      }
+    )
+    tract <- withr::local_tempfile(fileext = ".trk")
+    file.create(tract)
+
+    expect_error(
+      create_tract_from_tractography(
+        input_tracts = tract,
+        output_dir = withr::local_tempdir(),
+        verbose = FALSE
+      ),
+      "input_aseg.*required for steps 2-4"
+    )
+  })
+})
+
+
 describe("coord_space_to_voxels", {
   it("maps each space onto the internal flag", {
     expect_true(coord_space_to_voxels("voxel"))

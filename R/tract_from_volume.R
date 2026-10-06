@@ -69,6 +69,10 @@ create_tract_from_volume <- function(
     reason = "to fit tract centerlines from a label volume"
   )
   rlang::check_installed("RNifti", reason = "to read NIfTI volumes")
+  tract_check_aseg(
+    input_aseg,
+    list(...)$steps %||% seq_len(tract_total_steps())
+  )
 
   in_path <- resolve_volume_path(input_volume)
   vol <- RNifti::readNifti(in_path)
