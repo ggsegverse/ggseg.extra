@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9114</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9115</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -69,6 +69,17 @@
       <small>Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.9.9.9115" id="ggsegextra-1999115">ggseg.extra 1.9.9.9115<a class="anchor" aria-label="anchor" href="#ggsegextra-1999115"></a></h2>
+<div class="section level3">
+<h3 id="bug-fixes-1-9-9-9115">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-1-9-9-9115"></a></h3>
+<ul><li>
+<p><code><a href="../reference/create_tract_from_tractography.html">create_tract_from_tractography()</a></code> and <code><a href="../reference/create_tract_from_volume.html">create_tract_from_volume()</a></code> check for <code>input_aseg</code> before they start. It is required for every step after the first, and <code>steps</code> defaults to all of them, but the check only ran after step 1 – after every streamline had been read and every tube built, or after every centerline had been fitted from the volume. A call that relied on the defaults did all that work and then failed. The message also said “steps 2-7” for a pipeline that has four, and a path to a file that does not exist was not caught until the volume was read.</p>
+<p>Both now stop at once, name the right steps, and say that <code>steps = 1</code> builds a 3D-only atlas with no segmentation.</p>
+</li>
+<li><p><code><a href="../reference/create_tract_from_tractography.html">create_tract_from_tractography()</a></code> names an atlas after its tract when <code>atlas_name</code> is not given and there is one tract, and <code>"tracts"</code> when there are several. It used the name of <code>output_dir</code>, which by default is the session’s temporary directory, so atlases were called things like <code>"Rtmp5jlWE3"</code>.</p></li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9114" id="ggsegextra-1999114">ggseg.extra 1.9.9.9114<a class="anchor" aria-label="anchor" href="#ggsegextra-1999114"></a></h2>
 <div class="section level3">

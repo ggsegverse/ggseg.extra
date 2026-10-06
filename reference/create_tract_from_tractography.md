@@ -66,7 +66,8 @@ create_tract_from_tractography(
 - input_aseg:
 
   Path to a segmentation volume (`.mgz`, `.nii`) used to draw cortex
-  outlines in 2D views. Required for steps 2+.
+  outlines in 2D views. Required unless `steps = 1`; the build stops
+  before reading any tract when it is missing.
 
 - input_lut:
 
@@ -201,20 +202,23 @@ Other atlas creation:
 if (FALSE) { # \dontrun{
 # From TRK files (names derived from filenames)
 atlas <- create_tract_from_tractography(
-  input_tracts = c("cst_left.trk", "cst_right.trk")
+  input_tracts = c("cst_left.trk", "cst_right.trk"),
+  input_aseg = "aparc+aseg.mgz"
 )
 
 # With custom names and colours via LUT
 atlas <- create_tract_from_tractography(
   input_tracts = c("cst_left.trk", "cst_right.trk"),
+  input_aseg = "aparc+aseg.mgz",
   input_lut = "tract_colors.txt"
 )
 
-# Coordinate matrices: declare their space rather than letting it be
-# inferred
+# A 3D-only atlas from coordinate matrices, which needs no segmentation.
+# Declare their space rather than letting it be inferred
 atlas <- create_tract_from_tractography(
   input_tracts = list(cst_left = cst_left_points),
-  coord_space = "mm"
+  coord_space = "mm",
+  steps = 1
 )
 
 # View with ggseg3d

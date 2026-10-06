@@ -1,5 +1,30 @@
 # Changelog
 
+## ggseg.extra 1.9.9.9115
+
+### Bug fixes
+
+- [`create_tract_from_tractography()`](https://ggsegverse.github.io/ggseg.extra/reference/create_tract_from_tractography.md)
+  and
+  [`create_tract_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_tract_from_volume.md)
+  check for `input_aseg` before they start. It is required for every
+  step after the first, and `steps` defaults to all of them, but the
+  check only ran after step 1 – after every streamline had been read and
+  every tube built, or after every centerline had been fitted from the
+  volume. A call that relied on the defaults did all that work and then
+  failed. The message also said “steps 2-7” for a pipeline that has
+  four, and a path to a file that does not exist was not caught until
+  the volume was read.
+
+  Both now stop at once, name the right steps, and say that `steps = 1`
+  builds a 3D-only atlas with no segmentation.
+
+- [`create_tract_from_tractography()`](https://ggsegverse.github.io/ggseg.extra/reference/create_tract_from_tractography.md)
+  names an atlas after its tract when `atlas_name` is not given and
+  there is one tract, and `"tracts"` when there are several. It used the
+  name of `output_dir`, which by default is the session’s temporary
+  directory, so atlases were called things like `"Rtmp5jlWE3"`.
+
 ## ggseg.extra 1.9.9.9114
 
 ### Bug fixes
