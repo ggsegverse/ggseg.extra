@@ -332,12 +332,7 @@ create_cortical_from_cifti <- function(
 #' @param n_bins Number of quantile bins for continuous brain maps. The
 #'   quantiles are taken over both hemispheres together, so a bin covers the
 #'   same range of values on the left and on the right.
-#' @param breaks How to cut a continuous map into bins yourself, instead of
-#'   by quantiles. Either the bin edges, as increasing numbers, or a function
-#'   that takes the map's finite values from both hemispheres and returns the
-#'   edges -- for example `function(x) pretty(x, 6)` for round, equal-width
-#'   bins. Values outside the edges are left `unknown`, with a warning. Use
-#'   `n_bins` or `breaks`, not both. Ignored for parcellation data.
+#' @inheritParams read_neuromaps_annotation
 #' @template atlas_name
 #' @template output_dir
 #' @param hemisphere Which hemispheres to include: "lh", "rh", or both.
