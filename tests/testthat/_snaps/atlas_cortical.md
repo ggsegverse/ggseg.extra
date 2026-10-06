@@ -153,3 +153,24 @@
       v Reading neuromaps annotation [<time>]
       
 
+# check_cortical_views / names the view or hemisphere it does not know
+
+    Code
+      check_cortical_views(c("lateral", "medal"))
+    Condition
+      Error:
+      ! `views` must be one or more of "lateral", "medial", "superior", and "inferior".
+      x Got "medal".
+    Code
+      check_cortical_views(character(0))
+    Condition
+      Error:
+      ! `views` must be one or more of "lateral", "medial", "superior", and "inferior".
+      x Got nothing.
+    Code
+      check_cortical_views("lateral", hemisphere = "left")
+    Condition
+      Error:
+      ! `hemisphere` must be one or more of "lh" and "rh".
+      x Got "left".
+

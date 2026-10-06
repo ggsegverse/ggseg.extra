@@ -1,3 +1,28 @@
+# ggseg.extra 1.9.9.9121
+
+## Bug fixes
+
+- The cortical creators reject a view or hemisphere they do not know. A
+  mistyped entry in `views` used to be skipped without a word, so
+  `views = c("lateral", "medal")` returned an atlas with no medial view. All
+  five `create_cortical_from_*()` functions, and `cortical_opts$views` in
+  `create_wholebrain_from_volume()`, now stop before reading any input and
+  name the entry at fault.
+
+- An atlas built from a `.nii.gz` volume without an `atlas_name` is named
+  after the file. The `.gz` was mistaken for the whole extension, so
+  `thalamus.nii.gz` gave an atlas, and a working folder, called
+  `thalamus_nii`.
+
+- `prepare_subcortical_mni152()` reports a FreeSurfer step that produced
+  nothing. A failed `mri_convert` or `mri_vol2vol` used to surface on the
+  next line as a "failed to open" error about a temporary file.
+
+- `project_volume_anatomical()` and `create_tract_from_volume()` read a
+  lookup table file the same way the rest of the package does. They had
+  their own reader, which expected tab-separated columns and could not read
+  a file written by `write_lut()`.
+
 # ggseg.extra 1.9.9.9120
 
 ## Minor changes

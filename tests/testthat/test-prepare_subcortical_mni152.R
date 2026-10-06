@@ -110,3 +110,28 @@ describe("prepare_subcortical_mni152", {
     expect_true(all(c(211L, 212L) %in% merged$lut$idx))
   })
 })
+
+
+describe("check_fs_output", {
+  it("passes a file the command wrote", {
+    output <- withr::local_tempfile()
+    writeLines("data", output)
+
+    expect_identical(check_fs_output(output, "mri_convert", "aseg.mgz"), output)
+  })
+
+  it("aborts when the command left nothing, or an empty file", {
+    missing <- withr::local_tempfile()
+    empty <- withr::local_tempfile()
+    file.create(empty)
+
+    expect_error(
+      check_fs_output(missing, "mri_convert", "aseg.mgz"),
+      "mri_convert.*produced no output"
+    )
+    expect_error(
+      check_fs_output(empty, "mri_vol2vol", "parcels.nii.gz"),
+      "mri_vol2vol.*produced no output"
+    )
+  })
+})

@@ -1066,23 +1066,9 @@ read_lut_arg <- function(x) {
     if (!file.exists(x)) {
       cli::cli_abort("{.arg lut} file not found: {.path {x}}")
     }
-    df <- utils::read.table(
-      x,
-      header = FALSE,
-      sep = "\t",
-      stringsAsFactors = FALSE
-    )
-    names(df) <- c(
-      "idx",
-      "label",
-      "R",
-      "G",
-      "B",
-      "A"
-    )[seq_len(min(6, ncol(df)))]
-    return(df)
+    return(read_lut(x))
   }
   cli::cli_abort(
-    "{.arg lut} must be a data frame or path to a TSV file."
+    "{.arg lut} must be a data frame or path to a lookup table file."
   )
 }

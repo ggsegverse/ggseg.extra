@@ -239,6 +239,23 @@ describe("read_lut_arg", {
     expect_identical(out$label, c("Foo", "Bar"))
   })
 
+  it("reads a file written by write_lut()", {
+    lut <- data.frame(
+      idx = 1:2,
+      label = c("Foo", "Bar"),
+      R = c(10L, 40L),
+      G = c(20L, 50L),
+      B = c(30L, 60L),
+      A = 0L
+    )
+    f <- withr::local_tempfile(fileext = ".txt")
+    write_lut(lut, f)
+
+    out <- read_lut_arg(f)
+
+    expect_identical(out[names(lut)], lut)
+  })
+
   it("errors on missing file path", {
     expect_error(
       read_lut_arg("nope.tsv"),
