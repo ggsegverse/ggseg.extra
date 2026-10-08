@@ -26,7 +26,7 @@ new_project_setup_atlas_repo(path, ...)
 
 ## Value
 
-Invisible `NULL`, called for its side effects.
+The path to the new repository, invisibly.
 
 ## Examples
 

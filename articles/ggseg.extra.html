@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9120</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9122</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -202,8 +202,11 @@ one.</p>
 </tr>
 </tbody>
 </table>
-<p>All functions produce a <code>ggseg_atlas</code> object that works
-with both ggseg (2D) and ggseg3d (3D).</p>
+<p>Each function produces a <code>ggseg_atlas</code> object that works
+with both ggseg (2D) and ggseg3d (3D). The exception is
+<code><a href="../reference/create_wholebrain_from_volume.html">create_wholebrain_from_volume()</a></code>, which returns a named list
+of them: one each for the cortical, subcortical and cerebellar parts of
+the volume.</p>
 <div class="section level3">
 <h3 id="whats-inside-a-ggseg_atlas">What’s inside a ggseg_atlas<a class="anchor" aria-label="anchor" href="#whats-inside-a-ggseg_atlas"></a>
 </h3>
@@ -260,6 +263,9 @@ and projects mesh to 2D directly.</li>
 <li>
 <strong>Subcortical / whole-brain</strong> — <a href="https://surfer.nmr.mgh.harvard.edu/" class="external-link">FreeSurfer</a>; contours are
 traced from the projection itself, with no image round-trip.</li>
+<li>
+<strong>Cerebellar</strong> — no system tools from a surface
+parcellation (GIFTI or annotation); FreeSurfer from a volume.</li>
 <li>
 <strong>Tract</strong> — no system tools; reads tractography files
 with R packages.</li>

@@ -11,6 +11,8 @@ atlases may require external software depending on the pipeline.
 | **Cortical** (neuromaps volume) | `freesurfer`, `neuromapr` | FreeSurfer |
 | **Subcortical** | `freesurfer`, `Rvcg`, `terra` | FreeSurfer |
 | **Whole-brain** | `freesurfer`, `RNifti`, `Rvcg`, `terra` | FreeSurfer |
+| **Cerebellar** (GIFTI, annotation) | `gifti` or `freesurferformats` | None |
+| **Cerebellar** (volume) | `freesurfer`, `RNifti`, `gifti` | FreeSurfer |
 | **Tract** (tractography) | `RNifti`, `Rvcg` | None |
 | **Tract** (volume) | `RNifti`, `Rvcg`, `princurve` | None |
 | **GIFTI / CIFTI** | `gifti` or `ciftiTools` | Connectome Workbench (CIFTI only) |
@@ -23,8 +25,8 @@ loaded when a pipeline actually needs them.
 ## FreeSurfer
 
 [FreeSurfer](https://surfer.nmr.mgh.harvard.edu/fswiki/DownloadAndInstall)
-is needed by the subcortical, whole-brain, and neuromaps volume
-pipelines. The cortical annotation pipeline needs the
+is needed by the subcortical, whole-brain, cerebellar volume, and
+neuromaps volume pipelines. The cortical annotation pipeline needs the
 `freesurferformats` R package (not FreeSurfer itself) to read `.annot`
 and `.label` files, and the tract pipelines need no system tools at all.
 

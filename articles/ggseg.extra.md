@@ -43,8 +43,11 @@ Which pipeline you want depends on the format you have:
 | [`create_tract_from_tractography()`](https://ggsegverse.github.io/ggseg.extra/reference/create_tract_from_tractography.md) | Tractography files (`.trk`, `.tck`) | White matter tracts |
 | [`create_tract_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_tract_from_volume.md) | Volumetric tract labels | Tracts given as a segmentation rather than streamlines |
 
-All functions produce a `ggseg_atlas` object that works with both ggseg
-(2D) and ggseg3d (3D).
+Each function produces a `ggseg_atlas` object that works with both ggseg
+(2D) and ggseg3d (3D). The exception is
+[`create_wholebrain_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_wholebrain_from_volume.md),
+which returns a named list of them: one each for the cortical,
+subcortical and cerebellar parts of the volume.
 
 ### What’s inside a ggseg_atlas
 
@@ -91,6 +94,8 @@ the pipeline:
 - **Subcortical / whole-brain** —
   [FreeSurfer](https://surfer.nmr.mgh.harvard.edu/); contours are traced
   from the projection itself, with no image round-trip.
+- **Cerebellar** — no system tools from a surface parcellation (GIFTI or
+  annotation); FreeSurfer from a volume.
 - **Tract** — no system tools; reads tractography files with R packages.
 
 All heavier dependencies (`freesurfer`, `Rvcg`, `terra`, etc.) are in

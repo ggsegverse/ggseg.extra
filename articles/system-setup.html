@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9120</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9122</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -153,6 +153,23 @@ atlases may require external software depending on the pipeline.</p>
 </tr>
 <tr class="odd">
 <td>
+<strong>Cerebellar</strong> (GIFTI, annotation)</td>
+<td>
+<code>gifti</code> or <code>freesurferformats</code>
+</td>
+<td>None</td>
+</tr>
+<tr class="even">
+<td>
+<strong>Cerebellar</strong> (volume)</td>
+<td>
+<code>freesurfer</code>, <code>RNifti</code>,
+<code>gifti</code>
+</td>
+<td>FreeSurfer</td>
+</tr>
+<tr class="odd">
+<td>
 <strong>Tract</strong> (tractography)</td>
 <td>
 <code>RNifti</code>, <code>Rvcg</code>
@@ -186,8 +203,8 @@ pipeline actually needs them.</p>
 <h2 id="freesurfer">FreeSurfer<a class="anchor" aria-label="anchor" href="#freesurfer"></a>
 </h2>
 <p><a href="https://surfer.nmr.mgh.harvard.edu/fswiki/DownloadAndInstall" class="external-link">FreeSurfer</a>
-is needed by the subcortical, whole-brain, and neuromaps volume
-pipelines. The cortical annotation pipeline needs the
+is needed by the subcortical, whole-brain, cerebellar volume, and
+neuromaps volume pipelines. The cortical annotation pipeline needs the
 <code>freesurferformats</code> R package (not FreeSurfer itself) to read
 <code>.annot</code> and <code>.label</code> files, and the tract
 pipelines need no system tools at all.</p>

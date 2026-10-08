@@ -1,5 +1,84 @@
 # Changelog
 
+## ggseg.extra 1.9.9.9122
+
+### Bug fixes
+
+- [`sitrep()`](https://ggsegverse.github.io/ggseg.extra/reference/sitrep.md)
+  no longer says
+  [`create_cortical_from_annotation()`](https://ggsegverse.github.io/ggseg.extra/reference/create_cortical_from_annotation.md)
+  needs FreeSurfer and the `fsaverage5` subject. It needs only the
+  `freesurferformats` package, as the documentation says, so on a
+  machine without FreeSurfer the pipeline was reported as unavailable
+  while it ran fine.
+
+- [`sitrep()`](https://ggsegverse.github.io/ggseg.extra/reference/sitrep.md)
+  suggests installing neuromapr from CRAN rather than from a GitHub
+  repository.
+
+### Documentation
+
+- Corrected statements that did not match the code:
+
+  - The
+    [`create_subcortical_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_subcortical_from_volume.md)
+    example passed
+    [`ggseg3d()`](https://ggsegverse.github.io/ggseg3d/reference/ggseg3d.html)
+    a `hemisphere` argument it does not have, and removed and
+    reclassified regions by their hyphenated labels without
+    `match_on = "label"`, which matches nothing.
+  - [`coregister_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/coregister_volume.md)
+    and
+    [`prepare_subcortical_anatomical()`](https://ggsegverse.github.io/ggseg.extra/reference/prepare_subcortical_anatomical.md)
+    described `skip_existing` as defaulting from an option and an
+    environment variable that neither function reads.
+  - [`new_project_setup_atlas_repo()`](https://ggsegverse.github.io/ggseg.extra/reference/new_project_setup_atlas_repo.md)
+    returns the path to the new repository, not `NULL`.
+  - [`vignette("post-processing")`](https://ggsegverse.github.io/ggseg.extra/articles/post-processing.md)
+    renamed regions with a recipe that changed nothing, because region
+    names are already stripped of hemisphere prefixes and separators,
+    and gave
+    [`atlas_dilate()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_dilate.md)
+    amounts in voxels where they are in the atlas’s geometry units.
+  - [`vignette("ggseg.extra")`](https://ggsegverse.github.io/ggseg.extra/articles/ggseg.extra.md)
+    said every creator returns a `ggseg_atlas`;
+    [`create_wholebrain_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_wholebrain_from_volume.md)
+    returns a list of them.
+  - [`vignette("system-setup")`](https://ggsegverse.github.io/ggseg.extra/articles/system-setup.md)
+    and
+    [`vignette("ggseg.extra")`](https://ggsegverse.github.io/ggseg.extra/articles/ggseg.extra.md)
+    left the cerebellar pipelines out of what each pipeline needs.
+
+## ggseg.extra 1.9.9.9121
+
+### Bug fixes
+
+- The cortical creators reject a view or hemisphere they do not know. A
+  mistyped entry in `views` used to be skipped without a word, so
+  `views = c("lateral", "medal")` returned an atlas with no medial view.
+  All five `create_cortical_from_*()` functions, and
+  `cortical_opts$views` in
+  [`create_wholebrain_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_wholebrain_from_volume.md),
+  now stop before reading any input and name the entry at fault.
+
+- An atlas built from a `.nii.gz` volume without an `atlas_name` is
+  named after the file. The `.gz` was mistaken for the whole extension,
+  so `thalamus.nii.gz` gave an atlas, and a working folder, called
+  `thalamus_nii`.
+
+- [`prepare_subcortical_mni152()`](https://ggsegverse.github.io/ggseg.extra/reference/prepare_subcortical_mni152.md)
+  reports a FreeSurfer step that produced nothing. A failed
+  `mri_convert` or `mri_vol2vol` used to surface on the next line as a
+  “failed to open” error about a temporary file.
+
+- [`project_volume_anatomical()`](https://ggsegverse.github.io/ggseg.extra/reference/project_volume_anatomical.md)
+  and
+  [`create_tract_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_tract_from_volume.md)
+  read a lookup table file the same way the rest of the package does.
+  They had their own reader, which expected tab-separated columns and
+  could not read a file written by
+  [`write_lut()`](https://ggsegverse.github.io/ggseg.extra/reference/write_lut.md).
+
 ## ggseg.extra 1.9.9.9120
 
 ### Minor changes

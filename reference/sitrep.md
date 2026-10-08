@@ -37,9 +37,9 @@ sitrep()
 #> ✔ SUIT surfaces (bundled)
 #> 
 #> 
-#> ── Pipeline readiness (9/13) 
+#> ── Pipeline readiness (10/13) 
 #> Cortical
-#> ✖ from annotation: needs FreeSurfer, fsaverage5
+#> ✔ from annotation
 #> ✔ from GIFTI
 #> ✔ from CIFTI
 #> ✔ from neuromaps
@@ -57,7 +57,7 @@ sitrep()
 #> ✖ from volume: needs FreeSurfer
 #> ✔ MNI to SUIT transform
 #> 
-#> ℹ 9/13 pipelines ready
+#> ℹ 10/13 pipelines ready
 #> ℹ Run `sitrep("full")` for install instructions
 sitrep("full")
 #> 
@@ -104,18 +104,16 @@ sitrep("full")
 #>   verbose: 1
 #>   cleanup: TRUE
 #>   skip_existing: FALSE
-#>   output_dir: /tmp/RtmpNtgaC2
+#>   output_dir: /tmp/RtmpT03Rcu
 #> 
 #> ℹ Set via `options(ggseg.extra.<name> = value)` or environment variables
 #>   `GGSEG_EXTRA_<NAME>`
 #> ℹ See `vignette("pipeline-configuration")` for details
 #> 
 #> 
-#> ── Pipeline readiness (9/13) 
+#> ── Pipeline readiness (10/13) 
 #> Cortical
-#> ✖ from annotation: needs FreeSurfer, fsaverage5
-#> ℹ `Install from https://surfer.nmr.mgh.harvard.edu/`
-#> ℹ `Ships with FreeSurfer ($SUBJECTS_DIR/fsaverage5)`
+#> ✔ from annotation
 #> ✔ from GIFTI
 #> ✔ from CIFTI
 #> ✔ from neuromaps
@@ -137,5 +135,5 @@ sitrep("full")
 #> ℹ `Install from https://surfer.nmr.mgh.harvard.edu/`
 #> ✔ MNI to SUIT transform
 #> 
-#> ℹ 9/13 pipelines ready
+#> ℹ 10/13 pipelines ready
 ```

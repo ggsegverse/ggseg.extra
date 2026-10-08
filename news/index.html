@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9120</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9122</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -69,6 +69,41 @@
       <small>Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.9.9.9122" id="ggsegextra-1999122">ggseg.extra 1.9.9.9122<a class="anchor" aria-label="anchor" href="#ggsegextra-1999122"></a></h2>
+<div class="section level3">
+<h3 id="bug-fixes-1-9-9-9122">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-1-9-9-9122"></a></h3>
+<ul><li><p><code><a href="../reference/sitrep.html">sitrep()</a></code> no longer says <code><a href="../reference/create_cortical_from_annotation.html">create_cortical_from_annotation()</a></code> needs FreeSurfer and the <code>fsaverage5</code> subject. It needs only the <code>freesurferformats</code> package, as the documentation says, so on a machine without FreeSurfer the pipeline was reported as unavailable while it ran fine.</p></li>
+<li><p><code><a href="../reference/sitrep.html">sitrep()</a></code> suggests installing neuromapr from CRAN rather than from a GitHub repository.</p></li>
+</ul></div>
+<div class="section level3">
+<h3 id="documentation-1-9-9-9122">Documentation<a class="anchor" aria-label="anchor" href="#documentation-1-9-9-9122"></a></h3>
+<ul><li>
+<p>Corrected statements that did not match the code:</p>
+<ul><li>The <code><a href="../reference/create_subcortical_from_volume.html">create_subcortical_from_volume()</a></code> example passed <code><a href="https://ggsegverse.github.io/ggseg3d/reference/ggseg3d.html" class="external-link">ggseg3d()</a></code> a <code>hemisphere</code> argument it does not have, and removed and reclassified regions by their hyphenated labels without <code>match_on = "label"</code>, which matches nothing.</li>
+<li>
+<code><a href="../reference/coregister_volume.html">coregister_volume()</a></code> and <code><a href="../reference/prepare_subcortical_anatomical.html">prepare_subcortical_anatomical()</a></code> described <code>skip_existing</code> as defaulting from an option and an environment variable that neither function reads.</li>
+<li>
+<code><a href="../reference/new_project_setup_atlas_repo.html">new_project_setup_atlas_repo()</a></code> returns the path to the new repository, not <code>NULL</code>.</li>
+<li>
+<code><a href="../articles/post-processing.html">vignette("post-processing")</a></code> renamed regions with a recipe that changed nothing, because region names are already stripped of hemisphere prefixes and separators, and gave <code><a href="../reference/atlas_dilate.html">atlas_dilate()</a></code> amounts in voxels where they are in the atlas’s geometry units.</li>
+<li>
+<code><a href="../articles/ggseg.extra.html">vignette("ggseg.extra")</a></code> said every creator returns a <code>ggseg_atlas</code>; <code><a href="../reference/create_wholebrain_from_volume.html">create_wholebrain_from_volume()</a></code> returns a list of them.</li>
+<li>
+<code><a href="../articles/system-setup.html">vignette("system-setup")</a></code> and <code><a href="../articles/ggseg.extra.html">vignette("ggseg.extra")</a></code> left the cerebellar pipelines out of what each pipeline needs.</li>
+</ul></li>
+</ul></div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.9.9.9121" id="ggsegextra-1999121">ggseg.extra 1.9.9.9121<a class="anchor" aria-label="anchor" href="#ggsegextra-1999121"></a></h2>
+<div class="section level3">
+<h3 id="bug-fixes-1-9-9-9121">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-1-9-9-9121"></a></h3>
+<ul><li><p>The cortical creators reject a view or hemisphere they do not know. A mistyped entry in <code>views</code> used to be skipped without a word, so <code>views = c("lateral", "medal")</code> returned an atlas with no medial view. All five <code>create_cortical_from_*()</code> functions, and <code>cortical_opts$views</code> in <code><a href="../reference/create_wholebrain_from_volume.html">create_wholebrain_from_volume()</a></code>, now stop before reading any input and name the entry at fault.</p></li>
+<li><p>An atlas built from a <code>.nii.gz</code> volume without an <code>atlas_name</code> is named after the file. The <code>.gz</code> was mistaken for the whole extension, so <code>thalamus.nii.gz</code> gave an atlas, and a working folder, called <code>thalamus_nii</code>.</p></li>
+<li><p><code><a href="../reference/prepare_subcortical_mni152.html">prepare_subcortical_mni152()</a></code> reports a FreeSurfer step that produced nothing. A failed <code>mri_convert</code> or <code>mri_vol2vol</code> used to surface on the next line as a “failed to open” error about a temporary file.</p></li>
+<li><p><code><a href="../reference/project_volume_anatomical.html">project_volume_anatomical()</a></code> and <code><a href="../reference/create_tract_from_volume.html">create_tract_from_volume()</a></code> read a lookup table file the same way the rest of the package does. They had their own reader, which expected tab-separated columns and could not read a file written by <code><a href="../reference/write_lut.html">write_lut()</a></code>.</p></li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9120" id="ggsegextra-1999120">ggseg.extra 1.9.9.9120<a class="anchor" aria-label="anchor" href="#ggsegextra-1999120"></a></h2>
 <div class="section level3">

@@ -140,9 +140,8 @@ cleans up the `region` column without touching `label`:
 ``` r
 
 atlas <- atlas |>
-  atlas_region_rename("Left-", "") |>
-  atlas_region_rename("Right-", "") |>
-  atlas_region_rename("-", " ")
+  atlas_region_rename("brain stem", "brainstem") |>
+  atlas_region_rename("cerebellum cortex", "cerebellum")
 ```
 
 ## Adding metadata columns
@@ -259,7 +258,7 @@ Four functions. Start with the first one:
 | [`atlas_polish()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_polish.md) | Fewer vertices *and* rounder, in the right order | `keep = 0.05`–`0.5` |
 | [`atlas_simplify()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_simplify.md) | How many vertices does this cost? | `keep = 0.05`–`0.5` |
 | [`atlas_smooth()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_smooth.md) | How round is the outline? | `smoothness = 0.4`–`0.6` |
-| [`atlas_dilate()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_dilate.md) | How big is the region? | `0.5`–`1` voxels |
+| [`atlas_dilate()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_dilate.md) | How big is the region? | `0.5`–`1`, in the atlas’s own geometry units |
 
 ### Start with atlas_polish()
 
