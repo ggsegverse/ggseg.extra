@@ -1005,10 +1005,12 @@ overlay_label_row <- function(
     NA_character_
   }
 
+  region <- label_to_region(label_name)
   tibble(
     hemi = hemi,
-    region = label_to_region(label_name),
+    region = region,
     label = paste(hemi_short, safe_name, sep = "_"),
+    names = lut_names(ct_row, region),
     colour = colour,
     vertices = list(which(overlay == label_val) - 1L),
     source_label = label_name,

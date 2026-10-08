@@ -635,6 +635,54 @@ describe("finalize_atlas", {
 })
 
 
+describe("lut_names", {
+  it("uses the name the lookup table gives", {
+    row <- data.frame(idx = 10L, label = "Left-Thalamus", names = "Thalamus")
+
+    expect_identical(lut_names(row, "thalamus"), "Thalamus")
+  })
+
+  it("falls back to the region when the table gives none", {
+    blank <- data.frame(idx = 10L, label = "Left-Thalamus", names = " ")
+    missing <- data.frame(idx = 10L, label = "Left-Thalamus", names = NA)
+    no_column <- data.frame(idx = 10L, label = "Left-Thalamus")
+
+    expect_identical(lut_names(blank, "thalamus"), "thalamus")
+    expect_identical(lut_names(missing, "thalamus"), "thalamus")
+    expect_identical(lut_names(no_column, "thalamus"), "thalamus")
+    expect_identical(lut_names(no_column[0, ], "thalamus"), "thalamus")
+  })
+})
+
+
+describe("core_with_names", {
+  core <- data.frame(
+    hemi = c("left", "right"),
+    region = c("thalamus", "amygdala"),
+    label = c("Left-Thalamus", "Right-Amygdala")
+  )
+
+  it("names every row after its region when there are no names", {
+    expect_identical(core_with_names(core)$names, c("thalamus", "amygdala"))
+  })
+
+  it("keeps the names it is given and fills only the gaps", {
+    partly <- transform(core, names = c("Thalamus proper", NA))
+
+    expect_identical(
+      core_with_names(partly)$names,
+      c("Thalamus proper", "amygdala")
+    )
+  })
+
+  it("always returns a character column", {
+    numbered <- transform(core, names = c(1, 2))
+
+    expect_type(core_with_names(numbered)$names, "character")
+  })
+})
+
+
 describe("context_pattern", {
   it("matches the silhouette labels the volumetric pipelines produce", {
     expect_true(all(grepl(

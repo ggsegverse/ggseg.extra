@@ -675,7 +675,7 @@ cortical_read_data <- function(
     atlas = atlas_name,
     type = "cortical",
     palette = components$palette,
-    core = components$core,
+    core = core_with_names(components$core),
     data = ggseg_data_cortical(vertices = components$vertices_df)
   )
 
@@ -721,7 +721,7 @@ cortical_project_and_build <- function(
     atlas = atlas_name,
     type = "cortical",
     palette = components$palette,
-    core = components$core,
+    core = core_with_names(components$core),
     data = ggseg_data_cortical(
       geom = sf_data,
       vertices = components$vertices_df

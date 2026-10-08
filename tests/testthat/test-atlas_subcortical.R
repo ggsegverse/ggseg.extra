@@ -115,6 +115,29 @@ describe("create_subcortical_from_volume", {
     )
   })
 
+  it("names regions from the lookup table, and from the label without one", {
+    skip_if_no_freesurfer()
+
+    lut <- read_lut(test_path("testdata", "volumetric", "lut.txt"))
+    lut$names <- ifelse(lut$idx == 10L, "Thalamus (left)", NA)
+
+    atlas <- create_subcortical_from_volume(
+      input_volume = test_path("testdata", "volumetric", "aseg.mgz"),
+      input_lut = lut,
+      atlas_name = "named",
+      output_dir = withr::local_tempdir(),
+      steps = 1:3,
+      verbose = FALSE
+    )
+
+    core <- atlas$core
+    expect_identical(
+      core$names[core$label == "Left-Thalamus"],
+      "Thalamus (left)"
+    )
+    expect_identical(core$names[core$label == "Right-Thalamus"], "thalamus")
+  })
+
   it("errors when volume file not found", {
     skip_if_no_freesurfer()
 

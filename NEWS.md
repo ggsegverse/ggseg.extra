@@ -1,3 +1,24 @@
+# ggseg.extra 1.9.9.9120
+
+## Minor changes
+
+- Every atlas the pipelines build has a `names` column in its `core`: the
+  display name of each region, which ggseg.formats reads with
+  `atlas_names()`. A region is named after its `region` unless the lookup
+  table says otherwise.
+
+- A lookup table passed as a data.frame may carry a `names` column, and
+  `create_subcortical_from_volume()`, `create_cerebellar_from_volume()` and
+  `create_wholebrain_from_volume()` use it as the display name of each label
+  that has one. A row left `NA` is named after its region. Display names
+  contain spaces, which a lookup table file cannot hold in one field, so
+  `write_lut()` does not store the column.
+
+## Bug fixes
+
+- Building an atlas no longer prints "`core` has no names column" under
+  ggseg.formats versions that expect one.
+
 # ggseg.extra 1.9.9.9119
 
 ## Bug fixes
