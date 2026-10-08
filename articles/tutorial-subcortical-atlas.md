@@ -35,53 +35,82 @@ if (!file.exists(color_lut)) {
 }
 ```
 
-## Creating the atlas
+## Regions and context
 
 [`create_subcortical_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_subcortical_from_volume.md)
-takes a segmentation volume and a colour lookup table. Each structure’s
-hemisphere is read from its label (`Left-Thalamus`, `Right-Putamen`); if
-your labels don’t carry one, pass the table as a data.frame with a
+takes a segmentation volume and a colour lookup table, and the table
+does more than name things. It decides what the atlas is made of:
+
+- a label the table lists is a **region**, with a colour, a 3D mesh and
+  a shape in each 2D view;
+- a row whose `context` column is `TRUE` is **context**: grey anatomy
+  the regions are drawn against, with no mesh;
+- a label that is in the volume but not in the table is context as well.
+
+Nothing is worked out from a label’s id or its name, so the table is
+where the decision is made. For a subcortical atlas the cortex is the
+obvious context — it shows where the deep structures sit without
+competing for colour — so say so before building:
+
+``` r
+
+lut <- read_lut(color_lut)
+lut$context <- grepl("Cortex", lut$label)
+
+lut[lut$context, c("idx", "label", "context")]
+#>    idx                   label context
+#> 3    3    Left-Cerebral-Cortex    TRUE
+#> 7    8  Left-Cerebellum-Cortex    TRUE
+#> 23  42   Right-Cerebral-Cortex    TRUE
+#> 27  47 Right-Cerebellum-Cortex    TRUE
+```
+
+Deciding this in the table, rather than turning the cortex grey
+afterwards, changes how it is drawn. A region is projected through the
+whole slab it sits in, which turns a cortical ribbon into a solid shape.
+Context is traced on a single slice, so the ribbon keeps its folds.
+
+## Creating the atlas
+
+Each structure’s hemisphere is read from its label (`Left-Thalamus`,
+`Right-Putamen`); if your labels don’t carry one, give the table a
 `hemi` column, as [Lookup tables and
 colours](https://ggsegverse.github.io/ggseg.extra/articles/tutorial-lookup-tables.md)
-describes. The pipeline tessellates each labelled region into a 3D mesh,
-then creates 2D projection views:
+describes. The pipeline tessellates each region into a 3D mesh, then
+creates 2D projection views:
 
 ``` r
 
 aseg_raw <- create_subcortical_from_volume(
   input_volume = aseg_volume,
-  input_lut = color_lut,
+  input_lut = lut,
   atlas_name = "aseg"
 )
-#> Warning: Atlas has 31614 vertices (threshold: 10000)
-#> ℹ Large atlases may be slow to plot and increase package size
-#> ℹ Call `atlas_simplify(atlas, keep = 0.2)`, then `atlas_smooth(atlas)`, to tidy
-#>   it and reduce vertices
 
 aseg_raw
 #> 
 #> ── aseg ggseg atlas ────────────────────────────────────────────────────────────
 #> Type: subcortical
-#> Regions: 27
+#> Regions: 25
 #> Hemispheres: left, NA, right
-#> Views: axial_1, axial_2, axial_3, coronal_1, coronal_2, coronal_3,
-#> sagittal_left
+#> Views: axial_1, axial_2, coronal_1, coronal_2, sagittal_left, axial_3,
+#> coronal_3
 #> Palette: ✔
 #> Rendering: ✔ ggseg
 #> ✔ ggseg3d (meshes)
 #> ────────────────────────────────────────────────────────────────────────────────
 #>    hemi                  region                        label
 #> 1  left   cerebral white matter   Left-Cerebral-White-Matter
-#> 2  left         cerebral cortex         Left-Cerebral-Cortex
-#> 3  left       lateral ventricle       Left-Lateral-Ventricle
-#> 4  left            inf lat vent            Left-Inf-Lat-Vent
-#> 5  left cerebellum white matter Left-Cerebellum-White-Matter
-#> 6  left       cerebellum cortex       Left-Cerebellum-Cortex
-#> 7  left                thalamus                Left-Thalamus
-#> 8  left                 caudate                 Left-Caudate
-#> 9  left                 putamen                 Left-Putamen
-#> 10 left                pallidum                Left-Pallidum
-#> ... with 33 more rows
+#> 2  left       lateral ventricle       Left-Lateral-Ventricle
+#> 3  left            inf lat vent            Left-Inf-Lat-Vent
+#> 4  left cerebellum white matter Left-Cerebellum-White-Matter
+#> 5  left                thalamus                Left-Thalamus
+#> 6  left                 caudate                 Left-Caudate
+#> 7  left                 putamen                 Left-Putamen
+#> 8  left                pallidum                Left-Pallidum
+#> 9  <NA>           3rd ventricle                3rd-Ventricle
+#> 10 <NA>           4th ventricle                4th-Ventricle
+#> ... with 29 more rows
 ```
 
 ``` r
@@ -90,14 +119,14 @@ plot(aseg_raw)
 ```
 
 ![The full aseg segmentation across all seven projection views, every
-label filled, including cortex, white matter and
-ventricles.](figures/tutorial-subcortical-atlas-plot-raw-1.png)
+region filled, including white matter and ventricles, with the cortex in
+grey behind them.](figures/tutorial-subcortical-atlas-plot-raw-1.png)
 
 Stage 1 — everything aseg labels, on every view the pipeline made.
 
 That is the whole segmentation, and it is not yet an atlas anyone would
-want: cortex and white matter dominate the picture, and half the views
-say the same thing twice. The rest of this tutorial is subtraction.
+want: white matter dominates the picture, and half the views say the
+same thing twice. The rest of this tutorial is subtraction.
 
 The default pipeline creates seven projection views focused on the
 subcortical range: three axial slabs, three coronal slabs, and one
@@ -108,9 +137,8 @@ slices.
 
 ## Removing unwanted regions
 
-The aseg segmentation contains everything — cortex, white matter,
-ventricles, CSF. For a subcortical atlas, most of these are noise.
-Remove them:
+The aseg segmentation contains everything — white matter, ventricles,
+CSF. For a subcortical atlas, most of these are noise. Remove them:
 
 ``` r
 
@@ -119,8 +147,7 @@ aseg_raw <- aseg_raw |>
   atlas_region_remove("WM-hypointensities", match_on = "label") |>
   atlas_region_remove("-Ventricle", match_on = "label") |>
   atlas_region_remove("-Vent$", match_on = "label") |>
-  atlas_region_remove("CSF", match_on = "label") |>
-  atlas_region_remove("Cerebral-Cortex", match_on = "label")
+  atlas_region_remove("CSF", match_on = "label")
 ```
 
 Patterns are regular expressions, so `-Vent$` matches “3rd-Vent” and
@@ -131,28 +158,38 @@ Patterns are regular expressions, so `-Vent$` matches “3rd-Vent” and
 plot(aseg_raw)
 ```
 
-![The same views with cortex, white matter, ventricles and CSF gone,
-leaving the deep grey
-structures.](figures/tutorial-subcortical-atlas-plot-removed-1.png)
+![The same views with white matter, ventricles and CSF gone, leaving the
+deep grey structures on the grey
+cortex.](figures/tutorial-subcortical-atlas-plot-removed-1.png)
 
 Stage 2 — the structures we actually want, once the bulk tissue is gone.
 
-The cortical ribbon and white matter are gone, and what is left is what
-the atlas is for. The grey silhouette stays: it is context geometry, not
-a region, so it gives the structures somewhere to sit without taking a
-colour.
+The white matter is gone, and what is left is what the atlas is for. The
+grey cortex stays: the table declared it context, not a region, so it
+gives the structures somewhere to sit without taking a colour.
 
-## Setting context regions
+## Changing your mind about context
 
-The cortex works well as a background outline — it shows where
-subcortical structures sit relative to the brain surface without
-competing for colour:
+The table is the place to decide, but not the only chance.
+[`atlas_region_contextual()`](https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html)
+turns a region of an atlas you already have into context, and
+[`atlas_context_remove()`](https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html)
+drops the context altogether:
 
 ``` r
 
-aseg_raw <- aseg_raw |>
-  atlas_region_contextual("Cortex", match_on = "label")
+# Grey out the brain stem as well
+aseg_raw |>
+  atlas_region_contextual("Brain-Stem", match_on = "label")
+
+# No backdrop at all
+aseg_raw |>
+  atlas_context_remove()
 ```
+
+A region made context this way keeps the shape it was built with,
+projected through its slab, so for anything with folds the table gives
+the better picture.
 
 ## Selecting views
 
@@ -217,14 +254,14 @@ gives the price, and says where it is being paid:
 vertices <- count_vertices(aseg_raw)
 
 sum(vertices)
-#> [1] 10909
-sum(vertices[grepl(context_pattern(), names(vertices))])
-#> [1] 6796
+#> [1] 10740
+sum(vertices[grepl(context_pattern(aseg_raw), names(vertices))])
+#> [1] 7512
 ```
 
-Most of the atlas is the cortex silhouette. That matters for what comes
-next: the `create_*()` functions warn above ten thousand vertices, and
-here the context geometry alone accounts for the bulk of it.
+Most of the atlas is the cortex. That matters for what comes next: the
+`create_*()` functions warn above ten thousand vertices, and here the
+context geometry alone accounts for the bulk of it.
 
 Tidying is a separate post-processing step in two parts —
 [`atlas_simplify()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_simplify.md)
@@ -237,16 +274,17 @@ so it needs gentle settings; the nuclei need firmer ones to read as
 smooth shapes. A single pass tuned for nuclei flattens the cortical
 ribbon into a blob.
 
-Simplify each separately:
+Simplify each separately. `context_pattern`, handed over without
+brackets, selects whatever this atlas draws as context:
 
 ``` r
 
 aseg_raw <- aseg_raw |>
-  atlas_simplify(keep = 0.5, labels = context_pattern()) |>
-  atlas_simplify(keep = 0.25, exclude = context_pattern())
+  atlas_simplify(keep = 0.5, labels = context_pattern) |>
+  atlas_simplify(keep = 0.25, exclude = context_pattern)
 
 sum(count_vertices(aseg_raw))
-#> [1] 5478
+#> [1] 6728
 ```
 
 ``` r
@@ -275,13 +313,13 @@ Then smooth each separately, and note the second argument:
 aseg_raw <- aseg_raw |>
   atlas_smooth(
     smoothness = 0.35,
-    labels = context_pattern(),
+    labels = context_pattern,
     method = "chaikin"
   ) |>
-  atlas_smooth(smoothness = 0.4, exclude = context_pattern())
+  atlas_smooth(smoothness = 0.4, exclude = context_pattern)
 
 sum(count_vertices(aseg_raw))
-#> [1] 6621
+#> [1] 8821
 ```
 
 ``` r
@@ -403,15 +441,15 @@ aseg
 ``` r
 
 atlas_labels(aseg)
-#>  [1] "Brain-Stem"           "CC_Anterior"          "CC_Central"          
-#>  [4] "CC_Mid_Anterior"      "CC_Mid_Posterior"     "CC_Posterior"        
-#>  [7] "Left-Accumbens-area"  "Left-Amygdala"        "Left-Caudate"        
-#> [10] "Left-choroid-plexus"  "Left-Hippocampus"     "Left-Pallidum"       
-#> [13] "Left-Putamen"         "Left-Thalamus"        "Left-VentralDC"      
-#> [16] "Left-vessel"          "Optic-Chiasm"         "Right-Accumbens-area"
-#> [19] "Right-Amygdala"       "Right-Caudate"        "Right-choroid-plexus"
-#> [22] "Right-Hippocampus"    "Right-Pallidum"       "Right-Putamen"       
-#> [25] "Right-Thalamus"       "Right-VentralDC"      "Right-vessel"
+#>  [1] "Left-Thalamus"        "Left-Caudate"         "Left-Putamen"        
+#>  [4] "Left-Pallidum"        "Brain-Stem"           "Left-Hippocampus"    
+#>  [7] "Left-Amygdala"        "Left-Accumbens-area"  "Left-VentralDC"      
+#> [10] "Left-vessel"          "Left-choroid-plexus"  "Right-Thalamus"      
+#> [13] "Right-Caudate"        "Right-Putamen"        "Right-Pallidum"      
+#> [16] "Right-Hippocampus"    "Right-Amygdala"       "Right-Accumbens-area"
+#> [19] "Right-VentralDC"      "Right-vessel"         "Right-choroid-plexus"
+#> [22] "Optic-Chiasm"         "CC_Posterior"         "CC_Mid_Posterior"    
+#> [25] "CC_Central"           "CC_Mid_Anterior"      "CC_Anterior"
 
 table(aseg$core$structure)
 #> 

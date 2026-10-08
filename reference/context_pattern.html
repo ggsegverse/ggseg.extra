@@ -25,7 +25,7 @@ edit per atlas repository."><meta property="og:image" content="https://ggsegvers
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9122</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9123</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -100,9 +100,19 @@ edit per atlas repository.</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">context_pattern</span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">context_pattern</span><span class="op">(</span>atlas <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
     </div>
 
+    <div class="section level2">
+    <h2 id="arguments">Arguments<a class="anchor" aria-label="anchor" href="#arguments"></a></h2>
+
+
+<dl><dt id="arg-atlas">atlas<a class="anchor" aria-label="anchor" href="#arg-atlas"></a></dt>
+<dd><p>Optional <code>ggseg_atlas</code>. When given, the pattern matches that
+atlas's own context shapes; when <code>NULL</code>, the default, it matches the
+names the pipelines generate.</p></dd>
+
+</dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A regular expression, as a length-one character vector.</p>
@@ -114,7 +124,11 @@ plotting point of view they are the same thing.</p>
 <p>The pipelines generate one for the surface a parcellation does not cover:
 <code>lh_cortex</code> / <code>rh_cortex</code> on a cortical surface, <code>cerebellum</code> on the SUIT
 flatmap, and <code>cortex</code>, <code>cortex_left</code> or <code>cortex_right</code> from the volumetric
-slice tracing.</p>
+slice tracing of a tract atlas.</p>
+<p>A subcortical build takes its context from its lookup table instead: a
+row marked <code>context</code> keeps its own name, and a label the table does not
+list is named <code>context_</code> and its id, such as <code>context_0002</code>. Only the
+second kind has a name this pattern can know; see below for the first.</p>
 <p>A parcellation can also carry its own – an annotation's <code>unknown</code>, <code>???</code> or
 medial-wall region. Those arrive as regions and are demoted to backdrop
 during the build, so an atlas's medial wall is as much the grey behind the
@@ -125,6 +139,20 @@ what excludes them, so the pattern is safe to use case-insensitively, as
 <code><a href="atlas_simplify.html">atlas_simplify()</a></code> and <code><a href="atlas_smooth.html">atlas_smooth()</a></code> do.</p>
     </div>
     <div class="section level2">
+    <h2 id="asking-the-atlas-instead">Asking the atlas instead<a class="anchor" aria-label="anchor" href="#asking-the-atlas-instead"></a></h2>
+
+
+<p>Give it an atlas and it stops going by names: the pattern then matches
+exactly the shapes that atlas draws without their being one of its regions,
+whatever they are called. That is the form to use on a subcortical atlas,
+where the lookup table names the context and so no fixed spelling can know
+it.</p>
+<p><code><a href="atlas_polish.html">atlas_polish()</a></code>, <code><a href="atlas_simplify.html">atlas_simplify()</a></code>, <code><a href="atlas_smooth.html">atlas_smooth()</a></code> and <code><a href="atlas_dilate.html">atlas_dilate()</a></code>
+do the asking for you when handed the function itself:
+<code>exclude = context_pattern</code>, with no brackets, means "this atlas's
+context", and works in the middle of a pipe.</p>
+    </div>
+    <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
     <div class="dont-index"><p><code><a href="atlas_polish.html">atlas_polish()</a></code>, <code><a href="atlas_simplify.html">atlas_simplify()</a></code> and <code><a href="atlas_smooth.html">atlas_smooth()</a></code>, which
 take it as <code>labels</code> or <code>exclude</code>.</p></div>
@@ -133,12 +161,16 @@ take it as <code>labels</code> or <code>exclude</code>.</p></div>
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu">context_pattern</span><span class="op">(</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "^([lr]h_)?cortex|^cerebellum$|(^|_)unknown$|(^|_)[?]{3}$|medial[ _.-]?wall$"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "^([lr]h_)?cortex|^cerebellum$|^context_[0-9]+$|(^|_)unknown$|(^|_)[?]{3}$|medial[ _.-]?wall$"</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># What it does and does not match: the backdrop, not a cortex structure.</span></span></span>
 <span class="r-in"><span><span class="va">labels</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"lh_cortex"</span>, <span class="st">"cerebellum"</span>, <span class="st">"lh_unknown"</span>, <span class="st">"Left-Cerebral-Cortex"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/grep.html" class="external-link">grepl</a></span><span class="op">(</span><span class="fu">context_pattern</span><span class="op">(</span><span class="op">)</span>, <span class="va">labels</span>, ignore.case <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1]  TRUE  TRUE  TRUE FALSE</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Asked of an atlas, it matches whatever that atlas draws as context.</span></span></span>
+<span class="r-in"><span><span class="fu">context_pattern</span><span class="op">(</span><span class="fu">ggseg.formats</span><span class="fu">::</span><span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/dk.html" class="external-link">dk</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "^(lh_unknown|rh_unknown)$"</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># The usual shape of a build: backdrop and structures, each its own way.</span></span></span>
 <span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
@@ -147,9 +179,9 @@ take it as <code>labels</code> or <code>exclude</code>.</p></div>
 <span class="r-in"><span>    keep <span class="op">=</span> <span class="fl">0.4</span>,</span></span>
 <span class="r-in"><span>    smoothness <span class="op">=</span> <span class="fl">0.4</span>,</span></span>
 <span class="r-in"><span>    method <span class="op">=</span> <span class="st">"chaikin"</span>,</span></span>
-<span class="r-in"><span>    labels <span class="op">=</span> <span class="fu">context_pattern</span><span class="op">(</span><span class="op">)</span></span></span>
+<span class="r-in"><span>    labels <span class="op">=</span> <span class="va">context_pattern</span></span></span>
 <span class="r-in"><span>  <span class="op">)</span> <span class="op">|&gt;</span></span></span>
-<span class="r-in"><span>  <span class="fu"><a href="atlas_polish.html">atlas_polish</a></span><span class="op">(</span>keep <span class="op">=</span> <span class="fl">0.1</span>, smoothness <span class="op">=</span> <span class="fl">0.4</span>, exclude <span class="op">=</span> <span class="fu">context_pattern</span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span>  <span class="fu"><a href="atlas_polish.html">atlas_polish</a></span><span class="op">(</span>keep <span class="op">=</span> <span class="fl">0.1</span>, smoothness <span class="op">=</span> <span class="fl">0.4</span>, exclude <span class="op">=</span> <span class="va">context_pattern</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
 </code></pre></div>
     </div>

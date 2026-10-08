@@ -18,8 +18,8 @@ read_lut(path)
 
 ## Value
 
-A data.frame with columns: idx, label, R, G, B, A, and optionally type
-and hemi when the file carries them.
+A data.frame with columns: idx, label, R, G, B, A, and optionally type,
+hemi and context when the file carries them.
 
 ## Details
 
@@ -28,7 +28,8 @@ A file written by
 can carry declared columns after the colours. With a single extra field
 it is read as `type`. With more, a comment line naming the fields –
 `# idx label R G B A type hemi` – says which is which, and a field
-holding `NA` is read as missing.
+holding `NA` is read as missing. A `context` field is read as `TRUE` or
+`FALSE`.
 
 ## See also
 

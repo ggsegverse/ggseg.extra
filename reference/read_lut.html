@@ -13,7 +13,7 @@ and RGBA colours."><meta property="og:image" content="https://ggsegverse.github.
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9122</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9123</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -96,14 +96,15 @@ and RGBA colours.</p>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A data.frame with columns: idx, label, R, G, B, A, and
-optionally type and hemi when the file carries them.</p>
+optionally type, hemi and context when the file carries them.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>A file written by <code><a href="write_lut.html">write_lut()</a></code> can carry declared columns after the
 colours. With a single extra field it is read as <code>type</code>. With more, a
 comment line naming the fields – <code># idx label R G B A type hemi</code> – says
-which is which, and a field holding <code>NA</code> is read as missing.</p>
+which is which, and a field holding <code>NA</code> is read as missing. A <code>context</code>
+field is read as <code>TRUE</code> or <code>FALSE</code>.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

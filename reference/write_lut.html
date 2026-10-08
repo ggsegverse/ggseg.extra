@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9122</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9123</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -85,7 +85,7 @@
 
 <dl><dt id="arg-x">x<a class="anchor" aria-label="anchor" href="#arg-x"></a></dt>
 <dd><p>A data.frame with columns: idx, label, R, G, B, A, and
-optionally type and hemi. Their values must be single words.</p></dd>
+optionally type, hemi and context. Their values must be single words.</p></dd>
 
 
 <dt id="arg-path">path<a class="anchor" aria-label="anchor" href="#arg-path"></a></dt>
@@ -98,14 +98,14 @@ optionally type and hemi. Their values must be single words.</p></dd>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p>The declared columns <code>type</code> and <code>hemi</code> are written after the colours, so
-that <code><a href="read_lut.html">read_lut()</a></code> reads them back. FreeSurfer reads only the first six
-fields of a line and skips comments, so the file stays a valid colour
-table for it.</p>
+    <p>The declared columns <code>type</code>, <code>hemi</code> and <code>context</code> are written after the
+colours, so that <code><a href="read_lut.html">read_lut()</a></code> reads them back. FreeSurfer reads only the
+first six fields of a line and skips comments, so the file stays a valid
+colour table for it.</p>
 <p>A table with <code>type</code> alone gets it as a 7th field, left off rows that have
-none. A table with <code>hemi</code> gets a comment line naming the fields, and every
-row then carries each one, written as <code>NA</code> where it declares nothing.
-Other columns are not written.</p>
+none. A table with <code>hemi</code> or <code>context</code> gets a comment line naming the
+fields, and every row then carries each one, written as <code>NA</code> where it
+declares nothing. Other columns are not written.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

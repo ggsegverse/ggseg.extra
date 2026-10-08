@@ -28,7 +28,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9122</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9123</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -130,86 +130,107 @@
 <span><span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/files.html" class="external-link">file.exists</a></span><span class="op">(</span><span class="va">color_lut</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="va">color_lut</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">fs_dir</span>, <span class="st">"FreeSurferColorLUT.txt"</span><span class="op">)</span></span>
 <span><span class="op">}</span></span></code></pre></div>
+</section><section class="level2"><h2 id="regions-and-context">Regions and context<a class="anchor" aria-label="anchor" href="#regions-and-context"></a>
+</h2>
+<p><code><a href="../reference/create_subcortical_from_volume.html">create_subcortical_from_volume()</a></code> takes a segmentation volume and a colour lookup table, and the table does more than name things. It decides what the atlas is made of:</p>
+<ul>
+<li>a label the table lists is a <strong>region</strong>, with a colour, a 3D mesh and a shape in each 2D view;</li>
+<li>a row whose <code>context</code> column is <code>TRUE</code> is <strong>context</strong>: grey anatomy the regions are drawn against, with no mesh;</li>
+<li>a label that is in the volume but not in the table is context as well.</li>
+</ul>
+<p>Nothing is worked out from a label’s id or its name, so the table is where the decision is made. For a subcortical atlas the cortex is the obvious context — it shows where the deep structures sit without competing for colour — so say so before building:</p>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">lut</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/read_lut.html">read_lut</a></span><span class="op">(</span><span class="va">color_lut</span><span class="op">)</span></span>
+<span><span class="va">lut</span><span class="op">$</span><span class="va">context</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/grep.html" class="external-link">grepl</a></span><span class="op">(</span><span class="st">"Cortex"</span>, <span class="va">lut</span><span class="op">$</span><span class="va">label</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">lut</span><span class="op">[</span><span class="va">lut</span><span class="op">$</span><span class="va">context</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"idx"</span>, <span class="st">"label"</span>, <span class="st">"context"</span><span class="op">)</span><span class="op">]</span></span>
+<span><span class="co">#&gt;    idx                   label context</span></span>
+<span><span class="co">#&gt; 3    3    Left-Cerebral-Cortex    TRUE</span></span>
+<span><span class="co">#&gt; 7    8  Left-Cerebellum-Cortex    TRUE</span></span>
+<span><span class="co">#&gt; 23  42   Right-Cerebral-Cortex    TRUE</span></span>
+<span><span class="co">#&gt; 27  47 Right-Cerebellum-Cortex    TRUE</span></span></code></pre></div>
+<p>Deciding this in the table, rather than turning the cortex grey afterwards, changes how it is drawn. A region is projected through the whole slab it sits in, which turns a cortical ribbon into a solid shape. Context is traced on a single slice, so the ribbon keeps its folds.</p>
 </section><section class="level2"><h2 id="creating-the-atlas">Creating the atlas<a class="anchor" aria-label="anchor" href="#creating-the-atlas"></a>
 </h2>
-<p><code><a href="../reference/create_subcortical_from_volume.html">create_subcortical_from_volume()</a></code> takes a segmentation volume and a colour lookup table. Each structure’s hemisphere is read from its label (<code>Left-Thalamus</code>, <code>Right-Putamen</code>); if your labels don’t carry one, pass the table as a data.frame with a <code>hemi</code> column, as <a href="tutorial-lookup-tables.html">Lookup tables and colours</a> describes. The pipeline tessellates each labelled region into a 3D mesh, then creates 2D projection views:</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<p>Each structure’s hemisphere is read from its label (<code>Left-Thalamus</code>, <code>Right-Putamen</code>); if your labels don’t carry one, give the table a <code>hemi</code> column, as <a href="tutorial-lookup-tables.html">Lookup tables and colours</a> describes. The pipeline tessellates each region into a 3D mesh, then creates 2D projection views:</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">aseg_raw</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/create_subcortical_from_volume.html">create_subcortical_from_volume</a></span><span class="op">(</span></span>
 <span>  input_volume <span class="op">=</span> <span class="va">aseg_volume</span>,</span>
-<span>  input_lut <span class="op">=</span> <span class="va">color_lut</span>,</span>
+<span>  input_lut <span class="op">=</span> <span class="va">lut</span>,</span>
 <span>  atlas_name <span class="op">=</span> <span class="st">"aseg"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; Warning: Atlas has 31614 vertices (threshold: 10000)</span></span>
-<span><span class="co">#&gt; ℹ Large atlases may be slow to plot and increase package size</span></span>
-<span><span class="co">#&gt; ℹ Call `atlas_simplify(atlas, keep = 0.2)`, then `atlas_smooth(atlas)`, to tidy</span></span>
-<span><span class="co">#&gt;   it and reduce vertices</span></span>
 <span></span>
 <span><span class="va">aseg_raw</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── aseg ggseg atlas ────────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; Type: subcortical</span></span>
-<span><span class="co">#&gt; Regions: 27</span></span>
+<span><span class="co">#&gt; Regions: 25</span></span>
 <span><span class="co">#&gt; Hemispheres: left, NA, right</span></span>
-<span><span class="co">#&gt; Views: axial_1, axial_2, axial_3, coronal_1, coronal_2, coronal_3,</span></span>
-<span><span class="co">#&gt; sagittal_left</span></span>
+<span><span class="co">#&gt; Views: axial_1, axial_2, coronal_1, coronal_2, sagittal_left, axial_3,</span></span>
+<span><span class="co">#&gt; coronal_3</span></span>
 <span><span class="co">#&gt; Palette: ✔</span></span>
 <span><span class="co">#&gt; Rendering: ✔ ggseg</span></span>
 <span><span class="co">#&gt; ✔ ggseg3d (meshes)</span></span>
 <span><span class="co">#&gt; ────────────────────────────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt;    hemi                  region                        label</span></span>
 <span><span class="co">#&gt; 1  left   cerebral white matter   Left-Cerebral-White-Matter</span></span>
-<span><span class="co">#&gt; 2  left         cerebral cortex         Left-Cerebral-Cortex</span></span>
-<span><span class="co">#&gt; 3  left       lateral ventricle       Left-Lateral-Ventricle</span></span>
-<span><span class="co">#&gt; 4  left            inf lat vent            Left-Inf-Lat-Vent</span></span>
-<span><span class="co">#&gt; 5  left cerebellum white matter Left-Cerebellum-White-Matter</span></span>
-<span><span class="co">#&gt; 6  left       cerebellum cortex       Left-Cerebellum-Cortex</span></span>
-<span><span class="co">#&gt; 7  left                thalamus                Left-Thalamus</span></span>
-<span><span class="co">#&gt; 8  left                 caudate                 Left-Caudate</span></span>
-<span><span class="co">#&gt; 9  left                 putamen                 Left-Putamen</span></span>
-<span><span class="co">#&gt; 10 left                pallidum                Left-Pallidum</span></span>
-<span><span class="co">#&gt; ... with 33 more rows</span></span></code></pre></div>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<span><span class="co">#&gt; 2  left       lateral ventricle       Left-Lateral-Ventricle</span></span>
+<span><span class="co">#&gt; 3  left            inf lat vent            Left-Inf-Lat-Vent</span></span>
+<span><span class="co">#&gt; 4  left cerebellum white matter Left-Cerebellum-White-Matter</span></span>
+<span><span class="co">#&gt; 5  left                thalamus                Left-Thalamus</span></span>
+<span><span class="co">#&gt; 6  left                 caudate                 Left-Caudate</span></span>
+<span><span class="co">#&gt; 7  left                 putamen                 Left-Putamen</span></span>
+<span><span class="co">#&gt; 8  left                pallidum                Left-Pallidum</span></span>
+<span><span class="co">#&gt; 9  &lt;NA&gt;           3rd ventricle                3rd-Ventricle</span></span>
+<span><span class="co">#&gt; 10 &lt;NA&gt;           4th ventricle                4th-Ventricle</span></span>
+<span><span class="co">#&gt; ... with 29 more rows</span></span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">aseg_raw</span><span class="op">)</span></span></code></pre></div>
 <div class="figure">
-<img src="figures/tutorial-subcortical-atlas-plot-raw-1.png" alt="The full aseg segmentation across all seven projection views, every label filled, including cortex, white matter and ventricles." width="960"><p class="caption">
+<img src="figures/tutorial-subcortical-atlas-plot-raw-1.png" alt="The full aseg segmentation across all seven projection views, every region filled, including white matter and ventricles, with the cortex in grey behind them." width="960"><p class="caption">
 Stage 1 — everything aseg labels, on every view the pipeline made.
 </p>
 </div>
-<p>That is the whole segmentation, and it is not yet an atlas anyone would want: cortex and white matter dominate the picture, and half the views say the same thing twice. The rest of this tutorial is subtraction.</p>
+<p>That is the whole segmentation, and it is not yet an atlas anyone would want: white matter dominates the picture, and half the views say the same thing twice. The rest of this tutorial is subtraction.</p>
 <p>The default pipeline creates seven projection views focused on the subcortical range: three axial slabs, three coronal slabs, and one sagittal (<code>axial_1</code> to <code>axial_3</code>, <code>coronal_1</code> to <code>coronal_3</code>, <code>sagittal_left</code>). Each view collapses a slab of the volume onto a single plane, giving you spatial context without the complexity of individual slices.</p>
 </section><section class="level2"><h2 id="removing-unwanted-regions">Removing unwanted regions<a class="anchor" aria-label="anchor" href="#removing-unwanted-regions"></a>
 </h2>
-<p>The aseg segmentation contains everything — cortex, white matter, ventricles, CSF. For a subcortical atlas, most of these are noise. Remove them:</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<p>The aseg segmentation contains everything — white matter, ventricles, CSF. For a subcortical atlas, most of these are noise. Remove them:</p>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">aseg_raw</span> <span class="op">&lt;-</span> <span class="va">aseg_raw</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_remove</a></span><span class="op">(</span><span class="st">"White-Matter"</span>, match_on <span class="op">=</span> <span class="st">"label"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_remove</a></span><span class="op">(</span><span class="st">"WM-hypointensities"</span>, match_on <span class="op">=</span> <span class="st">"label"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_remove</a></span><span class="op">(</span><span class="st">"-Ventricle"</span>, match_on <span class="op">=</span> <span class="st">"label"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_remove</a></span><span class="op">(</span><span class="st">"-Vent$"</span>, match_on <span class="op">=</span> <span class="st">"label"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_remove</a></span><span class="op">(</span><span class="st">"CSF"</span>, match_on <span class="op">=</span> <span class="st">"label"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_remove</a></span><span class="op">(</span><span class="st">"Cerebral-Cortex"</span>, match_on <span class="op">=</span> <span class="st">"label"</span><span class="op">)</span></span></code></pre></div>
+<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_remove</a></span><span class="op">(</span><span class="st">"CSF"</span>, match_on <span class="op">=</span> <span class="st">"label"</span><span class="op">)</span></span></code></pre></div>
 <p>Patterns are regular expressions, so <code>-Vent$</code> matches “3rd-Vent” and “4th-Vent” without catching “Ventral-DC.”</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">aseg_raw</span><span class="op">)</span></span></code></pre></div>
 <div class="figure">
-<img src="figures/tutorial-subcortical-atlas-plot-removed-1.png" alt="The same views with cortex, white matter, ventricles and CSF gone, leaving the deep grey structures." width="960"><p class="caption">
+<img src="figures/tutorial-subcortical-atlas-plot-removed-1.png" alt="The same views with white matter, ventricles and CSF gone, leaving the deep grey structures on the grey cortex." width="960"><p class="caption">
 Stage 2 — the structures we actually want, once the bulk tissue is gone.
 </p>
 </div>
-<p>The cortical ribbon and white matter are gone, and what is left is what the atlas is for. The grey silhouette stays: it is context geometry, not a region, so it gives the structures somewhere to sit without taking a colour.</p>
-</section><section class="level2"><h2 id="setting-context-regions">Setting context regions<a class="anchor" aria-label="anchor" href="#setting-context-regions"></a>
+<p>The white matter is gone, and what is left is what the atlas is for. The grey cortex stays: the table declared it context, not a region, so it gives the structures somewhere to sit without taking a colour.</p>
+</section><section class="level2"><h2 id="changing-your-mind-about-context">Changing your mind about context<a class="anchor" aria-label="anchor" href="#changing-your-mind-about-context"></a>
 </h2>
-<p>The cortex works well as a background outline — it shows where subcortical structures sit relative to the brain surface without competing for colour:</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">aseg_raw</span> <span class="op">&lt;-</span> <span class="va">aseg_raw</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_contextual</a></span><span class="op">(</span><span class="st">"Cortex"</span>, match_on <span class="op">=</span> <span class="st">"label"</span><span class="op">)</span></span></code></pre></div>
+<p>The table is the place to decide, but not the only chance. <code><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_contextual()</a></code> turns a region of an atlas you already have into context, and <code><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_context_remove()</a></code> drops the context altogether:</p>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Grey out the brain stem as well</span></span>
+<span><span class="va">aseg_raw</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_contextual</a></span><span class="op">(</span><span class="st">"Brain-Stem"</span>, match_on <span class="op">=</span> <span class="st">"label"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># No backdrop at all</span></span>
+<span><span class="va">aseg_raw</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_context_remove</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<p>A region made context this way keeps the shape it was built with, projected through its slab, so for anything with folds the table gives the better picture.</p>
 </section><section class="level2"><h2 id="selecting-views">Selecting views<a class="anchor" aria-label="anchor" href="#selecting-views"></a>
 </h2>
 <p>Not all projection views are equally useful. Keep the ones that show your structures best:</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">aseg_raw</span> <span class="op">&lt;-</span> <span class="va">aseg_raw</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_view_keep</a></span><span class="op">(</span><span class="st">"axial_3|coronal_2|coronal_3|sagittal_left"</span><span class="op">)</span></span></code></pre></div>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">aseg_raw</span><span class="op">)</span></span></code></pre></div>
 <div class="figure">
 <img src="figures/tutorial-subcortical-atlas-plot-views-1.png" alt="One axial, two coronal and one sagittal view of the deep grey structures, the other three views gone." width="960"><p class="caption">
@@ -220,10 +241,10 @@ Stage 3 — only the views that show the structures well.
 </section><section class="level2"><h2 id="cleaning-up-the-layout">Cleaning up the layout<a class="anchor" aria-label="anchor" href="#cleaning-up-the-layout"></a>
 </h2>
 <p>Gather views into a compact arrangement:</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">aseg_raw</span> <span class="op">&lt;-</span> <span class="va">aseg_raw</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_view_gather</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">aseg_raw</span><span class="op">)</span></span></code></pre></div>
 <div class="figure">
 <img src="figures/tutorial-subcortical-atlas-plot-gathered-1.png" alt="The same four views packed together, with the empty space between them closed up." width="960"><p class="caption">
@@ -234,24 +255,24 @@ Stage 4 — gathered. Same geometry, less white space.
 </section><section class="level2"><h2 id="tidying-the-geometry">Tidying the geometry<a class="anchor" aria-label="anchor" href="#tidying-the-geometry"></a>
 </h2>
 <p>Every outline here is still made of mesh triangle edges, so each nucleus is bounded by a staircase rather than a line anyone would draw. <code><a href="../reference/count_vertices.html">count_vertices()</a></code> gives the price, and says where it is being paid:</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">vertices</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/count_vertices.html">count_vertices</a></span><span class="op">(</span><span class="va">aseg_raw</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="va">vertices</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] 10909</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="va">vertices</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/grep.html" class="external-link">grepl</a></span><span class="op">(</span><span class="fu"><a href="../reference/context_pattern.html">context_pattern</a></span><span class="op">(</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">vertices</span><span class="op">)</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] 6796</span></span></code></pre></div>
-<p>Most of the atlas is the cortex silhouette. That matters for what comes next: the <code>create_*()</code> functions warn above ten thousand vertices, and here the context geometry alone accounts for the bulk of it.</p>
+<span><span class="co">#&gt; [1] 10740</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="va">vertices</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/grep.html" class="external-link">grepl</a></span><span class="op">(</span><span class="fu"><a href="../reference/context_pattern.html">context_pattern</a></span><span class="op">(</span><span class="va">aseg_raw</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">vertices</span><span class="op">)</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] 7512</span></span></code></pre></div>
+<p>Most of the atlas is the cortex. That matters for what comes next: the <code>create_*()</code> functions warn above ten thousand vertices, and here the context geometry alone accounts for the bulk of it.</p>
 <p>Tidying is a separate post-processing step in two parts — <code><a href="../reference/atlas_simplify.html">atlas_simplify()</a></code> drops vertices, <code><a href="../reference/atlas_smooth.html">atlas_smooth()</a></code> rounds off what is left — and on a subcortical atlas <strong>both have to be applied twice</strong>, because the context and the structures want opposite things. The silhouette is only useful while its sulci and gyri survive, so it needs gentle settings; the nuclei need firmer ones to read as smooth shapes. A single pass tuned for nuclei flattens the cortical ribbon into a blob.</p>
-<p>Simplify each separately:</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<p>Simplify each separately. <code>context_pattern</code>, handed over without brackets, selects whatever this atlas draws as context:</p>
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">aseg_raw</span> <span class="op">&lt;-</span> <span class="va">aseg_raw</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="../reference/atlas_simplify.html">atlas_simplify</a></span><span class="op">(</span>keep <span class="op">=</span> <span class="fl">0.5</span>, labels <span class="op">=</span> <span class="fu"><a href="../reference/context_pattern.html">context_pattern</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="../reference/atlas_simplify.html">atlas_simplify</a></span><span class="op">(</span>keep <span class="op">=</span> <span class="fl">0.25</span>, exclude <span class="op">=</span> <span class="fu"><a href="../reference/context_pattern.html">context_pattern</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span>
+<span>  <span class="fu"><a href="../reference/atlas_simplify.html">atlas_simplify</a></span><span class="op">(</span>keep <span class="op">=</span> <span class="fl">0.5</span>, labels <span class="op">=</span> <span class="va">context_pattern</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/atlas_simplify.html">atlas_simplify</a></span><span class="op">(</span>keep <span class="op">=</span> <span class="fl">0.25</span>, exclude <span class="op">=</span> <span class="va">context_pattern</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="fu"><a href="../reference/count_vertices.html">count_vertices</a></span><span class="op">(</span><span class="va">aseg_raw</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] 5478</span></span></code></pre></div>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<span><span class="co">#&gt; [1] 6728</span></span></code></pre></div>
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">aseg_raw</span><span class="op">)</span></span></code></pre></div>
 <div class="figure">
 <img src="figures/tutorial-subcortical-atlas-plot-simple-1.png" alt="The same four views after simplification, with fewer vertices and straighter but still angular outlines on both the structures and the cortex silhouette." width="960"><p class="caption">
@@ -260,18 +281,18 @@ Stage 5 — simplified. Most of the vertices are gone; the corners they left beh
 </div>
 <p><code>keep = 0.5</code> on the context is deliberately mild. It drops roughly a quarter of the contour rings, which is a real loss, but the alternative is a silhouette whose sulci close up as soon as it is smoothed. Simplification is topology-aware, so neighbouring structures lose the same vertices and no gaps open between them.</p>
 <p>Then smooth each separately, and note the second argument:</p>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">aseg_raw</span> <span class="op">&lt;-</span> <span class="va">aseg_raw</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/atlas_smooth.html">atlas_smooth</a></span><span class="op">(</span></span>
 <span>    smoothness <span class="op">=</span> <span class="fl">0.35</span>,</span>
-<span>    labels <span class="op">=</span> <span class="fu"><a href="../reference/context_pattern.html">context_pattern</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>    labels <span class="op">=</span> <span class="va">context_pattern</span>,</span>
 <span>    method <span class="op">=</span> <span class="st">"chaikin"</span></span>
 <span>  <span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="../reference/atlas_smooth.html">atlas_smooth</a></span><span class="op">(</span>smoothness <span class="op">=</span> <span class="fl">0.4</span>, exclude <span class="op">=</span> <span class="fu"><a href="../reference/context_pattern.html">context_pattern</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span>
+<span>  <span class="fu"><a href="../reference/atlas_smooth.html">atlas_smooth</a></span><span class="op">(</span>smoothness <span class="op">=</span> <span class="fl">0.4</span>, exclude <span class="op">=</span> <span class="va">context_pattern</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="fu"><a href="../reference/count_vertices.html">count_vertices</a></span><span class="op">(</span><span class="va">aseg_raw</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] 6621</span></span></code></pre></div>
-<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<span><span class="co">#&gt; [1] 8821</span></span></code></pre></div>
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">aseg_raw</span><span class="op">)</span></span></code></pre></div>
 <div class="figure">
 <img src="figures/tutorial-subcortical-atlas-plot-smooth-1.png" alt="The same four views after smoothing, with rounded structure outlines and a cortex silhouette that still shows its sulci." width="960"><p class="caption">
@@ -284,7 +305,7 @@ Stage 6 — smoothed. The staircases are gone and the silhouette still has its f
 </section><section class="level2"><h2 id="adding-metadata">Adding metadata<a class="anchor" aria-label="anchor" href="#adding-metadata"></a>
 </h2>
 <p>The raw labels are technical identifiers like “Left-Thalamus-Proper.” Join human-readable names and structural groupings:</p>
-<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">normalize_region</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/ifelse.html" class="external-link">ifelse</a></span><span class="op">(</span></span>
 <span>    <span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span>,</span>
@@ -329,7 +350,7 @@ Stage 6 — smoothed. The staircases are gone and the silhouette still has its f
 </section><section class="level2"><h2 id="rebuilding-and-saving">Rebuilding and saving<a class="anchor" aria-label="anchor" href="#rebuilding-and-saving"></a>
 </h2>
 <p>Construct the final atlas from modified components:</p>
-<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">aseg</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/ggseg_atlas.html" class="external-link">ggseg_atlas</a></span><span class="op">(</span></span>
 <span>  atlas <span class="op">=</span> <span class="va">aseg_raw</span><span class="op">$</span><span class="va">atlas</span>,</span>
 <span>  type <span class="op">=</span> <span class="va">aseg_raw</span><span class="op">$</span><span class="va">type</span>,</span>
@@ -361,23 +382,23 @@ Stage 6 — smoothed. The staircases are gone and the silhouette still has its f
 <span><span class="co">#&gt; 9  left        ventral DC      Left-VentralDC  diencephalon</span></span>
 <span><span class="co">#&gt; 10 left            vessel         Left-vessel          &lt;NA&gt;</span></span>
 <span><span class="co">#&gt; ... with 17 more rows</span></span></code></pre></div>
-<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_labels.html" class="external-link">atlas_labels</a></span><span class="op">(</span><span class="va">aseg</span><span class="op">)</span></span>
-<span><span class="co">#&gt;  [1] "Brain-Stem"           "CC_Anterior"          "CC_Central"          </span></span>
-<span><span class="co">#&gt;  [4] "CC_Mid_Anterior"      "CC_Mid_Posterior"     "CC_Posterior"        </span></span>
-<span><span class="co">#&gt;  [7] "Left-Accumbens-area"  "Left-Amygdala"        "Left-Caudate"        </span></span>
-<span><span class="co">#&gt; [10] "Left-choroid-plexus"  "Left-Hippocampus"     "Left-Pallidum"       </span></span>
-<span><span class="co">#&gt; [13] "Left-Putamen"         "Left-Thalamus"        "Left-VentralDC"      </span></span>
-<span><span class="co">#&gt; [16] "Left-vessel"          "Optic-Chiasm"         "Right-Accumbens-area"</span></span>
-<span><span class="co">#&gt; [19] "Right-Amygdala"       "Right-Caudate"        "Right-choroid-plexus"</span></span>
-<span><span class="co">#&gt; [22] "Right-Hippocampus"    "Right-Pallidum"       "Right-Putamen"       </span></span>
-<span><span class="co">#&gt; [25] "Right-Thalamus"       "Right-VentralDC"      "Right-vessel"</span></span>
+<span><span class="co">#&gt;  [1] "Left-Thalamus"        "Left-Caudate"         "Left-Putamen"        </span></span>
+<span><span class="co">#&gt;  [4] "Left-Pallidum"        "Brain-Stem"           "Left-Hippocampus"    </span></span>
+<span><span class="co">#&gt;  [7] "Left-Amygdala"        "Left-Accumbens-area"  "Left-VentralDC"      </span></span>
+<span><span class="co">#&gt; [10] "Left-vessel"          "Left-choroid-plexus"  "Right-Thalamus"      </span></span>
+<span><span class="co">#&gt; [13] "Right-Caudate"        "Right-Putamen"        "Right-Pallidum"      </span></span>
+<span><span class="co">#&gt; [16] "Right-Hippocampus"    "Right-Amygdala"       "Right-Accumbens-area"</span></span>
+<span><span class="co">#&gt; [19] "Right-VentralDC"      "Right-vessel"         "Right-choroid-plexus"</span></span>
+<span><span class="co">#&gt; [22] "Optic-Chiasm"         "CC_Posterior"         "CC_Mid_Posterior"    </span></span>
+<span><span class="co">#&gt; [25] "CC_Central"           "CC_Mid_Anterior"      "CC_Anterior"</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/table.html" class="external-link">table</a></span><span class="op">(</span><span class="va">aseg</span><span class="op">$</span><span class="va">core</span><span class="op">$</span><span class="va">structure</span><span class="op">)</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; basal ganglia     brainstem  diencephalon        limbic </span></span>
 <span><span class="co">#&gt;             8             1             2             4</span></span></code></pre></div>
-<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">aseg</span><span class="op">)</span></span></code></pre></div>
 <div class="figure">
 <img src="figures/tutorial-subcortical-atlas-plot-1.png" alt="The same four views as the previous figure, unchanged; the structures now carry readable names in the atlas core rather than FreeSurfer identifiers." width="960"><p class="caption">

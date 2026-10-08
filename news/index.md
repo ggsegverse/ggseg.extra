@@ -1,5 +1,87 @@
 # Changelog
 
+## ggseg.extra 1.9.9.9123
+
+### Breaking changes
+
+- In
+  [`create_subcortical_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_subcortical_from_volume.md)
+  the lookup table decides what is a region and what is context, the
+  grey anatomy the regions are drawn against. Nothing is recognised by
+  its id or its name any more.
+
+  - A row of the table is a region.
+  - A row whose new, optional `context` column is `TRUE` is context. It
+    keeps its name, is traced on a single slice in each view so that a
+    cortical ribbon keeps its folds, and gets no 3D mesh.
+  - A label in the volume that the table does not list is context too,
+    named for its id: `context_0002`.
+  - With no table, every label is a region and there is no context.
+
+  The build used to draw a brain outline from fixed FreeSurfer ids – 3
+  and 42 for cortex, or the 1000s and 2000s of an `aparc+aseg`, plus 7,
+  8, 46, 47 and 16 for cerebellum and brain stem – whatever the volume
+  was. An atlas that numbered its own structures with any of those lost
+  them to the outline, and the default views were framed as though they
+  were not there.
+
+  What this changes in an existing build:
+
+  - The generated outline labelled `cortex` is gone. To get the cortex
+    as context, mark its rows in the table:
+    `lut$context <- grepl("Cortex", lut$label)`. It is then called what
+    the table calls it.
+  - A table that lists cortex, such as the full
+    `FreeSurferColorLUT.txt`, used to get the outline as well as the
+    cortex regions. It now gets the regions only.
+  - Context that is not wanted is removed afterwards with
+    [`atlas_context_remove()`](https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html).
+  - Caches written by earlier versions are not reused.
+
+- `aseg_context()`, `aseg_hidden_labels()` and the `context` argument of
+  [`create_subcortical_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_subcortical_from_volume.md)
+  are removed. They rebuilt after the fact what the table now states up
+  front: which labels are context is the `context` column, a ribbon
+  rather than a solid cortex comes from declaring it there, and unwanted
+  labels are dropped with
+  [`atlas_region_remove()`](https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html)
+  or
+  [`atlas_context_remove()`](https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html).
+
+### Minor changes
+
+- [`read_lut()`](https://ggsegverse.github.io/ggseg.extra/reference/read_lut.md)
+  and
+  [`write_lut()`](https://ggsegverse.github.io/ggseg.extra/reference/write_lut.md)
+  carry the `context` column, alongside `type` and `hemi`. It is
+  separate from `type` on purpose: `type` says which atlas a label
+  belongs to, `context` says what role it plays there, so a whole-brain
+  table can say both about one label.
+
+- [`prepare_subcortical_mni152()`](https://ggsegverse.github.io/ggseg.extra/reference/prepare_subcortical_mni152.md),
+  [`prepare_subcortical_anatomical()`](https://ggsegverse.github.io/ggseg.extra/reference/prepare_subcortical_anatomical.md)
+  and
+  [`project_volume_anatomical()`](https://ggsegverse.github.io/ggseg.extra/reference/project_volume_anatomical.md)
+  return a lookup table with the `context` column filled in: the
+  FreeSurfer anatomy the labels were stamped into is context, the labels
+  are regions. Passing the result straight to
+  [`create_subcortical_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_subcortical_from_volume.md)
+  needs no further instruction.
+
+- [`context_pattern()`](https://ggsegverse.github.io/ggseg.extra/reference/context_pattern.md)
+  takes an atlas and then matches exactly the context that atlas draws,
+  whatever its shapes are called.
+  [`atlas_polish()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_polish.md),
+  [`atlas_simplify()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_simplify.md),
+  [`atlas_smooth()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_smooth.md)
+  and
+  [`atlas_dilate()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_dilate.md)
+  accept a function as `labels` or `exclude` and ask it about the atlas
+  they are given, so `exclude = context_pattern`, without brackets,
+  means “this atlas’s context” and works in the middle of a pipe.
+  [`context_pattern()`](https://ggsegverse.github.io/ggseg.extra/reference/context_pattern.md)
+  with no argument still gives the names the pipelines generate.
+
 ## ggseg.extra 1.9.9.9122
 
 ### Bug fixes
@@ -1991,13 +2073,12 @@ creator.
 
 #### Minor changes
 
-- [`aseg_context()`](https://ggsegverse.github.io/ggseg.extra/reference/aseg_context.md)
-  applies its hidden-label recipe as one pattern rather than one call
-  per pattern. The recipe names structures an `aseg` may or may not
-  carry, so most of its patterns match nothing on any given atlas; with
-  ggseg.formats reporting a pattern that matches nothing, calling them
-  one at a time would have produced a warning per miss. Behaviour is
-  unchanged.
+- `aseg_context()` applies its hidden-label recipe as one pattern rather
+  than one call per pattern. The recipe names structures an `aseg` may
+  or may not carry, so most of its patterns match nothing on any given
+  atlas; with ggseg.formats reporting a pattern that matches nothing,
+  calling them one at a time would have produced a warning per miss.
+  Behaviour is unchanged.
 
 ## ggseg.extra 1.9.9.9065
 
@@ -3348,9 +3429,8 @@ not cost a rebuild.
   order, too: simplifying a rounded outline replaces its curves with
   straight chords, putting the stair-step back.
 
-- [`aseg_context()`](https://ggsegverse.github.io/ggseg.extra/reference/aseg_context.md)
-  no longer leaves two brain silhouettes behind, and no longer punches a
-  silhouette that does not need it.
+- `aseg_context()` no longer leaves two brain silhouettes behind, and no
+  longer punches a silhouette that does not need it.
 
   The white-matter punch writes its result to `cortex`, but
   [`atlas_region_op()`](https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html)
@@ -3371,9 +3451,8 @@ not cost a rebuild.
   The silhouette is the largest label in a subcortical atlas, so this is
   also the biggest single thing in the file. Together with per-label
   simplification it takes the `ho_sub` atlas in ggsegHO from 89,657
-  vertices to 34,103. Every atlas built through
-  [`aseg_context()`](https://ggsegverse.github.io/ggseg.extra/reference/aseg_context.md)
-  is affected, the bundled `aseg` included, and each needs rebuilding to
+  vertices to 34,103. Every atlas built through `aseg_context()` is
+  affected, the bundled `aseg` included, and each needs rebuilding to
   benefit.
 
 ### Minor improvements and fixes
@@ -3794,16 +3873,14 @@ volume reader, distilled from the repeated boilerplate in the
   builds a slab table from the bounding box of a set of labels, reading
   the volume in the **same** frame the builder uses so
   coronal/axial/sagittal slabs can’t be pointed at the wrong slices.
-- [`aseg_context()`](https://ggsegverse.github.io/ggseg.extra/reference/aseg_context.md)
-  collapses the standard post-processing chain (punch cortical white
-  matter, strip the structures `aseg` doesn’t draw, demote everything
-  outside `focus` to grey context, drop empty views) into one call. The
-  focus set is subtracted from the context set with exact,
-  case-sensitive matching, so a region is never swallowed by a context
-  entry that is a substring of its name (e.g. `Thalamus` vs
-  `hypothalamus`).
-  [`aseg_hidden_labels()`](https://ggsegverse.github.io/ggseg.extra/reference/aseg_hidden_labels.md)
-  returns the default stripped set.
+- `aseg_context()` collapses the standard post-processing chain (punch
+  cortical white matter, strip the structures `aseg` doesn’t draw,
+  demote everything outside `focus` to grey context, drop empty views)
+  into one call. The focus set is subtracted from the context set with
+  exact, case-sensitive matching, so a region is never swallowed by a
+  context entry that is a substring of its name (e.g. `Thalamus` vs
+  `hypothalamus`). `aseg_hidden_labels()` returns the default stripped
+  set.
 - [`lut_add()`](https://ggsegverse.github.io/ggseg.extra/reference/lut_add.md)
   /
   [`lut_combine()`](https://ggsegverse.github.io/ggseg.extra/reference/lut_combine.md)
@@ -3815,10 +3892,8 @@ volume reader, distilled from the repeated boilerplate in the
   gained two opt-in arguments: `slabs` now also accepts a
   [`subcortical_slabs()`](https://ggsegverse.github.io/ggseg.extra/reference/subcortical_slabs.md)
   list spec (e.g. `slabs = list(labels = 801:810, coronal = 3)`), and a
-  new `context` argument runs
-  [`aseg_context()`](https://ggsegverse.github.io/ggseg.extra/reference/aseg_context.md)
-  on the finished 2D atlas (e.g.
-  `context = list(focus = "Hippocampus")`). Both thread through
+  new `context` argument runs `aseg_context()` on the finished 2D atlas
+  (e.g. `context = list(focus = "Hippocampus")`). Both thread through
   [`create_wholebrain_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_wholebrain_from_volume.md)’s
   `subcortical_opts`.
 
@@ -3949,9 +4024,7 @@ atlas types. Old names/arguments keep working with a
   `list(volume, lut, id_offset)`: the merged volume *and* a colour table
   aligned to it (FreeSurfer names for the surviving `aparc+aseg` context
   labels plus the user’s labels at their shifted ids), so the context
-  regions render with names
-  [`aseg_context()`](https://ggsegverse.github.io/ggseg.extra/reference/aseg_context.md)
-  recognises.
+  regions render with names `aseg_context()` recognises.
 - New
   [`prepare_subcortical_anatomical()`](https://ggsegverse.github.io/ggseg.extra/reference/prepare_subcortical_anatomical.md)
   chains both in a single call, returning the same

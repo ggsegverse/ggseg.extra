@@ -28,7 +28,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9122</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9123</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -344,8 +344,8 @@
 <span id="cb10-41"><a href="#cb10-41" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ `atlas_polish(atlas)` simplifies and smooths it in one step.</span></span>
 <span id="cb10-42"><a href="#cb10-42" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb10-43"><a href="#cb10-43" aria-hidden="true" tabindex="-1"></a>atlas_full <span class="ot">&lt;-</span> atlas_full <span class="sc">|&gt;</span></span>
-<span id="cb10-44"><a href="#cb10-44" aria-hidden="true" tabindex="-1"></a>  <span class="fu">atlas_simplify</span>(<span class="at">keep =</span> <span class="fl">0.2</span>, <span class="at">exclude =</span> <span class="fu">context_pattern</span>()) <span class="sc">|&gt;</span></span>
-<span id="cb10-45"><a href="#cb10-45" aria-hidden="true" tabindex="-1"></a>  <span class="fu">atlas_smooth</span>(<span class="at">exclude =</span> <span class="fu">context_pattern</span>())</span></code></pre></div>
+<span id="cb10-44"><a href="#cb10-44" aria-hidden="true" tabindex="-1"></a>  <span class="fu">atlas_simplify</span>(<span class="at">keep =</span> <span class="fl">0.2</span>, <span class="at">exclude =</span> context_pattern) <span class="sc">|&gt;</span></span>
+<span id="cb10-45"><a href="#cb10-45" aria-hidden="true" tabindex="-1"></a>  <span class="fu">atlas_smooth</span>(<span class="at">exclude =</span> context_pattern)</span></code></pre></div>
 </section><section class="level2"><h2 id="post-processing">Post-processing<a class="anchor" aria-label="anchor" href="#post-processing"></a>
 </h2>
 <p>The “unknown” region (medial wall) renders as a filled region by default. Convert it to a background outline with <code><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_contextual()</a></code>:</p>

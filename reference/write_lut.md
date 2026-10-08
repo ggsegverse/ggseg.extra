@@ -12,8 +12,8 @@ write_lut(x, path)
 
 - x:
 
-  A data.frame with columns: idx, label, R, G, B, A, and optionally type
-  and hemi. Their values must be single words.
+  A data.frame with columns: idx, label, R, G, B, A, and optionally
+  type, hemi and context. Their values must be single words.
 
 - path:
 
@@ -25,16 +25,16 @@ Invisibly returns the lines written.
 
 ## Details
 
-The declared columns `type` and `hemi` are written after the colours, so
-that
+The declared columns `type`, `hemi` and `context` are written after the
+colours, so that
 [`read_lut()`](https://ggsegverse.github.io/ggseg.extra/reference/read_lut.md)
 reads them back. FreeSurfer reads only the first six fields of a line
 and skips comments, so the file stays a valid colour table for it.
 
 A table with `type` alone gets it as a 7th field, left off rows that
-have none. A table with `hemi` gets a comment line naming the fields,
-and every row then carries each one, written as `NA` where it declares
-nothing. Other columns are not written.
+have none. A table with `hemi` or `context` gets a comment line naming
+the fields, and every row then carries each one, written as `NA` where
+it declares nothing. Other columns are not written.
 
 ## See also
 

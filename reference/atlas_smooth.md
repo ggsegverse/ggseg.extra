@@ -50,7 +50,9 @@ atlas_smooth(
 
 - labels:
 
-  Optional regex. Only matching labels are smoothed.
+  Which labels to smooth: a regular expression, or a function that takes
+  the atlas and returns one. Pass `context_pattern`, without calling it,
+  to select the atlas's context.
 
 - exclude:
 
@@ -147,14 +149,14 @@ atlas_smooth(dk, smoothness = 0.4)
 
 if (FALSE) { # \dontrun{
 # Leave the brain outline alone.
-atlas_smooth(dk, smoothness = 0.4, exclude = context_pattern())
+atlas_smooth(dk, smoothness = 0.4, exclude = context_pattern)
 
 # Round a cortical ribbon without closing its sulci.
 atlas_smooth(
   dk,
   smoothness = 0.4,
   method = "chaikin",
-  labels = context_pattern()
+  labels = context_pattern
 )
 } # }
 ```

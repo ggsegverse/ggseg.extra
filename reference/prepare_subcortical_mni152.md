@@ -91,8 +91,9 @@ prepare_subcortical_mni152(
 
 Invisibly, `list(volume, lut)`: the merged volume path and a matching
 colour table, ready to pass straight to
-[`create_subcortical_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_subcortical_from_volume.md)
-(optionally with `context = list(focus = ...)`).
+[`create_subcortical_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_subcortical_from_volume.md).
+The table's `context` column marks the `aseg` anatomy as context and the
+stamped labels as regions.
 
 ## See also
 
@@ -110,9 +111,7 @@ merged <- prepare_subcortical_mni152(
   input_volume = "BN_Atlas_subcortical_1mm.nii.gz",
   labels = 211:246
 )
-atlas <- create_subcortical_from_volume(
-  input_volume = merged,
-  context = list(focus = "region_", match_on = "label")
-)
+# The parcels are the atlas's regions; the aseg around them is context
+atlas <- create_subcortical_from_volume(input_volume = merged)
 } # }
 ```

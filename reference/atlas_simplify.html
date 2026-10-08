@@ -11,7 +11,7 @@ atlas costs less to store and to draw."><meta property="og:image" content="https
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9122</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9123</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -118,8 +118,10 @@ of them is given back to one of them.</p></dd>
 
 
 <dt id="arg-labels-exclude">labels, exclude<a class="anchor" aria-label="anchor" href="#arg-labels-exclude"></a></dt>
-<dd><p>Regex selecting which labels to simplify, or which
-to leave alone. Give at most one.</p></dd>
+<dd><p>Which labels to simplify, or which to leave alone:
+a regular expression, or a function that takes the atlas and returns
+one. Pass <code>context_pattern</code>, without calling it, to select the atlas's
+context. Give at most one.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -157,7 +159,7 @@ smoothing has the last word on the outline.</p>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
 <span class="r-in"><span><span class="co"># Simplify the backdrop only, sparing the structures.</span></span></span>
-<span class="r-in"><span><span class="fu">atlas_simplify</span><span class="op">(</span><span class="va">dk</span>, keep <span class="op">=</span> <span class="fl">0.5</span>, labels <span class="op">=</span> <span class="fu"><a href="context_pattern.html">context_pattern</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">atlas_simplify</span><span class="op">(</span><span class="va">dk</span>, keep <span class="op">=</span> <span class="fl">0.5</span>, labels <span class="op">=</span> <span class="va">context_pattern</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
 </code></pre></div>
     </div>

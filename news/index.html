@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9122</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9123</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -69,6 +69,32 @@
       <small>Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.9.9.9123" id="ggsegextra-1999123">ggseg.extra 1.9.9.9123<a class="anchor" aria-label="anchor" href="#ggsegextra-1999123"></a></h2>
+<div class="section level3">
+<h3 id="breaking-changes-1-9-9-9123">Breaking changes<a class="anchor" aria-label="anchor" href="#breaking-changes-1-9-9-9123"></a></h3>
+<ul><li>
+<p>In <code><a href="../reference/create_subcortical_from_volume.html">create_subcortical_from_volume()</a></code> the lookup table decides what is a region and what is context, the grey anatomy the regions are drawn against. Nothing is recognised by its id or its name any more.</p>
+<ul><li>A row of the table is a region.</li>
+<li>A row whose new, optional <code>context</code> column is <code>TRUE</code> is context. It keeps its name, is traced on a single slice in each view so that a cortical ribbon keeps its folds, and gets no 3D mesh.</li>
+<li>A label in the volume that the table does not list is context too, named for its id: <code>context_0002</code>.</li>
+<li>With no table, every label is a region and there is no context.</li>
+</ul><p>The build used to draw a brain outline from fixed FreeSurfer ids – 3 and 42 for cortex, or the 1000s and 2000s of an <code>aparc+aseg</code>, plus 7, 8, 46, 47 and 16 for cerebellum and brain stem – whatever the volume was. An atlas that numbered its own structures with any of those lost them to the outline, and the default views were framed as though they were not there.</p>
+<p>What this changes in an existing build:</p>
+<ul><li>The generated outline labelled <code>cortex</code> is gone. To get the cortex as context, mark its rows in the table: <code>lut$context &lt;- grepl("Cortex", lut$label)</code>. It is then called what the table calls it.</li>
+<li>A table that lists cortex, such as the full <code>FreeSurferColorLUT.txt</code>, used to get the outline as well as the cortex regions. It now gets the regions only.</li>
+<li>Context that is not wanted is removed afterwards with <code><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_context_remove()</a></code>.</li>
+<li>Caches written by earlier versions are not reused.</li>
+</ul></li>
+<li><p><code>aseg_context()</code>, <code>aseg_hidden_labels()</code> and the <code>context</code> argument of <code><a href="../reference/create_subcortical_from_volume.html">create_subcortical_from_volume()</a></code> are removed. They rebuilt after the fact what the table now states up front: which labels are context is the <code>context</code> column, a ribbon rather than a solid cortex comes from declaring it there, and unwanted labels are dropped with <code><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_remove()</a></code> or <code><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_context_remove()</a></code>.</p></li>
+</ul></div>
+<div class="section level3">
+<h3 id="minor-changes-1-9-9-9123">Minor changes<a class="anchor" aria-label="anchor" href="#minor-changes-1-9-9-9123"></a></h3>
+<ul><li><p><code><a href="../reference/read_lut.html">read_lut()</a></code> and <code><a href="../reference/write_lut.html">write_lut()</a></code> carry the <code>context</code> column, alongside <code>type</code> and <code>hemi</code>. It is separate from <code>type</code> on purpose: <code>type</code> says which atlas a label belongs to, <code>context</code> says what role it plays there, so a whole-brain table can say both about one label.</p></li>
+<li><p><code><a href="../reference/prepare_subcortical_mni152.html">prepare_subcortical_mni152()</a></code>, <code><a href="../reference/prepare_subcortical_anatomical.html">prepare_subcortical_anatomical()</a></code> and <code><a href="../reference/project_volume_anatomical.html">project_volume_anatomical()</a></code> return a lookup table with the <code>context</code> column filled in: the FreeSurfer anatomy the labels were stamped into is context, the labels are regions. Passing the result straight to <code><a href="../reference/create_subcortical_from_volume.html">create_subcortical_from_volume()</a></code> needs no further instruction.</p></li>
+<li><p><code><a href="../reference/context_pattern.html">context_pattern()</a></code> takes an atlas and then matches exactly the context that atlas draws, whatever its shapes are called. <code><a href="../reference/atlas_polish.html">atlas_polish()</a></code>, <code><a href="../reference/atlas_simplify.html">atlas_simplify()</a></code>, <code><a href="../reference/atlas_smooth.html">atlas_smooth()</a></code> and <code><a href="../reference/atlas_dilate.html">atlas_dilate()</a></code> accept a function as <code>labels</code> or <code>exclude</code> and ask it about the atlas they are given, so <code>exclude = context_pattern</code>, without brackets, means “this atlas’s context” and works in the middle of a pipe. <code><a href="../reference/context_pattern.html">context_pattern()</a></code> with no argument still gives the names the pipelines generate.</p></li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9122" id="ggsegextra-1999122">ggseg.extra 1.9.9.9122<a class="anchor" aria-label="anchor" href="#ggsegextra-1999122"></a></h2>
 <div class="section level3">
@@ -866,7 +892,7 @@ x Problematic argument:
 <div class="section level4">
 <h4 id="minor-changes-1-9-9-9066">Minor changes<a class="anchor" aria-label="anchor" href="#minor-changes-1-9-9-9066"></a></h4>
 <ul><li>
-<code><a href="../reference/aseg_context.html">aseg_context()</a></code> applies its hidden-label recipe as one pattern rather than one call per pattern. The recipe names structures an <code>aseg</code> may or may not carry, so most of its patterns match nothing on any given atlas; with ggseg.formats reporting a pattern that matches nothing, calling them one at a time would have produced a warning per miss. Behaviour is unchanged.</li>
+<code>aseg_context()</code> applies its hidden-label recipe as one pattern rather than one call per pattern. The recipe names structures an <code>aseg</code> may or may not carry, so most of its patterns match nothing on any given atlas; with ggseg.formats reporting a pattern that matches nothing, calling them one at a time would have produced a warning per miss. Behaviour is unchanged.</li>
 </ul></div>
 </div>
 </div>
@@ -1252,10 +1278,10 @@ x Problematic argument:
 <p>Having both in one function meant <code><a href="../reference/atlas_smooth.html">atlas_smooth()</a></code> simplified to <code>keep = 0.05</code> unless told otherwise, so a call that asked only for smoothing quietly threw away 95% of the vertices - and a second call quietly threw away 95% of what the first left. That is how the bundled cortex silhouettes ended up as blobs. Run them in that order, too: simplifying a rounded outline replaces its curves with straight chords, putting the stair-step back.</p>
 </li>
 <li>
-<p><code><a href="../reference/aseg_context.html">aseg_context()</a></code> no longer leaves two brain silhouettes behind, and no longer punches a silhouette that does not need it.</p>
+<p><code>aseg_context()</code> no longer leaves two brain silhouettes behind, and no longer punches a silhouette that does not need it.</p>
 <p>The white-matter punch writes its result to <code>cortex</code>, but <code><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_op()</a></code> only replaces rows already named that - so the operand it was derived from, which the pipelines call <code>cortex_</code>, survived and drew behind the ribbon as a second full-brain outline. One character apart, which is why it went unnoticed. The punch now consumes its operand.</p>
 <p>The punch is also skipped when the silhouette is already hollow. It exists to hollow out a solid outline; snapshot pipelines that trace the grey-matter ribbon hand over one that is already hollow, and differencing the white matter out of that removes about a quarter of the mantle, because the white matter abuts the ribbon rather than sitting inside it. Whole sections of outline went missing. Interior rings tell the two apart: a solid outline has none, a ribbon has hundreds.</p>
-<p>The silhouette is the largest label in a subcortical atlas, so this is also the biggest single thing in the file. Together with per-label simplification it takes the <code>ho_sub</code> atlas in ggsegHO from 89,657 vertices to 34,103. Every atlas built through <code><a href="../reference/aseg_context.html">aseg_context()</a></code> is affected, the bundled <code>aseg</code> included, and each needs rebuilding to benefit.</p>
+<p>The silhouette is the largest label in a subcortical atlas, so this is also the biggest single thing in the file. Together with per-label simplification it takes the <code>ho_sub</code> atlas in ggsegHO from 89,657 vertices to 34,103. Every atlas built through <code>aseg_context()</code> is affected, the bundled <code>aseg</code> included, and each needs rebuilding to benefit.</p>
 </li>
 </ul></div>
 <div class="section level3">
@@ -1414,11 +1440,11 @@ x Problematic argument:
 <ul><li>
 <code><a href="../reference/subcortical_slabs.html">subcortical_slabs()</a></code> builds a slab table from the bounding box of a set of labels, reading the volume in the <strong>same</strong> frame the builder uses so coronal/axial/sagittal slabs can’t be pointed at the wrong slices.</li>
 <li>
-<code><a href="../reference/aseg_context.html">aseg_context()</a></code> collapses the standard post-processing chain (punch cortical white matter, strip the structures <code>aseg</code> doesn’t draw, demote everything outside <code>focus</code> to grey context, drop empty views) into one call. The focus set is subtracted from the context set with exact, case-sensitive matching, so a region is never swallowed by a context entry that is a substring of its name (e.g. <code>Thalamus</code> vs <code>hypothalamus</code>). <code><a href="../reference/aseg_hidden_labels.html">aseg_hidden_labels()</a></code> returns the default stripped set.</li>
+<code>aseg_context()</code> collapses the standard post-processing chain (punch cortical white matter, strip the structures <code>aseg</code> doesn’t draw, demote everything outside <code>focus</code> to grey context, drop empty views) into one call. The focus set is subtracted from the context set with exact, case-sensitive matching, so a region is never swallowed by a context entry that is a substring of its name (e.g. <code>Thalamus</code> vs <code>hypothalamus</code>). <code>aseg_hidden_labels()</code> returns the default stripped set.</li>
 <li>
 <code><a href="../reference/lut_add.html">lut_add()</a></code> / <code><a href="../reference/lut_combine.html">lut_combine()</a></code> append and merge FreeSurfer-style colour tables (validating with <code><a href="../reference/is_lut.html">is_lut()</a></code> and warning on index clashes) for atlases that add custom prefixed labels.</li>
 <li>
-<code><a href="../reference/create_subcortical_from_volume.html">create_subcortical_from_volume()</a></code> gained two opt-in arguments: <code>slabs</code> now also accepts a <code><a href="../reference/subcortical_slabs.html">subcortical_slabs()</a></code> list spec (e.g. <code>slabs = list(labels = 801:810, coronal = 3)</code>), and a new <code>context</code> argument runs <code><a href="../reference/aseg_context.html">aseg_context()</a></code> on the finished 2D atlas (e.g. <code>context = list(focus = "Hippocampus")</code>). Both thread through <code><a href="../reference/create_wholebrain_from_volume.html">create_wholebrain_from_volume()</a></code>’s <code>subcortical_opts</code>.</li>
+<code><a href="../reference/create_subcortical_from_volume.html">create_subcortical_from_volume()</a></code> gained two opt-in arguments: <code>slabs</code> now also accepts a <code><a href="../reference/subcortical_slabs.html">subcortical_slabs()</a></code> list spec (e.g. <code>slabs = list(labels = 801:810, coronal = 3)</code>), and a new <code>context</code> argument runs <code>aseg_context()</code> on the finished 2D atlas (e.g. <code>context = list(focus = "Hippocampus")</code>). Both thread through <code><a href="../reference/create_wholebrain_from_volume.html">create_wholebrain_from_volume()</a></code>’s <code>subcortical_opts</code>.</li>
 </ul></div>
 <div class="section level3">
 <h3 id="sf-smoothing-moves-out-of-atlas-creation-1-9-9-9005">sf smoothing moves out of atlas creation<a class="anchor" aria-label="anchor" href="#sf-smoothing-moves-out-of-atlas-creation-1-9-9-9005"></a></h3>
@@ -1457,7 +1483,7 @@ x Problematic argument:
 <div class="section level3">
 <h3 id="anatomical-context-coregistration-helpers-1-9-9-9005">Anatomical-context coregistration helpers<a class="anchor" aria-label="anchor" href="#anatomical-context-coregistration-helpers-1-9-9-9005"></a></h3>
 <ul><li>New <code><a href="../reference/coregister_volume.html">coregister_volume()</a></code> wraps <code>mri_coreg</code> to align an atlas volume to a FreeSurfer subject’s T1 grid (default <code>cvs_avg35_inMNI152</code>), returning a reusable LTA file.</li>
-<li>New <code><a href="../reference/project_volume_anatomical.html">project_volume_anatomical()</a></code> resamples each atlas label with trilinear interpolation onto the target <code>aparc+aseg</code> grid, takes the argmax across labels, and produces a merged volume that combines the source <code>aparc+aseg</code> (anatomical brain-outline context) with the user’s atlas labels. It returns a <code>list(volume, lut, id_offset)</code>: the merged volume <em>and</em> a colour table aligned to it (FreeSurfer names for the surviving <code>aparc+aseg</code> context labels plus the user’s labels at their shifted ids), so the context regions render with names <code><a href="../reference/aseg_context.html">aseg_context()</a></code> recognises.</li>
+<li>New <code><a href="../reference/project_volume_anatomical.html">project_volume_anatomical()</a></code> resamples each atlas label with trilinear interpolation onto the target <code>aparc+aseg</code> grid, takes the argmax across labels, and produces a merged volume that combines the source <code>aparc+aseg</code> (anatomical brain-outline context) with the user’s atlas labels. It returns a <code>list(volume, lut, id_offset)</code>: the merged volume <em>and</em> a colour table aligned to it (FreeSurfer names for the surviving <code>aparc+aseg</code> context labels plus the user’s labels at their shifted ids), so the context regions render with names <code>aseg_context()</code> recognises.</li>
 <li>New <code><a href="../reference/prepare_subcortical_anatomical.html">prepare_subcortical_anatomical()</a></code> chains both in a single call, returning the same <code>list(volume, lut, id_offset)</code>. <code><a href="../reference/create_subcortical_from_volume.html">create_subcortical_from_volume()</a></code> now accepts that list directly as <code>input_volume</code>, unpacking the matching colour table for you (an explicit <code>input_lut</code> still wins).</li>
 <li>Removes the ~50 lines of per-atlas boilerplate previously hand-rolled in <code>ggsegShen</code> and <code>ggsegHO</code> build scripts.</li>
 <li>

@@ -170,7 +170,7 @@ first:
 
 ``` r
 
-yeo7_simple <- atlas_simplify(yeo7_raw, keep = 0.2, exclude = context_pattern())
+yeo7_simple <- atlas_simplify(yeo7_raw, keep = 0.2, exclude = context_pattern)
 
 sum(count_vertices(yeo7_simple))
 #> [1] 5645
@@ -188,7 +188,7 @@ boundaries.](figures/tutorial-cortical-atlas-plot-simple-1.png)
 Stage 2 — simplified. Most of the vertices are gone; the corners they
 left behind are not.
 
-`exclude = context_pattern()` leaves the brain-outline geometry crisp
+`exclude = context_pattern` leaves the brain-outline geometry crisp
 while simplifying the labelled regions.
 
 Simplification is topology-aware, so neighbouring regions lose the same
@@ -200,7 +200,7 @@ is for:
 
 ``` r
 
-yeo7_smooth <- atlas_smooth(yeo7_simple, exclude = context_pattern())
+yeo7_smooth <- atlas_smooth(yeo7_simple, exclude = context_pattern)
 
 sum(count_vertices(yeo7_smooth))
 #> [1] 7354
@@ -386,3 +386,13 @@ dk <- create_cortical_from_annotation(
 ```
 
 ## Saving
+
+Once you’re satisfied with the atlas, save it as package data:
+
+``` r
+
+usethis::use_data(yeo7, overwrite = TRUE, compress = "xz")
+```
+
+The `compress = "xz"` flag gives the best compression for sf geometry
+data.

@@ -15,7 +15,7 @@ colour table, ready to feed create_subcortical_from_volume()."><meta property="o
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9122</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9123</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -226,10 +226,8 @@ subject-specific outline.</p></li>
 <span class="r-in"><span>  input_volume <span class="op">=</span> <span class="st">"shen_2mm_268_parcellation.nii.gz"</span>,</span></span>
 <span class="r-in"><span>  lut <span class="op">=</span> <span class="va">subcortical_lut</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">atlas</span> <span class="op">&lt;-</span> <span class="fu"><a href="create_subcortical_from_volume.html">create_subcortical_from_volume</a></span><span class="op">(</span></span></span>
-<span class="r-in"><span>  input_volume <span class="op">=</span> <span class="va">merged</span>,</span></span>
-<span class="r-in"><span>  context <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>focus <span class="op">=</span> <span class="st">"my-structures"</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co"># The parcels are the atlas's regions; the anatomy around them is context</span></span></span>
+<span class="r-in"><span><span class="va">atlas</span> <span class="op">&lt;-</span> <span class="fu"><a href="create_subcortical_from_volume.html">create_subcortical_from_volume</a></span><span class="op">(</span>input_volume <span class="op">=</span> <span class="va">merged</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
 </code></pre></div>
     </div>

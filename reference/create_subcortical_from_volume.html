@@ -21,7 +21,7 @@ Requires FreeSurfer for mesh generation."><meta property="og:image" content="htt
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9122</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9123</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -106,8 +106,7 @@ snapshots at specified coordinates and extracting contours.</p>
 <span>  vertex_size_limits <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  cleanup <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  skip_existing <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  steps <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  context <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  steps <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -151,7 +150,22 @@ passed here is an error. Geometry is shaped after the build: see
 <dd><p>Path to a FreeSurfer-style colour lookup table that maps
 label IDs to region names and colours (e.g., <code>FreeSurferColorLUT.txt</code>
 or <code>ASegStatsLUT.txt</code>), or a data.frame with columns <code>idx</code>, <code>label</code>,
-<code>R</code>, <code>G</code>, <code>B</code> and <code>A</code> (see <code><a href="is_lut.html">is_lut()</a></code>). Either may also carry a
+<code>R</code>, <code>G</code>, <code>B</code> and <code>A</code> (see <code><a href="is_lut.html">is_lut()</a></code>).</p>
+<p>The table decides what is a region and what is context, the grey
+anatomy the regions are drawn against. Nothing is recognised by its id
+or its name:</p><ul><li><p>A row is a <strong>region</strong> unless it says otherwise. It gets a mesh, a
+colour and a shape in each 2D view.</p></li>
+<li><p>A row whose optional <code>context</code> column is <code>TRUE</code> is <strong>context</strong>. It
+keeps its name, is traced on one slice per view rather than projected
+through the slab, and gets no mesh.</p></li>
+<li><p>A label in the volume that the table does not list is context too.
+With no name to go by, it is called <code>context_</code> and its id, such as
+<code>context_0002</code>.</p></li>
+</ul><p>To leave a context shape out of the atlas altogether, remove it
+afterwards with <code><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">ggseg.formats::atlas_context_remove()</a></code>. To treat the
+context differently when polishing, pass <code>context_pattern</code> as <code>labels</code>
+or <code>exclude</code>; see <code><a href="context_pattern.html">context_pattern()</a></code>.</p>
+<p>Either form may also carry a
 <code>hemi</code> column (<code>"left"</code>, <code>"right"</code> or <code>"midline"</code>) that sets each
 region's hemisphere; a row left <code>NA</code>, or a table without the column, has
 it read from the label's name, and any other value is an error.
@@ -159,8 +173,9 @@ it read from the label's name, and any other value is an error.
 <p>A data.frame may also carry a <code>names</code> column: the display name each
 region shows in a legend. A row left <code>NA</code>, or a table without the
 column, is named after its region.</p>
-<p>If NULL, region names will be generic (e.g., "region_0010") and the
-atlas will have no palette.</p></dd>
+<p>If NULL, every label is a region with a generic name (e.g.,
+"region_0010"), there is no context, and the atlas will have no
+palette.</p></dd>
 
 
 <dt id="arg-atlas-name">atlas_name<a class="anchor" aria-label="anchor" href="#arg-atlas-name"></a></dt>
@@ -226,14 +241,6 @@ steps out of <code>steps</code>.</p></dd>
 <li><p>6: Build the final atlas with 2D geometry</p></li>
 </ul><p>Use <code>steps = 1:3</code> for a 3D-only atlas. Geometry is shaped after the
 build, not during it: see <code><a href="atlas_polish.html">atlas_polish()</a></code>.</p></dd>
-
-
-<dt id="arg-context">context<a class="anchor" aria-label="anchor" href="#arg-context"></a></dt>
-<dd><p>Optional named list of <code><a href="aseg_context.html">aseg_context()</a></code> arguments (e.g.
-<code>context = list(focus = "Hippocampus")</code>) applied to the finished 2D atlas
-to keep the focus regions coloured on grey anatomical context. <code>NULL</code>
-(default) leaves the atlas unchanged. Only applied when the 2D build
-(step 6) runs.</p></dd>
 
 </dl></div>
     <div class="section level2">

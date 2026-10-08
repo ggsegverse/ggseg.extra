@@ -28,7 +28,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9122</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9123</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -228,7 +228,7 @@ Stage 1 — straight out of the pipeline. The boundaries still follow the mesh t
 <p>Tidying is a separate post-processing step in two parts: <code><a href="../reference/atlas_simplify.html">atlas_simplify()</a></code> drops vertices, <code><a href="../reference/atlas_smooth.html">atlas_smooth()</a></code> rounds off what is left. Tune either freely; you no longer have to re-run the full pipeline to try a different level.</p>
 <p>Take them one at a time, so you can see what each does. Simplification first:</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">yeo7_simple</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/atlas_simplify.html">atlas_simplify</a></span><span class="op">(</span><span class="va">yeo7_raw</span>, keep <span class="op">=</span> <span class="fl">0.2</span>, exclude <span class="op">=</span> <span class="fu"><a href="../reference/context_pattern.html">context_pattern</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">yeo7_simple</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/atlas_simplify.html">atlas_simplify</a></span><span class="op">(</span><span class="va">yeo7_raw</span>, keep <span class="op">=</span> <span class="fl">0.2</span>, exclude <span class="op">=</span> <span class="va">context_pattern</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="fu"><a href="../reference/count_vertices.html">count_vertices</a></span><span class="op">(</span><span class="va">yeo7_simple</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] 5645</span></span></code></pre></div>
@@ -239,10 +239,10 @@ Stage 1 — straight out of the pipeline. The boundaries still follow the mesh t
 Stage 2 — simplified. Most of the vertices are gone; the corners they left behind are not.
 </p>
 </div>
-<p><code>exclude = context_pattern()</code> leaves the brain-outline geometry crisp while simplifying the labelled regions.</p>
+<p><code>exclude = context_pattern</code> leaves the brain-outline geometry crisp while simplifying the labelled regions.</p>
 <p>Simplification is topology-aware, so neighbouring regions lose the same vertices and no gaps open between them. What it does not do is make anything look smooth — it removes vertices from a jagged line and leaves a jagged line with fewer vertices. That is what <code><a href="../reference/atlas_smooth.html">atlas_smooth()</a></code> is for:</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">yeo7_smooth</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/atlas_smooth.html">atlas_smooth</a></span><span class="op">(</span><span class="va">yeo7_simple</span>, exclude <span class="op">=</span> <span class="fu"><a href="../reference/context_pattern.html">context_pattern</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">yeo7_smooth</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/atlas_smooth.html">atlas_smooth</a></span><span class="op">(</span><span class="va">yeo7_simple</span>, exclude <span class="op">=</span> <span class="va">context_pattern</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="fu"><a href="../reference/count_vertices.html">count_vertices</a></span><span class="op">(</span><span class="va">yeo7_smooth</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] 7354</span></span></code></pre></div>
@@ -355,6 +355,10 @@ Stage 4 — the finished atlas. The geometry is stage 3’s; what changed is the
 <span><span class="op">)</span></span></code></pre></div>
 </section><section class="level2"><h2 id="saving">Saving<a class="anchor" aria-label="anchor" href="#saving"></a>
 </h2>
+<p>Once you’re satisfied with the atlas, save it as package data:</p>
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu">usethis</span><span class="fu">::</span><span class="fu">use_data</span><span class="op">(</span><span class="va">yeo7</span>, overwrite <span class="op">=</span> <span class="cn">TRUE</span>, compress <span class="op">=</span> <span class="st">"xz"</span><span class="op">)</span></span></code></pre></div>
+<p>The <code>compress = "xz"</code> flag gives the best compression for sf geometry data.</p>
 </section><script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);

@@ -55,7 +55,9 @@ atlas_polish(
 
 - labels:
 
-  Optional regex. Only matching labels are polished.
+  Which labels to polish: a regular expression, or a function that takes
+  the atlas and returns one. Pass `context_pattern`, without calling it,
+  to select the atlas's context.
 
 - exclude:
 
@@ -126,8 +128,8 @@ dk |>
     keep = 0.4,
     smoothness = 0.4,
     method = "chaikin",
-    labels = context_pattern()
+    labels = context_pattern
   ) |>
-  atlas_polish(keep = 0.1, smoothness = 0.4, exclude = context_pattern())
+  atlas_polish(keep = 0.1, smoothness = 0.4, exclude = context_pattern)
 } # }
 ```

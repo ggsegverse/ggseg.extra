@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9122</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9123</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -140,11 +140,12 @@ region.</p>
 <h2 id="removing-regions">Removing regions<a class="anchor" aria-label="anchor" href="#removing-regions"></a>
 </h2>
 <p>The most common post-processing step is removing structures you don’t
-need. <code><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_remove()</a></code> matches against
-<code>region</code> by default — the lower-cased, separator-normalised
-name. Pass <code>match_on = "label"</code> to match the raw label
-instead, which is what the hyphenated FreeSurfer spellings below
-need:</p>
+need. <code><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_remove()</a></code> matches its pattern against the
+column you name in <code>match_on</code>: <code>"label"</code>, the
+atlas’s own identifier, or <code>"region"</code>, the lower-cased,
+separator-normalised name. The examples here say which, so they read the
+same whichever version of ggseg.formats is installed. The hyphenated
+FreeSurfer spellings below are labels:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">atlas</span> <span class="op">&lt;-</span> <span class="va">atlas</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_remove</a></span><span class="op">(</span><span class="st">"White-Matter"</span>, match_on <span class="op">=</span> <span class="st">"label"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
@@ -163,7 +164,7 @@ need:</p>
 <p>The inverse operation — keep only regions that match:</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">atlas</span> <span class="op">&lt;-</span> <span class="va">atlas</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_keep</a></span><span class="op">(</span><span class="st">"Thalamus|Caudate|Putamen|Pallidum"</span><span class="op">)</span></span></code></pre></div>
+<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_keep</a></span><span class="op">(</span><span class="st">"Thalamus|Caudate|Putamen|Pallidum"</span>, match_on <span class="op">=</span> <span class="st">"label"</span><span class="op">)</span></span></code></pre></div>
 <p>Everything that doesn’t match gets dropped.</p>
 </div>
 <div class="section level2">
@@ -184,12 +185,17 @@ The region renders as an outline, not a filled polygon:</p>
 <p>The <code>match_on</code> parameter controls whether patterns match
 against <code>label</code> (annotation identifiers) or
 <code>region</code> (display names).</p>
-<p>Every pipeline labels the silhouette it produces the same way, and
-<code><a href="../reference/context_pattern.html">context_pattern()</a></code> is that pattern. Use it rather than
-typing <code>"^cortex"</code>, so a change of convention is one release
-rather than one edit per atlas repository:</p>
+<p>The geometry functions further down often need to treat this context
+differently from the regions. <code>context_pattern</code> selects it.
+Hand it over as it is, without brackets, and each function asks it about
+the atlas in front of it, so the context is found whatever its shapes
+are called:</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/context_pattern.html">context_pattern</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/atlas_polish.html">atlas_polish</a></span><span class="op">(</span><span class="va">atlas</span>, keep <span class="op">=</span> <span class="fl">0.1</span>, exclude <span class="op">=</span> <span class="va">context_pattern</span><span class="op">)</span></span></code></pre></div>
+<p>Called on its own, <code><a href="../reference/context_pattern.html">context_pattern()</a></code> gives the names the
+pipelines generate for a backdrop (<code>cortex</code>,
+<code>lh_cortex</code>, <code>unknown</code>, the medial wall), and
+<code>context_pattern(atlas)</code> gives the pattern for one atlas.</p>
 </div>
 <div class="section level2">
 <h2 id="labels-versus-regions">Labels versus regions<a class="anchor" aria-label="anchor" href="#labels-versus-regions"></a>
@@ -398,10 +404,9 @@ topology, via <code><a href="http://andyteucher.ca/rmapshaper/reference/ms_simpl
 silhouette drawn behind the structures usually holds most of an atlas’s
 vertices, so it is the part worth simplifying; small deep structures
 have few to spare. <code>labels</code> and <code>exclude</code> say
-which, and <code><a href="../reference/context_pattern.html">context_pattern()</a></code> is the silhouette’s
-pattern:</p>
+which, and <code>context_pattern</code> selects the silhouette:</p>
 <div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">atlas</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/atlas_simplify.html">atlas_simplify</a></span><span class="op">(</span><span class="va">atlas</span>, keep <span class="op">=</span> <span class="fl">0.3</span>, labels <span class="op">=</span> <span class="fu"><a href="../reference/context_pattern.html">context_pattern</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">atlas</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/atlas_simplify.html">atlas_simplify</a></span><span class="op">(</span><span class="va">atlas</span>, keep <span class="op">=</span> <span class="fl">0.3</span>, labels <span class="op">=</span> <span class="va">context_pattern</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="rounding-off-the-staircase">Rounding off the staircase<a class="anchor" aria-label="anchor" href="#rounding-off-the-staircase"></a>
@@ -416,7 +421,7 @@ keeping:</p>
 <code class="sourceCode R"><span><span class="va">atlas</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/atlas_smooth.html">atlas_smooth</a></span><span class="op">(</span><span class="va">atlas</span>, smoothness <span class="op">=</span> <span class="fl">0.4</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">atlas</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/atlas_smooth.html">atlas_smooth</a></span><span class="op">(</span><span class="va">atlas</span>, smoothness <span class="op">=</span> <span class="fl">0.4</span>, method <span class="op">=</span> <span class="st">"chaikin"</span>,</span>
-<span>                      labels <span class="op">=</span> <span class="fu"><a href="../reference/context_pattern.html">context_pattern</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<span>                      labels <span class="op">=</span> <span class="va">context_pattern</span><span class="op">)</span></span></code></pre></div>
 <p><code>smoothness</code> runs 0–1 on a scale shared by every method,
 so switching method does not mean re-finding the value.</p>
 <p>All four return a modified <code>ggseg_atlas</code>, so you can
@@ -442,9 +447,9 @@ selecting the context and one excluding it:</p>
 <span>    keep <span class="op">=</span> <span class="fl">0.5</span>,</span>
 <span>    smoothness <span class="op">=</span> <span class="fl">0.35</span>,</span>
 <span>    method <span class="op">=</span> <span class="st">"chaikin"</span>,</span>
-<span>    labels <span class="op">=</span> <span class="fu"><a href="../reference/context_pattern.html">context_pattern</a></span><span class="op">(</span><span class="op">)</span></span>
+<span>    labels <span class="op">=</span> <span class="va">context_pattern</span></span>
 <span>  <span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="../reference/atlas_polish.html">atlas_polish</a></span><span class="op">(</span>keep <span class="op">=</span> <span class="fl">0.25</span>, smoothness <span class="op">=</span> <span class="fl">0.4</span>, exclude <span class="op">=</span> <span class="fu"><a href="../reference/context_pattern.html">context_pattern</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<span>  <span class="fu"><a href="../reference/atlas_polish.html">atlas_polish</a></span><span class="op">(</span>keep <span class="op">=</span> <span class="fl">0.25</span>, smoothness <span class="op">=</span> <span class="fl">0.4</span>, exclude <span class="op">=</span> <span class="va">context_pattern</span><span class="op">)</span></span></code></pre></div>
 <p>Each of those four numbers is answering a question about the geometry
 it applies to:</p>
 <ul>
@@ -499,14 +504,14 @@ consistent.</p>
 <span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_view_keep</a></span><span class="op">(</span><span class="st">"axial_3|axial_5|coronal_3|sagittal"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_view_remove_small</a></span><span class="op">(</span>min_area <span class="op">=</span> <span class="fl">100</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_view_gather</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="../reference/atlas_dilate.html">atlas_dilate</a></span><span class="op">(</span><span class="fl">0.6</span>, exclude <span class="op">=</span> <span class="fu"><a href="../reference/context_pattern.html">context_pattern</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/atlas_dilate.html">atlas_dilate</a></span><span class="op">(</span><span class="fl">0.6</span>, exclude <span class="op">=</span> <span class="va">context_pattern</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/atlas_polish.html">atlas_polish</a></span><span class="op">(</span></span>
 <span>    keep <span class="op">=</span> <span class="fl">0.5</span>,</span>
 <span>    smoothness <span class="op">=</span> <span class="fl">0.35</span>,</span>
 <span>    method <span class="op">=</span> <span class="st">"chaikin"</span>,</span>
-<span>    labels <span class="op">=</span> <span class="fu"><a href="../reference/context_pattern.html">context_pattern</a></span><span class="op">(</span><span class="op">)</span></span>
+<span>    labels <span class="op">=</span> <span class="va">context_pattern</span></span>
 <span>  <span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="../reference/atlas_polish.html">atlas_polish</a></span><span class="op">(</span>keep <span class="op">=</span> <span class="fl">0.25</span>, smoothness <span class="op">=</span> <span class="fl">0.4</span>, exclude <span class="op">=</span> <span class="fu"><a href="../reference/context_pattern.html">context_pattern</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<span>  <span class="fu"><a href="../reference/atlas_polish.html">atlas_polish</a></span><span class="op">(</span>keep <span class="op">=</span> <span class="fl">0.25</span>, smoothness <span class="op">=</span> <span class="fl">0.4</span>, exclude <span class="op">=</span> <span class="va">context_pattern</span><span class="op">)</span></span></code></pre></div>
 <p>Each step is a pure transformation — pipe them together, inspect the
 result, adjust as needed.</p>
 </div>

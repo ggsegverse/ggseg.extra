@@ -137,10 +137,8 @@ caught and aborted. `NULL` is not accepted; name the spelling you want.
 The cortical ribbon (aparc labels `1000-2999`), cerebral white matter
 (`2`, `41`) and the corpus callosum (`251-255`) are left in place even
 where a user label wins the argmax above `threshold`. Cerebellar
-structures are not protected here;
-[`aseg_context()`](https://ggsegverse.github.io/ggseg.extra/reference/aseg_context.md)
-handles them downstream. Disable it only if you mean your labels to
-overwrite the cerebrum.
+structures are not protected here. Disable it only if you mean your
+labels to overwrite the cerebrum.
 
 ## See also
 

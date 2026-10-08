@@ -48,10 +48,11 @@ returns the 3D mesh data for each region.
 The most common post-processing step is removing structures you don’t
 need.
 [`atlas_region_remove()`](https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html)
-matches against `region` by default — the lower-cased,
-separator-normalised name. Pass `match_on = "label"` to match the raw
-label instead, which is what the hyphenated FreeSurfer spellings below
-need:
+matches its pattern against the column you name in `match_on`:
+`"label"`, the atlas’s own identifier, or `"region"`, the lower-cased,
+separator-normalised name. The examples here say which, so they read the
+same whichever version of ggseg.formats is installed. The hyphenated
+FreeSurfer spellings below are labels:
 
 ``` r
 
@@ -75,7 +76,7 @@ The inverse operation — keep only regions that match:
 ``` r
 
 atlas <- atlas |>
-  atlas_region_keep("Thalamus|Caudate|Putamen|Pallidum")
+  atlas_region_keep("Thalamus|Caudate|Putamen|Pallidum", match_on = "label")
 ```
 
 Everything that doesn’t match gets dropped.
@@ -102,15 +103,21 @@ atlas <- atlas |>
 The `match_on` parameter controls whether patterns match against `label`
 (annotation identifiers) or `region` (display names).
 
-Every pipeline labels the silhouette it produces the same way, and
-[`context_pattern()`](https://ggsegverse.github.io/ggseg.extra/reference/context_pattern.md)
-is that pattern. Use it rather than typing `"^cortex"`, so a change of
-convention is one release rather than one edit per atlas repository:
+The geometry functions further down often need to treat this context
+differently from the regions. `context_pattern` selects it. Hand it over
+as it is, without brackets, and each function asks it about the atlas in
+front of it, so the context is found whatever its shapes are called:
 
 ``` r
 
-context_pattern()
+atlas_polish(atlas, keep = 0.1, exclude = context_pattern)
 ```
+
+Called on its own,
+[`context_pattern()`](https://ggsegverse.github.io/ggseg.extra/reference/context_pattern.md)
+gives the names the pipelines generate for a backdrop (`cortex`,
+`lh_cortex`, `unknown`, the medial wall), and `context_pattern(atlas)`
+gives the pattern for one atlas.
 
 ## Labels versus regions
 
@@ -315,13 +322,12 @@ atlas <- atlas_simplify(atlas, keep = 0.3)
 `keep` is the proportion of vertices retained. The brain silhouette
 drawn behind the structures usually holds most of an atlas’s vertices,
 so it is the part worth simplifying; small deep structures have few to
-spare. `labels` and `exclude` say which, and
-[`context_pattern()`](https://ggsegverse.github.io/ggseg.extra/reference/context_pattern.md)
-is the silhouette’s pattern:
+spare. `labels` and `exclude` say which, and `context_pattern` selects
+the silhouette:
 
 ``` r
 
-atlas <- atlas_simplify(atlas, keep = 0.3, labels = context_pattern())
+atlas <- atlas_simplify(atlas, keep = 0.3, labels = context_pattern)
 ```
 
 ### Rounding off the staircase
@@ -338,7 +344,7 @@ keeping:
 atlas <- atlas_smooth(atlas, smoothness = 0.4)
 
 atlas <- atlas_smooth(atlas, smoothness = 0.4, method = "chaikin",
-                      labels = context_pattern())
+                      labels = context_pattern)
 ```
 
 `smoothness` runs 0–1 on a scale shared by every method, so switching
@@ -370,9 +376,9 @@ atlas <- atlas |>
     keep = 0.5,
     smoothness = 0.35,
     method = "chaikin",
-    labels = context_pattern()
+    labels = context_pattern
   ) |>
-  atlas_polish(keep = 0.25, smoothness = 0.4, exclude = context_pattern())
+  atlas_polish(keep = 0.25, smoothness = 0.4, exclude = context_pattern)
 ```
 
 Each of those four numbers is answering a question about the geometry it
@@ -432,14 +438,14 @@ atlas <- atlas_raw |>
   atlas_view_keep("axial_3|axial_5|coronal_3|sagittal") |>
   atlas_view_remove_small(min_area = 100) |>
   atlas_view_gather() |>
-  atlas_dilate(0.6, exclude = context_pattern()) |>
+  atlas_dilate(0.6, exclude = context_pattern) |>
   atlas_polish(
     keep = 0.5,
     smoothness = 0.35,
     method = "chaikin",
-    labels = context_pattern()
+    labels = context_pattern
   ) |>
-  atlas_polish(keep = 0.25, smoothness = 0.4, exclude = context_pattern())
+  atlas_polish(keep = 0.25, smoothness = 0.4, exclude = context_pattern)
 ```
 
 Each step is a pure transformation — pipe them together, inspect the

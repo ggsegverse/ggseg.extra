@@ -204,10 +204,9 @@ atlas_raw <- create_cortical_from_annotation(
 atlas <- atlas_polish(atlas_raw, keep = 0.5)
 
 # Compact, leaving the brain silhouette crisp
-atlas <- atlas_polish(atlas_raw, keep = 0.05, exclude = context_pattern())
+atlas <- atlas_polish(atlas_raw, keep = 0.05, exclude = context_pattern)
 ```
 
-[`context_pattern()`](https://ggsegverse.github.io/ggseg.extra/reference/context_pattern.md)
-matches the grey silhouette the structures are read against, which
-usually wants gentler treatment than they do. See
+`context_pattern` selects the grey silhouette the structures are read
+against, which usually wants gentler treatment than they do. See
 [`vignette("post-processing")`](https://ggsegverse.github.io/ggseg.extra/articles/post-processing.md).

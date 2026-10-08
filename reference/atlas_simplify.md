@@ -46,7 +46,9 @@ atlas_simplify(
 
 - labels, exclude:
 
-  Regex selecting which labels to simplify, or which to leave alone.
+  Which labels to simplify, or which to leave alone: a regular
+  expression, or a function that takes the atlas and returns one. Pass
+  `context_pattern`, without calling it, to select the atlas's context.
   Give at most one.
 
 ## Value
@@ -87,6 +89,6 @@ sum(count_vertices(simplified))
 
 if (FALSE) { # \dontrun{
 # Simplify the backdrop only, sparing the structures.
-atlas_simplify(dk, keep = 0.5, labels = context_pattern())
+atlas_simplify(dk, keep = 0.5, labels = context_pattern)
 } # }
 ```

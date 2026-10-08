@@ -154,9 +154,7 @@ merged <- prepare_subcortical_anatomical(
   input_volume = "shen_2mm_268_parcellation.nii.gz",
   lut = subcortical_lut
 )
-atlas <- create_subcortical_from_volume(
-  input_volume = merged,
-  context = list(focus = "my-structures")
-)
+# The parcels are the atlas's regions; the anatomy around them is context
+atlas <- create_subcortical_from_volume(input_volume = merged)
 } # }
 ```

@@ -15,7 +15,7 @@ finished atlas, so a build does not have to be repeated to retune it."><meta pro
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9122</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9123</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -102,8 +102,10 @@ negative shrinks it, <code>0</code> returns the atlas unchanged.</p></dd>
 
 
 <dt id="arg-labels-exclude">labels, exclude<a class="anchor" aria-label="anchor" href="#arg-labels-exclude"></a></dt>
-<dd><p>Regex selecting which labels to dilate, or which to
-leave alone. Give at most one.</p></dd>
+<dd><p>Which labels to dilate, or which to leave alone:
+a regular expression, or a function that takes the atlas and returns
+one. Pass <code>context_pattern</code>, without calling it, to select the atlas's
+context. Give at most one.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -135,7 +137,7 @@ geometry steps.</p>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">dk</span> <span class="op">&lt;-</span> <span class="fu">ggseg.formats</span><span class="fu">::</span><span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/dk.html" class="external-link">dk</a></span><span class="op">(</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Grow the structures and leave the grey brain alone</span></span></span>
-<span class="r-in"><span><span class="fu">atlas_dilate</span><span class="op">(</span><span class="va">dk</span>, <span class="fl">0.5</span>, exclude <span class="op">=</span> <span class="fu"><a href="context_pattern.html">context_pattern</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">atlas_dilate</span><span class="op">(</span><span class="va">dk</span>, <span class="fl">0.5</span>, exclude <span class="op">=</span> <span class="va">context_pattern</span><span class="op">)</span></span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">──</span> <span style="font-weight: bold;">dk ggseg atlas</span> <span style="color: #00BBBB;">──────────────────────────────────────────────────────────────</span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="font-weight: bold;">Type: cortical</span></span>

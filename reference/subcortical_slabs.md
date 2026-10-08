@@ -61,8 +61,7 @@ rather than indexing the volume by hand.
 
 ## See also
 
-[`create_subcortical_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_subcortical_from_volume.md),
-[`aseg_context()`](https://ggsegverse.github.io/ggseg.extra/reference/aseg_context.md)
+[`create_subcortical_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_subcortical_from_volume.md)
 
 ## Examples
 

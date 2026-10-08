@@ -25,8 +25,10 @@ atlas_dilate(atlas, amount, labels = NULL, exclude = NULL)
 
 - labels, exclude:
 
-  Regex selecting which labels to dilate, or which to leave alone. Give
-  at most one.
+  Which labels to dilate, or which to leave alone: a regular expression,
+  or a function that takes the atlas and returns one. Pass
+  `context_pattern`, without calling it, to select the atlas's context.
+  Give at most one.
 
 ## Value
 
@@ -61,7 +63,7 @@ Other atlas geometry:
 dk <- ggseg.formats::dk()
 
 # Grow the structures and leave the grey brain alone
-atlas_dilate(dk, 0.5, exclude = context_pattern())
+atlas_dilate(dk, 0.5, exclude = context_pattern)
 #> 
 #> ── dk ggseg atlas ──────────────────────────────────────────────────────────────
 #> Type: cortical

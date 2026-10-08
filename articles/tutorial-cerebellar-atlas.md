@@ -225,8 +225,8 @@ sum(count_vertices(atlas))
 #> [1] 9463
 
 atlas <- atlas |>
-  atlas_simplify(keep = 0.2, exclude = context_pattern()) |>
-  atlas_smooth(exclude = context_pattern())
+  atlas_simplify(keep = 0.2, exclude = context_pattern) |>
+  atlas_smooth(exclude = context_pattern)
 
 sum(count_vertices(atlas))
 #> [1] 2627
@@ -272,7 +272,7 @@ but does not name. Drop it:
 
 ``` r
 
-atlas <- atlas_region_remove(atlas, "region_28")
+atlas <- atlas_region_remove(atlas, "region_28", match_on = "region")
 ```
 
 Cerebellar atlases use hemisphere values `"left"`, `"right"`, and

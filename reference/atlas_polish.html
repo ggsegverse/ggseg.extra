@@ -23,7 +23,7 @@ atlas_polish() owns that order so a build does not have to rediscover it."><meta
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9122</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9123</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -136,7 +136,9 @@ between neighbouring regions. See <code><a href="atlas_smooth.html">atlas_smooth
 
 
 <dt id="arg-labels">labels<a class="anchor" aria-label="anchor" href="#arg-labels"></a></dt>
-<dd><p>Optional regex. Only matching labels are polished.</p></dd>
+<dd><p>Which labels to polish: a regular expression, or a function
+that takes the atlas and returns one. Pass <code>context_pattern</code>, without
+calling it, to select the atlas's context.</p></dd>
 
 
 <dt id="arg-exclude">exclude<a class="anchor" aria-label="anchor" href="#arg-exclude"></a></dt>
@@ -190,9 +192,9 @@ when a build needs to interleave them differently.</p>
 <span class="r-in"><span>    keep <span class="op">=</span> <span class="fl">0.4</span>,</span></span>
 <span class="r-in"><span>    smoothness <span class="op">=</span> <span class="fl">0.4</span>,</span></span>
 <span class="r-in"><span>    method <span class="op">=</span> <span class="st">"chaikin"</span>,</span></span>
-<span class="r-in"><span>    labels <span class="op">=</span> <span class="fu"><a href="context_pattern.html">context_pattern</a></span><span class="op">(</span><span class="op">)</span></span></span>
+<span class="r-in"><span>    labels <span class="op">=</span> <span class="va">context_pattern</span></span></span>
 <span class="r-in"><span>  <span class="op">)</span> <span class="op">|&gt;</span></span></span>
-<span class="r-in"><span>  <span class="fu">atlas_polish</span><span class="op">(</span>keep <span class="op">=</span> <span class="fl">0.1</span>, smoothness <span class="op">=</span> <span class="fl">0.4</span>, exclude <span class="op">=</span> <span class="fu"><a href="context_pattern.html">context_pattern</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span>  <span class="fu">atlas_polish</span><span class="op">(</span>keep <span class="op">=</span> <span class="fl">0.1</span>, smoothness <span class="op">=</span> <span class="fl">0.4</span>, exclude <span class="op">=</span> <span class="va">context_pattern</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
 </code></pre></div>
     </div>

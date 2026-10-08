@@ -26,8 +26,7 @@ create_subcortical_from_volume(
   vertex_size_limits = NULL,
   cleanup = NULL,
   skip_existing = NULL,
-  steps = NULL,
-  context = NULL
+  steps = NULL
 )
 ```
 
@@ -79,7 +78,30 @@ create_subcortical_from_volume(
   `ASegStatsLUT.txt`), or a data.frame with columns `idx`, `label`, `R`,
   `G`, `B` and `A` (see
   [`is_lut()`](https://ggsegverse.github.io/ggseg.extra/reference/is_lut.md)).
-  Either may also carry a `hemi` column (`"left"`, `"right"` or
+
+  The table decides what is a region and what is context, the grey
+  anatomy the regions are drawn against. Nothing is recognised by its id
+  or its name:
+
+  - A row is a **region** unless it says otherwise. It gets a mesh, a
+    colour and a shape in each 2D view.
+
+  - A row whose optional `context` column is `TRUE` is **context**. It
+    keeps its name, is traced on one slice per view rather than
+    projected through the slab, and gets no mesh.
+
+  - A label in the volume that the table does not list is context too.
+    With no name to go by, it is called `context_` and its id, such as
+    `context_0002`.
+
+  To leave a context shape out of the atlas altogether, remove it
+  afterwards with
+  [`ggseg.formats::atlas_context_remove()`](https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html).
+  To treat the context differently when polishing, pass
+  `context_pattern` as `labels` or `exclude`; see
+  [`context_pattern()`](https://ggsegverse.github.io/ggseg.extra/reference/context_pattern.md).
+
+  Either form may also carry a `hemi` column (`"left"`, `"right"` or
   `"midline"`) that sets each region's hemisphere; a row left `NA`, or a
   table without the column, has it read from the label's name, and any
   other value is an error.
@@ -90,8 +112,9 @@ create_subcortical_from_volume(
   region shows in a legend. A row left `NA`, or a table without the
   column, is named after its region.
 
-  If NULL, region names will be generic (e.g., "region_0010") and the
-  atlas will have no palette.
+  If NULL, every label is a region with a generic name (e.g.,
+  "region_0010"), there is no context, and the atlas will have no
+  palette.
 
 - atlas_name:
 
@@ -169,15 +192,6 @@ create_subcortical_from_volume(
   Use `steps = 1:3` for a 3D-only atlas. Geometry is shaped after the
   build, not during it: see
   [`atlas_polish()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_polish.md).
-
-- context:
-
-  Optional named list of
-  [`aseg_context()`](https://ggsegverse.github.io/ggseg.extra/reference/aseg_context.md)
-  arguments (e.g. `context = list(focus = "Hippocampus")`) applied to
-  the finished 2D atlas to keep the focus regions coloured on grey
-  anatomical context. `NULL` (default) leaves the atlas unchanged. Only
-  applied when the 2D build (step 6) runs.
 
 ## Value
 

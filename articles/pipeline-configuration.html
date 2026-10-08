@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9122</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9123</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -328,8 +328,8 @@ or settings that should persist across R sessions.</p>
 <span><span class="va">atlas</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/atlas_polish.html">atlas_polish</a></span><span class="op">(</span><span class="va">atlas_raw</span>, keep <span class="op">=</span> <span class="fl">0.5</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Compact, leaving the brain silhouette crisp</span></span>
-<span><span class="va">atlas</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/atlas_polish.html">atlas_polish</a></span><span class="op">(</span><span class="va">atlas_raw</span>, keep <span class="op">=</span> <span class="fl">0.05</span>, exclude <span class="op">=</span> <span class="fu"><a href="../reference/context_pattern.html">context_pattern</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<p><code><a href="../reference/context_pattern.html">context_pattern()</a></code> matches the grey silhouette the
+<span><span class="va">atlas</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/atlas_polish.html">atlas_polish</a></span><span class="op">(</span><span class="va">atlas_raw</span>, keep <span class="op">=</span> <span class="fl">0.05</span>, exclude <span class="op">=</span> <span class="va">context_pattern</span><span class="op">)</span></span></code></pre></div>
+<p><code>context_pattern</code> selects the grey silhouette the
 structures are read against, which usually wants gentler treatment than
 they do. See <code><a href="../articles/post-processing.html">vignette("post-processing")</a></code>.</p>
 </div>

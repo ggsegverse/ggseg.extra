@@ -141,11 +141,6 @@ Compose slice views and anatomical context for subcortical atlases
 
 - [`subcortical_slabs()`](https://ggsegverse.github.io/ggseg.extra/reference/subcortical_slabs.md)
   : Build subcortical slabs from a label bounding box
-- [`aseg_context()`](https://ggsegverse.github.io/ggseg.extra/reference/aseg_context.md)
-  : Reduce a subcortical atlas to focus regions on grey anatomical
-  context
-- [`aseg_hidden_labels()`](https://ggsegverse.github.io/ggseg.extra/reference/aseg_hidden_labels.md)
-  : Standard FreeSurfer aseg labels stripped from a subcortical atlas
 
 ## Anatomical Coregistration
 

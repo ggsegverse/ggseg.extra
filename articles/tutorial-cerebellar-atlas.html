@@ -28,7 +28,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9122</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9123</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -234,8 +234,8 @@ Stage 1 — straight out of the pipeline, at flatmap mesh resolution.
 <span><span class="co">#&gt; [1] 9463</span></span>
 <span></span>
 <span><span class="va">atlas</span> <span class="op">&lt;-</span> <span class="va">atlas</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="../reference/atlas_simplify.html">atlas_simplify</a></span><span class="op">(</span>keep <span class="op">=</span> <span class="fl">0.2</span>, exclude <span class="op">=</span> <span class="fu"><a href="../reference/context_pattern.html">context_pattern</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="../reference/atlas_smooth.html">atlas_smooth</a></span><span class="op">(</span>exclude <span class="op">=</span> <span class="fu"><a href="../reference/context_pattern.html">context_pattern</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span>
+<span>  <span class="fu"><a href="../reference/atlas_simplify.html">atlas_simplify</a></span><span class="op">(</span>keep <span class="op">=</span> <span class="fl">0.2</span>, exclude <span class="op">=</span> <span class="va">context_pattern</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/atlas_smooth.html">atlas_smooth</a></span><span class="op">(</span>exclude <span class="op">=</span> <span class="va">context_pattern</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="fu"><a href="../reference/count_vertices.html">count_vertices</a></span><span class="op">(</span><span class="va">atlas</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] 2627</span></span></code></pre></div>
@@ -258,7 +258,7 @@ Stage 2 — simplified and smoothed.
 <span><span class="co">#&gt;  [7] "VI"        "VIIb"      "VIIIa"     "VIIIb"     "X"</span></span></code></pre></div>
 <p><code>region_28</code> is the giveaway — a midline strip the parcellation numbers but does not name. Drop it:</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">atlas</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_remove</a></span><span class="op">(</span><span class="va">atlas</span>, <span class="st">"region_28"</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">atlas</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_remove</a></span><span class="op">(</span><span class="va">atlas</span>, <span class="st">"region_28"</span>, match_on <span class="op">=</span> <span class="st">"region"</span><span class="op">)</span></span></code></pre></div>
 <p>Cerebellar atlases use hemisphere values <code>"left"</code>, <code>"right"</code>, and <code>"vermis"</code> — the pipeline detects these from region name prefixes like “Left I-IV”, “Right Crus I”, or “Vermis VI”. A label whose name says none of these is filed under <code>"midline"</code>. When the names can’t be relied on, pass <code>input_lut</code> as a data.frame with a <code>hemi</code> column: a value there (<code>"left"</code>, <code>"right"</code>, <code>"vermis"</code> or <code>"midline"</code>) is used instead of the name, a row left <code>NA</code> is still read from its name, and anything else is an error. The <code>region</code> column has the hemisphere prefix stripped and the remainder sanitised, so you get <code>I_IV</code> and <code>CrusI</code> rather than “Left I-IV” and “Right Crus I”.</p>
 </section><section class="level2"><h2 id="visualization">Visualization<a class="anchor" aria-label="anchor" href="#visualization"></a>
 </h2>
