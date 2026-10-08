@@ -17,6 +17,16 @@
       ! `atlas_name` must be a single name, not "".
       i It names the working directory inside `output_dir`, so it cannot be empty, "." or "..", or contain a path separator.
 
+# lut_context_values / aborts on a value that is neither
+
+    Code
+      lut_context_values(c("TRUE", "backdrop"))
+    Condition
+      Error in `lut_context_values()`:
+      ! The lookup table's context column must be "TRUE" or "FALSE".
+      x Not recognised: "backdrop"
+      i Leave a row blank or "NA" to make it a region.
+
 # drop_labels_without_geometry / aborts rather than build an atlas with no drawable region
 
     Code

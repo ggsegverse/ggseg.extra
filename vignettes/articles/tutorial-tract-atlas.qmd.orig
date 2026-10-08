@@ -133,7 +133,7 @@ Add cortex as a background outline:
 #| label: context
 #| eval: !expr can_run
 tracula_raw <- tracula_raw |>
-  atlas_region_contextual("cortex")
+  atlas_region_contextual("cortex", match_on = "label")
 ```
 
 ### Removing small fragments
@@ -190,8 +190,8 @@ Simplify each separately:
 #| label: simplify
 #| eval: !expr can_run
 tracula_raw <- tracula_raw |>
-  atlas_simplify(keep = 0.5, labels = context_pattern()) |>
-  atlas_simplify(keep = 0.3, exclude = context_pattern())
+  atlas_simplify(keep = 0.5, labels = context_pattern) |>
+  atlas_simplify(keep = 0.3, exclude = context_pattern)
 
 sum(count_vertices(tracula_raw))
 ```
@@ -206,10 +206,10 @@ Then smooth each separately, and note the second argument:
 tracula_raw <- tracula_raw |>
   atlas_smooth(
     smoothness = 0.35,
-    labels = context_pattern(),
+    labels = context_pattern,
     method = "chaikin"
   ) |>
-  atlas_smooth(smoothness = 0.4, exclude = context_pattern())
+  atlas_smooth(smoothness = 0.4, exclude = context_pattern)
 
 sum(count_vertices(tracula_raw))
 ```

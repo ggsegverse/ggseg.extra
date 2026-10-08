@@ -152,7 +152,8 @@ subcort_create_snapshots <- function(
   colortable,
   slabs,
   dirs,
-  skip_existing
+  skip_existing,
+  context = NULL
 ) {
   vol <- read_volume(input_volume)
   dims <- dim(vol)
@@ -161,8 +162,13 @@ subcort_create_snapshots <- function(
     slabs <- default_subcortical_slabs(vol, labels = colortable$idx)
   }
 
-  cortex_slices <- create_cortex_slices(slabs, dims, vol = vol)
-  cortex_labels <- detect_cortex_labels(vol)
+  context <- subcort_context_table(vol, colortable, context)
+  cortex_slices <- create_cortex_slices(
+    slabs,
+    dims,
+    vol = vol,
+    ids = context$idx
+  )
 
   manifest <- read_snapshot_manifest(dirs$snapshots)
   signatures <- subcort_snapshot_structures(
@@ -175,27 +181,21 @@ subcort_create_snapshots <- function(
     manifest
   )
 
-  cortex_vol <- subcort_cortex_volume(vol, dims, cortex_labels)
-
-  # The context silhouette is one slice, never a projection. Projecting it
-  # through the slab unions every sulcus the slab passes through, which fills
-  # them in and leaves a smooth blob instead of a brain; a single slice keeps
-  # the gyri. cortex_slice_for_slab() already picks the slice - the densest
-  # cortex slice within the slab - for every view type. Skip entirely if
-  # cortex_vol has no voxels (consistent with how empty structures are
-  # skipped above).
-  if (sum(cortex_vol) > 0) {
-    signatures <- c(
-      signatures,
-      subcort_snapshot_cortex(
-        cortex_vol,
-        cortex_slices,
-        dirs,
-        skip_existing,
-        manifest
-      )
+  # A context shape is one slice, never a projection. Projecting it through
+  # the slab unions everything the slab passes through, which fills sulci in
+  # and leaves a smooth blob; a single slice keeps the anatomy readable.
+  # cortex_slice_for_slab() has already picked that slice for every view.
+  signatures <- c(
+    signatures,
+    subcort_snapshot_context(
+      vol,
+      context,
+      cortex_slices,
+      dirs,
+      skip_existing,
+      manifest
     )
-  }
+  )
 
   # Written once, from the main thread, after every pass that draws.
   record_snapshot_signatures(
@@ -203,7 +203,11 @@ subcort_create_snapshots <- function(
     signatures[file.exists(fs::path(dirs$snapshots, names(signatures)))]
   )
 
-  list(slabs = slabs, cortex_slices = cortex_slices)
+  list(
+    slabs = slabs,
+    cortex_slices = cortex_slices,
+    context = context
+  )
 }
 
 
@@ -213,7 +217,12 @@ subcort_create_snapshots <- function(
 #' is a superset of what actually appears. It is used to tell this run's
 #' output from an earlier one's, which only needs the superset.
 #' @noRd
-subcort_snapshot_names <- function(colortable, slabs, cortex_slices = NULL) {
+subcort_snapshot_names <- function(
+  colortable,
+  slabs,
+  cortex_slices = NULL,
+  context_labels = character()
+) {
   if (is.null(slabs) || nrow(slabs) == 0L) {
     cli::cli_abort(
       "A slab table is required to name this run's snapshots",
@@ -227,11 +236,16 @@ subcort_snapshot_names <- function(colortable, slabs, cortex_slices = NULL) {
   )
   structures <- projection_name(grid$view, sanitize_label(grid$label))
 
-  if (is.null(cortex_slices)) {
+  if (is.null(cortex_slices) || length(context_labels) == 0L) {
     return(structures)
   }
 
-  c(structures, cortex_snapshot_names(cortex_slices))
+  context <- expand.grid(
+    label = context_labels,
+    view = cortex_slices$name,
+    stringsAsFactors = FALSE
+  )
+  c(structures, projection_name(context$view, context$label))
 }
 
 
@@ -468,107 +482,76 @@ structure_snapshot_file <- function(output_dir, view_name, label) {
 }
 
 
-#' The file names the cortex silhouette slices carry
+#' Every context label of a build: declared in the lookup table, or unlisted
 #'
-#' Stated once because two callers need the same answer and must not drift:
-#' `prune_stale_snapshots()` deletes whatever this does not name, and
-#' `subcort_snapshot_cortex()` keys its signatures by it.
+#' The lookup table says which labels are the atlas's regions and which are
+#' backdrop. A label in the volume that it does not list at all is backdrop
+#' too. Nothing is recognised by its id or its name.
+#'
+#' A declared label keeps the name the table gives it. An unlisted one has no
+#' name, so it is called `context_` and its id.
+#'
+#' @param vol Label volume (3D integer array).
+#' @param colortable Lookup table of the atlas's regions, with an `idx` column.
+#' @param declared Data frame of `idx` and `label` for the rows the lookup
+#'   table marks as context, or `NULL`.
+#' @return Data frame of `idx` and `label`, declared labels first.
 #' @noRd
-cortex_snapshot_names <- function(cortex_slices) {
-  # Per row: extract_hemi_from_view() branches on a single view type and
-  # returns NULL off the sagittal views, so it cannot take the columns whole.
-  vapply(
-    seq_len(nrow(cortex_slices)),
-    function(i) {
-      cs <- cortex_slices[i, ]
-      projection_name(
-        cs$name,
-        cortex_slice_label(extract_hemi_from_view(cs$view, cs$name))
-      )
-    },
-    character(1)
+subcort_context_table <- function(vol, colortable, declared = NULL) {
+  declared <- declared %||%
+    data.frame(idx = integer(), label = character(), stringsAsFactors = FALSE)
+  present <- unique(as.vector(vol))
+  present <- present[!is.na(present)]
+
+  declared <- declared[declared$idx %in% present, , drop = FALSE]
+  unlisted <- sort(as.integer(
+    setdiff(present, c(0L, colortable$idx, declared$idx))
+  ))
+
+  rbind(
+    declared,
+    data.frame(
+      idx = unlisted,
+      label = sprintf("context_%04d", unlisted),
+      stringsAsFactors = FALSE
+    )
   )
 }
 
 
-#' Binary brain-outline volume: cortex plus cerebellum and brainstem
-#' @noRd
-subcort_cortex_volume <- function(vol, dims, cortex_labels) {
-  # Cerebellum and brainstem join the cortex labels (FS 7/8/46/47 =
-  # cerebellum WM/cortex per hemisphere; 16 = brain-stem). The "brain
-  # outline" context must span the full brain extent — otherwise atlases
-  # that label cerebellar regions (e.g. HOA-2) draw structures that extend
-  # below the cerebrum-only outline, making the structures look oversized.
-  outline_labels <- c(
-    cortex_labels$left,
-    cortex_labels$right,
-    7L,
-    8L,
-    46L,
-    47L,
-    16L
-  )
-
-  cortex_vol <- array(0L, dim = dims)
-  cortex_vol[vol %in% outline_labels] <- 1L
-  cortex_vol
-}
-
-
-#' Render the cortex reference outline for each cortex slice
+#' Draw each context label on the slice chosen for each view
 #'
-#' The silhouette is the snapshot whose content depends on how the pipeline
-#' builds its context volume, so its signature hashes that volume's voxels
-#' along with the slice taken through them. A snapshot whose signature does
-#' not match is redrawn rather than aborted on - a handful of slices is
-#' cheap.
+#' One snapshot per label and view, so every unlisted label is its own shape
+#' in the atlas and can be removed, merged or restyled afterwards. A label
+#' with no voxels on a view's slice is skipped.
 #'
 #' Returns the signatures keyed by file name, for the caller to record.
 #' @noRd
-subcort_snapshot_cortex <- function(
-  cortex_vol,
+subcort_snapshot_context <- function(
+  vol,
+  context,
   cortex_slices,
   dirs,
   skip_existing,
   manifest = character()
 ) {
-  voxels <- rlang::hash(which(cortex_vol > 0))
-
-  drawn <- lapply(
-    seq_len(nrow(cortex_slices)),
-    function(i) {
-      cs <- cortex_slices[i, ]
-      hemi <- extract_hemi_from_view(cs$view, cs$name)
-      outfile <- cortex_slice_file(dirs$snapshots, cs$name, hemi)
-      signature <- snapshot_signature(
-        voxels,
-        dim(cortex_vol),
-        cs$x,
-        cs$y,
-        cs$z,
-        cs$view,
-        cs$name,
-        hemi
-      )
-
-      written <- NULL
-      if (!snapshot_is_current(outfile, signature, manifest, skip_existing)) {
-        clear_stale_snapshot(outfile)
-        written <- snapshot_cortex_slice(
-          vol = cortex_vol,
-          x = cs$x,
-          y = cs$y,
-          z = cs$z,
-          slice_view = cs$view,
-          view_name = cs$name,
-          hemi = hemi,
-          output_dir = dirs$snapshots,
-          skip_existing = FALSE
-        )
-      }
-      list(name = basename(outfile), signature = signature, written = written)
-    }
+  grid <- expand.grid(
+    slice = seq_len(nrow(cortex_slices)),
+    label = seq_len(nrow(context)),
+    stringsAsFactors = FALSE
   )
+
+  drawn <- lapply(seq_len(nrow(grid)), function(i) {
+    subcort_snapshot_context_slice(
+      vol,
+      context$idx[grid$label[i]],
+      context$label[grid$label[i]],
+      cortex_slices[grid$slice[i], ],
+      dirs,
+      skip_existing,
+      manifest
+    )
+  })
 
   # One stamp for the step, not one per slice: stamping rewrites the whole
   # directory manifest, which the structure pass has just filled.
@@ -578,6 +561,55 @@ subcort_snapshot_cortex <- function(
     vapply(drawn, `[[`, character(1), "signature"),
     vapply(drawn, `[[`, character(1), "name")
   )
+}
+
+
+#' Draw one context label on one view's slice, unless it is already current
+#' @noRd
+subcort_snapshot_context_slice <- function(
+  vol,
+  id,
+  label,
+  cs,
+  dirs,
+  skip_existing,
+  manifest
+) {
+  hemi <- extract_hemi_from_view(cs$view, cs$name)
+  outfile <- projection_file(dirs$snapshots, cs$name, label)
+  pos <- switch(cs$view, axial = cs$z, coronal = cs$y, sagittal = cs$x)
+  axis <- switch(cs$view, sagittal = 1L, coronal = 2L, axial = 3L)
+  on_slice <- slice_along_axis(vol, axis, pos) == id
+  signature <- snapshot_signature(
+    rlang::hash(which(on_slice)),
+    dim(vol),
+    cs$x,
+    cs$y,
+    cs$z,
+    cs$view,
+    cs$name,
+    hemi
+  )
+
+  written <- NULL
+  if (!snapshot_is_current(outfile, signature, manifest, skip_existing)) {
+    clear_stale_snapshot(outfile)
+    mask <- array(0L, dim = dim(vol))
+    mask[vol == id] <- 1L
+    written <- snapshot_cortex_slice(
+      vol = mask,
+      x = cs$x,
+      y = cs$y,
+      z = cs$z,
+      slice_view = cs$view,
+      view_name = cs$name,
+      hemi = hemi,
+      output_dir = dirs$snapshots,
+      skip_existing = FALSE,
+      label = label
+    )
+  }
+  list(name = basename(outfile), signature = signature, written = written)
 }
 
 
@@ -597,7 +629,7 @@ subcort_snapshot_cortex <- function(
 #'
 #' @param vol Label volume in the builder's frame (3D integer array).
 #' @param labels Integer label ids to frame the slabs on. Defaults to every
-#'   non-zero label in `vol`. Cortical context labels are dropped either way.
+#'   non-zero label in `vol`.
 #'
 #' @return data.frame with columns: name, type, start, end
 #' @keywords internal
@@ -619,17 +651,13 @@ default_subcortical_slabs <- function(vol, labels = NULL) {
 
 #' Labels a default slab band may be framed on
 #'
-#' The cortical context labels are excluded deliberately: the whole-brain
-#' pipeline remaps each cortical hemisphere to FreeSurfer index 3 or 42, and
-#' those two labels span the entire brain, so a bounding box that includes
-#' them is the whole brain rather than the subcortex. `detect_cortex_labels()`
-#' is the same source `subcort_cortex_volume()` uses, so the labels drawn as
-#' the grey reference outline are exactly the ones that cannot frame a slab.
+#' The labels asked for that the volume actually holds. Callers pass the
+#' lookup table's ids, so the band frames the atlas's regions and not the
+#' context around them.
 #' @noRd
 subcort_slab_labels <- function(vol, labels = NULL) {
   present <- setdiff(unique(as.vector(vol)), 0L)
-  cortex <- unlist(detect_cortex_labels(vol), use.names = FALSE)
-  labels <- setdiff(intersect(labels %||% present, present), cortex)
+  labels <- intersect(labels %||% present, present)
 
   if (length(labels) == 0) {
     cli::cli_abort("No subcortical labels found in the volume.")

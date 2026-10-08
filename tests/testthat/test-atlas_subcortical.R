@@ -138,6 +138,67 @@ describe("create_subcortical_from_volume", {
     expect_identical(core$names[core$label == "Right-Thalamus"], "thalamus")
   })
 
+  it("makes regions of the labels the lookup table lists and context of the rest", {
+    skip_if_no_freesurfer()
+
+    lut <- read_lut(test_path("testdata", "volumetric", "lut.txt"))
+    thalamus_only <- lut[lut$idx %in% c(10L, 49L), ]
+
+    atlas <- create_subcortical_from_volume(
+      input_volume = test_path("testdata", "volumetric", "aseg.mgz"),
+      input_lut = thalamus_only,
+      atlas_name = "thalamus",
+      output_dir = withr::local_tempdir(),
+      verbose = FALSE
+    )
+
+    drawn <- unique(atlas_sf(atlas)$label)
+    expect_setequal(atlas$core$label, c("Left-Thalamus", "Right-Thalamus"))
+    expect_setequal(
+      setdiff(drawn, atlas$core$label),
+      c("context_0018", "context_0054")
+    )
+    expect_setequal(atlas_meshes(atlas)$label, atlas$core$label)
+  })
+
+  it("draws a label the lookup table declares context under its own name", {
+    skip_if_no_freesurfer()
+
+    lut <- read_lut(test_path("testdata", "volumetric", "lut.txt"))
+    lut$context <- lut$idx %in% c(18L, 54L)
+
+    atlas <- create_subcortical_from_volume(
+      input_volume = test_path("testdata", "volumetric", "aseg.mgz"),
+      input_lut = lut,
+      atlas_name = "declared",
+      output_dir = withr::local_tempdir(),
+      verbose = FALSE
+    )
+
+    drawn <- unique(atlas_sf(atlas)$label)
+    expect_setequal(atlas$core$label, c("Left-Thalamus", "Right-Thalamus"))
+    expect_setequal(
+      setdiff(drawn, atlas$core$label),
+      c("Left-Amygdala", "Right-Amygdala")
+    )
+    expect_setequal(atlas_meshes(atlas)$label, atlas$core$label)
+    expect_match(context_pattern(atlas), "Left-Amygdala", fixed = TRUE)
+  })
+
+  it("draws no context when the lookup table lists every label", {
+    skip_if_no_freesurfer()
+
+    atlas <- create_subcortical_from_volume(
+      input_volume = test_path("testdata", "volumetric", "aseg.mgz"),
+      input_lut = test_path("testdata", "volumetric", "lut.txt"),
+      atlas_name = "everything",
+      output_dir = withr::local_tempdir(),
+      verbose = FALSE
+    )
+
+    expect_setequal(unique(atlas_sf(atlas)$label), atlas$core$label)
+  })
+
   it("errors when volume file not found", {
     skip_if_no_freesurfer()
 
@@ -896,6 +957,38 @@ describe("subcort_assemble_full sf_data as data.frame", {
       "no 2D geometry"
     )
     expect_s3_class(result, "ggseg_atlas")
+  })
+})
+
+
+describe("split_lut_context", {
+  lut <- data.frame(
+    idx = c(10L, 18L, 2L),
+    label = c("Left-Thalamus", "Left-Amygdala", "Left-Cerebral-White-Matter"),
+    context = c(FALSE, NA, TRUE)
+  )
+
+  it("makes context of the rows the table marks and regions of the rest", {
+    split <- split_lut_context(lut)
+
+    expect_identical(split$regions$idx, c(10L, 18L))
+    expect_identical(
+      split$context,
+      data.frame(idx = 2L, label = "Left-Cerebral-White-Matter")
+    )
+  })
+
+  it("treats a table without the column as all regions", {
+    split <- split_lut_context(lut[c("idx", "label")])
+
+    expect_identical(nrow(split$regions), 3L)
+    expect_identical(nrow(split$context), 0L)
+  })
+
+  it("aborts when the table leaves no region", {
+    all_context <- transform(lut, context = TRUE)
+
+    expect_error(split_lut_context(all_context), "marks every label")
   })
 })
 

@@ -150,8 +150,6 @@ reference:
     desc: Compose slice views and anatomical context for subcortical atlases
     contents:
       - subcortical_slabs
-      - aseg_context
-      - aseg_hidden_labels
 
   - title: Anatomical Coregistration
     desc: Align an atlas volume to a FreeSurfer subject for anatomical context

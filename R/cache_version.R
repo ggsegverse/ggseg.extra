@@ -22,7 +22,7 @@
 #' @return Integer format version.
 #' @noRd
 cache_format_version <- function() {
-  2L
+  3L
 }
 
 cache_manifest_name <- "cache_manifest.rds"

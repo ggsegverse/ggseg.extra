@@ -60,8 +60,9 @@ aseg_subcortical_labels <- function() {
 #' @param verbose Verbosity, passed to the FreeSurfer command runner.
 #'
 #' @return Invisibly, `list(volume, lut)`: the merged volume path and a matching
-#'   colour table, ready to pass straight to [create_subcortical_from_volume()]
-#'   (optionally with `context = list(focus = ...)`).
+#'   colour table, ready to pass straight to [create_subcortical_from_volume()].
+#'   The table's `context` column marks the `aseg` anatomy as context and the
+#'   stamped labels as regions.
 #' @seealso [prepare_subcortical_anatomical()] for the computed-registration
 #'   (`cvs_avg35_inMNI152`, `mri_coreg`) counterpart;
 #'   [create_subcortical_from_volume()] which consumes the result.
@@ -72,10 +73,8 @@ aseg_subcortical_labels <- function() {
 #'   input_volume = "BN_Atlas_subcortical_1mm.nii.gz",
 #'   labels = 211:246
 #' )
-#' atlas <- create_subcortical_from_volume(
-#'   input_volume = merged,
-#'   context = list(focus = "region_", match_on = "label")
-#' )
+#' # The parcels are the atlas's regions; the aseg around them is context
+#' atlas <- create_subcortical_from_volume(input_volume = merged)
 #' }
 prepare_subcortical_mni152 <- function(
   input_volume,

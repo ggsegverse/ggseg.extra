@@ -1099,6 +1099,36 @@ describe("parse_parcellation_values", {
 })
 
 
+describe("lookup table context column", {
+  it("survives a write and a read", {
+    lut <- data.frame(
+      idx = 1:3,
+      label = c("thalamus", "white_matter", "cortex"),
+      R = 1L,
+      G = 2L,
+      B = 3L,
+      A = 0L,
+      context = c(FALSE, TRUE, NA)
+    )
+    f <- withr::local_tempfile(fileext = ".txt")
+
+    write_lut(lut, f)
+
+    expect_identical(read_lut(f)$context, c(FALSE, TRUE, NA))
+  })
+
+  it("aborts on reading a value that is neither yes nor no", {
+    f <- withr::local_tempfile(fileext = ".txt")
+    writeLines(
+      c("# idx label R G B A context", "1 thalamus 1 2 3 0 backdrop"),
+      f
+    )
+
+    expect_error(read_lut(f), "must be")
+  })
+})
+
+
 describe("neuromaps_hemi_regions binning", {
   bins_by_hemi <- function(regions) {
     rows <- dplyr::bind_rows(regions)

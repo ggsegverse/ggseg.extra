@@ -567,6 +567,16 @@ describe("build_anatomical_lut", {
     expect_true(is_lut(out))
   })
 
+  it("marks the surrounding anatomy as context and the atlas labels as regions", {
+    local_mocked_bindings(read_fs_color_lut = fs_lut)
+    merged <- c(0L, 2L, 41L, 211L)
+
+    out <- build_anatomical_lut(merged, 11L, 200L, NULL)
+
+    expect_identical(out$idx[out$context], c(2L, 41L))
+    expect_identical(out$idx[!out$context], 211L)
+  })
+
   it("falls back to generic user names when no lut is given", {
     local_mocked_bindings(read_fs_color_lut = fs_lut)
     merged <- c(2L, 211L)

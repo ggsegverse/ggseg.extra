@@ -32,8 +32,10 @@ the rings no longer agree and the shared edge comes apart. With \code{TRUE},
 the default, area that no longer belongs to any region but borders two
 of them is given back to one of them.}
 
-\item{labels, exclude}{Regex selecting which labels to simplify, or which
-to leave alone. Give at most one.}
+\item{labels, exclude}{Which labels to simplify, or which to leave alone:
+a regular expression, or a function that takes the atlas and returns
+one. Pass \code{context_pattern}, without calling it, to select the atlas's
+context. Give at most one.}
 }
 \value{
 The \code{ggseg_atlas}, in the representation it arrived in.
@@ -57,7 +59,7 @@ sum(count_vertices(simplified))
 
 \dontrun{
 # Simplify the backdrop only, sparing the structures.
-atlas_simplify(dk, keep = 0.5, labels = context_pattern())
+atlas_simplify(dk, keep = 0.5, labels = context_pattern)
 }
 }
 \seealso{

@@ -114,7 +114,7 @@ Take them one at a time, so you can see what each does. Simplification first:
 ```{r}
 #| label: simplify
 #| eval: !expr can_run
-yeo7_simple <- atlas_simplify(yeo7_raw, keep = 0.2, exclude = context_pattern())
+yeo7_simple <- atlas_simplify(yeo7_raw, keep = 0.2, exclude = context_pattern)
 
 sum(count_vertices(yeo7_simple))
 ```
@@ -129,14 +129,14 @@ sum(count_vertices(yeo7_simple))
 plot(yeo7_simple)
 ```
 
-`exclude = context_pattern()` leaves the brain-outline geometry crisp while simplifying the labelled regions.
+`exclude = context_pattern` leaves the brain-outline geometry crisp while simplifying the labelled regions.
 
 Simplification is topology-aware, so neighbouring regions lose the same vertices and no gaps open between them. What it does not do is make anything look smooth --- it removes vertices from a jagged line and leaves a jagged line with fewer vertices. That is what `atlas_smooth()` is for:
 
 ```{r}
 #| label: smooth
 #| eval: !expr can_run
-yeo7_smooth <- atlas_smooth(yeo7_simple, exclude = context_pattern())
+yeo7_smooth <- atlas_smooth(yeo7_simple, exclude = context_pattern)
 
 sum(count_vertices(yeo7_smooth))
 ```

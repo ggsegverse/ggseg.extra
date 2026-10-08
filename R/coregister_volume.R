@@ -174,8 +174,8 @@ coregister_volume <- function(
 #' The cortical ribbon (aparc labels `1000-2999`), cerebral white matter (`2`,
 #' `41`) and the corpus callosum (`251-255`) are left in place even where a
 #' user label wins the argmax above `threshold`. Cerebellar structures are not
-#' protected here; [aseg_context()] handles them downstream. Disable it only
-#' if you mean your labels to overwrite the cerebrum.
+#' protected here. Disable it only if you mean your labels to overwrite the
+#' cerebrum.
 #'
 #' @export
 #'
@@ -300,10 +300,8 @@ project_volume_anatomical <- function(
 #'   input_volume = "shen_2mm_268_parcellation.nii.gz",
 #'   lut = subcortical_lut
 #' )
-#' atlas <- create_subcortical_from_volume(
-#'   input_volume = merged,
-#'   context = list(focus = "my-structures")
-#' )
+#' # The parcels are the atlas's regions; the anatomy around them is context
+#' atlas <- create_subcortical_from_volume(input_volume = merged)
 #' }
 prepare_subcortical_anatomical <- function(
   input_volume,
@@ -803,8 +801,7 @@ resample_label_probability <- function(
 #' sits directly against the deep-gray nuclei a subcortical atlas targets, so
 #' it shares their protection. Cerebellar white matter (`7`, `46`) is
 #' deliberately excluded: it belongs to a different structure, not the
-#' cerebral outline this guard preserves, and is handled downstream by
-#' [aseg_context()] / [aseg_hidden_labels()].
+#' cerebral outline this guard preserves.
 #' @noRd
 cerebral_white_matter_labels <- function() {
   c(2L, 41L, 251L, 252L, 253L, 254L, 255L)
@@ -1037,6 +1034,10 @@ resolve_user_lut <- function(lut, label_ids, id_offset) {
 #' `id_offset`, trimmed to the labels actually present. The result lines up
 #' one-to-one with the merged volume so it can be passed straight to
 #' [create_subcortical_from_volume()].
+#'
+#' The table's `context` column records which is which: the anatomy the
+#' atlas's labels were stamped into is context, the labels are regions. That
+#' is known here for certain, so nothing downstream has to work it out.
 #' @noRd
 build_anatomical_lut <- function(merged, label_ids, id_offset, lut) {
   shifted_ids <- as.integer(label_ids) + id_offset
@@ -1046,8 +1047,10 @@ build_anatomical_lut <- function(merged, label_ids, id_offset, lut) {
 
   context_lut <- read_fs_color_lut()
   context_lut <- context_lut[context_lut$idx %in% context_ids, , drop = FALSE]
+  context_lut$context <- rep(TRUE, nrow(context_lut))
 
   user_tbl <- resolve_user_lut(lut, label_ids, id_offset)
+  user_tbl$context <- rep(FALSE, nrow(user_tbl))
 
   out <- lut_combine(context_lut, user_tbl)
   out <- out[out$idx %in% present, , drop = FALSE]
