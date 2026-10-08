@@ -1,3 +1,38 @@
+# ggseg.extra 1.9.9.9122
+
+## Bug fixes
+
+- `sitrep()` no longer says `create_cortical_from_annotation()` needs
+  FreeSurfer and the `fsaverage5` subject. It needs only the
+  `freesurferformats` package, as the documentation says, so on a machine
+  without FreeSurfer the pipeline was reported as unavailable while it ran
+  fine.
+
+- `sitrep()` suggests installing neuromapr from CRAN rather than from a
+  GitHub repository.
+
+## Documentation
+
+- Corrected statements that did not match the code:
+
+  - The `create_subcortical_from_volume()` example passed `ggseg3d()` a
+    `hemisphere` argument it does not have, and removed and reclassified
+    regions by their hyphenated labels without `match_on = "label"`, which
+    matches nothing.
+  - `coregister_volume()` and `prepare_subcortical_anatomical()` described
+    `skip_existing` as defaulting from an option and an environment variable
+    that neither function reads.
+  - `new_project_setup_atlas_repo()` returns the path to the new repository,
+    not `NULL`.
+  - `vignette("post-processing")` renamed regions with a recipe that changed
+    nothing, because region names are already stripped of hemisphere prefixes
+    and separators, and gave `atlas_dilate()` amounts in voxels where they
+    are in the atlas's geometry units.
+  - `vignette("ggseg.extra")` said every creator returns a `ggseg_atlas`;
+    `create_wholebrain_from_volume()` returns a list of them.
+  - `vignette("system-setup")` and `vignette("ggseg.extra")` left the
+    cerebellar pipelines out of what each pipeline needs.
+
 # ggseg.extra 1.9.9.9121
 
 ## Bug fixes

@@ -362,7 +362,7 @@ pipeline_pkg_needs <- function(results) {
     neuromapr = pipeline_need(
       isTRUE(results$packages$neuromapr),
       "{neuromapr}",
-      'remotes::install_github("ggseg/neuromapr")'
+      'install.packages("neuromapr")'
     ),
     princurve = pipeline_need(
       isTRUE(results$packages$princurve),
@@ -380,7 +380,7 @@ cortical_pipelines <- function(needs) {
     make_pipeline(
       "from annotation",
       "create_cortical_from_annotation()",
-      list(needs$fs, needs$fsavg, needs$fsf)
+      list(needs$fsf)
     ),
     make_pipeline(
       "from GIFTI",

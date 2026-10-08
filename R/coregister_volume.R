@@ -30,7 +30,8 @@
 #'   before coregistration. Set to `FALSE` to register on raw intensities.
 #' @param subjects_dir FreeSurfer `SUBJECTS_DIR`. Defaults to
 #'   [freesurfer::fs_subj_dir()].
-#' @template skip_existing
+#' @param skip_existing Reuse the registration at `output_lta` when the file
+#'   already exists, instead of running it again. Default `FALSE`.
 #' @template verbose
 #'
 #' @return Path to the LTA file (invisibly).
