@@ -52,5 +52,5 @@ vol[8:12, 6:14, 9:11] <- 17L
 subcortical_slabs(vol, labels = 17, coronal = 3, axial = 2)
 }
 \seealso{
-\code{\link[=create_subcortical_from_volume]{create_subcortical_from_volume()}}, \code{\link[=aseg_context]{aseg_context()}}
+\code{\link[=create_subcortical_from_volume]{create_subcortical_from_volume()}}
 }

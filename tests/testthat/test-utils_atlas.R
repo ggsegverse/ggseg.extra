@@ -688,6 +688,59 @@ describe("core_with_names", {
 })
 
 
+describe("lut_context_values", {
+  it("reads the usual spellings of yes and no, from a file or a data frame", {
+    expect_identical(
+      lut_context_values(c("TRUE", "false", "yes", "No", "1", "0", NA, "")),
+      c(TRUE, FALSE, TRUE, FALSE, TRUE, FALSE, NA, NA)
+    )
+    expect_identical(lut_context_values(c(TRUE, NA)), c(TRUE, NA))
+  })
+
+  it("aborts on a value that is neither", {
+    expect_snapshot(lut_context_values(c("TRUE", "backdrop")), error = TRUE)
+  })
+})
+
+
+describe("lut_is_context", {
+  it("is true only for the rows the table marks", {
+    lut <- data.frame(idx = 1:3, context = c(TRUE, FALSE, NA))
+
+    expect_identical(lut_is_context(lut), c(TRUE, FALSE, FALSE))
+  })
+
+  it("is false throughout for a table without the column", {
+    expect_identical(lut_is_context(data.frame(idx = 1:2)), c(FALSE, FALSE))
+  })
+})
+
+
+describe("context_pattern for one atlas", {
+  it("matches that atlas's context shapes and none of its regions", {
+    atlas <- ggseg.formats::atlas_region_contextual(
+      ggseg.formats::aseg(),
+      "Thalamus",
+      match_on = "label"
+    )
+    pattern <- context_pattern(atlas)
+
+    expect_true(all(grepl(pattern, c("Left-Thalamus", "Right-Thalamus"))))
+    expect_false(any(grepl(pattern, atlas$core$label)))
+  })
+
+  it("matches nothing when the atlas draws no context", {
+    atlas <- ggseg.formats::atlas_context_remove(ggseg.formats::dk())
+
+    expect_false(any(grepl(context_pattern(atlas), atlas$core$label)))
+  })
+
+  it("rejects what is not an atlas", {
+    expect_error(context_pattern("dk"), "must be a")
+  })
+})
+
+
 describe("context_pattern", {
   it("matches the silhouette labels the volumetric pipelines produce", {
     expect_true(all(grepl(

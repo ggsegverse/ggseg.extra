@@ -1,3 +1,65 @@
+# ggseg.extra 1.9.9.9123
+
+## Breaking changes
+
+- In `create_subcortical_from_volume()` the lookup table decides what is a
+  region and what is context, the grey anatomy the regions are drawn against.
+  Nothing is recognised by its id or its name any more.
+
+  - A row of the table is a region.
+  - A row whose new, optional `context` column is `TRUE` is context. It keeps
+    its name, is traced on a single slice in each view so that a cortical
+    ribbon keeps its folds, and gets no 3D mesh.
+  - A label in the volume that the table does not list is context too, named
+    for its id: `context_0002`.
+  - With no table, every label is a region and there is no context.
+
+  The build used to draw a brain outline from fixed FreeSurfer ids -- 3 and
+  42 for cortex, or the 1000s and 2000s of an `aparc+aseg`, plus 7, 8, 46, 47
+  and 16 for cerebellum and brain stem -- whatever the volume was. An atlas
+  that numbered its own structures with any of those lost them to the
+  outline, and the default views were framed as though they were not there.
+
+  What this changes in an existing build:
+
+  - The generated outline labelled `cortex` is gone. To get the cortex as
+    context, mark its rows in the table: `lut$context <- grepl("Cortex",
+    lut$label)`. It is then called what the table calls it.
+  - A table that lists cortex, such as the full `FreeSurferColorLUT.txt`,
+    used to get the outline as well as the cortex regions. It now gets the
+    regions only.
+  - Context that is not wanted is removed afterwards with
+    `atlas_context_remove()`.
+  - Caches written by earlier versions are not reused.
+
+- `aseg_context()`, `aseg_hidden_labels()` and the `context` argument of
+  `create_subcortical_from_volume()` are removed. They rebuilt after the fact
+  what the table now states up front: which labels are context is the
+  `context` column, a ribbon rather than a solid cortex comes from declaring
+  it there, and unwanted labels are dropped with `atlas_region_remove()` or
+  `atlas_context_remove()`.
+
+## Minor changes
+
+- `read_lut()` and `write_lut()` carry the `context` column, alongside `type`
+  and `hemi`. It is separate from `type` on purpose: `type` says which atlas
+  a label belongs to, `context` says what role it plays there, so a
+  whole-brain table can say both about one label.
+
+- `prepare_subcortical_mni152()`, `prepare_subcortical_anatomical()` and
+  `project_volume_anatomical()` return a lookup table with the `context`
+  column filled in: the FreeSurfer anatomy the labels were stamped into is
+  context, the labels are regions. Passing the result straight to
+  `create_subcortical_from_volume()` needs no further instruction.
+
+- `context_pattern()` takes an atlas and then matches exactly the context that
+  atlas draws, whatever its shapes are called. `atlas_polish()`,
+  `atlas_simplify()`, `atlas_smooth()` and `atlas_dilate()` accept a function
+  as `labels` or `exclude` and ask it about the atlas they are given, so
+  `exclude = context_pattern`, without brackets, means "this atlas's context"
+  and works in the middle of a pipe. `context_pattern()` with no argument
+  still gives the names the pipelines generate.
+
 # ggseg.extra 1.9.9.9122
 
 ## Bug fixes

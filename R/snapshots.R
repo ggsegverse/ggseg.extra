@@ -203,9 +203,10 @@ snapshot_cortex_slice <- function(
   view_name,
   hemi,
   output_dir,
-  skip_existing = get_skip_existing()
+  skip_existing = get_skip_existing(),
+  label = cortex_slice_label(hemi)
 ) {
-  outfile <- cortex_slice_file(path.expand(output_dir), view_name, hemi)
+  outfile <- projection_file(path.expand(output_dir), view_name, label)
 
   if (skip_existing && file.exists(outfile)) {
     return(invisible(NULL))
@@ -217,13 +218,6 @@ snapshot_cortex_slice <- function(
     return(invisible(NULL))
   }
   save_projection(slice, outfile)
-}
-
-
-#' Path of the cortex reference snapshot for one view
-#' @noRd
-cortex_slice_file <- function(output_dir, view_name, hemi) {
-  projection_file(output_dir, view_name, cortex_slice_label(hemi))
 }
 
 

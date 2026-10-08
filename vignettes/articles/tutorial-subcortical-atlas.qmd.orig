@@ -45,11 +45,35 @@ if (!file.exists(color_lut)) {
 }
 ```
 
+## Regions and context
+
+`create_subcortical_from_volume()` takes a segmentation volume and a colour lookup table, and the table does more than name things.
+It decides what the atlas is made of:
+
+- a label the table lists is a **region**, with a colour, a 3D mesh and a shape in each 2D view;
+- a row whose `context` column is `TRUE` is **context**: grey anatomy the regions are drawn against, with no mesh;
+- a label that is in the volume but not in the table is context as well.
+
+Nothing is worked out from a label's id or its name, so the table is where the decision is made.
+For a subcortical atlas the cortex is the obvious context --- it shows where the deep structures sit without competing for colour --- so say so before building:
+
+```{r}
+#| label: declare-context
+#| eval: !expr can_run
+lut <- read_lut(color_lut)
+lut$context <- grepl("Cortex", lut$label)
+
+lut[lut$context, c("idx", "label", "context")]
+```
+
+Deciding this in the table, rather than turning the cortex grey afterwards, changes how it is drawn.
+A region is projected through the whole slab it sits in, which turns a cortical ribbon into a solid shape.
+Context is traced on a single slice, so the ribbon keeps its folds.
+
 ## Creating the atlas
 
-`create_subcortical_from_volume()` takes a segmentation volume and a colour lookup table.
-Each structure's hemisphere is read from its label (`Left-Thalamus`, `Right-Putamen`); if your labels don't carry one, pass the table as a data.frame with a `hemi` column, as [Lookup tables and colours](tutorial-lookup-tables.html) describes.
-The pipeline tessellates each labelled region into a 3D mesh, then creates 2D projection views:
+Each structure's hemisphere is read from its label (`Left-Thalamus`, `Right-Putamen`); if your labels don't carry one, give the table a `hemi` column, as [Lookup tables and colours](tutorial-lookup-tables.html) describes.
+The pipeline tessellates each region into a 3D mesh, then creates 2D projection views:
 
 ```{r}
 #| label: create-atlas
@@ -57,7 +81,7 @@ The pipeline tessellates each labelled region into a 3D mesh, then creates 2D pr
 
 aseg_raw <- create_subcortical_from_volume(
   input_volume = aseg_volume,
-  input_lut = color_lut,
+  input_lut = lut,
   atlas_name = "aseg"
 )
 
@@ -69,19 +93,19 @@ aseg_raw
 #| eval: !expr can_run
 #| fig-width: 10
 #| fig-height: 8
-#| fig-alt: "The full aseg segmentation across all seven projection views, every label filled, including cortex, white matter and ventricles."
+#| fig-alt: "The full aseg segmentation across all seven projection views, every region filled, including white matter and ventricles, with the cortex in grey behind them."
 #| fig-cap: "Stage 1 --- everything aseg labels, on every view the pipeline made."
 plot(aseg_raw)
 ```
 
-That is the whole segmentation, and it is not yet an atlas anyone would want: cortex and white matter dominate the picture, and half the views say the same thing twice. The rest of this tutorial is subtraction.
+That is the whole segmentation, and it is not yet an atlas anyone would want: white matter dominates the picture, and half the views say the same thing twice. The rest of this tutorial is subtraction.
 
 The default pipeline creates seven projection views focused on the subcortical range: three axial slabs, three coronal slabs, and one sagittal (`axial_1` to `axial_3`, `coronal_1` to `coronal_3`, `sagittal_left`).
 Each view collapses a slab of the volume onto a single plane, giving you spatial context without the complexity of individual slices.
 
 ## Removing unwanted regions
 
-The aseg segmentation contains everything --- cortex, white matter, ventricles, CSF.
+The aseg segmentation contains everything --- white matter, ventricles, CSF.
 For a subcortical atlas, most of these are noise.
 Remove them:
 
@@ -93,8 +117,7 @@ aseg_raw <- aseg_raw |>
   atlas_region_remove("WM-hypointensities", match_on = "label") |>
   atlas_region_remove("-Ventricle", match_on = "label") |>
   atlas_region_remove("-Vent$", match_on = "label") |>
-  atlas_region_remove("CSF", match_on = "label") |>
-  atlas_region_remove("Cerebral-Cortex", match_on = "label")
+  atlas_region_remove("CSF", match_on = "label")
 ```
 
 Patterns are regular expressions, so `-Vent$` matches "3rd-Vent" and "4th-Vent" without catching "Ventral-DC."
@@ -104,23 +127,31 @@ Patterns are regular expressions, so `-Vent$` matches "3rd-Vent" and "4th-Vent" 
 #| eval: !expr can_run
 #| fig-width: 10
 #| fig-height: 8
-#| fig-alt: "The same views with cortex, white matter, ventricles and CSF gone, leaving the deep grey structures."
+#| fig-alt: "The same views with white matter, ventricles and CSF gone, leaving the deep grey structures on the grey cortex."
 #| fig-cap: "Stage 2 --- the structures we actually want, once the bulk tissue is gone."
 plot(aseg_raw)
 ```
 
-The cortical ribbon and white matter are gone, and what is left is what the atlas is for. The grey silhouette stays: it is context geometry, not a region, so it gives the structures somewhere to sit without taking a colour.
+The white matter is gone, and what is left is what the atlas is for. The grey cortex stays: the table declared it context, not a region, so it gives the structures somewhere to sit without taking a colour.
 
-## Setting context regions
+## Changing your mind about context
 
-The cortex works well as a background outline --- it shows where subcortical structures sit relative to the brain surface without competing for colour:
+The table is the place to decide, but not the only chance.
+`atlas_region_contextual()` turns a region of an atlas you already have into context, and `atlas_context_remove()` drops the context altogether:
 
 ```{r}
 #| label: context
-#| eval: !expr can_run
-aseg_raw <- aseg_raw |>
-  atlas_region_contextual("Cortex", match_on = "label")
+#| eval: false
+# Grey out the brain stem as well
+aseg_raw |>
+  atlas_region_contextual("Brain-Stem", match_on = "label")
+
+# No backdrop at all
+aseg_raw |>
+  atlas_context_remove()
 ```
+
+A region made context this way keeps the shape it was built with, projected through its slab, so for anything with folds the table gives the better picture.
 
 ## Selecting views
 
@@ -179,21 +210,21 @@ Every outline here is still made of mesh triangle edges, so each nucleus is boun
 vertices <- count_vertices(aseg_raw)
 
 sum(vertices)
-sum(vertices[grepl(context_pattern(), names(vertices))])
+sum(vertices[grepl(context_pattern(aseg_raw), names(vertices))])
 ```
 
-Most of the atlas is the cortex silhouette. That matters for what comes next: the `create_*()` functions warn above ten thousand vertices, and here the context geometry alone accounts for the bulk of it.
+Most of the atlas is the cortex. That matters for what comes next: the `create_*()` functions warn above ten thousand vertices, and here the context geometry alone accounts for the bulk of it.
 
 Tidying is a separate post-processing step in two parts --- `atlas_simplify()` drops vertices, `atlas_smooth()` rounds off what is left --- and on a subcortical atlas **both have to be applied twice**, because the context and the structures want opposite things. The silhouette is only useful while its sulci and gyri survive, so it needs gentle settings; the nuclei need firmer ones to read as smooth shapes. A single pass tuned for nuclei flattens the cortical ribbon into a blob.
 
-Simplify each separately:
+Simplify each separately. `context_pattern`, handed over without brackets, selects whatever this atlas draws as context:
 
 ```{r}
 #| label: simplify
 #| eval: !expr can_run
 aseg_raw <- aseg_raw |>
-  atlas_simplify(keep = 0.5, labels = context_pattern()) |>
-  atlas_simplify(keep = 0.25, exclude = context_pattern())
+  atlas_simplify(keep = 0.5, labels = context_pattern) |>
+  atlas_simplify(keep = 0.25, exclude = context_pattern)
 
 sum(count_vertices(aseg_raw))
 ```
@@ -218,10 +249,10 @@ Then smooth each separately, and note the second argument:
 aseg_raw <- aseg_raw |>
   atlas_smooth(
     smoothness = 0.35,
-    labels = context_pattern(),
+    labels = context_pattern,
     method = "chaikin"
   ) |>
-  atlas_smooth(smoothness = 0.4, exclude = context_pattern())
+  atlas_smooth(smoothness = 0.4, exclude = context_pattern)
 
 sum(count_vertices(aseg_raw))
 ```

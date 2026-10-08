@@ -61,11 +61,12 @@ read_annotation_data <- function(annot_files) {
 #' A file written by [write_lut()] can carry declared columns after the
 #' colours. With a single extra field it is read as `type`. With more, a
 #' comment line naming the fields -- `# idx label R G B A type hemi` -- says
-#' which is which, and a field holding `NA` is read as missing.
+#' which is which, and a field holding `NA` is read as missing. A `context`
+#' field is read as `TRUE` or `FALSE`.
 #'
 #' @param path Path to the LUT file.
 #' @return A data.frame with columns: idx, label, R, G, B, A, and
-#'   optionally type and hemi when the file carries them.
+#'   optionally type, hemi and context when the file carries them.
 #' @seealso [get_lut()] to read and add hex colours, [write_lut()] to write,
 #'   [lut_add()] and [lut_combine()] to build one up
 #' @export
@@ -119,6 +120,9 @@ read_lut <- function(path) {
   if (is.null(declared) && all(is.na(result$type))) {
     result$type <- NULL
   }
+  if ("context" %in% names(result)) {
+    result$context <- lut_context_values(result$context)
+  }
   result
 }
 
@@ -126,18 +130,18 @@ read_lut <- function(path) {
 #'
 #' Write a LUT to file in FreeSurfer format.
 #'
-#' The declared columns `type` and `hemi` are written after the colours, so
-#' that [read_lut()] reads them back. FreeSurfer reads only the first six
-#' fields of a line and skips comments, so the file stays a valid colour
-#' table for it.
+#' The declared columns `type`, `hemi` and `context` are written after the
+#' colours, so that [read_lut()] reads them back. FreeSurfer reads only the
+#' first six fields of a line and skips comments, so the file stays a valid
+#' colour table for it.
 #'
 #' A table with `type` alone gets it as a 7th field, left off rows that have
-#' none. A table with `hemi` gets a comment line naming the fields, and every
-#' row then carries each one, written as `NA` where it declares nothing.
-#' Other columns are not written.
+#' none. A table with `hemi` or `context` gets a comment line naming the
+#' fields, and every row then carries each one, written as `NA` where it
+#' declares nothing. Other columns are not written.
 #'
 #' @param x A data.frame with columns: idx, label, R, G, B, A, and
-#'   optionally type and hemi. Their values must be single words.
+#'   optionally type, hemi and context. Their values must be single words.
 #' @param path Path to write to.
 #' @return Invisibly returns the lines written.
 #' @seealso [read_lut()], [is_lut()], [lut_classify_anatomy()] to fill in
@@ -1431,7 +1435,7 @@ lut_line <- function(idx, name, red, green, blue, alpha) {
 #' In the order they are written. These are the columns a pipeline reads a
 #' declaration from; anything else in the table stays out of the file.
 #' @noRd
-lut_declared_columns <- c("type", "hemi")
+lut_declared_columns <- c("type", "hemi", "context")
 
 
 #' The comment line naming a LUT file's fields

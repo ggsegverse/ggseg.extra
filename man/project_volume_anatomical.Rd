@@ -107,8 +107,8 @@ aborted. \code{NULL} is not accepted; name the spelling you want.
 The cortical ribbon (aparc labels \code{1000-2999}), cerebral white matter (\code{2},
 \code{41}) and the corpus callosum (\code{251-255}) are left in place even where a
 user label wins the argmax above \code{threshold}. Cerebellar structures are not
-protected here; \code{\link[=aseg_context]{aseg_context()}} handles them downstream. Disable it only
-if you mean your labels to overwrite the cerebrum.
+protected here. Disable it only if you mean your labels to overwrite the
+cerebrum.
 }
 
 \examples{

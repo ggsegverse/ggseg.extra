@@ -1683,3 +1683,41 @@ describe("check_smoothness", {
     expect_error(check_smoothness(2), "must be between 0 and 1")
   })
 })
+
+
+describe("label selection by function", {
+  dk <- ggseg.formats::dk()
+
+  it("asks a function given as labels or exclude about the atlas", {
+    by_function <- atlas_simplify(dk, keep = 0.5, labels = context_pattern)
+    by_pattern <- atlas_simplify(dk, keep = 0.5, labels = context_pattern(dk))
+
+    expect_identical(by_function, by_pattern)
+  })
+
+  it("selects the context an earlier step in the same pipe created", {
+    polished <- dk |>
+      ggseg.formats::atlas_region_contextual("bankssts", match_on = "label") |>
+      atlas_dilate(1, labels = context_pattern)
+    untouched <- dk |>
+      ggseg.formats::atlas_region_contextual("bankssts", match_on = "label")
+
+    changed <- function(atlas, label) {
+      before <- atlas_sf(untouched)
+      after <- atlas_sf(atlas)
+      !identical(
+        sf::st_area(before[before$label == label, ]),
+        sf::st_area(after[after$label == label, ])
+      )
+    }
+    expect_true(changed(polished, "lh_bankssts"))
+    expect_false(changed(polished, "lh_precuneus"))
+  })
+
+  it("rejects a function that does not return one pattern", {
+    expect_error(
+      atlas_smooth(dk, labels = function(atlas) c("a", "b")),
+      "must return one pattern"
+    )
+  })
+})

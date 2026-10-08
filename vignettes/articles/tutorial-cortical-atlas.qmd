@@ -76,14 +76,22 @@ yeo7_raw <- create_cortical_from_annotation(
 #> 
 #> ℹ Projecting mesh to 2D polygons
 #> ℹ Projecting "rh" "lateral"
-#> ℹ Projecting mesh to 2D polygonsℹ Projecting "rh" "medial"
-#> ℹ Projecting mesh to 2D polygonsℹ Projecting "rh" "superior"
-#> ℹ Projecting mesh to 2D polygonsℹ Projecting "rh" "inferior"
-#> ℹ Projecting mesh to 2D polygonsℹ Projecting "lh" "lateral"
-#> ℹ Projecting mesh to 2D polygonsℹ Projecting "lh" "medial"
-#> ℹ Projecting mesh to 2D polygonsℹ Projecting "lh" "superior"
-#> ℹ Projecting mesh to 2D polygonsℹ Projecting "lh" "inferior"
-#> ℹ Projecting mesh to 2D polygons✔ Projecting mesh to 2D polygons [3.8s]
+#> ℹ Projecting mesh to 2D polygons
+ℹ Projecting "rh" "medial"
+#> ℹ Projecting mesh to 2D polygons
+ℹ Projecting "rh" "superior"
+#> ℹ Projecting mesh to 2D polygons
+ℹ Projecting "rh" "inferior"
+#> ℹ Projecting mesh to 2D polygons
+ℹ Projecting "lh" "lateral"
+#> ℹ Projecting mesh to 2D polygons
+ℹ Projecting "lh" "medial"
+#> ℹ Projecting mesh to 2D polygons
+ℹ Projecting "lh" "superior"
+#> ℹ Projecting mesh to 2D polygons
+ℹ Projecting "lh" "inferior"
+#> ℹ Projecting mesh to 2D polygons
+✔ Projecting mesh to 2D polygons [3.8s]
 #> 
 #> ✔ Brain atlas created with 14 regions
 #> ℹ Pipeline completed [4.1s]
@@ -152,7 +160,7 @@ Take them one at a time, so you can see what each does. Simplification first:
 
 
 ``` r
-yeo7_simple <- atlas_simplify(yeo7_raw, keep = 0.2, exclude = context_pattern())
+yeo7_simple <- atlas_simplify(yeo7_raw, keep = 0.2, exclude = context_pattern)
 
 sum(count_vertices(yeo7_simple))
 #> [1] 5645
@@ -168,13 +176,13 @@ plot(yeo7_simple)
 <p class="caption">Stage 2 --- simplified. Most of the vertices are gone; the corners they left behind are not.</p>
 </div>
 
-`exclude = context_pattern()` leaves the brain-outline geometry crisp while simplifying the labelled regions.
+`exclude = context_pattern` leaves the brain-outline geometry crisp while simplifying the labelled regions.
 
 Simplification is topology-aware, so neighbouring regions lose the same vertices and no gaps open between them. What it does not do is make anything look smooth --- it removes vertices from a jagged line and leaves a jagged line with fewer vertices. That is what `atlas_smooth()` is for:
 
 
 ``` r
-yeo7_smooth <- atlas_smooth(yeo7_simple, exclude = context_pattern())
+yeo7_smooth <- atlas_smooth(yeo7_simple, exclude = context_pattern)
 
 sum(count_vertices(yeo7_smooth))
 #> [1] 7354

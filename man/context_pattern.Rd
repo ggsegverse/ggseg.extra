@@ -4,7 +4,12 @@
 \alias{context_pattern}
 \title{The label pattern that matches an atlas's backdrop}
 \usage{
-context_pattern()
+context_pattern(atlas = NULL)
+}
+\arguments{
+\item{atlas}{Optional \code{ggseg_atlas}. When given, the pattern matches that
+atlas's own context shapes; when \code{NULL}, the default, it matches the
+names the pipelines generate.}
 }
 \value{
 A regular expression, as a length-one character vector.
@@ -29,7 +34,12 @@ plotting point of view they are the same thing.
 The pipelines generate one for the surface a parcellation does not cover:
 \code{lh_cortex} / \code{rh_cortex} on a cortical surface, \code{cerebellum} on the SUIT
 flatmap, and \code{cortex}, \code{cortex_left} or \code{cortex_right} from the volumetric
-slice tracing.
+slice tracing of a tract atlas.
+
+A subcortical build takes its context from its lookup table instead: a
+row marked \code{context} keeps its own name, and a label the table does not
+list is named \code{context_} and its id, such as \code{context_0002}. Only the
+second kind has a name this pattern can know; see below for the first.
 
 A parcellation can also carry its own -- an annotation's \code{unknown}, \verb{???} or
 medial-wall region. Those arrive as regions and are demoted to backdrop
@@ -41,12 +51,29 @@ and \code{Left-Cerebral-Cortex}, which are structures; anchoring at the start is
 what excludes them, so the pattern is safe to use case-insensitively, as
 \code{\link[=atlas_simplify]{atlas_simplify()}} and \code{\link[=atlas_smooth]{atlas_smooth()}} do.
 }
+\section{Asking the atlas instead}{
+
+Give it an atlas and it stops going by names: the pattern then matches
+exactly the shapes that atlas draws without their being one of its regions,
+whatever they are called. That is the form to use on a subcortical atlas,
+where the lookup table names the context and so no fixed spelling can know
+it.
+
+\code{\link[=atlas_polish]{atlas_polish()}}, \code{\link[=atlas_simplify]{atlas_simplify()}}, \code{\link[=atlas_smooth]{atlas_smooth()}} and \code{\link[=atlas_dilate]{atlas_dilate()}}
+do the asking for you when handed the function itself:
+\code{exclude = context_pattern}, with no brackets, means "this atlas's
+context", and works in the middle of a pipe.
+}
+
 \examples{
 context_pattern()
 
 # What it does and does not match: the backdrop, not a cortex structure.
 labels <- c("lh_cortex", "cerebellum", "lh_unknown", "Left-Cerebral-Cortex")
 grepl(context_pattern(), labels, ignore.case = TRUE)
+
+# Asked of an atlas, it matches whatever that atlas draws as context.
+context_pattern(ggseg.formats::dk())
 
 # The usual shape of a build: backdrop and structures, each its own way.
 \dontrun{
@@ -55,9 +82,9 @@ atlas <- my_atlas |>
     keep = 0.4,
     smoothness = 0.4,
     method = "chaikin",
-    labels = context_pattern()
+    labels = context_pattern
   ) |>
-  atlas_polish(keep = 0.1, smoothness = 0.4, exclude = context_pattern())
+  atlas_polish(keep = 0.1, smoothness = 0.4, exclude = context_pattern)
 }
 }
 \seealso{

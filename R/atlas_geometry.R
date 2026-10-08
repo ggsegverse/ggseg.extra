@@ -20,7 +20,9 @@
 #' @param close_gaps Whether to close the hairline gaps rounding opens along
 #'   shared boundaries. Set `FALSE` for geometry that is not a coverage, such
 #'   as separate tract tubes.
-#' @param labels Optional regex. Only matching labels are smoothed.
+#' @param labels Which labels to smooth: a regular expression, or a function
+#'   that takes the atlas and returns one. Pass `context_pattern`, without
+#'   calling it, to select the atlas's context.
 #' @param exclude Optional regex. Matching labels are left alone. Only one of
 #'   `labels` or `exclude` may be given.
 #'
@@ -68,14 +70,14 @@
 #'
 #' \dontrun{
 #' # Leave the brain outline alone.
-#' atlas_smooth(dk, smoothness = 0.4, exclude = context_pattern())
+#' atlas_smooth(dk, smoothness = 0.4, exclude = context_pattern)
 #'
 #' # Round a cortical ribbon without closing its sulci.
 #' atlas_smooth(
 #'   dk,
 #'   smoothness = 0.4,
 #'   method = "chaikin",
-#'   labels = context_pattern()
+#'   labels = context_pattern
 #' )
 #' }
 atlas_smooth <- function(
@@ -90,6 +92,8 @@ atlas_smooth <- function(
   method <- match.arg(method)
   vertex_budget <- match.arg(vertex_budget)
   check_smoothness(smoothness)
+  labels <- resolve_label_selector(labels, atlas)
+  exclude <- resolve_label_selector(exclude, atlas)
   geom <- ggseg.formats::atlas_geom(atlas)
   if (is.null(geom)) {
     cli::cli_warn("Atlas has no 2D geometry, nothing to smooth")
@@ -181,7 +185,9 @@ atlas_smooth <- function(
 #'   [atlas_smooth()].
 #' @param method Smoothing method, passed to [atlas_smooth()]. `"close"`
 #'   rounds solid shapes; the others keep holes open.
-#' @param labels Optional regex. Only matching labels are polished.
+#' @param labels Which labels to polish: a regular expression, or a function
+#'   that takes the atlas and returns one. Pass `context_pattern`, without
+#'   calling it, to select the atlas's context.
 #' @param exclude Optional regex. Matching labels are left alone.
 #' @param close_gaps Whether to hand back the slivers the operations open
 #'   between neighbouring regions. See [atlas_smooth()].
@@ -207,9 +213,9 @@ atlas_smooth <- function(
 #'     keep = 0.4,
 #'     smoothness = 0.4,
 #'     method = "chaikin",
-#'     labels = context_pattern()
+#'     labels = context_pattern
 #'   ) |>
-#'   atlas_polish(keep = 0.1, smoothness = 0.4, exclude = context_pattern())
+#'   atlas_polish(keep = 0.1, smoothness = 0.4, exclude = context_pattern)
 #' }
 atlas_polish <- function(
   atlas,
@@ -261,8 +267,10 @@ atlas_polish <- function(
 #' @param atlas A `ggseg_atlas` object with 2D geometry.
 #' @param amount Buffer distance in geometry units. Positive grows a region,
 #'   negative shrinks it, `0` returns the atlas unchanged.
-#' @param labels,exclude Regex selecting which labels to dilate, or which to
-#'   leave alone. Give at most one.
+#' @param labels,exclude Which labels to dilate, or which to leave alone:
+#'   a regular expression, or a function that takes the atlas and returns
+#'   one. Pass `context_pattern`, without calling it, to select the atlas's
+#'   context. Give at most one.
 #'
 #' @return The `ggseg_atlas`, in the representation it arrived in.
 #' @family atlas geometry
@@ -273,8 +281,10 @@ atlas_polish <- function(
 #' dk <- ggseg.formats::dk()
 #'
 #' # Grow the structures and leave the grey brain alone
-#' atlas_dilate(dk, 0.5, exclude = context_pattern())
+#' atlas_dilate(dk, 0.5, exclude = context_pattern)
 atlas_dilate <- function(atlas, amount, labels = NULL, exclude = NULL) {
+  labels <- resolve_label_selector(labels, atlas)
+  exclude <- resolve_label_selector(exclude, atlas)
   check_dilate_args(amount, labels, exclude)
 
   if (is.null(ggseg.formats::atlas_geom(atlas))) {
@@ -366,8 +376,10 @@ count_vertices <- function(atlas) {
 #'   its shape, so an atlas of many small rings lands above what was asked -
 #'   `keep = 0.05` on a tract atlas came back at 0.18. [atlas_polish()] has
 #'   measured figures.
-#' @param labels,exclude Regex selecting which labels to simplify, or which
-#'   to leave alone. Give at most one.
+#' @param labels,exclude Which labels to simplify, or which to leave alone:
+#'   a regular expression, or a function that takes the atlas and returns
+#'   one. Pass `context_pattern`, without calling it, to select the atlas's
+#'   context. Give at most one.
 #' @param close_gaps Whether to hand back any sliver the simplification
 #'   opens between neighbouring regions. Simplification is topology-aware,
 #'   so on geometry straight out of a pipeline, whose neighbours share their
@@ -393,7 +405,7 @@ count_vertices <- function(atlas) {
 #'
 #' \dontrun{
 #' # Simplify the backdrop only, sparing the structures.
-#' atlas_simplify(dk, keep = 0.5, labels = context_pattern())
+#' atlas_simplify(dk, keep = 0.5, labels = context_pattern)
 #' }
 atlas_simplify <- function(
   atlas,
@@ -402,6 +414,8 @@ atlas_simplify <- function(
   labels = NULL,
   exclude = NULL
 ) {
+  labels <- resolve_label_selector(labels, atlas)
+  exclude <- resolve_label_selector(exclude, atlas)
   check_simplify_args(keep, labels, exclude)
 
   if (is.null(ggseg.formats::atlas_geom(atlas))) {
@@ -486,6 +500,29 @@ trim_rounded_corners <- function(
     grown <- trimmed
   }
   sf_data
+}
+
+
+#' Turn a `labels` or `exclude` argument into a pattern
+#'
+#' Either may be a function, which is asked of the atlas being worked on.
+#' Passing [context_pattern] itself, rather than calling it, selects that
+#' atlas's own context whatever its shapes are named, and still works in the
+#' middle of a pipe where the atlas has no name.
+#' @noRd
+resolve_label_selector <- function(selector, atlas) {
+  if (!is.function(selector)) {
+    return(selector)
+  }
+  pattern <- selector(atlas)
+  if (!rlang::is_string(pattern)) {
+    cli::cli_abort(c(
+      "A function given as {.arg labels} or {.arg exclude} must return one
+      pattern.",
+      "x" = "It returned {.obj_type_friendly {pattern}}."
+    ))
+  }
+  pattern
 }
 
 
@@ -923,7 +960,12 @@ native_smoothness <- function(smoothness, method) {
 #' @noRd
 #' @importFrom dplyr select arrange desc
 #' @importFrom sf st_as_sf
-build_contour_sf <- function(contours_file, slabs, cortex_slices = NULL) {
+build_contour_sf <- function(
+  contours_file,
+  slabs,
+  cortex_slices = NULL,
+  context_labels = character()
+) {
   conts <- make_multipolygon(contours_file)
 
   all_view_names <- if (!is.null(cortex_slices)) {
@@ -939,7 +981,7 @@ build_contour_sf <- function(contours_file, slabs, cortex_slices = NULL) {
 
   conts$label <- strip_view_prefix(conts$filenm, conts$view)
 
-  arrange_contour_sf(conts)
+  arrange_contour_sf(conts, context_labels)
 }
 
 
@@ -1019,13 +1061,13 @@ is_cortex_outline <- function(label) {
 #' @noRd
 #' @importFrom dplyr arrange select
 #' @importFrom sf st_as_sf
-arrange_contour_sf <- function(conts) {
+arrange_contour_sf <- function(conts, context_labels = character()) {
   sf_data <- dplyr::select(conts, label, view, geometry)
   sf_data <- sf::st_as_sf(sf_data)
   sf_data <- dplyr::arrange(
     sf_data,
     view,
-    !is_cortex_outline(label)
+    !(is_cortex_outline(label) | label %in% context_labels)
   )
 
   sf_data

@@ -12,8 +12,10 @@ atlas_dilate(atlas, amount, labels = NULL, exclude = NULL)
 \item{amount}{Buffer distance in geometry units. Positive grows a region,
 negative shrinks it, \code{0} returns the atlas unchanged.}
 
-\item{labels, exclude}{Regex selecting which labels to dilate, or which to
-leave alone. Give at most one.}
+\item{labels, exclude}{Which labels to dilate, or which to leave alone:
+a regular expression, or a function that takes the atlas and returns
+one. Pass \code{context_pattern}, without calling it, to select the atlas's
+context. Give at most one.}
 }
 \value{
 The \code{ggseg_atlas}, in the representation it arrived in.
@@ -37,7 +39,7 @@ a grey brain silhouette closes its sulci and flattens into a blob, so pass
 dk <- ggseg.formats::dk()
 
 # Grow the structures and leave the grey brain alone
-atlas_dilate(dk, 0.5, exclude = context_pattern())
+atlas_dilate(dk, 0.5, exclude = context_pattern)
 }
 \seealso{
 \code{\link[=atlas_smooth]{atlas_smooth()}} and \code{\link[=atlas_simplify]{atlas_simplify()}}, the other post-creation

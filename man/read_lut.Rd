@@ -11,7 +11,7 @@ read_lut(path)
 }
 \value{
 A data.frame with columns: idx, label, R, G, B, A, and
-optionally type and hemi when the file carries them.
+optionally type, hemi and context when the file carries them.
 }
 \description{
 Read a FreeSurfer color lookup table file (e.g., \code{FreeSurferColorLUT.txt}
@@ -22,7 +22,8 @@ and RGBA colours.
 A file written by \code{\link[=write_lut]{write_lut()}} can carry declared columns after the
 colours. With a single extra field it is read as \code{type}. With more, a
 comment line naming the fields -- \verb{# idx label R G B A type hemi} -- says
-which is which, and a field holding \code{NA} is read as missing.
+which is which, and a field holding \code{NA} is read as missing. A \code{context}
+field is read as \code{TRUE} or \code{FALSE}.
 }
 \examples{
 lut_file <- tempfile()

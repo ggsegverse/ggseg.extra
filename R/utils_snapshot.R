@@ -175,6 +175,8 @@ projection_raster <- function(proj) {
 #' @param slabs data.frame with columns: name, type, start, end
 #' @param dims Volume dimensions (3-element vector)
 #' @param cortex_x X coordinate for non-hemisphere-specific sagittal slices
+#' @param ids Label ids the slice is chosen on. When `NULL`, the cortex
+#'   labels detected in `vol`.
 #'
 #' @return data.frame with columns: x, y, z, view, name
 #' @noRd
@@ -182,9 +184,12 @@ create_cortex_slices <- function(
   slabs,
   dims,
   cortex_x = NULL,
-  vol = NULL
+  vol = NULL,
+  ids = NULL
 ) {
-  cortex_ids <- if (is.null(vol)) {
+  cortex_ids <- if (!is.null(ids)) {
+    ids
+  } else if (is.null(vol)) {
     NULL
   } else {
     unlist(detect_cortex_labels(vol), use.names = FALSE)

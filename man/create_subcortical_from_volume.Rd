@@ -16,8 +16,7 @@ create_subcortical_from_volume(
   vertex_size_limits = NULL,
   cleanup = NULL,
   skip_existing = NULL,
-  steps = NULL,
-  context = NULL
+  steps = NULL
 )
 }
 \arguments{
@@ -48,7 +47,28 @@ passed here is an error. Geometry is shaped after the build: see
 \item{input_lut}{Path to a FreeSurfer-style colour lookup table that maps
 label IDs to region names and colours (e.g., \code{FreeSurferColorLUT.txt}
 or \code{ASegStatsLUT.txt}), or a data.frame with columns \code{idx}, \code{label},
-\code{R}, \code{G}, \code{B} and \code{A} (see \code{\link[=is_lut]{is_lut()}}). Either may also carry a
+\code{R}, \code{G}, \code{B} and \code{A} (see \code{\link[=is_lut]{is_lut()}}).
+
+The table decides what is a region and what is context, the grey
+anatomy the regions are drawn against. Nothing is recognised by its id
+or its name:
+\itemize{
+\item A row is a \strong{region} unless it says otherwise. It gets a mesh, a
+colour and a shape in each 2D view.
+\item A row whose optional \code{context} column is \code{TRUE} is \strong{context}. It
+keeps its name, is traced on one slice per view rather than projected
+through the slab, and gets no mesh.
+\item A label in the volume that the table does not list is context too.
+With no name to go by, it is called \code{context_} and its id, such as
+\code{context_0002}.
+}
+
+To leave a context shape out of the atlas altogether, remove it
+afterwards with \code{\link[ggseg.formats:atlas_context_remove]{ggseg.formats::atlas_context_remove()}}. To treat the
+context differently when polishing, pass \code{context_pattern} as \code{labels}
+or \code{exclude}; see \code{\link[=context_pattern]{context_pattern()}}.
+
+Either form may also carry a
 \code{hemi} column (\code{"left"}, \code{"right"} or \code{"midline"}) that sets each
 region's hemisphere; a row left \code{NA}, or a table without the column, has
 it read from the label's name, and any other value is an error.
@@ -58,8 +78,9 @@ A data.frame may also carry a \code{names} column: the display name each
 region shows in a legend. A row left \code{NA}, or a table without the
 column, is named after its region.
 
-If NULL, region names will be generic (e.g., "region_0010") and the
-atlas will have no palette.}
+If NULL, every label is a region with a generic name (e.g.,
+"region_0010"), there is no context, and the atlas will have no
+palette.}
 
 \item{atlas_name}{Name for the atlas. If NULL, derived from the input
 filename. It also names the folder of intermediate files inside
@@ -116,12 +137,6 @@ steps out of \code{steps}.}
 }
 Use \code{steps = 1:3} for a 3D-only atlas. Geometry is shaped after the
 build, not during it: see \code{\link[=atlas_polish]{atlas_polish()}}.}
-
-\item{context}{Optional named list of \code{\link[=aseg_context]{aseg_context()}} arguments (e.g.
-\code{context = list(focus = "Hippocampus")}) applied to the finished 2D atlas
-to keep the focus regions coloured on grey anatomical context. \code{NULL}
-(default) leaves the atlas unchanged. Only applied when the 2D build
-(step 6) runs.}
 }
 \value{
 A \code{ggseg_atlas} object with region metadata (core), 3D meshes,

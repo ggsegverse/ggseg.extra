@@ -33,7 +33,9 @@ grow. See details.}
 shared boundaries. Set \code{FALSE} for geometry that is not a coverage, such
 as separate tract tubes.}
 
-\item{labels}{Optional regex. Only matching labels are smoothed.}
+\item{labels}{Which labels to smooth: a regular expression, or a function
+that takes the atlas and returns one. Pass \code{context_pattern}, without
+calling it, to select the atlas's context.}
 
 \item{exclude}{Optional regex. Matching labels are left alone. Only one of
 \code{labels} or \code{exclude} may be given.}
@@ -80,14 +82,14 @@ atlas_smooth(dk, smoothness = 0.4)
 
 \dontrun{
 # Leave the brain outline alone.
-atlas_smooth(dk, smoothness = 0.4, exclude = context_pattern())
+atlas_smooth(dk, smoothness = 0.4, exclude = context_pattern)
 
 # Round a cortical ribbon without closing its sulci.
 atlas_smooth(
   dk,
   smoothness = 0.4,
   method = "chaikin",
-  labels = context_pattern()
+  labels = context_pattern
 )
 }
 }

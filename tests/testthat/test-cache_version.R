@@ -238,7 +238,10 @@ describe("cache manifest ownership", {
 
     claim_cache_manifests()
     expect_identical(stamp_cache_files(file), file)
-    expect_identical(read_cache_manifest(dir)[["step1_data.rds"]], 2L)
+    expect_identical(
+      read_cache_manifest(dir)[["step1_data.rds"]],
+      cache_format_version()
+    )
   })
 
   it("refuses to stamp from a process that did not claim", {

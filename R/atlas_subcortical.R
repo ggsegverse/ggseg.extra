@@ -24,7 +24,27 @@
 #' @param input_lut Path to a FreeSurfer-style colour lookup table that maps
 #'   label IDs to region names and colours (e.g., `FreeSurferColorLUT.txt`
 #'   or `ASegStatsLUT.txt`), or a data.frame with columns `idx`, `label`,
-#'   `R`, `G`, `B` and `A` (see [is_lut()]). Either may also carry a
+#'   `R`, `G`, `B` and `A` (see [is_lut()]).
+#'
+#'   The table decides what is a region and what is context, the grey
+#'   anatomy the regions are drawn against. Nothing is recognised by its id
+#'   or its name:
+#'
+#'   * A row is a **region** unless it says otherwise. It gets a mesh, a
+#'     colour and a shape in each 2D view.
+#'   * A row whose optional `context` column is `TRUE` is **context**. It
+#'     keeps its name, is traced on one slice per view rather than projected
+#'     through the slab, and gets no mesh.
+#'   * A label in the volume that the table does not list is context too.
+#'     With no name to go by, it is called `context_` and its id, such as
+#'     `context_0002`.
+#'
+#'   To leave a context shape out of the atlas altogether, remove it
+#'   afterwards with [ggseg.formats::atlas_context_remove()]. To treat the
+#'   context differently when polishing, pass `context_pattern` as `labels`
+#'   or `exclude`; see [context_pattern()].
+#'
+#'   Either form may also carry a
 #'   `hemi` column (`"left"`, `"right"` or `"midline"`) that sets each
 #'   region's hemisphere; a row left `NA`, or a table without the column, has
 #'   it read from the label's name, and any other value is an error.
@@ -34,8 +54,9 @@
 #'   region shows in a legend. A row left `NA`, or a table without the
 #'   column, is named after its region.
 #'
-#'   If NULL, region names will be generic (e.g., "region_0010") and the
-#'   atlas will have no palette.
+#'   If NULL, every label is a region with a generic name (e.g.,
+#'   "region_0010"), there is no context, and the atlas will have no
+#'   palette.
 #' @template atlas_name
 #' @template output_dir
 #' @param slabs A data.frame specifying projection slabs with columns `name`,
@@ -66,12 +87,6 @@
 #'   }
 #'   Use `steps = 1:3` for a 3D-only atlas. Geometry is shaped after the
 #'   build, not during it: see [atlas_polish()].
-#' @param context Optional named list of [aseg_context()] arguments (e.g.
-#'   `context = list(focus = "Hippocampus")`) applied to the finished 2D atlas
-#'   to keep the focus regions coloured on grey anatomical context. `NULL`
-#'   (default) leaves the atlas unchanged. Only applied when the 2D build
-#'   (step 6) runs.
-#'
 #' @return A `ggseg_atlas` object with region metadata (core), 3D meshes,
 #'   a colour palette, and optionally sf geometry for 2D slice plots.
 #' @template dots_post_creation
@@ -119,8 +134,7 @@ create_subcortical_from_volume <- function(
   vertex_size_limits = NULL,
   cleanup = NULL,
   skip_existing = NULL,
-  steps = NULL,
-  context = NULL
+  steps = NULL
 ) {
   rlang::check_dots_empty()
   unpacked <- unpack_anatomical_input(input_volume, input_lut)
@@ -135,15 +149,13 @@ create_subcortical_from_volume <- function(
     cleanup = cleanup,
     skip_existing = skip_existing,
     decimate = decimate,
-    steps = steps,
-    context = context
+    steps = steps
   )
 
   subcort_run_pipeline(
     setup,
     start_time,
     slabs,
-    context,
     vertex_size_limits
   )
 }
@@ -159,8 +171,7 @@ subcort_setup_pipeline <- function(
   cleanup,
   skip_existing,
   decimate,
-  steps,
-  context
+  steps
 ) {
   config <- validate_subcort_config(
     input_volume = unpacked$input_volume,
@@ -173,8 +184,6 @@ subcort_setup_pipeline <- function(
     decimate = decimate,
     steps = steps
   )
-
-  validate_subcort_context_arg(context, config$steps)
 
   dirs <- setup_atlas_dirs(
     config$output_dir,
@@ -203,7 +212,6 @@ subcort_run_pipeline <- function(
   setup,
   start_time,
   slabs,
-  context,
   vertex_size_limits
 ) {
   config <- setup$config
@@ -224,20 +232,27 @@ subcort_run_pipeline <- function(
   }
 
   slabs <- resolve_subcort_slabs_spec(slabs, config$input_volume)
-  snaps <- subcort_resolve_snapshots(config, dirs, labels$colortable, slabs)
+  snaps <- subcort_resolve_snapshots(
+    config,
+    dirs,
+    labels$colortable,
+    slabs,
+    labels$context
+  )
   prune_stale_snapshots(
     dirs,
     subcort_snapshot_names(
       labels$colortable,
       snaps$slabs,
-      snaps$cortex_slices
+      snaps$cortex_slices,
+      snaps$context$label
     ),
     verbose = config$verbose
   )
   subcort_extract_contours(config, dirs, vertex_size_limits)
 
   if (subcort_total_steps() %in% config$steps) {
-    atlas <- subcort_build_2d_atlas(config, components, dirs, snaps, context)
+    atlas <- subcort_build_2d_atlas(config, components, dirs, snaps)
     return(subcort_finalize(atlas, config, dirs, start_time))
   }
 
@@ -277,15 +292,15 @@ subcort_extract_contours <- function(config, dirs, vertex_size_limits) {
 
 
 #' @noRd
-subcort_build_2d_atlas <- function(config, components, dirs, snaps, context) {
-  atlas <- subcort_assemble_full(
+subcort_build_2d_atlas <- function(config, components, dirs, snaps) {
+  subcort_assemble_full(
     config$atlas_name,
     components,
     dirs,
     snaps$slabs,
-    snaps$cortex_slices
+    snaps$cortex_slices,
+    snaps$context$label
   )
-  apply_subcort_context_spec(atlas, context)
 }
 
 
@@ -328,40 +343,6 @@ resolve_subcort_slabs_spec <- function(slabs, input_volume) {
     ))
   }
   do.call(subcortical_slabs, c(list(volume = input_volume), slabs))
-}
-
-
-#' Validate the `context` argument of `create_subcortical_from_volume()`
-#'
-#' `context` is only applied when the 2D build (step 6) runs; warn otherwise.
-#' @noRd
-validate_subcort_context_arg <- function(context, steps) {
-  if (is.null(context)) {
-    return(invisible(NULL))
-  }
-  if (!is.list(context)) {
-    cli::cli_abort(c(
-      "{.arg context} must be a list of {.fn aseg_context} arguments.",
-      "i" = "Got {.cls {class(context)}}."
-    ))
-  }
-  if (!(subcort_total_steps() %in% steps)) {
-    cli::cli_warn(
-      "{.arg context} is ignored unless step {subcort_total_steps()} (the 2D
-      build) runs."
-    )
-  }
-  invisible(NULL)
-}
-
-
-#' Run [aseg_context()] on a built atlas from a `context` list spec
-#' @noRd
-apply_subcort_context_spec <- function(atlas, context) {
-  if (is.null(context)) {
-    return(atlas)
-  }
-  do.call(aseg_context, c(list(atlas = atlas), context))
 }
 
 
@@ -449,6 +430,7 @@ validate_subcort_inputs <- function(input_volume, input_lut) {
     cli::cli_abort("Color lookup table not found: {.path {input_lut}}")
   }
   check_lut_hemi(input_lut)
+  check_lut_context(input_lut)
   invisible(NULL)
 }
 
@@ -473,7 +455,8 @@ subcort_log_header <- function(config) {
 subcort_resolve_labels <- function(config, dirs) {
   files <- c(
     as.character(fs::path(dirs$base, "colortable.rds")),
-    as.character(fs::path(dirs$base, "vol_labels.rds"))
+    as.character(fs::path(dirs$base, "vol_labels.rds")),
+    as.character(fs::path(dirs$base, "context.rds"))
   )
   cached <- load_or_run_step(
     1L,
@@ -498,24 +481,61 @@ subcort_resolve_labels <- function(config, dirs) {
     config$input_volume,
     config$verbose
   )
-  colortable <- loaded$colortable
   vol_labels <- loaded$vol_labels
-  colortable$label <- sanitize_label(colortable$label)
+  split <- split_lut_context(loaded$colortable)
+  colortable <- split$regions
+  context <- split$context
 
   if (config$verbose) {
     cli::cli_alert_success("Found {nrow(colortable)} subcortical structures")
+    if (nrow(context) > 0) {
+      cli::cli_alert_info(
+        "{nrow(context)} label{?s} declared as context in the lookup table"
+      )
+    }
   }
 
   save_cache_rds(
     dirs$base,
     colortable.rds = colortable,
-    vol_labels.rds = vol_labels
+    vol_labels.rds = vol_labels,
+    context.rds = context
   )
   if (config$verbose) {
     cli::cli_progress_done()
   }
 
-  list(colortable = colortable, vol_labels = vol_labels)
+  list(colortable = colortable, vol_labels = vol_labels, context = context)
+}
+
+
+#' Split a lookup table into its regions and its declared context
+#'
+#' The table's `context` column decides: a row it marks is backdrop, every
+#' other row is a region. Labels are made filesystem-safe here, once, because
+#' both halves name snapshot files.
+#' @param colortable Lookup table restricted to labels present in the volume.
+#' @return List of `regions`, the table without its context rows, and
+#'   `context`, a data frame of `idx` and `label`.
+#' @noRd
+split_lut_context <- function(colortable) {
+  colortable$label <- sanitize_label(colortable$label)
+  is_context <- lut_is_context(colortable)
+  if (all(is_context)) {
+    cli::cli_abort(c(
+      "{.arg input_lut} marks every label in the volume as context.",
+      "i" = "An atlas needs at least one region: a row whose
+      {.field context} is not {.val TRUE}."
+    ))
+  }
+  list(
+    regions = colortable[!is_context, , drop = FALSE],
+    context = data.frame(
+      idx = as.integer(colortable$idx[is_context]),
+      label = colortable$label[is_context],
+      stringsAsFactors = FALSE
+    )
+  )
 }
 
 
@@ -526,7 +546,8 @@ subcort_cached_labels <- function(cached, verbose) {
   }
   list(
     colortable = cached$data[["colortable.rds"]],
-    vol_labels = cached$data[["vol_labels.rds"]]
+    vol_labels = cached$data[["vol_labels.rds"]],
+    context = cached$data[["context.rds"]]
   )
 }
 
@@ -614,10 +635,17 @@ subcort_resolve_components <- function(config, dirs, colortable, meshes_list) {
 
 
 #' @noRd
-subcort_resolve_snapshots <- function(config, dirs, colortable, slabs) {
+subcort_resolve_snapshots <- function(
+  config,
+  dirs,
+  colortable,
+  slabs,
+  context = NULL
+) {
   files <- c(
     as.character(fs::path(dirs$base, "slabs.rds")),
-    as.character(fs::path(dirs$base, "cortex_slices.rds"))
+    as.character(fs::path(dirs$base, "cortex_slices.rds")),
+    as.character(fs::path(dirs$base, "context_labels.rds"))
   )
   cached <- load_or_run_step(
     4L,
@@ -645,7 +673,8 @@ subcort_resolve_snapshots <- function(config, dirs, colortable, slabs) {
     }
     return(list(
       slabs = cached$data[["slabs.rds"]],
-      cortex_slices = cached$data[["cortex_slices.rds"]]
+      cortex_slices = cached$data[["cortex_slices.rds"]],
+      context = cached$data[["context_labels.rds"]]
     ))
   }
 
@@ -660,13 +689,15 @@ subcort_resolve_snapshots <- function(config, dirs, colortable, slabs) {
     colortable,
     slabs,
     dirs,
-    config$skip_existing
+    config$skip_existing,
+    context
   )
 
   save_cache_rds(
     dirs$base,
     slabs.rds = result$slabs,
-    cortex_slices.rds = result$cortex_slices
+    cortex_slices.rds = result$cortex_slices,
+    context_labels.rds = result$context
   )
   if (config$verbose) {
     cli::cli_progress_done()
@@ -693,7 +724,8 @@ subcort_assemble_full <- function(
   components,
   dirs,
   slabs,
-  cortex_slices
+  cortex_slices,
+  context_labels = character()
 ) {
   contours_file <- as.character(fs::path(dirs$base, "contours.rda"))
   if (!file.exists(contours_file)) {
@@ -704,7 +736,12 @@ subcort_assemble_full <- function(
     ))
   }
 
-  sf_data <- build_contour_sf(contours_file, slabs, cortex_slices)
+  sf_data <- build_contour_sf(
+    contours_file,
+    slabs,
+    cortex_slices,
+    context_labels
+  )
   components <- drop_labels_without_geometry(components, sf_data)
 
   atlas <- ggseg_atlas(

@@ -259,7 +259,8 @@ describe("subcort_create_snapshots", {
         slabs,
         dims,
         cortex_x = NULL,
-        vol = NULL
+        vol = NULL,
+        ids = NULL
       ) {
         data.frame(
           x = NA,
@@ -269,9 +270,6 @@ describe("subcort_create_snapshots", {
           name = "ax_1",
           stringsAsFactors = FALSE
         )
-      },
-      detect_cortex_labels = function(vol) {
-        list(left = 3L, right = integer(0))
       },
       extract_hemi_from_view = function(...) "left",
       progressor = function(...) function(...) NULL,
@@ -331,7 +329,8 @@ describe("subcort_create_snapshots", {
         slabs,
         dims,
         cortex_x = NULL,
-        vol = NULL
+        vol = NULL,
+        ids = NULL
       ) {
         data.frame(
           x = NA,
@@ -341,9 +340,6 @@ describe("subcort_create_snapshots", {
           name = "custom_view",
           stringsAsFactors = FALSE
         )
-      },
-      detect_cortex_labels = function(vol) {
-        list(left = integer(0), right = integer(0))
       },
       extract_hemi_from_view = function(...) "left",
       progressor = function(...) function(...) NULL,
@@ -393,7 +389,8 @@ describe("subcort_create_snapshots", {
         slabs,
         dims,
         cortex_x = NULL,
-        vol = NULL
+        vol = NULL,
+        ids = NULL
       ) {
         data.frame(
           x = NA,
@@ -403,9 +400,6 @@ describe("subcort_create_snapshots", {
           name = "ax_1",
           stringsAsFactors = FALSE
         )
-      },
-      detect_cortex_labels = function(vol) {
-        list(left = integer(0), right = integer(0))
       },
       extract_hemi_from_view = function(...) "left",
       progressor = function(...) function(...) NULL,
@@ -438,40 +432,50 @@ describe("subcort_create_snapshots", {
 })
 
 
-describe("subcort_snapshot_cortex", {
-  it("takes one slice per view, never a projection", {
-    .cap$pp <- 0L
-    .cap$cs <- 0L
+describe("subcort_snapshot_context", {
+  slices <- data.frame(
+    x = c(NA, NA),
+    y = c(NA, 3),
+    z = c(3, NA),
+    view = c("axial", "coronal"),
+    name = c("ax_1", "cor_1"),
+    stringsAsFactors = FALSE
+  )
+  context_volume <- function() {
+    vol <- array(0L, dim = c(6L, 6L, 6L))
+    vol[2:5, 2:5, 2:5] <- 2L
+    vol[1, 1, 6] <- 9L
+    vol
+  }
 
-    local_mocked_bindings(
-      extract_hemi_from_view = function(...) "left",
-      snapshot_partial_projection = function(...) {
-        .cap$pp <- .cap$pp + 1L
-        invisible(NULL)
-      },
-      snapshot_cortex_slice = function(...) {
-        .cap$cs <- .cap$cs + 1L
-        invisible(NULL)
-      }
+  it("draws each context label as its own shape on each view's slice", {
+    dirs <- local_subcort_dirs()
+
+    context <- data.frame(
+      idx = c(2L, 9L),
+      label = c("white_matter", "context_0009")
     )
 
-    cortex_vol <- array(1L, dim = c(10, 10, 10))
-    cortex_slices <- data.frame(
-      x = c(NA, NA, 5),
-      y = c(NA, 5, NA),
-      z = c(5, NA, NA),
-      view = c("axial", "coronal", "sagittal"),
-      name = c("ax_1", "cor_1", "sag_1"),
-      stringsAsFactors = FALSE
+    subcort_snapshot_context(context_volume(), context, slices, dirs, FALSE)
+
+    expect_setequal(
+      list.files(dirs$snapshots, pattern = "[.]rda$"),
+      c("ax_1_white_matter.rda", "cor_1_white_matter.rda")
     )
-    dirs <- list(snapshots = withr::local_tempdir())
+  })
 
-    subcort_snapshot_cortex(cortex_vol, cortex_slices, dirs, FALSE)
+  it("takes a single slice, not a projection through the slab", {
+    dirs <- local_subcort_dirs()
+    vol <- context_volume()
+    vol[3, 3, 3] <- 0L
 
-    # Projecting the silhouette through a slab unions every sulcus the slab
-    # passes through and fills them in, so every view takes a single slice.
-    expect_identical(.cap$pp, 0L)
-    expect_identical(.cap$cs, 3L)
+    context <- data.frame(idx = 2L, label = "context_0002")
+    subcort_snapshot_context(vol, context, slices[1, ], dirs, FALSE)
+
+    env <- new.env()
+    load(file.path(dirs$snapshots, "ax_1_context_0002.rda"), envir = env)
+    drawn <- get(ls(env)[1], envir = env)
+    expect_identical(sum(drawn > 0), 15L)
   })
 })
 
@@ -507,11 +511,12 @@ describe("default_subcortical_slabs", {
     expect_identical(max(axial_small$end), max(big_axial$end))
   })
 
-  it("ignores the whole-hemisphere cortical context labels", {
+  it("frames the labels it is given however large the labels around them", {
     vol <- sub_vol()
+    regions <- setdiff(unique(c(vol)), 0L)
     vol[2:38, 2:38, 2:38][vol[2:38, 2:38, 2:38] == 0L] <- 3L
 
-    result <- default_subcortical_slabs(vol)
+    result <- default_subcortical_slabs(vol, labels = regions)
     axial <- result[result$type == "axial", ]
 
     expect_identical(c(min(axial$start), max(axial$end)), c(8, 24))
@@ -524,11 +529,14 @@ describe("default_subcortical_slabs", {
     expect_identical(c(min(axial$start), max(axial$end)), c(12, 20))
   })
 
-  it("errors when the volume holds no subcortical labels", {
+  it("errors when none of the labels asked for is in the volume", {
     vol <- array(0L, dim = c(10, 10, 10))
     vol[2:8, 2:8, 2:8] <- 3L
 
-    expect_error(default_subcortical_slabs(vol), "No subcortical labels")
+    expect_error(
+      default_subcortical_slabs(vol, labels = 17L),
+      "No subcortical labels"
+    )
   })
 
   it("clips the sagittal slab to one side of the midline", {
@@ -1115,8 +1123,7 @@ describe("subcort_snapshot_names", {
     expect_false(any(grepl("cortex", names, fixed = TRUE)))
   })
 
-  it("adds the cortex slices when they are drawn", {
-    local_mocked_bindings(extract_hemi_from_view = function(...) "")
+  it("adds a snapshot per context label and view", {
     colortable <- data.frame(idx = 10, label = "a", stringsAsFactors = FALSE)
     slabs <- data.frame(name = "axial_1", stringsAsFactors = FALSE)
     cortex_slices <- data.frame(
@@ -1125,12 +1132,17 @@ describe("subcort_snapshot_names", {
       stringsAsFactors = FALSE
     )
 
-    names <- subcort_snapshot_names(colortable, slabs, cortex_slices)
+    names <- subcort_snapshot_names(
+      colortable,
+      slabs,
+      cortex_slices,
+      c("context_0002", "white_matter")
+    )
 
-    # An axial view has no hemisphere, so the context slice is "cortex", not
-    # "cortex_". The trailing underscore used to be asserted here, which made
-    # the test a record of the defect rather than of the intent.
-    expect_true("axial_1_cortex.rda" %in% names)
+    expect_setequal(
+      names,
+      c("axial_1_a.rda", "axial_1_context_0002.rda", "axial_1_white_matter.rda")
+    )
   })
 })
 
@@ -1311,26 +1323,28 @@ describe("snapshot_is_current", {
 })
 
 
-describe("cortex silhouette snapshot staleness", {
-  cortex_slice_row <- function() {
+describe("context snapshot staleness", {
+  slice_row <- function() {
     data.frame(
       x = NA,
       y = NA,
-      z = 5,
+      z = 2,
       view = "axial",
       name = "ax_1",
       stringsAsFactors = FALSE
     )
   }
 
+  context <- data.frame(idx = 2L, label = "context_0002")
+
   local_counting_slice <- function(env = parent.frame()) {
     .cap$drawn <- 0L
     local_mocked_bindings(
-      extract_hemi_from_view = function(...) "left",
-      snapshot_cortex_slice = function(output_dir, view_name, hemi, ...) {
+      snapshot_cortex_slice = function(output_dir, view_name, label, ...) {
         .cap$drawn <- .cap$drawn + 1L
-        file.create(cortex_slice_file(output_dir, view_name, hemi))
-        invisible(NULL)
+        outfile <- projection_file(output_dir, view_name, label)
+        file.create(outfile)
+        outfile
       },
       .env = env
     )
@@ -1338,40 +1352,40 @@ describe("cortex silhouette snapshot staleness", {
 
   it("redraws an unrecorded snapshot", {
     dirs <- local_subcort_dirs()
-    outfile <- file.path(dirs$snapshots, "ax_1_cortex_left.rda")
-    file.create(outfile)
+    file.create(file.path(dirs$snapshots, "ax_1_context_0002.rda"))
     local_counting_slice()
 
-    signatures <- subcort_snapshot_cortex(
-      array(1L, dim = c(4, 4, 4)),
-      cortex_slice_row(),
+    signatures <- subcort_snapshot_context(
+      array(2L, dim = c(4, 4, 4)),
+      context,
+      slice_row(),
       dirs,
       skip_existing = TRUE
     )
 
     expect_identical(.cap$drawn, 1L)
-    expect_named(signatures, "ax_1_cortex_left.rda")
+    expect_named(signatures, "ax_1_context_0002.rda")
   })
 
-  it("reuses a snapshot recorded for this context volume", {
+  it("reuses a snapshot recorded for this label on this slice", {
     dirs <- local_subcort_dirs()
-    outfile <- file.path(dirs$snapshots, "ax_1_cortex_left.rda")
-    file.create(outfile)
     local_counting_slice()
-    cortex_vol <- array(1L, dim = c(4, 4, 4))
+    vol <- array(2L, dim = c(4, 4, 4))
 
-    signatures <- subcort_snapshot_cortex(
-      cortex_vol,
-      cortex_slice_row(),
+    signatures <- subcort_snapshot_context(
+      vol,
+      context,
+      slice_row(),
       dirs,
-      skip_existing = TRUE
+      TRUE
     )
     record_snapshot_signatures(dirs$snapshots, signatures)
     .cap$drawn <- 0L
 
-    subcort_snapshot_cortex(
-      cortex_vol,
-      cortex_slice_row(),
+    subcort_snapshot_context(
+      vol,
+      context,
+      slice_row(),
       dirs,
       skip_existing = TRUE,
       manifest = read_snapshot_manifest(dirs$snapshots)
@@ -1380,30 +1394,29 @@ describe("cortex silhouette snapshot staleness", {
     expect_identical(.cap$drawn, 0L)
   })
 
-  it("redraws when the context volume itself changed", {
+  it("redraws when the label's voxels on the slice changed", {
     dirs <- local_subcort_dirs()
-    outfile <- file.path(dirs$snapshots, "ax_1_cortex_left.rda")
-    file.create(outfile)
     local_counting_slice()
 
-    signatures <- subcort_snapshot_cortex(
-      array(1L, dim = c(4, 4, 4)),
-      cortex_slice_row(),
+    signatures <- subcort_snapshot_context(
+      array(2L, dim = c(4, 4, 4)),
+      context,
+      slice_row(),
       dirs,
       skip_existing = TRUE
     )
     record_snapshot_signatures(dirs$snapshots, signatures)
     .cap$drawn <- 0L
 
-    # The same slice through a context volume with sulci in it is a different
-    # picture, and the old one must not be kept.
-    sulcal <- array(1L, dim = c(4, 4, 4))
-    # nolint next: commas_linter. air formats empty subscripts without spaces.
-    sulcal[,, 2] <- 0L
+    # The same slice with a hole in the label is a different picture, and
+    # the old one must not be kept.
+    holed <- array(2L, dim = c(4, 4, 4))
+    holed[2, 2, 2] <- 0L
 
-    subcort_snapshot_cortex(
-      sulcal,
-      cortex_slice_row(),
+    subcort_snapshot_context(
+      holed,
+      context,
+      slice_row(),
       dirs,
       skip_existing = TRUE,
       manifest = read_snapshot_manifest(dirs$snapshots)
@@ -1636,48 +1649,52 @@ describe("subcort_snapshot_names", {
 })
 
 
-describe("subcort_cortex_volume", {
-  it("flags the cortex labels it is given", {
-    vol <- array(0L, dim = c(4, 4, 2))
-    vol[1, 1, 1] <- 3L
-    vol[2, 2, 1] <- 42L
+describe("subcort_context_table", {
+  regions <- data.frame(idx = c(17L, 18L), label = c("hippocampus", "amygdala"))
 
-    out <- subcort_cortex_volume(vol, dim(vol), list(left = 3L, right = 42L))
+  it("names an unlisted label by its id", {
+    vol <- array(c(0L, 17L, 18L, 2L, 41L, 3L, 0L, 17L), dim = c(2, 2, 2))
 
-    expect_identical(out[1, 1, 1], 1L)
-    expect_identical(out[2, 2, 1], 1L)
-    expect_identical(sum(out), 2L)
+    expect_identical(
+      subcort_context_table(vol, regions),
+      data.frame(
+        idx = c(2L, 3L, 41L),
+        label = c("context_0002", "context_0003", "context_0041")
+      )
+    )
   })
 
-  it("also spans cerebellum and brainstem, so the outline covers them", {
-    vol <- array(0L, dim = c(4, 4, 2))
-    vol[1, 1, 1] <- 7L
-    vol[1, 2, 1] <- 8L
-    vol[1, 3, 1] <- 46L
-    vol[1, 4, 1] <- 47L
-    vol[2, 1, 1] <- 16L
+  it("keeps the name the lookup table gives a declared context label", {
+    vol <- array(c(0L, 17L, 2L, 41L), dim = c(2, 2))
+    declared <- data.frame(idx = 2L, label = "Left-Cerebral-White-Matter")
 
-    out <- subcort_cortex_volume(vol, dim(vol), list(left = 3L, right = 42L))
-
-    expect_identical(sum(out), 5L)
+    expect_identical(
+      subcort_context_table(vol, regions, declared),
+      data.frame(
+        idx = c(2L, 41L),
+        label = c("Left-Cerebral-White-Matter", "context_0041")
+      )
+    )
   })
 
-  it("leaves every other label out of the outline", {
-    vol <- array(c(17L, 18L, 53L, 0L), dim = c(2, 2))
+  it("leaves out a declared label the volume does not hold", {
+    vol <- array(c(0L, 17L, 18L, 17L), dim = c(2, 2))
+    declared <- data.frame(idx = 2L, label = "Left-Cerebral-White-Matter")
 
-    out <- subcort_cortex_volume(vol, dim(vol), list(left = 3L, right = 42L))
-
-    expect_identical(sum(out), 0L)
+    expect_identical(nrow(subcort_context_table(vol, regions, declared)), 0L)
   })
 
-  it("is unaffected by NA voxels", {
-    vol <- array(c(3L, NA_integer_, 42L, 0L), dim = c(2, 2))
+  it("goes by the lookup table alone, whatever the label's id", {
+    cortex_as_region <- data.frame(idx = c(3L, 42L), label = c("lh", "rh"))
+    vol <- array(c(3L, 42L, 17L, 0L), dim = c(2, 2))
 
-    out <- subcort_cortex_volume(vol, dim(vol), list(left = 3L, right = 42L))
+    expect_identical(subcort_context_table(vol, cortex_as_region)$idx, 17L)
+  })
 
-    expect_identical(sum(out), 2L)
-    # Column-major: the NA sits at [2, 1].
-    expect_identical(out[2, 1], 0L)
+  it("ignores NA voxels", {
+    vol <- array(c(17L, NA_integer_, 2L, 0L), dim = c(2, 2))
+
+    expect_identical(subcort_context_table(vol, regions)$idx, 2L)
   })
 })
 

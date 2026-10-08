@@ -51,8 +51,9 @@ tempfile.}
 }
 \value{
 Invisibly, \code{list(volume, lut)}: the merged volume path and a matching
-colour table, ready to pass straight to \code{\link[=create_subcortical_from_volume]{create_subcortical_from_volume()}}
-(optionally with \code{context = list(focus = ...)}).
+colour table, ready to pass straight to \code{\link[=create_subcortical_from_volume]{create_subcortical_from_volume()}}.
+The table's \code{context} column marks the \code{aseg} anatomy as context and the
+stamped labels as regions.
 }
 \description{
 Registers a subcortical parcellation supplied in fixed FSL-MNI152 space into
@@ -76,10 +77,8 @@ merged <- prepare_subcortical_mni152(
   input_volume = "BN_Atlas_subcortical_1mm.nii.gz",
   labels = 211:246
 )
-atlas <- create_subcortical_from_volume(
-  input_volume = merged,
-  context = list(focus = "region_", match_on = "label")
-)
+# The parcels are the atlas's regions; the aseg around them is context
+atlas <- create_subcortical_from_volume(input_volume = merged)
 }
 }
 \seealso{

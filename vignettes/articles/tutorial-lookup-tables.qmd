@@ -33,7 +33,7 @@ library(ggseg.extra)
 
 A LUT is a plain data frame with six columns.
 `idx` is the integer in the volume, `label` is the name, and `R`, `G`, `B` and `A` are the colour, each 0--255.
-The optional columns `type`, `hemi` and `names` are covered [further down](#declaring-what-the-name-doesnt-say).
+The optional columns `type`, `hemi`, `context` and `names` are covered [further down](#declaring-what-the-name-doesnt-say).
 
 ```{r}
 #| label: minimal-lut
@@ -275,6 +275,55 @@ All three volumetric builders honour the column.
 In `create_subcortical_from_volume()` and `create_cerebellar_from_volume()` it sets the region's hemisphere.
 In `create_wholebrain_from_volume()` it also decides which cortical surface a parcel is kept on, so a parcel whose voxels spill across the midline doesn't become two regions.
 
+### `context`: region or backdrop
+
+A subcortical atlas is rarely just its structures.
+They are drawn against other anatomy — a cortical ribbon, the ventricles, the brain stem — that locates them without being part of the atlas.
+`create_subcortical_from_volume()` does not work out which is which.
+It reads it from the table:
+
+- a row is a **region** unless it says otherwise;
+- a row whose `context` is `TRUE` is **context**: it keeps its name, is drawn grey, and gets no 3D mesh;
+- a label that is in the volume but not in the table at all is context too, and since nothing is known about it, it is named for its id — `context_0002`.
+
+```{r}
+#| label: context-column
+anatomy <- data.frame(
+  idx = c(10L, 49L, 3L, 42L),
+  label = c(
+    "Left-Thalamus", "Right-Thalamus",
+    "Left-Cerebral-Cortex", "Right-Cerebral-Cortex"
+  ),
+  R = c(0L, 0L, 205L, 205L), G = c(118L, 118L, 62L, 62L),
+  B = c(14L, 14L, 78L, 78L), A = 0L,
+  context = c(FALSE, FALSE, TRUE, TRUE)
+)
+
+is_lut(anatomy)
+```
+
+The column is `TRUE` or `FALSE`; a row left `NA`, or a table without the column, means region.
+It is deliberately separate from `type`, which says which atlas a label belongs to, so a whole-brain table can say both things about one label.
+
+Declaring context in the table is not the same as turning a region grey afterwards with `atlas_region_contextual()`.
+A region is projected through its whole slab, which turns a cortical ribbon into a solid shape; context is traced on a single slice, so the ribbon keeps its folds.
+Decide in the table when you can, and keep `atlas_region_contextual()` for changing your mind about an atlas you already have.
+
+Context you do not want drawn at all comes out afterwards.
+`atlas_context_remove()` drops every context shape, and `context_pattern(atlas)` gives a pattern matching exactly the context of that atlas, for treating it differently when you polish:
+
+```{r}
+#| label: context-remove
+#| eval: false
+atlas <- create_subcortical_from_volume("aseg.mgz", input_lut = anatomy)
+
+# Round the structures, leave the backdrop's folds alone
+atlas <- atlas_polish(atlas, keep = 0.1, exclude = context_pattern(atlas))
+
+# Or drop the backdrop altogether
+atlas <- atlas_context_remove(atlas)
+```
+
 ### `names`: what a region is called in a legend
 
 Every atlas the pipelines build carries three ways of referring to a region.
@@ -305,8 +354,8 @@ Keep it in the script that builds the table.
 
 ### Keeping the declarations in the file
 
-Both columns survive a trip through a file, so the table you commit is the whole declaration.
-`write_lut()` puts them after the colours, and when `hemi` is there it adds a comment line naming the fields, with `NA` wherever a row declares nothing:
+All three columns survive a trip through a file, so the table you commit is the whole declaration.
+`write_lut()` puts them after the colours, and when `hemi` or `context` is there it adds a comment line naming the fields, with `NA` wherever a row declares nothing:
 
 ```{r}
 #| label: declared-round-trip
