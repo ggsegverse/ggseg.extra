@@ -1031,6 +1031,14 @@ describe("check_atlas_coverage", {
     expect_no_warning(check_atlas_coverage(atlas, 1))
   })
 
+  it("leaves an object that is not a real atlas alone", {
+    stub <- structure(
+      list(core = data.frame(stringsAsFactors = FALSE, label = "lh_r")),
+      class = "ggseg_atlas"
+    )
+    expect_no_warning(expect_identical(check_atlas_coverage(stub, 1), stub))
+  })
+
   it("leaves geometry that is not a data frame alone", {
     # A stubbed or half-built data slot can hand back something with no
     # `label` column at all, and reading one off an atomic vector errors.

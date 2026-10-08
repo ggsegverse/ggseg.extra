@@ -271,6 +271,14 @@ check_atlas_coverage <- function(atlas, min_coverage = get_min_coverage()) {
     return(invisible(atlas))
   }
 
+  # The finalizers are also handed stubs -- a mocked `ggseg_atlas()` in the
+  # pipeline tests returns a bare list with the class attached -- and the
+  # accessors refuse anything that is not a real atlas. Nothing to measure
+  # either way, and the same reason preview_atlas() tolerates one.
+  if (!ggseg.formats::is_ggseg_atlas(atlas)) {
+    return(invisible(atlas))
+  }
+
   # As in drop_labels_without_geometry(): anything that is not a data frame --
   # a 3D-only build's empty slot among them -- counts as no geometry at all,
   # and there is nothing to measure.
