@@ -33,7 +33,7 @@ library(ggseg.extra)
 
 A LUT is a plain data frame with six columns.
 `idx` is the integer in the volume, `label` is the name, and `R`, `G`, `B` and `A` are the colour, each 0--255.
-Two optional columns, `type` and `hemi`, are covered [further down](#declaring-what-the-name-doesnt-say).
+The optional columns `type`, `hemi` and `names` are covered [further down](#declaring-what-the-name-doesnt-say).
 
 ```{r}
 #| label: minimal-lut
@@ -230,7 +230,7 @@ It means the table you inspected is the table the pipeline used, with no chance 
 
 The six columns are the minimum.
 A lookup table can also carry columns that *declare* something about a label, and a pipeline that finds one uses it instead of working the answer out for itself.
-There are two, and both follow the same rule: a value the column cannot mean is an error before any work starts, and `NA` means "I'm not saying", which sends that one label back to the fallback.
+Each answers one question, and all follow the same rule: a value the column cannot mean is an error before any work starts, and `NA` means "I'm not saying", which sends that one label back to the fallback.
 
 ### `type`: cortical, subcortical or cerebellar
 
@@ -274,6 +274,34 @@ The third row above declares nothing, so its hemisphere is still read from its n
 All three volumetric builders honour the column.
 In `create_subcortical_from_volume()` and `create_cerebellar_from_volume()` it sets the region's hemisphere.
 In `create_wholebrain_from_volume()` it also decides which cortical surface a parcel is kept on, so a parcel whose voxels spill across the midline doesn't become two regions.
+
+### `names`: what a region is called in a legend
+
+Every atlas the pipelines build carries three ways of referring to a region.
+`label` is the identifier, unique and never edited.
+`region` is the short key derived from it, the same on both sides of the brain.
+`names` is the one meant to be read: the long-form name a plot shows.
+
+Left alone, `names` is the region.
+A `names` column in the table supplies something better, row by row:
+
+```{r}
+#| label: names-column
+named <- data.frame(
+  idx = c(10L, 49L, 28L),
+  label = c("Left-Thalamus", "Right-Thalamus", "Left-VentralDC"),
+  R = c(0L, 0L, 165L), G = c(118L, 118L, 42L), B = c(14L, 14L, 42L), A = 0L,
+  names = c(NA, NA, "ventral diencephalon")
+)
+
+is_lut(named)
+```
+
+The two thalami declare nothing and are named `thalamus`, after their region.
+`Left-VentralDC` would have been `ventraldc`.
+
+Display names have spaces in them, which a lookup table file cannot hold in a single field, so `names` travels in a data frame and `write_lut()` leaves it out.
+Keep it in the script that builds the table.
 
 ### Keeping the declarations in the file
 

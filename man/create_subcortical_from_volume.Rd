@@ -52,8 +52,14 @@ or \code{ASegStatsLUT.txt}), or a data.frame with columns \code{idx}, \code{labe
 \code{hemi} column (\code{"left"}, \code{"right"} or \code{"midline"}) that sets each
 region's hemisphere; a row left \code{NA}, or a table without the column, has
 it read from the label's name, and any other value is an error.
-\code{\link[=write_lut]{write_lut()}} stores the column in a file. If NULL, region names will be
-generic (e.g., "region_0010") and the atlas will have no palette.}
+\code{\link[=write_lut]{write_lut()}} stores the column in a file.
+
+A data.frame may also carry a \code{names} column: the display name each
+region shows in a legend. A row left \code{NA}, or a table without the
+column, is named after its region.
+
+If NULL, region names will be generic (e.g., "region_0010") and the
+atlas will have no palette.}
 
 \item{atlas_name}{Name for the atlas. If NULL, derived from the input
 filename. It also names the folder of intermediate files inside

@@ -130,10 +130,12 @@ subcort_decimate_meshes <- function(meshes_list, decimate, verbose) {
 subcort_build_components <- function(colortable, meshes_list) {
   all_data <- lapply(names(meshes_list), function(label_name) {
     ct_row <- colortable[colortable$label == label_name, ]
+    region <- label_to_region(label_name)
     tibble(
       hemi = lut_hemi(ct_row, label_name),
-      region = label_to_region(label_name),
+      region = region,
       label = label_name,
+      names = lut_names(ct_row, region),
       colour = ct_row$color[1],
       mesh = list(meshes_list[[label_name]])
     )

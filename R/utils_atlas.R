@@ -590,6 +590,48 @@ is_context_region <- function(x) {
 
 # Atlas data construction ----
 
+#' The display name a lookup table gives a label, or the region if it gives none
+#'
+#' `names` is the long-form name an atlas shows in a legend. The lookup table
+#' may carry it in a `names` column; a table without the column, or a row left
+#' `NA` or blank, falls back to the region derived from the label.
+#' @param lut_row One row of a lookup table.
+#' @param region The region derived for that label.
+#' @return A single string.
+#' @noRd
+lut_names <- function(lut_row, region) {
+  if (!"names" %in% names(lut_row) || nrow(lut_row) == 0) {
+    return(region)
+  }
+  given <- trimws(as.character(lut_row$names[1]))
+  if (is.na(given) || !nzchar(given)) {
+    return(region)
+  }
+  given
+}
+
+
+#' Give a core table its `names` column
+#'
+#' Every atlas a pipeline builds carries `names`, the display name of each
+#' region. Rows without one take their region, so the column is always
+#' complete and always a character vector.
+#' @param core Core data frame with at least `region`.
+#' @return `core` with a `names` column after `label`.
+#' @noRd
+core_with_names <- function(core) {
+  given <- if ("names" %in% names(core)) {
+    as.character(core$names)
+  } else {
+    rep(NA_character_, nrow(core))
+  }
+  missing <- is.na(given) | !nzchar(trimws(given))
+  given[missing] <- as.character(core$region)[missing]
+  core$names <- given
+  core
+}
+
+
 #' Build core, palette, and vertices/meshes from atlas data
 #'
 #' Consolidates the repeated pattern of building atlas components from a
@@ -614,7 +656,11 @@ build_atlas_components <- function(atlas_data) {
     atlas_data <- atlas_data[vertex_lengths > 0, , drop = FALSE]
   }
 
-  core <- distinct(atlas_data, hemi, region, label)
+  core_columns <- intersect(
+    c("hemi", "region", "label", "names"),
+    names(atlas_data)
+  )
+  core <- core_with_names(distinct(atlas_data[core_columns]))
 
   raw_colours <- stats::setNames(atlas_data$colour, atlas_data$label)
   raw_colours <- raw_colours[!duplicated(names(raw_colours))]
