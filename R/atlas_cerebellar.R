@@ -215,6 +215,7 @@ transform_mni_to_suit <- function(
 #' @template atlas_name
 #' @template output_dir
 #' @template decimate
+#' @template min_coverage
 #' @template cleanup
 #' @template verbose
 #' @template skip_existing
@@ -243,6 +244,7 @@ create_cerebellar_from_gifti <- function(
   volume = NULL,
   atlas_name = NULL,
   output_dir = NULL,
+  min_coverage = NULL,
   cleanup = NULL,
   skip_existing = NULL
 ) {
@@ -256,7 +258,8 @@ create_cerebellar_from_gifti <- function(
     output_dir,
     verbose,
     cleanup,
-    skip_existing
+    skip_existing,
+    min_coverage
   )
   config$decimate <- decimate
 
@@ -288,6 +291,7 @@ create_cerebellar_from_gifti <- function(
 #' @template atlas_name
 #' @template output_dir
 #' @template decimate
+#' @template min_coverage
 #' @template cleanup
 #' @template verbose
 #' @template skip_existing
@@ -316,6 +320,7 @@ create_cerebellar_from_annotation <- function(
   volume = NULL,
   atlas_name = NULL,
   output_dir = NULL,
+  min_coverage = NULL,
   cleanup = NULL,
   skip_existing = NULL
 ) {
@@ -329,7 +334,8 @@ create_cerebellar_from_annotation <- function(
     output_dir,
     verbose,
     cleanup,
-    skip_existing
+    skip_existing,
+    min_coverage
   )
   config$decimate <- decimate
 
@@ -367,6 +373,7 @@ create_cerebellar_from_annotation <- function(
 #' @template atlas_name
 #' @template output_dir
 #' @template decimate
+#' @template min_coverage
 #' @template cleanup
 #' @template verbose
 #' @template skip_existing
@@ -392,6 +399,7 @@ create_cerebellar_from_volume <- function(
   input_lut = NULL,
   atlas_name = NULL,
   output_dir = NULL,
+  min_coverage = NULL,
   cleanup = NULL,
   skip_existing = NULL
 ) {
@@ -411,7 +419,8 @@ create_cerebellar_from_volume <- function(
     output_dir,
     verbose,
     cleanup,
-    skip_existing
+    skip_existing,
+    min_coverage
   )
   config$decimate <- decimate
 

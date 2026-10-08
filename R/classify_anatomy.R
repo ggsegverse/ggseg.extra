@@ -112,10 +112,11 @@ is_share <- function(x) {
 
 #' A threshold has to be one number between 0 and 1
 #' @noRd
-check_share <- function(x, arg) {
+check_share <- function(x, arg, call = rlang::caller_env()) {
   if (!is_share(x)) {
     cli::cli_abort(
-      "{.arg {arg}} must be a single number between 0 and 1, not {.val {x}}"
+      "{.arg {arg}} must be a single number between 0 and 1, not {.val {x}}",
+      call = call
     )
   }
   invisible(x)

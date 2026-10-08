@@ -241,6 +241,74 @@ drop_labels_without_geometry <- function(components, sf_data) {
 }
 
 
+#' Report a freshly built atlas whose 2D geometry covers too little of `core`
+#'
+#' A post-condition on a build, not a property of an atlas. The pipelines prune
+#' labels that fail to tessellate one at a time (see
+#' [drop_labels_without_geometry()]), which keeps `core` and the geometry in
+#' step but says nothing about *how much* of the parcellation survived the
+#' projection. A build that lost a fifth of its regions between the view
+#' assembly, the view gathering and the polygon conversion is almost always
+#' badly tuned slabs, a wrong hemisphere or a projection the structures are too
+#' small for -- and the author is still at the keyboard, so this is the moment
+#' to say it.
+#'
+#' Warn rather than abort: the shortest of these pipelines reads a surface, and
+#' the longest runs for hours. Throwing the result away over a threshold would
+#' cost more than the mis-built atlas it saved. The warning is not gated on
+#' `verbose`, for the same reason the label drops are not: it reports data loss.
+#'
+#' A 3D-only build has no 2D geometry to measure and is left alone.
+#'
+#' @param atlas A finished `ggseg_atlas`, or `NULL` for a run that stopped
+#'   before assembling one.
+#' @param min_coverage Share of `core` labels that must carry geometry, between
+#'   0 and 1. `0` turns the check off.
+#' @return `atlas`, unchanged, invisibly.
+#' @noRd
+check_atlas_coverage <- function(atlas, min_coverage = get_min_coverage()) {
+  if (is.null(atlas) || min_coverage <= 0) {
+    return(invisible(atlas))
+  }
+
+  # As in drop_labels_without_geometry(): anything that is not a data frame --
+  # a 3D-only build's empty slot among them -- counts as no geometry at all,
+  # and there is nothing to measure.
+  geom <- ggseg.formats::atlas_geom(atlas)
+  if (!is.data.frame(geom)) {
+    return(invisible(atlas))
+  }
+
+  # The accessors return the raw `core` column, one element per row, so the
+  # vocabulary has to be taken explicitly: counting rows instead of labels
+  # would read a bilateral atlas as half-covered.
+  labels <- ggseg.formats::atlas_labels(atlas)
+  named <- unique(labels[!is.na(labels)])
+  if (length(named) == 0) {
+    return(invisible(atlas))
+  }
+  drawn <- unique(geom$label[!is.na(geom$label)])
+  missing <- setdiff(named, drawn)
+  coverage <- 1 - length(missing) / length(named)
+
+  if (coverage < min_coverage) {
+    cli::cli_warn(
+      c(
+        "2D geometry covers {.strong {round(coverage * 100)}%} of the
+        {length(named)} {.field core} label{?s}, below
+        {.strong {round(min_coverage * 100)}%}.",
+        "x" = "No geometry: {.val {missing}}",
+        "i" = "Raise {.arg min_coverage} to accept this build, or {.val 0}
+        to turn the check off."
+      ),
+      wrap = TRUE
+    )
+  }
+
+  invisible(atlas)
+}
+
+
 #' Remove labels from every label-keyed field of a components list
 #'
 #' The fields are pruned together or the atlas is inconsistent in a new way:
@@ -835,7 +903,8 @@ validate_surface_config <- function(
   output_dir,
   verbose,
   cleanup,
-  skip_existing
+  skip_existing,
+  min_coverage = NULL
 ) {
   resolve_common_config(
     output_dir,
@@ -843,7 +912,8 @@ validate_surface_config <- function(
     cleanup,
     skip_existing,
     steps = NULL,
-    max_step = 2L
+    max_step = 2L,
+    min_coverage = min_coverage
   )
 }
 
@@ -855,7 +925,8 @@ resolve_common_config <- function(
   cleanup,
   skip_existing,
   steps,
-  max_step
+  max_step,
+  min_coverage = NULL
 ) {
   list(
     output_dir = get_output_dir(output_dir),
@@ -863,7 +934,8 @@ resolve_common_config <- function(
     cleanup = get_cleanup(cleanup),
     skip_existing = get_skip_existing(skip_existing),
     steps = validate_steps(steps, max_step),
-    max_step = max_step
+    max_step = max_step,
+    min_coverage = get_min_coverage(min_coverage)
   )
 }
 
@@ -986,6 +1058,8 @@ finalize_atlas <- function(
   if (is.null(atlas)) {
     return(invisible(NULL))
   }
+
+  check_atlas_coverage(atlas, config$min_coverage %||% get_min_coverage())
 
   if (ggseg.formats::is_atlas_sf(atlas)) {
     atlas <- ggseg.formats::as_polygon_atlas(atlas)

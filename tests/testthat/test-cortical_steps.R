@@ -80,7 +80,8 @@ describe("validate_surface_config", {
         "cleanup",
         "skip_existing",
         "steps",
-        "max_step"
+        "max_step",
+        "min_coverage"
       )
     )
   })

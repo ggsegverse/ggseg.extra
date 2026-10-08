@@ -47,6 +47,7 @@
 #' @param slabs A data.frame specifying projection slabs. If NULL, a default
 #'   set of tract slabs is derived from the volume dimensions.
 #' @template vertex_size_limits
+#' @template min_coverage
 #' @template cleanup
 #' @template verbose
 #' @template skip_existing
@@ -125,6 +126,7 @@ create_tract_from_tractography <- function(
   slabs = NULL,
   vertex_size_limits = NULL,
   steps = NULL,
+  min_coverage = NULL,
   cleanup = NULL,
   skip_existing = NULL,
   coord_space = c("infer", "voxel", "mm")
@@ -148,7 +150,8 @@ create_tract_from_tractography <- function(
     centerline_method = tube$centerline_method,
     tube_radius = tube$tube_radius,
     tube_segments = tube$tube_segments,
-    n_points = tube$n_points
+    n_points = tube$n_points,
+    min_coverage = min_coverage
   )
 
   tract_run_pipeline(setup, start_time, slabs, vertex_size_limits)
@@ -187,7 +190,8 @@ tract_setup_pipeline <- function(
   centerline_method,
   tube_radius,
   tube_segments,
-  n_points
+  n_points,
+  min_coverage = NULL
 ) {
   config <- validate_tract_config(
     output_dir,
@@ -198,7 +202,8 @@ tract_setup_pipeline <- function(
     centerline_method,
     tube_radius,
     tube_segments,
-    n_points
+    n_points,
+    min_coverage
   )
 
   tract_check_aseg(input_aseg, config$steps)
@@ -321,7 +326,8 @@ validate_tract_config <- function(
   centerline_method,
   tube_radius,
   tube_segments,
-  n_points
+  n_points,
+  min_coverage = NULL
 ) {
   config <- resolve_common_config(
     output_dir,
@@ -329,7 +335,8 @@ validate_tract_config <- function(
     cleanup,
     skip_existing,
     steps,
-    max_step = tract_total_steps()
+    max_step = tract_total_steps(),
+    min_coverage = min_coverage
   )
   config$output_dir <- absolute_path(config$output_dir)
 
