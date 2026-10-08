@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9118</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9119</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -69,6 +69,16 @@
       <small>Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.9.9.9119" id="ggsegextra-1999119">ggseg.extra 1.9.9.9119<a class="anchor" aria-label="anchor" href="#ggsegextra-1999119"></a></h2>
+<div class="section level3">
+<h3 id="bug-fixes-1-9-9-9119">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-1-9-9-9119"></a></h3>
+<ul><li>
+<p>The default sagittal views of a tract atlas show the hemisphere they are named for. <code>sagittal_left</code> was placed over the right hemisphere and <code>sagittal_right</code> over the left: the positions dated from before volumes were turned to a common orientation on reading, where left and right sit on the other sides of the grid. On FreeSurfer’s <code>fsaverage</code> the left hippocampus lies at x 91–116, and the view called left covered x 163–193.</p>
+<p>The default views are also placed from where the brain sits in <code>input_aseg</code> instead of from fixed positions scaled by the size of the grid, so a volume that is not a 256-voxel, 1 mm cube, or whose brain is off-centre, gets views that cover it. Views passed through <code>slabs</code> are unaffected.</p>
+</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9118" id="ggsegextra-1999118">ggseg.extra 1.9.9.9118<a class="anchor" aria-label="anchor" href="#ggsegextra-1999118"></a></h2>
 <div class="section level3">
