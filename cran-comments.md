@@ -3,7 +3,7 @@
 Local, macOS 26.6, R 4.6, `R CMD check --no-manual --as-cran`:
 **0 errors | 0 warnings | 1 note**.
 
-Tests: 3110 pass, 0 fail, 0 skip. Vignettes rebuild cleanly.
+Tests: 3180 pass, 0 fail, 0 skip. Vignettes rebuild cleanly.
 
 The one note is the standard new-submission note, plus the `Remotes` field:
 
