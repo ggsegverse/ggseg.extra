@@ -21,7 +21,7 @@ Requires FreeSurfer for mesh generation."><meta property="og:image" content="htt
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9119</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9120</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -155,8 +155,12 @@ or <code>ASegStatsLUT.txt</code>), or a data.frame with columns <code>idx</code>
 <code>hemi</code> column (<code>"left"</code>, <code>"right"</code> or <code>"midline"</code>) that sets each
 region's hemisphere; a row left <code>NA</code>, or a table without the column, has
 it read from the label's name, and any other value is an error.
-<code><a href="write_lut.html">write_lut()</a></code> stores the column in a file. If NULL, region names will be
-generic (e.g., "region_0010") and the atlas will have no palette.</p></dd>
+<code><a href="write_lut.html">write_lut()</a></code> stores the column in a file.</p>
+<p>A data.frame may also carry a <code>names</code> column: the display name each
+region shows in a legend. A row left <code>NA</code>, or a table without the
+column, is named after its region.</p>
+<p>If NULL, region names will be generic (e.g., "region_0010") and the
+atlas will have no palette.</p></dd>
 
 
 <dt id="arg-atlas-name">atlas_name<a class="anchor" aria-label="anchor" href="#arg-atlas-name"></a></dt>

@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9119</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9120</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -69,6 +69,18 @@
       <small>Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.9.9.9120" id="ggsegextra-1999120">ggseg.extra 1.9.9.9120<a class="anchor" aria-label="anchor" href="#ggsegextra-1999120"></a></h2>
+<div class="section level3">
+<h3 id="minor-changes-1-9-9-9120">Minor changes<a class="anchor" aria-label="anchor" href="#minor-changes-1-9-9-9120"></a></h3>
+<ul><li><p>Every atlas the pipelines build has a <code>names</code> column in its <code>core</code>: the display name of each region, which ggseg.formats reads with <code>atlas_names()</code>. A region is named after its <code>region</code> unless the lookup table says otherwise.</p></li>
+<li><p>A lookup table passed as a data.frame may carry a <code>names</code> column, and <code><a href="../reference/create_subcortical_from_volume.html">create_subcortical_from_volume()</a></code>, <code><a href="../reference/create_cerebellar_from_volume.html">create_cerebellar_from_volume()</a></code> and <code><a href="../reference/create_wholebrain_from_volume.html">create_wholebrain_from_volume()</a></code> use it as the display name of each label that has one. A row left <code>NA</code> is named after its region. Display names contain spaces, which a lookup table file cannot hold in one field, so <code><a href="../reference/write_lut.html">write_lut()</a></code> does not store the column.</p></li>
+</ul></div>
+<div class="section level3">
+<h3 id="bug-fixes-1-9-9-9120">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-1-9-9-9120"></a></h3>
+<ul><li>Building an atlas no longer prints “<code>core</code> has no names column” under ggseg.formats versions that expect one.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9119" id="ggsegextra-1999119">ggseg.extra 1.9.9.9119<a class="anchor" aria-label="anchor" href="#ggsegextra-1999119"></a></h2>
 <div class="section level3">
