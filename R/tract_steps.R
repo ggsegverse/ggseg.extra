@@ -270,7 +270,7 @@ tract_create_snapshots <- function(
   dims <- dim(aseg_vol)
 
   if (is.null(slabs)) {
-    slabs <- default_tract_slabs(dims)
+    slabs <- default_tract_slabs(aseg_vol)
   }
   cortex_slices <- create_cortex_slices(slabs, dims, vol = aseg_vol)
 
@@ -365,51 +365,64 @@ tract_volume_map <- function(
 }
 
 
-#' Default tract atlas slab configuration
+#' Default projection slabs for a tract atlas
 #'
-#' Creates projection slabs optimized for white matter tract visualization.
-#' Tracts typically span large portions of the brain, so projections cover
-#' wider ranges than subcortical slabs.
+#' Slabs are placed from where the labelled voxels of the reference volume
+#' sit, not from the size of the grid: four axial and five coronal slabs tile
+#' the brain's extent, and three sagittal slabs sit at the midline and out in
+#' each hemisphere.
 #'
-#' @param dims Volume dimensions (3-element vector)
+#' @param vol Reference volume in RAS+ orientation, as [read_volume()] returns
+#'   it. Any non-zero voxel counts as brain.
 #'
 #' @return data.frame with columns: name, type, start, end
 #' @keywords internal
 #' @noRd
-default_tract_slabs <- function(dims) {
-  scale <- dims[1] / 256
-  chunk_size <- round(30 * scale)
-  half_chunk <- chunk_size %/% 2
+default_tract_slabs <- function(vol) {
+  labelled <- which(vol != 0, arr.ind = TRUE)
+  if (nrow(labelled) == 0) {
+    cli::cli_abort(c(
+      "{.arg input_aseg} has no labelled voxels to place the 2D views on.",
+      "i" = "Pass {.arg slabs} to place them yourself."
+    ))
+  }
+  extent <- apply(labelled, 2, range)
 
-  z_lo <- round(60 * scale)
-  z_hi <- round(180 * scale)
-  y_lo <- round(50 * scale)
-  y_hi <- round(200 * scale)
+  rbind(
+    view_slabs(extent[1, 3], extent[2, 3], 4, "axial"),
+    view_slabs(extent[1, 2], extent[2, 2], 5, "coronal"),
+    tract_sagittal_slabs(extent[, 1])
+  )
+}
 
-  axial_views <- make_view_chunks(z_lo, z_hi, chunk_size, "axial")
-  coronal_views <- make_view_chunks(y_lo, y_hi, chunk_size, "coronal")
 
-  mid_x <- dims[1] %/% 2
-  gap <- round(10 * scale)
-  lateral_peak <- round(40 * scale)
+#' Midline, left and right sagittal slabs across a left-right extent
+#'
+#' In RAS+ orientation the first axis runs from left to right, so the left
+#' hemisphere is on its low side. The lateral slabs are centred most of the
+#' way out from the midline and all three are about a quarter of a hemisphere
+#' thick -- the proportions the previous fixed positions had on a conformed
+#' FreeSurfer brain.
+#' @param x_extent First and last labelled index along the first axis.
+#' @noRd
+tract_sagittal_slabs <- function(x_extent) {
+  mid <- round(mean(x_extent))
+  hemisphere_width <- (x_extent[2] - x_extent[1]) / 2
+  half_thickness <- max(1L, round(hemisphere_width * 0.23))
+  lateral_offset <- round(hemisphere_width * 0.78)
 
-  sagittal_views <- data.frame(
-    name = c("sagittal_midline", "sagittal_left", "sagittal_right"),
+  centres <- c(
+    sagittal_midline = mid,
+    sagittal_left = mid - lateral_offset,
+    sagittal_right = mid + lateral_offset
+  )
+  data.frame(
+    name = names(centres),
     type = "sagittal",
-    start = c(
-      mid_x - half_chunk,
-      mid_x + gap + lateral_peak - half_chunk,
-      mid_x - gap - lateral_peak - half_chunk
-    ),
-    end = c(
-      mid_x + half_chunk,
-      mid_x + gap + lateral_peak + half_chunk,
-      mid_x - gap - lateral_peak + half_chunk
-    ),
+    start = pmax(x_extent[1], unname(centres) - half_thickness),
+    end = pmin(x_extent[2], unname(centres) + half_thickness),
     stringsAsFactors = FALSE
   )
-
-  rbind(axial_views, coronal_views, sagittal_views)
 }
 
 

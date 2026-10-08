@@ -289,7 +289,7 @@ describe("tract_create_snapshots", {
         vol[3, 3, 3] <- 3L
         vol
       },
-      default_tract_slabs = function(dims) {
+      default_tract_slabs = function(vol) {
         data.frame(
           name = "ax_1",
           type = "axial",
@@ -420,7 +420,7 @@ describe("tract_create_snapshots", {
   it("handles streamlines as list of lists", {
     local_mocked_bindings(
       read_volume = function(f) array(0L, dim = c(10, 10, 10)),
-      default_tract_slabs = function(dims) {
+      default_tract_slabs = function(vol) {
         data.frame(
           name = "ax_1",
           type = "axial",
@@ -569,68 +569,56 @@ describe("resolve_tube_radius", {
 
 
 describe("default_tract_slabs", {
-  it("creates slabs for standard 256 brain", {
-    dims <- c(256, 256, 256)
-    result <- default_tract_slabs(dims)
+  brain_volume <- function() {
+    vol <- array(0L, dim = c(60L, 80L, 70L))
+    vol[11:30, 21:60, 16:55] <- 2L
+    vol[31:50, 21:60, 16:55] <- 41L
+    vol
+  }
 
-    expect_s3_class(result, "data.frame")
-    expect_true(all(c("name", "type", "start", "end") %in% names(result)))
-    expect_true("axial" %in% result$type)
-    expect_true("coronal" %in% result$type)
-    expect_true("sagittal" %in% result$type)
+  it("places the left view over the left hemisphere and the right over the right", {
+    slabs <- default_tract_slabs(brain_volume())
+    sagittal <- slabs[slabs$type == "sagittal", ]
+    left <- sagittal[sagittal$name == "sagittal_left", ]
+    right <- sagittal[sagittal$name == "sagittal_right", ]
+    midline <- sagittal[sagittal$name == "sagittal_midline", ]
+
+    expect_identical(
+      unique(c(brain_volume()[left$start:left$end, , ])),
+      c(0L, 2L)
+    )
+    expect_identical(
+      unique(c(brain_volume()[right$start:right$end, , ])),
+      c(0L, 41L)
+    )
+    expect_lt(left$end, midline$start)
+    expect_gt(right$start, midline$end)
   })
 
-  it("creates wider projections than subcortical", {
-    dims <- c(256, 256, 256)
-    vol <- array(0L, dim = dims)
-    vol[100:156, 100:156, 85:152] <- 17L
-    tract_slabs <- default_tract_slabs(dims)
-    subcort_slabs <- default_subcortical_slabs(vol)
+  it("tiles the labelled extent, not the grid", {
+    slabs <- default_tract_slabs(brain_volume())
+    axial <- slabs[slabs$type == "axial", ]
+    coronal <- slabs[slabs$type == "coronal", ]
 
-    tract_axial <- tract_slabs[tract_slabs$type == "axial", ]
-    subcort_axial <- subcort_slabs[subcort_slabs$type == "axial", ]
-
-    tract_range <- max(tract_axial$end) - min(tract_axial$start)
-    subcort_range <- max(subcort_axial$end) - min(subcort_axial$start)
-
-    expect_gt(tract_range, subcort_range)
+    expect_identical(c(min(axial$start), max(axial$end)), c(16, 55))
+    expect_identical(c(min(coronal$start), max(coronal$end)), c(21, 60))
+    expect_identical(c(nrow(axial), nrow(coronal)), c(4L, 5L))
   })
 
-  it("creates midline, left, and right sagittal projections", {
-    dims <- c(256, 256, 256)
-    result <- default_tract_slabs(dims)
+  it("follows the brain when it sits off-centre in the grid", {
+    shifted <- array(0L, dim = c(60L, 80L, 70L))
+    shifted[31:50, 21:60, 16:55] <- 2L
+    sagittal <- default_tract_slabs(shifted)
+    sagittal <- sagittal[sagittal$type == "sagittal", ]
 
-    sagittal <- result[result$type == "sagittal", ]
-    expect_identical(nrow(sagittal), 3L)
-    expect_true(any(grepl("midline", sagittal$name, fixed = TRUE)))
-    expect_true(any(grepl("left", sagittal$name, fixed = TRUE)))
-    expect_true(any(grepl("right", sagittal$name, fixed = TRUE)))
+    expect_true(all(sagittal$start >= 31 & sagittal$end <= 50))
   })
 
-  it("sagittal projections are lateralised around midline", {
-    dims <- c(256, 256, 256)
-    result <- default_tract_slabs(dims)
-
-    sagittal <- result[result$type == "sagittal", ]
-    left <- sagittal[grepl("left", sagittal$name, fixed = TRUE), ]
-    right <- sagittal[grepl("right", sagittal$name, fixed = TRUE), ]
-    midline <- sagittal[grepl("midline", sagittal$name, fixed = TRUE), ]
-
-    expect_gt(left$start, midline$end)
-    expect_lt(right$end, midline$start)
-  })
-
-  it("scales for different volume sizes", {
-    dims_256 <- c(256, 256, 256)
-    dims_128 <- c(128, 128, 128)
-
-    result_256 <- default_tract_slabs(dims_256)
-    result_128 <- default_tract_slabs(dims_128)
-
-    axial_256 <- result_256[result_256$type == "axial", ]
-    axial_128 <- result_128[result_128$type == "axial", ]
-
-    expect_identical(axial_128$start[1] / axial_256$start[1], 0.5)
+  it("aborts when the reference volume has nothing labelled", {
+    expect_error(
+      default_tract_slabs(array(0L, dim = c(4L, 4L, 4L))),
+      "no labelled voxels"
+    )
   })
 })
 

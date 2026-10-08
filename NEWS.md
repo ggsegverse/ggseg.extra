@@ -1,3 +1,19 @@
+# ggseg.extra 1.9.9.9119
+
+## Bug fixes
+
+- The default sagittal views of a tract atlas show the hemisphere they are
+  named for. `sagittal_left` was placed over the right hemisphere and
+  `sagittal_right` over the left: the positions dated from before volumes
+  were turned to a common orientation on reading, where left and right sit on
+  the other sides of the grid. On FreeSurfer's `fsaverage` the left
+  hippocampus lies at x 91--116, and the view called left covered x 163--193.
+
+  The default views are also placed from where the brain sits in `input_aseg`
+  instead of from fixed positions scaled by the size of the grid, so a volume
+  that is not a 256-voxel, 1 mm cube, or whose brain is off-centre, gets views
+  that cover it. Views passed through `slabs` are unaffected.
+
 # ggseg.extra 1.9.9.9118
 
 ## Minor changes

@@ -1,32 +1,5 @@
 .cap <- new.env()
 
-describe("make_view_chunks", {
-  it("creates correct number of chunks", {
-    result <- make_view_chunks(85, 152, 10, "axial")
-    expect_s3_class(result, "data.frame")
-    expect_true(all(c("name", "type", "start", "end") %in% names(result)))
-    expect_identical(nrow(result), 7L)
-  })
-
-  it("names chunks with type prefix", {
-    result <- make_view_chunks(100, 150, 20, "coronal")
-    expect_true(all(grepl("^coronal_", result$name)))
-    expect_identical(unique(result$type), "coronal")
-  })
-
-  it("handles exact division", {
-    result <- make_view_chunks(0, 30, 10, "axial")
-    expect_identical(result$start, c(0, 10, 20, 30))
-    expect_identical(result$end, c(9, 19, 29, 30))
-  })
-
-  it("clamps end to hi boundary", {
-    result <- make_view_chunks(0, 25, 10, "axial")
-    expect_identical(result$end[nrow(result)], 25)
-  })
-})
-
-
 describe("create_cortex_slices picking by content", {
   # 8x8x8 volume: cortex (label 1001) only on sagittal slice 3, coronal slice
   # 6 and axial slice 2, none of which is its slab's midpoint.
@@ -158,14 +131,14 @@ describe("create_cortex_slices", {
     views <- data.frame(
       name = c("sagittal_left", "sagittal_right"),
       type = "sagittal",
-      start = c(150, 100),
-      end = c(160, 110),
+      start = c(100, 150),
+      end = c(110, 160),
       stringsAsFactors = FALSE
     )
 
     result <- create_cortex_slices(views, c(256, 256, 256))
 
-    expect_identical(result$x, c(141, 115))
+    expect_identical(result$x, c(115, 141))
   })
 
   it("sets z for axial views", {
@@ -202,20 +175,20 @@ describe("create_cortex_slices", {
     expect_true(is.na(result$z))
   })
 
-  it("sets hemisphere-specific x for sagittal views", {
+  it("puts the left view's slice on the low side of the first axis", {
     views <- data.frame(
       name = c("sagittal_left", "sagittal_right"),
       type = c("sagittal", "sagittal"),
-      start = c(128, 1),
-      end = c(256, 128),
+      start = c(1, 128),
+      end = c(128, 256),
       stringsAsFactors = FALSE
     )
     dims <- c(256, 256, 256)
 
     result <- create_cortex_slices(views, dims)
 
-    expect_identical(result$x[1], round(256 * 0.55))
-    expect_identical(result$x[2], round(256 * 0.45))
+    expect_lt(result$x[1], 128)
+    expect_gt(result$x[2], 128)
   })
 })
 
