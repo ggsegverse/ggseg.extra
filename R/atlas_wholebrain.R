@@ -1978,6 +1978,7 @@ wholebrain_cortical_inputs <- function(config, dirs, projection, split, opts) {
   if (is.null(views)) {
     views <- c("lateral", "medial", "superior", "inferior")
   }
+  check_cortical_views(views)
 
   source_label <- projection$atlas_data$source_label
   cortical_data <- projection$atlas_data[

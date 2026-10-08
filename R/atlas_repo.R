@@ -133,7 +133,7 @@ setup_atlas_repo <- function(
 #'
 #' @param path Directory RStudio creates for the new project.
 #' @param ... Template parameters supplied by the wizard, notably `atlas_name`.
-#' @return Invisible `NULL`, called for its side effects.
+#' @return The path to the new repository, invisibly.
 #' @keywords internal
 #' @examples
 #' \dontrun{

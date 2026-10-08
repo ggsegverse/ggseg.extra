@@ -117,6 +117,7 @@ prepare_subcortical_mni152 <- function(
   # Convert the .mgz aseg the registration targets to NIfTI so RNifti can read
   # it below.
   freesurfer::mri_convert(file = aseg_mgz, outfile = aseg_nii)
+  check_fs_output(aseg_nii, "mri_convert", aseg_mgz)
   aseg_img <- RNifti::readNifti(aseg_nii)
   aseg <- as.array(aseg_img)
   validate_labels_clear_of_aseg(labels, aseg, replace_labels)
@@ -146,6 +147,7 @@ prepare_subcortical_mni152 <- function(
     verbose = fs_verbose,
     intern = TRUE
   )
+  check_fs_output(registered, "mri_vol2vol", parcels_mni)
 
   merged <- embed_labels_in_aseg(
     aseg,
@@ -215,4 +217,21 @@ validate_labels_clear_of_aseg <- function(labels, aseg, replace_labels) {
     remedy = "Shift the parcel ids (in the volume and {.arg lut}) clear of \\
               the aseg ids, or add them to {.arg replace_labels}."
   )
+}
+
+
+#' Abort when a FreeSurfer command left no output behind
+#'
+#' The wrappers used here return without raising when the command fails, and
+#' the next line then fails to open a file that was never written.
+#' @noRd
+check_fs_output <- function(output, command, input) {
+  if (file.exists(output) && file.size(output) > 0) {
+    return(invisible(output))
+  }
+  cli::cli_abort(c(
+    "FreeSurfer's {.code {command}} produced no output.",
+    "x" = "Input: {.path {input}}",
+    "i" = "Rerun with {.code verbose = 2} to see FreeSurfer's own messages."
+  ))
 }

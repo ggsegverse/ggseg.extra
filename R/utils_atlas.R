@@ -149,7 +149,7 @@ derive_atlas_name <- function(filepath) {
   if (length(filepath) != 1L || is.na(filepath)) {
     cli::cli_abort("A single input file is required to derive an atlas name")
   }
-  name <- basename(filepath)
+  name <- sub("\\.gz$", "", basename(filepath))
   ext <- tools::file_ext(name)
   name <- tools::file_path_sans_ext(name)
   if (ext %in% c("gii", "nii")) {

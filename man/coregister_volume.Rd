@@ -36,15 +36,8 @@ before coregistration. Set to \code{FALSE} to register on raw intensities.}
 \item{subjects_dir}{FreeSurfer \code{SUBJECTS_DIR}. Defaults to
 \code{\link[freesurfer:fs_subj_dir]{freesurfer::fs_subj_dir()}}.}
 
-\item{skip_existing}{Reuse a step's intermediate files when they already
-exist, instead of running the step. Default \code{FALSE}, from
-\code{options("ggseg.extra.skip_existing")} or \code{GGSEG_EXTRA_SKIP_EXISTING}.
-
-A cache records which ggseg.extra wrote it, not what it was built from, so
-reuse cannot tell that the volume or lookup table has changed. Reuse is
-therefore asked for rather than assumed, and is reported when it happens.
-To continue an interrupted build, either pass \code{TRUE} or leave the finished
-steps out of \code{steps}.}
+\item{skip_existing}{Reuse the registration at \code{output_lta} when the file
+already exists, instead of running it again. Default \code{FALSE}.}
 
 \item{verbose}{How much to print: \code{0} silent, \code{1} progress (the default),
 \code{2} adds FreeSurfer's own output. \code{TRUE} and \code{FALSE} mean \code{1} and \code{0}.

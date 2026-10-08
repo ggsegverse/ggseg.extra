@@ -1,3 +1,63 @@
+# ggseg.extra 1.9.9.9122
+
+## Bug fixes
+
+- `sitrep()` no longer says `create_cortical_from_annotation()` needs
+  FreeSurfer and the `fsaverage5` subject. It needs only the
+  `freesurferformats` package, as the documentation says, so on a machine
+  without FreeSurfer the pipeline was reported as unavailable while it ran
+  fine.
+
+- `sitrep()` suggests installing neuromapr from CRAN rather than from a
+  GitHub repository.
+
+## Documentation
+
+- Corrected statements that did not match the code:
+
+  - The `create_subcortical_from_volume()` example passed `ggseg3d()` a
+    `hemisphere` argument it does not have, and removed and reclassified
+    regions by their hyphenated labels without `match_on = "label"`, which
+    matches nothing.
+  - `coregister_volume()` and `prepare_subcortical_anatomical()` described
+    `skip_existing` as defaulting from an option and an environment variable
+    that neither function reads.
+  - `new_project_setup_atlas_repo()` returns the path to the new repository,
+    not `NULL`.
+  - `vignette("post-processing")` renamed regions with a recipe that changed
+    nothing, because region names are already stripped of hemisphere prefixes
+    and separators, and gave `atlas_dilate()` amounts in voxels where they
+    are in the atlas's geometry units.
+  - `vignette("ggseg.extra")` said every creator returns a `ggseg_atlas`;
+    `create_wholebrain_from_volume()` returns a list of them.
+  - `vignette("system-setup")` and `vignette("ggseg.extra")` left the
+    cerebellar pipelines out of what each pipeline needs.
+
+# ggseg.extra 1.9.9.9121
+
+## Bug fixes
+
+- The cortical creators reject a view or hemisphere they do not know. A
+  mistyped entry in `views` used to be skipped without a word, so
+  `views = c("lateral", "medal")` returned an atlas with no medial view. All
+  five `create_cortical_from_*()` functions, and `cortical_opts$views` in
+  `create_wholebrain_from_volume()`, now stop before reading any input and
+  name the entry at fault.
+
+- An atlas built from a `.nii.gz` volume without an `atlas_name` is named
+  after the file. The `.gz` was mistaken for the whole extension, so
+  `thalamus.nii.gz` gave an atlas, and a working folder, called
+  `thalamus_nii`.
+
+- `prepare_subcortical_mni152()` reports a FreeSurfer step that produced
+  nothing. A failed `mri_convert` or `mri_vol2vol` used to surface on the
+  next line as a "failed to open" error about a temporary file.
+
+- `project_volume_anatomical()` and `create_tract_from_volume()` read a
+  lookup table file the same way the rest of the package does. They had
+  their own reader, which expected tab-separated columns and could not read
+  a file written by `write_lut()`.
+
 # ggseg.extra 1.9.9.9120
 
 ## Minor changes

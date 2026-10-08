@@ -151,6 +151,27 @@ describe("summarize_pipelines", {
 })
 
 
+describe("cortical_pipelines", {
+  ready <- pipeline_need(TRUE, "ok", "")
+  absent <- pipeline_need(FALSE, "FreeSurfer", "install it")
+  needs <- list(
+    fs = absent,
+    fsavg = absent,
+    fsf = ready,
+    cifti = ready,
+    gifti = ready,
+    neuromapr = ready
+  )
+
+  it("reports building from an annotation as ready without FreeSurfer", {
+    pipelines <- cortical_pipelines(needs)
+    names(pipelines) <- vapply(pipelines, function(p) p$fn, character(1))
+
+    expect_true(pipelines[["create_cortical_from_annotation()"]]$ready)
+  })
+})
+
+
 describe("check_freesurfer when freesurfer package absent", {
   it("returns available=FALSE in minimal detail silently", {
     local_mocked_bindings(

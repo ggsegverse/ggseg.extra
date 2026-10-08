@@ -12,7 +12,7 @@ new_project_setup_atlas_repo(path, ...)
 \item{...}{Template parameters supplied by the wizard, notably \code{atlas_name}.}
 }
 \value{
-Invisible \code{NULL}, called for its side effects.
+The path to the new repository, invisibly.
 }
 \description{
 Backs the "Create ggseg brain atlas" entry in the RStudio New Project wizard,
