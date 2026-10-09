@@ -6,7 +6,7 @@
       Error in `check_lut_hemi()`:
       ! `input_lut` has 2 labels with an unrecognised hemi
       x Not a hemisphere: "rigth" and "both"
-      i Allowed: "left", "right", "midline", and "vermis", or `NA` to read it from the label's name.
+      i Allowed: "left", "right", and "midline", or `NA` to read it from the label's name. "vermis" is accepted and recorded as "midline".
 
 # setup_atlas_dirs working directory safety / rejects an atlas name that is not one directory name
 

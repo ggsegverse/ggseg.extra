@@ -307,13 +307,13 @@ describe("detect_cerebellar_hemi", {
     expect_identical(detect_cerebellar_hemi("Right I-IV"), "right")
   })
 
-  it("detects Vermis prefix", {
-    expect_identical(detect_cerebellar_hemi("Vermis VI"), "vermis")
-    expect_identical(detect_cerebellar_hemi("Vermis CrusII"), "vermis")
+  it("records a Vermis prefix as midline", {
+    expect_identical(detect_cerebellar_hemi("Vermis VI"), "midline")
+    expect_identical(detect_cerebellar_hemi("Vermis CrusII"), "midline")
   })
 
-  it("detects vermis in label body", {
-    expect_identical(detect_cerebellar_hemi("region_vermis"), "vermis")
+  it("records vermis in the label body as midline", {
+    expect_identical(detect_cerebellar_hemi("region_vermis"), "midline")
   })
 
   it("defaults to midline for ambiguous labels", {
@@ -593,7 +593,7 @@ describe("read_cerebellar_annotation", {
     expect_identical(nrow(result), 3L)
     expected_cols <- c("hemi", "region", "label", "colour", "vertices")
     expect_true(all(expected_cols %in% names(result)))
-    expect_identical(result$hemi, c("left", "right", "vermis"))
+    expect_identical(result$hemi, c("left", "right", "midline"))
     expect_identical(result$region, c("i iv", "crus i", "vi"))
     expect_identical(lengths(result$vertices), c(2L, 2L, 1L))
   })
@@ -2856,14 +2856,25 @@ describe("warn_no_hemisphere_split", {
 
   it("stays quiet for an atlas that is split", {
     expect_no_warning(warn_no_hemisphere_split(c("left", "right")))
-    expect_no_warning(warn_no_hemisphere_split(c("left", "right", "vermis")))
+    expect_no_warning(warn_no_hemisphere_split(c("left", "right", "midline")))
   })
 
   it("stays quiet for a single hemisphere that is not the fallback", {
     # An atlas genuinely confined to one side is fine; only the "midline"
     # fallback means nothing was detected.
-    expect_no_warning(warn_no_hemisphere_split(rep("vermis", 3)))
     expect_no_warning(warn_no_hemisphere_split(rep("left", 3)))
+  })
+
+  it("tells a vermis-only atlas apart from one where nothing was detected", {
+    # hemi records the vermis as midline, so all-midline is ambiguous on its
+    # own. The labels disambiguate it.
+    expect_no_warning(
+      warn_no_hemisphere_split(rep("midline", 2), c("vermis_VI", "vermis_X"))
+    )
+    expect_warning(
+      warn_no_hemisphere_split(rep("midline", 2), c("M1L", "M1R")),
+      "no hemisphere was detected"
+    )
   })
 
   it("stays quiet when midline is only some of the regions", {

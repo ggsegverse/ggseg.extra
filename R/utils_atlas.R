@@ -35,12 +35,13 @@ label_to_region <- function(
   region <- label_name
 
   if (remove_hemi) {
-    # vermis and midline are hemisphere values this package itself assigns --
-    # detect_cerebellar_hemi() returns them, and detect_hemi() takes
-    # "midline" as its default for tracts -- so a label carrying one is
-    # carrying a hemisphere, exactly as left/right is, and the region name
-    # should not keep it. Leaving them out is why every cerebellar region in
-    # the ggsegverse was named "midline_<something>".
+    # A label may carry "vermis" or "midline" where another carries
+    # "left"/"right": detect_cerebellar_hemi() reads both, and detect_hemi()
+    # defaults to "midline" for tracts. So a label carrying one is carrying a
+    # hemisphere, and the region name should not keep it. Leaving them out is
+    # why every cerebellar region in the ggsegverse was named
+    # "midline_<something>". Note `hemi` itself records vermis as midline;
+    # the "vermis" spelling survives only in the label.
     stripped <- gsub(
       "^(Left|Right|left|right|lh|rh|L|R|Vermis|vermis|Midline|midline)[- _.]+",
       "",
@@ -534,8 +535,9 @@ check_lut_hemi <- function(lut) {
       "{.arg input_lut} has {sum(unrecognised)} label{?s} with an
       unrecognised {.field hemi}",
       "x" = "Not a hemisphere: {.val {unique(declared[unrecognised])}}",
-      "i" = "Allowed: {.val {c('left', 'right', 'midline', 'vermis')}}, or
-      {.code NA} to read it from the label's name."
+      "i" = "Allowed: {.val {c('left', 'right', 'midline')}}, or {.code NA}
+      to read it from the label's name. {.val vermis} is accepted and
+      recorded as {.val midline}."
     ))
   }
   invisible(lut)

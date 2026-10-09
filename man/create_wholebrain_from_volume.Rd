@@ -284,7 +284,8 @@ as before.
 
 The column is passed on to the subcortical and cerebellar pipelines, where
 it sets the region's hemisphere instead of the label's name doing so. There
-it may also say \code{"midline"} or \code{"vermis"}.
+it may also say \code{"midline"}. \code{"vermis"} is accepted there and recorded as
+\code{"midline"}, since \code{hemi} carries only left/right/midline.
 
 The column can arrive in a data.frame or in a lookup table file:
 \code{\link[=write_lut]{write_lut()}} stores it and \code{\link[=read_lut]{read_lut()}} brings it back.

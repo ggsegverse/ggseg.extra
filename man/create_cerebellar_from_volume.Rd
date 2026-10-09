@@ -38,8 +38,8 @@ passed here is an error. Geometry is shaped after the build: see
 
 \item{input_lut}{Optional path to a colour lookup table file, or a
 data.frame with columns \code{idx}, \code{label}, and optionally \code{R}, \code{G}, \code{B}.
-Either may also carry a \code{hemi} column (\code{"left"}, \code{"right"},
-\code{"vermis"} or \code{"midline"}) that sets each region's hemisphere; a row left
+Either may also carry a \code{hemi} column (\code{"left"}, \code{"right"} or
+\code{"midline"}) that sets each region's hemisphere; a row left
 \code{NA}, or a table without the column, has it read from the label's name,
 and any other value is an error. \code{\link[=write_lut]{write_lut()}} stores the column in a
 file. If NULL, labels are auto-generated from volume values.}

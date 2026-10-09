@@ -82,6 +82,7 @@ describe("check_lut_hemi", {
 
   it("accepts every spelling normalise_hemi() reads, and undeclared rows", {
     spellings <- c("left", "lh", "L", "Right", "rh", "r", "midline", "vermis")
+    expect_identical(normalise_hemi("vermis"), "midline")
     lut <- data.frame(hemi = c(spellings, NA, ""))
     expect_no_error(check_lut_hemi(lut))
     expect_no_error(check_lut_hemi(data.frame(idx = 1L)))

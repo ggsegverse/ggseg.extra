@@ -2,6 +2,12 @@
 
 ## Breaking changes
 
+- `hemi` is recorded as `"left"`, `"right"` or `"midline"` only, matching the
+  closed vocabulary `ggseg.formats` now enforces. The cerebellar vermis is
+  recorded as `"midline"`; `"vermis"` is still read from a label or a lookup
+  table's `hemi` column, and still kept in the label, which is the join key.
+  Atlases built before this need rebuilding to construct at all.
+
 - In `create_subcortical_from_volume()` the lookup table decides what is a
   region and what is context, the grey anatomy the regions are drawn against.
   Nothing is recognised by its id or its name any more.
