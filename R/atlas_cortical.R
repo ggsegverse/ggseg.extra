@@ -18,6 +18,7 @@
 #' @param hemisphere Which hemispheres to include: "lh", "rh", or both.
 #' @param views Which views to include: "lateral", "medial",
 #'   "superior", "inferior".
+#' @template min_coverage
 #' @template cleanup
 #' @template verbose
 #' @template skip_existing
@@ -53,6 +54,7 @@ create_cortical_from_annotation <- function(
   ...,
   atlas_name = NULL,
   output_dir = NULL,
+  min_coverage = NULL,
   cleanup = NULL,
   skip_existing = NULL
 ) {
@@ -66,7 +68,8 @@ create_cortical_from_annotation <- function(
     output_dir,
     verbose,
     cleanup,
-    skip_existing
+    skip_existing,
+    min_coverage
   )
 
   if (is.null(atlas_name)) {
@@ -108,6 +111,7 @@ create_cortical_from_annotation <- function(
 #'   unlike the other cortical creators, because a hand-drawn label set is
 #'   usually a few regions on the outer surface rather than a whole-cortex
 #'   parcellation.
+#' @template min_coverage
 #' @template cleanup
 #' @template verbose
 #' @template skip_existing
@@ -138,6 +142,7 @@ create_cortical_from_labels <- function(
   input_lut = NULL,
   atlas_name = NULL,
   output_dir = NULL,
+  min_coverage = NULL,
   cleanup = NULL,
   skip_existing = NULL
 ) {
@@ -148,7 +153,8 @@ create_cortical_from_labels <- function(
     output_dir,
     verbose,
     cleanup,
-    skip_existing
+    skip_existing,
+    min_coverage
   )
 
   if (!all(file.exists(label_files))) {
@@ -181,6 +187,7 @@ create_cortical_from_labels <- function(
 #' @param hemisphere Which hemispheres to include: "lh", "rh", or both.
 #' @param views Which views to include: "lateral", "medial",
 #'   "superior", "inferior".
+#' @template min_coverage
 #' @template cleanup
 #' @template verbose
 #' @template skip_existing
@@ -208,6 +215,7 @@ create_cortical_from_gifti <- function(
   ...,
   atlas_name = NULL,
   output_dir = NULL,
+  min_coverage = NULL,
   cleanup = NULL,
   skip_existing = NULL
 ) {
@@ -221,7 +229,8 @@ create_cortical_from_gifti <- function(
     output_dir,
     verbose,
     cleanup,
-    skip_existing
+    skip_existing,
+    min_coverage
   )
 
   if (is.null(atlas_name)) {
@@ -255,6 +264,7 @@ create_cortical_from_gifti <- function(
 #' @param hemisphere Which hemispheres to include: "lh", "rh", or both.
 #' @param views Which views to include: "lateral", "medial",
 #'   "superior", "inferior".
+#' @template min_coverage
 #' @template cleanup
 #' @template verbose
 #' @template skip_existing
@@ -282,6 +292,7 @@ create_cortical_from_cifti <- function(
   ...,
   atlas_name = NULL,
   output_dir = NULL,
+  min_coverage = NULL,
   cleanup = NULL,
   skip_existing = NULL
 ) {
@@ -295,7 +306,8 @@ create_cortical_from_cifti <- function(
     output_dir,
     verbose,
     cleanup,
-    skip_existing
+    skip_existing,
+    min_coverage
   )
 
   if (is.null(atlas_name)) {
@@ -339,6 +351,7 @@ create_cortical_from_cifti <- function(
 #' @param hemisphere Which hemispheres to include: "lh", "rh", or both.
 #' @param views Which views to include: "lateral", "medial",
 #'   "superior", "inferior".
+#' @template min_coverage
 #' @template cleanup
 #' @template verbose
 #' @template skip_existing
@@ -373,6 +386,7 @@ create_cortical_from_neuromaps <- function(
   breaks = NULL,
   atlas_name = NULL,
   output_dir = NULL,
+  min_coverage = NULL,
   cleanup = NULL,
   skip_existing = NULL
 ) {
@@ -388,7 +402,8 @@ create_cortical_from_neuromaps <- function(
     output_dir,
     verbose,
     cleanup,
-    skip_existing
+    skip_existing,
+    min_coverage
   )
 
   run_neuromaps_creation(
@@ -816,6 +831,7 @@ cortical_finalize <- function(atlas, config, dirs, start_time) {
     log_elapsed(start_time) # nolint: object_usage_linter.
   }
 
+  check_atlas_coverage(atlas, config$min_coverage %||% get_min_coverage())
   warn_if_large_atlas(atlas)
   preview_atlas(atlas)
 

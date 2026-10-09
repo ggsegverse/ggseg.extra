@@ -41,6 +41,11 @@
 
 ## Minor changes
 
+- Every `create_*()` pipeline gains `min_coverage`: a newly built atlas whose
+  2D geometry covers less than 80% of its `core` labels warns and names the
+  labels with no shape. The threshold used to be a hard gate in ggseg.formats,
+  which made narrowing a finished atlas to one view invalid.
+
 - `read_lut()` and `write_lut()` carry the `context` column, alongside `type`
   and `hemi`. It is separate from `type` on purpose: `type` says which atlas
   a label belongs to, `context` says what role it plays there, so a
