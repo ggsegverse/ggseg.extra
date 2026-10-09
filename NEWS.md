@@ -11,7 +11,8 @@
   fallback is derived. `label` is unchanged, so no atlas's palette keys move.
 
 - The core display column is `display`, following `ggseg.formats`. A lookup
-  table may still spell it `names`, which is read as before.
+  table declares it under that name; the development-only `names` spelling is
+  not read.
 
 - `hemi` is recorded as `"left"`, `"right"` or `"midline"` only, matching the
   closed vocabulary `ggseg.formats` now enforces. The cerebellar vermis is

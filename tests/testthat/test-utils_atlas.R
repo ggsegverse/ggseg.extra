@@ -651,23 +651,6 @@ describe("lut_display", {
     expect_identical(lut_display(row, "thalamus"), "Thalamus")
   })
 
-  it("still reads the column under its former name", {
-    row <- data.frame(idx = 10L, label = "Left-Thalamus", names = "Thalamus")
-
-    expect_identical(lut_display(row, "thalamus"), "Thalamus")
-  })
-
-  it("prefers display over the former spelling", {
-    row <- data.frame(
-      idx = 10L,
-      label = "Left-Thalamus",
-      display = "Thalamus",
-      names = "stale"
-    )
-
-    expect_identical(lut_display(row, "thalamus"), "Thalamus")
-  })
-
   it("falls back to the region when the table gives none", {
     blank <- data.frame(idx = 10L, label = "Left-Thalamus", display = " ")
     missing <- data.frame(idx = 10L, label = "Left-Thalamus", display = NA)

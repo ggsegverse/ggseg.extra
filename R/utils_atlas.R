@@ -793,23 +793,15 @@ is_context_region <- function(x) {
 #' `names` is the long-form name an atlas shows in a legend. The lookup table
 #' may carry it in a `names` column; a table without the column, or a row left
 #' `NA` or blank, falls back to the region derived from the label.
-#' A `names` column is read as well as `display`, since that is what the
-#' column was called before the schema renamed it, and an in-memory lookup
-#' table may still use it. Dropping it silently would lose the author's
-#' display names without saying so.
 #' @param lut_row One row of a lookup table.
 #' @param region The region derived for that label.
 #' @return A single string.
 #' @noRd
 lut_display <- function(lut_row, region) {
-  if (nrow(lut_row) == 0) {
+  if (!"display" %in% names(lut_row) || nrow(lut_row) == 0) {
     return(region)
   }
-  column <- intersect(c("display", "names"), names(lut_row))
-  if (length(column) == 0) {
-    return(region)
-  }
-  given <- trimws(as.character(lut_row[[column[1]]][1]))
+  given <- trimws(as.character(lut_row$display[1]))
   if (is.na(given) || !nzchar(given)) {
     return(region)
   }
