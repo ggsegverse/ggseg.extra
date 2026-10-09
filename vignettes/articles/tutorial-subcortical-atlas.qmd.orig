@@ -345,7 +345,7 @@ aseg
 ```{r}
 #| label: inspect
 #| eval: !expr can_run
-atlas_labels(aseg)
+sort(atlas_labels(aseg))
 
 table(aseg$core$structure)
 ```

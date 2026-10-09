@@ -73,9 +73,12 @@ mri_surf2surf_rereg <- function(
   invisible(run_cmd(cmd, verbose = verbose))
 }
 
-# The CRAN release lacks what the pipelines use (`fs_sitrep()`,
-# `fs_cmd(validate_inputs = )`), so a bare presence check passes on it and the
-# pipeline fails later. CRAN is also why installs go through r-universe.
+# The CRAN release lacks `fs_sitrep()`, and its `fs_cmd(opts_after_outfile =
+# TRUE)` puts the output file before the trailing options rather than after,
+# which silently breaks the `mri_vol2vol` call in
+# `prepare_subcortical_mni152()`. A bare presence check passes on it and the
+# pipeline fails later, so the floor is a version. CRAN is also why installs go
+# through r-universe. See dev/freesurfer-cran-floor.md.
 #' @noRd
 freesurfer_min_version <- function() {
   "1.8.1.902"

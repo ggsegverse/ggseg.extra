@@ -296,7 +296,7 @@ tracula
 ```{r}
 #| label: inspect
 #| eval: !expr can_run
-atlas_labels(tracula)
+sort(atlas_labels(tracula))
 
 table(tracula$core$group, useNA = "ifany")
 ```

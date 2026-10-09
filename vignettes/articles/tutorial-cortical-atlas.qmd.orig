@@ -161,7 +161,7 @@ That grey mass on the medial views is the medial wall --- the part of the surfac
 #| label: context-already
 #| eval: !expr can_run
 length(unique(atlas_sf(yeo7_smooth)$label))
-length(atlas_regions(yeo7_smooth))
+length(unique(atlas_regions(yeo7_smooth)))
 ```
 
 Sixteen labels carry geometry; seven are regions you can fill with data. The medial wall is *context*: `create_cortical_from_annotation()` sets aside any region whose whole name is `unknown` or `???`, or whose name ends in "medial wall" (with a space, underscore, dot, hyphen or nothing in between). Case does not matter.
@@ -226,7 +226,7 @@ yeo7
 ```{r}
 #| label: regions
 #| eval: !expr can_run
-atlas_regions(yeo7) |> sort()
+atlas_regions(yeo7) |> unique() |> sort()
 ```
 
 ```{r}

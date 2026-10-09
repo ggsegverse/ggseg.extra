@@ -380,16 +380,16 @@ aseg
 
 
 ``` r
-atlas_labels(aseg)
-#>  [1] "Left-Thalamus"        "Left-Caudate"         "Left-Putamen"        
-#>  [4] "Left-Pallidum"        "Brain-Stem"           "Left-Hippocampus"    
-#>  [7] "Left-Amygdala"        "Left-Accumbens-area"  "Left-VentralDC"      
-#> [10] "Left-vessel"          "Left-choroid-plexus"  "Right-Thalamus"      
-#> [13] "Right-Caudate"        "Right-Putamen"        "Right-Pallidum"      
-#> [16] "Right-Hippocampus"    "Right-Amygdala"       "Right-Accumbens-area"
-#> [19] "Right-VentralDC"      "Right-vessel"         "Right-choroid-plexus"
-#> [22] "Optic-Chiasm"         "CC_Posterior"         "CC_Mid_Posterior"    
-#> [25] "CC_Central"           "CC_Mid_Anterior"      "CC_Anterior"
+sort(atlas_labels(aseg))
+#>  [1] "Brain-Stem"           "CC_Anterior"          "CC_Central"          
+#>  [4] "CC_Mid_Anterior"      "CC_Mid_Posterior"     "CC_Posterior"        
+#>  [7] "Left-Accumbens-area"  "Left-Amygdala"        "Left-Caudate"        
+#> [10] "Left-choroid-plexus"  "Left-Hippocampus"     "Left-Pallidum"       
+#> [13] "Left-Putamen"         "Left-Thalamus"        "Left-VentralDC"      
+#> [16] "Left-vessel"          "Optic-Chiasm"         "Right-Accumbens-area"
+#> [19] "Right-Amygdala"       "Right-Caudate"        "Right-choroid-plexus"
+#> [22] "Right-Hippocampus"    "Right-Pallidum"       "Right-Putamen"       
+#> [25] "Right-Thalamus"       "Right-VentralDC"      "Right-vessel"
 
 table(aseg$core$structure)
 #> 
