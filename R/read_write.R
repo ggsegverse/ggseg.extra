@@ -956,7 +956,7 @@ extract_vertex_regions <- function(
     labeled[[n_regions]] <- region_vertices
     all_data[[n_regions]] <- tibble(
       hemi = hemi,
-      region = regions$name[i],
+      region = label_to_region(regions$name[i]),
       label = paste(hemi_short, regions$name[i], sep = "_"),
       colour = regions$colour[i],
       vertices = list(region_vertices)
@@ -1159,15 +1159,17 @@ parse_parcellation_values <- function(values, hemi, hemi_short, label_table) {
     if (!is.null(label_table) && pid %in% label_table$id) {
       row <- label_table[label_table$id == pid, ]
       region_name <- row$region[1]
+      region <- region_name
       colour <- if ("colour" %in% names(row)) row$colour[1] else NA_character_
     } else {
       region_name <- paste0("parcel_", pid)
+      region <- label_to_region(region_name)
       colour <- NA_character_
     }
 
     data[[length(data) + 1]] <- tibble(
       hemi = hemi,
-      region = region_name,
+      region = region,
       label = paste(hemi_short, region_name, sep = "_"),
       colour = colour,
       vertices = list(region_vertices)
@@ -1343,7 +1345,7 @@ bin_continuous_values <- function(values, hemi, hemi_short, breaks) {
     region_name <- paste0("bin_", bid)
     data[[length(data) + 1]] <- tibble(
       hemi = hemi,
-      region = region_name,
+      region = label_to_region(region_name),
       label = paste(hemi_short, region_name, sep = "_"),
       colour = palette[bid],
       vertices = list(region_vertices)

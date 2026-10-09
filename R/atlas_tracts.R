@@ -671,7 +671,7 @@ tract_assemble_3d <- function(step1) {
     atlas = step1$atlas_name,
     type = "tract",
     palette = step1$palette,
-    core = core_with_names(step1$core),
+    core = core_with_display(step1$core),
     data = ggseg_data_tract(
       centerlines = step1$centerlines_df
     )
@@ -700,7 +700,7 @@ tract_assemble_full <- function(step1, dirs, slabs, cortex_slices) {
     atlas = step1$atlas_name,
     type = "tract",
     palette = step1$palette,
-    core = core_with_names(step1$core),
+    core = core_with_display(step1$core),
     data = ggseg_data_tract(
       geom = sf_data,
       centerlines = step1$centerlines_df

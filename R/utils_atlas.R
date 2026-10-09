@@ -793,15 +793,23 @@ is_context_region <- function(x) {
 #' `names` is the long-form name an atlas shows in a legend. The lookup table
 #' may carry it in a `names` column; a table without the column, or a row left
 #' `NA` or blank, falls back to the region derived from the label.
+#' A `names` column is read as well as `display`, since that is what the
+#' column was called before the schema renamed it, and an in-memory lookup
+#' table may still use it. Dropping it silently would lose the author's
+#' display names without saying so.
 #' @param lut_row One row of a lookup table.
 #' @param region The region derived for that label.
 #' @return A single string.
 #' @noRd
-lut_names <- function(lut_row, region) {
-  if (!"names" %in% names(lut_row) || nrow(lut_row) == 0) {
+lut_display <- function(lut_row, region) {
+  if (nrow(lut_row) == 0) {
     return(region)
   }
-  given <- trimws(as.character(lut_row$names[1]))
+  column <- intersect(c("display", "names"), names(lut_row))
+  if (length(column) == 0) {
+    return(region)
+  }
+  given <- trimws(as.character(lut_row[[column[1]]][1]))
   if (is.na(given) || !nzchar(given)) {
     return(region)
   }
@@ -809,7 +817,7 @@ lut_names <- function(lut_row, region) {
 }
 
 
-#' Give a core table its `names` column
+#' Give a core table its `display` column
 #'
 #' Every atlas a pipeline builds carries `names`, the display name of each
 #' region. Rows without one take their region, so the column is always
@@ -817,15 +825,15 @@ lut_names <- function(lut_row, region) {
 #' @param core Core data frame with at least `region`.
 #' @return `core` with a `names` column after `label`.
 #' @noRd
-core_with_names <- function(core) {
-  given <- if ("names" %in% names(core)) {
-    as.character(core$names)
+core_with_display <- function(core) {
+  given <- if ("display" %in% names(core)) {
+    as.character(core$display)
   } else {
     rep(NA_character_, nrow(core))
   }
   missing <- is.na(given) | !nzchar(trimws(given))
   given[missing] <- as.character(core$region)[missing]
-  core$names <- given
+  core$display <- given
   core
 }
 
@@ -855,10 +863,10 @@ build_atlas_components <- function(atlas_data) {
   }
 
   core_columns <- intersect(
-    c("hemi", "region", "label", "names"),
+    c("hemi", "region", "label", "display"),
     names(atlas_data)
   )
-  core <- core_with_names(distinct(atlas_data[core_columns]))
+  core <- core_with_display(distinct(atlas_data[core_columns]))
 
   raw_colours <- stats::setNames(atlas_data$colour, atlas_data$label)
   raw_colours <- raw_colours[!duplicated(names(raw_colours))]
@@ -1081,17 +1089,22 @@ finalize_atlas <- function(
 #' @noRd
 parse_lut_colours <- function(input_lut) {
   if (is.null(input_lut)) {
-    return(list(region_names = NULL, colours = NULL))
+    return(list(source_names = NULL, region_names = NULL, colours = NULL))
   }
 
   lut <- if (is.character(input_lut)) read_lut(input_lut) else input_lut
-  region_names <- if ("region" %in% names(lut)) {
+  # `source_names` is the identifier `label` is built from; its precedence is
+  # unchanged, so no atlas's labels or palette keys move. `region_names` is
+  # set only when the table declares a `region`, which is the author curating
+  # it -- everything else has `region` derived from the identifier.
+  source_names <- if ("region" %in% names(lut)) {
     lut$region
   } else if ("label" %in% names(lut)) {
     lut$label
   } else {
     NULL
   }
+  region_names <- if ("region" %in% names(lut)) lut$region else NULL
   colours <- if ("hex" %in% names(lut)) {
     lut$hex
   } else if (all(c("R", "G", "B") %in% names(lut))) {
@@ -1100,7 +1113,11 @@ parse_lut_colours <- function(input_lut) {
     NULL
   }
 
-  list(region_names = region_names, colours = colours)
+  list(
+    source_names = source_names,
+    region_names = region_names,
+    colours = colours
+  )
 }
 
 

@@ -2,6 +2,17 @@
 
 ## Breaking changes
 
+- `region` is derived from the region's identifier rather than copied from
+  it, so the hemisphere no longer ends up in both. The surface pipelines
+  (`.annot`, GIFTI, CIFTI, neuromaps and label files) were the only ones not
+  already doing this, which is why cortical atlases carried it and
+  subcortical ones did not. A lookup table that declares a `region` column
+  has had it curated by the atlas author and is used as given; only the
+  fallback is derived. `label` is unchanged, so no atlas's palette keys move.
+
+- The core display column is `display`, following `ggseg.formats`. A lookup
+  table may still spell it `names`, which is read as before.
+
 - `hemi` is recorded as `"left"`, `"right"` or `"midline"` only, matching the
   closed vocabulary `ggseg.formats` now enforces. The cerebellar vermis is
   recorded as `"midline"`; `"vermis"` is still read from a label or a lookup

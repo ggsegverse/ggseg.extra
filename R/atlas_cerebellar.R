@@ -828,10 +828,10 @@ split_cerebellar_surface_deep <- function(atlas_data, config) {
 merge_deep_into_components <- function(components, deep_data, dir) {
   if (!is.null(deep_data) && nrow(deep_data) > 0) {
     deep_columns <- intersect(
-      c("hemi", "region", "label", "names"),
+      c("hemi", "region", "label", "display"),
       names(deep_data)
     )
-    deep_core <- core_with_names(dplyr::distinct(deep_data[deep_columns]))
+    deep_core <- core_with_display(dplyr::distinct(deep_data[deep_columns]))
     components$core <- rbind(components$core, deep_core)
 
     deep_colours <- stats::setNames(deep_data$colour, deep_data$label)
@@ -896,7 +896,7 @@ cerebellar_project_and_build <- function(
     atlas = atlas_name,
     type = "cerebellar",
     palette = components$palette,
-    core = core_with_names(components$core),
+    core = core_with_display(components$core),
     data = ggseg_data_cerebellar(
       geom = sf_data,
       vertices = components$vertices_df,
@@ -1572,7 +1572,7 @@ build_cerebellar_volume_row <- function(
     hemi = hemi,
     region = region,
     label = label,
-    names = lut_names(colortable[i, ], region),
+    display = lut_display(colortable[i, ], region),
     colour = colour,
     vol_idx = idx,
     vertices = list(region_vertices),

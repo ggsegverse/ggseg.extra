@@ -1019,7 +1019,7 @@ overlay_label_row <- function(
     hemi = hemi,
     region = region,
     label = paste(hemi_short, safe_name, sep = "_"),
-    names = lut_names(ct_row, region),
+    display = lut_display(ct_row, region),
     colour = colour,
     vertices = list(which(overlay == label_val) - 1L),
     source_label = label_name,

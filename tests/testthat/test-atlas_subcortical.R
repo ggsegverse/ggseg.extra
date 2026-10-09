@@ -132,10 +132,10 @@ describe("create_subcortical_from_volume", {
 
     core <- atlas$core
     expect_identical(
-      core$names[core$label == "Left-Thalamus"],
+      core$display[core$label == "Left-Thalamus"],
       "Thalamus (left)"
     )
-    expect_identical(core$names[core$label == "Right-Thalamus"], "thalamus")
+    expect_identical(core$display[core$label == "Right-Thalamus"], "thalamus")
   })
 
   it("makes regions of the labels the lookup table lists and context of the rest", {

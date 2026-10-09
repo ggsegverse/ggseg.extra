@@ -231,7 +231,7 @@ describe("read_cifti_annotation", {
     writeLines("mock", tmp)
 
     result <- read_cifti_annotation(tmp)
-    expect_identical(result$colour[result$region == "test_region"], "#FF0000")
+    expect_identical(result$colour[result$region == "test region"], "#FF0000")
   })
 
   it("errors when vertex count does not match fsaverage5", {
@@ -350,8 +350,8 @@ describe("parse_parcellation_values", {
     )
 
     region_names <- vapply(result, function(r) r$region[1], character(1))
-    expect_true("parcel_1" %in% region_names)
-    expect_true("parcel_2" %in% region_names)
+    expect_true("parcel 1" %in% region_names)
+    expect_true("parcel 2" %in% region_names)
     expect_true("unknown" %in% region_names)
   })
 
@@ -414,7 +414,7 @@ describe("read_neuromaps_annotation", {
     expect_s3_class(result, "tbl_df")
     expect_named(result, c("hemi", "region", "label", "colour", "vertices"))
 
-    bin_regions <- result[grepl("^bin_", result$region), ]
+    bin_regions <- result[grepl("^bin ", result$region), ]
     expect_length(unique(bin_regions$region), 5)
 
     expect_true("left" %in% result$hemi)
@@ -440,7 +440,7 @@ describe("read_neuromaps_annotation", {
 
     result <- read_neuromaps_annotation(lh)
 
-    parcel_regions <- result[grepl("^parcel_", result$region), ]
+    parcel_regions <- result[grepl("^parcel ", result$region), ]
     expect_identical(nrow(parcel_regions), 2L)
     expect_true("unknown" %in% result$region)
   })

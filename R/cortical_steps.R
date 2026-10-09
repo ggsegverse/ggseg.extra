@@ -19,6 +19,7 @@ camera_presets <- list(
 #' @noRd
 labels_read_files <- function(
   label_files,
+  source_names,
   region_names,
   colours,
   default_colours
@@ -42,16 +43,25 @@ labels_read_files <- function(
       }
       hemi <- if (!is.na(hemi_short)) hemi_to_long(hemi_short) else NA
 
-      region <- if (is.null(region_names)) {
+      source_name <- if (is.null(source_names)) {
         gsub("^[lr]h\\.", "", file_path_sans_ext(filename))
       } else {
-        region_names[i]
+        source_names[i]
       }
 
       label <- if (!is.na(hemi_short)) {
-        paste(hemi_short, region, sep = "_")
+        paste(hemi_short, source_name, sep = "_")
       } else {
-        region
+        source_name
+      }
+
+      # A lookup table that declares `region` has had it curated by the atlas
+      # author, so it is used as given. Otherwise it is derived from the
+      # identifier, which is what keeps the hemisphere out of `region`.
+      region <- if (is.null(region_names)) {
+        label_to_region(source_name)
+      } else {
+        region_names[i]
       }
       colour <- if (is.null(colours)) default_colours[i] else colours[i]
 
@@ -66,7 +76,13 @@ labels_read_files <- function(
     },
     .options = furrr_options(
       packages = "ggseg.extra",
-      globals = c("region_names", "colours", "default_colours", "p")
+      globals = c(
+        "source_names",
+        "region_names",
+        "colours",
+        "default_colours",
+        "p"
+      )
     )
   )
 
