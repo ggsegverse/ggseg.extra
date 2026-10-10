@@ -81,7 +81,19 @@ describe("check_lut_hemi", {
   })
 
   it("accepts every spelling normalise_hemi() reads, and undeclared rows", {
-    spellings <- c("left", "lh", "L", "Right", "rh", "r", "midline", "vermis")
+    spellings <- c(
+      "left",
+      "lh",
+      "L",
+      "Right",
+      "rh",
+      "r",
+      "midline",
+      "vermis",
+      "middle"
+    )
+    expect_identical(normalise_hemi("vermis"), "midline")
+    expect_identical(normalise_hemi("middle"), "midline")
     lut <- data.frame(hemi = c(spellings, NA, ""))
     expect_no_error(check_lut_hemi(lut))
     expect_no_error(check_lut_hemi(data.frame(idx = 1L)))
@@ -411,7 +423,7 @@ describe("parse_lut_colours", {
     expect_null(result$colours)
   })
 
-  it("reads region names and colours from a region-column data.frame", {
+  it("treats a declared region column as curated, and as the identifier", {
     lut <- data.frame(
       region = c("Unknown", "region1"),
       R = c(0L, 205L),
@@ -419,6 +431,7 @@ describe("parse_lut_colours", {
       B = c(0L, 176L)
     )
     result <- parse_lut_colours(lut)
+    expect_identical(result$source_names, c("Unknown", "region1"))
     expect_identical(result$region_names, c("Unknown", "region1"))
     expect_identical(result$colours, c("#000000", "#CD82B0"))
   })
@@ -433,7 +446,8 @@ describe("parse_lut_colours", {
       A = c(0L, 0L)
     )
     result <- parse_lut_colours(lut)
-    expect_identical(result$region_names, c("Unknown", "region1"))
+    expect_identical(result$source_names, c("Unknown", "region1"))
+    expect_null(result$region_names)
     expect_identical(result$colours, c("#000000", "#CD82B0"))
   })
 
@@ -449,7 +463,8 @@ describe("parse_lut_colours", {
 
     result <- parse_lut_colours(lut_file)
 
-    expect_identical(result$region_names, c("Unknown", "region1"))
+    expect_identical(result$source_names, c("Unknown", "region1"))
+    expect_null(result$region_names)
     expect_identical(result$colours, c("#000000", "#CD82B0"))
   })
 
@@ -640,50 +655,50 @@ describe("finalize_atlas", {
 })
 
 
-describe("lut_names", {
-  it("uses the name the lookup table gives", {
-    row <- data.frame(idx = 10L, label = "Left-Thalamus", names = "Thalamus")
+describe("lut_display", {
+  it("uses the display name the lookup table gives", {
+    row <- data.frame(idx = 10L, label = "Left-Thalamus", display = "Thalamus")
 
-    expect_identical(lut_names(row, "thalamus"), "Thalamus")
+    expect_identical(lut_display(row, "thalamus"), "Thalamus")
   })
 
   it("falls back to the region when the table gives none", {
-    blank <- data.frame(idx = 10L, label = "Left-Thalamus", names = " ")
-    missing <- data.frame(idx = 10L, label = "Left-Thalamus", names = NA)
+    blank <- data.frame(idx = 10L, label = "Left-Thalamus", display = " ")
+    missing <- data.frame(idx = 10L, label = "Left-Thalamus", display = NA)
     no_column <- data.frame(idx = 10L, label = "Left-Thalamus")
 
-    expect_identical(lut_names(blank, "thalamus"), "thalamus")
-    expect_identical(lut_names(missing, "thalamus"), "thalamus")
-    expect_identical(lut_names(no_column, "thalamus"), "thalamus")
-    expect_identical(lut_names(no_column[0, ], "thalamus"), "thalamus")
+    expect_identical(lut_display(blank, "thalamus"), "thalamus")
+    expect_identical(lut_display(missing, "thalamus"), "thalamus")
+    expect_identical(lut_display(no_column, "thalamus"), "thalamus")
+    expect_identical(lut_display(no_column[0, ], "thalamus"), "thalamus")
   })
 })
 
 
-describe("core_with_names", {
+describe("core_with_display", {
   core <- data.frame(
     hemi = c("left", "right"),
     region = c("thalamus", "amygdala"),
     label = c("Left-Thalamus", "Right-Amygdala")
   )
 
-  it("names every row after its region when there are no names", {
-    expect_identical(core_with_names(core)$names, c("thalamus", "amygdala"))
+  it("names every row after its region when there is no display", {
+    expect_identical(core_with_display(core)$display, c("thalamus", "amygdala"))
   })
 
-  it("keeps the names it is given and fills only the gaps", {
-    partly <- transform(core, names = c("Thalamus proper", NA))
+  it("keeps the display names it is given and fills only the gaps", {
+    partly <- transform(core, display = c("Thalamus proper", NA))
 
     expect_identical(
-      core_with_names(partly)$names,
+      core_with_display(partly)$display,
       c("Thalamus proper", "amygdala")
     )
   })
 
   it("always returns a character column", {
-    numbered <- transform(core, names = c(1, 2))
+    numbered <- transform(core, display = c(1, 2))
 
-    expect_type(core_with_names(numbered)$names, "character")
+    expect_type(core_with_display(numbered)$display, "character")
   })
 })
 

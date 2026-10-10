@@ -135,7 +135,7 @@ subcort_build_components <- function(colortable, meshes_list) {
       hemi = lut_hemi(ct_row, label_name),
       region = region,
       label = label_name,
-      names = lut_names(ct_row, region),
+      display = lut_display(ct_row, region),
       colour = ct_row$color[1],
       mesh = list(meshes_list[[label_name]])
     )

@@ -1,6 +1,25 @@
-# ggseg.extra 1.9.9.9123
+# ggseg.extra 1.9.9.9124
 
 ## Breaking changes
+
+- `region` is derived from the region's identifier rather than copied from
+  it, so the hemisphere no longer ends up in both. The surface pipelines
+  (`.annot`, GIFTI, CIFTI, neuromaps and label files) were the only ones not
+  already doing this, which is why cortical atlases carried it and
+  subcortical ones did not. A lookup table that declares a `region` column
+  has had it curated by the atlas author and is used as given; only the
+  fallback is derived. `label` is unchanged, so no atlas's palette keys move.
+
+- The core display column is `display`, following `ggseg.formats`. A lookup
+  table declares it under that name; the development-only `names` spelling is
+  not read.
+
+- `hemi` is recorded as `"left"`, `"right"` or `"midline"` only, matching the
+  closed vocabulary `ggseg.formats` now enforces. The cerebellar vermis is
+  recorded as `"midline"`; `"vermis"` and `"middle"` are still read from a
+  label or a lookup table's `hemi` column, and the `vermis_` spelling is still
+  kept in the label, which is the join key.
+  Atlases built before this need rebuilding to construct at all.
 
 - In `create_subcortical_from_volume()` the lookup table decides what is a
   region and what is context, the grey anatomy the regions are drawn against.

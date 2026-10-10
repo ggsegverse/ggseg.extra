@@ -115,11 +115,11 @@ describe("create_subcortical_from_volume", {
     )
   })
 
-  it("names regions from the lookup table, and from the label without one", {
+  it("takes display from the lookup table, and from the label without one", {
     skip_if_no_freesurfer()
 
     lut <- read_lut(test_path("testdata", "volumetric", "lut.txt"))
-    lut$names <- ifelse(lut$idx == 10L, "Thalamus (left)", NA)
+    lut$display <- ifelse(lut$idx == 10L, "Thalamus (left)", NA)
 
     atlas <- create_subcortical_from_volume(
       input_volume = test_path("testdata", "volumetric", "aseg.mgz"),
@@ -132,10 +132,10 @@ describe("create_subcortical_from_volume", {
 
     core <- atlas$core
     expect_identical(
-      core$names[core$label == "Left-Thalamus"],
+      core$display[core$label == "Left-Thalamus"],
       "Thalamus (left)"
     )
-    expect_identical(core$names[core$label == "Right-Thalamus"], "thalamus")
+    expect_identical(core$display[core$label == "Right-Thalamus"], "thalamus")
   })
 
   it("makes regions of the labels the lookup table lists and context of the rest", {

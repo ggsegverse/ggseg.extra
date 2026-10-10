@@ -365,8 +365,8 @@ create_cerebellar_from_annotation <- function(
 #' @param input_volume Path to a cerebellar segmentation volume (NIfTI).
 #' @param input_lut Optional path to a colour lookup table file, or a
 #'   data.frame with columns `idx`, `label`, and optionally `R`, `G`, `B`.
-#'   Either may also carry a `hemi` column (`"left"`, `"right"`,
-#'   `"vermis"` or `"midline"`) that sets each region's hemisphere; a row left
+#'   Either may also carry a `hemi` column (`"left"`, `"right"` or
+#'   `"midline"`) that sets each region's hemisphere; a row left
 #'   `NA`, or a table without the column, has it read from the label's name,
 #'   and any other value is an error. [write_lut()] stores the column in a
 #'   file. If NULL, labels are auto-generated from volume values.
@@ -828,10 +828,10 @@ split_cerebellar_surface_deep <- function(atlas_data, config) {
 merge_deep_into_components <- function(components, deep_data, dir) {
   if (!is.null(deep_data) && nrow(deep_data) > 0) {
     deep_columns <- intersect(
-      c("hemi", "region", "label", "names"),
+      c("hemi", "region", "label", "display"),
       names(deep_data)
     )
-    deep_core <- core_with_names(dplyr::distinct(deep_data[deep_columns]))
+    deep_core <- core_with_display(dplyr::distinct(deep_data[deep_columns]))
     components$core <- rbind(components$core, deep_core)
 
     deep_colours <- stats::setNames(deep_data$colour, deep_data$label)
@@ -890,13 +890,13 @@ cerebellar_project_and_build <- function(
   # After the deep nuclei are merged in: their geometry is not on the flatmap,
   # so checking before this would drop every one of them.
   components <- drop_labels_without_geometry(components, sf_data)
-  warn_no_hemisphere_split(components$core$hemi)
+  warn_no_hemisphere_split(components$core$hemi, components$core$label)
 
   atlas <- ggseg_atlas(
     atlas = atlas_name,
     type = "cerebellar",
     palette = components$palette,
-    core = core_with_names(components$core),
+    core = core_with_display(components$core),
     data = ggseg_data_cerebellar(
       geom = sf_data,
       vertices = components$vertices_df,
@@ -1374,10 +1374,12 @@ extract_gifti_label_table <- function(gii) {
 #'
 #' Maps SUIT-style region names to hemisphere values. Recognises
 #' "Left"/"Right" prefixes and assigns "Vermis" labels to the
-#' "vermis" hemisphere. Unlabelled regions default to "midline".
+#' cerebellar midline, so it is recorded as "midline" -- `hemi` carries only
+#' left/right/midline. The `vermis_` spelling is kept in the label, which is
+#' the join key. Unlabelled regions default to "midline".
 #'
 #' @param region_name Character string.
-#' @return "left", "right", "vermis", or "midline".
+#' @return "left", "right", or "midline".
 #' @noRd
 detect_cerebellar_hemi <- function(region_name) {
   if (grepl("^(Left|left)[- _.]", region_name)) {
@@ -1387,10 +1389,10 @@ detect_cerebellar_hemi <- function(region_name) {
     return("right")
   }
   if (grepl("^(Vermis|vermis)[- _.]", region_name)) {
-    return("vermis")
+    return("midline")
   }
   if (grepl("vermis", region_name, ignore.case = TRUE)) {
-    return("vermis")
+    return("midline")
   }
 
   hemi <- detect_hemi(region_name, default = "midline")
@@ -1570,7 +1572,7 @@ build_cerebellar_volume_row <- function(
     hemi = hemi,
     region = region,
     label = label,
-    names = lut_names(colortable[i, ], region),
+    display = lut_display(colortable[i, ], region),
     colour = colour,
     vol_idx = idx,
     vertices = list(region_vertices),
@@ -1956,10 +1958,20 @@ resolve_provided_lut <- function(input_lut, unique_ids) {
 #' So this reports rather than guesses harder. An atlas genuinely without a
 #' hemisphere split is fine and common, which is why it is a warning naming
 #' the remedy and not an error.
+#'
+#' `hemi` records the vermis as `"midline"`, so an all-midline atlas is either
+#' one where nothing was detected or a genuinely vermis-only parcellation.
+#' Those are not the same thing, and only the first is worth reporting, so the
+#' labels are consulted to tell them apart.
 #' @noRd
-warn_no_hemisphere_split <- function(hemi) {
+warn_no_hemisphere_split <- function(hemi, label = NULL) {
   present <- unique(hemi[!is.na(hemi)])
   if (length(present) != 1L || !identical(present, "midline")) {
+    return(invisible(NULL))
+  }
+  named_midline <- !is.null(label) &&
+    any(grepl("vermis|midline", label, ignore.case = TRUE))
+  if (named_midline) {
     return(invisible(NULL))
   }
   cli::cli_warn(

@@ -221,7 +221,7 @@ tract_build_core <- function(meshes_list, colours, tract_names) {
     )
   })
 
-  core <- core_with_names(do.call(rbind, core_rows))
+  core <- core_with_display(do.call(rbind, core_rows))
 
   # No lookup table means no palette. See build_atlas_components().
   raw_colours <- colours[names(meshes_list)]

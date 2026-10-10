@@ -35,12 +35,13 @@ label_to_region <- function(
   region <- label_name
 
   if (remove_hemi) {
-    # vermis and midline are hemisphere values this package itself assigns --
-    # detect_cerebellar_hemi() returns them, and detect_hemi() takes
-    # "midline" as its default for tracts -- so a label carrying one is
-    # carrying a hemisphere, exactly as left/right is, and the region name
-    # should not keep it. Leaving them out is why every cerebellar region in
-    # the ggsegverse was named "midline_<something>".
+    # A label may carry "vermis" or "midline" where another carries
+    # "left"/"right": detect_cerebellar_hemi() reads both, and detect_hemi()
+    # defaults to "midline" for tracts. So a label carrying one is carrying a
+    # hemisphere, and the region name should not keep it. Leaving them out is
+    # why every cerebellar region in the ggsegverse was named
+    # "midline_<something>". Note `hemi` itself records vermis as midline;
+    # the "vermis" spelling survives only in the label.
     stripped <- gsub(
       "^(Left|Right|left|right|lh|rh|L|R|Vermis|vermis|Midline|midline)[- _.]+",
       "",
@@ -534,8 +535,9 @@ check_lut_hemi <- function(lut) {
       "{.arg input_lut} has {sum(unrecognised)} label{?s} with an
       unrecognised {.field hemi}",
       "x" = "Not a hemisphere: {.val {unique(declared[unrecognised])}}",
-      "i" = "Allowed: {.val {c('left', 'right', 'midline', 'vermis')}}, or
-      {.code NA} to read it from the label's name."
+      "i" = "Allowed: {.val {c('left', 'right', 'midline')}}, or {.code NA}
+      to read it from the label's name. {.val vermis} and {.val middle} are
+      accepted and recorded as {.val midline}."
     ))
   }
   invisible(lut)
@@ -795,11 +797,11 @@ is_context_region <- function(x) {
 #' @param region The region derived for that label.
 #' @return A single string.
 #' @noRd
-lut_names <- function(lut_row, region) {
-  if (!"names" %in% names(lut_row) || nrow(lut_row) == 0) {
+lut_display <- function(lut_row, region) {
+  if (!"display" %in% names(lut_row) || nrow(lut_row) == 0) {
     return(region)
   }
-  given <- trimws(as.character(lut_row$names[1]))
+  given <- trimws(as.character(lut_row$display[1]))
   if (is.na(given) || !nzchar(given)) {
     return(region)
   }
@@ -807,7 +809,7 @@ lut_names <- function(lut_row, region) {
 }
 
 
-#' Give a core table its `names` column
+#' Give a core table its `display` column
 #'
 #' Every atlas a pipeline builds carries `names`, the display name of each
 #' region. Rows without one take their region, so the column is always
@@ -815,15 +817,15 @@ lut_names <- function(lut_row, region) {
 #' @param core Core data frame with at least `region`.
 #' @return `core` with a `names` column after `label`.
 #' @noRd
-core_with_names <- function(core) {
-  given <- if ("names" %in% names(core)) {
-    as.character(core$names)
+core_with_display <- function(core) {
+  given <- if ("display" %in% names(core)) {
+    as.character(core$display)
   } else {
     rep(NA_character_, nrow(core))
   }
   missing <- is.na(given) | !nzchar(trimws(given))
   given[missing] <- as.character(core$region)[missing]
-  core$names <- given
+  core$display <- given
   core
 }
 
@@ -853,10 +855,10 @@ build_atlas_components <- function(atlas_data) {
   }
 
   core_columns <- intersect(
-    c("hemi", "region", "label", "names"),
+    c("hemi", "region", "label", "display"),
     names(atlas_data)
   )
-  core <- core_with_names(distinct(atlas_data[core_columns]))
+  core <- core_with_display(distinct(atlas_data[core_columns]))
 
   raw_colours <- stats::setNames(atlas_data$colour, atlas_data$label)
   raw_colours <- raw_colours[!duplicated(names(raw_colours))]
@@ -1079,17 +1081,22 @@ finalize_atlas <- function(
 #' @noRd
 parse_lut_colours <- function(input_lut) {
   if (is.null(input_lut)) {
-    return(list(region_names = NULL, colours = NULL))
+    return(list(source_names = NULL, region_names = NULL, colours = NULL))
   }
 
   lut <- if (is.character(input_lut)) read_lut(input_lut) else input_lut
-  region_names <- if ("region" %in% names(lut)) {
+  # `source_names` is the identifier `label` is built from; its precedence is
+  # unchanged, so no atlas's labels or palette keys move. `region_names` is
+  # set only when the table declares a `region`, which is the author curating
+  # it -- everything else has `region` derived from the identifier.
+  source_names <- if ("region" %in% names(lut)) {
     lut$region
   } else if ("label" %in% names(lut)) {
     lut$label
   } else {
     NULL
   }
+  region_names <- if ("region" %in% names(lut)) lut$region else NULL
   colours <- if ("hex" %in% names(lut)) {
     lut$hex
   } else if (all(c("R", "G", "B") %in% names(lut))) {
@@ -1098,7 +1105,11 @@ parse_lut_colours <- function(input_lut) {
     NULL
   }
 
-  list(region_names = region_names, colours = colours)
+  list(
+    source_names = source_names,
+    region_names = region_names,
+    colours = colours
+  )
 }
 
 

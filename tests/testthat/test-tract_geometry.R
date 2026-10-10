@@ -16,7 +16,7 @@ make_test_tract_atlas <- function(labels = "tract_a") {
     atlas = "test",
     type = "tract",
     core = data.frame(
-      hemi = "mid",
+      hemi = "midline",
       region = labels,
       label = labels,
       stringsAsFactors = FALSE
@@ -40,7 +40,7 @@ make_test_tract_atlas_geom <- function() {
     atlas = "test",
     type = "tract",
     core = data.frame(
-      hemi = "mid",
+      hemi = "midline",
       region = "tract a",
       label = "tract_a",
       stringsAsFactors = FALSE

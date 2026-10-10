@@ -166,9 +166,9 @@ describe("read_neuromaps_annotation", {
     writeLines("mock", tmp)
 
     result <- read_neuromaps_annotation(tmp)
-    parcel_1 <- result[result$region == "parcel_1", ]
+    parcel_one <- result[result$region == "parcel 1", ]
 
-    expect_identical(parcel_1$vertices[[1]], c(0L, 1L, 2L))
+    expect_identical(parcel_one$vertices[[1]], c(0L, 1L, 2L))
   })
 
   it("errors when vertex count does not match fsaverage5", {
