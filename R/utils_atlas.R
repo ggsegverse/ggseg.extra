@@ -536,8 +536,8 @@ check_lut_hemi <- function(lut) {
       unrecognised {.field hemi}",
       "x" = "Not a hemisphere: {.val {unique(declared[unrecognised])}}",
       "i" = "Allowed: {.val {c('left', 'right', 'midline')}}, or {.code NA}
-      to read it from the label's name. {.val vermis} is accepted and
-      recorded as {.val midline}."
+      to read it from the label's name. {.val vermis} and {.val middle} are
+      accepted and recorded as {.val midline}."
     ))
   }
   invisible(lut)

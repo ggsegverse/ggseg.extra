@@ -1,6 +1,6 @@
 Package: ggseg.extra
 Title: Create Brain Atlases for the 'ggsegverse' Plotting Ecosystem
-Version: 1.9.9.9123
+Version: 1.9.9.9124
 Authors@R: c(
     person(
         given = "Athanasia Mo",
@@ -39,7 +39,7 @@ Imports:
     dplyr,
     fs,
     furrr,
-    ggseg.formats (>= 0.0.4),
+    ggseg.formats (>= 0.0.4.9010),
     ggseg3d (>= 2.0.0),
     grDevices,
     lifecycle,

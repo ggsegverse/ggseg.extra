@@ -123,8 +123,8 @@
 #'
 #' The column is passed on to the subcortical and cerebellar pipelines, where
 #' it sets the region's hemisphere instead of the label's name doing so. There
-#' it may also say `"midline"`. `"vermis"` is accepted there and recorded as
-#' `"midline"`, since `hemi` carries only left/right/midline.
+#' it may also say `"midline"`. `"vermis"` and `"middle"` are accepted there
+#' and recorded as `"midline"`, since `hemi` carries only left/right/midline.
 #'
 #' The column can arrive in a data.frame or in a lookup table file:
 #' [write_lut()] stores it and [read_lut()] brings it back.
@@ -1121,6 +1121,7 @@ normalise_hemi <- function(x) {
     "rh" = ,
     "r" = "right",
     "midline" = ,
+    "middle" = ,
     "vermis" = "midline",
     NA_character_
   )

@@ -1,4 +1,4 @@
-# ggseg.extra 1.9.9.9123
+# ggseg.extra 1.9.9.9124
 
 ## Breaking changes
 
@@ -16,8 +16,9 @@
 
 - `hemi` is recorded as `"left"`, `"right"` or `"midline"` only, matching the
   closed vocabulary `ggseg.formats` now enforces. The cerebellar vermis is
-  recorded as `"midline"`; `"vermis"` is still read from a label or a lookup
-  table's `hemi` column, and still kept in the label, which is the join key.
+  recorded as `"midline"`; `"vermis"` and `"middle"` are still read from a
+  label or a lookup table's `hemi` column, and the `vermis_` spelling is still
+  kept in the label, which is the join key.
   Atlases built before this need rebuilding to construct at all.
 
 - In `create_subcortical_from_volume()` the lookup table decides what is a
