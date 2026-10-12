@@ -41,7 +41,7 @@ labels_read_files <- function(
       } else {
         NA
       }
-      hemi <- if (!is.na(hemi_short)) hemi_to_long(hemi_short) else NA
+      hemi <- normalise_hemi(hemi_short)
 
       source_name <- if (is.null(source_names)) {
         gsub("^[lr]h\\.", "", file_path_sans_ext(filename))

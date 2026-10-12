@@ -43,7 +43,7 @@ read_annotation_data <- function(annot_files) {
       )
       next
     }
-    hemi <- hemi_to_long(hemi_short)
+    hemi <- normalise_hemi(hemi_short)
 
     annot <- freesurferformats::read.fs.annot(annot_file)
     all_data <- c(all_data, annot_to_atlas_data(annot, hemi, hemi_short))
@@ -371,7 +371,7 @@ read_gifti_annotation <- function(gifti_files) {
       )
       next
     }
-    hemi <- hemi_to_long(hemi_short)
+    hemi <- normalise_hemi(hemi_short)
 
     annot <- freesurferformats::read.fs.annot.gii(gifti_file)
     all_data <- c(all_data, annot_to_atlas_data(annot, hemi, hemi_short))
@@ -500,7 +500,7 @@ read_neuromaps_annotation <- function(
     }
     hemi_values[[hemi_short]] <- read_neuromaps_values(
       gifti_file,
-      hemi_to_long(hemi_short)
+      normalise_hemi(hemi_short)
     )
   }
 
@@ -565,7 +565,7 @@ read_neuromaps_volume <- function(
   reg <- resolve_vol2surf_registration("mni152", subject)
 
   for (hemi_short in c("lh", "rh")) {
-    hemi <- hemi_to_long(hemi_short)
+    hemi <- normalise_hemi(hemi_short)
     output_nii <- as.character(fs::path(
       surf_dir,
       paste0(hemi_short, "_overlay.nii.gz")
@@ -1381,7 +1381,7 @@ neuromaps_hemi_regions <- function(
   label_table,
   breaks
 ) {
-  long_names <- vapply(names(hemi_values), hemi_to_long, character(1))
+  long_names <- vapply(names(hemi_values), normalise_hemi, character(1))
   if (!holds_labels) {
     cut_points <- neuromaps_bin_breaks(
       stats::setNames(hemi_values, long_names),

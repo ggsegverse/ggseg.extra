@@ -568,16 +568,29 @@ lut_hemi <- function(lut_row, label_name, from_name = detect_hemi) {
 }
 
 
-#' Map short hemisphere code to long form
+#' Read a declared hemisphere in any of its usual spellings
+#'
+#' `NA` for anything unrecognised. Whether that is an error is not decided
+#' here: `check_lut_hemi()` aborts on a value that declares something this
+#' cannot read, and lets `NA` and an empty string through as undeclared.
 #' @noRd
-hemi_to_long <- function(hemi_short) {
-  if (hemi_short == "lh") {
-    "left"
-  } else if (hemi_short == "rh") {
-    "right"
-  } else {
-    hemi_short
+normalise_hemi <- function(x) {
+  if (length(x) != 1L || is.na(x) || !nzchar(trimws(x))) {
+    return(NA_character_)
   }
+  switch(
+    tolower(trimws(x)),
+    "left" = ,
+    "lh" = ,
+    "l" = "left",
+    "right" = ,
+    "rh" = ,
+    "r" = "right",
+    "midline" = ,
+    "middle" = ,
+    "vermis" = "midline",
+    NA_character_
+  )
 }
 
 #' Map long hemisphere to short code

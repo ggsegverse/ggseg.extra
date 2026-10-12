@@ -236,15 +236,51 @@ describe("label_to_region", {
 })
 
 
-describe("hemi_to_long", {
-  it("converts short to long form", {
-    expect_identical(hemi_to_long("lh"), "left")
-    expect_identical(hemi_to_long("rh"), "right")
+describe("normalise_hemi", {
+  it("is the single gate every build path reads hemi through", {
+    expect_identical(normalise_hemi("lh"), "left")
+    expect_identical(normalise_hemi("rh"), "right")
+    expect_identical(normalise_hemi("l"), "left")
+    expect_identical(normalise_hemi("r"), "right")
+    expect_identical(normalise_hemi("left"), "left")
+    expect_identical(normalise_hemi("right"), "right")
   })
 
-  it("returns unchanged for non-short forms", {
-    expect_identical(hemi_to_long("left"), "left")
-    expect_identical(hemi_to_long("subcort"), "subcort")
+  it("reads every legacy midline spelling", {
+    expect_identical(normalise_hemi("midline"), "midline")
+    expect_identical(normalise_hemi("middle"), "midline")
+    expect_identical(normalise_hemi("vermis"), "midline")
+  })
+
+  it("is case- and whitespace-insensitive", {
+    expect_identical(normalise_hemi("LH"), "left")
+    expect_identical(normalise_hemi(" Right "), "right")
+  })
+
+  it("returns NA for anything outside the vocabulary", {
+    expect_identical(normalise_hemi("subcort"), NA_character_)
+    expect_identical(normalise_hemi("both"), NA_character_)
+    expect_identical(normalise_hemi(NA), NA_character_)
+    expect_identical(normalise_hemi(""), NA_character_)
+  })
+
+  it("only ever returns a value ggseg_atlas() accepts", {
+    spellings <- c(
+      "lh",
+      "rh",
+      "l",
+      "r",
+      "left",
+      "right",
+      "midline",
+      "middle",
+      "vermis",
+      "subcort",
+      "both",
+      ""
+    )
+    out <- vapply(spellings, normalise_hemi, character(1))
+    expect_true(all(out %in% c("left", "right", "midline", NA_character_)))
   })
 })
 
