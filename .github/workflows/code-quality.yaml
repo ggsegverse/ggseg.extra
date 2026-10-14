@@ -16,5 +16,6 @@ jobs:
     uses: ggsegverse/.github/.github/workflows/code-quality.yaml@main
     secrets: inherit
     with:
+      extra-repositories: https://ggsegverse.r-universe.dev
       install-spatial-deps: true
       extra-packages: github::muschellij2/freesurfer

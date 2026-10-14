@@ -19,6 +19,7 @@ jobs:
   pkgdown:
     uses: ggsegverse/.github/.github/workflows/pkgdown.yaml@main
     with:
+      extra-repositories: https://ggsegverse.r-universe.dev
       install-spatial-deps: true
       extra-packages: |
         any::pkgdown
