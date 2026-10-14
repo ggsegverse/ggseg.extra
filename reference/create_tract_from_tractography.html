@@ -27,7 +27,7 @@ the tube thicker where more streamlines pass through.'><meta property="og:image"
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9123</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9124</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -115,6 +115,7 @@ the tube thicker where more streamlines pass through.</p>
 <span>  slabs <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  vertex_size_limits <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  steps <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  min_coverage <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  cleanup <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  skip_existing <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  coord_space <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"infer"</span>, <span class="st">"voxel"</span>, <span class="st">"mm"</span><span class="op">)</span></span>
@@ -205,6 +206,17 @@ Steps are:</p><ul><li><p>1: Read tractography and create tube meshes</p></li>
 <li><p>4: Build the atlas</p></li>
 </ul><p>Use <code>steps = 1</code> for a 3D-only atlas. Geometry is shaped after the build,
 not during it: see <code><a href="atlas_polish.html">atlas_polish()</a></code>.</p></dd>
+
+
+<dt id="arg-min-coverage">min_coverage<a class="anchor" aria-label="anchor" href="#arg-min-coverage"></a></dt>
+<dd><p>Smallest share of <code>core</code> labels that must end up with
+2D geometry, between 0 and 1. A build that falls below it warns and names
+the labels that have no shape; the warning fires whatever <code>verbose</code> is
+set to, because a region that cannot be drawn is data loss rather than
+progress chatter. The build itself still returns, so a long pipeline is
+never thrown away over a threshold. Use <code>0</code> to turn the check off.
+Defaults to <code>0.8</code>, or to <code>options("ggseg.extra.min_coverage")</code>, then
+<code>GGSEG_EXTRA_MIN_COVERAGE</code>.</p></dd>
 
 
 <dt id="arg-cleanup">cleanup<a class="anchor" aria-label="anchor" href="#arg-cleanup"></a></dt>

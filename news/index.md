@@ -1,8 +1,29 @@
 # Changelog
 
-## ggseg.extra 1.9.9.9123
+## ggseg.extra 1.9.9.9124
 
 ### Breaking changes
+
+- `region` is derived from the region’s identifier rather than copied
+  from it, so the hemisphere no longer ends up in both. The surface
+  pipelines (`.annot`, GIFTI, CIFTI, neuromaps and label files) were the
+  only ones not already doing this, which is why cortical atlases
+  carried it and subcortical ones did not. A lookup table that declares
+  a `region` column has had it curated by the atlas author and is used
+  as given; only the fallback is derived. `label` is unchanged, so no
+  atlas’s palette keys move.
+
+- The core display column is `display`, following `ggseg.formats`. A
+  lookup table declares it under that name; the development-only `names`
+  spelling is not read.
+
+- `hemi` is recorded as `"left"`, `"right"` or `"midline"` only,
+  matching the closed vocabulary `ggseg.formats` now enforces. The
+  cerebellar vermis is recorded as `"midline"`; `"vermis"` and
+  `"middle"` are still read from a label or a lookup table’s `hemi`
+  column, and the `vermis_` spelling is still kept in the label, which
+  is the join key. Atlases built before this need rebuilding to
+  construct at all.
 
 - In
   [`create_subcortical_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_subcortical_from_volume.md)
@@ -49,6 +70,12 @@
   [`atlas_context_remove()`](https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html).
 
 ### Minor changes
+
+- Every `create_*()` pipeline gains `min_coverage`: a newly built atlas
+  whose 2D geometry covers less than 80% of its `core` labels warns and
+  names the labels with no shape. The threshold used to be a hard gate
+  in ggseg.formats, which made narrowing a finished atlas to one view
+  invalid.
 
 - [`read_lut()`](https://ggsegverse.github.io/ggseg.extra/reference/read_lut.md)
   and
@@ -2705,12 +2732,15 @@ creator.
   the whole namespace would mask one set with the other depending on
   load order, which is a silently wrong atlas rather than an error.
 
-  Twenty-four of the twenty-eight. `atlas_centerlines()`,
-  `atlas_plot_palette()`, `atlas_structure_reorder()` and
-  `atlas_view_select()` exist only in ggseg.formats’ development build,
-  so re-exporting them would stop this package building against the
-  release its DESCRIPTION asks for. They follow when ggseg.formats
-  releases them.
+  Twenty-four of the twenty-eight.
+  [`atlas_centerlines()`](https://ggsegverse.github.io/ggseg.formats/reference/atlas_centerlines.html),
+  [`atlas_plot_palette()`](https://ggsegverse.github.io/ggseg.formats/reference/atlas_plot_palette.html),
+  [`atlas_structure_reorder()`](https://ggsegverse.github.io/ggseg.formats/reference/atlas_structure_reorder.html)
+  and
+  [`atlas_view_select()`](https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html)
+  exist only in ggseg.formats’ development build, so re-exporting them
+  would stop this package building against the release its DESCRIPTION
+  asks for. They follow when ggseg.formats releases them.
 
 - New
   [`context_pattern()`](https://ggsegverse.github.io/ggseg.extra/reference/context_pattern.md)
@@ -3547,8 +3577,10 @@ not cost a rebuild.
   ended up in `region` as well as `hemi`: `R_Fx` gave hemi `"right"` but
   region `"r fx"`, so the two halves of one structure looked like two
   unrelated structures to anything grouping on `region` – including the
-  new `ggseg.formats::atlas_view_select()`. A name that is *only* a
-  hemisphere word is left alone rather than stripped to nothing.
+  new
+  [`ggseg.formats::atlas_view_select()`](https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html).
+  A name that is *only* a hemisphere word is left alone rather than
+  stripped to nothing.
 
 ## ggseg.extra 1.9.9.9013
 

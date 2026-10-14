@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9123</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9124</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -128,6 +128,134 @@ an atlas</a>, which walks through a complete example.</p>
 all four from the start, including tests, GitHub Actions workflows and a
 pkgdown site. In RStudio it is also available from the New Project
 dialog, under the ggseg icon.</p>
+</div>
+<div class="section level2">
+<h2 id="the-core-table">The core table<a class="anchor" aria-label="anchor" href="#the-core-table"></a>
+</h2>
+<p>Every atlas carries a <code>core</code> table, one row per region.
+Four columns have a fixed meaning across the whole ecosystem, and
+anything else is yours.</p>
+<table class="table">
+<thead><tr class="header">
+<th>Column</th>
+<th>Required</th>
+<th>What it holds</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td><code>label</code></td>
+<td>yes</td>
+<td>the identifier, unique within the atlas</td>
+</tr>
+<tr class="even">
+<td><code>region</code></td>
+<td>yes</td>
+<td>a short, readable key</td>
+</tr>
+<tr class="odd">
+<td><code>hemi</code></td>
+<td>yes</td>
+<td>
+<code>"left"</code>, <code>"right"</code>, <code>"midline"</code>,
+or <code>NA</code>
+</td>
+</tr>
+<tr class="even">
+<td><code>display</code></td>
+<td>expected</td>
+<td>the long-form name, for legends and axes</td>
+</tr>
+</tbody>
+</table>
+<p>The pipelines fill all four in, so a generated atlas satisfies this
+without you doing anything. The guidance below matters when you curate
+the result, which most atlases need.</p>
+<div class="section level3">
+<h3 id="label-is-the-join-key">
+<code>label</code> is the join key<a class="anchor" aria-label="anchor" href="#label-is-the-join-key"></a>
+</h3>
+<p><code>label</code> is what the palette and every geometry slot are
+keyed on, so it has to be unique and it has to stay put. Rename it and
+the geometry decouples from the metadata, which draws a region in the
+wrong colour, or not at all. If you do need to re-key,
+<code><a href="https://ggsegverse.github.io/ggseg.formats/reference/relabel_atlas.html" class="external-link">ggseg.formats::relabel_atlas()</a></code> rewrites all of them
+together.</p>
+<p>Keep the source parcellation’s spelling here, even when it is ugly. A
+reader tracing your atlas back to its publication needs that string.</p>
+</div>
+<div class="section level3">
+<h3 id="region-is-the-key-people-type">
+<code>region</code> is the key people type<a class="anchor" aria-label="anchor" href="#region-is-the-key-people-type"></a>
+</h3>
+<p><code>region</code> is the short form a user writes in their own
+results table, so it should be the readable version of
+<code>label</code>: no hemisphere, no suffix that is the same on every
+row. <code>lh_L_V1_ROI</code> becomes <code>v1 roi</code>;
+<code>Left-Thalamus</code> becomes <code>thalamus</code>.</p>
+<p>The pipelines derive it with <code><a href="../reference/label_to_region.html">label_to_region()</a></code>, which
+strips the hemisphere and normalises separators and case. It is a
+reasonable default, not a rule — it cannot know that <code>ROI</code>
+carries nothing or that <code>V1</code> should keep its capitals. Where
+it gets your atlas wrong, declare a <code>region</code> column in your
+lookup table and it is used exactly as you wrote it.</p>
+<p>Two things to get right, because nothing can check them for you:</p>
+<ul>
+<li>
+<strong>Do not leave the hemisphere in <code>region</code>.</strong>
+If <code>region</code> is unique across the whole atlas when the
+parcellation is bilateral, the hemisphere is almost certainly still in
+there, and grouping by <code>region</code> then silently aggregates
+nothing.</li>
+<li>
+<strong>Unless there genuinely is no pair.</strong> Data-driven
+parcellations often number parcels globally, so a left parcel has no
+right counterpart to share a name with. Then <code>region</code> being
+unique is correct, and forcing a shared name would invent an anatomical
+claim the parcellation does not make. Say which situation yours is in,
+in the atlas’s documentation.</li>
+</ul>
+</div>
+<div class="section level3">
+<h3 id="hemi-is-a-closed-vocabulary">
+<code>hemi</code> is a closed vocabulary<a class="anchor" aria-label="anchor" href="#hemi-is-a-closed-vocabulary"></a>
+</h3>
+<p><code>hemi</code> takes <code>"left"</code>, <code>"right"</code>,
+<code>"midline"</code> or <code>NA</code>, and nothing else is accepted.
+It is the one column with no room for per-atlas judgement, because plots
+filter and facet on it: a fifth spelling does not raise an error, it
+drops those rows from the figure.</p>
+<p><code>NA</code> is for structures where a side does not apply. Use it
+rather than inventing a value, and do not leave it <code>NA</code> for
+only part of an atlas — that is the case that bites, since
+<code>hemi == "left"</code> quietly loses rows.</p>
+<p>A finer distinction than side belongs in a column of your own. The
+cerebellar vermis is recorded as <code>"midline"</code>, for instance;
+if you need to pick the vermis out, add a column that says so.</p>
+</div>
+<div class="section level3">
+<h3 id="display-is-for-people">
+<code>display</code> is for people<a class="anchor" aria-label="anchor" href="#display-is-for-people"></a>
+</h3>
+<p><code>display</code> is the long-form name, spelled to read well in a
+legend: <code>region</code> <code>"bankssts"</code> has
+<code>display</code> <code>"banks of superior temporal sulcus"</code>.
+It is what lets <code>region</code> stay terse without the figure
+becoming unreadable.</p>
+<p>If you leave it out you get a message once per session telling you
+so. It is not an error, because about twenty atlas packages were
+published before the column existed, but a plot of your atlas has
+nothing but the machine key to put in its legend.</p>
+</div>
+<div class="section level3">
+<h3 id="everything-else-is-yours">Everything else is yours<a class="anchor" aria-label="anchor" href="#everything-else-is-yours"></a>
+</h3>
+<p>Add whatever columns classify your atlas usefully — the bundled
+atlases use <code>lobe</code>, <code>structure</code>,
+<code>group</code> and <code>label_short</code> — and nothing constrains
+their names or contents. They survive the atlas verbs and reach the
+user’s data frame, so a column like <code>network</code> or
+<code>lobe</code> is immediately available to facet or colour by.</p>
+</div>
 </div>
 <div class="section level2">
 <h2 id="adding-your-package-to-r-universe">Adding your package to r-universe<a class="anchor" aria-label="anchor" href="#adding-your-package-to-r-universe"></a>

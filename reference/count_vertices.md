@@ -52,12 +52,12 @@ dk <- ggseg.formats::dk()
 
 # The total is what the large-atlas warning reports.
 sum(count_vertices(dk))
-#> [1] 6254
+#> [1] 5391
 
 # Which regions are the expensive ones?
 head(sort(count_vertices(dk), decreasing = TRUE))
-#>     lh_inferiortemporal           rh_precentral      rh_superiorfrontal 
-#>                     189                     185                     179 
-#>     rh_inferiortemporal      lh_superiorfrontal lh_rostralmiddlefrontal 
-#>                     174                     162                     160 
+#> lh_superiortemporal rh_superiortemporal      rh_postcentral       rh_precentral 
+#>                 178                 158                 154                 154 
+#>       lh_precentral      lh_postcentral 
+#>                 150                 148 
 ```

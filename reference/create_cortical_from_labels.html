@@ -19,7 +19,7 @@ derives region names from the rest of the filename."><meta property="og:image" c
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9123</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9124</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -99,6 +99,7 @@ derives region names from the rest of the filename.</p>
 <span>  input_lut <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  atlas_name <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  output_dir <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  min_coverage <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  cleanup <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  skip_existing <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -153,6 +154,17 @@ filename. It also names the folder of intermediate files inside
 <dd><p>Where to put the intermediate files. Defaults to
 <code><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir()</a></code>, from <code>options("ggseg.extra.output_dir")</code> or
 <code>GGSEG_EXTRA_OUTPUT_DIR</code>.</p></dd>
+
+
+<dt id="arg-min-coverage">min_coverage<a class="anchor" aria-label="anchor" href="#arg-min-coverage"></a></dt>
+<dd><p>Smallest share of <code>core</code> labels that must end up with
+2D geometry, between 0 and 1. A build that falls below it warns and names
+the labels that have no shape; the warning fires whatever <code>verbose</code> is
+set to, because a region that cannot be drawn is data loss rather than
+progress chatter. The build itself still returns, so a long pipeline is
+never thrown away over a threshold. Use <code>0</code> to turn the check off.
+Defaults to <code>0.8</code>, or to <code>options("ggseg.extra.min_coverage")</code>, then
+<code>GGSEG_EXTRA_MIN_COVERAGE</code>.</p></dd>
 
 
 <dt id="arg-cleanup">cleanup<a class="anchor" aria-label="anchor" href="#arg-cleanup"></a></dt>

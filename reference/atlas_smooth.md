@@ -118,33 +118,33 @@ atlas_smooth(dk, smoothness = 0.4)
 #> Type: cortical
 #> Regions: 35
 #> Hemispheres: left, right
-#> Views: inferior, lateral, superior, medial
+#> Views: inferior, lateral, medial, superior
 #> Palette: ✔
 #> Rendering: ✔ ggseg
 #> ✔ ggseg3d (vertices)
 #> ────────────────────────────────────────────────────────────────────────────────
-#>    hemi                            region                      label
-#> 1  left banks of superior temporal sulcus                lh_bankssts
-#> 2  left         caudal anterior cingulate lh_caudalanteriorcingulate
-#> 3  left             caudal middle frontal     lh_caudalmiddlefrontal
-#> 4  left                   corpus callosum          lh_corpuscallosum
-#> 5  left                            cuneus                  lh_cuneus
-#> 6  left                        entorhinal              lh_entorhinal
-#> 7  left                          fusiform                lh_fusiform
-#> 8  left                 inferior parietal        lh_inferiorparietal
-#> 9  left                 inferior temporal        lh_inferiortemporal
-#> 10 left                 isthmus cingulate        lh_isthmuscingulate
-#>            lobe
-#> 1      temporal
-#> 2     cingulate
-#> 3       frontal
-#> 4  white matter
-#> 5     occipital
-#> 6      temporal
-#> 7      temporal
-#> 8      parietal
-#> 9      temporal
-#> 10    cingulate
+#>    hemi                  region                      label
+#> 1  left                bankssts                lh_bankssts
+#> 2  left caudalanteriorcingulate lh_caudalanteriorcingulate
+#> 3  left     caudalmiddlefrontal     lh_caudalmiddlefrontal
+#> 4  left          corpuscallosum          lh_corpuscallosum
+#> 5  left                  cuneus                  lh_cuneus
+#> 6  left              entorhinal              lh_entorhinal
+#> 7  left                fusiform                lh_fusiform
+#> 8  left        inferiorparietal        lh_inferiorparietal
+#> 9  left        inferiortemporal        lh_inferiortemporal
+#> 10 left        isthmuscingulate        lh_isthmuscingulate
+#>                              display         lobe
+#> 1  banks of superior temporal sulcus     temporal
+#> 2          caudal anterior cingulate    cingulate
+#> 3              caudal middle frontal      frontal
+#> 4                    corpus callosum white matter
+#> 5                             cuneus    occipital
+#> 6                         entorhinal     temporal
+#> 7                           fusiform     temporal
+#> 8                  inferior parietal     parietal
+#> 9                  inferior temporal     temporal
+#> 10                 isthmus cingulate    cingulate
 #> ... with 60 more rows
 
 if (FALSE) { # \dontrun{

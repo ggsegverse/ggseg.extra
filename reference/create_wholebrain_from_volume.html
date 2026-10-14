@@ -21,7 +21,7 @@ Requires FreeSurfer."><meta property="og:image" content="https://ggsegverse.gith
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9123</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9124</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -107,6 +107,7 @@ the mesh-based subcortical pipeline.</p>
 <span>  subcortical_opts <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  cerebellar_opts <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  steps <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  min_coverage <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  cleanup <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  skip_existing <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -224,6 +225,17 @@ Steps are:</p><ul><li><p>1: Project volume onto surface</p></li>
 <li><p>4: Run subcortical pipeline</p></li>
 <li><p>5: Run cerebellar pipeline</p></li>
 </ul><p>Use <code>steps = 1:2</code> to run projection and split only.</p></dd>
+
+
+<dt id="arg-min-coverage">min_coverage<a class="anchor" aria-label="anchor" href="#arg-min-coverage"></a></dt>
+<dd><p>Smallest share of <code>core</code> labels that must end up with
+2D geometry, between 0 and 1. A build that falls below it warns and names
+the labels that have no shape; the warning fires whatever <code>verbose</code> is
+set to, because a region that cannot be drawn is data loss rather than
+progress chatter. The build itself still returns, so a long pipeline is
+never thrown away over a threshold. Use <code>0</code> to turn the check off.
+Defaults to <code>0.8</code>, or to <code>options("ggseg.extra.min_coverage")</code>, then
+<code>GGSEG_EXTRA_MIN_COVERAGE</code>.</p></dd>
 
 
 <dt id="arg-cleanup">cleanup<a class="anchor" aria-label="anchor" href="#arg-cleanup"></a></dt>
@@ -363,7 +375,8 @@ and <code>rh_</code>. So this is opt-in, and a table without the column behaves 
 as before.</p>
 <p>The column is passed on to the subcortical and cerebellar pipelines, where
 it sets the region's hemisphere instead of the label's name doing so. There
-it may also say <code>"midline"</code> or <code>"vermis"</code>.</p>
+it may also say <code>"midline"</code>. <code>"vermis"</code> and <code>"middle"</code> are accepted there
+and recorded as <code>"midline"</code>, since <code>hemi</code> carries only left/right/midline.</p>
 <p>The column can arrive in a data.frame or in a lookup table file:
 <code><a href="write_lut.html">write_lut()</a></code> stores it and <code><a href="read_lut.html">read_lut()</a></code> brings it back.</p>
 <p>Hemisphere is never inferred from the voxels. The volume does know which side

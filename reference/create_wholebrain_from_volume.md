@@ -26,6 +26,7 @@ create_wholebrain_from_volume(
   subcortical_opts = list(),
   cerebellar_opts = list(),
   steps = NULL,
+  min_coverage = NULL,
   cleanup = NULL,
   skip_existing = NULL
 )
@@ -161,6 +162,17 @@ create_wholebrain_from_volume(
   - 5: Run cerebellar pipeline
 
   Use `steps = 1:2` to run projection and split only.
+
+- min_coverage:
+
+  Smallest share of `core` labels that must end up with 2D geometry,
+  between 0 and 1. A build that falls below it warns and names the
+  labels that have no shape; the warning fires whatever `verbose` is set
+  to, because a region that cannot be drawn is data loss rather than
+  progress chatter. The build itself still returns, so a long pipeline
+  is never thrown away over a threshold. Use `0` to turn the check off.
+  Defaults to `0.8`, or to `options("ggseg.extra.min_coverage")`, then
+  `GGSEG_EXTRA_MIN_COVERAGE`.
 
 - cleanup:
 
@@ -313,7 +325,9 @@ column behaves exactly as before.
 
 The column is passed on to the subcortical and cerebellar pipelines,
 where it sets the region's hemisphere instead of the label's name doing
-so. There it may also say `"midline"` or `"vermis"`.
+so. There it may also say `"midline"`. `"vermis"` and `"middle"` are
+accepted there and recorded as `"midline"`, since `hemi` carries only
+left/right/midline.
 
 The column can arrive in a data.frame or in a lookup table file:
 [`write_lut()`](https://ggsegverse.github.io/ggseg.extra/reference/write_lut.md)

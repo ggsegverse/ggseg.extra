@@ -15,7 +15,7 @@ when tuning an atlas for size."><meta property="og:image" content="https://ggseg
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9123</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9124</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -126,14 +126,14 @@ which raises it again – rounding a corner off means inserting points.</p>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># The total is what the large-atlas warning reports.</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="fu">count_vertices</span><span class="op">(</span><span class="va">dk</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 6254</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 5391</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Which regions are the expensive ones?</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sort.html" class="external-link">sort</a></span><span class="op">(</span><span class="fu">count_vertices</span><span class="op">(</span><span class="va">dk</span><span class="op">)</span>, decreasing <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     lh_inferiortemporal           rh_precentral      rh_superiorfrontal </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                     189                     185                     179 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     rh_inferiortemporal      lh_superiorfrontal lh_rostralmiddlefrontal </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                     174                     162                     160 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> lh_superiortemporal rh_superiortemporal      rh_postcentral       rh_precentral </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                 178                 158                 154                 154 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       lh_precentral      lh_postcentral </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                 150                 148 </span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

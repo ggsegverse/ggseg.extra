@@ -21,7 +21,8 @@ library(ggseg.extra)
 A LUT is a plain data frame with six columns. `idx` is the integer in
 the volume, `label` is the name, and `R`, `G`, `B` and `A` are the
 colour, each 0–255. The optional columns `type`, `hemi`, `context` and
-`names` are covered [further down](#declaring-what-the-name-doesnt-say).
+`display` are covered [further
+down](#declaring-what-the-name-doesnt-say).
 
 ``` r
 
@@ -449,14 +450,14 @@ atlas <- atlas_polish(atlas, keep = 0.1, exclude = context_pattern(atlas))
 atlas <- atlas_context_remove(atlas)
 ```
 
-### `names`: what a region is called in a legend
+### `display`: what a region is called in a legend
 
 Every atlas the pipelines build carries three ways of referring to a
 region. `label` is the identifier, unique and never edited. `region` is
 the short key derived from it, the same on both sides of the brain.
-`names` is the one meant to be read: the long-form name a plot shows.
+`display` is the one meant to be read: the long-form name a plot shows.
 
-Left alone, `names` is the region. A `names` column in the table
+Left alone, `display` is the region. A `display` column in the table
 supplies something better, row by row:
 
 ``` r
@@ -465,7 +466,7 @@ named <- data.frame(
   idx = c(10L, 49L, 28L),
   label = c("Left-Thalamus", "Right-Thalamus", "Left-VentralDC"),
   R = c(0L, 0L, 165L), G = c(118L, 118L, 42L), B = c(14L, 14L, 42L), A = 0L,
-  names = c(NA, NA, "ventral diencephalon")
+  display = c(NA, NA, "ventral diencephalon")
 )
 
 is_lut(named)
@@ -476,7 +477,7 @@ The two thalami declare nothing and are named `thalamus`, after their
 region. `Left-VentralDC` would have been `ventraldc`.
 
 Display names have spaces in them, which a lookup table file cannot hold
-in a single field, so `names` travels in a data frame and
+in a single field, so `display` travels in a data frame and
 [`write_lut()`](https://ggsegverse.github.io/ggseg.extra/reference/write_lut.md)
 leaves it out. Keep it in the script that builds the table.
 

@@ -114,11 +114,11 @@ Other atlas geometry:
 ``` r
 dk <- ggseg.formats::dk()
 sum(count_vertices(dk))
-#> [1] 6254
+#> [1] 5391
 
 polished <- atlas_polish(dk, keep = 0.2)
 sum(count_vertices(polished))
-#> [1] 6372
+#> [1] 3904
 
 if (FALSE) { # \dontrun{
 # The usual shape of a build: the context silhouette and the structures

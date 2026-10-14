@@ -81,11 +81,11 @@ Other atlas geometry:
 ``` r
 dk <- ggseg.formats::dk()
 sum(count_vertices(dk))
-#> [1] 6254
+#> [1] 5391
 
 simplified <- atlas_simplify(dk, keep = 0.2)
 sum(count_vertices(simplified))
-#> [1] 4051
+#> [1] 2346
 
 if (FALSE) { # \dontrun{
 # Simplify the backdrop only, sparing the structures.
