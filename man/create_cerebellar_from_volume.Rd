@@ -12,6 +12,7 @@ create_cerebellar_from_volume(
   input_lut = NULL,
   atlas_name = NULL,
   output_dir = NULL,
+  min_coverage = NULL,
   cleanup = NULL,
   skip_existing = NULL
 )
@@ -37,8 +38,8 @@ passed here is an error. Geometry is shaped after the build: see
 
 \item{input_lut}{Optional path to a colour lookup table file, or a
 data.frame with columns \code{idx}, \code{label}, and optionally \code{R}, \code{G}, \code{B}.
-Either may also carry a \code{hemi} column (\code{"left"}, \code{"right"},
-\code{"vermis"} or \code{"midline"}) that sets each region's hemisphere; a row left
+Either may also carry a \code{hemi} column (\code{"left"}, \code{"right"} or
+\code{"midline"}) that sets each region's hemisphere; a row left
 \code{NA}, or a table without the column, has it read from the label's name,
 and any other value is an error. \code{\link[=write_lut]{write_lut()}} stores the column in a
 file. If NULL, labels are auto-generated from volume values.}
@@ -50,6 +51,15 @@ filename. It also names the folder of intermediate files inside
 \item{output_dir}{Where to put the intermediate files. Defaults to
 \code{\link[=tempdir]{tempdir()}}, from \code{options("ggseg.extra.output_dir")} or
 \code{GGSEG_EXTRA_OUTPUT_DIR}.}
+
+\item{min_coverage}{Smallest share of \code{core} labels that must end up with
+2D geometry, between 0 and 1. A build that falls below it warns and names
+the labels that have no shape; the warning fires whatever \code{verbose} is
+set to, because a region that cannot be drawn is data loss rather than
+progress chatter. The build itself still returns, so a long pipeline is
+never thrown away over a threshold. Use \code{0} to turn the check off.
+Defaults to \code{0.8}, or to \code{options("ggseg.extra.min_coverage")}, then
+\code{GGSEG_EXTRA_MIN_COVERAGE}.}
 
 \item{cleanup}{Remove the intermediate files afterwards. Default \code{TRUE},
 from \code{options("ggseg.extra.cleanup")} or \code{GGSEG_EXTRA_CLEANUP}.

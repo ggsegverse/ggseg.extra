@@ -73,6 +73,7 @@
 #'   indices are computed in the builder's own frame.
 #' @template vertex_size_limits
 #' @template decimate
+#' @template min_coverage
 #' @template cleanup
 #' @template verbose
 #' @template skip_existing
@@ -132,6 +133,7 @@ create_subcortical_from_volume <- function(
   output_dir = NULL,
   slabs = NULL,
   vertex_size_limits = NULL,
+  min_coverage = NULL,
   cleanup = NULL,
   skip_existing = NULL,
   steps = NULL
@@ -149,7 +151,8 @@ create_subcortical_from_volume <- function(
     cleanup = cleanup,
     skip_existing = skip_existing,
     decimate = decimate,
-    steps = steps
+    steps = steps,
+    min_coverage = min_coverage
   )
 
   subcort_run_pipeline(
@@ -171,7 +174,8 @@ subcort_setup_pipeline <- function(
   cleanup,
   skip_existing,
   decimate,
-  steps
+  steps,
+  min_coverage = NULL
 ) {
   config <- validate_subcort_config(
     input_volume = unpacked$input_volume,
@@ -182,7 +186,8 @@ subcort_setup_pipeline <- function(
     cleanup = cleanup,
     skip_existing = skip_existing,
     decimate = decimate,
-    steps = steps
+    steps = steps,
+    min_coverage = min_coverage
   )
 
   dirs <- setup_atlas_dirs(
@@ -358,7 +363,8 @@ validate_subcort_config <- function(
   cleanup,
   skip_existing,
   decimate,
-  steps
+  steps,
+  min_coverage = NULL
 ) {
   config <- resolve_common_config(
     output_dir,
@@ -366,7 +372,8 @@ validate_subcort_config <- function(
     cleanup,
     skip_existing,
     steps,
-    max_step = subcort_total_steps()
+    max_step = subcort_total_steps(),
+    min_coverage = min_coverage
   )
 
   validate_decimate(decimate)
@@ -712,7 +719,7 @@ subcort_assemble_3d <- function(atlas_name, components) {
     atlas = atlas_name,
     type = "subcortical",
     palette = components$palette,
-    core = core_with_names(components$core),
+    core = core_with_display(components$core),
     data = ggseg_data_subcortical(meshes = components$meshes_df)
   )
 }
@@ -748,7 +755,7 @@ subcort_assemble_full <- function(
     atlas = atlas_name,
     type = "subcortical",
     palette = components$palette,
-    core = core_with_names(components$core),
+    core = core_with_display(components$core),
     data = ggseg_data_subcortical(geom = sf_data, meshes = components$meshes_df)
   )
 

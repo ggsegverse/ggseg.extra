@@ -123,7 +123,8 @@
 #'
 #' The column is passed on to the subcortical and cerebellar pipelines, where
 #' it sets the region's hemisphere instead of the label's name doing so. There
-#' it may also say `"midline"` or `"vermis"`.
+#' it may also say `"midline"`. `"vermis"` and `"middle"` are accepted there
+#' and recorded as `"midline"`, since `hemi` carries only left/right/midline.
 #'
 #' The column can arrive in a data.frame or in a lookup table file:
 #' [write_lut()] stores it and [read_lut()] brings it back.
@@ -199,6 +200,7 @@
 #'   records a volume's space, so `"suit"` is an assumption rather than a
 #'   detection: set it if your volume is in an MNI space. See
 #'   [suit_deformation_field()] for the spaces available.
+#' @template min_coverage
 #' @template cleanup
 #' @template verbose
 #' @template skip_existing
@@ -328,6 +330,7 @@ create_wholebrain_from_volume <- function(
   subcortical_opts = list(),
   cerebellar_opts = list(),
   steps = NULL,
+  min_coverage = NULL,
   cleanup = NULL,
   skip_existing = NULL
 ) {
@@ -361,7 +364,8 @@ create_wholebrain_from_volume <- function(
     cleanup = cleanup,
     skip_existing = skip_existing,
     steps = steps,
-    cerebellar_space = cerebellar$space
+    cerebellar_space = cerebellar$space,
+    min_coverage = min_coverage
   )
   wholebrain_run_pipeline(setup, opts, labels, start_time)
 }
@@ -458,7 +462,8 @@ wholebrain_setup <- function(
   cleanup,
   skip_existing,
   steps,
-  cerebellar_space
+  cerebellar_space,
+  min_coverage = NULL
 ) {
   config <- validate_wholebrain_config(
     input_volume = input_volume,
@@ -474,7 +479,8 @@ wholebrain_setup <- function(
     cleanup = cleanup,
     skip_existing = skip_existing,
     steps = steps,
-    cerebellar_space = cerebellar_space
+    cerebellar_space = cerebellar_space,
+    min_coverage = min_coverage
   )
 
   dirs <- setup_atlas_dirs(
@@ -741,7 +747,8 @@ SUB_PIPELINE_MANAGED_ARGS <- c(
   "output_dir",
   "verbose",
   "cleanup",
-  "skip_existing"
+  "skip_existing",
+  "min_coverage"
 )
 # Unlike subcortical/cerebellar, wholebrain does not call a single public
 # cortical builder, so there are no formals to track: the cortical sub-
@@ -804,7 +811,8 @@ validate_wholebrain_config <- function(
   cleanup,
   skip_existing,
   steps,
-  cerebellar_space = "suit"
+  cerebellar_space = "suit",
+  min_coverage = NULL
 ) {
   config <- resolve_common_config(
     output_dir,
@@ -812,7 +820,8 @@ validate_wholebrain_config <- function(
     cleanup,
     skip_existing,
     steps,
-    max_step = 5L
+    max_step = 5L,
+    min_coverage = min_coverage
   )
 
   check_fs(abort = TRUE)
@@ -941,7 +950,7 @@ overlay_to_atlas_data <- function(
   colortable,
   include_unknown = FALSE
 ) {
-  hemi <- hemi_to_long(hemi_short)
+  hemi <- normalise_hemi(hemi_short)
   unique_labels <- sort(unique(overlay[overlay != 0L]))
 
   rows <- lapply(
@@ -1010,7 +1019,7 @@ overlay_label_row <- function(
     hemi = hemi,
     region = region,
     label = paste(hemi_short, safe_name, sep = "_"),
-    names = lut_names(ct_row, region),
+    display = lut_display(ct_row, region),
     colour = colour,
     vertices = list(which(overlay == label_val) - 1L),
     source_label = label_name,
@@ -1093,31 +1102,6 @@ embedded_hemi_token <- function(label_name) {
 }
 
 
-#' Read a declared hemisphere in any of its usual spellings
-#'
-#' `NA` for anything unrecognised. Whether that is an error is not decided
-#' here: `check_lut_hemi()` aborts on a value that declares something this
-#' cannot read, and lets `NA` and an empty string through as undeclared.
-#' @noRd
-normalise_hemi <- function(x) {
-  if (length(x) != 1L || is.na(x) || !nzchar(trimws(x))) {
-    return(NA_character_)
-  }
-  switch(
-    tolower(trimws(x)),
-    "left" = ,
-    "lh" = ,
-    "l" = "left",
-    "right" = ,
-    "rh" = ,
-    "r" = "right",
-    "midline" = "midline",
-    "vermis" = "vermis",
-    NA_character_
-  )
-}
-
-
 #' @noRd
 wholebrain_project_to_surface <- function(
   input_volume,
@@ -1149,7 +1133,7 @@ wholebrain_project_to_surface <- function(
   all_data <- list()
 
   for (hemi_short in c("lh", "rh")) {
-    hemi <- hemi_to_long(hemi_short) # nolint: object_usage_linter
+    hemi <- normalise_hemi(hemi_short) # nolint: object_usage_linter
     overlay <- wholebrain_vol2surf_overlay(
       input_volume = projection_volume,
       hemi_short = hemi_short,
@@ -1999,7 +1983,8 @@ wholebrain_cortical_inputs <- function(config, dirs, projection, split, opts) {
     output_dir = dirs$base,
     verbose = config$verbose,
     cleanup = FALSE,
-    skip_existing = config$skip_existing
+    skip_existing = config$skip_existing,
+    min_coverage = config$min_coverage
   )
 
   list(
@@ -2082,7 +2067,8 @@ wholebrain_run_subcortical <- function(
     output_dir = dirs$base,
     verbose = config$verbose,
     cleanup = FALSE,
-    skip_existing = config$skip_existing
+    skip_existing = config$skip_existing,
+    min_coverage = config$min_coverage
   )
   atlas <- do.call(
     create_subcortical_from_volume,
@@ -2134,7 +2120,8 @@ wholebrain_run_cerebellar <- function(
     output_dir = dirs$base,
     verbose = config$verbose,
     cleanup = FALSE,
-    skip_existing = config$skip_existing
+    skip_existing = config$skip_existing,
+    min_coverage = config$min_coverage
   )
   args <- c(managed, opts)
   do.call(create_cerebellar_from_volume, args)

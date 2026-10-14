@@ -6,7 +6,7 @@
 \alias{ggseg.extra-package}
 \title{ggseg.extra: Create Brain Atlases for the 'ggsegverse' Plotting Ecosystem}
 \description{
-\if{html}{\figure{logo.png}{options: style='float: right' alt='logo' width='120'}}
+\if{html}{\figure{logo.svg}{options: style='float: right' alt='logo' width='120'}}
 
 Create brain atlas data sets compatible with the 'ggsegverse' plotting packages. Provides pipelines for building cortical, subcortical, white-matter tract, and cerebellar atlases from 'FreeSurfer' annotation files, 'GIFTI' and 'CIFTI' surface formats, 'neuromaps', cerebellar flatmaps, and volumetric 'NIfTI' images.
 }
@@ -52,7 +52,12 @@ Useful links:
 
 }
 \author{
-\strong{Maintainer}: Athanasia Mo Mowinckel \email{a.m.mowinckel@psykologi.uio.no} (\href{https://orcid.org/0000-0002-5756-0223}{ORCID}) (drmowinckels)
+\strong{Maintainer}: Athanasia Mo Mowinckel \email{a.m.mowinckel@psykologi.uio.no} (\href{https://orcid.org/0000-0002-5756-0223}{ORCID}) (Github: drmowinckels)
+
+Authors:
+\itemize{
+  \item Athanasia Mo Mowinckel \email{a.m.mowinckel@psykologi.uio.no} (\href{https://orcid.org/0000-0002-5756-0223}{ORCID}) (Github: drmowinckels)
+}
 
 Other contributors:
 \itemize{

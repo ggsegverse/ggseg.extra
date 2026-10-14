@@ -13,6 +13,7 @@ jobs:
   R-CMD-check:
     uses: ggsegverse/.github/.github/workflows/R-CMD-check.yaml@main
     with:
+      extra-repositories: https://ggsegverse.r-universe.dev
       extra-packages: |
         any::rcmdcheck
         github::muschellij2/freesurfer

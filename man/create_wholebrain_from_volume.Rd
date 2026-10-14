@@ -17,6 +17,7 @@ create_wholebrain_from_volume(
   subcortical_opts = list(),
   cerebellar_opts = list(),
   steps = NULL,
+  min_coverage = NULL,
   cleanup = NULL,
   skip_existing = NULL
 )
@@ -117,6 +118,15 @@ Steps are:
 \item 5: Run cerebellar pipeline
 }
 Use \code{steps = 1:2} to run projection and split only.}
+
+\item{min_coverage}{Smallest share of \code{core} labels that must end up with
+2D geometry, between 0 and 1. A build that falls below it warns and names
+the labels that have no shape; the warning fires whatever \code{verbose} is
+set to, because a region that cannot be drawn is data loss rather than
+progress chatter. The build itself still returns, so a long pipeline is
+never thrown away over a threshold. Use \code{0} to turn the check off.
+Defaults to \code{0.8}, or to \code{options("ggseg.extra.min_coverage")}, then
+\code{GGSEG_EXTRA_MIN_COVERAGE}.}
 
 \item{cleanup}{Remove the intermediate files afterwards. Default \code{TRUE},
 from \code{options("ggseg.extra.cleanup")} or \code{GGSEG_EXTRA_CLEANUP}.
@@ -274,7 +284,8 @@ as before.
 
 The column is passed on to the subcortical and cerebellar pipelines, where
 it sets the region's hemisphere instead of the label's name doing so. There
-it may also say \code{"midline"} or \code{"vermis"}.
+it may also say \code{"midline"}. \code{"vermis"} and \code{"middle"} are accepted there
+and recorded as \code{"midline"}, since \code{hemi} carries only left/right/midline.
 
 The column can arrive in a data.frame or in a lookup table file:
 \code{\link[=write_lut]{write_lut()}} stores it and \code{\link[=read_lut]{read_lut()}} brings it back.

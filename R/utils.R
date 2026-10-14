@@ -453,6 +453,65 @@ get_skip_existing <- function(skip_existing = NULL) {
   )
 }
 
+#' Get the polygon coverage threshold for a freshly built atlas
+#'
+#' The share of `core` labels that must carry 2D geometry before
+#' [check_atlas_coverage()] speaks up. This used to live in ggseg.formats as a
+#' hard gate on every atlas, which made the legitimate act of narrowing a
+#' finished atlas to one view invalid: filtering views thins the geometry while
+#' `core` stays whole, and no single anatomical slice holds every structure.
+#' Coverage is a statement about a *build*, so it belongs at build time, where
+#' the author can still go back and fix the input.
+#'
+#' @param min_coverage Optional explicit value. If NULL, reads from
+#'   options/env.
+#' @return A numeric scalar between 0 and 1.
+#' @noRd
+get_min_coverage <- function(min_coverage = NULL, call = rlang::caller_env()) {
+  value <- get_numeric_option(
+    min_coverage,
+    "ggseg.extra.min_coverage",
+    "GGSEG_EXTRA_MIN_COVERAGE",
+    0.8
+  )
+  check_share(value, "min_coverage", call = call)
+  value
+}
+
+#' Helper to get numeric option with fallback
+#'
+#' Unparseable values are passed through as `NA` rather than silently falling
+#' back to the default, so the caller can say which channel was wrong.
+#' @noRd
+get_numeric_option <- function(explicit, option_name, env_name, default) {
+  if (!is.null(explicit)) {
+    return(coerce_numeric(explicit))
+  }
+
+  opt <- getOption(option_name)
+  if (!is.null(opt)) {
+    return(coerce_numeric(opt))
+  }
+
+  env <- Sys.getenv(env_name, unset = NA)
+  if (!is.na(env) && nzchar(env)) {
+    return(coerce_numeric(env))
+  }
+
+  default
+}
+
+#' @noRd
+coerce_numeric <- function(x) {
+  if (is.numeric(x)) {
+    return(x)
+  }
+  if (is.character(x) && length(x) == 1L) {
+    return(suppressWarnings(as.numeric(x)))
+  }
+  NA_real_
+}
+
 #' Helper to get boolean option with fallback
 #' @noRd
 get_bool_option <- function(explicit, option_name, env_name, default) {
