@@ -37,6 +37,92 @@ start, including tests, GitHub Actions workflows and a pkgdown site. In
 RStudio it is also available from the New Project dialog, under the ggseg
 icon.
 
+## The core table
+
+Every atlas carries a `core` table, one row per region. Four columns have a
+fixed meaning across the whole ecosystem, and anything else is yours.
+
+| Column    | Required | What it holds                                 |
+| --------- | -------- | --------------------------------------------- |
+| `label`   | yes      | the identifier, unique within the atlas       |
+| `region`  | yes      | a short, readable key                         |
+| `hemi`    | yes      | `"left"`, `"right"`, `"midline"`, or `NA`     |
+| `display` | expected | the long-form name, for legends and axes      |
+
+The pipelines fill all four in, so a generated atlas satisfies this without
+you doing anything. The guidance below matters when you curate the result,
+which most atlases need.
+
+### `label` is the join key
+
+`label` is what the palette and every geometry slot are keyed on, so it has
+to be unique and it has to stay put. Rename it and the geometry decouples
+from the metadata, which draws a region in the wrong colour, or not at all.
+If you do need to re-key, `ggseg.formats::relabel_atlas()` rewrites all of
+them together.
+
+Keep the source parcellation's spelling here, even when it is ugly. A reader
+tracing your atlas back to its publication needs that string.
+
+### `region` is the key people type
+
+`region` is the short form a user writes in their own results table, so it
+should be the readable version of `label`: no hemisphere, no suffix that is
+the same on every row. `lh_L_V1_ROI` becomes `v1 roi`; `Left-Thalamus`
+becomes `thalamus`.
+
+The pipelines derive it with `label_to_region()`, which strips the
+hemisphere and normalises separators and case. It is a reasonable default,
+not a rule --- it cannot know that `ROI` carries nothing or that `V1` should
+keep its capitals. Where it gets your atlas wrong, declare a `region`
+column in your lookup table and it is used exactly as you wrote it.
+
+Two things to get right, because nothing can check them for you:
+
+- **Do not leave the hemisphere in `region`.** If `region` is unique across
+  the whole atlas when the parcellation is bilateral, the hemisphere is
+  almost certainly still in there, and grouping by `region` then silently
+  aggregates nothing.
+- **Unless there genuinely is no pair.** Data-driven parcellations often
+  number parcels globally, so a left parcel has no right counterpart to
+  share a name with. Then `region` being unique is correct, and forcing a
+  shared name would invent an anatomical claim the parcellation does not
+  make. Say which situation yours is in, in the atlas's documentation.
+
+### `hemi` is a closed vocabulary
+
+`hemi` takes `"left"`, `"right"`, `"midline"` or `NA`, and nothing else is
+accepted. It is the one column with no room for per-atlas judgement, because
+plots filter and facet on it: a fifth spelling does not raise an error, it
+drops those rows from the figure.
+
+`NA` is for structures where a side does not apply. Use it rather than
+inventing a value, and do not leave it `NA` for only part of an atlas ---
+that is the case that bites, since `hemi == "left"` quietly loses rows.
+
+A finer distinction than side belongs in a column of your own. The
+cerebellar vermis is recorded as `"midline"`, for instance; if you need to
+pick the vermis out, add a column that says so.
+
+### `display` is for people
+
+`display` is the long-form name, spelled to read well in a legend: `region`
+`"bankssts"` has `display` `"banks of superior temporal sulcus"`. It is what
+lets `region` stay terse without the figure becoming unreadable.
+
+If you leave it out you get a message once per session telling you so. It
+is not an error, because about twenty atlas packages were published before
+the column existed, but a plot of your atlas has nothing but the machine key
+to put in its legend.
+
+### Everything else is yours
+
+Add whatever columns classify your atlas usefully --- the bundled atlases
+use `lobe`, `structure`, `group` and `label_short` --- and nothing
+constrains their names or contents. They survive the atlas verbs and reach
+the user's data frame, so a column like `network` or `lobe` is immediately
+available to facet or colour by.
+
 ## Adding your package to r-universe
 
 ### 1. Fork the r-universe repository

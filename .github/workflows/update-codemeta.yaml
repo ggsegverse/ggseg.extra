@@ -17,6 +17,7 @@ jobs:
     uses: ggsegverse/.github/.github/workflows/update-codemeta.yaml@main
     secrets: inherit
     with:
+      extra-repositories: https://ggsegverse.r-universe.dev
       # ggseg.extra's package install pulls terra/GDAL + FreeSurfer (too large
       # for GHA), so skip local::. — write_codemeta() reads DESCRIPTION directly.
       extra-packages: any::codemetar

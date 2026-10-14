@@ -962,7 +962,7 @@ describe("read_neuromaps_volume", {
     )
 
     expect_s3_class(result, "tbl_df")
-    bin_regions <- result[grepl("^bin_", result$region), ]
+    bin_regions <- result[grepl("^bin ", result$region), ]
     expect_gt(nrow(bin_regions), 0)
     expect_false(anyNA(bin_regions$colour))
   })
@@ -1046,8 +1046,8 @@ describe("read_cifti_annotation", {
     result <- read_cifti_annotation(tmp)
 
     expect_false("ghost" %in% result$region)
-    expect_true("region_a" %in% result$region)
-    expect_true("region_b" %in% result$region)
+    expect_true("region a" %in% result$region)
+    expect_true("region b" %in% result$region)
   })
 
   it("creates unknown region for unlabeled vertices", {
@@ -1093,8 +1093,8 @@ describe("parse_parcellation_values", {
     values <- c(1, 1, 2, 2, 0)
     result <- parse_parcellation_values(values, "left", "lh", NULL)
     regions <- vapply(result, function(x) x$region[1], character(1))
-    expect_true("parcel_1" %in% regions)
-    expect_true("parcel_2" %in% regions)
+    expect_true("parcel 1" %in% regions)
+    expect_true("parcel 2" %in% regions)
   })
 })
 
@@ -1132,7 +1132,7 @@ describe("lookup table context column", {
 describe("neuromaps_hemi_regions binning", {
   bins_by_hemi <- function(regions) {
     rows <- dplyr::bind_rows(regions)
-    rows <- rows[grepl("^bin_", rows$region), ]
+    rows <- rows[grepl("^bin ", rows$region), ]
     split(rows$region, rows$hemi)
   }
 
@@ -1149,7 +1149,7 @@ describe("neuromaps_hemi_regions binning", {
 
     expect_identical(
       bins_by_hemi(regions),
-      list(left = c("bin_1", "bin_2"), right = c("bin_3", "bin_4"))
+      list(left = c("bin 1", "bin 2"), right = c("bin 3", "bin 4"))
     )
   })
 
@@ -1179,7 +1179,7 @@ describe("neuromaps_hemi_regions binning", {
 
     expect_identical(
       bins_by_hemi(regions),
-      list(left = c("bin_1", "bin_2"), right = c("bin_1", "bin_2"))
+      list(left = c("bin 1", "bin 2"), right = c("bin 1", "bin 2"))
     )
   })
 
@@ -1198,7 +1198,7 @@ describe("neuromaps_hemi_regions binning", {
     expect_identical(seen, c(1, 2, 3, 4))
     expect_identical(
       bins_by_hemi(regions),
-      list(left = "bin_1", right = "bin_2")
+      list(left = "bin 1", right = "bin 2")
     )
   })
 
@@ -1422,7 +1422,7 @@ describe("read_neuromaps_annotation", {
 
     result <- read_neuromaps_annotation(gii_file, breaks = 3)
 
-    expect_identical(result$region, c("bin_1", "bin_2", "bin_3"))
+    expect_identical(result$region, c("bin 1", "bin 2", "bin 3"))
     expect_identical(lengths(result$vertices), c(3414L, 3414L, 3414L))
   })
 
@@ -1442,7 +1442,7 @@ describe("read_neuromaps_annotation", {
 
     result <- read_neuromaps_annotation(gii_file, breaks = c(0, 0.5, 1))
 
-    expect_identical(result$region, c("bin_1", "bin_2"))
+    expect_identical(result$region, c("bin 1", "bin 2"))
     expect_identical(lengths(result$vertices), c(5121L, 5121L))
   })
 

@@ -123,7 +123,8 @@
 #'
 #' The column is passed on to the subcortical and cerebellar pipelines, where
 #' it sets the region's hemisphere instead of the label's name doing so. There
-#' it may also say `"midline"` or `"vermis"`.
+#' it may also say `"midline"`. `"vermis"` and `"middle"` are accepted there
+#' and recorded as `"midline"`, since `hemi` carries only left/right/midline.
 #'
 #' The column can arrive in a data.frame or in a lookup table file:
 #' [write_lut()] stores it and [read_lut()] brings it back.
@@ -949,7 +950,7 @@ overlay_to_atlas_data <- function(
   colortable,
   include_unknown = FALSE
 ) {
-  hemi <- hemi_to_long(hemi_short)
+  hemi <- normalise_hemi(hemi_short)
   unique_labels <- sort(unique(overlay[overlay != 0L]))
 
   rows <- lapply(
@@ -1018,7 +1019,7 @@ overlay_label_row <- function(
     hemi = hemi,
     region = region,
     label = paste(hemi_short, safe_name, sep = "_"),
-    names = lut_names(ct_row, region),
+    display = lut_display(ct_row, region),
     colour = colour,
     vertices = list(which(overlay == label_val) - 1L),
     source_label = label_name,
@@ -1101,31 +1102,6 @@ embedded_hemi_token <- function(label_name) {
 }
 
 
-#' Read a declared hemisphere in any of its usual spellings
-#'
-#' `NA` for anything unrecognised. Whether that is an error is not decided
-#' here: `check_lut_hemi()` aborts on a value that declares something this
-#' cannot read, and lets `NA` and an empty string through as undeclared.
-#' @noRd
-normalise_hemi <- function(x) {
-  if (length(x) != 1L || is.na(x) || !nzchar(trimws(x))) {
-    return(NA_character_)
-  }
-  switch(
-    tolower(trimws(x)),
-    "left" = ,
-    "lh" = ,
-    "l" = "left",
-    "right" = ,
-    "rh" = ,
-    "r" = "right",
-    "midline" = "midline",
-    "vermis" = "vermis",
-    NA_character_
-  )
-}
-
-
 #' @noRd
 wholebrain_project_to_surface <- function(
   input_volume,
@@ -1157,7 +1133,7 @@ wholebrain_project_to_surface <- function(
   all_data <- list()
 
   for (hemi_short in c("lh", "rh")) {
-    hemi <- hemi_to_long(hemi_short) # nolint: object_usage_linter
+    hemi <- normalise_hemi(hemi_short) # nolint: object_usage_linter
     overlay <- wholebrain_vol2surf_overlay(
       input_volume = projection_volume,
       hemi_short = hemi_short,

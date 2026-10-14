@@ -719,7 +719,7 @@ subcort_assemble_3d <- function(atlas_name, components) {
     atlas = atlas_name,
     type = "subcortical",
     palette = components$palette,
-    core = core_with_names(components$core),
+    core = core_with_display(components$core),
     data = ggseg_data_subcortical(meshes = components$meshes_df)
   )
 }
@@ -755,7 +755,7 @@ subcort_assemble_full <- function(
     atlas = atlas_name,
     type = "subcortical",
     palette = components$palette,
-    core = core_with_names(components$core),
+    core = core_with_display(components$core),
     data = ggseg_data_subcortical(geom = sf_data, meshes = components$meshes_df)
   )
 

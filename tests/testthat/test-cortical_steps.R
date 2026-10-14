@@ -16,15 +16,40 @@ describe("labels_read_files", {
     expect_true("right" %in% result$hemi)
   })
 
-  it("uses custom region_names when provided", {
+  it("uses a curated region_names verbatim when provided", {
     skip_if_not_installed("freesurferformats")
     labels <- unlist(test_label_files())
     default_colours <- rep(NA_character_, length(labels))
     custom_names <- c("Motor", "Visual", "Motor")
 
-    result <- labels_read_files(labels, custom_names, NULL, default_colours)
+    result <- labels_read_files(
+      labels,
+      custom_names,
+      custom_names,
+      NULL,
+      default_colours
+    )
 
     expect_identical(result$region, custom_names)
+  })
+
+  it("derives region from the source name when none is curated", {
+    skip_if_not_installed("freesurferformats")
+    labels <- unlist(test_label_files())
+    default_colours <- rep(NA_character_, length(labels))
+    custom_names <- c("Motor", "Visual", "Motor")
+
+    result <- labels_read_files(
+      labels,
+      custom_names,
+      NULL,
+      NULL,
+      default_colours
+    )
+
+    expect_identical(result$region, c("motor", "visual", "motor"))
+    # the identifier keeps the source spelling, because label is the join key
+    expect_true(all(grepl("Motor|Visual", result$label)))
   })
 })
 
