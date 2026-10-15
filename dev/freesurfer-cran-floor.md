@@ -1,6 +1,10 @@
 # Vendor `fs_sitrep()` / fix `fs_cmd()` ordering to unblock CRAN submission
 
-Status: open. Blocks the first CRAN submission of ggseg.extra.
+Status: resolved without doing any of the work below. freesurfer 1.9.0 reached
+CRAN on 2026-10-07, exporting `fs_sitrep()` and emitting `opts "outfile"` for
+`fs_cmd(opts_after_outfile = TRUE)`, so the floor moved to `>= 1.9.0` and
+`Remotes:` was dropped. Kept as the record of why the floor is a version
+rather than a presence check.
 Written 2026-10-05 while preparing `chore/cran-prep`.
 
 ## The problem

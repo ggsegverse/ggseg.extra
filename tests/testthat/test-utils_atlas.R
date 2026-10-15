@@ -81,7 +81,19 @@ describe("check_lut_hemi", {
   })
 
   it("accepts every spelling normalise_hemi() reads, and undeclared rows", {
-    spellings <- c("left", "lh", "L", "Right", "rh", "r", "midline", "vermis")
+    spellings <- c(
+      "left",
+      "lh",
+      "L",
+      "Right",
+      "rh",
+      "r",
+      "midline",
+      "vermis",
+      "middle"
+    )
+    expect_identical(normalise_hemi("vermis"), "midline")
+    expect_identical(normalise_hemi("middle"), "midline")
     lut <- data.frame(hemi = c(spellings, NA, ""))
     expect_no_error(check_lut_hemi(lut))
     expect_no_error(check_lut_hemi(data.frame(idx = 1L)))
@@ -224,15 +236,51 @@ describe("label_to_region", {
 })
 
 
-describe("hemi_to_long", {
-  it("converts short to long form", {
-    expect_identical(hemi_to_long("lh"), "left")
-    expect_identical(hemi_to_long("rh"), "right")
+describe("normalise_hemi", {
+  it("is the single gate every build path reads hemi through", {
+    expect_identical(normalise_hemi("lh"), "left")
+    expect_identical(normalise_hemi("rh"), "right")
+    expect_identical(normalise_hemi("l"), "left")
+    expect_identical(normalise_hemi("r"), "right")
+    expect_identical(normalise_hemi("left"), "left")
+    expect_identical(normalise_hemi("right"), "right")
   })
 
-  it("returns unchanged for non-short forms", {
-    expect_identical(hemi_to_long("left"), "left")
-    expect_identical(hemi_to_long("subcort"), "subcort")
+  it("reads every legacy midline spelling", {
+    expect_identical(normalise_hemi("midline"), "midline")
+    expect_identical(normalise_hemi("middle"), "midline")
+    expect_identical(normalise_hemi("vermis"), "midline")
+  })
+
+  it("is case- and whitespace-insensitive", {
+    expect_identical(normalise_hemi("LH"), "left")
+    expect_identical(normalise_hemi(" Right "), "right")
+  })
+
+  it("returns NA for anything outside the vocabulary", {
+    expect_identical(normalise_hemi("subcort"), NA_character_)
+    expect_identical(normalise_hemi("both"), NA_character_)
+    expect_identical(normalise_hemi(NA), NA_character_)
+    expect_identical(normalise_hemi(""), NA_character_)
+  })
+
+  it("only ever returns a value ggseg_atlas() accepts", {
+    spellings <- c(
+      "lh",
+      "rh",
+      "l",
+      "r",
+      "left",
+      "right",
+      "midline",
+      "middle",
+      "vermis",
+      "subcort",
+      "both",
+      ""
+    )
+    out <- vapply(spellings, normalise_hemi, character(1))
+    expect_true(all(out %in% c("left", "right", "midline", NA_character_)))
   })
 })
 
@@ -411,7 +459,7 @@ describe("parse_lut_colours", {
     expect_null(result$colours)
   })
 
-  it("reads region names and colours from a region-column data.frame", {
+  it("treats a declared region column as curated, and as the identifier", {
     lut <- data.frame(
       region = c("Unknown", "region1"),
       R = c(0L, 205L),
@@ -419,6 +467,7 @@ describe("parse_lut_colours", {
       B = c(0L, 176L)
     )
     result <- parse_lut_colours(lut)
+    expect_identical(result$source_names, c("Unknown", "region1"))
     expect_identical(result$region_names, c("Unknown", "region1"))
     expect_identical(result$colours, c("#000000", "#CD82B0"))
   })
@@ -433,7 +482,8 @@ describe("parse_lut_colours", {
       A = c(0L, 0L)
     )
     result <- parse_lut_colours(lut)
-    expect_identical(result$region_names, c("Unknown", "region1"))
+    expect_identical(result$source_names, c("Unknown", "region1"))
+    expect_null(result$region_names)
     expect_identical(result$colours, c("#000000", "#CD82B0"))
   })
 
@@ -449,7 +499,8 @@ describe("parse_lut_colours", {
 
     result <- parse_lut_colours(lut_file)
 
-    expect_identical(result$region_names, c("Unknown", "region1"))
+    expect_identical(result$source_names, c("Unknown", "region1"))
+    expect_null(result$region_names)
     expect_identical(result$colours, c("#000000", "#CD82B0"))
   })
 
@@ -640,50 +691,50 @@ describe("finalize_atlas", {
 })
 
 
-describe("lut_names", {
-  it("uses the name the lookup table gives", {
-    row <- data.frame(idx = 10L, label = "Left-Thalamus", names = "Thalamus")
+describe("lut_display", {
+  it("uses the display name the lookup table gives", {
+    row <- data.frame(idx = 10L, label = "Left-Thalamus", display = "Thalamus")
 
-    expect_identical(lut_names(row, "thalamus"), "Thalamus")
+    expect_identical(lut_display(row, "thalamus"), "Thalamus")
   })
 
   it("falls back to the region when the table gives none", {
-    blank <- data.frame(idx = 10L, label = "Left-Thalamus", names = " ")
-    missing <- data.frame(idx = 10L, label = "Left-Thalamus", names = NA)
+    blank <- data.frame(idx = 10L, label = "Left-Thalamus", display = " ")
+    missing <- data.frame(idx = 10L, label = "Left-Thalamus", display = NA)
     no_column <- data.frame(idx = 10L, label = "Left-Thalamus")
 
-    expect_identical(lut_names(blank, "thalamus"), "thalamus")
-    expect_identical(lut_names(missing, "thalamus"), "thalamus")
-    expect_identical(lut_names(no_column, "thalamus"), "thalamus")
-    expect_identical(lut_names(no_column[0, ], "thalamus"), "thalamus")
+    expect_identical(lut_display(blank, "thalamus"), "thalamus")
+    expect_identical(lut_display(missing, "thalamus"), "thalamus")
+    expect_identical(lut_display(no_column, "thalamus"), "thalamus")
+    expect_identical(lut_display(no_column[0, ], "thalamus"), "thalamus")
   })
 })
 
 
-describe("core_with_names", {
+describe("core_with_display", {
   core <- data.frame(
     hemi = c("left", "right"),
     region = c("thalamus", "amygdala"),
     label = c("Left-Thalamus", "Right-Amygdala")
   )
 
-  it("names every row after its region when there are no names", {
-    expect_identical(core_with_names(core)$names, c("thalamus", "amygdala"))
+  it("names every row after its region when there is no display", {
+    expect_identical(core_with_display(core)$display, c("thalamus", "amygdala"))
   })
 
-  it("keeps the names it is given and fills only the gaps", {
-    partly <- transform(core, names = c("Thalamus proper", NA))
+  it("keeps the display names it is given and fills only the gaps", {
+    partly <- transform(core, display = c("Thalamus proper", NA))
 
     expect_identical(
-      core_with_names(partly)$names,
+      core_with_display(partly)$display,
       c("Thalamus proper", "amygdala")
     )
   })
 
   it("always returns a character column", {
-    numbered <- transform(core, names = c(1, 2))
+    numbered <- transform(core, display = c(1, 2))
 
-    expect_type(core_with_names(numbered)$names, "character")
+    expect_type(core_with_display(numbered)$display, "character")
   })
 })
 
@@ -933,5 +984,201 @@ describe("drop_labels_without_geometry", {
       drop_labels_without_geometry(make_components(), NULL),
       error = TRUE
     )
+  })
+})
+
+
+describe("check_atlas_coverage", {
+  # A square per label, each in its own view, so the geometry can be thinned
+  # independently of `core`.
+  coverage_atlas <- function(n_core, n_drawn) {
+    labels <- sprintf("region_%02d", seq_len(n_core))
+    square <- function(i) {
+      sf::st_polygon(list(matrix(
+        c(i, 0, i + 1, 0, i + 1, 1, i, 1, i, 0),
+        ncol = 2,
+        byrow = TRUE
+      )))
+    }
+    drawn <- labels[seq_len(n_drawn)]
+    sf_obj <- sf::st_sf(
+      label = drawn,
+      view = "v1",
+      geometry = sf::st_sfc(lapply(seq_len(n_drawn), square))
+    )
+    ggseg.formats::ggseg_atlas(
+      atlas = "t",
+      type = "subcortical",
+      palette = stats::setNames(rep("#000000", n_core), labels),
+      core = data.frame(
+        label = labels,
+        region = labels,
+        stringsAsFactors = FALSE
+      ),
+      data = ggseg.formats::ggseg_data_subcortical(geom = sf_obj)
+    )
+  }
+
+  it("names the labels with no geometry when coverage is short", {
+    atlas <- coverage_atlas(10, 9)
+    expect_warning(
+      check_atlas_coverage(atlas, min_coverage = 0.95),
+      "region_10"
+    )
+  })
+
+  it("reports the percentage covered, not just the shortfall", {
+    expect_warning(
+      check_atlas_coverage(coverage_atlas(10, 9), min_coverage = 0.95),
+      "90%"
+    )
+  })
+
+  it("stays quiet when coverage meets the threshold exactly", {
+    expect_no_warning(
+      check_atlas_coverage(coverage_atlas(10, 9), min_coverage = 0.9)
+    )
+  })
+
+  it("stays quiet at full coverage", {
+    expect_no_warning(
+      check_atlas_coverage(coverage_atlas(10, 10), min_coverage = 1)
+    )
+  })
+
+  it("is off at a threshold of zero", {
+    expect_no_warning(
+      check_atlas_coverage(coverage_atlas(10, 9), min_coverage = 0)
+    )
+  })
+
+  it("returns the atlas unchanged", {
+    atlas <- coverage_atlas(10, 10)
+    expect_identical(check_atlas_coverage(atlas, 1), atlas)
+  })
+
+  it("leaves a run that assembled no atlas alone", {
+    expect_no_warning(expect_null(check_atlas_coverage(NULL, 1)))
+  })
+
+  it("leaves a 3D-only build alone, having no 2D geometry to measure", {
+    atlas <- ggseg.formats::ggseg_atlas(
+      atlas = "t",
+      type = "cortical",
+      palette = c(region_a = "#000000", region_b = "#111111"),
+      core = data.frame(
+        label = c("region_a", "region_b"),
+        region = c("region_a", "region_b"),
+        stringsAsFactors = FALSE
+      ),
+      data = ggseg.formats::ggseg_data_cortical(
+        vertices = data.frame(
+          stringsAsFactors = FALSE,
+          label = c("region_a", "region_b"),
+          vertices = I(list(1:3, 4:6))
+        )
+      )
+    )
+    expect_no_warning(check_atlas_coverage(atlas, 1))
+  })
+
+  it("leaves an object that is not a real atlas alone", {
+    stub <- structure(
+      list(core = data.frame(stringsAsFactors = FALSE, label = "lh_r")),
+      class = "ggseg_atlas"
+    )
+    expect_no_warning(expect_identical(check_atlas_coverage(stub, 1), stub))
+  })
+
+  it("leaves geometry that is not a data frame alone", {
+    # A stubbed or half-built data slot can hand back something with no
+    # `label` column at all, and reading one off an atomic vector errors.
+    testthat::local_mocked_bindings(
+      atlas_geom = function(...) list(1, 2),
+      .package = "ggseg.formats"
+    )
+    expect_no_warning(check_atlas_coverage(coverage_atlas(10, 9), 1))
+  })
+
+  it("counts the label vocabulary, not the rows of core", {
+    # The accessors return the raw column, so a bilateral atlas repeats each
+    # label. Counting rows would read this atlas as half covered.
+    atlas <- coverage_atlas(10, 10)
+    atlas$core <- rbind(atlas$core, atlas$core)
+    expect_no_warning(check_atlas_coverage(atlas, 1))
+  })
+
+  it("fires whatever the verbosity, because it reports data loss", {
+    withr::local_options(ggseg.extra.verbose = 0)
+    expect_warning(
+      check_atlas_coverage(coverage_atlas(10, 9), min_coverage = 0.95),
+      "region_10"
+    )
+  })
+})
+
+
+describe("get_min_coverage", {
+  it("defaults to the threshold ggseg.formats used to enforce", {
+    expect_identical(get_min_coverage(), 0.8)
+  })
+
+  it("reads the option", {
+    withr::local_options(ggseg.extra.min_coverage = 0.5)
+    expect_identical(get_min_coverage(), 0.5)
+  })
+
+  it("reads the environment variable", {
+    withr::local_envvar(GGSEG_EXTRA_MIN_COVERAGE = "0.25")
+    expect_identical(get_min_coverage(), 0.25)
+  })
+
+  it("prefers an explicit value to either", {
+    withr::local_options(ggseg.extra.min_coverage = 0.5)
+    expect_identical(get_min_coverage(0.75), 0.75)
+  })
+
+  it("rejects a value outside the unit interval", {
+    expect_error(get_min_coverage(1.5), "between 0 and 1")
+  })
+
+  it("rejects something that is not a number", {
+    expect_error(get_min_coverage("most of it"), "between 0 and 1")
+  })
+
+  it("rejects an unparseable option rather than falling back", {
+    withr::local_options(ggseg.extra.min_coverage = "lots")
+    expect_error(get_min_coverage(), "between 0 and 1")
+  })
+})
+
+
+describe("min_coverage reaches the pipelines", {
+  it("every atlas creator takes it", {
+    creators <- grep(
+      "^create_",
+      getNamespaceExports("ggseg.extra"),
+      value = TRUE
+    )
+    takes_it <- vapply(
+      creators,
+      function(nm) {
+        "min_coverage" %in%
+          names(formals(get(nm, envir = asNamespace("ggseg.extra"))))
+      },
+      logical(1)
+    )
+    expect_setequal(creators[!takes_it], character())
+  })
+
+  it("the resolved config carries it", {
+    config <- validate_surface_config(
+      output_dir = tempdir(),
+      verbose = 0,
+      cleanup = FALSE,
+      skip_existing = FALSE,
+      min_coverage = 0.42
+    )
+    expect_identical(config$min_coverage, 0.42)
   })
 })

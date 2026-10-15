@@ -143,8 +143,22 @@ and tractography files.
   `smoothr`, `princurve`, `rgl`, `neuromapr`, `ggseg` and `future` are all
   Suggests, checked at run time with `rlang::check_installed()` and requested
   only by the pipeline that needs them. `freesurfer` is required at
-  `>= 1.8.1.902`, which is currently only on r-universe (#72, #98), and
-  `ciftiTools` at `>= 0.17.4`.
+  `>= 1.9.0` (#72, #98) and `ciftiTools` at `>= 0.17.4`.
+
+- `region` is derived from the region's identifier rather than copied from
+  it, so the hemisphere no longer ends up in both. A lookup table that
+  declares a `region` column has had it curated by the atlas author and is
+  used as given; only the fallback is derived. `label` is unchanged, so no
+  atlas's palette keys move.
+
+- The core display column is `display`, following `ggseg.formats`. A lookup
+  table declares it under that name.
+
+- `hemi` is recorded as `"left"`, `"right"` or `"midline"` only, matching the
+  closed vocabulary `ggseg.formats` enforces. The cerebellar vermis is
+  recorded as `"midline"`; `"vermis"` and `"middle"` are still read from a
+  label or a lookup table's `hemi` column, and the `vermis_` spelling is still
+  kept in the label, which is the join key.
 
 ## New features
 
@@ -346,6 +360,10 @@ and tractography files.
   volumes to RAS+ as it has always done for NIfTI.
 
 ## Improvements
+
+- Every `create_*()` pipeline takes `min_coverage`: a newly built atlas whose
+  2D geometry covers less than 80% of its `core` labels warns and names the
+  labels with no shape.
 
 - The large-atlas warning has a per-atlas-type vertex budget, each sitting just
   above its type's 90th percentile measured across 109 installed atlases, so it
@@ -680,7 +698,7 @@ and tractography files.
 - The package-level help topic maps the five pipeline families to their
   creators and points at `sitrep()`, `atlas_polish()` and
   `setup_atlas_repo()`, and the README shows a four-line first atlas and states
-  the `freesurfer >= 1.8.1.902` floor.
+  the `freesurfer >= 1.9.0` floor.
 
 - Reading annotation files needs the `freesurferformats` R package, not a
   FreeSurfer installation, and `SystemRequirements` no longer claims FreeSurfer

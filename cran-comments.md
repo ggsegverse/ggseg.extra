@@ -3,23 +3,18 @@
 Local, macOS 26.6, R 4.6, `R CMD check --no-manual --as-cran`:
 **0 errors | 0 warnings | 1 note**.
 
-Tests: 3180 pass, 0 fail, 0 skip. Vignettes rebuild cleanly.
+Tests: 3215 pass, 0 fail, 0 skip. Vignettes rebuild cleanly.
 
-The one note is the standard new-submission note, plus the `Remotes` field:
+The one note is the standard new-submission note:
 
 ```
 * checking CRAN incoming feasibility ... NOTE
   Maintainer: 'Athanasia Mo Mowinckel <a.m.mowinckel@psykologi.uio.no>'
 
   New submission
-
-  Unknown, possibly misspelled, fields in DESCRIPTION:
-    'Remotes'
 ```
 
-"New submission" is expected for a first submission. **The `Remotes` line
-disappears once `Remotes:` is deleted, which must happen before submitting** —
-see the next section.
+"New submission" is expected for a first submission.
 
 ## First submission
 
@@ -28,37 +23,6 @@ developed and distributed on r-universe
 (<https://ggsegverse.r-universe.dev>) and is the atlas-construction half of
 the ggsegverse ecosystem, whose plotting packages ggseg and ggseg3d are
 already on CRAN.
-
-## MUST BE DONE BEFORE SUBMITTING
-
-This file is prepared ahead of time. The package is **not submittable until
-the two items below are resolved**, because the `freesurfer` version it needs
-is not yet on CRAN.
-
-1. **Delete the `Remotes:` field from DESCRIPTION.** It currently reads
-   `Remotes: muschellij2/freesurfer`. CRAN ignores `Remotes:` and flags it on
-   incoming submissions.
-
-2. **Confirm the CRAN `freesurfer` version satisfies the declared floor.**
-   DESCRIPTION suggests `freesurfer (>= 1.8.1.902)` and the floor is also
-   enforced at run time by an internal helper, `freesurfer_min_version()`.
-   CRAN currently has freesurfer 1.8.1, which does not satisfy it: 1.8.1
-   lacks `fs_sitrep()`, and its `fs_cmd(opts_after_outfile = TRUE)` places
-   the output file *before* the trailing options rather than after, which
-   breaks the `mri_vol2vol` invocation in
-   `prepare_subcortical_mni152()`. A user on CRAN's freesurfer would
-   therefore be refused by the version gate rather than silently given a
-   broken pipeline, but every FreeSurfer-backed pipeline would be
-   unreachable.
-
-   Either wait for freesurfer >= 1.8.1.902 to reach CRAN, or vendor the two
-   behaviours internally and lower the floor to `>= 1.8.1`. The scope of
-   that work is written up in `dev/freesurfer-cran-floor.md` and tracked as a
-   GitHub issue.
-
-Once freesurfer is available at a satisfying version on CRAN, item 1 is the
-only edit this file's advice requires, and the sections below stand as
-written.
 
 ## Downstream dependencies
 

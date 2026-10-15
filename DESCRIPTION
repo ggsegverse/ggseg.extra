@@ -40,7 +40,7 @@ Imports:
     dplyr,
     fs,
     furrr,
-    ggseg.formats (>= 0.0.4),
+    ggseg.formats (>= 0.0.4.9010),
     ggseg3d (>= 2.0.0),
     grDevices,
     lifecycle,
@@ -54,7 +54,7 @@ Imports:
 Suggests:
     base64enc,
     ciftiTools (>= 0.17.4),
-    freesurfer (>= 1.8.1.902),
+    freesurfer (>= 1.9.0),
     freesurferformats,
     future,
     ggseg,
@@ -72,8 +72,6 @@ Suggests:
     testthat (>= 3.0.0),
     withr,
     princurve
-Remotes:
-    muschellij2/freesurfer
 VignetteBuilder:
     knitr,
     rmarkdown
@@ -90,4 +88,4 @@ SystemRequirements: FreeSurfer (subcortical/wholebrain pipelines),
 Config/testthat/edition: 3
 Config/testthat/parallel: true
 Config/Needs/website: ggsegverse/ggseg.docs
-Config/roxygen2/version: 8.1.0
+Config/roxygen2/version: 8.1.1

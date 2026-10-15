@@ -30,6 +30,7 @@
 #'   [princurve::principal_curve()].
 #' @template atlas_name
 #' @template output_dir
+#' @template min_coverage
 #' @param ... Passed to [create_tract_from_tractography()] (for example
 #'   `tube_opts`, `slabs`, `steps`).
 #' @template verbose
@@ -62,7 +63,8 @@ create_tract_from_volume <- function(
   input_aseg = NULL,
   exclude = NULL,
   atlas_name = NULL,
-  output_dir = NULL
+  output_dir = NULL,
+  min_coverage = NULL
 ) {
   rlang::check_installed(
     "princurve",
@@ -151,6 +153,7 @@ create_tract_from_volume <- function(
         atlas_name = atlas_name,
         output_dir = output_dir,
         verbose = verbose,
+        min_coverage = min_coverage,
         # The centerlines were built in world/mm coordinates just above, so
         # there is nothing to infer: detect_coords_are_voxels() classifies
         # any bundle inside [0, 300] as voxel, which a unilateral tract

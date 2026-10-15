@@ -68,7 +68,7 @@ jobs:
           upgrade: "TRUE"
           extra-packages: |
             any::testthat
-            github::muschellij2/freesurfer
+            any::freesurfer
 
       - name: Run test suite with FreeSurfer available
         run: Rscript .github/scripts/run-freesurfer-tests.R

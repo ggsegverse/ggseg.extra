@@ -3998,14 +3998,6 @@ describe("declared cortical hemisphere", {
     }
   })
 
-  it("accepts the usual spellings of a declared hemisphere", {
-    expect_identical(normalise_hemi("LH"), "left")
-    expect_identical(normalise_hemi(" Right "), "right")
-    expect_identical(normalise_hemi("l"), "left")
-    expect_identical(normalise_hemi(NA), NA_character_)
-    expect_identical(normalise_hemi(""), NA_character_)
-  })
-
   it("drops the wrong-hemisphere row when building the atlas data", {
     # The end the user sees: one lookup table entry, one region, not two.
     colortable <- data.frame(

@@ -35,12 +35,13 @@ label_to_region <- function(
   region <- label_name
 
   if (remove_hemi) {
-    # vermis and midline are hemisphere values this package itself assigns --
-    # detect_cerebellar_hemi() returns them, and detect_hemi() takes
-    # "midline" as its default for tracts -- so a label carrying one is
-    # carrying a hemisphere, exactly as left/right is, and the region name
-    # should not keep it. Leaving them out is why every cerebellar region in
-    # the ggsegverse was named "midline_<something>".
+    # A label may carry "vermis" or "midline" where another carries
+    # "left"/"right": detect_cerebellar_hemi() reads both, and detect_hemi()
+    # defaults to "midline" for tracts. So a label carrying one is carrying a
+    # hemisphere, and the region name should not keep it. Leaving them out is
+    # why every cerebellar region in the ggsegverse was named
+    # "midline_<something>". Note `hemi` itself records vermis as midline;
+    # the "vermis" spelling survives only in the label.
     stripped <- gsub(
       "^(Left|Right|left|right|lh|rh|L|R|Vermis|vermis|Midline|midline)[- _.]+",
       "",
@@ -238,6 +239,82 @@ drop_labels_without_geometry <- function(components, sf_data) {
     cli::cli_abort("No labels with geometry remain. Cannot build atlas.")
   }
   components
+}
+
+
+#' Report a freshly built atlas whose 2D geometry covers too little of `core`
+#'
+#' A post-condition on a build, not a property of an atlas. The pipelines prune
+#' labels that fail to tessellate one at a time (see
+#' [drop_labels_without_geometry()]), which keeps `core` and the geometry in
+#' step but says nothing about *how much* of the parcellation survived the
+#' projection. A build that lost a fifth of its regions between the view
+#' assembly, the view gathering and the polygon conversion is almost always
+#' badly tuned slabs, a wrong hemisphere or a projection the structures are too
+#' small for -- and the author is still at the keyboard, so this is the moment
+#' to say it.
+#'
+#' Warn rather than abort: the shortest of these pipelines reads a surface, and
+#' the longest runs for hours. Throwing the result away over a threshold would
+#' cost more than the mis-built atlas it saved. The warning is not gated on
+#' `verbose`, for the same reason the label drops are not: it reports data loss.
+#'
+#' A 3D-only build has no 2D geometry to measure and is left alone.
+#'
+#' @param atlas A finished `ggseg_atlas`, or `NULL` for a run that stopped
+#'   before assembling one.
+#' @param min_coverage Share of `core` labels that must carry geometry, between
+#'   0 and 1. `0` turns the check off.
+#' @return `atlas`, unchanged, invisibly.
+#' @noRd
+check_atlas_coverage <- function(atlas, min_coverage = get_min_coverage()) {
+  if (is.null(atlas) || min_coverage <= 0) {
+    return(invisible(atlas))
+  }
+
+  # The finalizers are also handed stubs -- a mocked `ggseg_atlas()` in the
+  # pipeline tests returns a bare list with the class attached -- and the
+  # accessors refuse anything that is not a real atlas. Nothing to measure
+  # either way, and the same reason preview_atlas() tolerates one.
+  if (!ggseg.formats::is_ggseg_atlas(atlas)) {
+    return(invisible(atlas))
+  }
+
+  # As in drop_labels_without_geometry(): anything that is not a data frame --
+  # a 3D-only build's empty slot among them -- counts as no geometry at all,
+  # and there is nothing to measure.
+  geom <- ggseg.formats::atlas_geom(atlas)
+  if (!is.data.frame(geom)) {
+    return(invisible(atlas))
+  }
+
+  # The accessors return the raw `core` column, one element per row, so the
+  # vocabulary has to be taken explicitly: counting rows instead of labels
+  # would read a bilateral atlas as half-covered.
+  labels <- ggseg.formats::atlas_labels(atlas)
+  named <- unique(labels[!is.na(labels)])
+  if (length(named) == 0) {
+    return(invisible(atlas))
+  }
+  drawn <- unique(geom$label[!is.na(geom$label)])
+  missing <- setdiff(named, drawn)
+  coverage <- 1 - length(missing) / length(named)
+
+  if (coverage < min_coverage) {
+    cli::cli_warn(
+      c(
+        "2D geometry covers {.strong {round(coverage * 100)}%} of the
+        {length(named)} {.field core} label{?s}, below
+        {.strong {round(min_coverage * 100)}%}.",
+        "x" = "No geometry: {.val {missing}}",
+        "i" = "Raise {.arg min_coverage} to accept this build, or {.val 0}
+        to turn the check off."
+      ),
+      wrap = TRUE
+    )
+  }
+
+  invisible(atlas)
 }
 
 
@@ -458,8 +535,9 @@ check_lut_hemi <- function(lut) {
       "{.arg input_lut} has {sum(unrecognised)} label{?s} with an
       unrecognised {.field hemi}",
       "x" = "Not a hemisphere: {.val {unique(declared[unrecognised])}}",
-      "i" = "Allowed: {.val {c('left', 'right', 'midline', 'vermis')}}, or
-      {.code NA} to read it from the label's name."
+      "i" = "Allowed: {.val {c('left', 'right', 'midline')}}, or {.code NA}
+      to read it from the label's name. {.val vermis} and {.val middle} are
+      accepted and recorded as {.val midline}."
     ))
   }
   invisible(lut)
@@ -490,16 +568,29 @@ lut_hemi <- function(lut_row, label_name, from_name = detect_hemi) {
 }
 
 
-#' Map short hemisphere code to long form
+#' Read a declared hemisphere in any of its usual spellings
+#'
+#' `NA` for anything unrecognised. Whether that is an error is not decided
+#' here: `check_lut_hemi()` aborts on a value that declares something this
+#' cannot read, and lets `NA` and an empty string through as undeclared.
 #' @noRd
-hemi_to_long <- function(hemi_short) {
-  if (hemi_short == "lh") {
-    "left"
-  } else if (hemi_short == "rh") {
-    "right"
-  } else {
-    hemi_short
+normalise_hemi <- function(x) {
+  if (length(x) != 1L || is.na(x) || !nzchar(trimws(x))) {
+    return(NA_character_)
   }
+  switch(
+    tolower(trimws(x)),
+    "left" = ,
+    "lh" = ,
+    "l" = "left",
+    "right" = ,
+    "rh" = ,
+    "r" = "right",
+    "midline" = ,
+    "middle" = ,
+    "vermis" = "midline",
+    NA_character_
+  )
 }
 
 #' Map long hemisphere to short code
@@ -719,11 +810,11 @@ is_context_region <- function(x) {
 #' @param region The region derived for that label.
 #' @return A single string.
 #' @noRd
-lut_names <- function(lut_row, region) {
-  if (!"names" %in% names(lut_row) || nrow(lut_row) == 0) {
+lut_display <- function(lut_row, region) {
+  if (!"display" %in% names(lut_row) || nrow(lut_row) == 0) {
     return(region)
   }
-  given <- trimws(as.character(lut_row$names[1]))
+  given <- trimws(as.character(lut_row$display[1]))
   if (is.na(given) || !nzchar(given)) {
     return(region)
   }
@@ -731,7 +822,7 @@ lut_names <- function(lut_row, region) {
 }
 
 
-#' Give a core table its `names` column
+#' Give a core table its `display` column
 #'
 #' Every atlas a pipeline builds carries `names`, the display name of each
 #' region. Rows without one take their region, so the column is always
@@ -739,15 +830,15 @@ lut_names <- function(lut_row, region) {
 #' @param core Core data frame with at least `region`.
 #' @return `core` with a `names` column after `label`.
 #' @noRd
-core_with_names <- function(core) {
-  given <- if ("names" %in% names(core)) {
-    as.character(core$names)
+core_with_display <- function(core) {
+  given <- if ("display" %in% names(core)) {
+    as.character(core$display)
   } else {
     rep(NA_character_, nrow(core))
   }
   missing <- is.na(given) | !nzchar(trimws(given))
   given[missing] <- as.character(core$region)[missing]
-  core$names <- given
+  core$display <- given
   core
 }
 
@@ -777,10 +868,10 @@ build_atlas_components <- function(atlas_data) {
   }
 
   core_columns <- intersect(
-    c("hemi", "region", "label", "names"),
+    c("hemi", "region", "label", "display"),
     names(atlas_data)
   )
-  core <- core_with_names(distinct(atlas_data[core_columns]))
+  core <- core_with_display(distinct(atlas_data[core_columns]))
 
   raw_colours <- stats::setNames(atlas_data$colour, atlas_data$label)
   raw_colours <- raw_colours[!duplicated(names(raw_colours))]
@@ -835,7 +926,8 @@ validate_surface_config <- function(
   output_dir,
   verbose,
   cleanup,
-  skip_existing
+  skip_existing,
+  min_coverage = NULL
 ) {
   resolve_common_config(
     output_dir,
@@ -843,7 +935,8 @@ validate_surface_config <- function(
     cleanup,
     skip_existing,
     steps = NULL,
-    max_step = 2L
+    max_step = 2L,
+    min_coverage = min_coverage
   )
 }
 
@@ -855,7 +948,8 @@ resolve_common_config <- function(
   cleanup,
   skip_existing,
   steps,
-  max_step
+  max_step,
+  min_coverage = NULL
 ) {
   list(
     output_dir = get_output_dir(output_dir),
@@ -863,7 +957,8 @@ resolve_common_config <- function(
     cleanup = get_cleanup(cleanup),
     skip_existing = get_skip_existing(skip_existing),
     steps = validate_steps(steps, max_step),
-    max_step = max_step
+    max_step = max_step,
+    min_coverage = get_min_coverage(min_coverage)
   )
 }
 
@@ -987,6 +1082,8 @@ finalize_atlas <- function(
     return(invisible(NULL))
   }
 
+  check_atlas_coverage(atlas, config$min_coverage %||% get_min_coverage())
+
   if (ggseg.formats::is_atlas_sf(atlas)) {
     atlas <- ggseg.formats::as_polygon_atlas(atlas)
   }
@@ -997,17 +1094,22 @@ finalize_atlas <- function(
 #' @noRd
 parse_lut_colours <- function(input_lut) {
   if (is.null(input_lut)) {
-    return(list(region_names = NULL, colours = NULL))
+    return(list(source_names = NULL, region_names = NULL, colours = NULL))
   }
 
   lut <- if (is.character(input_lut)) read_lut(input_lut) else input_lut
-  region_names <- if ("region" %in% names(lut)) {
+  # `source_names` is the identifier `label` is built from; its precedence is
+  # unchanged, so no atlas's labels or palette keys move. `region_names` is
+  # set only when the table declares a `region`, which is the author curating
+  # it -- everything else has `region` derived from the identifier.
+  source_names <- if ("region" %in% names(lut)) {
     lut$region
   } else if ("label" %in% names(lut)) {
     lut$label
   } else {
     NULL
   }
+  region_names <- if ("region" %in% names(lut)) lut$region else NULL
   colours <- if ("hex" %in% names(lut)) {
     lut$hex
   } else if (all(c("R", "G", "B") %in% names(lut))) {
@@ -1016,7 +1118,11 @@ parse_lut_colours <- function(input_lut) {
     NULL
   }
 
-  list(region_names = region_names, colours = colours)
+  list(
+    source_names = source_names,
+    region_names = region_names,
+    colours = colours
+  )
 }
 
 
