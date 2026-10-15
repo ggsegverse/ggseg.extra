@@ -1150,8 +1150,9 @@ describe("subcort_snapshot_names", {
 describe("prune_stale_snapshots", {
   it("removes projections no slab in this run can produce", {
     dirs <- local_subcort_dirs()
-    file.create(file.path(dirs$snapshots, c("axial_1_a.rda", "axial_9_a.rda")))
-    file.create(file.path(dirs$snapshots, "cache_manifest.rds"))
+    kept <- file.path(dirs$snapshots, "axial_1_a.rda")
+    file.create(c(kept, file.path(dirs$snapshots, "axial_9_a.rda")))
+    stamp_cache_files(kept)
 
     expect_message(
       stale <- prune_stale_snapshots(dirs, "axial_1_a.rda"),
@@ -1167,6 +1168,7 @@ describe("prune_stale_snapshots", {
   it("says nothing when every image belongs to this run", {
     dirs <- local_subcort_dirs()
     file.create(file.path(dirs$snapshots, "axial_1_a.rda"))
+    stamp_cache_files(file.path(dirs$snapshots, "axial_1_a.rda"))
 
     expect_silent(stale <- prune_stale_snapshots(dirs, "axial_1_a.rda"))
     expect_length(stale, 0L)
@@ -1175,6 +1177,7 @@ describe("prune_stale_snapshots", {
   it("prunes quietly when verbose is FALSE", {
     dirs <- local_subcort_dirs()
     file.create(file.path(dirs$snapshots, c("axial_1_a.rda", "axial_9_a.rda")))
+    stamp_cache_files(file.path(dirs$snapshots, "axial_1_a.rda"))
 
     expect_silent(
       stale <- prune_stale_snapshots(dirs, "axial_1_a.rda", verbose = FALSE)
@@ -1720,5 +1723,45 @@ describe("subcort_mesh_one", {
       "Left-Hippocampus"
     )
     expect_null(result)
+  })
+})
+
+
+describe("prune_stale_snapshots cache format", {
+  it("removes a correctly named snapshot that cannot be read", {
+    # A structure with no voxels in a slab is skipped rather than drawn, so a
+    # file this run would have named but had nothing to put in survives from
+    # whenever it was last drawn. Under an older cache format nothing can
+    # read it and nothing replaces it, so contour extraction aborts on a file
+    # no rerun clears.
+    dir <- withr::local_tempdir()
+    dirs <- list(snapshots = dir)
+    current <- file.path(dir, "axial_1_a.rda")
+    unreadable <- file.path(dir, "axial_1_b.rda")
+    saveRDS(1, current)
+    saveRDS(1, unreadable)
+    stamp_cache_files(current)
+    manifest <- read_cache_manifest(dir)
+    manifest[["axial_1_b.rda"]] <- 0L
+    write_cache_manifest(dir, manifest)
+
+    stale <- suppressMessages(
+      prune_stale_snapshots(dirs, c("axial_1_a.rda", "axial_1_b.rda"))
+    )
+
+    expect_identical(basename(stale), "axial_1_b.rda")
+    expect_identical(list.files(dir, pattern = "\\.rda$"), "axial_1_a.rda")
+  })
+
+  it("keeps an expected snapshot this ggseg.extra can read", {
+    dir <- withr::local_tempdir()
+    dirs <- list(snapshots = dir)
+    file <- file.path(dir, "axial_1_a.rda")
+    saveRDS(1, file)
+    stamp_cache_files(file)
+
+    expect_silent(stale <- prune_stale_snapshots(dirs, "axial_1_a.rda"))
+    expect_length(stale, 0L)
+    expect_identical(list.files(dir, pattern = "\\.rda$"), "axial_1_a.rda")
   })
 })

@@ -266,6 +266,15 @@ tract_run_pipeline <- function(
     slabs
   )
 
+  prune_stale_snapshots(
+    dirs,
+    tract_snapshot_names(
+      step1$core$label,
+      snaps$slabs,
+      snaps$cortex_slices
+    ),
+    verbose = config$verbose
+  )
   tract_extract_contours(config, dirs, vertex_size_limits)
 
   if (tract_total_steps() %in% config$steps) {
@@ -583,6 +592,45 @@ default_tract_atlas_name <- function(input_tracts) {
 
 
 #' @noRd
+#' Every snapshot filename a tract run can produce
+#'
+#' The mirror of [subcort_snapshot_names()], and needed for the same reason:
+#' contour extraction traces every projection it finds in the directory, so a
+#' file left by a run with different slabs -- or with an older spelling of a
+#' name, as `cortex_slice_label()` once produced -- is read back as though
+#' this run had drawn it. A tract with no voxels in a slab is skipped rather
+#' than drawn, so this is a superset of what actually appears, which is all
+#' telling this run's output from an earlier one's needs.
+#' @noRd
+tract_snapshot_names <- function(labels, slabs, cortex_slices = NULL) {
+  if (is.null(slabs) || nrow(slabs) == 0L) {
+    cli::cli_abort(
+      "A slab table is required to name this run's snapshots",
+      .internal = TRUE
+    )
+  }
+  grid <- expand.grid(
+    label = labels,
+    view = slabs$name,
+    stringsAsFactors = FALSE
+  )
+  tracts <- projection_name(grid$view, sanitize_label(grid$label))
+
+  if (is.null(cortex_slices) || nrow(cortex_slices) == 0L) {
+    return(tracts)
+  }
+
+  context <- unlist(Map(
+    function(view, name) {
+      cortex_slice_label(extract_hemi_from_view(view, name))
+    },
+    cortex_slices$view,
+    cortex_slices$name
+  ))
+  c(tracts, projection_name(cortex_slices$name, context))
+}
+
+
 tract_resolve_snapshots <- function(config, dirs, step1, input_aseg, slabs) {
   files <- c(
     as.character(fs::path(dirs$base, "slabs.rds")),
@@ -671,7 +719,10 @@ tract_assemble_3d <- function(step1) {
     atlas = step1$atlas_name,
     type = "tract",
     palette = step1$palette,
-    core = core_with_display(step1$core),
+    core = core_with_display(
+      step1$core,
+      source = source_name(step1$core$label)
+    ),
     data = ggseg_data_tract(
       centerlines = step1$centerlines_df
     )
@@ -700,7 +751,10 @@ tract_assemble_full <- function(step1, dirs, slabs, cortex_slices) {
     atlas = step1$atlas_name,
     type = "tract",
     palette = step1$palette,
-    core = core_with_display(step1$core),
+    core = core_with_display(
+      step1$core,
+      source = source_name(step1$core$label)
+    ),
     data = ggseg_data_tract(
       geom = sf_data,
       centerlines = step1$centerlines_df

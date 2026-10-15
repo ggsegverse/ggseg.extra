@@ -1182,3 +1182,97 @@ describe("min_coverage reaches the pipelines", {
     expect_identical(config$min_coverage, 0.42)
   })
 })
+
+
+describe("source_name", {
+  it("keeps the source's own spelling after taking the hemisphere off", {
+    expect_identical(source_name("Left_17Networks_1"), "17Networks_1")
+    expect_identical(source_name("Right-Thalamus"), "Thalamus")
+    expect_identical(source_name("Vermis_VIIAt"), "VIIAt")
+  })
+
+  it("leaves a name that carries no hemisphere alone", {
+    expect_identical(source_name("17Networks_1"), "17Networks_1")
+    expect_identical(source_name("M1L"), "M1L")
+  })
+
+  it("is vectorised", {
+    expect_identical(
+      source_name(c("Left_Region1", "Right_Region2")),
+      c("Region1", "Region2")
+    )
+  })
+})
+
+
+describe("core_with_display", {
+  it("prefers a display the lookup table gave over anything derived", {
+    core <- data.frame(
+      region = "v1 roi",
+      label = "lh_L_V1_ROI",
+      display = "Primary Visual Cortex",
+      stringsAsFactors = FALSE
+    )
+    expect_identical(
+      core_with_display(core, source = "L_V1_ROI")$display,
+      "Primary Visual Cortex"
+    )
+  })
+
+  it("falls back to the source name, not the derived region", {
+    # `display` exists to keep the human-readable name that deriving
+    # `region` throws away. Falling back to `region` makes it a copy of
+    # `region` and loses the only record of what the source called it.
+    core <- data.frame(
+      region = c("v1 roi", "17networks 1"),
+      label = c("lh_L_V1_ROI", "midline_17Networks_1"),
+      stringsAsFactors = FALSE
+    )
+    expect_identical(
+      core_with_display(core, source = c("L_V1_ROI", "17Networks_1"))$display,
+      c("L_V1_ROI", "17Networks_1")
+    )
+  })
+
+  it("falls back to region only when there is no source name", {
+    core <- data.frame(
+      region = "thalamus",
+      label = "left_Thalamus",
+      stringsAsFactors = FALSE
+    )
+    expect_identical(core_with_display(core)$display, "thalamus")
+    expect_identical(
+      core_with_display(core, source = NA_character_)$display,
+      "thalamus"
+    )
+    expect_identical(
+      core_with_display(core, source = "")$display,
+      "thalamus"
+    )
+  })
+})
+
+
+describe("lut_display", {
+  it("returns the fallback when the table has no display column", {
+    expect_identical(
+      lut_display(data.frame(label = "x"), "17Networks_1"),
+      "17Networks_1"
+    )
+  })
+
+  it("returns the fallback when the row's display is blank", {
+    expect_identical(
+      lut_display(data.frame(display = NA_character_), "M1L"),
+      "M1L"
+    )
+    expect_identical(lut_display(data.frame(display = " "), "M1L"), "M1L")
+  })
+
+  it("returns what the table gave when it gave something", {
+    expect_identical(
+      lut_display(data.frame(display = "Motor 1 Left"), "M1L"),
+      "Motor 1 Left"
+    )
+  })
+})

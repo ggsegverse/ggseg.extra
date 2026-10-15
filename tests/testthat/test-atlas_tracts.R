@@ -699,3 +699,76 @@ describe("coord_space_to_voxels", {
     )
   })
 })
+
+
+describe("tract_snapshot_names", {
+  it("names every tract against every slab", {
+    slabs <- data.frame(
+      name = c("axial_1", "coronal_1"),
+      stringsAsFactors = FALSE
+    )
+
+    names <- tract_snapshot_names(c("L_CST", "R_CST"), slabs)
+
+    expect_setequal(
+      names,
+      c(
+        "axial_1_L_CST.rda",
+        "axial_1_R_CST.rda",
+        "coronal_1_L_CST.rda",
+        "coronal_1_R_CST.rda"
+      )
+    )
+  })
+
+  it("names the cortex reference slices the run draws", {
+    # The spelling matters: `cortex_slice_label()` used to produce a trailing
+    # underscore for a view with no hemisphere, so a directory built before
+    # that fix holds `axial_1_cortex_.rda` beside this run's
+    # `axial_1_cortex.rda`. The expected set has to match what this run
+    # writes, or the orphan survives the prune and contour extraction reads
+    # it back.
+    slabs <- data.frame(name = "axial_1", stringsAsFactors = FALSE)
+    cortex_slices <- data.frame(
+      name = c("axial_1", "sagittal_left"),
+      view = c("axial", "sagittal"),
+      stringsAsFactors = FALSE
+    )
+
+    names <- tract_snapshot_names("L_CST", slabs, cortex_slices)
+
+    expect_true("axial_1_cortex.rda" %in% names)
+    expect_false("axial_1_cortex_.rda" %in% names)
+  })
+
+  it("errors rather than naming an empty set without slabs", {
+    expect_error(tract_snapshot_names("L_CST", NULL), "slab table")
+    expect_error(
+      tract_snapshot_names("L_CST", data.frame(name = character())),
+      "slab table"
+    )
+  })
+})
+
+
+describe("tract snapshot pruning", {
+  it("removes a projection this run's slabs cannot name", {
+    dir <- withr::local_tempdir()
+    dirs <- list(snapshots = dir)
+    file.create(file.path(dir, c("axial_1_L_CST.rda", "mid_axial_L_CST.rda")))
+    stamp_cache_files(file.path(dir, "axial_1_L_CST.rda"))
+
+    stale <- suppressMessages(
+      prune_stale_snapshots(
+        dirs,
+        tract_snapshot_names(
+          "L_CST",
+          data.frame(name = "axial_1", stringsAsFactors = FALSE)
+        )
+      )
+    )
+
+    expect_identical(basename(stale), "mid_axial_L_CST.rda")
+    expect_identical(list.files(dir, pattern = "\\.rda$"), "axial_1_L_CST.rda")
+  })
+})

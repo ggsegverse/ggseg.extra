@@ -831,7 +831,11 @@ merge_deep_into_components <- function(components, deep_data, dir) {
       c("hemi", "region", "label", "display"),
       names(deep_data)
     )
-    deep_core <- core_with_display(dplyr::distinct(deep_data[deep_columns]))
+    deep_core <- dplyr::distinct(deep_data[deep_columns])
+    deep_core <- core_with_display(
+      deep_core,
+      source = source_name(deep_core$label)
+    )
     components$core <- rbind(components$core, deep_core)
 
     deep_colours <- stats::setNames(deep_data$colour, deep_data$label)
@@ -1299,7 +1303,7 @@ build_suit_region_row <- function(pid, region_vertices, label_table) {
 
   hemi <- detect_cerebellar_hemi(region_name)
   region <- label_to_region(region_name)
-  label <- paste(hemi, sanitize_label(region), sep = "_")
+  label <- paste(hemi, sanitize_label(source_name(region_name)), sep = "_")
 
   dplyr::tibble(
     hemi = hemi,
@@ -1469,7 +1473,7 @@ read_one_cerebellar_annotation <- function(annot_file) {
   dplyr::tibble(
     hemi = hemi,
     region = region,
-    label = paste(hemi, sanitize_label(region), sep = "_"),
+    label = paste(hemi, sanitize_label(source_name(ct$struct_name)), sep = "_"),
     colour = ct$hex_color_string_rgb,
     vertices = region_verts
   )
@@ -1552,7 +1556,7 @@ build_cerebellar_volume_row <- function(
 
   hemi <- lut_hemi(colortable[i, ], region_name, detect_cerebellar_hemi)
   region <- label_to_region(region_name)
-  label <- paste(hemi, sanitize_label(region), sep = "_")
+  label <- paste(hemi, sanitize_label(source_name(region_name)), sep = "_")
 
   resolved <- resolve_orphan_region(
     region_vertices,
@@ -1572,7 +1576,7 @@ build_cerebellar_volume_row <- function(
     hemi = hemi,
     region = region,
     label = label,
-    display = lut_display(colortable[i, ], region),
+    display = lut_display(colortable[i, ], source_name(region_name)),
     colour = colour,
     vol_idx = idx,
     vertices = list(region_vertices),
