@@ -69,22 +69,6 @@ label_to_region <- function(
 }
 
 
-#' The source's own name for a region, with the hemisphere taken off
-#'
-#' [label_to_region()] does two things at once: it strips the hemisphere, and
-#' it normalises what is left to a lower-case key. Only the first is wanted
-#' when the result has to stay recognisable to someone reading a legend, or
-#' has to go into a `label` that users join their data on. This is that half
-#' on its own, so `"Left_17Networks_1"` gives `"17Networks_1"` rather than
-#' `"17networks 1"`.
-#' @param label_name The name as the annotation or lookup table gives it.
-#' @return The name with any hemisphere affix removed, otherwise unchanged.
-#' @noRd
-source_name <- function(label_name) {
-  label_to_region(label_name, remove_hemi = TRUE, normalize = FALSE)
-}
-
-
 # Context silhouette ----
 
 #' The label pattern that matches an atlas's backdrop
@@ -819,6 +803,22 @@ is_context_region <- function(x) {
 
 #' The display name a lookup table gives a label, or the region if it gives none
 #'
+#' The source's own name for a region, with the hemisphere taken off
+#'
+#' [label_to_region()] does two things at once: it strips the hemisphere, and
+#' it normalises what is left to a lower-case key. Only the first is wanted
+#' when the result has to stay recognisable to someone reading a legend, or
+#' has to go into a `label` that users join their data on. This is that half
+#' on its own, so `"Left_17Networks_1"` gives `"17Networks_1"` rather than
+#' `"17networks 1"`.
+#' @param label_name The name as the annotation or lookup table gives it.
+#' @return The name with any hemisphere affix removed, otherwise unchanged.
+#' @noRd
+source_name <- function(label_name) {
+  label_to_region(label_name, remove_hemi = TRUE, normalize = FALSE)
+}
+
+
 #' `display` is the long-form name an atlas shows in a legend. The lookup
 #' table may carry it in a `display` column; a table without the column, or a
 #' row left `NA` or blank, falls back to `fallback`.
