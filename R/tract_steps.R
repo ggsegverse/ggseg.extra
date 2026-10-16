@@ -389,21 +389,14 @@ default_tract_slabs <- function(vol) {
   }
   extent <- apply(labelled, 2, range)
 
-  # Three axial and three coronal, as `default_subcortical_slabs()` uses: the
-  # four and five here made twelve panels where the subcortical default makes
-  # seven, and a tract drawn across twelve slabs is a thinner thing in each.
-  # The three sagittal slabs stay. Tracts are the one atlas type where the
-  # midline carries its own content -- the commissural tracts are only
-  # properly seen there -- so narrowing to the single hemisphere slab the
-  # subcortical default uses would lose them.
+  # Axial and coronal counts match `default_subcortical_slabs()`. The three
+  # sagittal slabs stay: commissural tracts are only seen at the midline.
   slabs <- rbind(
     view_slabs(extent[1, 3], extent[2, 3], 3, "axial"),
     view_slabs(extent[1, 2], extent[2, 2], 3, "coronal"),
     tract_sagittal_slabs(extent[, 1])
   )
 
-  # The subcortical default prunes; this one did not, so a tract atlas
-  # carried a panel for every slab whether or not a tract reached it.
   drop_empty_slabs(slabs, vol, setdiff(unique(as.vector(vol)), 0L))
 }
 

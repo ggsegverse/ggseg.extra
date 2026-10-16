@@ -1853,21 +1853,9 @@ fill_unlabelled_from_mesh_neighbors <- function(labels, faces, n_verts) {
 #' @noRd
 #' The flatmap vertices a polygon can actually be built from
 #'
-#' The SUIT flatmap carries 28935 vertices but its triangulation uses only
-#' 28834 of them: around a hundred survive the flattening as points in the
-#' vertex array and belong to no face. Nothing can be drawn from those, since
-#' every polygon is assembled out of triangles.
-#'
-#' This matters to the orphan rescue and almost nowhere else. The rescue
-#' looks for the surface vertices nearest a structure the volume has but the
-#' surface does not, and for a deep structure the nearest vertices are the
-#' ones that did not make it onto the flat sheet either -- so the rescue
-#' picked unusable vertices for precisely the regions needing rescue, said it
-#' had assigned them, and the region was dropped for having no geometry two
-#' steps later.
-#'
-#' Cached because the template never changes within a session and the
-#' rescue runs once per orphaned region.
+#' The SUIT flatmap keeps ~100 of its 28935 vertices in no face at all, and
+#' polygons are assembled from triangles, so nothing can be drawn from those.
+#' Cached: the template does not change within a session.
 #' @return Integer vector of 0-based vertex indices used by at least one face.
 #' @noRd
 suit_drawable_vertices <- function() {
@@ -1915,10 +1903,8 @@ rescue_orphaned_region <- function(
       (verts_3d[, 3] - centroid_world[3])^2
   )
 
-  # Only a vertex some triangle uses can become part of a polygon, so the
-  # candidates are narrowed before distance is considered rather than after:
-  # the nearest vertex to a deep structure is often one of the undrawable
-  # ones. See suit_drawable_vertices().
+  # Narrowed before distance, not after: the nearest vertex to a deep
+  # structure is often one of the undrawable ones.
   usable <- drawable + 1L
   usable <- usable[usable >= 1L & usable <= nrow(verts_3d)]
 

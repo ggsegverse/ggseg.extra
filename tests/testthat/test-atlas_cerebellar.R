@@ -1613,11 +1613,8 @@ describe("rescue_orphaned_region", {
   })
 
   it("will not hand back a vertex no triangle uses", {
-    # The flatmap keeps about a hundred vertices that belong to no face, and
-    # the nearest vertex to a deep structure is often one of them. Handing
-    # one back looked like a rescue and produced a region with no geometry,
-    # dropped two steps later -- which is how 17Networks_14 left buckner17
-    # and Right_Region_133 left the Shen cerebellar atlas.
+    # A vertex in no face looks like a rescue but yields no geometry, which
+    # is how 17Networks_14 left buckner17.
     skip_if_not_installed("RNifti")
     skip_if_not_installed("gifti")
 
