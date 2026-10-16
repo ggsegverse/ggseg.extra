@@ -115,3 +115,27 @@ describe("use_atlas_github_actions", {
     expect_no_match(yaml, "README.Rmd", fixed = TRUE)
   })
 })
+
+
+describe("atlas workflow templates", {
+  it("point dependency resolution at the r-universe", {
+    # ggseg's DESCRIPTION floor names a ggseg.formats newer than CRAN's, so a
+    # workflow that resolves against CRAN alone fails before the check runs.
+    needs_deps <- c("R-CMD-check", "code-quality", "pkgdown", "render-readme")
+
+    for (nm in needs_deps) {
+      path <- system.file(
+        "templates",
+        "workflows",
+        paste0(nm, ".yaml"),
+        package = "ggseg.extra"
+      )
+      expect_true(file.exists(path), info = nm)
+      expect_match(
+        paste(readLines(path), collapse = "\n"),
+        "extra-repositories: https://ggsegverse\\.r-universe\\.dev",
+        info = nm
+      )
+    }
+  })
+})
