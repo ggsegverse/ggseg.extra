@@ -135,7 +135,7 @@ describe("create_subcortical_from_volume", {
       core$display[core$label == "Left-Thalamus"],
       "Thalamus (left)"
     )
-    expect_identical(core$display[core$label == "Right-Thalamus"], "thalamus")
+    expect_identical(core$display[core$label == "Right-Thalamus"], "Thalamus")
   })
 
   it("makes regions of the labels the lookup table lists and context of the rest", {
@@ -1232,6 +1232,7 @@ describe("subcortical pipeline snapshot pruning", {
     )
 
     file.create(file.path(dirs$snapshots, c("ax_1_r.rda", "ax_9_r.rda")))
+    stamp_cache_files(file.path(dirs$snapshots, "ax_1_r.rda"))
 
     vol_file <- withr::local_tempfile(fileext = ".mgz")
     file.create(vol_file)

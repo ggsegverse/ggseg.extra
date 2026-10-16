@@ -151,6 +151,7 @@ describe("snapshot_cortex_slice", {
     outdir <- withr::local_tempdir("cortex_slice_")
     outfile <- as.character(fs::path(outdir, "axial_1_cortex_left.rda"))
     saveRDS("untouched", outfile)
+    stamp_cache_files(outfile)
 
     result <- snapshot_cortex_slice(
       vol = vol,
@@ -270,12 +271,12 @@ describe("snapshot_cortex_slice when extract_slice_2d returns NULL", {
 describe("snapshot_partial_projection skip and zero paths", {
   # The caller stamps whatever it is handed back, so letting an earlier run's
   # file stand must look like "wrote nothing". Returning its path would
-  # re-stamp a projection written under an older cache format as current and
-  # defeat the staleness check that would otherwise abort the build.
+  # re-stamp a projection this run did not draw.
   it("returns NULL, leaving the file alone, when skip_existing finds one", {
     outdir <- withr::local_tempdir("partial_skip_")
     outfile <- as.character(fs::path(outdir, "axial_1_test.rda"))
     saveRDS("untouched", outfile)
+    stamp_cache_files(outfile)
 
     result <- snapshot_partial_projection(
       vol = array(1L, dim = c(10, 10, 10)),
@@ -290,6 +291,33 @@ describe("snapshot_partial_projection skip and zero paths", {
 
     expect_null(result)
     expect_identical(readRDS(outfile), "untouched")
+  })
+
+  it("redraws rather than skips a file it cannot read", {
+    outdir <- withr::local_tempdir("partial_stale_")
+    outfile <- as.character(fs::path(outdir, "axial_1_test.rda"))
+    saveRDS("untouched", outfile)
+    write_cache_manifest(
+      outdir,
+      stats::setNames(cache_format_version() - 1L, basename(outfile))
+    )
+
+    result <- snapshot_partial_projection(
+      vol = array(1L, dim = c(10, 10, 10)),
+      view = "axial",
+      start = 1,
+      end = 10,
+      view_name = "axial_1",
+      label = "test",
+      output_dir = outdir,
+      skip_existing = TRUE
+    )
+
+    # Stamping is the caller's job; covered end to end in test-tract_geometry.R.
+    expect_identical(result, outfile)
+    env <- new.env(parent = emptyenv())
+    load(outfile, envir = env)
+    expect_true("projection" %in% ls(env))
   })
 
   it("returns NULL when projection is all zeros", {

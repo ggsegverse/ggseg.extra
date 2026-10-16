@@ -135,7 +135,7 @@ subcort_build_components <- function(colortable, meshes_list) {
       hemi = lut_hemi(ct_row, label_name),
       region = region,
       label = label_name,
-      display = lut_display(ct_row, region),
+      display = lut_display(ct_row, source_name(label_name)),
       colour = ct_row$color[1],
       mesh = list(meshes_list[[label_name]])
     )
@@ -265,7 +265,12 @@ prune_stale_snapshots <- function(dirs, expected, verbose = TRUE) {
     dirs$snapshots,
     function(dir) {
       files <- list.files(dir, pattern = "\\.rda$")
-      as.character(fs::path(dir, setdiff(files, expected)))
+      unnamed <- as.character(fs::path(dir, setdiff(files, expected)))
+
+      # An expected name is not proof this run wrote the file: a structure
+      # with nothing in a slab is skipped, so an unreadable one can survive.
+      kept <- as.character(fs::path(dir, intersect(files, expected)))
+      c(unnamed, stale_cache_files(kept))
     }
   ))
 

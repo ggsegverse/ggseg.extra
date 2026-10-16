@@ -208,7 +208,7 @@ snapshot_cortex_slice <- function(
 ) {
   outfile <- projection_file(path.expand(output_dir), view_name, label)
 
-  if (skip_existing && file.exists(outfile)) {
+  if (skip_existing && reusable_cache_file(outfile)) {
     return(invisible(NULL))
   }
 
@@ -268,7 +268,7 @@ snapshot_partial_projection <- function(
   label <- sanitize_label(label)
   outfile <- projection_file(output_dir, view_name, label)
 
-  if (skip_existing && file.exists(outfile)) {
+  if (skip_existing && reusable_cache_file(outfile)) {
     return(invisible(NULL))
   }
 

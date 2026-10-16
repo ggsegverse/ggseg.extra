@@ -349,6 +349,41 @@ describe("cerebellar region naming", {
 })
 
 
+describe("build_suit_region_row label spelling", {
+  it("keeps the source's spelling in the label, not the derived region", {
+    # `label` is the join and palette key: rewriting it breaks every dataset
+    # keyed on a published atlas.
+    label_table <- tibble(
+      id = 1L,
+      name = "17Networks_1",
+      colour = "#ffffff"
+    )
+
+    row <- build_suit_region_row(
+      pid = 1L,
+      region_vertices = c(0L, 1L, 2L),
+      label_table = label_table
+    )
+
+    expect_identical(row$label, "midline_17Networks_1")
+    expect_identical(row$region, "17networks 1")
+  })
+
+  it("does not repeat a hemisphere the source name already carried", {
+    label_table <- tibble(id = 1L, name = "Left_Crus_I", colour = "#ffffff")
+
+    row <- build_suit_region_row(
+      pid = 1L,
+      region_vertices = 0L,
+      label_table = label_table
+    )
+
+    expect_identical(row$hemi, "left")
+    expect_identical(row$label, "left_Crus_I")
+  })
+})
+
+
 describe("build_suit_region_row missing label names", {
   it("falls back to the numbered region name used in the tutorial", {
     label_table <- tibble(

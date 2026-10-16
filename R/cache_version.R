@@ -237,6 +237,18 @@ is_stale_version <- function(versions) {
   is.na(versions) | versions != cache_format_version()
 }
 
+#' Whether a cached file can be reused as it stands
+#'
+#' Presence is not enough: a file written under an older cache format cannot
+#' be read, and skipping over it leaves one nothing will replace.
+#' @param path A cache file that may or may not exist.
+#' @return `TRUE` when the file exists and this ggseg.extra can read it.
+#' @noRd
+reusable_cache_file <- function(path) {
+  file.exists(path) && !any(is_stale_version(cache_file_versions(path)))
+}
+
+
 #' @noRd
 stale_cache_files <- function(files) {
   files[is_stale_version(cache_file_versions(files))]
