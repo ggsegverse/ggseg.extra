@@ -16,6 +16,18 @@ The one note is the standard new-submission note:
 
 "New submission" is expected for a first submission.
 
+## Before submitting
+
+The package stays on a development version until the moment of submission, so
+a plain `x.y.z` reaching `main` cannot auto-publish a release nobody asked for.
+Two edits, together, at submission time:
+
+1. `Version: 1.9.9.9127` becomes `Version: 2.0.0` in `DESCRIPTION`.
+2. The top `NEWS.md` heading becomes `# ggseg.extra 2.0.0` to match, and loses
+   the sentence saying it becomes the release notes.
+
+Nothing else in this file depends on the version.
+
 ## First submission
 
 This is the first CRAN submission for ggseg.extra. The package has been

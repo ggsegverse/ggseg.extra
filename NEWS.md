@@ -1,6 +1,7 @@
-# ggseg.extra 2.0.0
+# ggseg.extra 1.9.9.9127
 
-This is the first CRAN release of ggseg.extra, the atlas-building package of
+This section becomes the 2.0.0 release notes at submission. It is the first
+CRAN release of ggseg.extra, the atlas-building package of
 the ggsegverse, renamed and restructured from 'ggsegExtra' for the ggsegverse
 2.0 architecture. Every pipeline now returns a single `ggseg_atlas` object
 holding 2D polygons and 3D meshes together, and geometry shaping has moved out
