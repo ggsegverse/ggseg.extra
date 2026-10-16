@@ -291,9 +291,6 @@ describe("reusable_cache_file", {
   })
 
   it("is FALSE for a file written under an older cache format", {
-    # The reason `skip_existing` cannot just ask whether the file is there:
-    # skipping over an unreadable file leaves something on disk that nothing
-    # can read and nothing will replace, and the build dies on it later.
     file <- local_cache_file(stamped = FALSE)
     dir <- dirname(file)
     write_cache_manifest(dir, stats::setNames(0L, basename(file)))

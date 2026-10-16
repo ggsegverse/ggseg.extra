@@ -1729,11 +1729,8 @@ describe("subcort_mesh_one", {
 
 describe("prune_stale_snapshots cache format", {
   it("removes a correctly named snapshot that cannot be read", {
-    # A structure with no voxels in a slab is skipped rather than drawn, so a
-    # file this run would have named but had nothing to put in survives from
-    # whenever it was last drawn. Under an older cache format nothing can
-    # read it and nothing replaces it, so contour extraction aborts on a file
-    # no rerun clears.
+    # A structure with nothing in a slab is skipped, so an unreadable file
+    # with an expected name can survive.
     dir <- withr::local_tempdir()
     dirs <- list(snapshots = dir)
     current <- file.path(dir, "axial_1_a.rda")

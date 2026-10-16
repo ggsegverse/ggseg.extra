@@ -1098,12 +1098,8 @@ describe("snapshot_tract_views", {
     expect_identical(stale_cache_files(written), character())
   })
 
-  # A projection left by an older cache format must never be reused: nothing
-  # can read it, and the contour step traces whatever it finds. It used to be
-  # left stale so that step would abort on it, but the abort was a dead end --
-  # the advice was to rerun, and rerunning skipped the file again and aborted
-  # again. `skip_existing` now treats an unreadable projection as absent, so
-  # it is redrawn and stamped current instead.
+  # Previously left stale so the contour step would abort; that abort was a
+  # dead end, since rerunning skipped the file again. Redrawn instead.
   it("redraws a projection written under an older cache format", {
     dirs <- list(snapshots = withr::local_tempdir())
     stale <- projection_file(dirs$snapshots, "ax_1", "t_a")

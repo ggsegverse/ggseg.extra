@@ -351,11 +351,8 @@ describe("cerebellar region naming", {
 
 describe("build_suit_region_row label spelling", {
   it("keeps the source's spelling in the label, not the derived region", {
-    # `label` is the key users join their data on and the key the palette is
-    # named by. Building it from the derived region silently rewrote every
-    # shipped cerebellar label, so `midline_17Networks_1` became
-    # `midline_17networks_1` and every dataset keyed on the published labels
-    # stopped matching.
+    # `label` is the join and palette key: rewriting it breaks every dataset
+    # keyed on a published atlas.
     label_table <- tibble(
       id = 1L,
       name = "17Networks_1",
