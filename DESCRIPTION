@@ -8,7 +8,8 @@ Authors@R: c(
         email = "a.m.mowinckel@psykologi.uio.no",
         role = c("aut", "cre"),
         comment = c(
-            ORCID = "0000-0002-5756-0223")),
+            ORCID = "0000-0002-5756-0223",
+            Github = "drmowinckels")),
     person(
         given = "Didac",
         family = "Vidal-Piñeiro",
