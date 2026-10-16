@@ -138,7 +138,9 @@ describe("create_subcortical_from_volume", {
     expect_identical(core$display[core$label == "Right-Thalamus"], "Thalamus")
   })
 
-  it("makes regions of the labels the lookup table lists and context of the rest", {
+  it("draws the labels the lookup table lists and nothing else", {
+    # A label the table does not mention is one nobody has said anything
+    # about, so it is left undrawn rather than guessed into a backdrop.
     skip_if_no_freesurfer()
 
     lut <- read_lut(test_path("testdata", "volumetric", "lut.txt"))
@@ -154,10 +156,7 @@ describe("create_subcortical_from_volume", {
 
     drawn <- unique(atlas_sf(atlas)$label)
     expect_setequal(atlas$core$label, c("Left-Thalamus", "Right-Thalamus"))
-    expect_setequal(
-      setdiff(drawn, atlas$core$label),
-      c("context_0018", "context_0054")
-    )
+    expect_identical(setdiff(drawn, atlas$core$label), character())
     expect_setequal(atlas_meshes(atlas)$label, atlas$core$label)
   })
 
@@ -972,10 +971,9 @@ describe("split_lut_context", {
     split <- split_lut_context(lut)
 
     expect_identical(split$regions$idx, c(10L, 18L))
-    expect_identical(
-      split$context,
-      data.frame(idx = 2L, label = "Left-Cerebral-White-Matter")
-    )
+    expect_identical(split$context$idx, 2L)
+    expect_identical(split$context$label, "Left-Cerebral-White-Matter")
+    expect_identical(split$context$group, NA_character_)
   })
 
   it("treats a table without the column as all regions", {

@@ -96,9 +96,9 @@ label_to_region <- function(
 #' slice tracing of a tract atlas.
 #'
 #' A subcortical build takes its context from its lookup table instead: a
-#' row marked `context` keeps its own name, and a label the table does not
-#' list is named `context_` and its id, such as `context_0002`. Only the
-#' second kind has a name this pattern can know; see below for the first.
+#' row marked `context` keeps its own name, and rows whose `context` names a
+#' group are one silhouette called after it -- `cortex` by convention, which
+#' this pattern knows. A label the table does not list is not drawn.
 #'
 #' A parcellation can also carry its own -- an annotation's `unknown`, `???` or
 #' medial-wall region. Those arrive as regions and are demoted to backdrop
@@ -461,23 +461,69 @@ lut_context_values <- function(context) {
   if (is.logical(context)) {
     return(context)
   }
-  text <- tolower(trimws(as.character(context)))
+  text <- trimws(as.character(context))
+  lower <- tolower(text)
   declares_something <- !is.na(text) & nzchar(text)
-  is_yes <- text %in% c("true", "t", "yes", "1")
-  is_no <- text %in% c("false", "f", "no", "0")
-  unrecognised <- declares_something & !is_yes & !is_no
-  if (any(unrecognised)) {
-    cli::cli_abort(c(
-      "The lookup table's {.field context} column must be {.val TRUE} or
-      {.val FALSE}.",
-      "x" = "Not recognised: {.val {unique(context[unrecognised])}}",
-      "i" = "Leave a row blank or {.val NA} to make it a region."
-    ))
-  }
+  is_yes <- lower %in% c("true", "t", "yes", "1")
+  is_no <- lower %in% c("false", "f", "no", "0")
+
   declared <- rep(NA, length(text))
   declared[is_yes] <- TRUE
   declared[is_no] <- FALSE
+  # Anything else names a group: the rows sharing it are one silhouette.
+  declared[declares_something & !is_yes & !is_no] <- TRUE
   declared
+}
+
+
+#' A `context` column as it should be held in memory
+#'
+#' Logical when every declared value is a yes or a no, and the text itself
+#' when any row names a group -- so a group survives a round trip through
+#' [read_lut()] instead of flattening to `TRUE`.
+#' @param context The column as read.
+#' @return Logical or character, one element per row.
+#' @noRd
+lut_context_column <- function(context) {
+  if (is.logical(context)) {
+    return(context)
+  }
+  text <- trimws(as.character(context))
+  lower <- tolower(text)
+  declared <- !is.na(text) & nzchar(text)
+  boolish <- lower %in% c("true", "t", "yes", "1", "false", "f", "no", "0")
+
+  if (!any(declared & !boolish)) {
+    return(lut_context_values(context))
+  }
+  text[!declared] <- NA_character_
+  text
+}
+
+
+#' The silhouette each context row belongs to
+#'
+#' `TRUE` puts a row in a silhouette of its own, under its own name. Any
+#' other value names a group, and every row carrying that name is drawn as
+#' one shape called after it -- which is how a table says that its seventy
+#' cortical parcels are one ribbon, without anything having to recognise a
+#' parcel by its id.
+#' @param lut A lookup table data frame.
+#' @return Character vector, one per row: the group a context row belongs to,
+#'   and `NA` for a region or for context under its own name.
+#' @noRd
+lut_context_group <- function(lut) {
+  if (!"context" %in% names(lut) || is.logical(lut$context)) {
+    return(rep(NA_character_, nrow(lut)))
+  }
+  text <- trimws(as.character(lut$context))
+  lower <- tolower(text)
+  named <- !is.na(text) &
+    nzchar(text) &
+    !lower %in% c("true", "t", "yes", "1", "false", "f", "no", "0")
+  out <- rep(NA_character_, nrow(lut))
+  out[named] <- text[named]
+  out
 }
 
 

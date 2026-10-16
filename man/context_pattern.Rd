@@ -37,9 +37,9 @@ flatmap, and \code{cortex}, \code{cortex_left} or \code{cortex_right} from the v
 slice tracing of a tract atlas.
 
 A subcortical build takes its context from its lookup table instead: a
-row marked \code{context} keeps its own name, and a label the table does not
-list is named \code{context_} and its id, such as \code{context_0002}. Only the
-second kind has a name this pattern can know; see below for the first.
+row marked \code{context} keeps its own name, and rows whose \code{context} names a
+group are one silhouette called after it -- \code{cortex} by convention, which
+this pattern knows. A label the table does not list is not drawn.
 
 A parcellation can also carry its own -- an annotation's \code{unknown}, \verb{???} or
 medial-wall region. Those arrive as regions and are demoted to backdrop

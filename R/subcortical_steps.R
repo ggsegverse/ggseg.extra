@@ -167,7 +167,7 @@ subcort_create_snapshots <- function(
     slabs,
     dims,
     vol = vol,
-    ids = context$idx
+    ids = unlist(context$idx, use.names = FALSE)
   )
 
   manifest <- read_snapshot_manifest(dirs$snapshots)
@@ -490,11 +490,12 @@ structure_snapshot_file <- function(output_dir, view_name, label) {
 #' Every context label of a build: declared in the lookup table, or unlisted
 #'
 #' The lookup table says which labels are the atlas's regions and which are
-#' backdrop. A label in the volume that it does not list at all is backdrop
-#' too. Nothing is recognised by its id or its name.
+#' backdrop. A label it does not list is neither, and is not drawn. Nothing
+#' is recognised by its id or its name.
 #'
-#' A declared label keeps the name the table gives it. An unlisted one has no
-#' name, so it is called `context_` and its id.
+#' A declared label keeps the name the table gives it, unless its `context`
+#' value names a group, in which case every row sharing that name is folded
+#' into one silhouette called after it.
 #'
 #' @param vol Label volume (3D integer array).
 #' @param colortable Lookup table of the atlas's regions, with an `idx` column.
@@ -504,23 +505,53 @@ structure_snapshot_file <- function(output_dir, view_name, label) {
 #' @noRd
 subcort_context_table <- function(vol, colortable, declared = NULL) {
   declared <- declared %||%
-    data.frame(idx = integer(), label = character(), stringsAsFactors = FALSE)
-  present <- unique(as.vector(vol))
-  present <- present[!is.na(present)]
-
-  declared <- declared[declared$idx %in% present, , drop = FALSE]
-  unlisted <- sort(as.integer(
-    setdiff(present, c(0L, colortable$idx, declared$idx))
-  ))
-
-  rbind(
-    declared,
     data.frame(
-      idx = unlisted,
-      label = sprintf("context_%04d", unlisted),
+      idx = integer(),
+      label = character(),
+      group = character(),
       stringsAsFactors = FALSE
     )
+  if (!"group" %in% names(declared)) {
+    declared$group <- NA_character_
+  }
+  present <- unique(as.vector(vol))
+  present <- present[!is.na(present)]
+  declared <- declared[declared$idx %in% present, , drop = FALSE]
+
+  # A label the table does not mention is one nobody has said anything
+  # about. It used to be drawn anyway, as `context_<id>`, which is a guess
+  # that reads well only when the volume happens to be shaped like an
+  # `aseg`: a volume carrying a whole parcellation drew a hundred grey
+  # shapes, white matter among them, filling the sulci the backdrop exists
+  # to show. Say nothing instead, and let the table say it.
+  grouped_context_rows(declared)
+}
+
+
+#' Fold declared context rows into one row per silhouette
+#'
+#' A row with no group is its own silhouette, under its own name. Rows
+#' sharing a group are one silhouette named after it.
+#' @return data.frame of `label` and a list-column `idx`.
+#' @noRd
+grouped_context_rows <- function(declared) {
+  ungrouped <- is.na(declared$group) | !nzchar(declared$group)
+
+  solo <- data.frame(
+    label = declared$label[ungrouped],
+    stringsAsFactors = FALSE
   )
+  solo$idx <- as.list(as.integer(declared$idx[ungrouped]))
+
+  groups <- declared[!ungrouped, , drop = FALSE]
+  if (nrow(groups) == 0L) {
+    return(solo)
+  }
+  by_group <- split(as.integer(groups$idx), groups$group)
+  merged <- data.frame(label = names(by_group), stringsAsFactors = FALSE)
+  merged$idx <- unname(by_group)
+
+  rbind(merged, solo)
 }
 
 
@@ -549,7 +580,7 @@ subcort_snapshot_context <- function(
   drawn <- lapply(seq_len(nrow(grid)), function(i) {
     subcort_snapshot_context_slice(
       vol,
-      context$idx[grid$label[i]],
+      context$idx[[grid$label[i]]],
       context$label[grid$label[i]],
       cortex_slices[grid$slice[i], ],
       dirs,
@@ -573,7 +604,7 @@ subcort_snapshot_context <- function(
 #' @noRd
 subcort_snapshot_context_slice <- function(
   vol,
-  id,
+  ids,
   label,
   cs,
   dirs,
@@ -584,7 +615,7 @@ subcort_snapshot_context_slice <- function(
   outfile <- projection_file(dirs$snapshots, cs$name, label)
   pos <- switch(cs$view, axial = cs$z, coronal = cs$y, sagittal = cs$x)
   axis <- switch(cs$view, sagittal = 1L, coronal = 2L, axial = 3L)
-  on_slice <- slice_along_axis(vol, axis, pos) == id
+  on_slice <- slice_along_axis(vol, axis, pos) %in% ids
   signature <- snapshot_signature(
     rlang::hash(which(on_slice)),
     dim(vol),
@@ -600,7 +631,7 @@ subcort_snapshot_context_slice <- function(
   if (!snapshot_is_current(outfile, signature, manifest, skip_existing)) {
     clear_stale_snapshot(outfile)
     mask <- array(0L, dim = dim(vol))
-    mask[vol == id] <- 1L
+    mask[vol %in% ids] <- 1L
     written <- snapshot_cortex_slice(
       vol = mask,
       x = cs$x,
