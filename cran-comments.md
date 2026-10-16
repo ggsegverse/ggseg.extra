@@ -1,116 +1,46 @@
 ## R CMD check results
 
 Local, macOS 26.6, R 4.6, `R CMD check --no-manual --as-cran`:
-**0 errors | 0 warnings | 1 note**.
+0 errors | 0 warnings | 1 note.
 
-Tests: 3215 pass, 0 fail, 0 skip. Vignettes rebuild cleanly.
-
-The one note is the standard new-submission note:
-
-```
-* checking CRAN incoming feasibility ... NOTE
-  Maintainer: 'Athanasia Mo Mowinckel <a.m.mowinckel@psykologi.uio.no>'
-
-  New submission
-```
-
-"New submission" is expected for a first submission.
-
-## Before submitting
-
-The package stays on a development version until the moment of submission, so
-a plain `x.y.z` reaching `main` cannot auto-publish a release nobody asked for.
-Two edits, together, at submission time:
-
-1. `Version: 1.9.9.9127` becomes `Version: 2.0.0` in `DESCRIPTION`.
-2. The top `NEWS.md` heading becomes `# ggseg.extra 2.0.0` to match, and loses
-   the sentence saying it becomes the release notes.
-
-Nothing else in this file depends on the version.
+The note is the standard "New submission". Tests: 3215 pass, 0 fail, 0 skip.
+Vignettes rebuild cleanly.
 
 ## First submission
 
-This is the first CRAN submission for ggseg.extra. The package has been
-developed and distributed on r-universe
-(<https://ggsegverse.r-universe.dev>) and is the atlas-construction half of
-the ggsegverse ecosystem, whose plotting packages ggseg and ggseg3d are
-already on CRAN.
+ggseg.extra builds brain atlas data sets for the ggsegverse plotting
+packages, ggseg and ggseg3d, which are already on CRAN. It has been
+distributed on r-universe (<https://ggsegverse.r-universe.dev>) until now.
 
-## Downstream dependencies
+No reverse dependencies on CRAN.
 
-There are currently no reverse dependencies on CRAN.
+## SystemRequirements
 
-## Notes for reviewers
+The atlas-construction pipelines drive FreeSurfer
+(<https://surfer.nmr.mgh.harvard.edu/>) and, optionally, Connectome
+Workbench. Neither can be bundled, and FreeSurfer is Linux and macOS only.
+Nothing is touched at load time: each pipeline checks for the tool it needs
+and errors informatively if it is absent, `sitrep()` reports what is
+available, and the tests skip those paths, so the check is clean without
+them. `V8` is listed because `rmapshaper`, used for polygon simplification
+in every pipeline, requires it.
 
-### `SystemRequirements` and graceful degradation
+## `\dontrun{}` in examples
 
-The headline feature of this package is building brain atlases from
-neuroimaging files, and the richest pipelines drive external command-line
-tools: FreeSurfer (<https://surfer.nmr.mgh.harvard.edu/>) and, optionally,
-Connectome Workbench for CIFTI resampling. These are large third-party
-installations that cannot be bundled, and FreeSurfer is available for Linux
-and macOS only.
+36 of 58 help pages use `\dontrun{}`. Most are the atlas-construction entry
+points and external-format readers, which cannot run without FreeSurfer,
+Connectome Workbench or a large source file we should not download during a
+check; they are what the package is for, so we document the real call. The
+rest are short follow-on blocks beside an already-executable example,
+showing the two-pass idiom a real build uses.
 
-The package degrades gracefully rather than failing to install or to check:
+`\donttest{}` would not help: those examples are run by `--as-cran` and
+would fail on any machine without FreeSurfer. Every function that needs no
+external tool has an executable example.
 
-- No external tool is touched at load time. Every pipeline that needs one
-  checks for it first and raises an informative error naming the missing
-  tool if it is absent.
-- `sitrep()` reports which system dependencies and optional R packages are
-  present and which pipelines are consequently available, so a user can see
-  what they can run before they try.
-- The geometry verbs (`atlas_polish()`, `atlas_simplify()`,
-  `atlas_smooth()`, `atlas_dilate()`), the lookup-table reader and writer,
-  the legacy-atlas converters and the validation helpers need no external
-  tool at all, and their examples and tests run everywhere.
-- The test suite skips the external-tool paths when the tool is absent, so
-  `R CMD check` is clean on a machine with no FreeSurfer, which is what we
-  expect of CRAN's build machines.
+## Before submitting (internal note, not shipped)
 
-`V8 (>= 6.0.0)` is listed in `SystemRequirements` because `rmapshaper`, an
-`Imports` dependency used for topology-preserving polygon simplification in
-every atlas pipeline, requires the V8 engine.
-
-### `\dontrun{}` in examples
-
-36 of 58 help pages contain a `\dontrun{}` block. They fall into two groups,
-and we expect a reviewer to ask about them.
-
-**The external-tool pipelines.** These genuinely cannot run without
-FreeSurfer, Connectome Workbench, or a large atlas source file it would be
-inappropriate to download during a check. They are the atlas-construction
-entry points (the `create_cortical_from_*()`,
-`create_subcortical_from_volume()`, `create_wholebrain_from_volume()`,
-`create_cerebellar_from_*()` and `create_tract_from_*()` families), the
-readers for external formats (`read_cifti_annotation()`,
-`read_gifti_annotation()`, `read_neuromaps_annotation()`,
-`read_tractography()` and friends), the FreeSurfer command wrappers
-(`mri_surf2surf_rereg()`, `coregister_volume()`,
-`prepare_subcortical_mni152()`), and the repository scaffolding helpers
-(`setup_atlas_repo()`, `use_atlas_github_actions()`), which write files into
-a new project directory. These are the reason the package exists, so we
-document them with the real call rather than omitting the example.
-
-We considered `\donttest{}` and rejected it: `\donttest{}` examples *are*
-run by `R CMD check --as-cran`, and these would fail on any machine without
-FreeSurfer, CRAN's included. We also considered `if (interactive())` guards
-and rejected them as less honest about why the code does not run.
-
-**Supplementary illustrations beside a runnable example.** The geometry verbs
-(`atlas_polish()`, `atlas_simplify()`, `atlas_smooth()`) and
-`context_pattern()` have fully executable examples that run on the `dk`
-atlas from the suggested 'ggseg' package, guarded by `@examplesIf`, followed
-by a short `\dontrun{}` block showing the two-pass idiom a real build uses.
-Those blocks are not run because they would double the example's run time to
-show a pattern the executable part has already demonstrated, not because
-anything is missing.
-
-Every function that requires no external tool has at least one executable
-example.
-
-### Suggested packages
-
-Suggested packages ('ciftiTools', 'freesurfer', 'freesurferformats',
-'gifti', 'RNifti', 'Rvcg', 'terra', 'smoothr', 'princurve', 'neuromapr' and
-others) are checked at run time with `rlang::check_installed()` immediately
-before first use, and the error names the pipeline that wanted them.
+Flip both together: `Version` in `DESCRIPTION` to `2.0.0`, and the top
+`NEWS.md` heading to match, dropping its "becomes the release notes"
+sentence. The package stays on a development version until then so a plain
+`x.y.z` on `main` cannot auto-publish.
