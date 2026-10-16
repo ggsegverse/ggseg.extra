@@ -1,5 +1,26 @@
 # Changelog
 
+## ggseg.extra 1.9.9.9125
+
+### Bug fixes
+
+- `display` holds the source’s own name for a region again. It fell back
+  to `region`, which is now derived, so every atlas built since came out
+  with `display` a copy of `region` (`"v1 roi"`), losing the
+  human-readable name the column exists to keep.
+
+- The cerebellar pipeline builds `label` from the source name rather
+  than the derived region, so `midline_17Networks_1` stays itself
+  instead of becoming `midline_17networks_1`. `label` is the join and
+  palette key, so rewriting it silently broke every dataset keyed on a
+  published cerebellar atlas.
+
+- The tract pipeline prunes snapshots its slabs cannot name, as the
+  subcortical one already did. Contour extraction reads the snapshot
+  directory whole, so a projection left by an earlier slab configuration
+  – or by the older `cortex_` spelling – was read back, and aborted the
+  build on a cache-format mismatch that no rerun could clear.
+
 ## ggseg.extra 1.9.9.9124
 
 ### Breaking changes

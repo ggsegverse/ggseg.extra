@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9124</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9125</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -69,6 +69,15 @@
       <small>Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.9.9.9125" id="ggsegextra-1999125">ggseg.extra 1.9.9.9125<a class="anchor" aria-label="anchor" href="#ggsegextra-1999125"></a></h2>
+<div class="section level3">
+<h3 id="bug-fixes-1-9-9-9125">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-1-9-9-9125"></a></h3>
+<ul><li><p><code>display</code> holds the source’s own name for a region again. It fell back to <code>region</code>, which is now derived, so every atlas built since came out with <code>display</code> a copy of <code>region</code> (<code>"v1 roi"</code>), losing the human-readable name the column exists to keep.</p></li>
+<li><p>The cerebellar pipeline builds <code>label</code> from the source name rather than the derived region, so <code>midline_17Networks_1</code> stays itself instead of becoming <code>midline_17networks_1</code>. <code>label</code> is the join and palette key, so rewriting it silently broke every dataset keyed on a published cerebellar atlas.</p></li>
+<li><p>The tract pipeline prunes snapshots its slabs cannot name, as the subcortical one already did. Contour extraction reads the snapshot directory whole, so a projection left by an earlier slab configuration – or by the older <code>cortex_</code> spelling – was read back, and aborted the build on a cache-format mismatch that no rerun could clear.</p></li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9124" id="ggsegextra-1999124">ggseg.extra 1.9.9.9124<a class="anchor" aria-label="anchor" href="#ggsegextra-1999124"></a></h2>
 <div class="section level3">
