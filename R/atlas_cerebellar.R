@@ -1641,6 +1641,13 @@ resolve_orphan_region <- function(
           "Region {.val {region_name}} ({n_voxels} voxels) had 0 surface",
           "vertices; assigned {length(nearest)} nearest vertex{?es}"
         ))
+      } else {
+        cli::cli_warn(c(
+          "Region {.val {region_name}} ({n_voxels} voxels) reaches no part of
+          the flatmap and is left without geometry.",
+          "i" = "It sits too deep to surface. A deep nucleus is carried as one
+          by name; anything else is dropped from the atlas."
+        ))
       }
     }
   }
@@ -1844,13 +1851,48 @@ fill_unlabelled_from_mesh_neighbors <- function(labels, faces, n_verts) {
 #' centroid and assign them.
 #' @return Integer vector of 0-based vertex indices (may be empty)
 #' @noRd
+#' The flatmap vertices a polygon can actually be built from
+#'
+#' The SUIT flatmap carries 28935 vertices but its triangulation uses only
+#' 28834 of them: around a hundred survive the flattening as points in the
+#' vertex array and belong to no face. Nothing can be drawn from those, since
+#' every polygon is assembled out of triangles.
+#'
+#' This matters to the orphan rescue and almost nowhere else. The rescue
+#' looks for the surface vertices nearest a structure the volume has but the
+#' surface does not, and for a deep structure the nearest vertices are the
+#' ones that did not make it onto the flat sheet either -- so the rescue
+#' picked unusable vertices for precisely the regions needing rescue, said it
+#' had assigned them, and the region was dropped for having no geometry two
+#' steps later.
+#'
+#' Cached because the template never changes within a session and the
+#' rescue runs once per orphaned region.
+#' @return Integer vector of 0-based vertex indices used by at least one face.
+#' @noRd
+suit_drawable_vertices <- function() {
+  cached <- suit_drawable_cache$idx
+  if (!is.null(cached)) {
+    return(cached)
+  }
+  flat <- read_suit_flatmap(suit_flatmap_path())
+  idx <- sort(unique(as.integer(flat$faces)))
+  suit_drawable_cache$idx <- idx
+  idx
+}
+
+#' @noRd
+suit_drawable_cache <- new.env(parent = emptyenv())
+
+
 rescue_orphaned_region <- function(
   vol,
   label_id,
   volume_path,
   suit_3d_surface,
   vertex_labels,
-  n_vertices = 5L
+  n_vertices = 5L,
+  drawable = suit_drawable_vertices()
 ) {
   voxel_locs <- which(vol == label_id, arr.ind = TRUE)
   if (nrow(voxel_locs) == 0) {
@@ -1873,15 +1915,22 @@ rescue_orphaned_region <- function(
       (verts_3d[, 3] - centroid_world[3])^2
   )
 
-  unassigned <- which(vertex_labels == 0L)
+  # Only a vertex some triangle uses can become part of a polygon, so the
+  # candidates are narrowed before distance is considered rather than after:
+  # the nearest vertex to a deep structure is often one of the undrawable
+  # ones. See suit_drawable_vertices().
+  usable <- drawable + 1L
+  usable <- usable[usable >= 1L & usable <= nrow(verts_3d)]
+
+  unassigned <- intersect(which(vertex_labels == 0L), usable)
   if (length(unassigned) > 0) {
     candidates <- unassigned[order(dists[unassigned])]
     n <- min(n_vertices, length(candidates))
     return(as.integer(candidates[seq_len(n)] - 1L))
   }
 
-  nearest_idx <- order(dists)[seq_len(min(n_vertices, length(dists)))]
-  as.integer(nearest_idx - 1L)
+  ranked <- usable[order(dists[usable])]
+  as.integer(ranked[seq_len(min(n_vertices, length(ranked)))] - 1L)
 }
 
 
