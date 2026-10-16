@@ -279,3 +279,22 @@ describe("cache manifest ownership", {
     expect_null(cache_manifest_owner_violation())
   })
 })
+
+
+describe("reusable_cache_file", {
+  it("is TRUE for a file this ggseg.extra stamped", {
+    expect_true(reusable_cache_file(local_cache_file()))
+  })
+
+  it("is FALSE for a file that does not exist", {
+    expect_false(reusable_cache_file(file.path(tempdir(), "absent.rds")))
+  })
+
+  it("is FALSE for a file written under an older cache format", {
+    file <- local_cache_file(stamped = FALSE)
+    dir <- dirname(file)
+    write_cache_manifest(dir, stats::setNames(0L, basename(file)))
+
+    expect_false(reusable_cache_file(file))
+  })
+})

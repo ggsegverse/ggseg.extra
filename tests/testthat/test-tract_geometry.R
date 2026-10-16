@@ -1098,10 +1098,9 @@ describe("snapshot_tract_views", {
     expect_identical(stale_cache_files(written), character())
   })
 
-  # Stamping is how a projection is declared current, so it must follow an
-  # actual write. A projection left by an older cache format and skipped over
-  # has to stay stale, or the contour step reuses it instead of aborting.
-  it("leaves a skipped projection's stale stamp alone", {
+  # Previously left stale so the contour step would abort; that abort was a
+  # dead end, since rerunning skipped the file again. Redrawn instead.
+  it("redraws a projection written under an older cache format", {
     dirs <- list(snapshots = withr::local_tempdir())
     stale <- projection_file(dirs$snapshots, "ax_1", "t_a")
     save(list = character(), file = stale)
@@ -1118,7 +1117,7 @@ describe("snapshot_tract_views", {
       skip_existing = TRUE
     )
 
-    expect_identical(stale_cache_files(stale), stale)
+    expect_identical(stale_cache_files(stale), character())
   })
 })
 

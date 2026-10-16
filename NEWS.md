@@ -496,6 +496,38 @@ and tractography files.
 
 ## Bug fixes
 
+- `display` holds the source's own name for a region again. It fell back to
+  `region`, which is now derived, so every atlas built since came out with
+  `display` a copy of `region` (`"v1 roi"`), losing the human-readable name
+  the column exists to keep.
+
+- The cerebellar pipeline builds `label` from the source name rather than the
+  derived region, so `midline_17Networks_1` stays itself instead of becoming
+  `midline_17networks_1`. `label` is the join and palette key, so rewriting it
+  silently broke every dataset keyed on a published cerebellar atlas.
+
+- The tract pipeline prunes snapshots its slabs cannot name, as the
+  subcortical one already did. Contour extraction reads the snapshot
+  directory whole, so a projection left by an earlier slab configuration --
+  or by the older `cortex_` spelling -- was read back, and aborted the build
+  on a cache-format mismatch that no rerun could clear.
+
+- The cerebellar orphan rescue only considers vertices the flatmap
+  triangulation actually uses. The template keeps about a hundred vertices
+  that belong to no face, and the nearest vertex to a deep structure is
+  often one of them, so the rescue reported success and the region was
+  dropped for having no geometry two steps later. That is how
+  `17Networks_14` left buckner17 and `Right_Region_133`, 2362 voxels, left
+  the Shen cerebellar atlas. A structure that reaches no drawable vertex
+  now says so.
+
+- `default_tract_slabs()` takes three axial and three coronal slabs, as
+  `default_subcortical_slabs()` does rather than four and five, and drops
+  the ones no label reaches. A tract atlas came out with twelve panels
+  where the subcortical default makes seven, each one thinner for it. The
+  three sagittal slabs stay: the commissural tracts are only properly seen
+  at the midline.
+
 - `create_subcortical_from_volume()`, `create_tract_from_tractography()` and
   `create_tract_from_volume()` return the atlas they built, instead of running
   every step, reporting success and returning `NULL`.

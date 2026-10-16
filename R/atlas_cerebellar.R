@@ -831,7 +831,11 @@ merge_deep_into_components <- function(components, deep_data, dir) {
       c("hemi", "region", "label", "display"),
       names(deep_data)
     )
-    deep_core <- core_with_display(dplyr::distinct(deep_data[deep_columns]))
+    deep_core <- dplyr::distinct(deep_data[deep_columns])
+    deep_core <- core_with_display(
+      deep_core,
+      source = source_name(deep_core$label)
+    )
     components$core <- rbind(components$core, deep_core)
 
     deep_colours <- stats::setNames(deep_data$colour, deep_data$label)
@@ -1299,7 +1303,7 @@ build_suit_region_row <- function(pid, region_vertices, label_table) {
 
   hemi <- detect_cerebellar_hemi(region_name)
   region <- label_to_region(region_name)
-  label <- paste(hemi, sanitize_label(region), sep = "_")
+  label <- paste(hemi, sanitize_label(source_name(region_name)), sep = "_")
 
   dplyr::tibble(
     hemi = hemi,
@@ -1469,7 +1473,7 @@ read_one_cerebellar_annotation <- function(annot_file) {
   dplyr::tibble(
     hemi = hemi,
     region = region,
-    label = paste(hemi, sanitize_label(region), sep = "_"),
+    label = paste(hemi, sanitize_label(source_name(ct$struct_name)), sep = "_"),
     colour = ct$hex_color_string_rgb,
     vertices = region_verts
   )
@@ -1552,7 +1556,7 @@ build_cerebellar_volume_row <- function(
 
   hemi <- lut_hemi(colortable[i, ], region_name, detect_cerebellar_hemi)
   region <- label_to_region(region_name)
-  label <- paste(hemi, sanitize_label(region), sep = "_")
+  label <- paste(hemi, sanitize_label(source_name(region_name)), sep = "_")
 
   resolved <- resolve_orphan_region(
     region_vertices,
@@ -1572,7 +1576,7 @@ build_cerebellar_volume_row <- function(
     hemi = hemi,
     region = region,
     label = label,
-    display = lut_display(colortable[i, ], region),
+    display = lut_display(colortable[i, ], source_name(region_name)),
     colour = colour,
     vol_idx = idx,
     vertices = list(region_vertices),
@@ -1636,6 +1640,13 @@ resolve_orphan_region <- function(
         cli::cli_warn(c(
           "Region {.val {region_name}} ({n_voxels} voxels) had 0 surface",
           "vertices; assigned {length(nearest)} nearest vertex{?es}"
+        ))
+      } else {
+        cli::cli_warn(c(
+          "Region {.val {region_name}} ({n_voxels} voxels) reaches no part of
+          the flatmap and is left without geometry.",
+          "i" = "It sits too deep to surface. A deep nucleus is carried as one
+          by name; anything else is dropped from the atlas."
         ))
       }
     }
@@ -1840,13 +1851,36 @@ fill_unlabelled_from_mesh_neighbors <- function(labels, faces, n_verts) {
 #' centroid and assign them.
 #' @return Integer vector of 0-based vertex indices (may be empty)
 #' @noRd
+#' The flatmap vertices a polygon can actually be built from
+#'
+#' The SUIT flatmap keeps ~100 of its 28935 vertices in no face at all, and
+#' polygons are assembled from triangles, so nothing can be drawn from those.
+#' Cached: the template does not change within a session.
+#' @return Integer vector of 0-based vertex indices used by at least one face.
+#' @noRd
+suit_drawable_vertices <- function() {
+  cached <- suit_drawable_cache$idx
+  if (!is.null(cached)) {
+    return(cached)
+  }
+  flat <- read_suit_flatmap(suit_flatmap_path())
+  idx <- sort(unique(as.integer(flat$faces)))
+  suit_drawable_cache$idx <- idx
+  idx
+}
+
+#' @noRd
+suit_drawable_cache <- new.env(parent = emptyenv())
+
+
 rescue_orphaned_region <- function(
   vol,
   label_id,
   volume_path,
   suit_3d_surface,
   vertex_labels,
-  n_vertices = 5L
+  n_vertices = 5L,
+  drawable = suit_drawable_vertices()
 ) {
   voxel_locs <- which(vol == label_id, arr.ind = TRUE)
   if (nrow(voxel_locs) == 0) {
@@ -1869,15 +1903,20 @@ rescue_orphaned_region <- function(
       (verts_3d[, 3] - centroid_world[3])^2
   )
 
-  unassigned <- which(vertex_labels == 0L)
+  # Narrowed before distance, not after: the nearest vertex to a deep
+  # structure is often one of the undrawable ones.
+  usable <- drawable + 1L
+  usable <- usable[usable >= 1L & usable <= nrow(verts_3d)]
+
+  unassigned <- intersect(which(vertex_labels == 0L), usable)
   if (length(unassigned) > 0) {
     candidates <- unassigned[order(dists[unassigned])]
     n <- min(n_vertices, length(candidates))
     return(as.integer(candidates[seq_len(n)] - 1L))
   }
 
-  nearest_idx <- order(dists)[seq_len(min(n_vertices, length(dists)))]
-  as.integer(nearest_idx - 1L)
+  ranked <- usable[order(dists[usable])]
+  as.integer(ranked[seq_len(min(n_vertices, length(ranked)))] - 1L)
 }
 
 

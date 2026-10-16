@@ -349,6 +349,41 @@ describe("cerebellar region naming", {
 })
 
 
+describe("build_suit_region_row label spelling", {
+  it("keeps the source's spelling in the label, not the derived region", {
+    # `label` is the join and palette key: rewriting it breaks every dataset
+    # keyed on a published atlas.
+    label_table <- tibble(
+      id = 1L,
+      name = "17Networks_1",
+      colour = "#ffffff"
+    )
+
+    row <- build_suit_region_row(
+      pid = 1L,
+      region_vertices = c(0L, 1L, 2L),
+      label_table = label_table
+    )
+
+    expect_identical(row$label, "midline_17Networks_1")
+    expect_identical(row$region, "17networks 1")
+  })
+
+  it("does not repeat a hemisphere the source name already carried", {
+    label_table <- tibble(id = 1L, name = "Left_Crus_I", colour = "#ffffff")
+
+    row <- build_suit_region_row(
+      pid = 1L,
+      region_vertices = 0L,
+      label_table = label_table
+    )
+
+    expect_identical(row$hemi, "left")
+    expect_identical(row$label, "left_Crus_I")
+  })
+})
+
+
 describe("build_suit_region_row missing label names", {
   it("falls back to the numbered region name used in the tutorial", {
     label_table <- tibble(
@@ -1503,7 +1538,8 @@ describe("rescue_orphaned_region", {
       vol_file,
       "mock.surf.gii",
       vertex_labels,
-      n_vertices = 2L
+      n_vertices = 2L,
+      drawable = 0:2
     )
 
     expect_length(result, 2)
@@ -1568,11 +1604,88 @@ describe("rescue_orphaned_region", {
       vol_file,
       "mock.surf.gii",
       vertex_labels,
-      n_vertices = 1L
+      n_vertices = 1L,
+      drawable = 0:1
     )
 
     expect_length(result, 1)
     expect_identical(result, 0L)
+  })
+
+  it("will not hand back a vertex no triangle uses", {
+    # A vertex in no face looks like a rescue but yields no geometry, which
+    # is how 17Networks_14 left buckner17.
+    skip_if_not_installed("RNifti")
+    skip_if_not_installed("gifti")
+
+    vol <- array(0L, dim = c(10, 10, 10))
+    vol[5, 5, 5] <- 7L
+    vol_file <- withr::local_tempfile(fileext = ".nii.gz")
+    nii <- RNifti::asNifti(vol)
+    RNifti::writeNifti(nii, vol_file)
+    centroid_world <- RNifti::voxelToWorld(c(5, 5, 5), nii)
+
+    local_mocked_bindings(
+      readgii = function(file) {
+        list(
+          data = list(
+            pointset = matrix(
+              c(
+                # nearest, but in no face
+                centroid_world[1],
+                centroid_world[2],
+                centroid_world[3],
+                # further away, but drawable
+                centroid_world[1] + 20,
+                centroid_world[2],
+                centroid_world[3]
+              ),
+              ncol = 3,
+              byrow = TRUE
+            )
+          )
+        )
+      },
+      .package = "gifti"
+    )
+
+    result <- rescue_orphaned_region(
+      vol,
+      7L,
+      vol_file,
+      "mock.surf.gii",
+      vertex_labels = c(0L, 0L),
+      n_vertices = 1L,
+      drawable = 1L
+    )
+
+    expect_identical(result, 1L)
+  })
+
+  it("gives back nothing when no drawable vertex exists", {
+    skip_if_not_installed("RNifti")
+    vol <- array(0L, dim = c(5, 5, 5))
+    vol[2, 2, 2] <- 1L
+    vol_file <- withr::local_tempfile(fileext = ".nii.gz")
+    RNifti::writeNifti(RNifti::asNifti(vol), vol_file)
+
+    local_mocked_bindings(
+      readgii = function(file) {
+        list(data = list(pointset = matrix(c(0, 0, 0), ncol = 3)))
+      },
+      .package = "gifti"
+    )
+
+    result <- rescue_orphaned_region(
+      vol,
+      1L,
+      vol_file,
+      "mock.surf.gii",
+      vertex_labels = 0L,
+      drawable = integer()
+    )
+
+    expect_identical(result, integer())
   })
 })
 
@@ -2879,5 +2992,29 @@ describe("warn_no_hemisphere_split", {
 
   it("stays quiet when midline is only some of the regions", {
     expect_no_warning(warn_no_hemisphere_split(c("midline", "left")))
+  })
+})
+
+
+describe("suit_drawable_vertices", {
+  it("is the vertices the flatmap triangulation actually uses", {
+    skip_if_not_installed("gifti")
+    flat <- read_suit_flatmap(suit_flatmap_path())
+    drawable <- suit_drawable_vertices()
+
+    expect_identical(drawable, sort(unique(as.integer(flat$faces))))
+    # the template keeps a small number of vertices in no face at all,
+    # which is the whole reason this exists
+    expect_lt(length(drawable), flat$n_vertices)
+  })
+
+  it("caches, so the template is read once a session", {
+    skip_if_not_installed("gifti")
+    first <- suit_drawable_vertices()
+    local_mocked_bindings(read_suit_flatmap = function(...) {
+      cli::cli_abort("should not be read again")
+    })
+
+    expect_identical(suit_drawable_vertices(), first)
   })
 })

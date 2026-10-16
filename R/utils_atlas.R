@@ -803,20 +803,34 @@ is_context_region <- function(x) {
 
 #' The display name a lookup table gives a label, or the region if it gives none
 #'
-#' `names` is the long-form name an atlas shows in a legend. The lookup table
-#' may carry it in a `names` column; a table without the column, or a row left
-#' `NA` or blank, falls back to the region derived from the label.
+#' The source's own name for a region, with the hemisphere taken off
+#'
+#' [label_to_region()] also normalises to a lower-case key; this is the
+#' hemisphere half alone, so `"Left_17Networks_1"` gives `"17Networks_1"`.
+#' @param label_name The name as the annotation or lookup table gives it.
+#' @return The name with any hemisphere affix removed, otherwise unchanged.
+#' @noRd
+source_name <- function(label_name) {
+  label_to_region(label_name, remove_hemi = TRUE, normalize = FALSE)
+}
+
+
+#' `display` is the long-form name an atlas shows in a legend, taken from the
+#' table's `display` column when it has one and `fallback` otherwise.
+#'
+#' `fallback` must be the source's name, not the derived region: passing the
+#' latter makes `display` a copy of `region`, losing what it exists to keep.
 #' @param lut_row One row of a lookup table.
-#' @param region The region derived for that label.
+#' @param fallback The source's name for that label, from [source_name()].
 #' @return A single string.
 #' @noRd
-lut_display <- function(lut_row, region) {
+lut_display <- function(lut_row, fallback) {
   if (!"display" %in% names(lut_row) || nrow(lut_row) == 0) {
-    return(region)
+    return(fallback)
   }
   given <- trimws(as.character(lut_row$display[1]))
   if (is.na(given) || !nzchar(given)) {
-    return(region)
+    return(fallback)
   }
   given
 }
@@ -830,13 +844,21 @@ lut_display <- function(lut_row, region) {
 #' @param core Core data frame with at least `region`.
 #' @return `core` with a `names` column after `label`.
 #' @noRd
-core_with_display <- function(core) {
+core_with_display <- function(core, source = NULL) {
   given <- if ("display" %in% names(core)) {
     as.character(core$display)
   } else {
     rep(NA_character_, nrow(core))
   }
-  missing <- is.na(given) | !nzchar(trimws(given))
+  blank <- function(x) is.na(x) | !nzchar(trimws(x))
+
+  missing <- blank(given)
+  if (!is.null(source)) {
+    from_source <- as.character(source)
+    take <- missing & !blank(from_source)
+    given[take] <- from_source[take]
+    missing <- blank(given)
+  }
   given[missing] <- as.character(core$region)[missing]
   core$display <- given
   core
@@ -871,7 +893,8 @@ build_atlas_components <- function(atlas_data) {
     c("hemi", "region", "label", "display"),
     names(atlas_data)
   )
-  core <- core_with_display(distinct(atlas_data[core_columns]))
+  core <- distinct(atlas_data[core_columns])
+  core <- core_with_display(core, source = source_name(core$label))
 
   raw_colours <- stats::setNames(atlas_data$colour, atlas_data$label)
   raw_colours <- raw_colours[!duplicated(names(raw_colours))]
