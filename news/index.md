@@ -1,5 +1,25 @@
 # Changelog
 
+## ggseg.extra 1.9.9.9126
+
+### Bug fixes
+
+- The cerebellar orphan rescue only considers vertices the flatmap
+  triangulation actually uses. The template keeps about a hundred
+  vertices that belong to no face, and the nearest vertex to a deep
+  structure is often one of them, so the rescue reported success and the
+  region was dropped for having no geometry two steps later. That is how
+  `17Networks_14` left buckner17 and `Right_Region_133`, 2362 voxels,
+  left the Shen cerebellar atlas. A structure that reaches no drawable
+  vertex now says so.
+
+- `default_tract_slabs()` takes three axial and three coronal slabs, as
+  `default_subcortical_slabs()` does rather than four and five, and
+  drops the ones no label reaches. A tract atlas came out with twelve
+  panels where the subcortical default makes seven, each one thinner for
+  it. The three sagittal slabs stay: the commissural tracts are only
+  properly seen at the midline.
+
 ## ggseg.extra 1.9.9.9125
 
 ### Bug fixes

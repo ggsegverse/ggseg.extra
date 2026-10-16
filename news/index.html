@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9125</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9126</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -69,6 +69,14 @@
       <small>Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.9.9.9126" id="ggsegextra-1999126">ggseg.extra 1.9.9.9126<a class="anchor" aria-label="anchor" href="#ggsegextra-1999126"></a></h2>
+<div class="section level3">
+<h3 id="bug-fixes-1-9-9-9126">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-1-9-9-9126"></a></h3>
+<ul><li><p>The cerebellar orphan rescue only considers vertices the flatmap triangulation actually uses. The template keeps about a hundred vertices that belong to no face, and the nearest vertex to a deep structure is often one of them, so the rescue reported success and the region was dropped for having no geometry two steps later. That is how <code>17Networks_14</code> left buckner17 and <code>Right_Region_133</code>, 2362 voxels, left the Shen cerebellar atlas. A structure that reaches no drawable vertex now says so.</p></li>
+<li><p><code>default_tract_slabs()</code> takes three axial and three coronal slabs, as <code>default_subcortical_slabs()</code> does rather than four and five, and drops the ones no label reaches. A tract atlas came out with twelve panels where the subcortical default makes seven, each one thinner for it. The three sagittal slabs stay: the commissural tracts are only properly seen at the midline.</p></li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9125" id="ggsegextra-1999125">ggseg.extra 1.9.9.9125<a class="anchor" aria-label="anchor" href="#ggsegextra-1999125"></a></h2>
 <div class="section level3">
