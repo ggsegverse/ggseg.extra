@@ -594,13 +594,8 @@ default_tract_atlas_name <- function(input_tracts) {
 #' @noRd
 #' Every snapshot filename a tract run can produce
 #'
-#' The mirror of [subcort_snapshot_names()], and needed for the same reason:
-#' contour extraction traces every projection it finds in the directory, so a
-#' file left by a run with different slabs -- or with an older spelling of a
-#' name, as `cortex_slice_label()` once produced -- is read back as though
-#' this run had drawn it. A tract with no voxels in a slab is skipped rather
-#' than drawn, so this is a superset of what actually appears, which is all
-#' telling this run's output from an earlier one's needs.
+#' The mirror of [subcort_snapshot_names()]. A superset: a tract with no
+#' voxels in a slab is skipped rather than drawn.
 #' @noRd
 tract_snapshot_names <- function(labels, slabs, cortex_slices = NULL) {
   if (is.null(slabs) || nrow(slabs) == 0L) {

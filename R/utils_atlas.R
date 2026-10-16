@@ -805,12 +805,8 @@ is_context_region <- function(x) {
 #'
 #' The source's own name for a region, with the hemisphere taken off
 #'
-#' [label_to_region()] does two things at once: it strips the hemisphere, and
-#' it normalises what is left to a lower-case key. Only the first is wanted
-#' when the result has to stay recognisable to someone reading a legend, or
-#' has to go into a `label` that users join their data on. This is that half
-#' on its own, so `"Left_17Networks_1"` gives `"17Networks_1"` rather than
-#' `"17networks 1"`.
+#' [label_to_region()] also normalises to a lower-case key; this is the
+#' hemisphere half alone, so `"Left_17Networks_1"` gives `"17Networks_1"`.
 #' @param label_name The name as the annotation or lookup table gives it.
 #' @return The name with any hemisphere affix removed, otherwise unchanged.
 #' @noRd
@@ -819,14 +815,11 @@ source_name <- function(label_name) {
 }
 
 
-#' `display` is the long-form name an atlas shows in a legend. The lookup
-#' table may carry it in a `display` column; a table without the column, or a
-#' row left `NA` or blank, falls back to `fallback`.
+#' `display` is the long-form name an atlas shows in a legend, taken from the
+#' table's `display` column when it has one and `fallback` otherwise.
 #'
-#' The fallback is the source's own name for the region, not the region
-#' derived from it. Passing the derived region makes `display` a copy of
-#' `region`, which is the one thing it must never be: `display` exists to keep
-#' the human-readable name that deriving `region` throws away.
+#' `fallback` must be the source's name, not the derived region: passing the
+#' latter makes `display` a copy of `region`, losing what it exists to keep.
 #' @param lut_row One row of a lookup table.
 #' @param fallback The source's name for that label, from [source_name()].
 #' @return A single string.

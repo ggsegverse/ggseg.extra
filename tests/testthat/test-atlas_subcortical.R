@@ -135,9 +135,6 @@ describe("create_subcortical_from_volume", {
       core$display[core$label == "Left-Thalamus"],
       "Thalamus (left)"
     )
-    # Without a `display` in the table the fallback is the source's own name
-    # for the label, not the region derived from it: `display` exists to keep
-    # the spelling that deriving `region` throws away.
     expect_identical(core$display[core$label == "Right-Thalamus"], "Thalamus")
   })
 

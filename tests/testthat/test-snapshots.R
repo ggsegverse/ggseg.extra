@@ -294,9 +294,6 @@ describe("snapshot_partial_projection skip and zero paths", {
   })
 
   it("redraws rather than skips a file it cannot read", {
-    # `skip_existing` asks whether the work was already done. A projection
-    # written under an older cache format is not done: nothing can read it,
-    # and skipping it leaves the contour step a file no rerun can clear.
     outdir <- withr::local_tempdir("partial_stale_")
     outfile <- as.character(fs::path(outdir, "axial_1_test.rda"))
     saveRDS("untouched", outfile)
@@ -316,8 +313,7 @@ describe("snapshot_partial_projection skip and zero paths", {
       skip_existing = TRUE
     )
 
-    # Returning the path is the writer saying it drew; stamping it current is
-    # the caller's job, covered end to end in test-tract_geometry.R.
+    # Stamping is the caller's job; covered end to end in test-tract_geometry.R.
     expect_identical(result, outfile)
     env <- new.env(parent = emptyenv())
     load(outfile, envir = env)

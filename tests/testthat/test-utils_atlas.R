@@ -1220,9 +1220,6 @@ describe("core_with_display", {
   })
 
   it("falls back to the source name, not the derived region", {
-    # `display` exists to keep the human-readable name that deriving
-    # `region` throws away. Falling back to `region` makes it a copy of
-    # `region` and loses the only record of what the source called it.
     core <- data.frame(
       region = c("v1 roi", "17networks 1"),
       label = c("lh_L_V1_ROI", "midline_17Networks_1"),

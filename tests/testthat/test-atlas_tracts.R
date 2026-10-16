@@ -722,12 +722,8 @@ describe("tract_snapshot_names", {
   })
 
   it("names the cortex reference slices the run draws", {
-    # The spelling matters: `cortex_slice_label()` used to produce a trailing
-    # underscore for a view with no hemisphere, so a directory built before
-    # that fix holds `axial_1_cortex_.rda` beside this run's
-    # `axial_1_cortex.rda`. The expected set has to match what this run
-    # writes, or the orphan survives the prune and contour extraction reads
-    # it back.
+    # `cortex_slice_label()` once emitted a trailing underscore, so an older
+    # directory holds `axial_1_cortex_.rda` beside this run's spelling.
     slabs <- data.frame(name = "axial_1", stringsAsFactors = FALSE)
     cortex_slices <- data.frame(
       name = c("axial_1", "sagittal_left"),

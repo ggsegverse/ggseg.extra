@@ -267,13 +267,8 @@ prune_stale_snapshots <- function(dirs, expected, verbose = TRUE) {
       files <- list.files(dir, pattern = "\\.rda$")
       unnamed <- as.character(fs::path(dir, setdiff(files, expected)))
 
-      # A name in `expected` is not proof this run wrote the file. A
-      # structure with no voxels in a slab is skipped rather than drawn, so
-      # a file this run would have named but had nothing to put in survives
-      # from whenever it was last drawn. If that was under an older cache
-      # format, nothing can read it and nothing will replace it, so the
-      # build dies on a file no rerun can clear. This run stamps the current
-      # format, so a stale one cannot be its output either way.
+      # An expected name is not proof this run wrote the file: a structure
+      # with nothing in a slab is skipped, so an unreadable one can survive.
       kept <- as.character(fs::path(dir, intersect(files, expected)))
       c(unnamed, stale_cache_files(kept))
     }
