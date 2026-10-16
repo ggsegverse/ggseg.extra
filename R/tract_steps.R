@@ -389,11 +389,15 @@ default_tract_slabs <- function(vol) {
   }
   extent <- apply(labelled, 2, range)
 
-  rbind(
-    view_slabs(extent[1, 3], extent[2, 3], 4, "axial"),
-    view_slabs(extent[1, 2], extent[2, 2], 5, "coronal"),
+  # Axial and coronal counts match `default_subcortical_slabs()`. The three
+  # sagittal slabs stay: commissural tracts are only seen at the midline.
+  slabs <- rbind(
+    view_slabs(extent[1, 3], extent[2, 3], 3, "axial"),
+    view_slabs(extent[1, 2], extent[2, 2], 3, "coronal"),
     tract_sagittal_slabs(extent[, 1])
   )
+
+  drop_empty_slabs(slabs, vol, setdiff(unique(as.vector(vol)), 0L))
 }
 
 

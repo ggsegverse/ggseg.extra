@@ -602,7 +602,45 @@ describe("default_tract_slabs", {
 
     expect_identical(c(min(axial$start), max(axial$end)), c(16, 55))
     expect_identical(c(min(coronal$start), max(coronal$end)), c(21, 60))
-    expect_identical(c(nrow(axial), nrow(coronal)), c(4L, 5L))
+    expect_identical(c(nrow(axial), nrow(coronal)), c(3L, 3L))
+  })
+
+  it("uses the same axial and coronal count as the subcortical default", {
+    # Twelve panels where the subcortical default makes seven drew every
+    # tract thinner for no extra information.
+    slabs <- default_tract_slabs(brain_volume())
+
+    expect_identical(sum(slabs$type == "axial"), 3L)
+    expect_identical(sum(slabs$type == "coronal"), 3L)
+    expect_identical(sum(slabs$type == "sagittal"), 3L)
+  })
+
+  it("keeps all three sagittal slabs", {
+    # Unlike the subcortical default, which takes one hemisphere slab: the
+    # commissural tracts are only properly seen at the midline.
+    slabs <- default_tract_slabs(brain_volume())
+
+    expect_setequal(
+      slabs$name[slabs$type == "sagittal"],
+      c("sagittal_midline", "sagittal_left", "sagittal_right")
+    )
+  })
+
+  it("drops a slab no label reaches", {
+    # A band of empty grid between two blocks: the middle coronal slab has
+    # nothing in it and should not become a panel.
+    gapped <- array(0L, dim = c(60L, 120L, 70L))
+    gapped[11:50, 1:20, 16:55] <- 2L
+    gapped[11:50, 101:120, 16:55] <- 41L
+
+    slabs <- default_tract_slabs(gapped)
+    coronal <- slabs[slabs$type == "coronal", ]
+
+    expect_lt(nrow(coronal), 3L)
+    for (i in seq_len(nrow(coronal))) {
+      rng <- seq(coronal$start[i], coronal$end[i])
+      expect_true(any(gapped[, rng, ] != 0L))
+    }
   })
 
   it("follows the brain when it sits off-centre in the grid", {
