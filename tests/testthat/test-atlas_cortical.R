@@ -381,11 +381,14 @@ describe("cortical_read_data", {
         vertices = I(list(1:5))
       )
     )
-    save_cache_rds(
+    files <- save_cache_rds(
       tmp_dir,
       atlas_3d.rds = mock_atlas,
       components.rds = mock_components
     )
+    # A cache with no recorded signature is recomputed, so the fixture
+    # records the one this call will look for.
+    record_step_signature(files, step_signature(NULL, "test"))
 
     # Reusing a cache is reported: it was not checked against current inputs.
     expect_warning(
@@ -709,11 +712,12 @@ describe("cortical_read_data verbose paths", {
         vertices = I(list(1:5))
       )
     )
-    save_cache_rds(
+    files <- save_cache_rds(
       tmp_dir,
       atlas_3d.rds = mock_atlas,
       components.rds = mock_components
     )
+    record_step_signature(files, step_signature(NULL, "test"))
 
     expect_message(
       suppressWarnings(cortical_read_data(

@@ -281,6 +281,123 @@ abort_stale_cache <- function(paths, versions, remedy) {
 }
 
 
+# Step provenance ----
+
+#' What a step's output was built from
+#'
+#' [cache_format_version()] says a cache was written by this ggseg.extra and
+#' nothing about its inputs, so a step whose volume, lookup table or
+#' arguments had changed was reused anyway, and so was one written by a
+#' version of this package that computed something different. Both are
+#' silent: the atlas comes out built from the old thing and nothing says so.
+#'
+#' The signature closes that. It carries the package version, so a change in
+#' what a step computes invalidates its cache without anyone bumping a
+#' format, and whatever the caller passes, so a change in what the step was
+#' given does too. The snapshot layer has worked this way all along; this is
+#' the same contract for the steps around it.
+#' @param ... Everything that determines the step's output.
+#' @return A single hash.
+#' @noRd
+step_signature <- function(...) {
+  rlang::hash(list(
+    cache_format_version(),
+    as.character(utils::packageVersion("ggseg.extra")),
+    lapply(list(...), cache_input)
+  ))
+}
+
+
+#' An input as the signature should see it
+#'
+#' A path is taken as its name, size and modification time rather than its
+#' text, so a build directory can move without invalidating anything while a
+#' changed file still does. Everything else is hashed as given.
+#' @noRd
+cache_input <- function(x) {
+  if (!is.character(x) || length(x) == 0L) {
+    return(x)
+  }
+  lapply(x, function(one) {
+    if (is.na(one) || !nzchar(one) || !file.exists(one)) {
+      return(one)
+    }
+    info <- file.info(one)
+    list(name = basename(one), size = info$size, mtime = info$mtime)
+  })
+}
+
+
+#' @noRd
+step_manifest_name <- "step_manifest.rds"
+
+
+#' @noRd
+read_step_manifest <- function(dir) {
+  file <- as.character(fs::path(dir, step_manifest_name))
+  if (!file.exists(file)) {
+    return(character())
+  }
+  manifest <- tryCatch(readRDS(file), error = function(e) NULL)
+  if (!is.character(manifest) || is.null(names(manifest))) {
+    return(character())
+  }
+  manifest
+}
+
+
+#' Record what this run built a step's files from
+#' @noRd
+record_step_signature <- function(files, signature) {
+  files <- unlist(files, use.names = FALSE)
+  if (length(files) == 0L || is.null(signature)) {
+    return(invisible(signature))
+  }
+  dirs <- dirname(files)
+  for (dir in unique(dirs)) {
+    manifest <- read_step_manifest(dir)
+    manifest[basename(files[dirs == dir])] <- signature
+    file <- as.character(fs::path(dir, step_manifest_name))
+    staged <- tempfile(
+      pattern = "step_manifest",
+      tmpdir = dir,
+      fileext = ".rds"
+    )
+    saveRDS(manifest, staged)
+    if (!file.rename(staged, file)) {
+      unlink(staged)
+      cli::cli_warn("Could not update the step manifest in {.path {dir}}")
+    }
+  }
+  invisible(signature)
+}
+
+
+#' Whether a step's cache was built from what this run would give it
+#'
+#' A cache written before signatures existed has none recorded, which reads
+#' as a mismatch: it is reused on trust only when the caller asks for no
+#' signature at all.
+#' @noRd
+step_cache_matches <- function(files, signature) {
+  if (is.null(signature)) {
+    return(TRUE)
+  }
+  files <- unlist(files, use.names = FALSE)
+  recorded <- vapply(
+    files,
+    function(f) {
+      manifest <- read_step_manifest(dirname(f))
+      value <- manifest[basename(f)]
+      if (is.na(value)) NA_character_ else unname(value)
+    },
+    character(1),
+    USE.NAMES = FALSE
+  )
+  all(!is.na(recorded)) && all(recorded == signature)
+}
+
+
 # Snapshot provenance ----
 
 #' Signature of everything a snapshot was drawn from

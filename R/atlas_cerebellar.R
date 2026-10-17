@@ -734,7 +734,8 @@ run_cerebellar_creation <- function(
   step1 <- cerebellar_read_data(
     config,
     dirs,
-    read_fn = read_fn
+    read_fn = read_fn,
+    input_files = input_files
   )
 
   cerebellar_project_and_build(
@@ -750,7 +751,7 @@ run_cerebellar_creation <- function(
 
 
 #' @noRd
-cerebellar_read_data <- function(config, dirs, read_fn) {
+cerebellar_read_data <- function(config, dirs, read_fn, input_files = NULL) {
   files <- as.character(fs::path(dirs$base, "components.rds"))
   deep_file <- as.character(fs::path(dirs$base, "deep_data.rds"))
   cached <- load_or_run_step(
@@ -758,7 +759,8 @@ cerebellar_read_data <- function(config, dirs, read_fn) {
     config$steps,
     files,
     config$skip_existing,
-    "Read parcellation"
+    "Read parcellation",
+    signature = step_signature(input_files)
   )
 
   if (!cached$run) {

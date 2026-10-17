@@ -305,7 +305,8 @@ load_or_run_step <- function(
   steps,
   files,
   skip_existing,
-  step_name = cli::format_inline("Step {step_num}")
+  step_name = cli::format_inline("Step {step_num}"),
+  signature = NULL
 ) {
   files_exist <- all(file.exists(files))
   step_requested <- step_num %in% steps
@@ -313,10 +314,17 @@ load_or_run_step <- function(
   reuses_cache <- files_exist && (skip_existing || !step_requested)
 
   recompute <- reuses_cache &&
-    recomputes_stale_cache(files, step_num, step_name, step_requested)
+    (recomputes_stale_cache(files, step_num, step_name, step_requested) ||
+      recomputes_changed_inputs(
+        files,
+        signature,
+        step_num,
+        step_name,
+        step_requested
+      ))
 
   if (recompute) {
-    return(list(run = TRUE, data = NULL))
+    return(dispatch_step(files, signature))
   }
 
   if (files_exist && skip_existing) {
@@ -325,7 +333,7 @@ load_or_run_step <- function(
   }
 
   if (step_requested) {
-    return(list(run = TRUE, data = NULL))
+    return(dispatch_step(files, signature))
   }
 
   if (!files_exist) {
@@ -381,6 +389,51 @@ recomputes_stale_cache <- function(files, step_num, step_name, step_requested) {
   }
   cli::cli_alert_info(
     "{step_name}: cached output predates this ggseg.extra; recomputing."
+  )
+  TRUE
+}
+
+
+#' Send a step off to run, recording what it is being built from
+#'
+#' Written before the step rather than after it because the format stamp is
+#' what marks the output complete: a step that dies halfway leaves its files
+#' unstamped, and [recomputes_stale_cache()] catches them on the next run
+#' whatever the signature says.
+#' @noRd
+dispatch_step <- function(files, signature) {
+  if (!is.null(signature) && all(dir.exists(dirname(files)))) {
+    record_step_signature(files, signature)
+  }
+  list(run = TRUE, data = NULL)
+}
+
+
+#' Whether a step's cache was built from something other than this run's input
+#'
+#' The mirror of [recomputes_stale_cache()] for inputs rather than format.
+#' Aborts instead when the step was not requested, for the same reason: the
+#' alternatives are building the atlas from the wrong thing, or silently
+#' running work the caller left out.
+#' @noRd
+recomputes_changed_inputs <- function(
+  files,
+  signature,
+  step_num,
+  step_name,
+  step_requested
+) {
+  if (is.null(signature) || step_cache_matches(files, signature)) {
+    return(FALSE)
+  }
+  if (!step_requested) {
+    cli::cli_abort(c(
+      "{step_name}: the cache was built from different inputs.",
+      "i" = "Rerun this step, or include it in {.arg steps}."
+    ))
+  }
+  cli::cli_alert_info(
+    "{step_name}: inputs changed since the cache was written; recomputing."
   )
   TRUE
 }

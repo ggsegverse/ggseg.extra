@@ -298,3 +298,143 @@ describe("reusable_cache_file", {
     expect_false(reusable_cache_file(file))
   })
 })
+
+
+describe("step_signature", {
+  it("changes when the package version changes", {
+    # The reason a format integer is not enough: a release that computes
+    # something different writes the same format, so the cache looked current
+    # and the atlas came out built by the old code.
+    before <- step_signature("a")
+    local_mocked_bindings(
+      packageVersion = function(...) package_version("99.9.9"),
+      .package = "utils"
+    )
+
+    expect_false(identical(before, step_signature("a")))
+  })
+
+  it("changes when an input changes and not when it does not", {
+    expect_identical(step_signature("a", 1L), step_signature("a", 1L))
+    expect_false(identical(step_signature("a", 1L), step_signature("a", 2L)))
+  })
+
+  it("reads a path by its name, size and time, not its text", {
+    dir <- withr::local_tempdir()
+    f <- file.path(dir, "vol.nii.gz")
+    writeLines("one", f)
+    first <- step_signature(f)
+
+    # moved, metadata intact: the build directory is allowed to move
+    other <- file.path(withr::local_tempdir(), "vol.nii.gz")
+    file.copy(f, other, copy.date = TRUE)
+    expect_identical(step_signature(other), first)
+
+    # changed contents: not allowed to go unnoticed
+    writeLines(c("one", "two"), f)
+    expect_false(identical(step_signature(f), first))
+  })
+})
+
+
+describe("step_cache_matches", {
+  it("is FALSE for a cache written before signatures existed", {
+    file <- local_cache_file()
+
+    expect_false(step_cache_matches(file, step_signature("a")))
+  })
+
+  it("is TRUE only for the signature the files were recorded under", {
+    file <- local_cache_file()
+    sig <- step_signature("a")
+    record_step_signature(file, sig)
+
+    expect_true(step_cache_matches(file, sig))
+    expect_false(step_cache_matches(file, step_signature("b")))
+  })
+
+  it("asks nothing of a caller that supplies no signature", {
+    expect_true(step_cache_matches(local_cache_file(), NULL))
+  })
+})
+
+
+describe("clear_atlas_cache", {
+  local_build_dir <- function(name, env = parent.frame()) {
+    root <- withr::local_tempdir(.local_envir = env)
+    dir <- file.path(root, name)
+    dir.create(dir)
+    saveRDS(1, file.path(dir, "step1_data.rds"))
+    mark_working_dir(dir)
+    list(root = root, dir = dir)
+  }
+
+  it("removes the atlas's intermediates", {
+    b <- local_build_dir("glasser")
+
+    expect_message(clear_atlas_cache("glasser", output_dir = b$root))
+    expect_false(dir.exists(b$dir))
+  })
+
+  it("refuses a directory holding files it did not write", {
+    root <- withr::local_tempdir()
+    dir.create(file.path(root, "mine"))
+    writeLines("precious", file.path(root, "mine", "data.csv"))
+
+    expect_error(
+      clear_atlas_cache("mine", output_dir = root),
+      "did not write"
+    )
+    expect_true(file.exists(file.path(root, "mine", "data.csv")))
+  })
+
+  it("clears one anyway when forced", {
+    root <- withr::local_tempdir()
+    dir.create(file.path(root, "mine"))
+    writeLines("x", file.path(root, "mine", "data.csv"))
+
+    expect_message(clear_atlas_cache("mine", output_dir = root, force = TRUE))
+    expect_false(dir.exists(file.path(root, "mine")))
+  })
+
+  it("clears every atlas when given no name", {
+    root <- withr::local_tempdir()
+    for (nm in c("a", "b")) {
+      dir.create(file.path(root, nm))
+      saveRDS(1, file.path(root, nm, "step1_data.rds"))
+      mark_working_dir(file.path(root, nm))
+    }
+
+    expect_message(clear_atlas_cache(output_dir = root))
+    expect_identical(list.dirs(root, recursive = FALSE), character())
+  })
+
+  it("says so rather than failing when there is nothing to clear", {
+    expect_message(
+      clear_atlas_cache("absent", output_dir = withr::local_tempdir()),
+      "Nothing to clear"
+    )
+    expect_warning(
+      clear_atlas_cache("absent", output_dir = file.path(tempdir(), "nope")),
+      "does not exist"
+    )
+  })
+})
+
+
+describe("cache_input over several paths", {
+  it("notices a change in any one of them", {
+    # The creators take a vector of annotation files, and a signature that
+    # only looked at a length-one path read the vector as plain text, so
+    # touching one of two annots went unnoticed.
+    dir <- withr::local_tempdir()
+    f <- file.path(dir, c("lh.annot", "rh.annot"))
+    writeLines("a", f[1])
+    writeLines("b", f[2])
+    before <- step_signature(f)
+
+    writeLines("changed", f[2])
+
+    expect_false(identical(step_signature(f), before))
+  })
+})
