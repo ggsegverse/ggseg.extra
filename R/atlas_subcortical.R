@@ -32,12 +32,18 @@
 #'
 #'   * A row is a **region** unless it says otherwise. It gets a mesh, a
 #'     colour and a shape in each 2D view.
-#'   * A row whose optional `context` column is `TRUE` is **context**. It
-#'     keeps its name, is traced on one slice per view rather than projected
-#'     through the slab, and gets no mesh.
-#'   * A label in the volume that the table does not list is context too.
-#'     With no name to go by, it is called `context_` and its id, such as
-#'     `context_0002`.
+#'   * A row whose optional `context` column is `TRUE` is **context**, the
+#'     grey anatomy the regions are drawn against. It keeps its name, is
+#'     traced on one slice per view rather than projected through the slab,
+#'     and gets no mesh.
+#'   * A row whose `context` column names something else joins the
+#'     silhouette of that name: every row sharing it is traced as one shape,
+#'     called after the group. A parcellation's cortical labels marked
+#'     `context = "cortex"` become one ribbon rather than a hundred patches.
+#'   * A label in the volume that the table does not list is **not drawn**.
+#'     Nothing has said what it is, and guessing fills the sulci a backdrop
+#'     exists to show -- white matter drawn as context turns a ribbon into a
+#'     solid blob. List it to draw it.
 #'
 #'   To leave a context shape out of the atlas altogether, remove it
 #'   afterwards with [ggseg.formats::atlas_context_remove()]. To treat the
@@ -470,7 +476,8 @@ subcort_resolve_labels <- function(config, dirs) {
     config$steps,
     files,
     config$skip_existing,
-    "Step 1 (Extract labels)"
+    "Step 1 (Extract labels)",
+    signature = step_signature(config$input_volume, config$input_lut)
   )
 
   if (!cached$run) {
@@ -540,6 +547,7 @@ split_lut_context <- function(colortable) {
     context = data.frame(
       idx = as.integer(colortable$idx[is_context]),
       label = colortable$label[is_context],
+      group = lut_context_group(colortable)[is_context],
       stringsAsFactors = FALSE
     )
   )
@@ -567,7 +575,12 @@ subcort_resolve_meshes <- function(config, dirs, colortable) {
     config$steps,
     files,
     config$skip_existing,
-    "Step 2 (Create meshes)"
+    "Step 2 (Create meshes)",
+    signature = step_signature(
+      config$input_volume,
+      config$input_lut,
+      config$decimate
+    )
   )
 
   if (!cached$run) {
@@ -613,7 +626,8 @@ subcort_resolve_components <- function(config, dirs, colortable, meshes_list) {
     config$steps,
     files,
     config$skip_existing,
-    "Step 3 (Build atlas data)"
+    "Step 3 (Build atlas data)",
+    signature = step_signature(config$input_volume, config$input_lut)
   )
 
   if (!cached$run) {
@@ -659,7 +673,12 @@ subcort_resolve_snapshots <- function(
     config$steps,
     files,
     config$skip_existing,
-    "Step 4 (Create snapshots)"
+    "Step 4 (Create snapshots)",
+    signature = step_signature(
+      config$input_volume,
+      config$input_lut,
+      slabs
+    )
   )
 
   # Reuse without looking at the snapshots only when step 4 was excluded on

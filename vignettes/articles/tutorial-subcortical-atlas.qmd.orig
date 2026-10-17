@@ -52,9 +52,11 @@ It decides what the atlas is made of:
 
 - a label the table lists is a **region**, with a colour, a 3D mesh and a shape in each 2D view;
 - a row whose `context` column is `TRUE` is **context**: grey anatomy the regions are drawn against, with no mesh;
-- a label that is in the volume but not in the table is context as well.
+- a row whose `context` column names a group joins one silhouette called after it, so a parcellation's cortical labels marked `context = "cortex"` are one ribbon rather than a patchwork;
+- a label that is in the volume but not in the table is **not drawn** at all.
 
 Nothing is worked out from a label's id or its name, so the table is where the decision is made.
+That cuts both ways: a volume carrying a whole `aparc+aseg` holds a hundred labels this atlas is not about, and leaving them undeclared is what keeps white matter and the ventricles off the picture --- draw them and they fill the hollow the ribbon reads by.
 For a subcortical atlas the cortex is the obvious context --- it shows where the deep structures sit without competing for colour --- so say so before building:
 
 ```{r}

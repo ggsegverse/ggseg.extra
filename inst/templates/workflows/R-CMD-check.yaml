@@ -12,3 +12,9 @@ permissions: read-all
 jobs:
   R-CMD-check:
     uses: ggsegverse/.github/.github/workflows/R-CMD-check.yaml@main
+    with:
+      # An atlas package's dependencies include ggseg, whose DESCRIPTION floor
+      # names a ggseg.formats newer than CRAN's. Resolution has to see the
+      # r-universe or it fails before the check starts. Remove this once
+      # ggseg.formats is on CRAN at the floor ggseg asks for.
+      extra-repositories: https://ggsegverse.r-universe.dev

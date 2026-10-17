@@ -1,12 +1,105 @@
 # Development log for ggseg.extra 2.0.0
 
-The 119 per-commit entries below were the `NEWS.md` of the 1.9.9.9001 to
-1.9.9.9124 development series, which together became the 2.0.0 release. They
+The 124 per-commit entries below were the `NEWS.md` of the 1.9.9.9001 to
+1.9.9.9129 development series, which together became the 2.0.0 release. They
 were consolidated into one release section in `NEWS.md` when the package was
 prepared for CRAN, and are kept here so the per-change detail is not lost.
 This file is `.Rbuildignore`d and does not ship.
 
 ---
+
+# ggseg.extra 1.9.9.9129
+
+## New features
+
+- `clear_atlas_cache()` removes an atlas's build intermediates, or every
+  atlas's under a build directory. It refuses a directory holding files this
+  package did not write, so pointing it at the wrong folder does not delete
+  source data; `force = TRUE` overrides. `vignette("pipeline-configuration")`
+  explains what the cache notices and what it cannot.
+
+## Bug fixes
+
+- A step's cache records what it was built from, and the step recomputes when
+  that moves: the ggseg.extra version, the cache format, and the step's own
+  inputs, each path taken by name, size and modification time so a build
+  directory can move without invalidating anything. The cache used to record
+  the format alone, so a release that computed something different was
+  reused as though it did not, and a step whose volume or lookup table had
+  changed was reused too. Both were silent. The snapshot layer has worked
+  this way all along; this is the same contract for the steps around it.
+
+# ggseg.extra 1.9.9.9128
+
+## Breaking changes
+
+- A label the lookup table does not list is no longer drawn. It used to come
+  back as `context_<id>`, which is the pipeline guessing, and the guess only
+  reads well when the volume happens to be shaped like an `aseg`: a volume
+  carrying a whole parcellation drew a hundred grey shapes, cerebral white
+  matter among them, filling the sulci a backdrop exists to show. Declare a
+  label to draw it.
+
+- A `context` value other than yes or no names a group, and every row
+  carrying that name is traced as one silhouette called after it. A
+  parcellation's cortical labels marked `context = "cortex"` are one ribbon
+  rather than a hundred patches, without anything having to recognise a
+  parcel by its id.
+
+## Bug fixes
+
+- `read_lut()` keeps a group name instead of flattening it to `TRUE`.
+
+# ggseg.extra 1.9.9.9127
+
+## Bug fixes
+
+- The atlas workflow templates `use_atlas_github_actions()` writes resolve
+  dependencies against the ggsegverse r-universe. An atlas package depends on
+  ggseg, whose DESCRIPTION floor names a ggseg.formats newer than the one on
+  CRAN, so
+  resolution failed before the check could start. Remove the setting once
+  ggseg.formats is on CRAN at that floor.
+
+# ggseg.extra 1.9.9.9126
+
+## Bug fixes
+
+- The cerebellar orphan rescue only considers vertices the flatmap
+  triangulation actually uses. The template keeps about a hundred vertices
+  that belong to no face, and the nearest vertex to a deep structure is
+  often one of them, so the rescue reported success and the region was
+  dropped for having no geometry two steps later. That is how
+  `17Networks_14` left buckner17 and `Right_Region_133`, 2362 voxels, left
+  the Shen cerebellar atlas. A structure that reaches no drawable vertex
+  now says so.
+
+- `default_tract_slabs()` takes three axial and three coronal slabs, as
+  `default_subcortical_slabs()` does rather than four and five, and drops
+  the ones no label reaches. A tract atlas came out with twelve panels
+  where the subcortical default makes seven, each one thinner for it. The
+  three sagittal slabs stay: the commissural tracts are only properly seen
+  at the midline.
+
+# ggseg.extra 1.9.9.9125
+
+## Bug fixes
+
+- `display` holds the source's own name for a region again. It fell back to
+  `region`, which is now derived, so every atlas built since came out with
+  `display` a copy of `region` (`"v1 roi"`), losing the human-readable name
+  the column exists to keep.
+
+- The cerebellar pipeline builds `label` from the source name rather than the
+  derived region, so `midline_17Networks_1` stays itself instead of becoming
+  `midline_17networks_1`. `label` is the join and palette key, so rewriting it
+  silently broke every dataset keyed on a published cerebellar atlas.
+
+- The tract pipeline prunes snapshots its slabs cannot name, as the
+  subcortical one already did. Contour extraction reads the snapshot
+  directory whole, so a projection left by an earlier slab configuration --
+  or by the older `cortex_` spelling -- was read back, and aborted the build
+  on a cache-format mismatch that no rerun could clear.
 
 # ggseg.extra 1.9.9.9124
 

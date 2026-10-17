@@ -882,7 +882,12 @@ wholebrain_resolve_projection <- function(config, dirs) {
     config$steps,
     files,
     config$skip_existing,
-    "Step 1 (Project to surface)"
+    "Step 1 (Project to surface)",
+    signature = step_signature(
+      config$input_volume,
+      config$input_lut,
+      config$projection_opts
+    )
   )
 
   if (!cached$run) {
@@ -1315,7 +1320,8 @@ wholebrain_resolve_split <- function(
     config$steps,
     files,
     config$skip_existing,
-    "Step 2 (Split labels)"
+    "Step 2 (Split labels)",
+    signature = step_signature(config$input_volume, config$input_lut)
   )
 
   if (!cached$run) {

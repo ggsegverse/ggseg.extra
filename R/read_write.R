@@ -121,7 +121,7 @@ read_lut <- function(path) {
     result$type <- NULL
   }
   if ("context" %in% names(result)) {
-    result$context <- lut_context_values(result$context)
+    result$context <- lut_context_column(result$context)
   }
   result
 }

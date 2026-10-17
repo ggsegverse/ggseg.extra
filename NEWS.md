@@ -1,4 +1,4 @@
-# ggseg.extra 1.9.9.9127
+# ggseg.extra 1.9.9.9130
 
 This section becomes the 2.0.0 release notes at submission. It is the first
 CRAN release of ggseg.extra, the atlas-building package of
@@ -12,6 +12,19 @@ annotations and labels, GIFTI, CIFTI, neuromaps, NIfTI/MGZ parcellation volumes
 and tractography files.
 
 ## Breaking changes
+
+- A label the lookup table does not list is not drawn. It used to come back
+  as `context_<id>`, which is the pipeline guessing, and the guess only reads
+  well when the volume happens to be shaped like an `aseg`: a volume carrying
+  a whole parcellation drew a hundred grey shapes, cerebral white matter
+  among them, filling the sulci a backdrop exists to show. Declare a label to
+  draw it.
+
+- A `context` value other than yes or no names a group, and every row
+  carrying that name is traced as one silhouette called after it. A
+  parcellation's cortical labels marked `context = "cortex"` are one ribbon
+  rather than a hundred patches, without anything having to recognise a
+  parcel by its id.
 
 - The package is `ggseg.extra`; the old `ggsegExtra` name is gone from the
   code and the documentation.
@@ -162,6 +175,11 @@ and tractography files.
   kept in the label, which is the join key.
 
 ## New features
+
+- `clear_atlas_cache()` removes an atlas's build intermediates, or every
+  atlas's under a build directory. It refuses a directory holding files this
+  package did not write, so pointing it at the wrong folder does not delete
+  source data.
 
 - Cerebellar atlases are a first-class atlas type across the ecosystem, with
   SUIT flatmap polygons for 2D and per-region meshes for 3D.
@@ -495,6 +513,18 @@ and tractography files.
   absolute on every platform whether or not the directory already exists.
 
 ## Bug fixes
+
+- A step's cache records what it was built from -- the package version, the
+  cache format and the step's own inputs -- and the step recomputes when any
+  of it moves. It recorded the format alone, so a release that computed
+  something different was reused as though it had not.
+
+- `read_lut()` keeps a `context` group name instead of flattening it to
+  `TRUE`.
+
+- The atlas workflow templates `use_atlas_github_actions()` writes resolve
+  dependencies against the ggsegverse r-universe, so an atlas package's CI
+  can see the ggseg.formats its dependencies name.
 
 - `display` holds the source's own name for a region again. It fell back to
   `region`, which is now derived, so every atlas built since came out with
