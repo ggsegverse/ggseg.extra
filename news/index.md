@@ -1,5 +1,17 @@
 # Changelog
 
+## ggseg.extra 1.9.9.9127
+
+### Bug fixes
+
+- The atlas workflow templates
+  [`use_atlas_github_actions()`](https://ggsegverse.github.io/ggseg.extra/reference/use_atlas_github_actions.md)
+  writes resolve dependencies against the ggsegverse r-universe. An
+  atlas package depends on ggseg, whose DESCRIPTION floor names a
+  ggseg.formats newer than the one on CRAN, so resolution failed before
+  the check could start. Remove the setting once ggseg.formats is on
+  CRAN at that floor.
+
 ## ggseg.extra 1.9.9.9126
 
 ### Bug fixes
