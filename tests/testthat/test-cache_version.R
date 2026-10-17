@@ -326,11 +326,14 @@ describe("step_signature", {
     first <- step_signature(f)
 
     # moved, metadata intact: the build directory is allowed to move.
-    # The time is set rather than copied because `copy.date` is not
-    # honoured on every platform.
+    # `fs::file_touch()` sets the time rather than `file.copy(copy.date =)`,
+    # which is not honoured on every platform.
     other <- file.path(withr::local_tempdir(), "vol.nii.gz")
     file.copy(f, other)
-    Sys.setFileTime(other, file.info(f)$mtime)
+    fs::file_touch(
+      other,
+      modification_time = fs::file_info(f)$modification_time
+    )
     expect_identical(step_signature(other), first)
 
     # changed contents: not allowed to go unnoticed

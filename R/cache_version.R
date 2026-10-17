@@ -322,13 +322,14 @@ cache_input <- function(x) {
     if (is.na(one) || !nzchar(one) || !file.exists(one)) {
       return(one)
     }
-    info <- file.info(one)
-    # Whole seconds: filesystems and `Sys.setFileTime()` disagree below
-    # that, so a file carried across one would otherwise look changed.
+    info <- fs::file_info(one)
+    # Whole seconds, and plain numbers rather than fs's own classes. File
+    # systems disagree below a second -- FAT keeps two, network shares
+    # round -- so a file carried across one would otherwise look changed.
     list(
       name = basename(one),
-      size = info$size,
-      mtime = trunc(as.numeric(info$mtime))
+      size = as.numeric(info$size),
+      mtime = trunc(as.numeric(info$modification_time))
     )
   })
 }
