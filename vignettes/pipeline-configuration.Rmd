@@ -104,6 +104,41 @@ options(ggseg.extra.skip_existing = FALSE)
 options(ggseg.extra.skip_existing = TRUE)
 ```
 
+### What the cache notices, and what it cannot
+
+Reuse is not blind. Every step records what it was built from, and the next
+run recomputes that step when any of it has moved:
+
+- the version of ggseg.extra that wrote it, so a release that computes
+  something different does not get mistaken for one that does not;
+- the cache format, so output this version cannot read is redrawn rather
+  than read;
+- the step's own inputs — the volume, the lookup table, the slabs, the
+  arguments that shape the result — each taken by name, size and
+  modification time rather than by path, so a build directory can move
+  without invalidating anything.
+
+Two things it cannot see. A source file regenerated in place at the same size
+and within the same second looks unchanged --- times are compared to the
+second, because file systems disagree below that --- and so does a change
+outside the inputs a step is given. Clear the cache when either might apply, or when you simply
+want to watch a build happen from nothing:
+
+```{r}
+#| label: clear-cache
+#| eval: false
+# one atlas
+clear_atlas_cache("glasser", output_dir = "data-raw")
+
+# everything under a build directory
+clear_atlas_cache(output_dir = "data-raw")
+```
+
+`clear_atlas_cache()` refuses a directory holding files ggseg.extra did not
+write, so pointing it at the wrong folder does not delete your source data.
+Pass `force = TRUE` when you mean it. Deleting the folder yourself does the
+same job; the function exists so you do not have to work out which folder.
+
 ### Output directory
 
 Intermediate files — meshes, projections, traced contours — are written to a

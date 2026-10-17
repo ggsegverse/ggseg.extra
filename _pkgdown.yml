@@ -133,6 +133,7 @@ reference:
       - use_atlas_github_actions
       - ggseg_atlas_github_actions
       - sitrep
+      - clear_atlas_cache
 
   - title: Lookup Tables
     desc: Read, write and build FreeSurfer-style colour lookup tables

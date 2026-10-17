@@ -476,7 +476,8 @@ subcort_resolve_labels <- function(config, dirs) {
     config$steps,
     files,
     config$skip_existing,
-    "Step 1 (Extract labels)"
+    "Step 1 (Extract labels)",
+    signature = step_signature(config$input_volume, config$input_lut)
   )
 
   if (!cached$run) {
@@ -574,7 +575,12 @@ subcort_resolve_meshes <- function(config, dirs, colortable) {
     config$steps,
     files,
     config$skip_existing,
-    "Step 2 (Create meshes)"
+    "Step 2 (Create meshes)",
+    signature = step_signature(
+      config$input_volume,
+      config$input_lut,
+      config$decimate
+    )
   )
 
   if (!cached$run) {
@@ -620,7 +626,8 @@ subcort_resolve_components <- function(config, dirs, colortable, meshes_list) {
     config$steps,
     files,
     config$skip_existing,
-    "Step 3 (Build atlas data)"
+    "Step 3 (Build atlas data)",
+    signature = step_signature(config$input_volume, config$input_lut)
   )
 
   if (!cached$run) {
@@ -666,7 +673,12 @@ subcort_resolve_snapshots <- function(
     config$steps,
     files,
     config$skip_existing,
-    "Step 4 (Create snapshots)"
+    "Step 4 (Create snapshots)",
+    signature = step_signature(
+      config$input_volume,
+      config$input_lut,
+      slabs
+    )
   )
 
   # Reuse without looking at the snapshots only when step 4 was excluded on

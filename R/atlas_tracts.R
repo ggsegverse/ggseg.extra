@@ -406,7 +406,12 @@ tract_resolve_step1 <- function(
     config$steps,
     files,
     config$skip_existing,
-    "Step 1 (Read tracts & create tube meshes)"
+    "Step 1 (Read tracts & create tube meshes)",
+    signature = step_signature(
+      config$input_tracts,
+      config$input_lut,
+      config$tube_opts
+    )
   )
 
   if (!cached$run) {
@@ -636,7 +641,12 @@ tract_resolve_snapshots <- function(config, dirs, step1, input_aseg, slabs) {
     config$steps,
     files,
     config$skip_existing,
-    "Step 2 (Create projection snapshots)"
+    "Step 2 (Create projection snapshots)",
+    signature = step_signature(
+      config$input_tracts,
+      config$input_aseg,
+      slabs
+    )
   )
 
   if (!cached$run) {

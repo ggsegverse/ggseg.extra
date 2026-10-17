@@ -674,7 +674,8 @@ run_cortical_creation <- function(
     atlas_name,
     read_fn = read_fn,
     step_label = step_label,
-    cache_label = cache_label
+    cache_label = cache_label,
+    input_files = input_files
   )
 
   if (!is.null(hemisphere_fn)) {
@@ -702,7 +703,8 @@ cortical_read_data <- function(
   atlas_name,
   read_fn,
   step_label,
-  cache_label
+  cache_label,
+  input_files = NULL
 ) {
   files <- c(
     as.character(fs::path(dirs$base, "atlas_3d.rds")),
@@ -713,7 +715,8 @@ cortical_read_data <- function(
     config$steps,
     files,
     config$skip_existing,
-    cache_label
+    cache_label,
+    signature = step_signature(input_files, atlas_name)
   )
 
   if (!cached$run) {
