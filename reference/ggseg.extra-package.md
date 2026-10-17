@@ -4,7 +4,10 @@ Create brain atlas data sets compatible with the 'ggsegverse' plotting
 packages. Provides pipelines for building cortical, subcortical,
 white-matter tract, and cerebellar atlases from 'FreeSurfer' annotation
 files, 'GIFTI' and 'CIFTI' surface formats, 'neuromaps', cerebellar
-flatmaps, and volumetric 'NIfTI' images.
+flatmaps, and volumetric 'NIfTI' images. Mowinckel & Vidal-Piñeiro
+(2020)
+[doi:10.1177/2515245920928009](https://doi.org/10.1177/2515245920928009)
+.
 
 ## Getting started
 
@@ -68,6 +71,8 @@ adds its workflows.
 ## See also
 
 Useful links:
+
+- <https://ggsegverse.github.io/ggseg.extra/>
 
 - <https://github.com/ggsegverse/ggseg.extra>
 

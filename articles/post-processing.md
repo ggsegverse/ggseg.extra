@@ -7,7 +7,7 @@ atlas without rebuilding from scratch.
 
 Most of the functions in this vignette come from ggseg.formats and are
 re-exported by ggseg.extra, so
-[`library(ggseg.extra)`](https://github.com/ggsegverse/ggseg.extra) is
+[`library(ggseg.extra)`](https://ggsegverse.github.io/ggseg.extra/) is
 all you need. `?atlas-verbs` lists them. The geometry functions
 ([`atlas_polish()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_polish.md),
 [`atlas_simplify()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_simplify.md),
@@ -21,9 +21,9 @@ Before changing anything, understand what you have:
 
 ``` r
 
-atlas_labels(atlas)
+sort(atlas_labels(atlas))
 
-atlas_regions(atlas)
+sort(unique(atlas_regions(atlas)))
 
 atlas_views(atlas)
 
@@ -35,7 +35,10 @@ atlas_meshes(atlas)
 [`atlas_labels()`](https://ggsegverse.github.io/ggseg.formats/reference/atlas_labels.html)
 returns the annotation-level identifiers.
 [`atlas_regions()`](https://ggsegverse.github.io/ggseg.formats/reference/atlas_regions.html)
-returns the display names stored in `$core`.
+returns the region keys stored in `$core`. Both return one element per
+`$core` row, in row order, so wrap them in
+[`unique()`](https://rdrr.io/r/base/unique.html) when you want the
+distinct set.
 [`atlas_views()`](https://ggsegverse.github.io/ggseg.formats/reference/atlas_views.html)
 lists the available 2D views.
 [`atlas_sf()`](https://ggsegverse.github.io/ggseg.formats/reference/atlas_sf.html)

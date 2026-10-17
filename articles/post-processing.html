@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9129</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9130</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -110,7 +110,7 @@ labels, cortex outlines, and views that may not show your structures
 well. The <code>atlas_region_*</code> and <code>atlas_view_*</code>
 families let you curate an atlas without rebuilding from scratch.</p>
 <p>Most of the functions in this vignette come from ggseg.formats and
-are re-exported by ggseg.extra, so <code><a href="https://github.com/ggsegverse/ggseg.extra" class="external-link">library(ggseg.extra)</a></code> is
+are re-exported by ggseg.extra, so <code><a href="https://ggsegverse.github.io/ggseg.extra/">library(ggseg.extra)</a></code> is
 all you need. <code>?atlas-verbs</code> lists them. The geometry
 functions (<code><a href="../reference/atlas_polish.html">atlas_polish()</a></code>, <code><a href="../reference/atlas_simplify.html">atlas_simplify()</a></code>,
 <code><a href="../reference/atlas_smooth.html">atlas_smooth()</a></code>, <code><a href="../reference/atlas_dilate.html">atlas_dilate()</a></code>) are native to
@@ -120,9 +120,9 @@ ggseg.extra.</p>
 </h2>
 <p>Before changing anything, understand what you have:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_labels.html" class="external-link">atlas_labels</a></span><span class="op">(</span><span class="va">atlas</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/sort.html" class="external-link">sort</a></span><span class="op">(</span><span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_labels.html" class="external-link">atlas_labels</a></span><span class="op">(</span><span class="va">atlas</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_regions.html" class="external-link">atlas_regions</a></span><span class="op">(</span><span class="va">atlas</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/sort.html" class="external-link">sort</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_regions.html" class="external-link">atlas_regions</a></span><span class="op">(</span><span class="va">atlas</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_views.html" class="external-link">atlas_views</a></span><span class="op">(</span><span class="va">atlas</span><span class="op">)</span></span>
 <span></span>
@@ -130,10 +130,12 @@ ggseg.extra.</p>
 <span></span>
 <span><span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_meshes.html" class="external-link">atlas_meshes</a></span><span class="op">(</span><span class="va">atlas</span><span class="op">)</span></span></code></pre></div>
 <p><code><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_labels.html" class="external-link">atlas_labels()</a></code> returns the annotation-level identifiers.
-<code><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_regions.html" class="external-link">atlas_regions()</a></code> returns the display names stored in
-<code>$core</code>. <code><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_views.html" class="external-link">atlas_views()</a></code> lists the available 2D
-views. <code><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_sf.html" class="external-link">atlas_sf()</a></code> returns the sf geometry used for 2D
-plotting. <code><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_meshes.html" class="external-link">atlas_meshes()</a></code> returns the 3D mesh data for each
+<code><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_regions.html" class="external-link">atlas_regions()</a></code> returns the region keys stored in
+<code>$core</code>. Both return one element per <code>$core</code> row,
+in row order, so wrap them in <code><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique()</a></code> when you want the
+distinct set. <code><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_views.html" class="external-link">atlas_views()</a></code> lists the available 2D views.
+<code><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_sf.html" class="external-link">atlas_sf()</a></code> returns the sf geometry used for 2D plotting.
+<code><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_meshes.html" class="external-link">atlas_meshes()</a></code> returns the 3D mesh data for each
 region.</p>
 </div>
 <div class="section level2">

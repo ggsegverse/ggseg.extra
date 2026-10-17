@@ -28,7 +28,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9129</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9130</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -118,7 +118,7 @@
 <li>FreeSurfer installed with the <code>fsaverage5</code> subject</li>
 </ul>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/ggsegverse/ggseg.extra" class="external-link">ggseg.extra</a></span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggsegverse.github.io/ggseg.extra/">ggseg.extra</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span><span class="op">)</span></span></code></pre></div>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fs_dir</span> <span class="op">&lt;-</span> <span class="fu">freesurfer</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/freesurfer/man/fs_dir.html" class="external-link">fs_dir</a></span><span class="op">(</span><span class="op">)</span></span>
@@ -384,16 +384,16 @@ Stage 6 — smoothed. The staircases are gone and the silhouette still has its f
 <span><span class="co">#&gt; 10 left            vessel         Left-vessel          &lt;NA&gt;</span></span>
 <span><span class="co">#&gt; ... with 17 more rows</span></span></code></pre></div>
 <div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_labels.html" class="external-link">atlas_labels</a></span><span class="op">(</span><span class="va">aseg</span><span class="op">)</span></span>
-<span><span class="co">#&gt;  [1] "Left-Thalamus"        "Left-Caudate"         "Left-Putamen"        </span></span>
-<span><span class="co">#&gt;  [4] "Left-Pallidum"        "Brain-Stem"           "Left-Hippocampus"    </span></span>
-<span><span class="co">#&gt;  [7] "Left-Amygdala"        "Left-Accumbens-area"  "Left-VentralDC"      </span></span>
-<span><span class="co">#&gt; [10] "Left-vessel"          "Left-choroid-plexus"  "Right-Thalamus"      </span></span>
-<span><span class="co">#&gt; [13] "Right-Caudate"        "Right-Putamen"        "Right-Pallidum"      </span></span>
-<span><span class="co">#&gt; [16] "Right-Hippocampus"    "Right-Amygdala"       "Right-Accumbens-area"</span></span>
-<span><span class="co">#&gt; [19] "Right-VentralDC"      "Right-vessel"         "Right-choroid-plexus"</span></span>
-<span><span class="co">#&gt; [22] "Optic-Chiasm"         "CC_Posterior"         "CC_Mid_Posterior"    </span></span>
-<span><span class="co">#&gt; [25] "CC_Central"           "CC_Mid_Anterior"      "CC_Anterior"</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/sort.html" class="external-link">sort</a></span><span class="op">(</span><span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_labels.html" class="external-link">atlas_labels</a></span><span class="op">(</span><span class="va">aseg</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt;  [1] "Brain-Stem"           "CC_Anterior"          "CC_Central"          </span></span>
+<span><span class="co">#&gt;  [4] "CC_Mid_Anterior"      "CC_Mid_Posterior"     "CC_Posterior"        </span></span>
+<span><span class="co">#&gt;  [7] "Left-Accumbens-area"  "Left-Amygdala"        "Left-Caudate"        </span></span>
+<span><span class="co">#&gt; [10] "Left-choroid-plexus"  "Left-Hippocampus"     "Left-Pallidum"       </span></span>
+<span><span class="co">#&gt; [13] "Left-Putamen"         "Left-Thalamus"        "Left-VentralDC"      </span></span>
+<span><span class="co">#&gt; [16] "Left-vessel"          "Optic-Chiasm"         "Right-Accumbens-area"</span></span>
+<span><span class="co">#&gt; [19] "Right-Amygdala"       "Right-Caudate"        "Right-choroid-plexus"</span></span>
+<span><span class="co">#&gt; [22] "Right-Hippocampus"    "Right-Pallidum"       "Right-Putamen"       </span></span>
+<span><span class="co">#&gt; [25] "Right-Thalamus"       "Right-VentralDC"      "Right-vessel"</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/table.html" class="external-link">table</a></span><span class="op">(</span><span class="va">aseg</span><span class="op">$</span><span class="va">core</span><span class="op">$</span><span class="va">structure</span><span class="op">)</span></span>
 <span><span class="co">#&gt; </span></span>

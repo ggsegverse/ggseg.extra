@@ -28,7 +28,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9129</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9130</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -118,7 +118,7 @@
 <li>The <code>fsaverage5</code> subject directory (ships with a FreeSurfer install, or can be downloaded separately)</li>
 </ul>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/ggsegverse/ggseg.extra" class="external-link">ggseg.extra</a></span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggsegverse.github.io/ggseg.extra/">ggseg.extra</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span><span class="op">)</span></span></code></pre></div>
 </section><section class="level2"><h2 id="locating-annotation-files">Locating annotation files<a class="anchor" aria-label="anchor" href="#locating-annotation-files"></a>
 </h2>
@@ -260,7 +260,7 @@ Stage 3 — smoothed. The staircases are gone.
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_sf.html" class="external-link">atlas_sf</a></span><span class="op">(</span><span class="va">yeo7_smooth</span><span class="op">)</span><span class="op">$</span><span class="va">label</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] 16</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_regions.html" class="external-link">atlas_regions</a></span><span class="op">(</span><span class="va">yeo7_smooth</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_regions.html" class="external-link">atlas_regions</a></span><span class="op">(</span><span class="va">yeo7_smooth</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] 7</span></span></code></pre></div>
 <p>Sixteen labels carry geometry; seven are regions you can fill with data. The medial wall is <em>context</em>: <code><a href="../reference/create_cortical_from_annotation.html">create_cortical_from_annotation()</a></code> sets aside any region whose whole name is <code>unknown</code> or <code>???</code>, or whose name ends in “medial wall” (with a space, underscore, dot, hyphen or nothing in between). Case does not matter.</p>
 <p>Which is fine until a parcellation names its leftovers something else. FreeSurfer’s own <code>aparc</code> labels the callosal region <code>corpuscallosum</code>, and that matches none of the above — so it would arrive as an ordinary region, coloured and listed alongside the real ones. <code><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_contextual()</a></code> is how you set one aside by hand. It keeps the geometry for spatial reference and drops the region from <code>$core</code>:</p>
@@ -323,7 +323,7 @@ Stage 3 — smoothed. The staircases are gone.
 <span><span class="co">#&gt; 10 right  dorsal attention rh_7Networks_3</span></span>
 <span><span class="co">#&gt; ... with 4 more rows</span></span></code></pre></div>
 <div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_regions.html" class="external-link">atlas_regions</a></span><span class="op">(</span><span class="va">yeo7</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://rdrr.io/r/base/sort.html" class="external-link">sort</a></span><span class="op">(</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_regions.html" class="external-link">atlas_regions</a></span><span class="op">(</span><span class="va">yeo7</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://rdrr.io/r/base/sort.html" class="external-link">sort</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "default"           "dorsal attention"  "frontoparietal"   </span></span>
 <span><span class="co">#&gt; [4] "limbic"            "somatomotor"       "ventral attention"</span></span>
 <span><span class="co">#&gt; [7] "visual"</span></span></code></pre></div>

@@ -233,7 +233,7 @@ pipeline already sorted that out:
 
 length(unique(atlas_sf(yeo7_smooth)$label))
 #> [1] 16
-length(atlas_regions(yeo7_smooth))
+length(unique(atlas_regions(yeo7_smooth)))
 #> [1] 7
 ```
 
@@ -331,7 +331,7 @@ yeo7
 
 ``` r
 
-atlas_regions(yeo7) |> sort()
+atlas_regions(yeo7) |> unique() |> sort()
 #> [1] "default"           "dorsal attention"  "frontoparietal"   
 #> [4] "limbic"            "somatomotor"       "ventral attention"
 #> [7] "visual"

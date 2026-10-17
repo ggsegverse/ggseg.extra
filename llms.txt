@@ -28,16 +28,14 @@ Or from GitHub:
 remotes::install_github("ggsegverse/ggseg.extra")
 ```
 
-### Development version of freesurfer
+### freesurfer
 
-The atlas creation functions require the development version of the
-freesurfer R package (\>= 1.8.1.902), which is not yet on CRAN. Install
-it from GitHub — an older cached copy will fail the version requirement
-later:
+The atlas creation functions need the freesurfer R package at 1.9.0 or
+newer. An older cached copy will fail the version requirement later:
 
 ``` r
 
-pak::pak("muschellij2/freesurfer")
+install.packages("freesurfer")
 ```
 
 ## Create custom atlases

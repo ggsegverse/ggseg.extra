@@ -5,7 +5,7 @@ gathering views, boolean geometry between labels – lives in
 ggseg.formats, because it belongs to the atlas format rather than to any
 one builder. Every atlas build reaches for both packages, so ggseg.extra
 re-exports the verbs and
-[`library(ggseg.extra)`](https://github.com/ggsegverse/ggseg.extra) is
+[`library(ggseg.extra)`](https://ggsegverse.github.io/ggseg.extra/) is
 enough.
 
 ## Reading an atlas

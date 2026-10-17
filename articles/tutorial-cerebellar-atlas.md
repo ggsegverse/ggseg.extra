@@ -262,7 +262,7 @@ needs removing depends on the parcellation, so look before you cut:
 
 ``` r
 
-atlas_regions(atlas)
+sort(unique(atlas_regions(atlas)))
 #>  [1] "CrusI"     "CrusII"    "I_IV"      "IX"        "region_28" "V"        
 #>  [7] "VI"        "VIIb"      "VIIIa"     "VIIIb"     "X"
 ```
