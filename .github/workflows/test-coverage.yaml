@@ -19,4 +19,4 @@ jobs:
     with:
       extra-repositories: https://ggsegverse.r-universe.dev
       install-spatial-deps: true
-      extra-packages: any::covr, github::muschellij2/freesurfer
+      extra-packages: any::covr, any::freesurfer

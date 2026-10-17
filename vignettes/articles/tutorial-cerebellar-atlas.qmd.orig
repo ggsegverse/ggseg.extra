@@ -214,7 +214,7 @@ The same post-processing tools from the other tutorials work here. What needs re
 ```{r}
 #| label: inspect-regions
 #| eval: !expr can_build
-atlas_regions(atlas)
+sort(unique(atlas_regions(atlas)))
 ```
 
 `region_28` is the giveaway --- a midline strip the parcellation numbers but does not name. Drop it:

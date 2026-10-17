@@ -16,5 +16,5 @@ jobs:
       extra-repositories: https://ggsegverse.r-universe.dev
       extra-packages: |
         any::rcmdcheck
-        github::muschellij2/freesurfer
+        any::freesurfer
       install-spatial-deps: true

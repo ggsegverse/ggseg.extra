@@ -53,20 +53,6 @@ describe("check_fs", {
   })
 })
 
-describe("freesurfer_repos", {
-  it("puts the ggsegverse r-universe ahead of the configured repos", {
-    withr::local_options(repos = c(CRAN = "https://cloud.r-project.org"))
-
-    expect_identical(
-      freesurfer_repos(),
-      c(
-        ggsegverse = "https://ggsegverse.r-universe.dev",
-        CRAN = "https://cloud.r-project.org"
-      )
-    )
-  })
-})
-
 describe("freesurfer_min_version", {
   it("matches the Suggests constraint in DESCRIPTION", {
     suggests <- gsub(

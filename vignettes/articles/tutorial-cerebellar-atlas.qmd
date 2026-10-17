@@ -223,7 +223,7 @@ The same post-processing tools from the other tutorials work here. What needs re
 
 
 ``` r
-atlas_regions(atlas)
+sort(unique(atlas_regions(atlas)))
 #>  [1] "CrusI"     "CrusII"    "I_IV"      "IX"        "region_28" "V"        
 #>  [7] "VI"        "VIIb"      "VIIIa"     "VIIIb"     "X"
 ```

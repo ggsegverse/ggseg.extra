@@ -73,17 +73,14 @@ mri_surf2surf_rereg <- function(
   invisible(run_cmd(cmd, verbose = verbose))
 }
 
-# The CRAN release lacks what the pipelines use (`fs_sitrep()`,
-# `fs_cmd(validate_inputs = )`), so a bare presence check passes on it and the
-# pipeline fails later. CRAN is also why installs go through r-universe.
+# Releases before 1.9.0 lack `fs_sitrep()`, and their
+# `fs_cmd(opts_after_outfile = TRUE)` puts the output file before the trailing
+# options rather than after, which silently breaks the `mri_vol2vol` call in
+# `prepare_subcortical_mni152()`. A bare presence check passes on them and the
+# pipeline fails later, so the floor is a version.
 #' @noRd
 freesurfer_min_version <- function() {
-  "1.8.1.902"
-}
-
-#' @noRd
-freesurfer_repos <- function() {
-  c(ggsegverse = "https://ggsegverse.r-universe.dev", getOption("repos"))
+  "1.9.0"
 }
 
 #' Check if FS can be run
@@ -96,10 +93,7 @@ check_fs <- function(abort = FALSE) {
   rlang::check_installed(
     "freesurfer",
     version = freesurfer_min_version(),
-    reason = "to interact with FreeSurfer",
-    action = function(...) {
-      utils::install.packages("freesurfer", repos = freesurfer_repos())
-    }
+    reason = "to interact with FreeSurfer"
   )
   x <- freesurfer::have_fs()
 

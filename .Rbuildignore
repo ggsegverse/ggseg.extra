@@ -30,3 +30,6 @@ _brand.yml
 ^cran-comments\.md$
 ^codemeta\.json$
 ^dev$
+^revdep$
+^.*\.Rcheck$
+^.*\.tar\.gz$

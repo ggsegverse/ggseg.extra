@@ -199,8 +199,8 @@
     Code
       invisible(check_freesurfer("full"))
     Message
-      x freesurfer R package (>= 1.8.1.902) not installed
-      i Install with: `remotes::install_github("muschellij2/freesurfer")`
+      x freesurfer R package (>= 1.9.0) not installed
+      i Install with: `install.packages("freesurfer")`
 
 # check_fsaverage additional branches / shows Ships-with-FreeSurfer hint in full detail when absent
 

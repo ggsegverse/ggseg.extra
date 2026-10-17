@@ -51,7 +51,7 @@ check_freesurfer <- function(detail = "simple") {
         cli::cli_bullets(c(
           "i" = paste(
             "Install with:",
-            '{.code remotes::install_github("muschellij2/freesurfer")}'
+            '{.code install.packages("freesurfer")}'
           )
         ))
       }
