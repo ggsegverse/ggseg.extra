@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9128</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9129</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -69,6 +69,18 @@
       <small>Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.9.9.9129" id="ggsegextra-1999129">ggseg.extra 1.9.9.9129<a class="anchor" aria-label="anchor" href="#ggsegextra-1999129"></a></h2>
+<div class="section level3">
+<h3 id="new-features-1-9-9-9129">New features<a class="anchor" aria-label="anchor" href="#new-features-1-9-9-9129"></a></h3>
+<ul><li>
+<code><a href="../reference/clear_atlas_cache.html">clear_atlas_cache()</a></code> removes an atlas’s build intermediates, or every atlas’s under a build directory. It refuses a directory holding files this package did not write, so pointing it at the wrong folder does not delete source data; <code>force = TRUE</code> overrides. <code><a href="../articles/pipeline-configuration.html">vignette("pipeline-configuration")</a></code> explains what the cache notices and what it cannot.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="bug-fixes-1-9-9-9129">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-1-9-9-9129"></a></h3>
+<ul><li>A step’s cache records what it was built from, and the step recomputes when that moves: the ggseg.extra version, the cache format, and the step’s own inputs, each path taken by name, size and modification time so a build directory can move without invalidating anything. The cache used to record the format alone, so a release that computed something different was reused as though it did not, and a step whose volume or lookup table had changed was reused too. Both were silent. The snapshot layer has worked this way all along; this is the same contract for the steps around it.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9128" id="ggsegextra-1999128">ggseg.extra 1.9.9.9128<a class="anchor" aria-label="anchor" href="#ggsegextra-1999128"></a></h2>
 <div class="section level3">

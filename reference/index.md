@@ -114,6 +114,9 @@ Create and maintain a ggseg atlas package
 - [`sitrep()`](https://ggsegverse.github.io/ggseg.extra/reference/sitrep.md)
   : Report on the ggseg.extra setup
 
+- [`clear_atlas_cache()`](https://ggsegverse.github.io/ggseg.extra/reference/clear_atlas_cache.md)
+  **\[experimental\]** : Clear an atlas's build cache
+
 ## Lookup Tables
 
 Read, write and build FreeSurfer-style colour lookup tables

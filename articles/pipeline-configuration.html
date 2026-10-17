@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9128</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9129</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -235,6 +235,39 @@ pipeline runs by reusing existing intermediate files:</p>
 <span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>ggseg.extra.skip_existing <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level3">
+<h3 id="what-the-cache-notices-and-what-it-cannot">What the cache notices, and what it cannot<a class="anchor" aria-label="anchor" href="#what-the-cache-notices-and-what-it-cannot"></a>
+</h3>
+<p>Reuse is not blind. Every step records what it was built from, and
+the next run recomputes that step when any of it has moved:</p>
+<ul>
+<li>the version of ggseg.extra that wrote it, so a release that computes
+something different does not get mistaken for one that does not;</li>
+<li>the cache format, so output this version cannot read is redrawn
+rather than read;</li>
+<li>the step’s own inputs — the volume, the lookup table, the slabs, the
+arguments that shape the result — each taken by name, size and
+modification time rather than by path, so a build directory can move
+without invalidating anything.</li>
+</ul>
+<p>Two things it cannot see. A source file regenerated in place at the
+same size and within the same second looks unchanged — times are
+compared to the second, because file systems disagree below that — and
+so does a change outside the inputs a step is given. Clear the cache
+when either might apply, or when you simply want to watch a build happen
+from nothing:</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># one atlas</span></span>
+<span><span class="fu"><a href="../reference/clear_atlas_cache.html">clear_atlas_cache</a></span><span class="op">(</span><span class="st">"glasser"</span>, output_dir <span class="op">=</span> <span class="st">"data-raw"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># everything under a build directory</span></span>
+<span><span class="fu"><a href="../reference/clear_atlas_cache.html">clear_atlas_cache</a></span><span class="op">(</span>output_dir <span class="op">=</span> <span class="st">"data-raw"</span><span class="op">)</span></span></code></pre></div>
+<p><code><a href="../reference/clear_atlas_cache.html">clear_atlas_cache()</a></code> refuses a directory holding files
+ggseg.extra did not write, so pointing it at the wrong folder does not
+delete your source data. Pass <code>force = TRUE</code> when you mean
+it. Deleting the folder yourself does the same job; the function exists
+so you do not have to work out which folder.</p>
+</div>
+<div class="section level3">
 <h3 id="output-directory">Output directory<a class="anchor" aria-label="anchor" href="#output-directory"></a>
 </h3>
 <p>Intermediate files — meshes, projections, traced contours — are
@@ -247,7 +280,7 @@ than <code>output_dir/atlas_name</code>, or pass
 <code><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir()</a></code>, so a build leaves nothing behind. Set it when
 you want the intermediates to survive the session, which is what makes
 <code>skip_existing</code> useful:</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>ggseg.extra.output_dir <span class="op">=</span> <span class="st">"~/atlas-builds"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level3">
@@ -269,17 +302,17 @@ or settings that should persist across R sessions.</p>
 <span><span class="va">GGSEG_EXTRA_CLEANUP</span><span class="op">=</span><span class="va">true</span></span>
 <span><span class="va">GGSEG_EXTRA_SKIP_EXISTING</span><span class="op">=</span><span class="va">true</span></span></code></pre>
 <p>In a shell:</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="bu">export</span> <span class="va">GGSEG_EXTRA_VERBOSE</span><span class="op">=</span>0</span>
-<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a><span class="ex">R</span> <span class="at">-e</span> <span class="st">"ggseg.extra::create_cortical_from_annotation(...)"</span></span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="bu">export</span> <span class="va">GGSEG_EXTRA_VERBOSE</span><span class="op">=</span>0</span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a><span class="ex">R</span> <span class="at">-e</span> <span class="st">"ggseg.extra::create_cortical_from_annotation(...)"</span></span></code></pre></div>
 <p>In Docker:</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode dockerfile"><code class="sourceCode dockerfile"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="kw">ENV</span> GGSEG_EXTRA_VERBOSE=0</span>
-<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a><span class="kw">ENV</span> GGSEG_EXTRA_CLEANUP=true</span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode dockerfile"><code class="sourceCode dockerfile"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a><span class="kw">ENV</span> GGSEG_EXTRA_VERBOSE=0</span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a><span class="kw">ENV</span> GGSEG_EXTRA_CLEANUP=true</span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="overriding-defaults">Overriding defaults<a class="anchor" aria-label="anchor" href="#overriding-defaults"></a>
 </h2>
 <p>Explicit arguments always win:</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>ggseg.extra.cleanup <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">atlas</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/create_cortical_from_annotation.html">create_cortical_from_annotation</a></span><span class="op">(</span></span>
@@ -293,7 +326,7 @@ or settings that should persist across R sessions.</p>
 <div class="section level3">
 <h3 id="development-and-debugging">Development and debugging<a class="anchor" aria-label="anchor" href="#development-and-debugging"></a>
 </h3>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span></span>
 <span>  ggseg.extra.verbose <span class="op">=</span> <span class="fl">2</span>,</span>
 <span>  ggseg.extra.cleanup <span class="op">=</span> <span class="cn">FALSE</span>,</span>
@@ -303,7 +336,7 @@ or settings that should persist across R sessions.</p>
 <div class="section level3">
 <h3 id="production-and-ci">Production and CI<a class="anchor" aria-label="anchor" href="#production-and-ci"></a>
 </h3>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span></span>
 <span>  ggseg.extra.verbose <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>  ggseg.extra.cleanup <span class="op">=</span> <span class="cn">TRUE</span>,</span>
@@ -316,7 +349,7 @@ or settings that should persist across R sessions.</p>
 <p>Build once, then shape the returned atlas as many times as you like.
 <code><a href="../reference/atlas_polish.html">atlas_polish()</a></code> does the usual pair — simplify, then smooth
 — against a vertex budget:</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">annot_files</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"lh.myatlas.annot"</span>, <span class="st">"rh.myatlas.annot"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">atlas_raw</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/create_cortical_from_annotation.html">create_cortical_from_annotation</a></span><span class="op">(</span></span>

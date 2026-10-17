@@ -1,5 +1,29 @@
 # Changelog
 
+## ggseg.extra 1.9.9.9129
+
+### New features
+
+- [`clear_atlas_cache()`](https://ggsegverse.github.io/ggseg.extra/reference/clear_atlas_cache.md)
+  removes an atlas’s build intermediates, or every atlas’s under a build
+  directory. It refuses a directory holding files this package did not
+  write, so pointing it at the wrong folder does not delete source data;
+  `force = TRUE` overrides.
+  [`vignette("pipeline-configuration")`](https://ggsegverse.github.io/ggseg.extra/articles/pipeline-configuration.md)
+  explains what the cache notices and what it cannot.
+
+### Bug fixes
+
+- A step’s cache records what it was built from, and the step recomputes
+  when that moves: the ggseg.extra version, the cache format, and the
+  step’s own inputs, each path taken by name, size and modification time
+  so a build directory can move without invalidating anything. The cache
+  used to record the format alone, so a release that computed something
+  different was reused as though it did not, and a step whose volume or
+  lookup table had changed was reused too. Both were silent. The
+  snapshot layer has worked this way all along; this is the same
+  contract for the steps around it.
+
 ## ggseg.extra 1.9.9.9128
 
 ### Breaking changes
