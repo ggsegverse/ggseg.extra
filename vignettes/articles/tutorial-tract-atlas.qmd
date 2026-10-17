@@ -51,9 +51,14 @@ If it's missing, you can still create a 3D-only atlas.
 `create_tract_from_tractography()` reads each tractography file, computes a centerline, and generates a tube mesh around it.
 The `input_aseg` provides cortex context for 2D views:
 
-The tracts and that `aseg` have to be the same brain, and nothing checks it.
+::: {.callout-important}
+## The tracts and the `aseg` must be the same brain
+
+Nothing checks this, and nothing errors when it is false.
 Both are rasterised onto a shared grid, so tracts drawn on their own template against a reference from another one line up on paper and overhang the silhouette in every panel: one atlas we rebuilt spanned 192 mm front to back against a brain of 170 mm, with 40% of its voxels outside the brain altogether.
+
 If the tracts come from a different template, register them first --- `coregister_volume()`, or `mri_robust_register` and `mri_vol2vol` --- so the labels are in the reference's space before the build sees them.
+:::
 
 
 ``` r
