@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9127</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9128</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -86,6 +86,7 @@
 <li>Atlas objects: one <code>ggseg_atlas</code> carries both 2D and 3D data, built with <code><a href="https://ggsegverse.github.io/ggseg.formats/reference/ggseg_atlas.html" class="external-link">ggseg.formats::ggseg_atlas()</a></code>. The palette is a named character vector keyed by <code>label</code>, and <code>core</code> carries <code>hemi</code>/<code>region</code>/<code>label</code>; <code>build_atlas_components()</code> derives both. The old paired <code>dk</code>/<code>dk_3d</code> scheme is legacy — <code><a href="https://ggsegverse.github.io/ggseg.formats/reference/convert_legacy_brain_atlas.html" class="external-link">convert_legacy_brain_atlas()</a></code> migrates it, see <code><a href="articles/legacy-conversion.html">vignette("legacy-conversion")</a></code>.</li>
 <li>External binaries: subcortical/tract functions shell out to FreeSurfer. Cortical functions only need FreeSurfer to read annotations. Guard changes that call or parse external tool outputs and add clear error messages if binaries are missing.</li>
 <li>Reporting/progress: code uses <code>cli</code>, <code>progressr</code> and verbose text output. Preserve this behaviour in edits (use <code>cli::cli_*</code> and <code><a href="https://progressr.futureverse.org/reference/progressor.html" class="external-link">progressr::progressor()</a></code> patterns).</li>
+<li>Tutorial callouts: the <code>.qmd</code> articles in <code>vignettes/articles/</code> use Quarto callouts for the traps a reader would otherwise skim past — <code>callout-warning</code> for something that fails quietly, <code>callout-important</code> for a precondition nothing checks. Give each a <code>##</code> title that states the rule, and keep them for the few things that actually bite; prose carries everything else. The <code>.Rmd</code> vignettes in <code>vignettes/</code> are knitr, not Quarto, so callouts do not render there — use prose.</li>
 </ul></div>
 <div class="section level3">
 <h3 id="developer-workflows-how-to-build--test--debug">Developer workflows (how to build / test / debug)<a class="anchor" aria-label="anchor" href="#developer-workflows-how-to-build--test--debug"></a></h3>

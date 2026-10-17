@@ -398,9 +398,11 @@ does not work out which is which. It reads it from the table:
 - a row is a **region** unless it says otherwise;
 - a row whose `context` is `TRUE` is **context**: it keeps its name, is
   drawn grey, and gets no 3D mesh;
-- a label that is in the volume but not in the table at all is context
-  too, and since nothing is known about it, it is named for its id —
-  `context_0002`.
+- a row whose `context` names something else joins the **silhouette of
+  that name**: every row carrying it is traced as one shape, called
+  after the group;
+- a label that is in the volume but not in the table at all is **not
+  drawn**. Nothing has said what it is.
 
 ``` r
 
@@ -419,10 +421,29 @@ is_lut(anatomy)
 #> [1] TRUE
 ```
 
-The column is `TRUE` or `FALSE`; a row left `NA`, or a table without the
-column, means region. It is deliberately separate from `type`, which
-says which atlas a label belongs to, so a whole-brain table can say both
-things about one label.
+The column is `TRUE`, `FALSE`, or a group name; a row left `NA`, or a
+table without the column, means region.
+
+That last rule — an unlisted label is left off the picture — matters
+most when the volume carries more than the atlas. A parcellation
+embedded in a whole `aparc+aseg` sits in a volume holding a hundred
+other labels, and drawing them all would put cerebral white matter and
+the ventricles on the picture as backdrop, filling the hollow a cortical
+ribbon reads by. Name the ones you want instead, and group the ribbon so
+it is one shape rather than seventy:
+
+``` r
+
+# the parcels are the atlas; the cortical labels are one backdrop
+lut$context <- NA_character_
+lut$context[lut$idx %in% cortical_ids] <- "cortex"
+```
+
+The ids there come from the script, which knows what volume it is
+holding. The pipeline never guesses them: it reads the table and nothing
+else. It is deliberately separate from `type`, which says which atlas a
+label belongs to, so a whole-brain table can say both things about one
+label.
 
 Declaring context in the table is not the same as turning a region grey
 afterwards with
@@ -524,6 +545,20 @@ change. Columns that declare nothing a pipeline reads, like the `roi`
 and `color` that
 [`get_lut()`](https://ggsegverse.github.io/ggseg.extra/reference/get_lut.md)
 adds, stay out of the file.
+
+> **Write it with
+> [`write_lut()`](https://ggsegverse.github.io/ggseg.extra/reference/write_lut.md),
+> not `write_tsv()`**
+>
+> [`read_lut()`](https://ggsegverse.github.io/ggseg.extra/reference/read_lut.md)
+> takes the declared columns by position. A file whose own header reads
+> `idx label R G B A context` has that header skipped as unparseable,
+> and the seventh field read as `type`.
+>
+> The `context` declaration is simply gone, every row it marked comes
+> back a region, and nothing errors. An atlas that should have had
+> fifteen regions and one backdrop was built with eighty-five regions
+> and no backdrop before anyone noticed.
 
 ## Where to go next
 

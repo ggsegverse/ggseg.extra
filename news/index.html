@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9127</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9128</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -69,6 +69,19 @@
       <small>Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.9.9.9128" id="ggsegextra-1999128">ggseg.extra 1.9.9.9128<a class="anchor" aria-label="anchor" href="#ggsegextra-1999128"></a></h2>
+<div class="section level3">
+<h3 id="breaking-changes-1-9-9-9128">Breaking changes<a class="anchor" aria-label="anchor" href="#breaking-changes-1-9-9-9128"></a></h3>
+<ul><li><p>A label the lookup table does not list is no longer drawn. It used to come back as <code>context_&lt;id&gt;</code>, which is the pipeline guessing, and the guess only reads well when the volume happens to be shaped like an <code>aseg</code>: a volume carrying a whole parcellation drew a hundred grey shapes, cerebral white matter among them, filling the sulci a backdrop exists to show. Declare a label to draw it.</p></li>
+<li><p>A <code>context</code> value other than yes or no names a group, and every row carrying that name is traced as one silhouette called after it. A parcellation’s cortical labels marked <code>context = "cortex"</code> are one ribbon rather than a hundred patches, without anything having to recognise a parcel by its id.</p></li>
+</ul></div>
+<div class="section level3">
+<h3 id="bug-fixes-1-9-9-9128">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-1-9-9-9128"></a></h3>
+<ul><li>
+<code><a href="../reference/read_lut.html">read_lut()</a></code> keeps a group name instead of flattening it to <code>TRUE</code>.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9127" id="ggsegextra-1999127">ggseg.extra 1.9.9.9127<a class="anchor" aria-label="anchor" href="#ggsegextra-1999127"></a></h2>
 <div class="section level3">

@@ -1,5 +1,27 @@
 # Changelog
 
+## ggseg.extra 1.9.9.9128
+
+### Breaking changes
+
+- A label the lookup table does not list is no longer drawn. It used to
+  come back as `context_<id>`, which is the pipeline guessing, and the
+  guess only reads well when the volume happens to be shaped like an
+  `aseg`: a volume carrying a whole parcellation drew a hundred grey
+  shapes, cerebral white matter among them, filling the sulci a backdrop
+  exists to show. Declare a label to draw it.
+
+- A `context` value other than yes or no names a group, and every row
+  carrying that name is traced as one silhouette called after it. A
+  parcellation’s cortical labels marked `context = "cortex"` are one
+  ribbon rather than a hundred patches, without anything having to
+  recognise a parcel by its id.
+
+### Bug fixes
+
+- [`read_lut()`](https://ggsegverse.github.io/ggseg.extra/reference/read_lut.md)
+  keeps a group name instead of flattening it to `TRUE`.
+
 ## ggseg.extra 1.9.9.9127
 
 ### Bug fixes

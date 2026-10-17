@@ -28,7 +28,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9127</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9128</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -136,9 +136,10 @@
 <ul>
 <li>a label the table lists is a <strong>region</strong>, with a colour, a 3D mesh and a shape in each 2D view;</li>
 <li>a row whose <code>context</code> column is <code>TRUE</code> is <strong>context</strong>: grey anatomy the regions are drawn against, with no mesh;</li>
-<li>a label that is in the volume but not in the table is context as well.</li>
+<li>a row whose <code>context</code> column names a group joins one silhouette called after it, so a parcellation’s cortical labels marked <code>context = "cortex"</code> are one ribbon rather than a patchwork;</li>
+<li>a label that is in the volume but not in the table is <strong>not drawn</strong> at all.</li>
 </ul>
-<p>Nothing is worked out from a label’s id or its name, so the table is where the decision is made. For a subcortical atlas the cortex is the obvious context — it shows where the deep structures sit without competing for colour — so say so before building:</p>
+<p>Nothing is worked out from a label’s id or its name, so the table is where the decision is made. That cuts both ways: a volume carrying a whole <code>aparc+aseg</code> holds a hundred labels this atlas is not about, and leaving them undeclared is what keeps white matter and the ventricles off the picture — draw them and they fill the hollow the ribbon reads by. For a subcortical atlas the cortex is the obvious context — it shows where the deep structures sit without competing for colour — so say so before building:</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">lut</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/read_lut.html">read_lut</a></span><span class="op">(</span><span class="va">color_lut</span><span class="op">)</span></span>
 <span><span class="va">lut</span><span class="op">$</span><span class="va">context</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/grep.html" class="external-link">grepl</a></span><span class="op">(</span><span class="st">"Cortex"</span>, <span class="va">lut</span><span class="op">$</span><span class="va">label</span><span class="op">)</span></span>

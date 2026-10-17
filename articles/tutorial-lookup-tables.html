@@ -28,7 +28,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9127</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9128</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -355,7 +355,8 @@
 <ul>
 <li>a row is a <strong>region</strong> unless it says otherwise;</li>
 <li>a row whose <code>context</code> is <code>TRUE</code> is <strong>context</strong>: it keeps its name, is drawn grey, and gets no 3D mesh;</li>
-<li>a label that is in the volume but not in the table at all is context too, and since nothing is known about it, it is named for its id — <code>context_0002</code>.</li>
+<li>a row whose <code>context</code> names something else joins the <strong>silhouette of that name</strong>: every row carrying it is traced as one shape, called after the group;</li>
+<li>a label that is in the volume but not in the table at all is <strong>not drawn</strong>. Nothing has said what it is.</li>
 </ul>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb18"><pre class="downlit sourceCode r">
@@ -373,11 +374,19 @@
 <span><span class="fu"><a href="../reference/is_lut.html">is_lut</a></span><span class="op">(</span><span class="va">anatomy</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] TRUE</span></span></code></pre></div>
 </div>
-<p>The column is <code>TRUE</code> or <code>FALSE</code>; a row left <code>NA</code>, or a table without the column, means region. It is deliberately separate from <code>type</code>, which says which atlas a label belongs to, so a whole-brain table can say both things about one label.</p>
+<p>The column is <code>TRUE</code>, <code>FALSE</code>, or a group name; a row left <code>NA</code>, or a table without the column, means region.</p>
+<p>That last rule — an unlisted label is left off the picture — matters most when the volume carries more than the atlas. A parcellation embedded in a whole <code>aparc+aseg</code> sits in a volume holding a hundred other labels, and drawing them all would put cerebral white matter and the ventricles on the picture as backdrop, filling the hollow a cortical ribbon reads by. Name the ones you want instead, and group the ribbon so it is one shape rather than seventy:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb19"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># the parcels are the atlas; the cortical labels are one backdrop</span></span>
+<span><span class="va">lut</span><span class="op">$</span><span class="va">context</span> <span class="op">&lt;-</span> <span class="cn">NA_character_</span></span>
+<span><span class="va">lut</span><span class="op">$</span><span class="va">context</span><span class="op">[</span><span class="va">lut</span><span class="op">$</span><span class="va">idx</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="va">cortical_ids</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="st">"cortex"</span></span></code></pre></div>
+</div>
+<p>The ids there come from the script, which knows what volume it is holding. The pipeline never guesses them: it reads the table and nothing else. It is deliberately separate from <code>type</code>, which says which atlas a label belongs to, so a whole-brain table can say both things about one label.</p>
 <p>Declaring context in the table is not the same as turning a region grey afterwards with <code><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_contextual()</a></code>. A region is projected through its whole slab, which turns a cortical ribbon into a solid shape; context is traced on a single slice, so the ribbon keeps its folds. Decide in the table when you can, and keep <code><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_contextual()</a></code> for changing your mind about an atlas you already have.</p>
 <p>Context you do not want drawn at all comes out afterwards. <code><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_context_remove()</a></code> drops every context shape, and <code>context_pattern(atlas)</code> gives a pattern matching exactly the context of that atlas, for treating it differently when you polish:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb19"><pre class="downlit sourceCode r">
+<div class="sourceCode cell-code" id="cb20"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">atlas</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/create_subcortical_from_volume.html">create_subcortical_from_volume</a></span><span class="op">(</span><span class="st">"aseg.mgz"</span>, input_lut <span class="op">=</span> <span class="va">anatomy</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Round the structures, leave the backdrop's folds alone</span></span>
@@ -392,7 +401,7 @@
 <p>Every atlas the pipelines build carries three ways of referring to a region. <code>label</code> is the identifier, unique and never edited. <code>region</code> is the short key derived from it, the same on both sides of the brain. <code>display</code> is the one meant to be read: the long-form name a plot shows.</p>
 <p>Left alone, <code>display</code> is the region. A <code>display</code> column in the table supplies something better, row by row:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb20"><pre class="downlit sourceCode r">
+<div class="sourceCode cell-code" id="cb21"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">named</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
 <span>  idx <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">10L</span>, <span class="fl">49L</span>, <span class="fl">28L</span><span class="op">)</span>,</span>
 <span>  label <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Left-Thalamus"</span>, <span class="st">"Right-Thalamus"</span>, <span class="st">"Left-VentralDC"</span><span class="op">)</span>,</span>
@@ -409,7 +418,7 @@
 </h3>
 <p>All three columns survive a trip through a file, so the table you commit is the whole declaration. <code><a href="../reference/write_lut.html">write_lut()</a></code> puts them after the colours, and when <code>hemi</code> or <code>context</code> is there it adds a comment line naming the fields, with <code>NA</code> wherever a row declares nothing:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb21"><pre class="downlit sourceCode r">
+<div class="sourceCode cell-code" id="cb22"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">numbered</span><span class="op">$</span><span class="va">type</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"cortical"</span>, <span class="st">"cortical"</span>, <span class="st">"subcortical"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">path</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span>, <span class="st">"numbered_LUT.txt"</span><span class="op">)</span></span>
@@ -423,7 +432,7 @@
 </div>
 <p>FreeSurfer skips the comment and reads only the first six fields of each line, so this is still a colour table as far as it is concerned. <code><a href="../reference/read_lut.html">read_lut()</a></code> reads all of it back:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb22"><pre class="downlit sourceCode r">
+<div class="sourceCode cell-code" id="cb23"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/read_lut.html">read_lut</a></span><span class="op">(</span><span class="va">path</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   idx    label   R   G   B A        type  hemi</span></span>
 <span><span class="co">#&gt; 1   1 Region_1   0 118  14 0    cortical  left</span></span>
@@ -431,6 +440,13 @@
 <span><span class="co">#&gt; 3   3 Region_3 236  13 176 0 subcortical  &lt;NA&gt;</span></span></code></pre></div>
 </div>
 <p>A table with <code>type</code> alone is written the older way — no comment line, <code>type</code> as a seventh field — so lookup table files you already have don’t change. Columns that declare nothing a pipeline reads, like the <code>roi</code> and <code>color</code> that <code><a href="../reference/get_lut.html">get_lut()</a></code> adds, stay out of the file.</p>
+<div>
+<blockquote>
+<p><strong>Write it with <code><a href="../reference/write_lut.html">write_lut()</a></code>, not <code>write_tsv()</code></strong></p>
+<p><code><a href="../reference/read_lut.html">read_lut()</a></code> takes the declared columns by position. A file whose own header reads <code>idx label R G B A context</code> has that header skipped as unparseable, and the seventh field read as <code>type</code>.</p>
+<p>The <code>context</code> declaration is simply gone, every row it marked comes back a region, and nothing errors. An atlas that should have had fifteen regions and one backdrop was built with eighty-five regions and no backdrop before anyone noticed.</p>
+</blockquote>
+</div>
 </section></section><section class="level2"><h2 id="where-to-go-next">Where to go next<a class="anchor" aria-label="anchor" href="#where-to-go-next"></a>
 </h2>
 <p>The LUT is the least glamorous file in an atlas build and the one that most often explains a broken result. When a region comes out the wrong colour, missing, or merged with its neighbour, read the table first.</p>

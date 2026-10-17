@@ -21,7 +21,7 @@ Requires FreeSurfer for mesh generation."><meta property="og:image" content="htt
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9127</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9128</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -156,12 +156,18 @@ or <code>ASegStatsLUT.txt</code>), or a data.frame with columns <code>idx</code>
 anatomy the regions are drawn against. Nothing is recognised by its id
 or its name:</p><ul><li><p>A row is a <strong>region</strong> unless it says otherwise. It gets a mesh, a
 colour and a shape in each 2D view.</p></li>
-<li><p>A row whose optional <code>context</code> column is <code>TRUE</code> is <strong>context</strong>. It
-keeps its name, is traced on one slice per view rather than projected
-through the slab, and gets no mesh.</p></li>
-<li><p>A label in the volume that the table does not list is context too.
-With no name to go by, it is called <code>context_</code> and its id, such as
-<code>context_0002</code>.</p></li>
+<li><p>A row whose optional <code>context</code> column is <code>TRUE</code> is <strong>context</strong>, the
+grey anatomy the regions are drawn against. It keeps its name, is
+traced on one slice per view rather than projected through the slab,
+and gets no mesh.</p></li>
+<li><p>A row whose <code>context</code> column names something else joins the
+silhouette of that name: every row sharing it is traced as one shape,
+called after the group. A parcellation's cortical labels marked
+<code>context = "cortex"</code> become one ribbon rather than a hundred patches.</p></li>
+<li><p>A label in the volume that the table does not list is <strong>not drawn</strong>.
+Nothing has said what it is, and guessing fills the sulci a backdrop
+exists to show – white matter drawn as context turns a ribbon into a
+solid blob. List it to draw it.</p></li>
 </ul><p>To leave a context shape out of the atlas altogether, remove it
 afterwards with <code><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">ggseg.formats::atlas_context_remove()</a></code>. To treat the
 context differently when polishing, pass <code>context_pattern</code> as <code>labels</code>

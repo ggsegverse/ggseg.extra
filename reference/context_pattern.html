@@ -25,7 +25,7 @@ edit per atlas repository."><meta property="og:image" content="https://ggsegvers
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9127</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9128</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -126,9 +126,9 @@ plotting point of view they are the same thing.</p>
 flatmap, and <code>cortex</code>, <code>cortex_left</code> or <code>cortex_right</code> from the volumetric
 slice tracing of a tract atlas.</p>
 <p>A subcortical build takes its context from its lookup table instead: a
-row marked <code>context</code> keeps its own name, and a label the table does not
-list is named <code>context_</code> and its id, such as <code>context_0002</code>. Only the
-second kind has a name this pattern can know; see below for the first.</p>
+row marked <code>context</code> keeps its own name, and rows whose <code>context</code> names a
+group are one silhouette called after it – <code>cortex</code> by convention, which
+this pattern knows. A label the table does not list is not drawn.</p>
 <p>A parcellation can also carry its own – an annotation's <code>unknown</code>, <code>???</code> or
 medial-wall region. Those arrive as regions and are demoted to backdrop
 during the build, so an atlas's medial wall is as much the grey behind the

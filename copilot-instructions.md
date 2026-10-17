@@ -46,6 +46,14 @@
   output. Preserve this behaviour in edits (use `cli::cli_*` and
   [`progressr::progressor()`](https://progressr.futureverse.org/reference/progressor.html)
   patterns).
+- Tutorial callouts: the `.qmd` articles in `vignettes/articles/` use
+  Quarto callouts for the traps a reader would otherwise skim past —
+  `callout-warning` for something that fails quietly,
+  `callout-important` for a precondition nothing checks. Give each a
+  `##` title that states the rule, and keep them for the few things that
+  actually bite; prose carries everything else. The `.Rmd` vignettes in
+  `vignettes/` are knitr, not Quarto, so callouts do not render there —
+  use prose.
 
 ### Developer workflows (how to build / test / debug)
 
