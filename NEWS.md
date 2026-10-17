@@ -4,7 +4,8 @@
 
 - The atlas workflow templates `use_atlas_github_actions()` writes resolve
   dependencies against the ggsegverse r-universe. An atlas package depends on
-  ggseg, whose DESCRIPTION floor names a ggseg.formats newer than CRAN's, so
+  ggseg, whose DESCRIPTION floor names a ggseg.formats newer than the one on
+  CRAN, so
   resolution failed before the check could start. Remove the setting once
   ggseg.formats is on CRAN at that floor.
 
