@@ -34,7 +34,8 @@ A build reuses what it finds, which is what makes \code{skip_existing} worth
 having on a pipeline that takes minutes. The cache knows the format that
 wrote it, the version of this package, and what each step was given, and
 recomputes when any of those move. It cannot know that a source file was
-regenerated in place with the same size and timestamp, or that you want to
+regenerated in place within the same second and at the same size, or that
+you want to
 see a build from nothing. Clear it when you want to be sure.
 }
 \examples{

@@ -323,7 +323,13 @@ cache_input <- function(x) {
       return(one)
     }
     info <- file.info(one)
-    list(name = basename(one), size = info$size, mtime = info$mtime)
+    # Whole seconds: filesystems and `Sys.setFileTime()` disagree below
+    # that, so a file carried across one would otherwise look changed.
+    list(
+      name = basename(one),
+      size = info$size,
+      mtime = trunc(as.numeric(info$mtime))
+    )
   })
 }
 
@@ -394,7 +400,7 @@ step_cache_matches <- function(files, signature) {
     character(1),
     USE.NAMES = FALSE
   )
-  !any(is.na(recorded)) && all(recorded == signature)
+  !anyNA(recorded) && all(recorded == signature)
 }
 
 

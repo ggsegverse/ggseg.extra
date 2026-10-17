@@ -118,9 +118,10 @@ run recomputes that step when any of it has moved:
   modification time rather than by path, so a build directory can move
   without invalidating anything.
 
-Two things it cannot see. A source file regenerated in place with the same
-size and timestamp looks unchanged, and so does a change outside the inputs
-a step is given. Clear the cache when either might apply, or when you simply
+Two things it cannot see. A source file regenerated in place at the same size
+and within the same second looks unchanged --- times are compared to the
+second, because file systems disagree below that --- and so does a change
+outside the inputs a step is given. Clear the cache when either might apply, or when you simply
 want to watch a build happen from nothing:
 
 ```{r}
