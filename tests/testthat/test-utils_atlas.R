@@ -748,8 +748,55 @@ describe("lut_context_values", {
     expect_identical(lut_context_values(c(TRUE, NA)), c(TRUE, NA))
   })
 
-  it("aborts on a value that is neither", {
-    expect_snapshot(lut_context_values(c("TRUE", "backdrop")), error = TRUE)
+  it("reads any other value as context, because it names a group", {
+    expect_identical(
+      lut_context_values(c("TRUE", "cortex", "cortex", NA)),
+      c(TRUE, TRUE, TRUE, NA)
+    )
+  })
+})
+
+
+describe("lut_context_group", {
+  it("gives the group a row joins, and NA for a row that joins none", {
+    lut <- data.frame(
+      idx = 1:4,
+      context = c(NA, "TRUE", "cortex", "cortex"),
+      stringsAsFactors = FALSE
+    )
+
+    expect_identical(
+      lut_context_group(lut),
+      c(NA, NA, "cortex", "cortex")
+    )
+  })
+
+  it("is NA throughout for a logical column or no column", {
+    expect_identical(
+      lut_context_group(data.frame(idx = 1:2, context = c(TRUE, FALSE))),
+      c(NA_character_, NA_character_)
+    )
+    expect_identical(
+      lut_context_group(data.frame(idx = 1:2)),
+      c(NA_character_, NA_character_)
+    )
+  })
+})
+
+
+describe("lut_context_column", {
+  it("keeps a group name, which would otherwise flatten to TRUE", {
+    expect_identical(
+      lut_context_column(c("cortex", "TRUE", NA, "")),
+      c("cortex", "TRUE", NA, NA)
+    )
+  })
+
+  it("gives logical back when every value is a yes or a no", {
+    expect_identical(
+      lut_context_column(c("TRUE", "no", NA)),
+      c(TRUE, FALSE, NA)
+    )
   })
 })
 

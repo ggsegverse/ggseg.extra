@@ -1117,14 +1117,14 @@ describe("lookup table context column", {
     expect_identical(read_lut(f)$context, c(FALSE, TRUE, NA))
   })
 
-  it("aborts on reading a value that is neither yes nor no", {
+  it("reads a value that is neither yes nor no as a group name", {
     f <- withr::local_tempfile(fileext = ".txt")
     writeLines(
       c("# idx label R G B A context", "1 thalamus 1 2 3 0 backdrop"),
       f
     )
 
-    expect_error(read_lut(f), "must be")
+    expect_identical(read_lut(f)$context, "backdrop")
   })
 })
 
@@ -1585,5 +1585,29 @@ describe("lut_combine", {
     b <- data.frame(idx = 1L, label = "Region2", R = 5L, G = 6L, B = 7L, A = 0L)
 
     expect_warning(lut_combine(a, b), "Duplicate label indices")
+  })
+})
+
+
+describe("a context group through write_lut and read_lut", {
+  it("survives the round trip instead of flattening to TRUE", {
+    lut <- data.frame(
+      idx = c(10L, 1001L, 1002L),
+      label = c("thalamus", "ctx_a", "ctx_b"),
+      R = 10L,
+      G = 20L,
+      B = 30L,
+      A = 0L,
+      context = c(NA, "cortex", "cortex"),
+      stringsAsFactors = FALSE
+    )
+    path <- withr::local_tempfile(fileext = ".txt")
+
+    write_lut(lut, path)
+    back <- read_lut(path)
+
+    expect_identical(back$context, c(NA, "cortex", "cortex"))
+    expect_identical(lut_context_group(back), c(NA, "cortex", "cortex"))
+    expect_identical(lut_is_context(back), c(FALSE, TRUE, TRUE))
   })
 })

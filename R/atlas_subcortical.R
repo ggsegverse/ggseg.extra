@@ -32,12 +32,18 @@
 #'
 #'   * A row is a **region** unless it says otherwise. It gets a mesh, a
 #'     colour and a shape in each 2D view.
-#'   * A row whose optional `context` column is `TRUE` is **context**. It
-#'     keeps its name, is traced on one slice per view rather than projected
-#'     through the slab, and gets no mesh.
-#'   * A label in the volume that the table does not list is context too.
-#'     With no name to go by, it is called `context_` and its id, such as
-#'     `context_0002`.
+#'   * A row whose optional `context` column is `TRUE` is **context**, the
+#'     grey anatomy the regions are drawn against. It keeps its name, is
+#'     traced on one slice per view rather than projected through the slab,
+#'     and gets no mesh.
+#'   * A row whose `context` column names something else joins the
+#'     silhouette of that name: every row sharing it is traced as one shape,
+#'     called after the group. A parcellation's cortical labels marked
+#'     `context = "cortex"` become one ribbon rather than a hundred patches.
+#'   * A label in the volume that the table does not list is **not drawn**.
+#'     Nothing has said what it is, and guessing fills the sulci a backdrop
+#'     exists to show -- white matter drawn as context turns a ribbon into a
+#'     solid blob. List it to draw it.
 #'
 #'   To leave a context shape out of the atlas altogether, remove it
 #'   afterwards with [ggseg.formats::atlas_context_remove()]. To treat the
@@ -540,6 +546,7 @@ split_lut_context <- function(colortable) {
     context = data.frame(
       idx = as.integer(colortable$idx[is_context]),
       label = colortable$label[is_context],
+      group = lut_context_group(colortable)[is_context],
       stringsAsFactors = FALSE
     )
   )

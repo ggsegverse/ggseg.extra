@@ -290,6 +290,12 @@ describe("subcort_create_snapshots", {
       label = "Left-Putamen",
       stringsAsFactors = FALSE
     )
+    declared <- data.frame(
+      idx = 3L,
+      label = "cortex",
+      group = NA_character_,
+      stringsAsFactors = FALSE
+    )
     dirs <- list(snapshots = withr::local_tempdir())
 
     result <- subcort_create_snapshots(
@@ -297,7 +303,8 @@ describe("subcort_create_snapshots", {
       colortable,
       NULL,
       dirs,
-      FALSE
+      FALSE,
+      context = declared
     )
 
     expect_type(result, "list")
@@ -1655,29 +1662,40 @@ describe("subcort_snapshot_names", {
 describe("subcort_context_table", {
   regions <- data.frame(idx = c(17L, 18L), label = c("hippocampus", "amygdala"))
 
-  it("names an unlisted label by its id", {
+  it("does not draw a label no lookup table mentions", {
+    # Drawing it anyway is a guess, and it reads well only when the volume
+    # happens to be shaped like an aseg: a whole parcellation came back as a
+    # hundred grey shapes, white matter among them, filling the sulci the
+    # backdrop exists to show.
     vol <- array(c(0L, 17L, 18L, 2L, 41L, 3L, 0L, 17L), dim = c(2, 2, 2))
 
-    expect_identical(
-      subcort_context_table(vol, regions),
-      data.frame(
-        idx = c(2L, 3L, 41L),
-        label = c("context_0002", "context_0003", "context_0041")
-      )
-    )
+    expect_identical(nrow(subcort_context_table(vol, regions)), 0L)
   })
 
   it("keeps the name the lookup table gives a declared context label", {
     vol <- array(c(0L, 17L, 2L, 41L), dim = c(2, 2))
     declared <- data.frame(idx = 2L, label = "Left-Cerebral-White-Matter")
 
-    expect_identical(
-      subcort_context_table(vol, regions, declared),
-      data.frame(
-        idx = c(2L, 41L),
-        label = c("Left-Cerebral-White-Matter", "context_0041")
-      )
+    out <- subcort_context_table(vol, regions, declared)
+
+    expect_identical(out$label, "Left-Cerebral-White-Matter")
+    expect_identical(out$idx, list(2L))
+  })
+
+  it("folds the rows of a group into one silhouette named after it", {
+    vol <- array(c(0L, 17L, 1001L, 1002L, 8L, 17L), dim = c(3, 2))
+    declared <- data.frame(
+      idx = c(1001L, 1002L, 8L),
+      label = c("ctx_a", "ctx_b", "cerebellum"),
+      group = c("cortex", "cortex", NA),
+      stringsAsFactors = FALSE
     )
+
+    out <- subcort_context_table(vol, regions, declared)
+
+    expect_setequal(out$label, c("cortex", "cerebellum"))
+    expect_setequal(out$idx[[match("cortex", out$label)]], c(1001L, 1002L))
+    expect_identical(out$idx[[match("cerebellum", out$label)]], 8L)
   })
 
   it("leaves out a declared label the volume does not hold", {
@@ -1690,14 +1708,21 @@ describe("subcort_context_table", {
   it("goes by the lookup table alone, whatever the label's id", {
     cortex_as_region <- data.frame(idx = c(3L, 42L), label = c("lh", "rh"))
     vol <- array(c(3L, 42L, 17L, 0L), dim = c(2, 2))
+    declared <- data.frame(idx = 17L, label = "hippocampus")
 
-    expect_identical(subcort_context_table(vol, cortex_as_region)$idx, 17L)
+    out <- subcort_context_table(vol, cortex_as_region, declared)
+
+    expect_identical(out$idx, list(17L))
   })
 
   it("ignores NA voxels", {
     vol <- array(c(17L, NA_integer_, 2L, 0L), dim = c(2, 2))
+    declared <- data.frame(idx = 2L, label = "wm")
 
-    expect_identical(subcort_context_table(vol, regions)$idx, 2L)
+    expect_identical(
+      subcort_context_table(vol, regions, declared)$idx,
+      list(2L)
+    )
   })
 })
 

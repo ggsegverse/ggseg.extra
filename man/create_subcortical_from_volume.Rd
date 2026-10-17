@@ -56,12 +56,18 @@ or its name:
 \itemize{
 \item A row is a \strong{region} unless it says otherwise. It gets a mesh, a
 colour and a shape in each 2D view.
-\item A row whose optional \code{context} column is \code{TRUE} is \strong{context}. It
-keeps its name, is traced on one slice per view rather than projected
-through the slab, and gets no mesh.
-\item A label in the volume that the table does not list is context too.
-With no name to go by, it is called \code{context_} and its id, such as
-\code{context_0002}.
+\item A row whose optional \code{context} column is \code{TRUE} is \strong{context}, the
+grey anatomy the regions are drawn against. It keeps its name, is
+traced on one slice per view rather than projected through the slab,
+and gets no mesh.
+\item A row whose \code{context} column names something else joins the
+silhouette of that name: every row sharing it is traced as one shape,
+called after the group. A parcellation's cortical labels marked
+\code{context = "cortex"} become one ribbon rather than a hundred patches.
+\item A label in the volume that the table does not list is \strong{not drawn}.
+Nothing has said what it is, and guessing fills the sulci a backdrop
+exists to show -- white matter drawn as context turns a ribbon into a
+solid blob. List it to draw it.
 }
 
 To leave a context shape out of the atlas altogether, remove it
