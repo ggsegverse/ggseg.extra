@@ -394,7 +394,7 @@ step_cache_matches <- function(files, signature) {
     character(1),
     USE.NAMES = FALSE
   )
-  all(!is.na(recorded)) && all(recorded == signature)
+  !any(is.na(recorded)) && all(recorded == signature)
 }
 
 
