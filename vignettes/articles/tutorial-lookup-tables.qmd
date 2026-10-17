@@ -394,6 +394,10 @@ read_lut(path)
 A table with `type` alone is written the older way — no comment line, `type` as a seventh field — so lookup table files you already have don't change.
 Columns that declare nothing a pipeline reads, like the `roi` and `color` that `get_lut()` adds, stay out of the file.
 
+Write it with `write_lut()` rather than a plain `write_tsv()`.
+`read_lut()` takes the declared columns by position, so a file whose own header reads `idx label R G B A context` has that header skipped as unparseable and the seventh field read as `type`.
+The `context` declaration is simply gone, every row it marked comes back a region, and nothing errors — an atlas that should have had fifteen regions and one backdrop was built with eighty-five regions and no backdrop before anyone noticed.
+
 ## Where to go next
 
 The LUT is the least glamorous file in an atlas build and the one that most often explains a broken result.
