@@ -697,7 +697,7 @@ describe("create_wholebrain_from_volume pipeline flow", {
       },
       write_lut = function(...) invisible(NULL),
       wholebrain_prepare_subcortical_volume = function(...) {
-        invisible("filtered.nii.gz")
+        invisible(list(file = "filtered.nii.gz", context_idx = integer(0)))
       },
       create_subcortical_from_volume = function(...) {
         .cap$captured_subcort_args <- list(...)
@@ -780,7 +780,7 @@ describe("create_wholebrain_from_volume pipeline flow", {
       },
       write_lut = function(...) invisible(NULL),
       wholebrain_prepare_subcortical_volume = function(...) {
-        invisible("filtered.nii.gz")
+        invisible(list(file = "filtered.nii.gz", context_idx = integer(0)))
       },
       create_subcortical_from_volume = function(...) {
         structure(
@@ -1192,7 +1192,7 @@ describe("wholebrain_run_subcortical verbose logging", {
     local_mocked_bindings(
       write_lut = function(...) invisible(NULL),
       wholebrain_prepare_subcortical_volume = function(...) {
-        invisible("filtered.nii.gz")
+        invisible(list(file = "filtered.nii.gz", context_idx = integer(0)))
       },
       create_subcortical_from_volume = function(...) {
         structure(
@@ -1250,7 +1250,7 @@ describe("wholebrain_run_subcortical verbose logging", {
 
     local_mocked_bindings(
       wholebrain_prepare_subcortical_volume = function(...) {
-        invisible("filtered.nii.gz")
+        invisible(list(file = "filtered.nii.gz", context_idx = integer(0)))
       },
       create_subcortical_from_volume = function(input_lut, ...) {
         .cap$captured_lut <- input_lut
@@ -1318,7 +1318,7 @@ describe("wholebrain_run_subcortical verbose logging", {
     local_mocked_bindings(
       wholebrain_prepare_subcortical_volume = function(...) {
         .cap$captured <- list(...)
-        invisible("filtered.nii.gz")
+        invisible(list(file = "filtered.nii.gz", context_idx = integer(0)))
       },
       create_subcortical_from_volume = function(input_lut, ...) {
         .cap$captured_lut <- input_lut
@@ -4041,5 +4041,72 @@ describe("warn_volume_only_subcortical", {
 
   it("stays quiet when every label reached the surface", {
     expect_no_warning(warn_volume_only_subcortical(character(0)))
+  })
+})
+
+
+describe("colortable_is_unpainted()", {
+  it("is true for a table written with zero colours", {
+    ct <- data.frame(idx = 1:3, label = letters[1:3], R = 0L, G = 0L, B = 0L)
+    expect_true(colortable_is_unpainted(ct))
+  })
+
+  it("is true when every colour is missing", {
+    ct <- data.frame(
+      idx = 1:3,
+      label = letters[1:3],
+      R = NA_integer_,
+      G = NA_integer_,
+      B = NA_integer_
+    )
+    expect_true(colortable_is_unpainted(ct))
+  })
+
+  it("is false when one row among many is black", {
+    ct <- data.frame(
+      idx = 1:3,
+      label = letters[1:3],
+      R = c(0L, 120L, 30L),
+      G = c(0L, 18L, 200L),
+      B = c(0L, 134L, 90L)
+    )
+    expect_false(colortable_is_unpainted(ct))
+  })
+
+  it("is false for a table with no colour columns at all", {
+    expect_false(colortable_is_unpainted(data.frame(idx = 1L, label = "a")))
+    expect_false(colortable_is_unpainted(NULL))
+  })
+})
+
+
+describe("paint_unpainted_lut()", {
+  it("gives an unpainted table a distinct colour per row", {
+    lut <- data.frame(idx = 1:4, label = letters[1:4], R = 0L, G = 0L, B = 0L)
+    expect_message(painted <- paint_unpainted_lut(lut), "no colours")
+
+    hex <- grDevices::rgb(
+      painted$R,
+      painted$G,
+      painted$B,
+      maxColorValue = 255
+    )
+    expect_length(unique(hex), 4L)
+    expect_false(any(hex == "#000000"))
+  })
+
+  it("leaves a painted table untouched", {
+    lut <- data.frame(
+      idx = 1:2,
+      label = c("a", "b"),
+      R = c(120L, 0L),
+      G = c(18L, 118L),
+      B = c(134L, 14L)
+    )
+    expect_equal(paint_unpainted_lut(lut), lut)
+  })
+
+  it("passes NULL through", {
+    expect_null(paint_unpainted_lut(NULL))
   })
 })

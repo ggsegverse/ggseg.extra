@@ -117,6 +117,16 @@ lut_generate_colors(blank)
 Two structures, two colours, and `idx = 0` untouched.
 Every other row is overwritten, so run this on a table whose palette you are willing to lose.
 
+A table like `blank` — black in every channel, which is how a parcellation that publishes no colours usually arrives — is not a table that chose black.
+`create_wholebrain_from_volume()` recognises that and paints it itself rather than drawing every structure in the same ink, saying so as it does:
+
+```
+i `input_lut` carries no colours; generating 65 distinct colours
+```
+
+One black row among coloured ones is a choice and is left alone; only an entirely black table counts.
+Prefer calling `lut_generate_colors()` in your build script anyway: a palette you have committed is reviewable and reproducible, it can be grouped with `by`, and the pipeline's own is neither.
+
 `chroma` and `luminance` control intensity and lightness.
 If you ask for a chroma the display cannot render across that many hues, the function errors rather than quietly handing you two regions the same colour — lowering `chroma` is the usual fix.
 

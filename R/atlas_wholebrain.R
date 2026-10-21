@@ -835,6 +835,7 @@ validate_wholebrain_config <- function(
     cli::cli_abort("Color lookup table not found: {.path {input_lut}}")
   }
   lut <- if (is.character(input_lut)) read_lut(input_lut) else input_lut
+  lut <- paint_unpainted_lut(lut)
   check_lut_type(lut)
   check_lut_hemi(lut)
 
@@ -2055,13 +2056,19 @@ wholebrain_run_subcortical <- function(
   ]
 
   filtered_vol <- as.character(fs::path(dirs$base, "subcort_volume.nii.gz"))
-  wholebrain_prepare_subcortical_volume(
+  prepared <- wholebrain_prepare_subcortical_volume(
     input_volume = config$input_volume,
     subcortical_idx = subcort_ct$source_idx,
     cortical_idx = cortical_idx,
     output_file = filtered_vol,
     target_idx = subcort_ct$idx,
     verbose = config$verbose
+  )
+  # The backdrop is written into the volume here, and the subcortical
+  # pipeline draws only what its table declares, so it is declared here too.
+  subcort_lut <- declare_wholebrain_context(
+    subcort_lut,
+    prepared$context_idx
   )
 
   subcort_name <- paste0(config$atlas_name, "_subcortical")
@@ -2187,11 +2194,71 @@ wholebrain_cerebellar_to_suit <- function(filtered_vol, config, dirs) {
 #' all NA (or entirely missing) are replaced with values from an evenly
 #' spaced HCL palette so generic LUTs render as something other than black.
 #' @noRd
+#' Does a colour table carry no colour at all?
+#'
+#' True when every row is black, whether written as zeros or left `NA`. A
+#' table like that says nothing about how its structures should be told
+#' apart, so it is treated as unpainted and given a generated palette rather
+#' than shipping one colour for everything.
+#'
+#' Only an entirely black table counts. One black row among coloured ones is
+#' a choice, and the `aseg`'s own `Unknown` is exactly that.
+#' @param ct A colour table with `R`, `G` and `B` columns.
+#' @noRd
+colortable_is_unpainted <- function(ct) {
+  if (is.null(ct) || nrow(ct) == 0L) {
+    return(FALSE)
+  }
+  if (!all(c("R", "G", "B") %in% names(ct))) {
+    return(FALSE)
+  }
+  zero_or_na <- function(x) is.na(x) | x == 0L
+  all(zero_or_na(ct$R) & zero_or_na(ct$G) & zero_or_na(ct$B))
+}
+
+
+#' Give an unpainted lookup table a palette
+#'
+#' Several published parcellations ship no colours, and a build script that
+#' pads the colour fields with zeros to make a file FreeSurfer will read
+#' hands the pipeline a table with one colour in it. Every structure then
+#' draws in the same ink, and the atlas looks like a silhouette rather than
+#' a parcellation. The table is painted here, once, where it enters the
+#' pipeline, so the cortical, subcortical and cerebellar halves of a
+#' whole-brain atlas all agree about it.
+#' @param lut A lookup table, or `NULL`.
+#' @return `lut`, with generated `R`, `G` and `B` where it had none.
+#' @noRd
+paint_unpainted_lut <- function(lut) {
+  if (!colortable_is_unpainted(lut)) {
+    return(lut)
+  }
+  cli::cli_alert_info(c(
+    "{.arg input_lut} carries no colours; generating {nrow(lut)} distinct ",
+    "{cli::qty(nrow(lut))}colour{?s}"
+  ))
+  rgb_mat <- grDevices::col2rgb(generate_region_palette(nrow(lut)))
+  lut$R <- as.integer(rgb_mat["red", ])
+  lut$G <- as.integer(rgb_mat["green", ])
+  lut$B <- as.integer(rgb_mat["blue", ])
+  lut
+}
+
+
 fill_missing_rgb <- function(ct, label = "structures") {
   for (col in c("R", "G", "B", "A")) {
     if (!col %in% names(ct)) ct[[col]] <- NA_integer_
   }
   missing_rows <- is.na(ct$R) & is.na(ct$G) & is.na(ct$B)
+  # A table that is black from end to end is not a table that chose black.
+  # Several published parcellations ship no colours at all, and a build
+  # script that pads the colour fields with zeros to make a readable LUT
+  # hands over a palette with one colour in it, which draws every structure
+  # in the same ink. Only an entirely black table counts: one black row
+  # among coloured ones is a choice.
+  if (nrow(ct) > 0L && !all(missing_rows) && colortable_is_unpainted(ct)) {
+    missing_rows <- rep(TRUE, nrow(ct))
+  }
   n_missing <- sum(missing_rows)
   if (n_missing > 0L) {
     cli::cli_alert_info(c(
@@ -2332,7 +2399,10 @@ wholebrain_prepare_subcortical_volume <- function(
     RNifti::orientation(out) <- "RAS"
   }
   RNifti::writeNifti(out, output_file)
-  invisible(output_file)
+  invisible(list(
+    file = output_file,
+    context_idx = written_context_idx(result)
+  ))
 }
 
 
@@ -2402,10 +2472,16 @@ wholebrain_write_cerebrum <- function(
 #' @noRd
 write_aseg_context <- function(result, aseg, idx) {
   free <- result == 0L
+  written <- integer(0)
   for (i in idx) {
-    result[free & aseg == i] <- i
+    hit <- free & aseg == i
+    if (!any(hit)) {
+      next
+    }
+    result[hit] <- i
+    written <- c(written, i)
   }
-  result
+  record_context_idx(result, written)
 }
 
 
@@ -2424,7 +2500,12 @@ wholebrain_cortex_by_midline <- function(result, cortical_mask, vol) {
   cortex <- aseg_cortex_idx()
   low <- if (left_is_high) cortex[["right"]] else cortex[["left"]]
   high <- if (left_is_high) cortex[["left"]] else cortex[["right"]]
-  result[cortical_mask & x_idx <= x0_voxel] <- low
-  result[cortical_mask & x_idx > x0_voxel] <- high
-  result
+  in_low <- cortical_mask & x_idx <= x0_voxel
+  in_high <- cortical_mask & x_idx > x0_voxel
+  result[in_low] <- low
+  result[in_high] <- high
+  record_context_idx(
+    result,
+    c(if (any(in_low)) low, if (any(in_high)) high)
+  )
 }

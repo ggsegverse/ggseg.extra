@@ -1,4 +1,4 @@
-# ggseg.extra 1.9.9.9130
+# ggseg.extra 1.9.9.9131
 
 This section becomes the 2.0.0 release notes at submission. It is the first
 CRAN release of ggseg.extra, the atlas-building package of
@@ -513,6 +513,18 @@ and tractography files.
   absolute on every platform whether or not the directory already exists.
 
 ## Bug fixes
+
+- `create_wholebrain_from_volume()` declares the backdrop it writes, so the
+  subcortical atlas keeps its grey brain silhouette. The pipeline writes the
+  `aseg` context indices into the volume it hands the subcortical pipeline,
+  which since the lookup table became the authority draws only what the table
+  declares -- and the table it was handed listed the structures alone, so
+  every whole-brain subcortical atlas came back with no backdrop at all.
+
+- A lookup table that is black in every channel is treated as carrying no
+  colours and is given a generated palette, rather than drawing every
+  structure in the same ink. One black row among coloured ones is still a
+  choice.
 
 - A step's cache records what it was built from -- the package version, the
   cache format and the step's own inputs -- and the step recomputes when any
