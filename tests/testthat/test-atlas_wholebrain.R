@@ -4080,33 +4080,41 @@ describe("colortable_is_unpainted()", {
 })
 
 
-describe("paint_unpainted_lut()", {
-  it("gives an unpainted table a distinct colour per row", {
-    lut <- data.frame(idx = 1:4, label = letters[1:4], R = 0L, G = 0L, B = 0L)
-    expect_message(painted <- paint_unpainted_lut(lut), "no colours")
-
-    hex <- grDevices::rgb(
-      painted$R,
-      painted$G,
-      painted$B,
-      maxColorValue = 255
+describe("paint_unpainted_colours()", {
+  it("gives an unpainted set a distinct colour per region", {
+    cols <- rep("#000000", 4)
+    expect_message(
+      painted <- paint_unpainted_colours(cols, letters[1:4]),
+      "No colours"
     )
-    expect_length(unique(hex), 4L)
-    expect_false(any(hex == "#000000"))
+    expect_length(unique(painted), 4L)
+    expect_false(any(painted == "#000000"))
   })
 
-  it("leaves a painted table untouched", {
-    lut <- data.frame(
-      idx = 1:2,
-      label = c("a", "b"),
-      R = c(120L, 0L),
-      G = c(18L, 118L),
-      B = c(134L, 14L)
-    )
-    expect_equal(paint_unpainted_lut(lut), lut)
+  it("spends the whole colour circle on one atlas", {
+    sub <- paint_unpainted_colours(rep("#000000", 14), paste0("s", 1:14))
+    hue <- grDevices::rgb2hsv(grDevices::col2rgb(sub))["h", ] * 360
+    # Painted across the whole table instead, 14 structures out of 96 came
+    # back spanning 45 degrees of hue -- every one of them magenta.
+    expect_gt(diff(range(hue)), 180)
   })
 
-  it("passes NULL through", {
-    expect_null(paint_unpainted_lut(NULL))
+  it("gives rows sharing a key the same colour", {
+    painted <- paint_unpainted_colours(
+      rep("#000000", 4),
+      c("thalamus", "thalamus", "caudate", "caudate")
+    )
+    expect_identical(painted[1], painted[2])
+    expect_false(identical(painted[1], painted[3]))
+  })
+
+  it("leaves a set that carries any colour alone", {
+    cols <- c("#000000", "#78124A", "#00AA55")
+    expect_identical(paint_unpainted_colours(cols, letters[1:3]), cols)
+  })
+
+  it("treats NA as no colour", {
+    painted <- paint_unpainted_colours(rep(NA_character_, 3), letters[1:3])
+    expect_false(any(is.na(painted)))
   })
 })

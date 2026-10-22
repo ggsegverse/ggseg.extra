@@ -835,7 +835,6 @@ validate_wholebrain_config <- function(
     cli::cli_abort("Color lookup table not found: {.path {input_lut}}")
   }
   lut <- if (is.character(input_lut)) read_lut(input_lut) else input_lut
-  lut <- paint_unpainted_lut(lut)
   check_lut_type(lut)
   check_lut_hemi(lut)
 
@@ -1975,9 +1974,20 @@ wholebrain_cortical_inputs <- function(config, dirs, projection, split, opts) {
   cortical_data <- projection$atlas_data[
     source_label %in% split$cortical_labels | is_context_region(source_label),
   ]
+  # The context rows are backdrop and keep the grey they arrived with; only
+  # the parcels are painted, and only when none of them has a colour. The
+  # test is on `source_label`, which is what names a context region -- `label`
+  # has already been derived and does not.
+  parcels <- !is_context_region(cortical_data$source_label)
   cortical_data <- cortical_data[,
     c("hemi", "region", "label", "colour", "vertices")
   ]
+  if (any(parcels)) {
+    cortical_data$colour[parcels] <- paint_unpainted_colours(
+      cortical_data$colour[parcels],
+      cortical_data$region[parcels]
+    )
+  }
 
   cortical_name <- paste0(config$atlas_name, "_cortical")
   cortical_dirs <- setup_atlas_dirs(
@@ -2217,31 +2227,39 @@ colortable_is_unpainted <- function(ct) {
 }
 
 
-#' Give an unpainted lookup table a palette
+#' Give an unpainted set of colours a palette
 #'
 #' Several published parcellations ship no colours, and a build script that
-#' pads the colour fields with zeros to make a file FreeSurfer will read
-#' hands the pipeline a table with one colour in it. Every structure then
-#' draws in the same ink, and the atlas looks like a silhouette rather than
-#' a parcellation. The table is painted here, once, where it enters the
-#' pipeline, so the cortical, subcortical and cerebellar halves of a
-#' whole-brain atlas all agree about it.
-#' @param lut A lookup table, or `NULL`.
-#' @return `lut`, with generated `R`, `G` and `B` where it had none.
+#' pads the colour fields with zeros to make a file FreeSurfer will read hands
+#' the pipeline a table with one colour in it. Every structure then draws in
+#' the same ink.
+#'
+#' Painted per atlas rather than once for the whole table, because the
+#' whole-brain pipeline splits one table into a cortical, a subcortical and a
+#' cerebellar atlas that are never plotted together. A palette generated
+#' across the whole table hands each of them a slice of the colour circle:
+#' `MarsAtlas`'s fourteen structures came out spanning 45 degrees of hue, all
+#' of them magenta. Each atlas is painted on its own and gets the whole
+#' circle, which is what `by = "type"` does in [lut_generate_colors()].
+#'
+#' @param colours Character vector of hex colours, or `NA`.
+#' @param keys What a colour belongs to -- rows sharing a key share a colour.
+#' @return `colours`, or a generated palette when it carried none.
 #' @noRd
-paint_unpainted_lut <- function(lut) {
-  if (!colortable_is_unpainted(lut)) {
-    return(lut)
+paint_unpainted_colours <- function(colours, keys = seq_along(colours)) {
+  black <- is.na(colours) | toupper(colours) %in% c("#000000", "#000000FF")
+  if (!all(black)) {
+    return(colours)
   }
-  cli::cli_alert_info(c(
-    "{.arg input_lut} carries no colours; generating {nrow(lut)} distinct ",
-    "{cli::qty(nrow(lut))}colour{?s}"
-  ))
-  rgb_mat <- grDevices::col2rgb(generate_region_palette(nrow(lut)))
-  lut$R <- as.integer(rgb_mat["red", ])
-  lut$G <- as.integer(rgb_mat["green", ])
-  lut$B <- as.integer(rgb_mat["blue", ])
-  lut
+  keys <- as.character(keys)
+  uniq <- unique(keys)
+  if (length(uniq) == 0L) {
+    return(colours)
+  }
+  cli::cli_alert_info(
+    "No colours for {length(uniq)} region{?s}; generating that many"
+  )
+  generate_region_palette(length(uniq))[match(keys, uniq)]
 }
 
 

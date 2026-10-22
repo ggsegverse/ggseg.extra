@@ -163,14 +163,16 @@ That is the point: a `type` column you have committed is visible in a code revie
 ### When the release ships no colours
 
 Plenty of parcellations come as names only, with every RGB channel set to `0 0 0 0`.
-A table that is black from end to end is not a table that chose black, so `create_wholebrain_from_volume()` treats it as unpainted and generates a distinct colour per row, telling you it has:
+A table that is black from end to end is not a table that chose black, so `create_wholebrain_from_volume()` treats it as unpainted and generates a palette, telling you it has:
 
 ```
-i `input_lut` carries no colours; generating 122 distinct colours
+i No colours for 41 regions; generating that many
 ```
 
-That is a safety net, not the recommended route.
-It paints the table that reaches the pipeline, which nobody reviews, and it knows nothing about the cortical and subcortical halves yet.
+It paints each atlas on its own, after the split, so the cortical and subcortical halves each get the whole colour circle rather than a slice of a shared one — the same thing `by = "type"` does below.
+Both hemispheres of a region share a colour.
+
+That is a safety net, not the recommended route: it paints a table nobody reviews.
 `lut_generate_colors()` builds the palette in your build script instead, where you can commit it:
 
 

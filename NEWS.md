@@ -521,10 +521,14 @@ and tractography files.
   declares -- and the table it was handed listed the structures alone, so
   every whole-brain subcortical atlas came back with no backdrop at all.
 
-- A lookup table that is black in every channel is treated as carrying no
-  colours and is given a generated palette, rather than drawing every
-  structure in the same ink. One black row among coloured ones is still a
-  choice.
+- A whole-brain atlas whose lookup table carries no colours is given a
+  generated palette, one atlas at a time. Several published parcellations
+  ship no colours, and a build script that pads the colour fields with zeros
+  to make a file FreeSurfer will read was handing the pipeline a palette with
+  one colour in it. Painting the whole table at once would only move the
+  problem: the pipeline splits that table into a cortical, a subcortical and
+  a cerebellar atlas, so each would get a slice of the colour circle rather
+  than the whole of it. One black row among coloured ones is still a choice.
 
 - A step's cache records what it was built from -- the package version, the
   cache format and the step's own inputs -- and the step recomputes when any
