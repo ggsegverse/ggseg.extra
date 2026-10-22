@@ -625,7 +625,11 @@ describe("grid_carries_a_ribbon()", {
     # fossa, which no grid is too coarse for.
     arr <- array(10L, dim = c(4, 4, 4))
     expect_true(
-      grid_carries_a_ribbon("unused.nii.gz", arr, integer(0), "subj",
+      grid_carries_a_ribbon(
+        "unused.nii.gz",
+        arr,
+        integer(0),
+        "subj",
         verbose = FALSE
       )
     )
@@ -635,7 +639,11 @@ describe("grid_carries_a_ribbon()", {
     local_mocked_bindings(aseg_context_volume = function(...) NULL)
     arr <- array(1000L, dim = c(4, 4, 4))
     expect_true(
-      grid_carries_a_ribbon("unused.nii.gz", arr, 1000L, "subj",
+      grid_carries_a_ribbon(
+        "unused.nii.gz",
+        arr,
+        1000L,
+        "subj",
         verbose = FALSE
       )
     )
@@ -649,7 +657,11 @@ describe("grid_carries_a_ribbon()", {
     arr <- array(0L, dim = c(10, 4, 4))
     arr[1:2, , ] <- 1000L
     expect_true(
-      grid_carries_a_ribbon("unused.nii.gz", arr, 1000L, "subj",
+      grid_carries_a_ribbon(
+        "unused.nii.gz",
+        arr,
+        1000L,
+        "subj",
         verbose = FALSE
       )
     )
@@ -663,7 +675,11 @@ describe("grid_carries_a_ribbon()", {
     local_mocked_bindings(aseg_context_volume = function(...) aseg)
     arr <- array(1000L, dim = c(10, 4, 4))
     expect_false(
-      grid_carries_a_ribbon("unused.nii.gz", arr, 1000L, "subj",
+      grid_carries_a_ribbon(
+        "unused.nii.gz",
+        arr,
+        1000L,
+        "subj",
         verbose = FALSE
       )
     )

@@ -539,8 +539,13 @@ have_fs_quietly <- function() {
 #' parent of their own message, which is what distinguishes a missing binary
 #' from a volume whose header lies.
 #' @noRd
-resample_volume_to_grid <- function(source_file, target, verbose) {
-  out_file <- tempfile(fileext = paste0(".", volume_ext(target)))
+resample_volume_to_grid <- function(
+  source_file,
+  target,
+  verbose,
+  out_ext = volume_ext(target)
+) {
+  out_file <- tempfile(fileext = paste0(".", out_ext))
   cmd <- paste(
     "mri_vol2vol",
     "--mov",

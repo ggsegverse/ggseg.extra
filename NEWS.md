@@ -530,14 +530,15 @@ and tractography files.
   declares -- and the table it was handed listed the structures alone, so
   every whole-brain subcortical atlas came back with no backdrop at all.
 
-- A whole-brain atlas whose lookup table carries no colours is given a
-  generated palette, one atlas at a time. Several published parcellations
+- An atlas whose lookup table carries no colours ships no palette, and says
+  so, instead of one the pipeline invented. Several published parcellations
   ship no colours, and a build script that pads the colour fields with zeros
-  to make a file FreeSurfer will read was handing the pipeline a palette with
-  one colour in it. Painting the whole table at once would only move the
-  problem: the pipeline splits that table into a cortical, a subcortical and
-  a cerebellar atlas, so each would get a slice of the colour circle rather
-  than the whole of it. One black row among coloured ones is still a choice.
+  to make a file FreeSurfer will read means the same thing an empty column
+  does. Colour is a drawing decision: `ggseg` resolves it when it plots,
+  knowing which labels are regions and which are backdrop, which a lookup
+  table does not. An atlas published with a palette still uses that palette.
+  The backdrop's own grey does not count as colour when asking -- counting it
+  made a wholly black parcellation look like a table with two colours in it.
 
 - A step's cache records what it was built from -- the package version, the
   cache format and the step's own inputs -- and the step recomputes when any

@@ -1014,7 +1014,7 @@ overlay_label_row <- function(
   colour <- if ("color" %in% names(ct_row)) {
     ct_row$color[1]
   } else if (all(c("R", "G", "B") %in% names(ct_row))) {
-    rgb(ct_row$R[1], ct_row$G[1], ct_row$B[1], maxColorValue = 255)
+    hex_from_rgb(ct_row$R[1], ct_row$G[1], ct_row$B[1])
   } else {
     NA_character_
   }
@@ -1974,20 +1974,9 @@ wholebrain_cortical_inputs <- function(config, dirs, projection, split, opts) {
   cortical_data <- projection$atlas_data[
     source_label %in% split$cortical_labels | is_context_region(source_label),
   ]
-  # The context rows are backdrop and keep the grey they arrived with; only
-  # the parcels are painted, and only when none of them has a colour. The
-  # test is on `source_label`, which is what names a context region -- `label`
-  # has already been derived and does not.
-  parcels <- !is_context_region(cortical_data$source_label)
   cortical_data <- cortical_data[,
     c("hemi", "region", "label", "colour", "vertices")
   ]
-  if (any(parcels)) {
-    cortical_data$colour[parcels] <- paint_unpainted_colours(
-      cortical_data$colour[parcels],
-      cortical_data$region[parcels]
-    )
-  }
 
   cortical_name <- paste0(config$atlas_name, "_cortical")
   cortical_dirs <- setup_atlas_dirs(
@@ -2227,56 +2216,20 @@ colortable_is_unpainted <- function(ct) {
 }
 
 
-#' Give an unpainted set of colours a palette
-#'
-#' Several published parcellations ship no colours, and a build script that
-#' pads the colour fields with zeros to make a file FreeSurfer will read hands
-#' the pipeline a table with one colour in it. Every structure then draws in
-#' the same ink.
-#'
-#' Painted per atlas rather than once for the whole table, because the
-#' whole-brain pipeline splits one table into a cortical, a subcortical and a
-#' cerebellar atlas that are never plotted together. A palette generated
-#' across the whole table hands each of them a slice of the colour circle:
-#' `MarsAtlas`'s fourteen structures came out spanning 45 degrees of hue, all
-#' of them magenta. Each atlas is painted on its own and gets the whole
-#' circle, which is what `by = "type"` does in [lut_generate_colors()].
-#'
-#' @param colours Character vector of hex colours, or `NA`.
-#' @param keys What a colour belongs to -- rows sharing a key share a colour.
-#' @return `colours`, or a generated palette when it carried none.
-#' @noRd
-paint_unpainted_colours <- function(colours, keys = seq_along(colours)) {
-  black <- is.na(colours) | toupper(colours) %in% c("#000000", "#000000FF")
-  if (!all(black)) {
-    return(colours)
-  }
-  keys <- as.character(keys)
-  uniq <- unique(keys)
-  if (length(uniq) == 0L) {
-    return(colours)
-  }
-  cli::cli_alert_info(
-    "No colours for {length(uniq)} region{?s}; generating that many"
-  )
-  generate_region_palette(length(uniq))[match(keys, uniq)]
-}
-
-
 fill_missing_rgb <- function(ct, label = "structures") {
   for (col in c("R", "G", "B", "A")) {
     if (!col %in% names(ct)) ct[[col]] <- NA_integer_
   }
-  missing_rows <- is.na(ct$R) & is.na(ct$G) & is.na(ct$B)
-  # A table that is black from end to end is not a table that chose black.
-  # Several published parcellations ship no colours at all, and a build
-  # script that pads the colour fields with zeros to make a readable LUT
-  # hands over a palette with one colour in it, which draws every structure
-  # in the same ink. Only an entirely black table counts: one black row
-  # among coloured ones is a choice.
-  if (nrow(ct) > 0L && !all(missing_rows) && colortable_is_unpainted(ct)) {
-    missing_rows <- rep(TRUE, nrow(ct))
+  # A table with no colour anywhere -- every channel zero or NA -- is left
+  # exactly as it is. Colours are never invented here: the atlas says it has
+  # no palette and plotting generates its own, which it does knowing which
+  # labels are regions and which are backdrop. Only a table that carries
+  # some colours has its gaps filled, because there the author chose.
+  if (colortable_is_unpainted(ct)) {
+    ct$A[is.na(ct$A)] <- 0L
+    return(ct)
   }
+  missing_rows <- is.na(ct$R) & is.na(ct$G) & is.na(ct$B)
   n_missing <- sum(missing_rows)
   if (n_missing > 0L) {
     cli::cli_alert_info(c(

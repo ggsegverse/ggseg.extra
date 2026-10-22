@@ -2214,20 +2214,19 @@ describe("wholebrain_refine_cortical_projection", {
 
 
 describe("fill_missing_rgb", {
-  it("adds missing R/G/B/A columns and fills them", {
+  it("adds missing R/G/B/A columns without inventing colours", {
+    # A table with no colour columns carries no colours, so it gets the
+    # columns and nothing else: the atlas will report no palette, and
+    # plotting supplies one.
     ct <- data.frame(
       idx = 1:2,
       label = c("a", "b"),
       stringsAsFactors = FALSE
     )
-    expect_message(
-      result <- fill_missing_rgb(ct, "test"),
-      "Auto-generating colours"
-    )
+    result <- fill_missing_rgb(ct, "test")
+
     expect_true(all(c("R", "G", "B", "A") %in% names(result)))
-    expect_false(anyNA(result$R))
-    expect_false(anyNA(result$G))
-    expect_false(anyNA(result$B))
+    expect_true(all(is.na(result$R)))
     expect_identical(result$A, c(0L, 0L))
   })
 
@@ -3429,7 +3428,7 @@ describe("create_wholebrain_from_volume without FreeSurfer", {
 
 
 describe("wholebrain cortex context on a coarse grid", {
-  it("keeps the atlas's own labels when the ribbon is a sheet", {
+  it("keeps the atlas's own labels when it cannot regrid", {
     skip_if_not_installed("RNifti")
     arr <- array(1000L, dim = c(12, 5, 5))
     vol_file <- withr::local_tempfile(fileext = ".nii.gz")
@@ -3437,12 +3436,14 @@ describe("wholebrain cortex context on a coarse grid", {
     out_file <- withr::local_tempfile(fileext = ".nii.gz")
 
     # A solid mantle six times the ribbon, but a ribbon one voxel thick:
-    # what a 4 mm parcellation resamples the aseg into.
+    # what a 4 mm parcellation resamples the aseg into. With no finer grid
+    # to move to, the atlas's own labels are still the best silhouette.
     left <- right <- array(FALSE, dim = dim(arr))
     left[1, , ] <- TRUE
     right[12, , ] <- TRUE
     local_mocked_bindings(
-      aseg_context_volume = function(...) mock_cortex_ribbon(left, right)
+      aseg_context_volume = function(...) mock_cortex_ribbon(left, right),
+      regrid_onto_aseg = function(...) NULL
     )
 
     wholebrain_prepare_subcortical_volume(
@@ -3455,6 +3456,42 @@ describe("wholebrain cortex context on a coarse grid", {
     result <- as.array(RNifti::readNifti(out_file))
     expect_identical(sum(result %in% c(3L, 42L)), 300L)
     expect_identical(sum(result == 0L), 0L)
+  })
+
+  it("writes on the finer grid when it can regrid", {
+    skip_if_not_installed("RNifti")
+    arr <- array(1000L, dim = c(12, 5, 5))
+    vol_file <- withr::local_tempfile(fileext = ".nii.gz")
+    RNifti::writeNifti(RNifti::asNifti(arr), vol_file)
+
+    # The grid the regrid moves to: twice as fine, so the ribbon has an
+    # interior and the silhouette keeps its sulci.
+    fine <- array(1000L, dim = c(24, 10, 10))
+    fine_file <- withr::local_tempfile(fileext = ".nii.gz")
+    RNifti::writeNifti(RNifti::asNifti(fine), fine_file)
+    out_file <- withr::local_tempfile(fileext = ".nii.gz")
+
+    ribbon_for <- function(dims) {
+      left <- right <- array(FALSE, dim = dims)
+      left[1, , ] <- TRUE
+      right[dims[1], , ] <- TRUE
+      mock_cortex_ribbon(left, right)
+    }
+    local_mocked_bindings(
+      aseg_context_volume = function(dims, ...) ribbon_for(dims),
+      regrid_onto_aseg = function(...) fine_file
+    )
+
+    prepared <- wholebrain_prepare_subcortical_volume(
+      input_volume = vol_file,
+      subcortical_idx = integer(0),
+      cortical_idx = 1000L,
+      output_file = out_file
+    )
+
+    result <- as.array(RNifti::readNifti(out_file))
+    expect_identical(dim(result), c(24L, 10L, 10L))
+    expect_identical(prepared$context_idx, c(3L, 42L))
   })
 })
 
@@ -4080,41 +4117,41 @@ describe("colortable_is_unpainted()", {
 })
 
 
-describe("paint_unpainted_colours()", {
-  it("gives an unpainted set a distinct colour per region", {
-    cols <- rep("#000000", 4)
-    expect_message(
-      painted <- paint_unpainted_colours(cols, letters[1:4]),
-      "No colours"
+describe("fill_missing_rgb() and the unpainted table", {
+  it("leaves a table with no colour anywhere exactly as it is", {
+    # Colours are never invented. The atlas says it has no palette and
+    # plotting supplies one, knowing which labels are backdrop.
+    ct <- data.frame(idx = 1:3, label = letters[1:3], R = 0L, G = 0L, B = 0L)
+    out <- fill_missing_rgb(ct)
+
+    expect_identical(out$R, rep(0L, 3))
+    expect_identical(out$G, rep(0L, 3))
+    expect_identical(out$B, rep(0L, 3))
+  })
+
+  it("leaves an all-NA table alone too", {
+    ct <- data.frame(
+      idx = 1:3,
+      label = letters[1:3],
+      R = NA_integer_,
+      G = NA_integer_,
+      B = NA_integer_
     )
-    expect_length(unique(painted), 4L)
-    expect_false(any(painted == "#000000"))
+    expect_true(all(is.na(fill_missing_rgb(ct)$R)))
   })
 
-  it("spends the whole colour circle on one atlas", {
-    sub <- paint_unpainted_colours(rep("#000000", 14), paste0("s", 1:14))
-    hue <- grDevices::rgb2hsv(grDevices::col2rgb(sub))["h", ] * 360
-    # Painted across the whole table instead, 14 structures out of 96 came
-    # back spanning 45 degrees of hue -- every one of them magenta.
-    expect_gt(diff(range(hue)), 180)
-  })
-
-  it("gives rows sharing a key the same colour", {
-    painted <- paint_unpainted_colours(
-      rep("#000000", 4),
-      c("thalamus", "thalamus", "caudate", "caudate")
+  it("fills the gaps in a table that carries some colours", {
+    # Here the author chose, so a row left blank is an omission.
+    ct <- data.frame(
+      idx = 1:3,
+      label = letters[1:3],
+      R = c(120L, NA, 30L),
+      G = c(18L, NA, 200L),
+      B = c(134L, NA, 90L)
     )
-    expect_identical(painted[1], painted[2])
-    expect_false(identical(painted[1], painted[3]))
-  })
+    expect_message(out <- fill_missing_rgb(ct), "Auto-generating")
 
-  it("leaves a set that carries any colour alone", {
-    cols <- c("#000000", "#78124A", "#00AA55")
-    expect_identical(paint_unpainted_colours(cols, letters[1:3]), cols)
-  })
-
-  it("treats NA as no colour", {
-    painted <- paint_unpainted_colours(rep(NA_character_, 3), letters[1:3])
-    expect_false(any(is.na(painted)))
+    expect_false(any(is.na(out$R)))
+    expect_identical(out$R[1], 120L)
   })
 })

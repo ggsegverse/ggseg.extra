@@ -85,7 +85,15 @@ regrid_onto_aseg <- function(
   if (is.null(aseg)) {
     return(NULL)
   }
-  resampling <- resample_volume_to_grid(input_volume, aseg, verbose)
+  # NIfTI, not the `aseg`'s own `.mgz`: the volume is read back through
+  # RNifti, which does not read `.mgz` at all, and the path that does
+  # silently mirrored the result left for right.
+  resampling <- resample_volume_to_grid(
+    input_volume,
+    aseg,
+    verbose,
+    out_ext = "nii.gz"
+  )
   if (is.null(resampling$file)) {
     warn_solid_cortex_context(resampling$reason, parent = resampling$cnd)
     return(NULL)
