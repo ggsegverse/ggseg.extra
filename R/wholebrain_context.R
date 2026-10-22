@@ -57,6 +57,87 @@ aseg_context_labels <- function() {
 }
 
 
+#' Regrid a volume onto the `aseg`'s own grid
+#'
+#' A parcellation published on a coarse grid cannot carry a cortical ribbon:
+#' the ribbon is about 2.5 mm thick, so on the 4 mm grid the ADHD-200 and
+#' Craddock parcellations ship on, a single voxel spans it. Resampling the
+#' `aseg` down to that grid destroys the one thing the backdrop is for, and
+#' the silhouette falls back to the atlas's own solid mantle -- a blob with
+#' no sulci in it.
+#'
+#' So the volume goes up to the `aseg` instead of the `aseg` coming down to
+#' it. Nearest-neighbour resampling of a 4 mm parcellation to 1 mm invents no
+#' detail and loses none: the structures keep the shape they had, described by
+#' more voxels, while the ribbon arrives intact.
+#'
+#' @param input_volume The atlas volume.
+#' @param subject FreeSurfer subject holding the `aseg`.
+#' @param verbose Report the regrid.
+#' @return Path to the regridded volume, or `NULL` when it cannot be done.
+#' @noRd
+regrid_onto_aseg <- function(
+  input_volume,
+  subject,
+  verbose = get_verbose()
+) {
+  aseg <- aseg_volume_path(subject)
+  if (is.null(aseg)) {
+    return(NULL)
+  }
+  resampling <- resample_volume_to_grid(input_volume, aseg, verbose)
+  if (is.null(resampling$file)) {
+    warn_solid_cortex_context(resampling$reason, parent = resampling$cnd)
+    return(NULL)
+  }
+  if (verbose) {
+    cli::cli_alert_info(
+      "Regridding the volume onto the {.field aseg} so the backdrop can
+      carry a ribbon",
+      wrap = TRUE
+    )
+  }
+  resampling$file
+}
+
+
+#' Would a ribbon survive on this volume's grid?
+#'
+#' Asked before anything is written, because the answer decides which grid
+#' everything is written on. The `aseg` is resampled onto the volume's grid
+#' exactly as it would be for the backdrop, and the question is whether what
+#' arrives is still a ribbon.
+#'
+#' Only a volume with cortical labels of its own is asked: the backdrop for
+#' one without them is the posterior fossa, which no grid is too coarse for.
+#' @noRd
+grid_carries_a_ribbon <- function(
+  input_volume,
+  arr,
+  cortical_idx,
+  subject,
+  verbose = get_verbose()
+) {
+  if (!any(arr %in% cortical_idx)) {
+    return(TRUE)
+  }
+  aseg <- suppressWarnings(aseg_context_volume(
+    input_volume = input_volume,
+    subject = subject,
+    dims = dim(arr),
+    brain_mask = arr != 0,
+    verbose = FALSE
+  ))
+  if (is.null(aseg)) {
+    return(TRUE)
+  }
+  if (!cortex_mask_is_solid(arr %in% cortical_idx, aseg, verbose = FALSE)) {
+    return(TRUE)
+  }
+  ribbon_is_resolved(aseg, verbose = verbose)
+}
+
+
 #' Record which context indices a writer actually wrote
 #'
 #' The declaration that follows has to name what was written, and only the

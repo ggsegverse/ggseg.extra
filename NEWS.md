@@ -514,6 +514,15 @@ and tractography files.
 
 ## Bug fixes
 
+- A parcellation published on a grid too coarse to carry a cortical ribbon
+  is resampled onto the `aseg`'s grid rather than the `aseg` being resampled
+  down to it. A ribbon is about 2.5 mm thick, so on the 4 mm grid the
+  ADHD-200 and Craddock parcellations ship on, one voxel spans it: the
+  silhouette fell back to the atlas's own solid mantle, a blob with no sulci
+  in it. Nearest-neighbour resampling the other way invents no detail and
+  loses none, and the backdrop arrives intact --
+  `craddock200_subcortical`'s went from 12 rings to 47.
+
 - `create_wholebrain_from_volume()` declares the backdrop it writes, so the
   subcortical atlas keeps its grey brain silhouette. The pipeline writes the
   `aseg` context indices into the volume it hands the subcortical pipeline,

@@ -617,3 +617,87 @@ describe("the writers report the context they wrote", {
     )
   })
 })
+
+
+describe("grid_carries_a_ribbon()", {
+  it("does not ask when the atlas has no cortical labels", {
+    # Nothing to substitute: the backdrop for such an atlas is the posterior
+    # fossa, which no grid is too coarse for.
+    arr <- array(10L, dim = c(4, 4, 4))
+    expect_true(
+      grid_carries_a_ribbon("unused.nii.gz", arr, integer(0), "subj",
+        verbose = FALSE
+      )
+    )
+  })
+
+  it("does not ask when there is no aseg to substitute", {
+    local_mocked_bindings(aseg_context_volume = function(...) NULL)
+    arr <- array(1000L, dim = c(4, 4, 4))
+    expect_true(
+      grid_carries_a_ribbon("unused.nii.gz", arr, 1000L, "subj",
+        verbose = FALSE
+      )
+    )
+  })
+
+  it("does not ask when the atlas's own mask is already a ribbon", {
+    # Thinner than the aseg ribbon, so it is a ribbon of its own and keeps it.
+    aseg <- array(0L, dim = c(10, 4, 4))
+    aseg[1:6, , ] <- 3L
+    local_mocked_bindings(aseg_context_volume = function(...) aseg)
+    arr <- array(0L, dim = c(10, 4, 4))
+    arr[1:2, , ] <- 1000L
+    expect_true(
+      grid_carries_a_ribbon("unused.nii.gz", arr, 1000L, "subj",
+        verbose = FALSE
+      )
+    )
+  })
+
+  it("says no when a solid mantle meets a ribbon the grid cannot carry", {
+    # One voxel thick: no interior at all, which is what a 4 mm grid does to
+    # a 2.5 mm ribbon.
+    aseg <- array(0L, dim = c(10, 4, 4))
+    aseg[5, , ] <- 3L
+    local_mocked_bindings(aseg_context_volume = function(...) aseg)
+    arr <- array(1000L, dim = c(10, 4, 4))
+    expect_false(
+      grid_carries_a_ribbon("unused.nii.gz", arr, 1000L, "subj",
+        verbose = FALSE
+      )
+    )
+  })
+})
+
+
+describe("regrid_onto_aseg()", {
+  it("returns NULL when there is no aseg to regrid onto", {
+    local_mocked_bindings(aseg_volume_path = function(...) NULL)
+    expect_null(regrid_onto_aseg("unused.nii.gz", "subj", verbose = FALSE))
+  })
+
+  it("reports why it could not regrid", {
+    local_mocked_bindings(
+      aseg_volume_path = function(...) "aseg.mgz",
+      resample_volume_to_grid = function(...) {
+        list(file = NULL, reason = "{.code mri_vol2vol} failed")
+      }
+    )
+    expect_warning(
+      expect_null(regrid_onto_aseg("unused.nii.gz", "subj", verbose = FALSE)),
+      "mri_vol2vol"
+    )
+  })
+
+  it("hands back the regridded file", {
+    local_mocked_bindings(
+      aseg_volume_path = function(...) "aseg.mgz",
+      resample_volume_to_grid = function(...) list(file = "regridded.nii.gz")
+    )
+    expect_identical(
+      regrid_onto_aseg("unused.nii.gz", "subj", verbose = FALSE),
+      "regridded.nii.gz"
+    )
+  })
+})

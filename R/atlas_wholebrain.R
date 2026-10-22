@@ -2394,6 +2394,25 @@ wholebrain_prepare_subcortical_volume <- function(
 ) {
   vol <- read_volume(input_volume, reorient = FALSE)
   arr <- as.array(vol)
+  # Decided before anything is written, because it decides which grid
+  # everything is written on: a grid too coarse to carry a ribbon would
+  # leave the backdrop a solid mantle with no sulci in it.
+  carries <- grid_carries_a_ribbon(
+    input_volume,
+    arr,
+    cortical_idx,
+    cortex_subject,
+    verbose = verbose
+  )
+  if (!carries) {
+    regridded <- regrid_onto_aseg(input_volume, cortex_subject, verbose)
+    if (!is.null(regridded)) {
+      on.exit(unlink(regridded), add = TRUE)
+      input_volume <- regridded
+      vol <- read_volume(regridded, reorient = FALSE)
+      arr <- as.array(vol)
+    }
+  }
   result <- array(0L, dim = dim(arr))
   # One match() pass rather than a whole-array scan per label: a 400-parcel
   # atlas on a 1 mm grid is ~10^9 comparisons the loop way. match() reports
