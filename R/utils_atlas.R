@@ -837,6 +837,51 @@ sanitize_label <- function(x) {
 #' @noRd
 context_region_pattern <- "^(unknown|\\?\\?\\?)$|medial[ _.-]?wall$"
 
+# The grey every anatomical backdrop is drawn in. Not a region colour, so it
+# does not count when asking whether a table carries any colour at all.
+backdrop_colour <- "#BEBEBE"
+
+#' Hex colours from R/G/B channels, tolerating missing ones
+#'
+#' [grDevices::rgb()] errors on `NA`, and a lookup table that carries no
+#' colours is now left with its channels missing rather than filled with
+#' invented ones. A row with no colour becomes `NA`, which is what the rest
+#' of the pipeline reads as "this one has no colour".
+#' @param r,g,b Integer channels, possibly `NA`.
+#' @noRd
+hex_from_rgb <- function(r, g, b) {
+  out <- rep(NA_character_, length(r))
+  ok <- !is.na(r) & !is.na(g) & !is.na(b)
+  if (any(ok)) {
+    out[ok] <- grDevices::rgb(r[ok], g[ok], b[ok], maxColorValue = 255)
+  }
+  out
+}
+
+
+#' Does a set of colours say nothing about how regions differ?
+#'
+#' True when every colour is black, missing, or the grey a backdrop is drawn
+#' in. Several published parcellations ship no colours, and a build script
+#' padding the colour fields with zeros to make a file FreeSurfer will read
+#' says the same thing an empty column does.
+#'
+#' The backdrop grey is discounted rather than the backdrop rows being
+#' identified by name: a context label is `unknown` in the source and
+#' `lh_unknown` by the time it is a label, and [is_context_region()] only
+#' knows the first spelling.
+#' @param colours Character vector of hex colours.
+#' @noRd
+carries_no_colour <- function(colours) {
+  if (length(colours) == 0L) {
+    return(TRUE)
+  }
+  blank <- is.na(colours) |
+    toupper(colours) %in% c("#000000", "#000000FF", backdrop_colour)
+  all(blank)
+}
+
+
 #' Whether a source parcellation name denotes unlabelled cortex or the medial
 #' wall rather than a structure
 #' @noRd
@@ -951,7 +996,16 @@ build_atlas_components <- function(atlas_data) {
   # its own colours for an atlas with no palette, and does it knowing which
   # labels are regions and which are anatomical backdrop -- which is more than
   # this function knows.
-  palette <- if (all(is.na(raw_colours))) NULL else raw_colours
+  # A table black in every channel is not a table that chose black: several
+  # published parcellations ship no colours, and a build script padding the
+  # colour fields with zeros to make a file FreeSurfer will read says the
+  # same thing an empty column does. Either way the atlas has no palette.
+  #
+  # The backdrop arrives carrying the grey every backdrop is drawn in, which
+  # is not a choice anybody made about the regions. Counting it made a wholly
+  # black parcellation look like a table with two colours in it, and the
+  # atlas shipped 82 identical blacks.
+  palette <- if (carries_no_colour(raw_colours)) NULL else raw_colours
 
   result <- list(core = core, palette = palette)
 
@@ -1182,7 +1236,7 @@ parse_lut_colours <- function(input_lut) {
   colours <- if ("hex" %in% names(lut)) {
     lut$hex
   } else if (all(c("R", "G", "B") %in% names(lut))) {
-    grDevices::rgb(lut$R, lut$G, lut$B, maxColorValue = 255)
+    hex_from_rgb(lut$R, lut$G, lut$B)
   } else {
     NULL
   }

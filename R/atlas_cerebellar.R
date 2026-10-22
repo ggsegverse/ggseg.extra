@@ -1976,7 +1976,7 @@ resolve_provided_lut <- function(input_lut, unique_ids) {
     }
     lut <- input_lut[input_lut$idx %in% unique_ids, , drop = FALSE]
     if ("R" %in% names(lut) && "G" %in% names(lut) && "B" %in% names(lut)) {
-      lut$color <- grDevices::rgb(lut$R, lut$G, lut$B, maxColorValue = 255)
+      lut$color <- hex_from_rgb(lut$R, lut$G, lut$B)
     }
     return(lut)
   }

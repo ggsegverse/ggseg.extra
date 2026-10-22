@@ -1,4 +1,4 @@
-# ggseg.extra 1.9.9.9130
+# ggseg.extra 1.9.9.9131
 
 This section becomes the 2.0.0 release notes at submission. It is the first
 CRAN release of ggseg.extra, the atlas-building package of
@@ -513,6 +513,32 @@ and tractography files.
   absolute on every platform whether or not the directory already exists.
 
 ## Bug fixes
+
+- A parcellation published on a grid too coarse to carry a cortical ribbon
+  is resampled onto the `aseg`'s grid rather than the `aseg` being resampled
+  down to it. A ribbon is about 2.5 mm thick, so on the 4 mm grid the
+  ADHD-200 and Craddock parcellations ship on, one voxel spans it: the
+  silhouette fell back to the atlas's own solid mantle, a blob with no sulci
+  in it. Nearest-neighbour resampling the other way invents no detail and
+  loses none, and the backdrop arrives intact --
+  `craddock200_subcortical`'s went from 12 rings to 47.
+
+- `create_wholebrain_from_volume()` declares the backdrop it writes, so the
+  subcortical atlas keeps its grey brain silhouette. The pipeline writes the
+  `aseg` context indices into the volume it hands the subcortical pipeline,
+  which since the lookup table became the authority draws only what the table
+  declares -- and the table it was handed listed the structures alone, so
+  every whole-brain subcortical atlas came back with no backdrop at all.
+
+- An atlas whose lookup table carries no colours ships no palette, and says
+  so, instead of one the pipeline invented. Several published parcellations
+  ship no colours, and a build script that pads the colour fields with zeros
+  to make a file FreeSurfer will read means the same thing an empty column
+  does. Colour is a drawing decision: `ggseg` resolves it when it plots,
+  knowing which labels are regions and which are backdrop, which a lookup
+  table does not. An atlas published with a palette still uses that palette.
+  The backdrop's own grey does not count as colour when asking -- counting it
+  made a wholly black parcellation look like a table with two colours in it.
 
 - A step's cache records what it was built from -- the package version, the
   cache format and the step's own inputs -- and the step recomputes when any

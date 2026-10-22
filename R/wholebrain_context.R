@@ -38,6 +38,198 @@ aseg_context_idx <- function() {
 }
 
 
+#' The name each context index is declared under
+#'
+#' The whole-brain pipeline writes these indices into the volume it hands the
+#' subcortical pipeline, which draws only what its lookup table declares, so
+#' the table has to carry a row for each of them. The names are the `aseg`'s
+#' own; what makes them one silhouette rather than five is the group they are
+#' declared in, not what they are called.
+#' @noRd
+aseg_context_labels <- function() {
+  c(
+    left = "Left-Cerebral-Cortex",
+    right = "Right-Cerebral-Cortex",
+    cerebellum_left = "Left-Cerebellum-Cortex",
+    cerebellum_right = "Right-Cerebellum-Cortex",
+    brainstem = "Brain-Stem"
+  )
+}
+
+
+#' Regrid a volume onto the `aseg`'s own grid
+#'
+#' A parcellation published on a coarse grid cannot carry a cortical ribbon:
+#' the ribbon is about 2.5 mm thick, so on the 4 mm grid the ADHD-200 and
+#' Craddock parcellations ship on, a single voxel spans it. Resampling the
+#' `aseg` down to that grid destroys the one thing the backdrop is for, and
+#' the silhouette falls back to the atlas's own solid mantle -- a blob with
+#' no sulci in it.
+#'
+#' So the volume goes up to the `aseg` instead of the `aseg` coming down to
+#' it. Nearest-neighbour resampling of a 4 mm parcellation to 1 mm invents no
+#' detail and loses none: the structures keep the shape they had, described by
+#' more voxels, while the ribbon arrives intact.
+#'
+#' @param input_volume The atlas volume.
+#' @param subject FreeSurfer subject holding the `aseg`.
+#' @param verbose Report the regrid.
+#' @return Path to the regridded volume, or `NULL` when it cannot be done.
+#' @noRd
+regrid_onto_aseg <- function(
+  input_volume,
+  subject,
+  verbose = get_verbose()
+) {
+  aseg <- aseg_volume_path(subject)
+  if (is.null(aseg)) {
+    return(NULL)
+  }
+  # NIfTI, not the `aseg`'s own `.mgz`: the volume is read back through
+  # RNifti, which does not read `.mgz` at all, and the path that does
+  # silently mirrored the result left for right.
+  resampling <- resample_volume_to_grid(
+    input_volume,
+    aseg,
+    verbose,
+    out_ext = "nii.gz"
+  )
+  if (is.null(resampling$file)) {
+    warn_solid_cortex_context(resampling$reason, parent = resampling$cnd)
+    return(NULL)
+  }
+  if (verbose) {
+    cli::cli_alert_info(
+      "Regridding the volume onto the {.field aseg} so the backdrop can
+      carry a ribbon",
+      wrap = TRUE
+    )
+  }
+  resampling$file
+}
+
+
+#' Would a ribbon survive on this volume's grid?
+#'
+#' Asked before anything is written, because the answer decides which grid
+#' everything is written on. The `aseg` is resampled onto the volume's grid
+#' exactly as it would be for the backdrop, and the question is whether what
+#' arrives is still a ribbon.
+#'
+#' Only a volume with cortical labels of its own is asked: the backdrop for
+#' one without them is the posterior fossa, which no grid is too coarse for.
+#' @noRd
+grid_carries_a_ribbon <- function(
+  input_volume,
+  arr,
+  cortical_idx,
+  subject,
+  verbose = get_verbose()
+) {
+  if (!any(arr %in% cortical_idx)) {
+    return(TRUE)
+  }
+  aseg <- suppressWarnings(aseg_context_volume(
+    input_volume = input_volume,
+    subject = subject,
+    dims = dim(arr),
+    brain_mask = arr != 0,
+    verbose = FALSE
+  ))
+  if (is.null(aseg)) {
+    return(TRUE)
+  }
+  if (!cortex_mask_is_solid(arr %in% cortical_idx, aseg, verbose = FALSE)) {
+    return(TRUE)
+  }
+  ribbon_is_resolved(aseg, verbose = verbose)
+}
+
+
+#' Record which context indices a writer actually wrote
+#'
+#' The declaration that follows has to name what was written, and only the
+#' writers know that: which of the two routes ran is decided from the
+#' registration and the grid, and an index whose voxels were all claimed by a
+#' structure is not in the volume at all. Inferring it afterwards would mean a
+#' second list of indices that has to agree with these ones, so they report
+#' instead. An index that landed no voxels is not recorded.
+#' @param result The volume being written.
+#' @param idx Indices written, or none.
+#' @return `result`, carrying the accumulated `context_idx` attribute.
+#' @noRd
+record_context_idx <- function(result, idx) {
+  attr(result, "context_idx") <- sort(unique(c(
+    written_context_idx(result),
+    as.integer(idx)
+  )))
+  result
+}
+
+
+#' The context indices a prepared volume reports holding
+#'
+#' `integer(0)` when nothing was written, which is the honest answer for a
+#' parcellation with no cortical labels: there is no backdrop to declare.
+#' @param result A volume written by the whole-brain pipeline.
+#' @noRd
+written_context_idx <- function(result) {
+  as.integer(attr(result, "context_idx") %||% integer(0))
+}
+
+
+#' The silhouette the whole-brain backdrop is drawn as
+#'
+#' One shape, so a parcellation's cortex is a ribbon rather than a hundred
+#' grey patches. See [split_lut_context()] for what a group name does.
+#' @noRd
+wholebrain_context_group <- function() {
+  "cortex"
+}
+
+
+#' Declare the context indices a prepared volume holds
+#'
+#' Appends a row per context index to the lookup table the subcortical
+#' pipeline is handed, so the backdrop the pipeline wrote is also the
+#' backdrop the pipeline draws. Columns are matched to `lut`, and the
+#' colours are the grey a backdrop is drawn in; `idx` values already in the
+#' table are left alone, since a structure claims the voxel first.
+#' @param lut The subcortical lookup table, as [sub_pipeline_lut()] builds it.
+#' @param context_idx Integer indices the writers reported writing, from
+#'   [written_context_idx()].
+#' @return `lut` with the context rows appended and a `context` column.
+#' @noRd
+declare_wholebrain_context <- function(lut, context_idx) {
+  if (!"context" %in% names(lut)) {
+    lut$context <- NA_character_
+  }
+  context_idx <- setdiff(as.integer(context_idx), as.integer(lut$idx))
+  if (length(context_idx) == 0L) {
+    return(lut)
+  }
+  labels <- aseg_context_labels()
+  known <- match(context_idx, unname(aseg_context_idx()))
+  rows <- data.frame(
+    idx = context_idx,
+    label = ifelse(
+      is.na(known),
+      paste0("context_", context_idx),
+      labels[known]
+    ),
+    R = 190L,
+    G = 190L,
+    B = 190L,
+    A = 0L,
+    context = wholebrain_context_group(),
+    stringsAsFactors = FALSE
+  )
+  missing <- setdiff(names(lut), names(rows))
+  rows[missing] <- NA
+  rbind(lut, rows[, names(lut), drop = FALSE])
+}
+
+
 #' Is the atlas's own cortical mask a solid mantle rather than a ribbon?
 #'
 #' Not every parcellation needs this fix. One derived from a surface, such as

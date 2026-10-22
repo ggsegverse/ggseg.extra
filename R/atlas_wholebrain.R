@@ -1014,7 +1014,7 @@ overlay_label_row <- function(
   colour <- if ("color" %in% names(ct_row)) {
     ct_row$color[1]
   } else if (all(c("R", "G", "B") %in% names(ct_row))) {
-    rgb(ct_row$R[1], ct_row$G[1], ct_row$B[1], maxColorValue = 255)
+    hex_from_rgb(ct_row$R[1], ct_row$G[1], ct_row$B[1])
   } else {
     NA_character_
   }
@@ -2055,13 +2055,19 @@ wholebrain_run_subcortical <- function(
   ]
 
   filtered_vol <- as.character(fs::path(dirs$base, "subcort_volume.nii.gz"))
-  wholebrain_prepare_subcortical_volume(
+  prepared <- wholebrain_prepare_subcortical_volume(
     input_volume = config$input_volume,
     subcortical_idx = subcort_ct$source_idx,
     cortical_idx = cortical_idx,
     output_file = filtered_vol,
     target_idx = subcort_ct$idx,
     verbose = config$verbose
+  )
+  # The backdrop is written into the volume here, and the subcortical
+  # pipeline draws only what its table declares, so it is declared here too.
+  subcort_lut <- declare_wholebrain_context(
+    subcort_lut,
+    prepared$context_idx
   )
 
   subcort_name <- paste0(config$atlas_name, "_subcortical")
@@ -2187,9 +2193,41 @@ wholebrain_cerebellar_to_suit <- function(filtered_vol, config, dirs) {
 #' all NA (or entirely missing) are replaced with values from an evenly
 #' spaced HCL palette so generic LUTs render as something other than black.
 #' @noRd
+#' Does a colour table carry no colour at all?
+#'
+#' True when every row is black, whether written as zeros or left `NA`. A
+#' table like that says nothing about how its structures should be told
+#' apart, so it is treated as unpainted and given a generated palette rather
+#' than shipping one colour for everything.
+#'
+#' Only an entirely black table counts. One black row among coloured ones is
+#' a choice, and the `aseg`'s own `Unknown` is exactly that.
+#' @param ct A colour table with `R`, `G` and `B` columns.
+#' @noRd
+colortable_is_unpainted <- function(ct) {
+  if (is.null(ct) || nrow(ct) == 0L) {
+    return(FALSE)
+  }
+  if (!all(c("R", "G", "B") %in% names(ct))) {
+    return(FALSE)
+  }
+  zero_or_na <- function(x) is.na(x) | x == 0L
+  all(zero_or_na(ct$R) & zero_or_na(ct$G) & zero_or_na(ct$B))
+}
+
+
 fill_missing_rgb <- function(ct, label = "structures") {
   for (col in c("R", "G", "B", "A")) {
     if (!col %in% names(ct)) ct[[col]] <- NA_integer_
+  }
+  # A table with no colour anywhere -- every channel zero or NA -- is left
+  # exactly as it is. Colours are never invented here: the atlas says it has
+  # no palette and plotting generates its own, which it does knowing which
+  # labels are regions and which are backdrop. Only a table that carries
+  # some colours has its gaps filled, because there the author chose.
+  if (colortable_is_unpainted(ct)) {
+    ct$A[is.na(ct$A)] <- 0L
+    return(ct)
   }
   missing_rows <- is.na(ct$R) & is.na(ct$G) & is.na(ct$B)
   n_missing <- sum(missing_rows)
@@ -2309,6 +2347,25 @@ wholebrain_prepare_subcortical_volume <- function(
 ) {
   vol <- read_volume(input_volume, reorient = FALSE)
   arr <- as.array(vol)
+  # Decided before anything is written, because it decides which grid
+  # everything is written on: a grid too coarse to carry a ribbon would
+  # leave the backdrop a solid mantle with no sulci in it.
+  carries <- grid_carries_a_ribbon(
+    input_volume,
+    arr,
+    cortical_idx,
+    cortex_subject,
+    verbose = verbose
+  )
+  if (!carries) {
+    regridded <- regrid_onto_aseg(input_volume, cortex_subject, verbose)
+    if (!is.null(regridded)) {
+      on.exit(unlink(regridded), add = TRUE)
+      input_volume <- regridded
+      vol <- read_volume(regridded, reorient = FALSE)
+      arr <- as.array(vol)
+    }
+  }
   result <- array(0L, dim = dim(arr))
   # One match() pass rather than a whole-array scan per label: a 400-parcel
   # atlas on a 1 mm grid is ~10^9 comparisons the loop way. match() reports
@@ -2332,7 +2389,10 @@ wholebrain_prepare_subcortical_volume <- function(
     RNifti::orientation(out) <- "RAS"
   }
   RNifti::writeNifti(out, output_file)
-  invisible(output_file)
+  invisible(list(
+    file = output_file,
+    context_idx = written_context_idx(result)
+  ))
 }
 
 
@@ -2402,10 +2462,16 @@ wholebrain_write_cerebrum <- function(
 #' @noRd
 write_aseg_context <- function(result, aseg, idx) {
   free <- result == 0L
+  written <- integer(0)
   for (i in idx) {
-    result[free & aseg == i] <- i
+    hit <- free & aseg == i
+    if (!any(hit)) {
+      next
+    }
+    result[hit] <- i
+    written <- c(written, i)
   }
-  result
+  record_context_idx(result, written)
 }
 
 
@@ -2424,7 +2490,12 @@ wholebrain_cortex_by_midline <- function(result, cortical_mask, vol) {
   cortex <- aseg_cortex_idx()
   low <- if (left_is_high) cortex[["right"]] else cortex[["left"]]
   high <- if (left_is_high) cortex[["left"]] else cortex[["right"]]
-  result[cortical_mask & x_idx <= x0_voxel] <- low
-  result[cortical_mask & x_idx > x0_voxel] <- high
-  result
+  in_low <- cortical_mask & x_idx <= x0_voxel
+  in_high <- cortical_mask & x_idx > x0_voxel
+  result[in_low] <- low
+  result[in_high] <- high
+  record_context_idx(
+    result,
+    c(if (any(in_low)) low, if (any(in_high)) high)
+  )
 }

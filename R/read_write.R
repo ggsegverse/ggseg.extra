@@ -226,11 +226,10 @@ get_lut <- function(lut) {
   }
 
   colourtable$roi <- sprintf("%04d", colourtable$idx)
-  colourtable$color <- rgb(
+  colourtable$color <- hex_from_rgb(
     colourtable$R,
     colourtable$G,
-    colourtable$B,
-    maxColorValue = 255
+    colourtable$B
   )
 
   colourtable

@@ -1159,7 +1159,22 @@ describe("create_cortical_from_annotation unknown context", {
       hemi = rep(c("left", "right"), each = n_regions),
       region = rep(regions, 2),
       label = paste(rep(c("lh", "rh"), each = n_regions), regions, sep = "_"),
-      colour = "#BEBEBE",
+      # Context keeps the backdrop grey; the parcels get colours of their
+      # own, as a real annotation's would. A table where every region is the
+      # backdrop grey carries no colour at all, and the atlas would rightly
+      # report no palette.
+      colour = rep(
+        ifelse(
+          is_context_region(regions) | grepl("medial", regions, TRUE),
+          "#BEBEBE",
+          grDevices::hcl(
+            seq(15, 375, length.out = n_regions + 1)[seq_len(n_regions)],
+            100,
+            65
+          )
+        ),
+        2
+      ),
       vertices = rep(
         lapply(seq_len(n_regions), function(i) (i - 1L) * 10L + 1:10),
         2
