@@ -88,7 +88,7 @@ sitrep("full")
 #> 
 #> ── System Information 
 #> • Operating System: "x86_64-pc-linux-gnu"
-#> • R Version: "4.6.1 (2026-06-24)"
+#> • R Version: "4.6.2 (2026-10-29)"
 #> • Shell: "/bin/bash"
 #> 
 #> ── Testing R and FreeSurfer Communication 
@@ -104,7 +104,7 @@ sitrep("full")
 #>   verbose: 1
 #>   cleanup: TRUE
 #>   skip_existing: FALSE
-#>   output_dir: /tmp/Rtmpx74e3D
+#>   output_dir: /tmp/RtmpouLVJU
 #> 
 #> ℹ Set via `options(ggseg.extra.<name> = value)` or environment variables
 #>   `GGSEG_EXTRA_<NAME>`

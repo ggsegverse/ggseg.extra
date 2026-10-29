@@ -95,8 +95,50 @@ colour table, ready to pass straight to
 The table's `context` column marks the `aseg` anatomy as context and the
 stamped labels as regions.
 
+## Everything the `aseg` segments is declared
+
+The table declares all of it – ventricles, CSF, choroid plexus, vessels
+and the cerebral white matter – because the table is what decides what
+is drawn, and deciding for you which anatomy is worth drawing is an
+authoring judgement, not the pipeline's.
+
+So they are drawn, as grey backdrop. The white matter is the one that
+changes how a slice reads: it fills the inside of the cortical ribbon,
+and a filled ribbon is a blob rather than cortex. Punch it through after
+building, with the silhouette as the shape and the white matter as the
+hole:
+
+    atlas <- atlas |>
+      ggseg.formats::atlas_region_op(
+        x = "Cerebral-Cortex$",
+        y = "Cerebral-White-Matter$",
+        action = "difference",
+        into = "cortex"
+      ) |>
+      ggseg.formats::atlas_region_remove(
+        paste(
+          "Cerebral-Cortex$", "Cerebral-White-Matter", "WM-hypointensities",
+          "-Ventricle", "-Vent$", "CSF", "choroid-plexus", "vessel", "CC_",
+          sep = "|"
+        ),
+        match_on = "label"
+      )
+
+Both operands are `aseg` labels, so they are spelled out rather than
+guessed at. The punch has to come first: removing the white matter
+before subtracting it leaves nothing to subtract, and the ribbon stays
+solid. `Cerebral-Cortex` itself goes with the second step, since the
+hollowed `cortex` replaces it; drop that step entirely to keep the
+ventricles and the rest as backdrop – some atlases read better with
+them. Only the *cerebral* white matter is punched and dropped: take the
+cerebellar white matter with it and the cerebellum thins to a sliver in
+axial slabs, because its ribbon alone is most of what a slab through it
+catches.
+
 ## See also
 
+[`atlas_region_op()`](https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html)
+for the punch;
 [`prepare_subcortical_anatomical()`](https://ggsegverse.github.io/ggseg.extra/reference/prepare_subcortical_anatomical.md)
 for the computed-registration (`cvs_avg35_inMNI152`, `mri_coreg`)
 counterpart;
