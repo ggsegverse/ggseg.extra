@@ -75,3 +75,21 @@ mock_cortex_ribbon <- function(left, right) {
   ribbon[right] <- 42L
   ribbon
 }
+
+
+# Write `arr` to a temporary NIfTI whose world x = 0 falls on the 1-based
+# voxel `midline`, which is the plane the hemisphere split reads.
+local_volume_at_midline <- function(arr, midline, env = parent.frame()) {
+  file <- withr::local_tempfile(fileext = ".nii.gz", .local_envir = env)
+  img <- RNifti::asNifti(
+    arr,
+    reference = list(
+      sform_code = 1L,
+      srow_x = c(1, 0, 0, 1 - midline),
+      srow_y = c(0, 1, 0, 0),
+      srow_z = c(0, 0, 1, 0)
+    )
+  )
+  RNifti::writeNifti(img, file)
+  file
+}

@@ -2074,20 +2074,22 @@ wholebrain_run_subcortical <- function(
     )
   }
 
-  subcort_ct <- colortable[
-    colortable$label %in% c(split$subcortical_labels, split$context_labels),
-  ]
+  backdrop <- default_backdrop_labels(colortable, split$cortical_labels)
+  subcort_ct <- slice(
+    colortable,
+    which(
+      colortable$label %in% c(split$subcortical_labels, split$context_labels)
+    )
+  )
 
   subcort_ct <- fill_missing_rgb(subcort_ct, "subcort")
   subcort_ct <- reindex_reserved_subcort_idx(subcort_ct, config$verbose)
   subcort_lut <- sub_pipeline_lut(subcort_ct)
 
-  cortical_idx <- colortable$idx[
-    colortable$label %in% split$cortical_labels
-  ]
+  cortical_idx <- colortable$idx[colortable$label %in% backdrop]
 
   filtered_vol <- as.character(fs::path(dirs$base, "subcort_volume.nii.gz"))
-  wholebrain_prepare_subcortical_volume(
+  prepared <- wholebrain_prepare_subcortical_volume(
     input_volume = config$input_volume,
     subcortical_idx = subcort_ct$source_idx,
     cortical_idx = cortical_idx,
@@ -2096,10 +2098,12 @@ wholebrain_run_subcortical <- function(
     verbose = config$verbose
   )
 
+  subcort_lut <- declare_backdrop_rows(subcort_lut, prepared$context_idx)
+
   subcort_name <- paste0(config$atlas_name, "_subcortical")
 
   managed <- list(
-    input_volume = filtered_vol,
+    input_volume = prepared$file,
     input_lut = subcort_lut,
     atlas_name = "subcortical",
     output_dir = dirs$base,
@@ -2364,7 +2368,10 @@ wholebrain_prepare_subcortical_volume <- function(
     RNifti::orientation(out) <- "RAS"
   }
   RNifti::writeNifti(out, output_file)
-  invisible(output_file)
+  invisible(list(
+    file = output_file,
+    context_idx = written_context_idx(result)
+  ))
 }
 
 
@@ -2393,19 +2400,13 @@ wholebrain_write_cortex_context <- function(
     return(result)
   }
 
-  aseg <- aseg_context_volume(
-    input_volume = input_volume,
-    subject = cortex_subject,
-    dims = dim(arr),
-    brain_mask = arr != 0,
-    verbose = verbose
-  )
-  if (is.null(aseg)) {
-    return(wholebrain_cortex_by_midline(result, cortical_mask, vol))
-  }
-
-  result <- wholebrain_write_cerebrum(result, cortical_mask, vol, aseg, verbose)
-  write_aseg_context(result, aseg, aseg_fossa_idx())
+  # The backdrop is the author's own cortical labels. Reaching for
+  # FreeSurfer's aseg instead made the silhouette depend on a file outside
+  # the inputs: the same table and volume gave a different atlas on a machine
+  # without FreeSurfer, silently. A cortical mask that is a filled blob rather
+  # than a ribbon is hollowed by punching the white matter out afterwards,
+  # which the author controls and can see.
+  wholebrain_cortex_by_midline(result, cortical_mask, vol)
 }
 
 
@@ -2456,7 +2457,12 @@ wholebrain_cortex_by_midline <- function(result, cortical_mask, vol) {
   cortex <- aseg_cortex_idx()
   low <- if (left_is_high) cortex[["right"]] else cortex[["left"]]
   high <- if (left_is_high) cortex[["left"]] else cortex[["right"]]
-  result[cortical_mask & x_idx <= x0_voxel] <- low
-  result[cortical_mask & x_idx > x0_voxel] <- high
-  result
+  in_low <- cortical_mask & x_idx <= x0_voxel
+  in_high <- cortical_mask & x_idx > x0_voxel
+  result[in_low] <- low
+  result[in_high] <- high
+  record_context_idx(
+    result,
+    c(if (any(in_low)) low, if (any(in_high)) high)
+  )
 }

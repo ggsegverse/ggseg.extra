@@ -745,7 +745,7 @@ describe("create_wholebrain_from_volume pipeline flow", {
       },
       write_lut = function(...) invisible(NULL),
       wholebrain_prepare_subcortical_volume = function(...) {
-        invisible("filtered.nii.gz")
+        invisible(list(file = "filtered.nii.gz", context_idx = integer(0)))
       },
       create_subcortical_from_volume = function(...) {
         .cap$captured_subcort_args <- list(...)
@@ -828,7 +828,7 @@ describe("create_wholebrain_from_volume pipeline flow", {
       },
       write_lut = function(...) invisible(NULL),
       wholebrain_prepare_subcortical_volume = function(...) {
-        invisible("filtered.nii.gz")
+        invisible(list(file = "filtered.nii.gz", context_idx = integer(0)))
       },
       create_subcortical_from_volume = function(...) {
         structure(
@@ -1240,7 +1240,7 @@ describe("wholebrain_run_subcortical verbose logging", {
     local_mocked_bindings(
       write_lut = function(...) invisible(NULL),
       wholebrain_prepare_subcortical_volume = function(...) {
-        invisible("filtered.nii.gz")
+        invisible(list(file = "filtered.nii.gz", context_idx = integer(0)))
       },
       create_subcortical_from_volume = function(...) {
         structure(
@@ -1298,7 +1298,7 @@ describe("wholebrain_run_subcortical verbose logging", {
 
     local_mocked_bindings(
       wholebrain_prepare_subcortical_volume = function(...) {
-        invisible("filtered.nii.gz")
+        invisible(list(file = "filtered.nii.gz", context_idx = integer(0)))
       },
       create_subcortical_from_volume = function(input_lut, ...) {
         .cap$captured_lut <- input_lut
@@ -1366,7 +1366,7 @@ describe("wholebrain_run_subcortical verbose logging", {
     local_mocked_bindings(
       wholebrain_prepare_subcortical_volume = function(...) {
         .cap$captured <- list(...)
-        invisible("filtered.nii.gz")
+        invisible(list(file = "filtered.nii.gz", context_idx = integer(0)))
       },
       create_subcortical_from_volume = function(input_lut, ...) {
         .cap$captured_lut <- input_lut
@@ -3527,97 +3527,80 @@ describe("aseg_fossa_idx", {
 })
 
 
-describe("posterior fossa context", {
-  fossa_volume <- function(structure_slice = NULL) {
+describe("whole-brain backdrop", {
+  backdrop_volume <- function(structure_slice = NULL) {
     arr <- array(1000L, dim = c(12, 5, 5))
     if (!is.null(structure_slice)) {
-      arr[structure_slice, , ] <- 10L
+      arr[slice.index(arr, 1) == structure_slice] <- 10L
     }
     arr
   }
 
-  # Cortex three voxels thick on the outer x-slices, so the grid can carry
-  # it, with cerebellum and brain stem in the middle.
-  fossa_aseg <- function(dims = c(12, 5, 5)) {
-    aseg <- array(0L, dim = dims)
-    aseg[1:3, , ] <- 3L
-    aseg[10:12, , ] <- 42L
-    aseg[5, , ] <- 8L
-    aseg[6, , ] <- 16L
-    aseg
-  }
-
-  write_context <- function(arr, aseg, env = parent.frame()) {
+  write_context <- function(arr, env = parent.frame()) {
     vol_file <- withr::local_tempfile(fileext = ".nii.gz", .local_envir = env)
     RNifti::writeNifti(RNifti::asNifti(arr), vol_file)
     out_file <- withr::local_tempfile(fileext = ".nii.gz", .local_envir = env)
-    local_mocked_bindings(
-      aseg_context_volume = function(...) aseg,
-      .env = env
-    )
-    wholebrain_prepare_subcortical_volume(
+    prepared <- wholebrain_prepare_subcortical_volume(
       input_volume = vol_file,
       subcortical_idx = 10L,
       cortical_idx = 1000L,
       output_file = out_file,
       target_idx = 101L
     )
-    as.array(RNifti::readNifti(out_file))
+    list(
+      arr = as.array(RNifti::readNifti(out_file)),
+      context_idx = prepared$context_idx
+    )
   }
 
-  it("fills the fossa behind a solid mantle", {
+  it("draws the backdrop from the atlas's own cortical labels", {
     skip_if_not_installed("RNifti")
-    result <- write_context(fossa_volume(), fossa_aseg())
+    out <- write_context(backdrop_volume())
 
-    expect_identical(sum(result == 8L), 25L)
-    expect_identical(sum(result == 16L), 25L)
-    expect_identical(sum(result == 3L), 75L)
-    expect_identical(sum(result == 42L), 75L)
+    # Every cortical voxel becomes backdrop, split at the midline.
+    expect_identical(sum(out$arr %in% c(3L, 42L)), 300L)
   })
 
-  it("fills the fossa even when the atlas keeps its own cortical ribbon", {
+  it("leaves the posterior fossa empty rather than importing one", {
     skip_if_not_installed("RNifti")
-    # Cortex on three x-slices only: a ribbon, not a mantle, so the cerebral
-    # context stays the atlas's own. The fossa is empty either way, so it is
-    # filled regardless.
-    arr <- array(0L, dim = c(12, 5, 5))
-    arr[1:3, , ] <- 1000L
-    result <- write_context(arr, fossa_aseg())
+    out <- write_context(backdrop_volume())
 
-    expect_identical(sum(result == 8L), 25L)
-    expect_identical(sum(result == 16L), 25L)
-    # The atlas's own cortical slices, split at the midline.
-    expect_identical(sum(result %in% c(3L, 42L)), 75L)
+    # Nothing supplies cerebellum or brain stem unless the atlas labelled it.
+    expect_identical(sum(out$arr == 8L), 0L)
+    expect_identical(sum(out$arr == 16L), 0L)
   })
 
-  it("never writes fossa context over a structure", {
+  it("reports the indices it wrote as backdrop", {
     skip_if_not_installed("RNifti")
-    result <- write_context(fossa_volume(structure_slice = 5), fossa_aseg())
+    out <- write_context(backdrop_volume())
 
-    # The whole x = 5 slice is a structure, so the cerebellum there is not
-    # drawn over it.
-    expect_identical(sum(result == 101L), 25L)
-    expect_identical(sum(result == 8L), 0L)
-    expect_identical(sum(result == 16L), 25L)
+    expect_setequal(out$context_idx, c(3L, 42L))
   })
 
-  it("is skipped entirely when no aseg can be had", {
+  it("reports nothing when the atlas has no cortical labels", {
     skip_if_not_installed("RNifti")
-    arr <- fossa_volume()
-    vol_file <- withr::local_tempfile(fileext = ".nii.gz")
-    RNifti::writeNifti(RNifti::asNifti(arr), vol_file)
-    out_file <- withr::local_tempfile(fileext = ".nii.gz")
-    local_no_aseg_ribbon()
+    arr <- array(10L, dim = c(12, 5, 5))
+    out <- write_context(arr)
 
-    wholebrain_prepare_subcortical_volume(
-      input_volume = vol_file,
-      subcortical_idx = integer(0),
-      cortical_idx = 1000L,
-      output_file = out_file
+    expect_length(out$context_idx, 0)
+  })
+
+  it("never writes backdrop over a structure", {
+    skip_if_not_installed("RNifti")
+    out <- write_context(backdrop_volume(structure_slice = 5))
+
+    expect_identical(sum(out$arr == 101L), 25L)
+  })
+
+  it("does not consult the aseg", {
+    skip_if_not_installed("RNifti")
+    local_mocked_bindings(
+      aseg_context_volume = function(...) {
+        stop("the backdrop must not reach for the aseg")
+      }
     )
 
-    result <- as.array(RNifti::readNifti(out_file))
-    expect_identical(sum(result %in% aseg_fossa_idx()), 0L)
+    expect_no_error(write_context(backdrop_volume()))
   })
 })
 

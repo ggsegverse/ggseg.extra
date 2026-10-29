@@ -1,4 +1,4 @@
-# ggseg.extra 1.9.9.9130
+# ggseg.extra 1.9.9.9131
 
 This section becomes the 2.0.0 release notes at submission. It is the first
 CRAN release of ggseg.extra, the atlas-building package of
@@ -175,6 +175,11 @@ and tractography files.
   kept in the label, which is the join key.
 
 ## New features
+
+- A lookup table's `context` column decides the whole-brain backdrop. A
+  declared row is withheld from classification and built as backdrop; the
+  cortical labels are the default backdrop for the subcortical sub-atlas
+  unless the table says otherwise. No label matching is involved.
 
 - `clear_atlas_cache()` removes an atlas's build intermediates, or every
   atlas's under a build directory. It refuses a directory holding files this

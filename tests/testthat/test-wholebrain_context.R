@@ -1,21 +1,11 @@
 # Tests for R/wholebrain_context.R -- the aseg cortical ribbon context.
 
-describe("wholebrain cortex context from the aseg ribbon", {
-  it("keeps only the voxels the ribbon covers when the mantle is solid", {
+describe("wholebrain cortex context from the volume midline", {
+  it("splits the cortical mask at the midline", {
     skip_if_not_installed("RNifti")
     arr <- array(1000L, dim = c(12, 5, 5))
-    vol_file <- withr::local_tempfile(fileext = ".nii.gz")
-    RNifti::writeNifti(RNifti::asNifti(arr), vol_file)
+    vol_file <- local_volume_at_midline(arr, midline = 6)
     out_file <- withr::local_tempfile(fileext = ".nii.gz")
-
-    # 300 cortical voxels against a 150-voxel ribbon: a solid mantle. The
-    # ribbon is three voxels thick, so the grid can carry it.
-    left <- right <- array(FALSE, dim = dim(arr))
-    left[1:3, , ] <- TRUE
-    right[10:12, , ] <- TRUE
-    local_mocked_bindings(
-      aseg_context_volume = function(...) mock_cortex_ribbon(left, right)
-    )
 
     wholebrain_prepare_subcortical_volume(
       input_volume = vol_file,
@@ -25,24 +15,17 @@ describe("wholebrain cortex context from the aseg ribbon", {
     )
 
     result <- as.array(RNifti::readNifti(out_file))
-    expect_identical(sum(result == 3L), 75L)
-    expect_identical(sum(result == 42L), 75L)
-    # The six middle x-slices are cortex the ribbon does not cover: the
-    # sulcal space that makes the silhouette read as a brain.
-    expect_identical(sum(result == 0L), 150L)
+    expect_identical(sum(result == 3L), 150L)
+    expect_identical(sum(result == 42L), 150L)
+    expect_identical(sum(result == 0L), 0L)
   })
 
   it("never writes context over a structure", {
     skip_if_not_installed("RNifti")
     arr <- array(1000L, dim = c(8, 5, 5))
     arr[2, 2, 2] <- 10L
-    vol_file <- withr::local_tempfile(fileext = ".nii.gz")
-    RNifti::writeNifti(RNifti::asNifti(arr), vol_file)
+    vol_file <- local_volume_at_midline(arr, midline = 4)
     out_file <- withr::local_tempfile(fileext = ".nii.gz")
-
-    ribbon <- array(0L, dim = dim(arr))
-    ribbon[1:3, , ] <- 3L
-    local_mocked_bindings(aseg_context_volume = function(...) ribbon)
 
     wholebrain_prepare_subcortical_volume(
       input_volume = vol_file,
@@ -54,7 +37,8 @@ describe("wholebrain cortex context from the aseg ribbon", {
 
     result <- as.array(RNifti::readNifti(out_file))
     expect_identical(result[2, 2, 2], 101L)
-    expect_identical(sum(result == 3L), 74L)
+    expect_identical(sum(result == 3L), 99L)
+    expect_identical(sum(result == 42L), 100L)
   })
 
   it("keeps a cortical mask that is already a ribbon", {
