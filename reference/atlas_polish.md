@@ -118,7 +118,7 @@ sum(count_vertices(dk))
 
 polished <- atlas_polish(dk, keep = 0.2)
 sum(count_vertices(polished))
-#> [1] 3904
+#> [1] 3809
 
 if (FALSE) { # \dontrun{
 # The usual shape of a build: the context silhouette and the structures

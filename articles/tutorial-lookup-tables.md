@@ -150,6 +150,24 @@ Two structures, two colours, and `idx = 0` untouched. Every other row is
 overwritten, so run this on a table whose palette you are willing to
 lose.
 
+A table like `blank` — black in every channel, which is how a
+parcellation that publishes no colours usually arrives — is not a table
+that chose black.
+[`create_wholebrain_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_wholebrain_from_volume.md)
+recognises that and paints it itself rather than drawing every structure
+in the same ink, saying so as it does:
+
+    i No colours for 41 regions; generating that many
+
+It paints each of its atlases separately, for the reason `by` exists:
+the cortical and subcortical halves are never plotted together, so each
+should get the whole colour circle rather than a slice of a shared one.
+One black row among coloured ones is a choice and is left alone; only an
+entirely black table counts. Prefer calling
+[`lut_generate_colors()`](https://ggsegverse.github.io/ggseg.extra/reference/lut_generate_colors.md)
+in your build script anyway: a palette you have committed is reviewable
+and reproducible, and the pipeline’s own is neither.
+
 `chroma` and `luminance` control intensity and lightness. If you ask for
 a chroma the display cannot render across that many hues, the function
 errors rather than quietly handing you two regions the same colour —

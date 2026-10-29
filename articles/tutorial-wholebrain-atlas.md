@@ -190,11 +190,23 @@ inferred at build time is neither.
 ### When the release ships no colours
 
 Plenty of parcellations come as names only, with every RGB channel set
-to `0 0 0 0`. Sent down the pipeline that way the atlas arrives with no
-palette, the plotting packages assign one, and the render comes back as
-large blocks of repeated hue.
+to `0 0 0 0`. A table that is black from end to end is not a table that
+chose black, so
+[`create_wholebrain_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_wholebrain_from_volume.md)
+treats it as unpainted and generates a palette, telling you it has:
+
+    i No colours for 41 regions; generating that many
+
+It paints each atlas on its own, after the split, so the cortical and
+subcortical halves each get the whole colour circle rather than a slice
+of a shared one — the same thing `by = "type"` does below. Both
+hemispheres of a region share a colour.
+
+That is a safety net, not the recommended route: it paints a table
+nobody reviews.
 [`lut_generate_colors()`](https://ggsegverse.github.io/ggseg.extra/reference/lut_generate_colors.md)
-builds a palette from the label names instead:
+builds the palette in your build script instead, where you can commit
+it:
 
 ``` r
 
@@ -409,6 +421,21 @@ volume’s own orientation matrix, so it works for any volume whose header
 is correct, whatever `registration` you chose, but can break with
 unusual orientations.
 
+The backdrop is written into the volume the subcortical pipeline is
+handed, and the subcortical pipeline draws only what its lookup table
+declares, so the whole-brain pipeline declares it too — you do not add a
+`context` column for it yourself. It arrives as one silhouette named
+`cortex`, whichever of the two routes above produced it, so that is the
+label to address when you polish it. A subcortical atlas you build
+yourself with
+[`create_subcortical_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_subcortical_from_volume.md)
+is a different matter: there the table is yours, and a backdrop it does
+not declare is not drawn. [Lookup tables and
+colours](https://ggsegverse.github.io/ggseg.extra/articles/tutorial-lookup-tables.md)
+covers the `context` column, and the [subcortical
+tutorial](https://ggsegverse.github.io/ggseg.extra/articles/tutorial-subcortical-atlas.md)
+the atlas it builds.
+
 ## Post-processing
 
 The raw atlas usually needs cleanup. Simplify the contours for faster
@@ -428,9 +455,38 @@ important for keeping atlas file sizes manageable. The right value
 depends on your atlas: parcellations with many small regions need higher
 `keep` values than those with a few large ones.
 
+### Polish the backdrop apart from the parcels
+
+The subcortical atlas is two kinds of geometry in one object, and one
+setting cannot serve both. The structures are small and compact and
+carry no detail worth keeping, so they simplify hard and want
+[`atlas_smooth()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_smooth.md)’s
+default `close`, which is what rounds a marching-squares parcel into a
+recognisable nucleus. The `cortex` silhouette is the opposite: what
+makes it read as a brain is its sulcal and gyral shape, which is
+fine-scale detail, and its holes. Simplified as hard as a parcel the
+gyral crowns straighten into facets, and `method = "close"` fills
+anything narrower than the smoothing distance — which a sulcus is — so
+the hollow ribbon comes back a solid mass. Addressing them separately
+costs two more lines and is the difference between a brain and a potato:
+
+``` r
+
+ho_sub <- ho$subcortical |>
+  atlas_simplify(keep = 0.5, labels = "^cortex") |>
+  atlas_smooth(smoothness = 0.35, labels = "^cortex", method = "chaikin") |>
+  atlas_simplify(keep = 0.25, exclude = "^cortex") |>
+  atlas_smooth(smoothness = 0.4, exclude = "^cortex")
+```
+
+`chaikin` rounds by moving vertices rather than dilating, so it takes
+the voxel staircase off the outline and leaves every sulcus open. Count
+the rings before and after if you want to see it: polishing
+Hammersmith’s backdrop like a parcel took its outline from 46 rings to
+19, and the settings above keep 45 of the 46.
+
 You can also remove unwanted regions from the subcortical atlas
-(ventricles, white matter) and set context regions, just like in the
-[subcortical
+(ventricles, white matter), just like in the [subcortical
 tutorial](https://ggsegverse.github.io/ggseg.extra/articles/tutorial-subcortical-atlas.md):
 
 ``` r
