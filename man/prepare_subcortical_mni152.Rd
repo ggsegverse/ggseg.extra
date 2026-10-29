@@ -71,6 +71,47 @@ context is taken from \code{fsaverage5}, matching the rest of the ecosystem. Use
 computed from an arbitrary volume (it targets \code{cvs_avg35_inMNI152} via
 \code{mri_coreg}).
 }
+\section{Everything the \code{aseg} segments is declared}{
+
+The table declares all of it -- ventricles, CSF, choroid plexus, vessels
+and the cerebral white matter -- because the table is what decides what is
+drawn, and deciding for you which anatomy is worth drawing is an authoring
+judgement, not the pipeline's.
+
+So they are drawn, as grey backdrop. The white matter is the one that
+changes how a slice reads: it fills the inside of the cortical ribbon, and
+a filled ribbon is a blob rather than cortex. Punch it through after
+building, with the silhouette as the shape and the white matter as the
+hole:
+
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{atlas <- atlas |>
+  ggseg.formats::atlas_region_op(
+    x = "Cerebral-Cortex$",
+    y = "Cerebral-White-Matter$",
+    action = "difference",
+    into = "cortex"
+  ) |>
+  ggseg.formats::atlas_region_remove(
+    paste(
+      "Cerebral-Cortex$", "Cerebral-White-Matter", "WM-hypointensities",
+      "-Ventricle", "-Vent$", "CSF", "choroid-plexus", "vessel", "CC_",
+      sep = "|"
+    ),
+    match_on = "label"
+  )
+}\if{html}{\out{</div>}}
+
+Both operands are \code{aseg} labels, so they are spelled out rather than
+guessed at. The punch has to come first: removing the white matter before
+subtracting it leaves nothing to subtract, and the ribbon stays solid.
+\code{Cerebral-Cortex} itself goes with the second step, since the hollowed
+\code{cortex} replaces it; drop that step entirely to keep the ventricles and
+the rest as backdrop -- some atlases read better with them. Only the
+\emph{cerebral} white matter is punched and dropped: take the cerebellar white
+matter with it and the cerebellum thins to a sliver in axial slabs,
+because its ribbon alone is most of what a slab through it catches.
+}
+
 \examples{
 \dontrun{
 merged <- prepare_subcortical_mni152(
@@ -82,6 +123,7 @@ atlas <- create_subcortical_from_volume(input_volume = merged)
 }
 }
 \seealso{
+\code{\link[=atlas_region_op]{atlas_region_op()}} for the punch;
 \code{\link[=prepare_subcortical_anatomical]{prepare_subcortical_anatomical()}} for the computed-registration
 (\code{cvs_avg35_inMNI152}, \code{mri_coreg}) counterpart;
 \code{\link[=create_subcortical_from_volume]{create_subcortical_from_volume()}} which consumes the result.
