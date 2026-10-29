@@ -1320,3 +1320,26 @@ describe("lut_display", {
     )
   })
 })
+
+
+describe("carries_no_colour()", {
+  it("is true for a table black in every channel", {
+    expect_true(carries_no_colour(rep("#000000", 4)))
+  })
+
+  it("is true when the only colour is the backdrop grey", {
+    # A wholly black parcellation arrives with its backdrop already grey.
+    # Counting that grey made the table look like it held two colours, and
+    # the atlas shipped 82 identical blacks.
+    expect_true(carries_no_colour(c("#000000", "#000000", "#BEBEBE")))
+  })
+
+  it("is true for missing colours, and for none at all", {
+    expect_true(carries_no_colour(rep(NA_character_, 3)))
+    expect_true(carries_no_colour(character(0)))
+  })
+
+  it("is false as soon as one region has a colour of its own", {
+    expect_false(carries_no_colour(c("#000000", "#78124A", "#BEBEBE")))
+  })
+})

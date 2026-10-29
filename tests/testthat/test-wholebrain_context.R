@@ -17,7 +17,7 @@ describe("wholebrain cortex context from the aseg ribbon", {
       aseg_context_volume = function(...) mock_cortex_ribbon(left, right)
     )
 
-    wholebrain_prepare_subcortical_volume(
+    prepared <- wholebrain_prepare_subcortical_volume(
       input_volume = vol_file,
       subcortical_idx = integer(0),
       cortical_idx = 1000L,
@@ -27,6 +27,8 @@ describe("wholebrain cortex context from the aseg ribbon", {
     result <- as.array(RNifti::readNifti(out_file))
     expect_identical(sum(result == 3L), 75L)
     expect_identical(sum(result == 42L), 75L)
+    # What it wrote is what it reports, which is what gets declared.
+    expect_identical(prepared$context_idx, c(3L, 42L))
     # The six middle x-slices are cortex the ribbon does not cover: the
     # sulcal space that makes the silhouette read as a brain.
     expect_identical(sum(result == 0L), 150L)
@@ -432,5 +434,286 @@ describe("ribbon_lands_on_volume", {
     ribbon <- array(3L, dim = c(4, 1, 1))
     brain <- array(c(TRUE, TRUE, TRUE, FALSE), dim = c(4, 1, 1))
     expect_true(ribbon_lands_on_volume(ribbon, brain))
+  })
+})
+
+
+describe("declare_wholebrain_context()", {
+  it("declares the backdrop the prepared volume holds", {
+    lut <- data.frame(
+      idx = c(10L, 49L),
+      label = c("Left-Thalamus", "Right-Thalamus"),
+      R = 0L,
+      G = 118L,
+      B = 14L,
+      A = 0L
+    )
+    out <- declare_wholebrain_context(lut, c(3L, 42L, 16L))
+
+    expect_equal(nrow(out), 5L)
+    expect_equal(
+      out$label[3:5],
+      c("Left-Cerebral-Cortex", "Right-Cerebral-Cortex", "Brain-Stem")
+    )
+    expect_equal(out$context[1:2], rep(NA_character_, 2))
+    expect_equal(out$context[3:5], rep("cortex", 3))
+  })
+
+  it("declares every context row in one silhouette", {
+    lut <- data.frame(
+      idx = 10L,
+      label = "Left-Thalamus",
+      R = 0L,
+      G = 118L,
+      B = 14L,
+      A = 0L
+    )
+    out <- declare_wholebrain_context(lut, unname(aseg_context_idx()))
+
+    expect_length(unique(out$context[!is.na(out$context)]), 1L)
+    expect_true(all(lut_is_context(out)[-1]))
+    expect_equal(unique(lut_context_group(out)[-1]), "cortex")
+  })
+
+  it("leaves a table alone when no context was written", {
+    lut <- data.frame(
+      idx = 10L,
+      label = "Left-Thalamus",
+      R = 0L,
+      G = 118L,
+      B = 14L,
+      A = 0L
+    )
+    expect_equal(declare_wholebrain_context(lut, integer(0))$idx, 10L)
+    expect_false(any(lut_is_context(declare_wholebrain_context(lut, NULL))))
+  })
+
+  it("does not redeclare an index a structure already claims", {
+    lut <- data.frame(
+      idx = c(10L, 16L),
+      label = c("Left-Thalamus", "Brain-Stem"),
+      R = 0L,
+      G = 118L,
+      B = 14L,
+      A = 0L
+    )
+    out <- declare_wholebrain_context(lut, c(16L, 3L))
+
+    expect_equal(nrow(out), 3L)
+    expect_equal(sum(out$idx == 16L), 1L)
+    expect_false(lut_is_context(out)[out$idx == 16L])
+  })
+
+  it("keeps the columns the subcortical pipeline was handed", {
+    lut <- data.frame(
+      idx = 10L,
+      label = "Left-Thalamus",
+      R = 0L,
+      G = 118L,
+      B = 14L,
+      A = 0L,
+      hemi = "left"
+    )
+    out <- declare_wholebrain_context(lut, 3L)
+
+    expect_equal(names(out), c(names(lut), "context"))
+    expect_true(is.na(out$hemi[2]))
+  })
+})
+
+
+describe("the writers report the context they wrote", {
+  it("reports the aseg indices that landed, and not the ones that did not", {
+    result <- array(0L, dim = c(4, 1, 1))
+    aseg <- array(c(3L, 3L, 16L, 0L), dim = c(4, 1, 1))
+
+    written <- write_aseg_context(result, aseg, aseg_context_idx())
+
+    expect_identical(written_context_idx(written), c(3L, 16L))
+  })
+
+  it("does not report an index whose voxels a structure already claims", {
+    result <- array(c(0L, 99L, 99L, 99L), dim = c(4, 1, 1))
+    aseg <- array(c(3L, 42L, 42L, 42L), dim = c(4, 1, 1))
+
+    written <- write_aseg_context(result, aseg, aseg_context_idx())
+
+    expect_identical(written_context_idx(written), 3L)
+  })
+
+  it("accumulates across the cerebrum and the posterior fossa", {
+    result <- array(0L, dim = c(4, 1, 1))
+    aseg <- array(c(3L, 42L, 8L, 47L), dim = c(4, 1, 1))
+
+    written <- write_aseg_context(result, aseg, aseg_cortex_idx())
+    written <- write_aseg_context(written, aseg, aseg_fossa_idx())
+
+    expect_identical(written_context_idx(written), c(3L, 8L, 42L, 47L))
+  })
+
+  it("reports both sides of a midline split", {
+    skip_if_not_installed("RNifti")
+    vol <- RNifti::asNifti(array(0L, dim = c(4, 1, 1)))
+    mask <- array(TRUE, dim = c(4, 1, 1))
+
+    written <- wholebrain_cortex_by_midline(
+      array(0L, dim = c(4, 1, 1)),
+      mask,
+      vol
+    )
+
+    expect_identical(written_context_idx(written), c(3L, 42L))
+  })
+
+  it("reports one side when the mask is on one side only", {
+    skip_if_not_installed("RNifti")
+    vol <- RNifti::asNifti(array(0L, dim = c(4, 1, 1)))
+    mask <- array(c(TRUE, FALSE, FALSE, FALSE), dim = c(4, 1, 1))
+
+    written <- wholebrain_cortex_by_midline(
+      array(0L, dim = c(4, 1, 1)),
+      mask,
+      vol
+    )
+
+    expect_length(written_context_idx(written), 1L)
+  })
+
+  it("reports nothing for a volume no writer touched", {
+    expect_identical(
+      written_context_idx(array(0L, dim = c(2, 2, 2))),
+      integer(0)
+    )
+  })
+
+  it("reports nothing when the parcellation has no cortical labels", {
+    skip_if_not_installed("RNifti")
+    arr <- array(10L, dim = c(4, 2, 2))
+    vol_file <- withr::local_tempfile(fileext = ".nii.gz")
+    RNifti::writeNifti(RNifti::asNifti(arr), vol_file)
+    out_file <- withr::local_tempfile(fileext = ".nii.gz")
+
+    prepared <- wholebrain_prepare_subcortical_volume(
+      input_volume = vol_file,
+      subcortical_idx = 10L,
+      cortical_idx = integer(0),
+      output_file = out_file
+    )
+
+    expect_identical(prepared$context_idx, integer(0))
+    expect_identical(
+      declare_wholebrain_context(
+        data.frame(
+          idx = 10L,
+          label = "a",
+          R = 1L,
+          G = 1L,
+          B = 1L,
+          A = 0L
+        ),
+        prepared$context_idx
+      )$idx,
+      10L
+    )
+  })
+})
+
+
+describe("grid_carries_a_ribbon()", {
+  it("does not ask when the atlas has no cortical labels", {
+    # Nothing to substitute: the backdrop for such an atlas is the posterior
+    # fossa, which no grid is too coarse for.
+    arr <- array(10L, dim = c(4, 4, 4))
+    expect_true(
+      grid_carries_a_ribbon(
+        "unused.nii.gz",
+        arr,
+        integer(0),
+        "subj",
+        verbose = FALSE
+      )
+    )
+  })
+
+  it("does not ask when there is no aseg to substitute", {
+    local_mocked_bindings(aseg_context_volume = function(...) NULL)
+    arr <- array(1000L, dim = c(4, 4, 4))
+    expect_true(
+      grid_carries_a_ribbon(
+        "unused.nii.gz",
+        arr,
+        1000L,
+        "subj",
+        verbose = FALSE
+      )
+    )
+  })
+
+  it("does not ask when the atlas's own mask is already a ribbon", {
+    # Thinner than the aseg ribbon, so it is a ribbon of its own and keeps it.
+    aseg <- array(0L, dim = c(10, 4, 4))
+    aseg[1:6, , ] <- 3L
+    local_mocked_bindings(aseg_context_volume = function(...) aseg)
+    arr <- array(0L, dim = c(10, 4, 4))
+    arr[1:2, , ] <- 1000L
+    expect_true(
+      grid_carries_a_ribbon(
+        "unused.nii.gz",
+        arr,
+        1000L,
+        "subj",
+        verbose = FALSE
+      )
+    )
+  })
+
+  it("says no when a solid mantle meets a ribbon the grid cannot carry", {
+    # One voxel thick: no interior at all, which is what a 4 mm grid does to
+    # a 2.5 mm ribbon.
+    aseg <- array(0L, dim = c(10, 4, 4))
+    aseg[5, , ] <- 3L
+    local_mocked_bindings(aseg_context_volume = function(...) aseg)
+    arr <- array(1000L, dim = c(10, 4, 4))
+    expect_false(
+      grid_carries_a_ribbon(
+        "unused.nii.gz",
+        arr,
+        1000L,
+        "subj",
+        verbose = FALSE
+      )
+    )
+  })
+})
+
+
+describe("regrid_onto_aseg()", {
+  it("returns NULL when there is no aseg to regrid onto", {
+    local_mocked_bindings(aseg_volume_path = function(...) NULL)
+    expect_null(regrid_onto_aseg("unused.nii.gz", "subj", verbose = FALSE))
+  })
+
+  it("reports why it could not regrid", {
+    local_mocked_bindings(
+      aseg_volume_path = function(...) "aseg.mgz",
+      resample_volume_to_grid = function(...) {
+        list(file = NULL, reason = "{.code mri_vol2vol} failed")
+      }
+    )
+    expect_warning(
+      expect_null(regrid_onto_aseg("unused.nii.gz", "subj", verbose = FALSE)),
+      "mri_vol2vol"
+    )
+  })
+
+  it("hands back the regridded file", {
+    local_mocked_bindings(
+      aseg_volume_path = function(...) "aseg.mgz",
+      resample_volume_to_grid = function(...) list(file = "regridded.nii.gz")
+    )
+    expect_identical(
+      regrid_onto_aseg("unused.nii.gz", "subj", verbose = FALSE),
+      "regridded.nii.gz"
+    )
   })
 })
