@@ -1,0 +1,18 @@
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, edited]
+
+name: pr-risk-tier.yaml
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  pr-risk-tier:
+    uses: ggsegverse/.github/.github/workflows/pr-risk-tier.yaml@main
+    secrets: inherit
+    with:
+      # The atlas construction entry points. These produce the objects every atlas package ships, so a change here alters published data on the next rebuild.
+      extra-t2-paths: |
+        R/atlas_cortical.R R/atlas_subcortical.R R/atlas_cerebellar.R R/atlas_tracts.R R/atlas_wholebrain.R R/atlas_convert.R
