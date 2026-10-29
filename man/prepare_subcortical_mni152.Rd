@@ -87,14 +87,14 @@ hole:
 \if{html}{\out{<div class="sourceCode r">}}\preformatted{atlas <- atlas |>
   ggseg.formats::atlas_region_op(
     x = "Cerebral-Cortex$",
-    y = "White-Matter$",
+    y = "Cerebral-White-Matter$",
     action = "difference",
     into = "cortex"
   ) |>
   ggseg.formats::atlas_region_remove(
     paste(
-      "Cerebral-Cortex$", "White-Matter", "-Ventricle", "-Vent$",
-      "CSF", "choroid-plexus", "vessel", "CC_",
+      "Cerebral-Cortex$", "Cerebral-White-Matter", "WM-hypointensities",
+      "-Ventricle", "-Vent$", "CSF", "choroid-plexus", "vessel", "CC_",
       sep = "|"
     ),
     match_on = "label"
@@ -106,7 +106,10 @@ guessed at. The punch has to come first: removing the white matter before
 subtracting it leaves nothing to subtract, and the ribbon stays solid.
 \code{Cerebral-Cortex} itself goes with the second step, since the hollowed
 \code{cortex} replaces it; drop that step entirely to keep the ventricles and
-the rest as backdrop -- some atlases read better with them.
+the rest as backdrop -- some atlases read better with them. Only the
+\emph{cerebral} white matter is punched and dropped: take the cerebellar white
+matter with it and the cerebellum thins to a sliver in axial slabs,
+because its ribbon alone is most of what a slab through it catches.
 }
 
 \examples{

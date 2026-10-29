@@ -80,14 +80,14 @@ aseg_subcortical_labels <- function() {
 #' atlas <- atlas |>
 #'   ggseg.formats::atlas_region_op(
 #'     x = "Cerebral-Cortex$",
-#'     y = "White-Matter$",
+#'     y = "Cerebral-White-Matter$",
 #'     action = "difference",
 #'     into = "cortex"
 #'   ) |>
 #'   ggseg.formats::atlas_region_remove(
 #'     paste(
-#'       "Cerebral-Cortex$", "White-Matter", "-Ventricle", "-Vent$",
-#'       "CSF", "choroid-plexus", "vessel", "CC_",
+#'       "Cerebral-Cortex$", "Cerebral-White-Matter", "WM-hypointensities",
+#'       "-Ventricle", "-Vent$", "CSF", "choroid-plexus", "vessel", "CC_",
 #'       sep = "|"
 #'     ),
 #'     match_on = "label"
@@ -99,7 +99,10 @@ aseg_subcortical_labels <- function() {
 #' subtracting it leaves nothing to subtract, and the ribbon stays solid.
 #' `Cerebral-Cortex` itself goes with the second step, since the hollowed
 #' `cortex` replaces it; drop that step entirely to keep the ventricles and
-#' the rest as backdrop -- some atlases read better with them.
+#' the rest as backdrop -- some atlases read better with them. Only the
+#' *cerebral* white matter is punched and dropped: take the cerebellar white
+#' matter with it and the cerebellum thins to a sliver in axial slabs,
+#' because its ribbon alone is most of what a slab through it catches.
 #' @seealso [atlas_region_op()] for the punch;
 #'   [prepare_subcortical_anatomical()] for the computed-registration
 #'   (`cvs_avg35_inMNI152`, `mri_coreg`) counterpart;
