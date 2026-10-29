@@ -20,6 +20,9 @@
       $cerebellar_labels
       character(0)
       
+      $context_labels
+      character(0)
+      
       $vertex_counts
         big small 
         100    10 
@@ -47,6 +50,9 @@
       $cerebellar_labels
       character(0)
       
+      $context_labels
+      character(0)
+      
       $vertex_counts
        big tiny 
        200    5 
@@ -71,6 +77,9 @@
       character(0)
       
       $cerebellar_labels
+      character(0)
+      
+      $context_labels
       character(0)
       
       $vertex_counts
@@ -319,6 +328,9 @@
       
       $cerebellar_labels
       [1] "lobule_I"
+      
+      $context_labels
+      character(0)
       
       $vertex_counts
       cortex_a lobule_I 

@@ -95,6 +95,7 @@ importFrom(dplyr,
   mutate,
   row_number,
   select,
+  slice,
   summarise,
   tibble,
   ungroup
