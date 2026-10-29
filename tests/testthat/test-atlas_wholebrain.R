@@ -2360,7 +2360,6 @@ describe("wholebrain_prepare_cerebellar_volume", {
 describe("wholebrain_prepare_subcortical_volume", {
   it("zeros non-subcortical non-cortical voxels", {
     skip_if_not_installed("RNifti")
-    local_no_aseg_ribbon()
     vol <- array(0L, dim = c(6, 3, 3))
     vol[1, 1, 1] <- 10L
     vol[3, 1, 1] <- 20L
@@ -2384,7 +2383,6 @@ describe("wholebrain_prepare_subcortical_volume", {
 
   it("writes subcortical voxels under their target index", {
     skip_if_not_installed("RNifti")
-    local_no_aseg_ribbon()
     vol <- array(0L, dim = c(6, 3, 3))
     vol[1, 1, 1] <- 3L
     vol[3, 1, 1] <- 20L
@@ -2912,7 +2910,6 @@ describe("wholebrain_prepare_cerebellar_volume orientation", {
 describe("wholebrain_prepare_subcortical_volume left-high", {
   it("handles a negative x-axis xform and reorients output to RAS", {
     skip_if_not_installed("RNifti")
-    local_no_aseg_ribbon()
     vol <- array(0L, dim = c(6, 3, 3))
     vol[1, 1, 1] <- 10L
     vol[6, 1, 1] <- 20L
@@ -2940,7 +2937,6 @@ describe("wholebrain_prepare_subcortical_volume left-high", {
 
   it("splits cortex at the 1-based midline voxel", {
     skip_if_not_installed("RNifti")
-    local_no_aseg_ribbon()
     # 5 cortical voxels along x (3x3 in y/z so read_volume keeps it 3D);
     # world_x = voxel_x - 2, so the world origin sits at 0-based voxel 2
     # (1-based voxel 3).
@@ -3476,57 +3472,6 @@ describe("create_wholebrain_from_volume without FreeSurfer", {
 })
 
 
-describe("wholebrain cortex context on a coarse grid", {
-  it("keeps the atlas's own labels when the ribbon is a sheet", {
-    skip_if_not_installed("RNifti")
-    arr <- array(1000L, dim = c(12, 5, 5))
-    vol_file <- withr::local_tempfile(fileext = ".nii.gz")
-    RNifti::writeNifti(RNifti::asNifti(arr), vol_file)
-    out_file <- withr::local_tempfile(fileext = ".nii.gz")
-
-    # A solid mantle six times the ribbon, but a ribbon one voxel thick:
-    # what a 4 mm parcellation resamples the aseg into.
-    left <- right <- array(FALSE, dim = dim(arr))
-    left[1, , ] <- TRUE
-    right[12, , ] <- TRUE
-    local_mocked_bindings(
-      aseg_context_volume = function(...) mock_cortex_ribbon(left, right)
-    )
-
-    wholebrain_prepare_subcortical_volume(
-      input_volume = vol_file,
-      subcortical_idx = integer(0),
-      cortical_idx = 1000L,
-      output_file = out_file
-    )
-
-    result <- as.array(RNifti::readNifti(out_file))
-    expect_identical(sum(result %in% c(3L, 42L)), 300L)
-    expect_identical(sum(result == 0L), 0L)
-  })
-})
-
-
-describe("aseg_fossa_idx", {
-  it("is cerebellar cortex and brain stem, not cerebellar white matter", {
-    expect_identical(
-      aseg_fossa_idx(),
-      c(cerebellum_left = 8L, cerebellum_right = 47L, brainstem = 16L)
-    )
-    # 7 and 46 fill the cerebellum into a solid lump that merges with the
-    # occipital lobe; without them it stays a foliated shell.
-    expect_false(any(c(7L, 46L) %in% aseg_fossa_idx()))
-  })
-
-  it("is part of the context volume alongside the cortical ribbon", {
-    expect_identical(
-      aseg_context_idx(),
-      c(aseg_cortex_idx(), aseg_fossa_idx())
-    )
-  })
-})
-
-
 describe("whole-brain backdrop", {
   backdrop_volume <- function(structure_slice = NULL) {
     arr <- array(1000L, dim = c(12, 5, 5))
@@ -3590,17 +3535,6 @@ describe("whole-brain backdrop", {
     out <- write_context(backdrop_volume(structure_slice = 5))
 
     expect_identical(sum(out$arr == 101L), 25L)
-  })
-
-  it("does not consult the aseg", {
-    skip_if_not_installed("RNifti")
-    local_mocked_bindings(
-      aseg_context_volume = function(...) {
-        stop("the backdrop must not reach for the aseg")
-      }
-    )
-
-    expect_no_error(write_context(backdrop_volume()))
   })
 })
 

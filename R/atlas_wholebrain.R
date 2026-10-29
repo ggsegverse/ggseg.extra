@@ -2410,42 +2410,11 @@ wholebrain_write_cortex_context <- function(
 }
 
 
-#' Cerebral cortex context: the `aseg` ribbon, or the atlas's own mask
-#'
-#' Two things have to hold before the ribbon is worth substituting: the
-#' atlas's own mask has to be a solid mantle, and the grid has to be fine
-#' enough to carry a ribbon at all.
-#' @noRd
-wholebrain_write_cerebrum <- function(
-  result,
-  cortical_mask,
-  vol,
-  aseg,
-  verbose
-) {
-  solid <- cortex_mask_is_solid(cortical_mask, aseg, verbose)
-  if (!solid || !ribbon_is_resolved(aseg, verbose)) {
-    return(wholebrain_cortex_by_midline(result, cortical_mask, vol))
-  }
-  write_aseg_context(result, aseg, aseg_cortex_idx())
-}
-
-
-#' Copy `aseg` labels into the voxels no structure claims
-#' @noRd
-write_aseg_context <- function(result, aseg, idx) {
-  free <- result == 0L
-  for (i in idx) {
-    result[free & aseg == i] <- i
-  }
-  result
-}
-
-
 #' Split a cortical mask into hemispheres at the volume midline
 #'
-#' The fallback when no `aseg` ribbon is available. Left-hemisphere voxels
-#' map to label 3 (FS left cortex), right-hemisphere to label 42.
+#' Left-hemisphere voxels map to label 3 (FS left cortex), right-hemisphere
+#' to label 42. The midline is the volume's own, read from its `sform`, so
+#' nothing outside the atlas decides where the hemispheres meet.
 #' @noRd
 wholebrain_cortex_by_midline <- function(result, cortical_mask, vol) {
   xform <- RNifti::xform(vol)

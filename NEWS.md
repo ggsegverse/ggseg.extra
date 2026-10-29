@@ -179,7 +179,9 @@ and tractography files.
 - A lookup table's `context` column decides the whole-brain backdrop. A
   declared row is withheld from classification and built as backdrop; the
   cortical labels are the default backdrop for the subcortical sub-atlas
-  unless the table says otherwise. No label matching is involved.
+  unless the table says otherwise. No label matching is involved, and the
+  backdrop no longer depends on a FreeSurfer `aseg`: the hemisphere split
+  reads the volume's own midline.
 
 - `clear_atlas_cache()` removes an atlas's build intermediates, or every
   atlas's under a build directory. It refuses a directory holding files this

@@ -1,5 +1,5 @@
-# Fixtures shared by the whole-brain pipeline, its aseg ribbon context
-# and the surface dilation tests, which live in three files now.
+# Fixtures shared by the whole-brain pipeline, its context declaration and
+# the surface dilation tests, which live in three files now.
 
 .cap <- new.env()
 
@@ -55,25 +55,6 @@ local_mock_mri_vol2surf <- function(overlay = c(1L, 2L), env = parent.frame()) {
     .env = env
   )
   cap
-}
-
-
-# Pretend no FreeSurfer aseg is available, so the cortical context falls back
-# to the solid silhouette without shelling out or warning.
-local_no_aseg_ribbon <- function(env = parent.frame()) {
-  local_mocked_bindings(
-    aseg_context_volume = function(...) NULL,
-    .env = env
-  )
-}
-
-# A context volume in the shape aseg_context_volume() returns: left cortex
-# where `left` is TRUE, right cortex where `right` is TRUE, 0 elsewhere.
-mock_cortex_ribbon <- function(left, right) {
-  ribbon <- array(0L, dim = dim(left))
-  ribbon[left] <- 3L
-  ribbon[right] <- 42L
-  ribbon
 }
 
 
