@@ -8,13 +8,13 @@
   "codeRepository": "https://github.com/ggsegverse/ggseg.extra",
   "issueTracker": "https://github.com/ggsegverse/ggseg.extra/issues",
   "license": "https://spdx.org/licenses/MIT",
-  "version": "1.9.9.9132",
+  "version": "1.9.9.9133",
   "programmingLanguage": {
     "@type": "ComputerLanguage",
     "name": "R",
     "url": "https://r-project.org"
   },
-  "runtimePlatform": "R version 4.6.1 (2026-06-24)",
+  "runtimePlatform": "R version 4.6.2 (2026-10-29)",
   "author": [
     {
       "@type": "Person",
@@ -463,7 +463,7 @@
     },
     "SystemRequirements": "FreeSurfer (subcortical/wholebrain pipelines), \n    Connectome Workbench (optional, for CIFTI resampling),\n    V8 (>= 6.0.0, required by the 'rmapshaper' dependency), \n    GDAL (>= 2.0.1), \n    GEOS (>= 3.4.0), \n    PROJ (>= 4.8.0), \n    sqlite3"
   },
-  "fileSize": "4462.015KB",
+  "fileSize": "4474.8KB",
   "citation": [
     {
       "@type": "CreativeWork",
