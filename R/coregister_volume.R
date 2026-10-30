@@ -782,7 +782,7 @@ resample_label_probability <- function(
     shQuote(mov_tmp),
     "--targ",
     shQuote(aparc_mgz),
-    vol2vol_registration_opt(registration),
+    vol2vol_registration_opt(registration, mov = mov_tmp, targ = aparc_mgz),
     "--interp",
     "trilin",
     "--o",

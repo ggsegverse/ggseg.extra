@@ -233,15 +233,81 @@ resolve_vol2surf_registration <- function(registration, subject) {
 #' `mri_vol2vol` says the same two things as `mri_vol2surf` with one option
 #' rather than a set: `--regheader` for a volume already on the target's grid,
 #' `--reg <file>` otherwise.
+#'
+#' A tkregister matrix cannot be handed to `mri_vol2vol` directly. FreeSurfer
+#' 8 refuses one whose source geometry it cannot establish -- "LTAchangeType:
+#' src geometry must be valid" -- and writes no output, because a
+#' `REGISTER_DAT` transform carries no geometry of its own and is only
+#' meaningful between COR-type volumes with `c_(r,a,s) = 0`. FreeSurfer 7
+#' assumed that silently. So the matrix is converted to an LTA against this
+#' call's own volumes first, which states the geometry rather than assuming
+#' it, and is the better transform on either version.
+#'
+#' `mri_vol2surf` is unaffected and takes the matrix as it is.
+#'
+#' @param registration One of `"mni152"`, `"header"`, or a path to a
+#'   register.dat or LTA file.
+#' @param mov,targ The volumes this call registers between, which are what
+#'   give the LTA its geometry.
+#' @param envir Frame whose exit removes the LTA, so a temporary file does
+#'   not outlive the command it was built for.
 #' @noRd
-vol2vol_registration_opt <- function(registration) {
+vol2vol_registration_opt <- function(
+  registration,
+  mov,
+  targ,
+  envir = parent.frame()
+) {
   spec <- resolve_registration(registration)
 
   if (identical(spec$kind, "header")) {
     return("--regheader")
   }
 
-  paste("--reg", shQuote(spec$path))
+  paste("--reg", shQuote(vol2vol_transform_file(spec$path, mov, targ, envir)))
+}
+
+
+#' An `mri_vol2vol` transform with geometry FreeSurfer 8 accepts
+#'
+#' An LTA already states its geometry and is passed through untouched. A
+#' tkregister matrix is converted against the volumes at hand.
+#' @noRd
+vol2vol_transform_file <- function(path, mov, targ, envir = parent.frame()) {
+  if (identical(tolower(fs::path_ext(path)), "lta")) {
+    return(path)
+  }
+  lta_from_register_dat(path, mov = mov, targ = targ, envir = envir)
+}
+
+
+#' Convert a tkregister matrix into an LTA carrying explicit geometry
+#' @noRd
+lta_from_register_dat <- function(
+  path,
+  mov,
+  targ,
+  envir = parent.frame(),
+  verbose = get_verbose()
+) {
+  lta <- tempfile(fileext = ".lta")
+  withr::defer(unlink(lta), envir = envir)
+
+  cmd <- paste(
+    "lta_convert",
+    "--inreg",
+    shQuote(path),
+    "--src",
+    shQuote(mov),
+    "--trg",
+    shQuote(targ),
+    "--outlta",
+    shQuote(lta)
+  )
+  suppressWarnings(run_cmd(cmd, verbose = max(0L, verbose - 1L)))
+  check_fs_output(lta, "lta_convert", path)
+
+  lta
 }
 
 
