@@ -13,8 +13,19 @@ permissions:
 jobs:
   freesurfer-tests:
     runs-on: ubuntu-latest
+    name: freesurfer-tests (${{ matrix.fs_version }})
+    strategy:
+      # A version-specific failure is the result this matrix exists to
+      # produce, so one leg must not cancel the other.
+      fail-fast: false
+      matrix:
+        # The two ends of what users actually have installed. 7.4.1 is the
+        # long-standing release most installations still are; 8.2.0 is the
+        # current one. Anything that shells out to FreeSurfer can differ
+        # between them, and only running both says whether it does.
+        fs_version: ["7.4.1", "8.2.0"]
     container:
-      image: ghcr.io/${{ github.repository_owner }}/freesurfer-slim:7.4.1-r4.6
+      image: ghcr.io/${{ github.repository_owner }}/freesurfer-slim:${{ matrix.fs_version }}-r4.6
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
