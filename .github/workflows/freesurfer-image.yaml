@@ -19,13 +19,26 @@ permissions:
   packages: write
 
 env:
-  FS_VERSION: "7.4.1"
   R_VERSION: "4.6.1"
   IMAGE: ghcr.io/${{ github.repository_owner }}/freesurfer-slim
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    strategy:
+      # One version failing to build says nothing about the other, and the
+      # whole point of testing two is to see them disagree.
+      fail-fast: false
+      matrix:
+        # 7.4.1 is what most installations still are; 8.2.0 is the current
+        # release. `latest` follows the older of the two deliberately: it is
+        # what freesurfer-tests resolves when nothing pins a version, and
+        # that should keep meaning the conservative choice.
+        include:
+          - fs_version: "7.4.1"
+            latest: true
+          - fs_version: "8.2.0"
+            latest: false
     steps:
       - uses: actions/checkout@v6
 
@@ -44,6 +57,8 @@ jobs:
         env:
           REF: ${{ github.head_ref || github.ref_name }}
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          FS_VERSION: ${{ matrix.fs_version }}
+          IS_LATEST: ${{ matrix.latest }}
         run: |
           short="${R_VERSION%.*}"
           ref="$REF"
@@ -57,9 +72,14 @@ jobs:
           if [ "$ref" = "$DEFAULT_BRANCH" ]; then
             tags="${IMAGE}:${FS_VERSION}-r${R_VERSION}"
             tags="${tags},${IMAGE}:${FS_VERSION}-r${short}"
-            tags="${tags},${IMAGE}:latest"
+            if [ "$IS_LATEST" = "true" ]; then
+              tags="${tags},${IMAGE}:latest"
+            fi
           else
-            tags="${IMAGE}:$(echo "$ref" | tr '/' '-')"
+            # The branch tag carries the version too, or the two matrix legs
+            # would overwrite each other and the second would be tested as
+            # the first.
+            tags="${IMAGE}:$(echo "$ref" | tr '/' '-')-fs${FS_VERSION}"
           fi
           echo "tags=${tags}" >> "$GITHUB_OUTPUT"
 
@@ -69,7 +89,7 @@ jobs:
           push: true
           tags: ${{ steps.tags.outputs.tags }}
           build-args: |
-            FS_VERSION=${{ env.FS_VERSION }}
+            FS_VERSION=${{ matrix.fs_version }}
             R_VERSION=${{ env.R_VERSION }}
 
       - name: Report image size
