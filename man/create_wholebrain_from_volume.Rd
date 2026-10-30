@@ -16,6 +16,7 @@ create_wholebrain_from_volume(
   cortical_opts = list(),
   subcortical_opts = list(),
   cerebellar_opts = list(),
+  context_opts = list(),
   steps = NULL,
   min_coverage = NULL,
   cleanup = NULL,
@@ -107,6 +108,19 @@ the matching \code{\link[=suit_deformation_field]{suit_deformation_field()}} fir
 records a volume's space, so \code{"suit"} is an assumption rather than a
 detection: set it if your volume is in an MNI space. See
 \code{\link[=suit_deformation_field]{suit_deformation_field()}} for the spaces available.}
+
+\item{context_opts}{Named list controlling the grey backdrop the
+subcortical structures are drawn against, with these entries and
+defaults:
+\itemize{
+\item \code{silhouette} (\code{"atlas"}): where the cerebral backdrop's shape
+comes from. \code{"atlas"} uses this parcellation's own cortical
+mantle, split at the midline. \code{"aseg"} substitutes a FreeSurfer
+cortical ribbon instead. See \strong{Cortical backdrop}.
+\item \code{subject} (\code{"cvs_avg35_inMNI152"}): the FreeSurfer subject the
+\code{aseg} is taken from. Only read when \code{silhouette = "aseg"}.
+}
+Unknown entries error.}
 
 \item{steps}{Which pipeline steps to run. Default NULL runs all steps.
 Steps are:
@@ -331,6 +345,30 @@ own register.dat or LTA file.
 
 FreeSurfer's own \code{INFO} and \code{WARNING} lines about the registration are
 only visible with \code{verbose = TRUE}.
+}
+
+\section{Cortical backdrop}{
+
+The subcortical atlas draws its structures against a grey silhouette, and
+by default that silhouette is this parcellation's own cortical labels,
+split at the midline. It is the atlas's geometry, in the atlas's space, on
+the atlas's grid: whatever it shows, the parcellation put there.
+
+A parcellation covering both banks of every sulcus has no sulci left in
+it, so that silhouette is a solid mantle rather than a recognisable brain.
+\code{context_opts = list(silhouette = "aseg")} replaces it with the cortical
+ribbon from FreeSurfer's \code{aseg}, resampled onto this volume's grid, which
+has sulci. The cost is that they are another brain's sulci: the backdrop
+then describes \code{context_opts$subject}'s anatomy, not the atlas's. It also
+adds the posterior fossa - cerebellum and brain stem - behind the
+structures, which the atlas's own cortical labels cannot supply.
+
+Ask for it deliberately, in the build script, where a reader can see it.
+It needs FreeSurfer, and it declines rather than substitutes a backdrop it
+cannot trust: no \code{aseg}, a ribbon landing off this volume's brain, a mask
+already thin enough to be a ribbon of its own, or a grid too coarse to
+carry one all fall back to the atlas's own mantle. Each of those decisions
+is reported with \code{verbose = TRUE}.
 }
 
 \examples{

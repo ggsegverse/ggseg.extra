@@ -325,13 +325,15 @@ and tractography files.
   indices or RAS world `"mm"` instead of relying on a heuristic that cannot
   always tell; the space in force is reported at `verbose >= 1`.
 
-- The brain silhouette behind a whole-brain subcortical atlas is a gyrified
-  mantle rather than a solid blob: it is taken from FreeSurfer's `aseg` ribbon,
-  resampled onto the atlas volume's own grid, wherever the parcellation's own
-  cortical labels are solid, and the `aseg` cerebellar cortex and brain stem
-  fill the posterior fossa. An atlas whose own labels are already a ribbon
-  keeps them, the substitution is declined on grids too coarse to carry a
-  ribbon, and the pipeline reports which silhouette it drew in every case.
+- The brain silhouette behind a whole-brain subcortical atlas is the
+  parcellation's own cortical labels, split at the midline.
+  `create_wholebrain_from_volume(context_opts = list(silhouette = "aseg"))`
+  substitutes FreeSurfer's gyrified `aseg` ribbon instead, resampled onto the
+  atlas volume's own grid, with the `aseg` cerebellar cortex and brain stem
+  filling the posterior fossa. That is another subject's anatomy, so it is
+  asked for rather than inferred; it is declined on grids too coarse to carry
+  a ribbon or on labels already thin enough to be one, and the pipeline
+  reports which silhouette it drew in every case.
 
 - `setup_atlas_repo()` scaffolds an atlas package from the
   ggsegverse/ggseg-atlas-template repository, with a Quarto README, pkgdown

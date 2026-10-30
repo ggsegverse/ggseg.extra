@@ -21,6 +21,7 @@ describe("wholebrain cortex context from the aseg ribbon", {
       input_volume = vol_file,
       subcortical_idx = integer(0),
       cortical_idx = 1000L,
+      silhouette = "aseg",
       output_file = out_file
     )
 
@@ -50,6 +51,7 @@ describe("wholebrain cortex context from the aseg ribbon", {
       input_volume = vol_file,
       subcortical_idx = 10L,
       cortical_idx = 1000L,
+      silhouette = "aseg",
       output_file = out_file,
       target_idx = 101L
     )
@@ -74,6 +76,7 @@ describe("wholebrain cortex context from the aseg ribbon", {
       input_volume = vol_file,
       subcortical_idx = integer(0),
       cortical_idx = 1000L,
+      silhouette = "aseg",
       output_file = out_file
     )
 
@@ -104,12 +107,108 @@ describe("wholebrain cortex context from the aseg ribbon", {
       input_volume = vol_file,
       subcortical_idx = 10L,
       cortical_idx = integer(0),
+      silhouette = "aseg",
       output_file = out_file
     )
 
     expect_false(seen$called)
     result <- as.array(RNifti::readNifti(out_file))
     expect_identical(sum(result %in% c(3L, 42L)), 0L)
+  })
+})
+
+
+describe("the default cortical backdrop", {
+  it("never looks for an aseg", {
+    skip_if_not_installed("RNifti")
+    arr <- array(1000L, dim = c(12, 5, 5))
+    vol_file <- withr::local_tempfile(fileext = ".nii.gz")
+    RNifti::writeNifti(RNifti::asNifti(arr), vol_file)
+    out_file <- withr::local_tempfile(fileext = ".nii.gz")
+
+    seen <- new.env()
+    seen$asked <- FALSE
+    seen$regridded <- FALSE
+    local_mocked_bindings(
+      aseg_context_volume = function(...) {
+        seen$asked <- TRUE
+        NULL
+      },
+      regrid_onto_aseg = function(...) {
+        seen$regridded <- TRUE
+        NULL
+      }
+    )
+
+    prepared <- wholebrain_prepare_subcortical_volume(
+      input_volume = vol_file,
+      subcortical_idx = integer(0),
+      cortical_idx = 1000L,
+      output_file = out_file
+    )
+
+    expect_false(seen$asked)
+    expect_false(seen$regridded)
+    expect_identical(prepared$context_idx, c(3L, 42L))
+  })
+
+  it("keeps a solid mantle the aseg ribbon would have replaced", {
+    skip_if_not_installed("RNifti")
+    arr <- array(1000L, dim = c(12, 5, 5))
+    vol_file <- withr::local_tempfile(fileext = ".nii.gz")
+    RNifti::writeNifti(RNifti::asNifti(arr), vol_file)
+
+    x <- slice.index(arr, 1)
+    local_mocked_bindings(
+      aseg_context_volume = function(...) {
+        mock_cortex_ribbon(x <= 3, x >= 10)
+      }
+    )
+
+    silhouette_of <- function(silhouette) {
+      out_file <- withr::local_tempfile(fileext = ".nii.gz")
+      wholebrain_prepare_subcortical_volume(
+        input_volume = vol_file,
+        subcortical_idx = integer(0),
+        cortical_idx = 1000L,
+        silhouette = silhouette,
+        output_file = out_file
+      )
+      sum(as.array(RNifti::readNifti(out_file)) %in% c(3L, 42L))
+    }
+
+    # Every cortical voxel, against the 150 the ribbon covers: the whole
+    # point is that the same volume gives a different backdrop only on
+    # request.
+    expect_identical(silhouette_of("atlas"), 300L)
+    expect_identical(silhouette_of("aseg"), 150L)
+  })
+
+  it("leaves the posterior fossa empty, as the atlas does", {
+    skip_if_not_installed("RNifti")
+    arr <- array(1000L, dim = c(12, 5, 5))
+    vol_file <- withr::local_tempfile(fileext = ".nii.gz")
+    RNifti::writeNifti(RNifti::asNifti(arr), vol_file)
+    out_file <- withr::local_tempfile(fileext = ".nii.gz")
+
+    x <- slice.index(arr, 1)
+    aseg <- array(0L, dim = dim(arr))
+    aseg[x <= 3] <- 3L
+    aseg[x >= 10] <- 42L
+    aseg[x == 5] <- 8L
+    aseg[x == 6] <- 16L
+    local_mocked_bindings(aseg_context_volume = function(...) aseg)
+
+    prepared <- wholebrain_prepare_subcortical_volume(
+      input_volume = vol_file,
+      subcortical_idx = integer(0),
+      cortical_idx = 1000L,
+      output_file = out_file
+    )
+
+    expect_identical(prepared$context_idx, c(3L, 42L))
+    result <- as.array(RNifti::readNifti(out_file))
+    expect_identical(sum(result %in% aseg_fossa_idx()), 0L)
   })
 })
 

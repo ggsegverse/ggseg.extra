@@ -1215,6 +1215,49 @@ describe("wholebrain_run_cortical verbose logging", {
 })
 
 
+describe("wholebrain_run_subcortical backdrop options", {
+  it("hands the volume writer the context options the caller chose", {
+    test_dir <- withr::local_tempdir()
+    seen <- new.env()
+    local_mocked_bindings(
+      wholebrain_prepare_subcortical_volume = function(...) {
+        seen$args <- list(...)
+        invisible(list(file = "filtered.nii.gz", context_idx = integer(0)))
+      },
+      create_subcortical_from_volume = function(...) {
+        structure(list(core = data.frame(region = "b")), class = "ggseg_atlas")
+      }
+    )
+
+    config <- list(
+      atlas_name = "test",
+      verbose = FALSE,
+      input_volume = "fake.nii.gz",
+      output_dir = test_dir,
+      skip_existing = FALSE,
+      context = list(silhouette = "aseg", subject = "bert")
+    )
+    wholebrain_run_subcortical(
+      config,
+      dirs = list(base = test_dir),
+      split = list(subcortical_labels = "b"),
+      colortable = data.frame(
+        idx = 1L,
+        label = "b",
+        R = 1L,
+        G = 1L,
+        B = 1L,
+        A = 0L,
+        stringsAsFactors = FALSE
+      )
+    )
+
+    expect_identical(seen$args$silhouette, "aseg")
+    expect_identical(seen$args$cortex_subject, "bert")
+  })
+})
+
+
 describe("wholebrain_run_subcortical verbose logging", {
   it("logs progress step and filters subcortical data", {
     test_dir <- withr::local_tempdir()
@@ -1955,6 +1998,33 @@ describe("validate_pipeline_opts", {
       c("views", "tolerance")
     )
     expect_identical(result$views, c("lateral", "medial"))
+  })
+})
+
+
+describe("validate_context_opts", {
+  it("accepts both silhouette sources and keeps the subject", {
+    out <- validate_context_opts(list(silhouette = "aseg", subject = "bert"))
+    expect_identical(out$silhouette, "aseg")
+    expect_identical(out$subject, "bert")
+    expect_identical(
+      validate_context_opts(WHOLEBRAIN_CONTEXT_DEFAULTS)$silhouette,
+      "atlas"
+    )
+  })
+
+  it("rejects a silhouette source it cannot draw", {
+    expect_error(
+      validate_context_opts(list(silhouette = "ribbon", subject = "bert")),
+      "context_opts\\$silhouette"
+    )
+  })
+
+  it("rejects a subject that is not a single name", {
+    expect_error(
+      validate_context_opts(list(silhouette = "aseg", subject = c("a", "b"))),
+      "single FreeSurfer subject"
+    )
   })
 })
 
@@ -3498,6 +3568,7 @@ describe("wholebrain cortex context on a coarse grid", {
       input_volume = vol_file,
       subcortical_idx = integer(0),
       cortical_idx = 1000L,
+      silhouette = "aseg",
       output_file = out_file
     )
 
@@ -3534,6 +3605,7 @@ describe("wholebrain cortex context on a coarse grid", {
       input_volume = vol_file,
       subcortical_idx = integer(0),
       cortical_idx = 1000L,
+      silhouette = "aseg",
       output_file = out_file
     )
 
@@ -3596,6 +3668,7 @@ describe("posterior fossa context", {
       input_volume = vol_file,
       subcortical_idx = 10L,
       cortical_idx = 1000L,
+      silhouette = "aseg",
       output_file = out_file,
       target_idx = 101L
     )
@@ -3650,6 +3723,7 @@ describe("posterior fossa context", {
       input_volume = vol_file,
       subcortical_idx = integer(0),
       cortical_idx = 1000L,
+      silhouette = "aseg",
       output_file = out_file
     )
 
@@ -3737,6 +3811,29 @@ describe("create_wholebrain_from_volume argument groups", {
     expect_error(
       capture_setup(list(decimate = 0.5)),
       "subcortical_opts"
+    )
+  })
+
+  it("defaults the cortical backdrop to the atlas's own geometry", {
+    seen <- capture_setup(list())
+
+    expect_identical(seen$config$context$silhouette, "atlas")
+    expect_identical(seen$config$context$subject, "cvs_avg35_inMNI152")
+  })
+
+  it("takes the aseg silhouette from context_opts", {
+    seen <- capture_setup(list(
+      context_opts = list(silhouette = "aseg", subject = "bert")
+    ))
+
+    expect_identical(seen$config$context$silhouette, "aseg")
+    expect_identical(seen$config$context$subject, "bert")
+  })
+
+  it("rejects an unknown context_opts entry by name", {
+    expect_error(
+      capture_setup(list(context_opts = list(ribbon = TRUE))),
+      "Unknown .*context_opts.* entr"
     )
   })
 
