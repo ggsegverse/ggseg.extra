@@ -1,6 +1,6 @@
 # Anatomy-based label classification ----
 
-#' Classify lookup-table labels as cortical, subcortical, or cerebellar
+#' Classify lookup-table labels by the tissue they sit on
 #'
 #' Fills in a lookup table's `type` column by reading where each label sits
 #' in FreeSurfer's `aparc+aseg`, rather than by matching label names. This is
@@ -27,6 +27,16 @@
 #' voxels, are both called subcortical: the share alone would let a single
 #' stray ribbon voxel decide an otherwise unlabelled label.
 #'
+#' White matter is typed `"white_matter"` rather than being forced into one
+#' of the grey classes. A whole-brain parcellation that carries
+#' `Left-/Right-Cerebral-White-Matter` has nowhere to put them otherwise: the
+#' vertex-count fallback calls them cortical, because white matter sits
+#' directly under the ribbon and the surface projection samples through it,
+#' and they are then drawn as legended cortical regions. White matter is
+#' measured against the grey tissues individually, not against their total,
+#' so adding this class moves no label that was already classified by its
+#' grey.
+#'
 #' @param volume Path to the labelled atlas volume (`.nii`, `.nii.gz` or
 #'   `.mgz`), in the space its header claims.
 #' @param lut A lookup table: a path to a LUT file, or a data.frame with
@@ -38,13 +48,18 @@
 #'   must be cortical ribbon for the label to be called cortical.
 #' @param min_cerebellar Minimum share of a label's labelled grey matter
 #'   that must be cerebellar cortex for the label to be called cerebellar.
+#' @param min_white Minimum share of a label's labelled tissue, grey and
+#'   white together, that must be white matter for the label to be called
+#'   white matter. Cerebellum is settled first, so a lobule reaching into the
+#'   peduncles stays cerebellar.
 #' @param min_fraction Minimum share of a label's *own voxels* that must sit
 #'   on the winning tissue, whatever the grey-matter share says. This is what
 #'   stops one ribbon voxel from making a white-matter label cortical.
 #' @template verbose
 #'
 #' @return The lookup table as a data.frame, with a `type` column of
-#'   `"cortical"`, `"subcortical"` or `"cerebellar"`. Labels the volume does
+#'   `"cortical"`, `"subcortical"`, `"cerebellar"` or `"white_matter"`.
+#'   Labels the volume does
 #'   not carry are typed `"subcortical"`, matching how
 #'   [create_wholebrain_from_volume()] treats a label that never reaches the
 #'   surface, and warned about. The background label `idx = 0` is left
@@ -74,6 +89,7 @@ lut_classify_anatomy <- function(
   subject = "cvs_avg35_inMNI152",
   min_cortical = 0.6,
   min_cerebellar = 0.5,
+  min_white = 0.5,
   min_fraction = 0.05,
   verbose = get_verbose()
 ) {
@@ -81,6 +97,7 @@ lut_classify_anatomy <- function(
   verbose <- as_verbosity(verbose)
   check_share(min_cortical, "min_cortical")
   check_share(min_cerebellar, "min_cerebellar")
+  check_share(min_white, "min_white")
   check_share(min_fraction, "min_fraction")
   if (!file.exists(volume)) {
     cli::cli_abort("Volume file not found: {.path {volume}}")
@@ -91,6 +108,7 @@ lut_classify_anatomy <- function(
     composition,
     min_cortical = min_cortical,
     min_cerebellar = min_cerebellar,
+    min_white = min_white,
     min_fraction = min_fraction
   )
 
@@ -208,7 +226,8 @@ report_anatomy_split <- function(type) {
   ))
   cli::cli_alert_info(
     "{counts[['cortical']]} cortical, {counts[['subcortical']]} subcortical,
-    {counts[['cerebellar']]} cerebellar labels",
+    {counts[['cerebellar']]} cerebellar,
+    {counts[['white_matter']]} white matter labels",
     wrap = TRUE
   )
   invisible(NULL)
@@ -283,6 +302,20 @@ cerebellar_grey_idx <- function() {
 #' @noRd
 brainstem_idx <- function() {
   16L
+}
+
+
+#' Every `aseg` label id this predicate counts as white matter
+#'
+#' Cerebral hemispheric white matter and the corpus callosum, from
+#' `cerebral_white_matter_labels()`, plus cerebellar white matter (`7`, `46`).
+#' Cerebellar white matter is excluded from `cerebellar_grey_idx()` because
+#' filling it makes the cerebellum draw as a solid lump, but that is a
+#' question about drawing. Asked what tissue a label sits on, it is white
+#' matter.
+#' @noRd
+white_matter_idx <- function() {
+  c(cerebral_white_matter_labels(), 7L, 46L)
 }
 
 
@@ -362,7 +395,7 @@ tissue_fractions <- function(parcellation, aseg, label_ids) {
     tissue_class(aseg[keep])
   )
   fractions <- as.data.frame.matrix(counts / rowSums(counts))
-  fractions[, c("cortex", "subcortex", "cerebellum", "brainstem")]
+  fractions[c("cortex", "subcortex", "cerebellum", "brainstem", "white_matter")]
 }
 
 
@@ -377,9 +410,17 @@ tissue_class <- function(hit) {
   class[hit %in% subcortical_grey_idx()] <- "subcortex"
   class[hit %in% cerebellar_grey_idx()] <- "cerebellum"
   class[hit == brainstem_idx()] <- "brainstem"
+  class[hit %in% white_matter_idx()] <- "white_matter"
   factor(
     class,
-    levels = c("cortex", "subcortex", "cerebellum", "brainstem", "other")
+    levels = c(
+      "cortex",
+      "subcortex",
+      "cerebellum",
+      "brainstem",
+      "white_matter",
+      "other"
+    )
   )
 }
 
@@ -391,15 +432,19 @@ tissue_class <- function(hit) {
 #'   be cortical.
 #' @param min_cerebellar Minimum cerebellar share of labelled grey for a label
 #'   to be cerebellar.
+#' @param min_white Minimum share of a label's labelled tissue, grey and
+#'   white together, that must be white matter for the label to be white
+#'   matter.
 #' @param min_fraction Minimum raw fraction of a label's voxels on the
 #'   winning tissue, whatever the share.
-#' @return Character vector of `"cortical"`, `"subcortical"` or
-#'   `"cerebellar"`, one per row of `composition`.
+#' @return Character vector of `"cortical"`, `"subcortical"`, `"cerebellar"`
+#'   or `"white_matter"`, one per row of `composition`.
 #' @noRd
 classify_labels_by_anatomy <- function(
   composition,
   min_cortical = 0.6,
   min_cerebellar = 0.5,
+  min_white = 0.5,
   min_fraction = 0.05
 ) {
   grey <- composition$cortex +
@@ -407,6 +452,13 @@ classify_labels_by_anatomy <- function(
     composition$cerebellum +
     composition$brainstem
   share <- function(x) ifelse(grey > 0, x / grey, 0)
+
+  # White matter competes against the grey tissues rather than against the
+  # grey total, so the grey shares above are measured on exactly the
+  # denominator they always were and no grey verdict moves because this test
+  # was added.
+  tissue <- grey + composition$white_matter
+  white_share <- ifelse(tissue > 0, composition$white_matter / tissue, 0)
 
   # A stray voxel or two of the winning tissue should not decide a label that
   # is otherwise unlabelled, hence the floor on the raw fraction as well as
@@ -416,12 +468,22 @@ classify_labels_by_anatomy <- function(
     composition$cerebellum >= composition$cortex &
     composition$cerebellum >= composition$subcortex &
     composition$cerebellum >= composition$brainstem
+  # Cerebellum is settled first, as it is against the cortex: a lobule label
+  # reaching into the cerebellar peduncles is still a cerebellar region.
+  is_white <- !is_cerebellar &
+    white_share >= min_white &
+    composition$white_matter >= min_fraction &
+    composition$white_matter >= composition$cortex &
+    composition$white_matter >= composition$subcortex &
+    composition$white_matter >= composition$brainstem
   is_cortical <- !is_cerebellar &
+    !is_white &
     share(composition$cortex) >= min_cortical &
     composition$cortex >= min_fraction
 
   verdict <- rep("subcortical", nrow(composition))
   verdict[is_cortical] <- "cortical"
+  verdict[is_white] <- "white_matter"
   verdict[is_cerebellar] <- "cerebellar"
   verdict
 }
@@ -619,7 +681,7 @@ resampled_overlap <- function(inside, brain_mask) {
 
 #' The values a lookup table's `type` column may hold
 #' @noRd
-lut_type_values <- c("cortical", "subcortical", "cerebellar")
+lut_type_values <- c("cortical", "subcortical", "cerebellar", "white_matter")
 
 
 #' Abort on a `type` value no pipeline recognises

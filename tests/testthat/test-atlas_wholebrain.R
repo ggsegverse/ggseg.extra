@@ -4026,3 +4026,107 @@ describe("warn_volume_only_subcortical", {
     expect_no_warning(warn_volume_only_subcortical(character(0)))
   })
 })
+
+
+describe("white matter in a whole-brain volume", {
+  lut <- function(type = NULL, context = NULL) {
+    out <- data.frame(
+      idx = c(2L, 41L, 10L, 1001L),
+      label = c("wm_left", "wm_right", "thalamus", "bankssts")
+    )
+    if (!is.null(type)) {
+      out$type <- type
+    }
+    if (!is.null(context)) {
+      out$context <- context
+    }
+    out
+  }
+
+  # White matter sits directly under the ribbon and the surface projection
+  # samples through it, so a white-matter label lands a lot of vertices. That
+  # is what used to make the vertex-count fallback call it cortical.
+  atlas_data <- function() {
+    tibble::tibble(
+      source_label = c("wm_left", "wm_right", "thalamus", "bankssts"),
+      vertices = list(1:4000, 1:4000, 1:3, 1:900)
+    )
+  }
+
+  classify <- function(...) {
+    wholebrain_classify_labels(
+      atlas_data = atlas_data(),
+      min_vertices = 50L,
+      ...
+    )
+  }
+
+  it("withholds a declared white-matter label from all three grey classes", {
+    split <- classify(
+      colortable = lut(c(
+        "white_matter",
+        "white_matter",
+        "subcortical",
+        "cortical"
+      ))
+    )
+
+    expect_identical(split$white_matter_labels, c("wm_left", "wm_right"))
+    expect_identical(split$cortical_labels, "bankssts")
+    expect_identical(split$subcortical_labels, "thalamus")
+    expect_identical(split$cerebellar_labels, character(0))
+  })
+
+  it("routes white matter into the backdrop", {
+    table <- lut(c("white_matter", "white_matter", "subcortical", "cortical"))
+    split <- classify(colortable = table)
+
+    expect_identical(
+      default_backdrop_labels(
+        table,
+        cortical_labels = split$cortical_labels,
+        white_matter_labels = split$white_matter_labels
+      ),
+      c("bankssts", "wm_left", "wm_right")
+    )
+  })
+
+  it("makes a declined white-matter label a subcortical region, not nothing", {
+    # A declined cortical label is still a cortical region, but white matter
+    # has no region class of its own, so declining the backdrop for one has
+    # to put it somewhere or it leaves the atlas entirely.
+    table <- lut(
+      type = c("white_matter", "white_matter", "subcortical", "cortical"),
+      context = c(FALSE, NA, NA, NA)
+    )
+    split <- classify(colortable = table)
+
+    expect_identical(split$white_matter_labels, "wm_right")
+    expect_true("wm_left" %in% split$subcortical_labels)
+    expect_false("wm_left" %in% split$cortical_labels)
+  })
+
+  it("still calls an undeclared white-matter label cortical", {
+    # The gap this type exists to close: with no `type` column there is
+    # nothing but the vertex count to go on, and white matter wins it.
+    expect_warning(
+      split <- classify(colortable = lut()),
+      "vertex count"
+    )
+
+    expect_identical(split$white_matter_labels, character(0))
+    expect_true(all(c("wm_left", "wm_right") %in% split$cortical_labels))
+  })
+
+  it("says which labels it is drawing as backdrop", {
+    expect_message(
+      classify(
+        colortable = lut(
+          c("white_matter", "white_matter", "subcortical", "cortical")
+        ),
+        verbose = TRUE
+      ),
+      "2 white matter labels drawn as backdrop"
+    )
+  })
+})

@@ -1,4 +1,4 @@
-# ggseg.extra 1.9.9.9131
+# ggseg.extra 1.9.9.9132
 
 This section becomes the 2.0.0 release notes at submission. It is the first
 CRAN release of ggseg.extra, the atlas-building package of
@@ -175,6 +175,12 @@ and tractography files.
   kept in the label, which is the join key.
 
 ## New features
+
+- White matter is a fourth `type` value. `lut_classify_anatomy()` types a
+  label whose tissue is mostly white matter `"white_matter"`, and the
+  whole-brain pipeline draws it as backdrop rather than as a region. It used
+  to be called cortical by the vertex-count fallback, because white matter
+  sits under the ribbon and the surface projection samples through it.
 
 - A lookup table's `context` column decides the whole-brain backdrop. A
   declared row is withheld from classification and built as backdrop; the

@@ -41,29 +41,45 @@ written_context_idx <- function(result) {
 }
 
 
-#' The cortical labels that stand in as backdrop for a slab view
+#' The labels whose rows explicitly decline to be backdrop
+#'
+#' `context = FALSE` is a declaration, not an absence: the author is saying
+#' this label is a region. A row that says nothing is not declining.
+#' @param colortable The lookup table whose `context` column is read, or
+#'   `NULL` when there is none.
+#' @return Character vector of labels, empty when nothing declines.
+#' @noRd
+declined_context_labels <- function(colortable) {
+  if (is.null(colortable) || !"context" %in% names(colortable)) {
+    return(character(0))
+  }
+  declared <- lut_context_values(colortable$context)
+  as.character(colortable$label[!is.na(declared) & !declared])
+}
+
+
+#' The labels that stand in as backdrop for a slab view
 #'
 #' A subcortical or tract atlas is drawn against the cortex, and a
 #' whole-brain volume already contains it, so the labels classified as
-#' cortical are the backdrop by default. The author overrules that per row by
-#' declaring `context = FALSE`, which keeps the label a region. A row that
-#' says nothing, or a table with no `context` column at all, takes the
-#' default.
+#' cortical are the backdrop by default. White matter joins them: it is the
+#' interior those structures sit in, and it is not a region in any of the
+#' three grey classes. The author overrules either per row by declaring
+#' `context = FALSE`, which keeps the label a region. A row that says
+#' nothing, or a table with no `context` column at all, takes the default.
 #' @param colortable The lookup table whose `context` column may decline a
 #'   label, or `NULL` when there is none.
 #' @param cortical_labels Labels classification assigned to the cortex.
-#' @return The subset of `cortical_labels` that serve as backdrop.
+#' @param white_matter_labels Labels classification assigned to white matter.
+#' @return The subset of those labels that serve as backdrop.
 #' @noRd
-default_backdrop_labels <- function(colortable, cortical_labels) {
-  if (is.null(colortable) || !length(cortical_labels)) {
-    return(as.character(cortical_labels))
-  }
-  if (!"context" %in% names(colortable)) {
-    return(as.character(cortical_labels))
-  }
-  declared <- lut_context_values(colortable$context)
-  declined <- colortable$label[!is.na(declared) & !declared]
-  setdiff(as.character(cortical_labels), as.character(declined))
+default_backdrop_labels <- function(
+  colortable,
+  cortical_labels,
+  white_matter_labels = character(0)
+) {
+  candidates <- as.character(c(cortical_labels, white_matter_labels))
+  setdiff(candidates, declined_context_labels(colortable))
 }
 
 

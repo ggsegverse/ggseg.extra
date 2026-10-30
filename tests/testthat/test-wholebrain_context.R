@@ -61,3 +61,124 @@ describe("wholebrain cortex context from the volume midline", {
     expect_identical(sum(result %in% c(3L, 42L)), 0L)
   })
 })
+
+
+describe("declined_context_labels()", {
+  lut <- function(context) {
+    out <- data.frame(idx = 1:3, label = c("a", "b", "c"))
+    if (!missing(context)) {
+      out$context <- context
+    }
+    out
+  }
+
+  it("is empty for a table with no context column", {
+    expect_identical(declined_context_labels(lut()), character(0))
+  })
+
+  it("is empty for a NULL table", {
+    expect_identical(declined_context_labels(NULL), character(0))
+  })
+
+  it("is empty when every row says nothing", {
+    expect_identical(
+      declined_context_labels(lut(c(NA, NA, NA))),
+      character(0)
+    )
+  })
+
+  it("names only the rows that explicitly decline", {
+    expect_identical(
+      declined_context_labels(lut(c(FALSE, NA, TRUE))),
+      "a"
+    )
+  })
+
+  it("reads the written forms of declining as well as FALSE", {
+    expect_identical(
+      declined_context_labels(lut(c("no", "0", "yes"))),
+      c("a", "b")
+    )
+  })
+})
+
+
+describe("default_backdrop_labels()", {
+  lut <- function(context) {
+    out <- data.frame(
+      idx = 1:3,
+      label = c("ctx_a", "ctx_b", "wm_a")
+    )
+    if (!missing(context)) {
+      out$context <- context
+    }
+    out
+  }
+
+  it("takes every cortical label when the table has no context column", {
+    expect_identical(
+      default_backdrop_labels(lut(), c("ctx_a", "ctx_b")),
+      c("ctx_a", "ctx_b")
+    )
+  })
+
+  it("takes every cortical label when the column says nothing", {
+    expect_identical(
+      default_backdrop_labels(lut(c(NA, NA, NA)), c("ctx_a", "ctx_b")),
+      c("ctx_a", "ctx_b")
+    )
+  })
+
+  it("drops the label whose row explicitly declines", {
+    expect_identical(
+      default_backdrop_labels(lut(c(NA, FALSE, NA)), c("ctx_a", "ctx_b")),
+      "ctx_a"
+    )
+  })
+
+  it("can be declined down to nothing", {
+    expect_identical(
+      default_backdrop_labels(lut(c(FALSE, FALSE, NA)), c("ctx_a", "ctx_b")),
+      character(0)
+    )
+  })
+
+  it("adds the white-matter labels to the cortical ones", {
+    expect_identical(
+      default_backdrop_labels(lut(), c("ctx_a", "ctx_b"), "wm_a"),
+      c("ctx_a", "ctx_b", "wm_a")
+    )
+  })
+
+  it("drops a white-matter label whose row declines", {
+    expect_identical(
+      default_backdrop_labels(
+        lut(c(NA, NA, FALSE)),
+        c("ctx_a", "ctx_b"),
+        "wm_a"
+      ),
+      c("ctx_a", "ctx_b")
+    )
+  })
+
+  it("is white matter alone when there is no cortex", {
+    expect_identical(
+      default_backdrop_labels(lut(), character(0), "wm_a"),
+      "wm_a"
+    )
+  })
+
+  it("is empty when there is nothing to draw", {
+    expect_identical(
+      default_backdrop_labels(lut(), character(0), character(0)),
+      character(0)
+    )
+  })
+
+  it("survives a NULL table", {
+    expect_identical(
+      default_backdrop_labels(NULL, "ctx_a", "wm_a"),
+      c("ctx_a", "wm_a")
+    )
+  })
+})
