@@ -300,7 +300,6 @@ tract_finalize <- function(atlas, config, dirs, start_time) {
 }
 
 
-#' @noRd
 #' Number of steps in the tract pipeline
 #'
 #' The last step assembles the atlas, so this is both the ceiling `steps` is
@@ -309,6 +308,7 @@ tract_finalize <- function(atlas, config, dirs, start_time) {
 tract_total_steps <- function() 4L
 
 
+#' @noRd
 tract_extract_contours <- function(config, dirs, vertex_size_limits) {
   if (!(3L %in% config$steps)) {
     return(invisible(NULL))
@@ -596,7 +596,6 @@ default_tract_atlas_name <- function(input_tracts) {
 }
 
 
-#' @noRd
 #' Every snapshot filename a tract run can produce
 #'
 #' The mirror of [subcort_snapshot_names()]. A superset: a tract with no
@@ -631,6 +630,7 @@ tract_snapshot_names <- function(labels, slabs, cortex_slices = NULL) {
 }
 
 
+#' @noRd
 tract_resolve_snapshots <- function(config, dirs, step1, input_aseg, slabs) {
   files <- c(
     as.character(fs::path(dirs$base, "slabs.rds")),

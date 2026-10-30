@@ -208,8 +208,6 @@ subcort_setup_pipeline <- function(
 }
 
 
-#' Run the subcortical pipeline steps and assemble the atlas
-#' @noRd
 #' Number of steps in the subcortical pipeline
 #'
 #' The last step assembles the 2D atlas, so this is both the ceiling `steps`
@@ -219,6 +217,8 @@ subcort_setup_pipeline <- function(
 subcort_total_steps <- function() 6L
 
 
+#' Run the subcortical pipeline steps and assemble the atlas
+#' @noRd
 subcort_run_pipeline <- function(
   setup,
   start_time,
