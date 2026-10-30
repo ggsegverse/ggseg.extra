@@ -19,6 +19,54 @@ describe("wholebrain_classify_labels", {
     bind_rows(rows)
   }
 
+  it("withholds a label the table declares as context", {
+    ad <- make_atlas_data(c("parcel_a", "mantle"), c(100, 100))
+    ct <- data.frame(
+      idx = 1:2,
+      label = c("parcel_a", "mantle"),
+      R = 1L,
+      G = 1L,
+      B = 1L,
+      A = 0L,
+      context = c(NA, "cortex")
+    )
+
+    result <- suppressWarnings(
+      wholebrain_classify_labels(ad, min_vertices = 50L, colortable = ct)
+    )
+
+    expect_identical(result$context_labels, "mantle")
+    expect_false(
+      "mantle" %in%
+        c(
+          result$cortical_labels,
+          result$subcortical_labels,
+          result$cerebellar_labels
+        )
+    )
+    expect_true("parcel_a" %in% result$cortical_labels)
+  })
+
+  it("classifies every label when the table declares nothing", {
+    ad <- make_atlas_data(c("parcel_a", "mantle"), c(100, 100))
+    ct <- data.frame(
+      idx = 1:2,
+      label = c("parcel_a", "mantle"),
+      R = 1L,
+      G = 1L,
+      B = 1L,
+      A = 0L,
+      context = NA_character_
+    )
+
+    result <- suppressWarnings(
+      wholebrain_classify_labels(ad, min_vertices = 50L, colortable = ct)
+    )
+
+    expect_length(result$context_labels, 0)
+    expect_true("mantle" %in% result$cortical_labels)
+  })
+
   it("classifies labels above threshold as cortical", {
     ad <- make_atlas_data(
       c("region_a", "region_b"),
@@ -3767,6 +3815,24 @@ describe("wholebrain label stamping", {
 
 
 describe("sub_pipeline_lut", {
+  it("carries the author's context declaration to the sub-pipeline", {
+    ct <- data.frame(
+      idx = c(10L, 3L),
+      label = c("Left-Thalamus", "mantle"),
+      R = 1L,
+      G = 1L,
+      B = 1L,
+      A = 0L,
+      context = c(NA, "cortex")
+    )
+
+    out <- sub_pipeline_lut(ct)
+
+    expect_true("context" %in% names(out))
+    expect_identical(split_lut_context(out)$context$label, "mantle")
+    expect_identical(split_lut_context(out)$regions$label, "Left-Thalamus")
+  })
+
   miccai_style <- function() {
     data.frame(
       stringsAsFactors = FALSE,

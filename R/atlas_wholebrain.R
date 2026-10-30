@@ -260,7 +260,7 @@
 #' @seealso [atlas_polish()] to simplify and round off the result, which
 #'   most builds want next.
 #' @export
-#' @importFrom dplyr tibble bind_rows filter
+#' @importFrom dplyr tibble bind_rows filter slice
 #' @importFrom grDevices rgb
 #' @importFrom tools file_path_sans_ext
 #'
@@ -1393,6 +1393,17 @@ wholebrain_classify_labels <- function(
   subcortical_labels = NULL,
   cerebellar_labels = NULL
 ) {
+  declared <- declared_context_labels(colortable)
+  if (length(declared)) {
+    colortable <- slice(colortable, which(!colortable$label %in% declared))
+    # Classification keys on `source_label` -- the name the volume used --
+    # while `label` has already been given its hemisphere prefix.
+    if (!is.null(atlas_data) && "source_label" %in% names(atlas_data)) {
+      keep <- which(!atlas_data$source_label %in% declared)
+      atlas_data <- slice(atlas_data, keep)
+    }
+  }
+
   prep <- classify_labels_inputs(atlas_data, colortable)
   vertex_counts <- prep$vertex_counts
 
@@ -1426,8 +1437,26 @@ wholebrain_classify_labels <- function(
     cortical_labels = classified_cortical,
     subcortical_labels = classified_subcortical,
     cerebellar_labels = classified_cerebellar,
+    context_labels = declared,
     vertex_counts = vertex_counts
   )
+}
+
+
+#' The labels a whole-brain lookup table declares as backdrop
+#'
+#' A row the author marked as context is not a region, so it is withheld
+#' from classification rather than being sorted into one of the three
+#' outputs. The declaration is the author's; the pipeline does not infer it
+#' from the label's name.
+#' @param colortable The loaded lookup table, or `NULL`.
+#' @return Character vector of labels, empty when nothing is declared.
+#' @noRd
+declared_context_labels <- function(colortable) {
+  if (is.null(colortable) || !nrow(colortable)) {
+    return(character(0))
+  }
+  as.character(colortable$label[lut_is_context(colortable)])
 }
 
 
@@ -2020,7 +2049,10 @@ sub_pipeline_lut <- function(colortable) {
     "G",
     "B",
     "A",
-    intersect("hemi", names(colortable))
+    intersect("hemi", names(colortable)),
+    # The author's declaration travels with the row. Dropping it here is what
+    # made the whole-brain pipeline ignore a `context` column it was handed.
+    intersect("context", names(colortable))
   )
   lut <- as.data.frame(colortable[, columns, drop = FALSE])
   rownames(lut) <- NULL
@@ -2043,7 +2075,7 @@ wholebrain_run_subcortical <- function(
   }
 
   subcort_ct <- colortable[
-    colortable$label %in% split$subcortical_labels,
+    colortable$label %in% c(split$subcortical_labels, split$context_labels),
   ]
 
   subcort_ct <- fill_missing_rgb(subcort_ct, "subcort")
