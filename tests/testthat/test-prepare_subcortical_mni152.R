@@ -71,7 +71,10 @@ describe("validate_labels_clear_of_aseg", {
 
 describe("prepare_subcortical_mni152", {
   it("embeds MNI152 parcels into the fsaverage5 aseg context", {
-    skip_if(!freesurfer::have_fs(), "FreeSurfer not available")
+    # The shared guard, not a hand-rolled have_fs() check: have_fs() only
+    # finds the directory, so an installation whose binaries do not execute
+    # passes it and then errors on the first call.
+    skip_if_no_freesurfer()
 
     aseg_mgz <- fsaverage5_file("mri", "aseg.mgz")
     skip_if(!file.exists(aseg_mgz), "fsaverage5 aseg not available")

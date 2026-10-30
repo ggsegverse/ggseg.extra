@@ -4,9 +4,40 @@
 # With GGSEG_REQUIRE_FREESURFER set, as in the container CI job, a missing
 # FreeSurfer is a failure rather than a skip, so the job cannot go green while
 # silently running none of the FreeSurfer tests.
+# Does a representative binary actually run? Resolving one is not enough: an
+# x86_64 FreeSurfer on an arm64 Mac resolves and then dies with "Bad CPU type
+# in executable" on every call, which is a skip, not 18 test errors. Cached
+# because it costs a process and the answer cannot change mid-run.
+.fs_runs <- local({
+  answer <- NULL
+  function() {
+    if (is.null(answer)) {
+      binary <- Sys.which("mri_info")
+      answer <<- nzchar(binary) &&
+        identical(
+          suppressWarnings(system2(
+            binary,
+            "--version",
+            stdout = FALSE,
+            stderr = FALSE
+          )),
+          0L
+        )
+    }
+    answer
+  }
+})
+
+freesurfer_is_usable <- function() {
+  # have_fs() only checks for the FreeSurfer directory; it returns TRUE even
+  # when the binaries are not on PATH, and being on PATH does not mean they
+  # execute.
+  freesurfer::have_fs() && .fs_runs()
+}
+
 skip_if_no_freesurfer <- function() {
   if (nzchar(Sys.getenv("GGSEG_REQUIRE_FREESURFER"))) {
-    if (!freesurfer::have_fs() || !nzchar(Sys.which("mri_info"))) {
+    if (!freesurfer_is_usable()) {
       stop("GGSEG_REQUIRE_FREESURFER is set but FreeSurfer is not available")
     }
     return(invisible(TRUE))
@@ -16,10 +47,7 @@ skip_if_no_freesurfer <- function() {
     "freesurfer",
     minimum_version = freesurfer_min_version()
   )
-  # have_fs() only checks for the FreeSurfer directory; it returns TRUE even
-  # when the binaries are not on PATH. Also require a representative binary to
-  # be resolvable so tests that shell out (e.g. mri_info) skip instead of error.
-  if (!freesurfer::have_fs() || !nzchar(Sys.which("mri_info"))) {
+  if (!freesurfer_is_usable()) {
     skip("FreeSurfer not available")
   }
 }

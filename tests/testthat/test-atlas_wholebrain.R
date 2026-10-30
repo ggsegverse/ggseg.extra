@@ -4047,10 +4047,11 @@ describe("white matter in a whole-brain volume", {
   # samples through it, so a white-matter label lands a lot of vertices. That
   # is what used to make the vertex-count fallback call it cortical.
   atlas_data <- function() {
-    tibble::tibble(
-      source_label = c("wm_left", "wm_right", "thalamus", "bankssts"),
-      vertices = list(1:4000, 1:4000, 1:3, 1:900)
+    out <- data.frame(
+      source_label = c("wm_left", "wm_right", "thalamus", "bankssts")
     )
+    out$vertices <- list(1:4000, 1:4000, 1:3, 1:900)
+    out
   }
 
   classify <- function(...) {

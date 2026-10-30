@@ -87,7 +87,8 @@ of the grey classes. A whole-brain parcellation that carries
 \verb{Left-/Right-Cerebral-White-Matter} has nowhere to put them otherwise: the
 vertex-count fallback calls them cortical, because white matter sits
 directly under the ribbon and the surface projection samples through it,
-and they are then drawn as legended cortical regions. White matter is
+and they are then drawn as cortical regions with an entry each in the
+legend. White matter is
 measured against the grey tissues individually, not against their total,
 so adding this class moves no label that was already classified by its
 grey.

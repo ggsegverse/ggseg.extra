@@ -110,3 +110,85 @@ describe("create_wholebrain_from_volume on fsaverage5", {
     expect_setequal(result$cerebellar_labels, cerebellum)
   })
 })
+
+
+describe("white matter in a real whole-brain volume", {
+  it("draws the aseg's cerebral white matter as backdrop, not as regions", {
+    skip_if_no_freesurfer()
+
+    # The shipped aseg is a genuine whole-brain volume and it carries
+    # Left-/Right-Cerebral-White-Matter (2, 41). FreeSurferColorLUT.txt has no
+    # `type` column, so without one the vertex count calls them cortical --
+    # white matter sits under the ribbon and the projection samples through
+    # it. Declaring the type is what routes them to the backdrop instead.
+    volume <- fsaverage5_file("mri", "aseg.mgz")
+    lut <- read_lut(file.path(freesurfer::fs_dir(), "FreeSurferColorLUT.txt"))
+    wm <- c("Left-Cerebral-White-Matter", "Right-Cerebral-White-Matter")
+    lut$type <- NA_character_
+    lut$type[lut$label %in% wm] <- "white_matter"
+
+    lut_file <- withr::local_tempfile(fileext = ".txt")
+    write_lut(lut, lut_file)
+
+    result <- NULL
+    expect_warning(
+      expect_warning(
+        result <- create_wholebrain_from_volume(
+          input_volume = volume,
+          input_lut = lut_file,
+          atlas_name = "aseg_wm_fsaverage5",
+          output_dir = withr::local_tempdir(),
+          projection_opts = list(registration = "header"),
+          steps = 1:2,
+          verbose = FALSE
+        ),
+        "not on the cortical surface"
+      ),
+      "by surface vertex count"
+    )
+
+    expect_setequal(result$white_matter_labels, wm)
+    expect_false(any(wm %in% result$cortical_labels))
+    expect_false(any(wm %in% result$subcortical_labels))
+    expect_false(any(wm %in% result$cerebellar_labels))
+
+    # And the backdrop the subcortical sub-atlas is drawn against holds them.
+    backdrop <- default_backdrop_labels(
+      lut,
+      cortical_labels = result$cortical_labels,
+      white_matter_labels = result$white_matter_labels
+    )
+    expect_true(all(wm %in% backdrop))
+  })
+
+  it("still calls the aseg's white matter cortical when nothing declares it", {
+    skip_if_no_freesurfer()
+
+    # The regression this guards: the same volume and the stock lookup table,
+    # which declares nothing. White matter has no type, so the vertex count
+    # decides, and it decides wrong. Pinned so the gap cannot quietly close
+    # for the wrong reason, or quietly widen.
+    result <- NULL
+    expect_warning(
+      expect_warning(
+        result <- create_wholebrain_from_volume(
+          input_volume = fsaverage5_file("mri", "aseg.mgz"),
+          input_lut = file.path(freesurfer::fs_dir(), "FreeSurferColorLUT.txt"),
+          atlas_name = "aseg_nowm_fsaverage5",
+          output_dir = withr::local_tempdir(),
+          projection_opts = list(registration = "header"),
+          steps = 1:2,
+          verbose = FALSE
+        ),
+        "not on the cortical surface"
+      ),
+      "by surface vertex count"
+    )
+
+    expect_identical(result$white_matter_labels, character(0))
+    expect_true(
+      "Left-Cerebral-White-Matter" %in%
+        c(result$cortical_labels, result$subcortical_labels)
+    )
+  })
+})
