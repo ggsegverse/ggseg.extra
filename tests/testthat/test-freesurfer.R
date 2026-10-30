@@ -166,15 +166,93 @@ describe("mni152_register_path", {
 
 
 describe("vol2vol_registration_opt", {
-  it("asks mri_vol2vol to trust the header, or to use a file", {
+  it("asks mri_vol2vol to trust the header", {
+    expect_identical(
+      vol2vol_registration_opt("header", mov = "m.nii", targ = "t.mgz"),
+      "--regheader"
+    )
+  })
+
+  it("hands an LTA over untouched", {
+    # An LTA already states its geometry, so converting it would be a
+    # round trip that can only lose something.
+    lta <- withr::local_tempfile(fileext = ".lta")
+    file.create(lta)
+
+    expect_identical(
+      vol2vol_registration_opt(lta, mov = "m.nii", targ = "t.mgz"),
+      paste("--reg", shQuote(lta))
+    )
+  })
+
+  it("converts a tkregister matrix against this call's volumes", {
+    # FreeSurfer 8 refuses a REGISTER_DAT whose source geometry it cannot
+    # establish and writes no output, so the matrix becomes an LTA first.
     reg_file <- withr::local_tempfile(fileext = ".dat")
     file.create(reg_file)
-
-    expect_identical(vol2vol_registration_opt("header"), "--regheader")
-    expect_identical(
-      vol2vol_registration_opt(reg_file),
-      paste("--reg", shQuote(reg_file))
+    local_mocked_bindings(
+      lta_from_register_dat = function(path, mov, targ, ...) {
+        paste0(path, "|", mov, "|", targ, ".lta")
+      }
     )
+
+    expect_identical(
+      vol2vol_registration_opt(reg_file, mov = "m.nii", targ = "t.mgz"),
+      paste("--reg", shQuote(paste0(reg_file, "|m.nii|t.mgz.lta")))
+    )
+  })
+})
+
+
+describe("lta_from_register_dat", {
+  # Stand in for lta_convert: write the file the command asks for, and
+  # report the command so its shape can be checked.
+  local_mock_lta_convert <- function(write = TRUE, env = parent.frame()) {
+    seen <- new.env()
+    local_mocked_bindings(
+      run_cmd = function(cmd, ...) {
+        seen$cmd <- cmd
+        if (write) {
+          out <- sub('.*--outlta \'([^\']*)\'.*', "\\1", cmd)
+          writeLines("lta", out)
+        }
+        invisible(0L)
+      },
+      .env = env
+    )
+    seen
+  }
+
+  it("names the source and target volumes the geometry comes from", {
+    seen <- local_mock_lta_convert()
+
+    lta <- lta_from_register_dat("reg.dat", mov = "m.nii", targ = "t.mgz")
+
+    expect_match(seen$cmd, "^lta_convert ")
+    expect_match(seen$cmd, "--inreg 'reg.dat'", fixed = TRUE)
+    expect_match(seen$cmd, "--src 'm.nii'", fixed = TRUE)
+    expect_match(seen$cmd, "--trg 't.mgz'", fixed = TRUE)
+    expect_true(file.exists(lta))
+  })
+
+  it("aborts when lta_convert writes nothing", {
+    # The failure this whole change exists to stop being silent.
+    local_mock_lta_convert(write = FALSE)
+
+    expect_error(
+      lta_from_register_dat("reg.dat", mov = "m.nii", targ = "t.mgz"),
+      "lta_convert"
+    )
+  })
+
+  it("does not leave the LTA behind when its caller returns", {
+    seen <- local_mock_lta_convert()
+
+    lta <- local({
+      lta_from_register_dat("reg.dat", mov = "m.nii", targ = "t.mgz")
+    })
+
+    expect_false(file.exists(lta))
   })
 })
 

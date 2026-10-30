@@ -514,6 +514,14 @@ and tractography files.
 
 ## Bug fixes
 
+- `mri_vol2vol` is given a transform FreeSurfer 8 accepts.
+  `registration = "mni152"` passed FreeSurfer's `mni152.register.dat`
+  straight through, and FreeSurfer 8 refuses a tkregister matrix whose
+  source geometry it cannot establish, writing no output. The matrix is now
+  converted to an LTA against the volumes being registered, which states the
+  geometry instead of assuming it. Affected `prepare_subcortical_mni152()`
+  and `coregister_volume()`; `mri_vol2surf` was never affected.
+
 - A parcellation published on a grid too coarse to carry a cortical ribbon
   is resampled onto the `aseg`'s grid rather than the `aseg` being resampled
   down to it. A ribbon is about 2.5 mm thick, so on the 4 mm grid the

@@ -132,7 +132,10 @@ prepare_subcortical_mni152 <- function(
   rlang::check_installed("RNifti", reason = "to read NIfTI volumes")
 
   in_path <- resolve_volume_path(input_volume)
-  registration_opt <- vol2vol_registration_opt(registration)
+  # Validated here even though the option is built later: a bad registration
+  # costs nothing to reject and should not be reported only after the volume
+  # has been read and resampled.
+  resolve_registration(registration)
   aseg_mgz <- as.character(
     fs::path(subjects_dir, target_subject, "mri", "aseg.mgz")
   )
@@ -171,6 +174,13 @@ prepare_subcortical_mni152 <- function(
 
   registered <- tempfile(fileext = ".nii.gz")
   on.exit(unlink(registered), add = TRUE)
+  # Built here rather than up front: a tkregister matrix becomes an LTA
+  # against these two volumes, so it cannot be resolved before they exist.
+  registration_opt <- vol2vol_registration_opt(
+    registration,
+    mov = parcels_mni,
+    targ = aseg_mgz
+  )
   freesurfer::fs_cmd(
     func = "mri_vol2vol",
     file = parcels_mni,
