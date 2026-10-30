@@ -1846,13 +1846,6 @@ fill_unlabelled_from_mesh_neighbors <- function(labels, faces, n_verts) {
 }
 
 
-#' Rescue an orphaned surface region by finding nearest vertices
-#'
-#' For regions that have volume voxels but no surface vertices (even after
-#' expanded fill), find the surface vertices closest to the region's voxel
-#' centroid and assign them.
-#' @return Integer vector of 0-based vertex indices (may be empty)
-#' @noRd
 #' The flatmap vertices a polygon can actually be built from
 #'
 #' The SUIT flatmap keeps ~100 of its 28935 vertices in no face at all, and
@@ -1875,6 +1868,13 @@ suit_drawable_vertices <- function() {
 suit_drawable_cache <- new.env(parent = emptyenv())
 
 
+#' Rescue an orphaned surface region by finding nearest vertices
+#'
+#' For regions that have volume voxels but no surface vertices (even after
+#' expanded fill), find the surface vertices closest to the region's voxel
+#' centroid and assign them.
+#' @return Integer vector of 0-based vertex indices (may be empty)
+#' @noRd
 rescue_orphaned_region <- function(
   vol,
   label_id,

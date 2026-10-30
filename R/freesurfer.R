@@ -321,13 +321,6 @@ check_mni152_subject <- function(subject) {
 }
 
 
-#' Warn when a volume already sits on the surface subject's own voxel grid
-#'
-#' Grid identity is the one claim a header supports: a volume on the
-#' subject's exact grid is in that subject's space, not an MNI152 template,
-#' and registering it as one displaces the atlas while it still looks
-#' plausible. A volume in some other non-MNI152 space cannot be recognised.
-#' @noRd
 #' Stop when mni152.register.dat does not apply to this volume's grid
 #'
 #' `mni152.register.dat` is a tkregister matrix, and tkreg coordinates are
@@ -373,6 +366,13 @@ check_mni152_grid <- function(input_volume) {
 }
 
 
+#' Warn when a volume already sits on the surface subject's own voxel grid
+#'
+#' Grid identity is the one claim a header supports: a volume on the
+#' subject's exact grid is in that subject's space, not an MNI152 template,
+#' and registering it as one displaces the atlas while it still looks
+#' plausible. A volume in some other non-MNI152 space cannot be recognised.
+#' @noRd
 warn_if_subject_space_volume <- function(input_volume, subject) {
   if (!same_geometry(volume_vox2ras(input_volume), subject_vox2ras(subject))) {
     return(invisible(FALSE))
