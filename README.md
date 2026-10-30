@@ -16,6 +16,23 @@ This package provides pipelines for creating brain atlas data sets
 compatible with the [ggseg](https://ggsegverse.github.io/ggseg/) and
 [ggseg3d](https://ggsegverse.github.io/ggseg3d/) plotting packages in R.
 
+## What these atlases are for
+
+The atlases built here are for visualising results. They give general
+anatomical guidance — roughly where in the brain an effect sits, and
+which structures neighbour it — and they are not a source of precision
+geometry. Millimetre-scale vertex shifts, smoothing and decimation loss,
+and simplified polygon outlines are all acceptable by design. A region
+on the wrong hemisphere, a label on the wrong structure, or a region
+missing from a view where it is anatomically present is not: that is a
+bug, and worth reporting.
+
+A 3D plot of a cortical or cerebellar atlas draws the fsaverage5 or SUIT
+surface with the atlas’s labels painted onto it, never the atlas’s own
+cortical shape.
+[`?ggseg.extra`](https://ggsegverse.github.io/ggseg.extra/reference/ggseg.extra-package.html)
+has the full statement, including why.
+
 ## Installing
 
 Install the development version from

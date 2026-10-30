@@ -29,6 +29,8 @@ Description: Create brain atlas data sets compatible with the 'ggsegverse' plott
     cortical, subcortical, white-matter tract, and cerebellar atlases from
     'FreeSurfer' annotation files, 'GIFTI' and 'CIFTI' surface formats,
     'neuromaps', cerebellar flatmaps, and volumetric 'NIfTI' images.
+    The atlases it builds are intended for visualising results as general
+    anatomical guidance, not as a source of precision geometry for analysis.
     Mowinckel & Vidal-Piñeiro (2020) <doi:10.1177/2515245920928009>.
 License: MIT + file LICENSE
 URL: https://ggsegverse.github.io/ggseg.extra/,

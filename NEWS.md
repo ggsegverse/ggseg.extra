@@ -757,6 +757,12 @@ and tractography files.
 
 ## Documentation
 
+- `?ggseg.extra` states what these atlases are for:
+  visualising results as general anatomical guidance, not precision geometry for analysis.
+  It says which approximations are acceptable by design and which are bugs,
+  and documents that a cortical or cerebellar atlas carries vertex indices into fsaverage5 or SUIT,
+  so its 3D plot shows that surface's anatomy rather than the atlas's own.
+
 - Six vignettes -- getting started, pipeline configuration, post-processing,
   system setup, legacy conversion, contributing -- and, on the package website,
   an atlas creation workflows article with six verified diagrams plus nine
