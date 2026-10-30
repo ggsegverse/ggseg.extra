@@ -1087,15 +1087,7 @@ build_deep_nucleus_mesh <- function(
   if (!is.null(decimate) && decimate < 1) {
     mesh <- decimate_mesh(mesh, percent = decimate)
   }
-  verts <- as.matrix(mesh$vertices)
-  verts_h <- cbind(verts, 1)
-  world <- verts_h %*% t(tkr_to_world)
-  mesh$vertices <- data.frame(
-    x = world[, 1],
-    y = world[, 2],
-    z = world[, 3]
-  )
-  mesh
+  mesh_tkras_to_world(mesh, tkr_to_world)
 }
 # nocov end
 
@@ -1154,64 +1146,6 @@ build_deep_nuclei_meshes <- function(
   deep_meshes$mesh <- unname(meshes_list)
   deep_meshes
   # nocov end
-}
-
-
-# nocov start
-#' Compute tkRAS-to-world transform for a NIfTI volume
-#'
-#' FreeSurfer tessellation outputs surfaces in tkRAS coordinates.
-#' This computes the transform to convert them to the volume's world
-#' (scanner RAS / MNI) coordinates: world = vox2ras * inv(vox2ras_tkr) * tkRAS
-#' @noRd
-get_tkras_to_world <- function(volume_path) {
-  check_fs(abort = TRUE)
-
-  vox2ras_tkr <- mri_info_matrix("--vox2ras-tkr", volume_path)
-  vox2ras <- mri_info_matrix("--vox2ras", volume_path)
-
-  vox2ras %*% solve(vox2ras_tkr)
-}
-# nocov end
-
-#' Run `mri_info` and parse its printed matrix
-#'
-#' `mri_info` can print informational/warning lines (e.g. about a missing
-#' qform) ahead of the requested matrix, so only the matrix's own 4 lines
-#' -- always the last non-empty lines of output -- are parsed; naively
-#' parsing every line would silently fold stray numbers from those messages
-#' into the matrix. Aborts loudly if the subprocess fails or the tail lines
-#' don't parse into a complete 4x4 matrix, rather than returning garbage.
-#' @noRd
-mri_info_matrix <- function(flag, volume_path) {
-  lines <- system2(
-    "mri_info",
-    c(flag, shQuote(volume_path)),
-    stdout = TRUE,
-    stderr = TRUE
-  )
-  status <- attr(lines, "status")
-  if (!is.null(status) && status != 0L) {
-    cli::cli_abort(c(
-      "{.code mri_info {flag}} failed for {.path {volume_path}} \\
-       (exit {status}).",
-      "x" = paste(lines, collapse = "\n")
-    ))
-  }
-
-  lines <- trimws(lines)
-  lines <- lines[nzchar(lines)]
-  vals <- suppressWarnings(as.numeric(unlist(
-    strsplit(utils::tail(lines, 4L), "\\s+")
-  )))
-
-  if (length(vals) != 16L || anyNA(vals)) {
-    cli::cli_abort(
-      "{.code mri_info {flag}} did not return a valid 4x4 matrix for \\
-       {.path {volume_path}}."
-    )
-  }
-  matrix(vals, nrow = 4, ncol = 4, byrow = TRUE)
 }
 
 

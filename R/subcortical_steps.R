@@ -38,6 +38,12 @@ subcort_create_meshes <- function(
     cli::cli_abort("No meshes were successfully created")
   }
 
+  # Tessellation hands back tkRAS. Bringing the meshes into the volume's own
+  # world has to happen before centring, because centring is a translation
+  # and cannot undo the reflection a non-conformed volume picks up.
+  tkr_to_world <- get_tkras_to_world(input_volume)
+  meshes_list <- lapply(meshes_list, mesh_tkras_to_world, tkr_to_world)
+
   meshes_list <- center_meshes(meshes_list)
 
   meshes_list <- subcort_decimate_meshes(meshes_list, decimate, verbose)
