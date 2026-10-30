@@ -49,3 +49,49 @@ describe("mesh_tkras_to_world()", {
     expect_identical(out$faces, mesh()$faces)
   })
 })
+
+
+describe("a tessellated structure keeps its side", {
+  it("puts a left-sided label on the left of a non-conformed volume", {
+    # The regression this file exists for. tkRAS is derived from a volume's
+    # dimensions alone, so for a volume that is not in FreeSurfer's conformed
+    # order the x axis can come back reflected -- and a mesh on the wrong
+    # side is a defect, not an approximation, however tight its vertices are.
+    skip_if_no_freesurfer()
+    skip_if_not_installed("RNifti")
+
+    # Two blobs either side of the midline, in a right-handed (RAS) volume:
+    # +x is anatomical right, so label 10 is left and label 20 is right.
+    arr <- array(0L, dim = c(40L, 40L, 40L))
+    arr[8:14, 18:24, 18:24] <- 10L
+    arr[26:32, 18:24, 18:24] <- 20L
+    img <- RNifti::asNifti(
+      arr,
+      reference = list(
+        sform_code = 1L,
+        srow_x = c(1, 0, 0, -20),
+        srow_y = c(0, 1, 0, -20),
+        srow_z = c(0, 0, 1, -20)
+      )
+    )
+    volume <- withr::local_tempfile(fileext = ".nii.gz")
+    RNifti::writeNifti(img, volume)
+    expect_gt(det(RNifti::xform(RNifti::readNifti(volume))[1:3, 1:3]), 0)
+
+    work <- withr::local_tempdir()
+    tkr <- get_tkras_to_world(volume)
+    side <- function(id) {
+      mesh <- tessellate_label(
+        volume_file = volume,
+        label_id = id,
+        output_dir = work,
+        verbose = FALSE,
+        skip_existing = FALSE
+      )
+      mean(as.matrix(mesh_tkras_to_world(mesh, tkr)$vertices)[, 1])
+    }
+
+    expect_lt(side(10L), 0)
+    expect_gt(side(20L), 0)
+  })
+})
