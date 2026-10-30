@@ -213,7 +213,11 @@ describe("lta_from_register_dat", {
       run_cmd = function(cmd, ...) {
         seen$cmd <- cmd
         if (write) {
-          out <- sub('.*--outlta \'([^\']*)\'.*', "\\1", cmd)
+          # `--outlta` is the last argument, so everything after it is the
+          # path. Taking the tail and stripping quotes rather than matching
+          # them: shQuote() uses single quotes on Unix and double on
+          # Windows, and a pattern for one silently fails on the other.
+          out <- gsub('^["\']|["\']$', "", sub(".*--outlta ", "", cmd))
           writeLines("lta", out)
         }
         invisible(0L)
@@ -229,9 +233,15 @@ describe("lta_from_register_dat", {
     lta <- lta_from_register_dat("reg.dat", mov = "m.nii", targ = "t.mgz")
 
     expect_match(seen$cmd, "^lta_convert ")
-    expect_match(seen$cmd, "--inreg 'reg.dat'", fixed = TRUE)
-    expect_match(seen$cmd, "--src 'm.nii'", fixed = TRUE)
-    expect_match(seen$cmd, "--trg 't.mgz'", fixed = TRUE)
+    # Quoted with shQuote() rather than written out, for the same reason the
+    # mock does not match quotes: they differ by platform.
+    expect_match(
+      seen$cmd,
+      paste("--inreg", shQuote("reg.dat")),
+      fixed = TRUE
+    )
+    expect_match(seen$cmd, paste("--src", shQuote("m.nii")), fixed = TRUE)
+    expect_match(seen$cmd, paste("--trg", shQuote("t.mgz")), fixed = TRUE)
     expect_true(file.exists(lta))
   })
 
