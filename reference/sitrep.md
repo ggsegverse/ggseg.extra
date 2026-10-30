@@ -104,7 +104,7 @@ sitrep("full")
 #>   verbose: 1
 #>   cleanup: TRUE
 #>   skip_existing: FALSE
-#>   output_dir: /tmp/Rtmpyx2G7O
+#>   output_dir: /tmp/RtmpFZi0DW
 #> 
 #> ℹ Set via `options(ggseg.extra.<name> = value)` or environment variables
 #>   `GGSEG_EXTRA_<NAME>`
