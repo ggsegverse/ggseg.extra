@@ -117,8 +117,12 @@ defaults:
 comes from. \code{"atlas"} uses this parcellation's own cortical
 mantle, split at the midline. \code{"aseg"} substitutes a FreeSurfer
 cortical ribbon instead. See \strong{Cortical backdrop}.
-\item \code{subject} (\code{"cvs_avg35_inMNI152"}): the FreeSurfer subject the
-\code{aseg} is taken from. Only read when \code{silhouette = "aseg"}.
+\item \code{subject} (\code{"fsaverage5"}): the FreeSurfer subject the \code{aseg}
+is taken from. Only read when \code{silhouette = "aseg"}. \code{fsaverage5}
+ships with FreeSurfer, so the opt-in works without downloading
+anything; a volume in MNI152 space may prefer
+\code{"cvs_avg35_inMNI152"}, which is in that space rather than a few
+millimetres off it.
 }
 Unknown entries error.}
 

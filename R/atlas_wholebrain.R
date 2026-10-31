@@ -186,8 +186,12 @@
 #'       comes from. `"atlas"` uses this parcellation's own cortical
 #'       mantle, split at the midline. `"aseg"` substitutes a FreeSurfer
 #'       cortical ribbon instead. See **Cortical backdrop**.
-#'     \item `subject` (`"cvs_avg35_inMNI152"`): the FreeSurfer subject the
-#'       `aseg` is taken from. Only read when `silhouette = "aseg"`.
+#'     \item `subject` (`"fsaverage5"`): the FreeSurfer subject the `aseg`
+#'       is taken from. Only read when `silhouette = "aseg"`. `fsaverage5`
+#'       ships with FreeSurfer, so the opt-in works without downloading
+#'       anything; a volume in MNI152 space may prefer
+#'       `"cvs_avg35_inMNI152"`, which is in that space rather than a few
+#'       millimetres off it.
 #'   }
 #'   Unknown entries error.
 #' @param cortical_opts Named list of extra arguments forwarded to the
@@ -429,7 +433,7 @@ WHOLEBRAIN_PROJECTION_DEFAULTS <- list(
 #' @noRd
 WHOLEBRAIN_CONTEXT_DEFAULTS <- list(
   silhouette = "atlas",
-  subject = "cvs_avg35_inMNI152"
+  subject = "fsaverage5"
 )
 
 #' Silhouette sources `context_opts$silhouette` accepts
@@ -2452,7 +2456,7 @@ wholebrain_prepare_subcortical_volume <- function(
   output_file,
   target_idx = subcortical_idx,
   silhouette = "atlas",
-  cortex_subject = "cvs_avg35_inMNI152",
+  cortex_subject = "fsaverage5",
   verbose = get_verbose()
 ) {
   vol <- read_volume(input_volume, reorient = FALSE)

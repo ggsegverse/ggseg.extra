@@ -1235,7 +1235,7 @@ describe("wholebrain_run_subcortical backdrop options", {
       input_volume = "fake.nii.gz",
       output_dir = test_dir,
       skip_existing = FALSE,
-      context = list(silhouette = "aseg", subject = "bert")
+      context = list(silhouette = "aseg", subject = "fsaverage5")
     )
     wholebrain_run_subcortical(
       config,
@@ -1253,7 +1253,7 @@ describe("wholebrain_run_subcortical backdrop options", {
     )
 
     expect_identical(seen$args$silhouette, "aseg")
-    expect_identical(seen$args$cortex_subject, "bert")
+    expect_identical(seen$args$cortex_subject, "fsaverage5")
   })
 })
 
@@ -2004,9 +2004,12 @@ describe("validate_pipeline_opts", {
 
 describe("validate_context_opts", {
   it("accepts both silhouette sources and keeps the subject", {
-    out <- validate_context_opts(list(silhouette = "aseg", subject = "bert"))
+    out <- validate_context_opts(list(
+      silhouette = "aseg",
+      subject = "fsaverage5"
+    ))
     expect_identical(out$silhouette, "aseg")
-    expect_identical(out$subject, "bert")
+    expect_identical(out$subject, "fsaverage5")
     expect_identical(
       validate_context_opts(WHOLEBRAIN_CONTEXT_DEFAULTS)$silhouette,
       "atlas"
@@ -2015,7 +2018,10 @@ describe("validate_context_opts", {
 
   it("rejects a silhouette source it cannot draw", {
     expect_error(
-      validate_context_opts(list(silhouette = "ribbon", subject = "bert")),
+      validate_context_opts(list(
+        silhouette = "ribbon",
+        subject = "fsaverage5"
+      )),
       "context_opts\\$silhouette"
     )
   })
@@ -3818,16 +3824,17 @@ describe("create_wholebrain_from_volume argument groups", {
     seen <- capture_setup(list())
 
     expect_identical(seen$config$context$silhouette, "atlas")
-    expect_identical(seen$config$context$subject, "cvs_avg35_inMNI152")
+    # fsaverage5 ships with FreeSurfer, so the opt-in needs no download.
+    expect_identical(seen$config$context$subject, "fsaverage5")
   })
 
   it("takes the aseg silhouette from context_opts", {
     seen <- capture_setup(list(
-      context_opts = list(silhouette = "aseg", subject = "bert")
+      context_opts = list(silhouette = "aseg", subject = "cvs_avg35_inMNI152")
     ))
 
     expect_identical(seen$config$context$silhouette, "aseg")
-    expect_identical(seen$config$context$subject, "bert")
+    expect_identical(seen$config$context$subject, "cvs_avg35_inMNI152")
   })
 
   it("rejects an unknown context_opts entry by name", {

@@ -472,7 +472,7 @@ describe("mri_surf2surf_rereg", {
     tmp <- withr::local_tempdir()
 
     mri_surf2surf_rereg(
-      subject = "bert",
+      subject = "fsaverage5",
       annot = "aparc.DKTatlas",
       hemisphere = "lh",
       output_dir = tmp,
@@ -480,7 +480,7 @@ describe("mri_surf2surf_rereg", {
     )
 
     expect_match(cap$cmd, "mri_surf2surf")
-    expect_match(cap$cmd, paste("--srcsubject", shQuote("bert")))
+    expect_match(cap$cmd, paste("--srcsubject", shQuote("fsaverage5")))
     expect_match(
       cap$cmd,
       paste("--sval-annot", shQuote("aparc.DKTatlas"))
@@ -493,7 +493,7 @@ describe("mri_surf2surf_rereg", {
     tmp <- withr::local_tempdir()
 
     mri_surf2surf_rereg(
-      subject = "bert",
+      subject = "fsaverage5",
       annot = "aparc.DKTatlas",
       hemisphere = "rh",
       output_dir = tmp,
@@ -508,7 +508,7 @@ describe("mri_surf2surf_rereg", {
 
     expect_error(
       mri_surf2surf_rereg(
-        subject = "bert",
+        subject = "fsaverage5",
         annot = "aparc.DKTatlas",
         hemisphere = "left",
         output_dir = withr::local_tempdir(),
@@ -653,7 +653,7 @@ describe("check_mni152_subject", {
     )
 
     expect_error(
-      check_mni152_subject("bert"),
+      check_mni152_subject("fsaverage5"),
       "does not apply to subject"
     )
   })
@@ -661,7 +661,7 @@ describe("check_mni152_subject", {
   it("warns when the geometry cannot be read", {
     local_mocked_bindings(subject_vox2ras = function(...) NULL)
 
-    expect_warning(check_mni152_subject("bert"), "Could not confirm")
+    expect_warning(check_mni152_subject("fsaverage5"), "Could not confirm")
   })
 })
 
