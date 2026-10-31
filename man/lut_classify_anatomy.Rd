@@ -2,7 +2,7 @@
 % Please edit documentation in R/classify_anatomy.R
 \name{lut_classify_anatomy}
 \alias{lut_classify_anatomy}
-\title{Classify lookup-table labels as cortical, subcortical, or cerebellar}
+\title{Classify lookup-table labels by the tissue they sit on}
 \usage{
 lut_classify_anatomy(
   volume,
@@ -10,6 +10,7 @@ lut_classify_anatomy(
   subject = "cvs_avg35_inMNI152",
   min_cortical = 0.6,
   min_cerebellar = 0.5,
+  min_white = 0.5,
   min_fraction = 0.05,
   verbose = get_verbose()
 )
@@ -31,6 +32,11 @@ must be cortical ribbon for the label to be called cortical.}
 \item{min_cerebellar}{Minimum share of a label's labelled grey matter
 that must be cerebellar cortex for the label to be called cerebellar.}
 
+\item{min_white}{Minimum share of a label's labelled tissue, grey and
+white together, that must be white matter for the label to be called
+white matter. Cerebellum is settled first, so a lobule reaching into the
+peduncles stays cerebellar.}
+
 \item{min_fraction}{Minimum share of a label's \emph{own voxels} that must sit
 on the winning tissue, whatever the grey-matter share says. This is what
 stops one ribbon voxel from making a white-matter label cortical.}
@@ -42,7 +48,8 @@ Falls back to \code{options("ggseg.extra.verbose")}, then
 }
 \value{
 The lookup table as a data.frame, with a \code{type} column of
-\code{"cortical"}, \code{"subcortical"} or \code{"cerebellar"}. Labels the volume does
+\code{"cortical"}, \code{"subcortical"}, \code{"cerebellar"} or \code{"white_matter"}.
+Labels the volume does
 not carry are typed \code{"subcortical"}, matching how
 \code{\link[=create_wholebrain_from_volume]{create_wholebrain_from_volume()}} treats a label that never reaches the
 surface, and warned about. The background label \code{idx = 0} is left
@@ -74,6 +81,17 @@ reads as part cortical. A label that touches no labelled grey matter at
 all, and one whose winning tissue is under \code{min_fraction} of its own
 voxels, are both called subcortical: the share alone would let a single
 stray ribbon voxel decide an otherwise unlabelled label.
+
+White matter is typed \code{"white_matter"} rather than being forced into one
+of the grey classes. A whole-brain parcellation that carries
+\verb{Left-/Right-Cerebral-White-Matter} has nowhere to put them otherwise: the
+vertex-count fallback calls them cortical, because white matter sits
+directly under the ribbon and the surface projection samples through it,
+and they are then drawn as cortical regions with an entry each in the
+legend. White matter is
+measured against the grey tissues individually, not against their total,
+so adding this class moves no label that was already classified by its
+grey.
 }
 \examples{
 \dontrun{

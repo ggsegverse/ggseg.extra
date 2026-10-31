@@ -74,10 +74,20 @@ describe("tissue_class()", {
     )
   })
 
-  it("does not count wmparc white matter as cortex", {
+  it("counts the aseg white-matter ids as white matter", {
     expect_identical(
-      as.character(tissue_class(c(3000L, 4035L, 5001L, 5002L, 2L, 41L))),
-      rep("other", 6L)
+      as.character(tissue_class(c(2L, 41L, 251L, 255L, 7L, 46L))),
+      rep("white_matter", 6L)
+    )
+  })
+
+  it("does not count wmparc white matter as cortex", {
+    # wmparc's own ids are not aseg ids, and `aparc+aseg` is what the
+    # composition is measured against, so they never arrive. Unlabelled is
+    # the honest answer for a value this does not know.
+    expect_identical(
+      as.character(tissue_class(c(3000L, 4035L, 5001L, 5002L))),
+      rep("other", 4L)
     )
   })
 
@@ -90,16 +100,19 @@ describe("tissue_class()", {
 
   it("separates deep, cerebellar and brainstem grey", {
     expect_identical(
-      as.character(tissue_class(c(10L, 53L, 8L, 47L, 16L, 7L, 46L))),
-      c(
-        "subcortex",
-        "subcortex",
-        "cerebellum",
-        "cerebellum",
-        "brainstem",
-        "other",
-        "other"
-      )
+      as.character(tissue_class(c(10L, 53L, 8L, 47L, 16L))),
+      c("subcortex", "subcortex", "cerebellum", "cerebellum", "brainstem")
+    )
+  })
+
+  it("keeps cerebellar white matter out of cerebellar grey", {
+    # `cerebellar_grey_idx()` excludes 7 and 46 so the cerebellum draws as a
+    # foliated shell rather than a lump. Asked what tissue they are, the
+    # answer is still white matter.
+    expect_false(any(c(7L, 46L) %in% cerebellar_grey_idx()))
+    expect_identical(
+      as.character(tissue_class(c(7L, 46L))),
+      c("white_matter", "white_matter")
     )
   })
 })
@@ -113,7 +126,8 @@ describe("classify_labels_by_anatomy()", {
       cortex = c(0.3, 0.9),
       subcortex = c(0, 0),
       cerebellum = c(0.6, 0),
-      brainstem = c(0, 0)
+      brainstem = c(0, 0),
+      white_matter = c(0, 0)
     )
     expect_identical(
       classify_labels_by_anatomy(comp),
@@ -128,7 +142,8 @@ describe("classify_labels_by_anatomy()", {
       cortex = 0,
       subcortex = 0,
       cerebellum = 0.4,
-      brainstem = 0.5
+      brainstem = 0.5,
+      white_matter = 0
     )
     expect_identical(classify_labels_by_anatomy(comp), "subcortical")
   })
@@ -140,7 +155,8 @@ describe("classify_labels_by_anatomy()", {
       cortex = 0.01,
       subcortex = 0,
       cerebellum = 0,
-      brainstem = 0
+      brainstem = 0,
+      white_matter = 0
     )
     expect_identical(classify_labels_by_anatomy(comp), "subcortical")
   })
@@ -152,7 +168,85 @@ describe("classify_labels_by_anatomy()", {
       cortex = 0,
       subcortex = 0,
       cerebellum = 0.01,
-      brainstem = 0
+      brainstem = 0,
+      white_matter = 0
+    )
+    expect_identical(classify_labels_by_anatomy(comp), "subcortical")
+  })
+
+  it("types a label whose tissue is mostly white matter white_matter", {
+    comp <- data.frame(
+      idx = 1L,
+      label = "Left-Cerebral-White-Matter",
+      cortex = 0.02,
+      subcortex = 0.01,
+      cerebellum = 0,
+      brainstem = 0,
+      white_matter = 0.93
+    )
+    expect_identical(classify_labels_by_anatomy(comp), "white_matter")
+  })
+
+  it("leaves every grey verdict where it was when white matter is added", {
+    # White matter competes against the grey tissues one by one, not against
+    # their total, so the grey shares are measured on the denominator they
+    # always were. A label already classified by its grey does not move
+    # because it also touches some white matter.
+    comp <- data.frame(
+      idx = 1:3,
+      label = c("temporal", "lobule", "thalamus"),
+      cortex = c(0.9, 0, 0),
+      subcortex = c(0, 0, 0.95),
+      cerebellum = c(0, 0.8, 0),
+      brainstem = c(0, 0, 0),
+      white_matter = c(0.1, 0.12, 0.02)
+    )
+    expect_identical(
+      classify_labels_by_anatomy(comp),
+      c("cortical", "cerebellar", "subcortical")
+    )
+  })
+
+  it("settles cerebellum before white matter", {
+    # A lobule label reaching into the peduncles is more white than grey, but
+    # it is still a cerebellar region.
+    comp <- data.frame(
+      idx = 1L,
+      label = "lobule_into_peduncle",
+      cortex = 0,
+      subcortex = 0,
+      cerebellum = 0.3,
+      brainstem = 0,
+      white_matter = 0.6
+    )
+    expect_identical(classify_labels_by_anatomy(comp), "cerebellar")
+  })
+
+  it("keeps a label out of white matter below min_white", {
+    comp <- data.frame(
+      idx = 1L,
+      label = "half_and_half",
+      cortex = 0.3,
+      subcortex = 0,
+      cerebellum = 0,
+      brainstem = 0,
+      white_matter = 0.2
+    )
+    expect_identical(
+      classify_labels_by_anatomy(comp, min_white = 0.9),
+      "cortical"
+    )
+  })
+
+  it("keeps a label out of white matter despite a stray white voxel", {
+    comp <- data.frame(
+      idx = 1L,
+      label = "mostly_unlabelled",
+      cortex = 0,
+      subcortex = 0,
+      cerebellum = 0,
+      brainstem = 0,
+      white_matter = 0.01
     )
     expect_identical(classify_labels_by_anatomy(comp), "subcortical")
   })
@@ -164,7 +258,8 @@ describe("classify_labels_by_anatomy()", {
       cortex = 0,
       subcortex = 0,
       cerebellum = 0,
-      brainstem = 0
+      brainstem = 0,
+      white_matter = 0
     )
     expect_identical(classify_labels_by_anatomy(comp), "subcortical")
   })
@@ -288,7 +383,10 @@ describe("lut_classify_anatomy()", {
     arr[1:10, 1, 1] <- 1L
     volume <- write_test_volume(arr)
 
-    aseg <- array(2L, dim = c(10L, 10L, 10L))
+    # Unlabelled filler, not white matter: a label nine-tenths in cerebral
+    # white matter is typed `white_matter` now, which would answer a
+    # different question than the floor this test is about.
+    aseg <- array(0L, dim = c(10L, 10L, 10L))
     aseg[1, 1, 1] <- 1001L
     local_aseg(aseg)
     lut <- data.frame(idx = 1L, label = "one_ribbon_voxel")
@@ -556,9 +654,18 @@ describe("check_lut_type()", {
   })
 
   it("accepts every allowed value, NA, and a table with no type column", {
-    lut <- data.frame(idx = 1:4, label = c("A", "B", "C", "D"))
+    # Sized from the vocabulary rather than written out, so adding a type
+    # does not silently stop this from covering every value.
+    n <- length(lut_type_values) + 1L
+    lut <- data.frame(idx = seq_len(n), label = letters[seq_len(n)])
     expect_no_error(check_lut_type(lut))
     lut$type <- c(lut_type_values, NA)
+    expect_no_error(check_lut_type(lut))
+  })
+
+  it("accepts white_matter", {
+    lut <- data.frame(idx = 1L, label = "Left-Cerebral-White-Matter")
+    lut$type <- "white_matter"
     expect_no_error(check_lut_type(lut))
   })
 })
