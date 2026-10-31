@@ -178,6 +178,22 @@
 #'       **Label classification**.
 #'   }
 #'   Unknown entries error.
+#' @param context_opts Named list controlling the grey backdrop the
+#'   subcortical structures are drawn against, with these entries and
+#'   defaults:
+#'   \itemize{
+#'     \item `silhouette` (`"atlas"`): where the cerebral backdrop's shape
+#'       comes from. `"atlas"` uses this parcellation's own cortical
+#'       mantle, split at the midline. `"aseg"` substitutes a FreeSurfer
+#'       cortical ribbon instead. See **Cortical backdrop**.
+#'     \item `subject` (`"fsaverage5"`): the FreeSurfer subject the `aseg`
+#'       is taken from. Only read when `silhouette = "aseg"`. `fsaverage5`
+#'       ships with FreeSurfer, so the opt-in works without downloading
+#'       anything; a volume in MNI152 space may prefer
+#'       `"cvs_avg35_inMNI152"`, which is in that space rather than a few
+#'       millimetres off it.
+#'   }
+#'   Unknown entries error.
 #' @param cortical_opts Named list of extra arguments forwarded to the
 #'   cortical sub-pipeline. Allowed entry: `views`. Unknown entries error.
 #'   Leave empty to use defaults.
@@ -249,6 +265,28 @@
 #'
 #' FreeSurfer's own `INFO` and `WARNING` lines about the registration are
 #' only visible with `verbose = TRUE`.
+#'
+#' @section Cortical backdrop:
+#' The subcortical atlas draws its structures against a grey silhouette, and
+#' by default that silhouette is this parcellation's own cortical labels,
+#' split at the midline. It is the atlas's geometry, in the atlas's space, on
+#' the atlas's grid: whatever it shows, the parcellation put there.
+#'
+#' A parcellation covering both banks of every sulcus has no sulci left in
+#' it, so that silhouette is a solid mantle rather than a recognisable brain.
+#' `context_opts = list(silhouette = "aseg")` replaces it with the cortical
+#' ribbon from FreeSurfer's `aseg`, resampled onto this volume's grid, which
+#' has sulci. The cost is that they are another brain's sulci: the backdrop
+#' then describes `context_opts$subject`'s anatomy, not the atlas's. It also
+#' adds the posterior fossa - cerebellum and brain stem - behind the
+#' structures, which the atlas's own cortical labels cannot supply.
+#'
+#' Ask for it deliberately, in the build script, where a reader can see it.
+#' It needs FreeSurfer, and it declines rather than substitutes a backdrop it
+#' cannot trust: no `aseg`, a ribbon landing off this volume's brain, a mask
+#' already thin enough to be a ribbon of its own, or a grid too coarse to
+#' carry one all fall back to the atlas's own mantle. Each of those decisions
+#' is reported with `verbose = TRUE`.
 #'
 #' @return For a full run, a named list with elements `cortical`,
 #'   `subcortical` and `cerebellar`, each a `ggseg_atlas` object (or `NULL`
@@ -329,6 +367,7 @@ create_wholebrain_from_volume <- function(
   cortical_opts = list(),
   subcortical_opts = list(),
   cerebellar_opts = list(),
+  context_opts = list(),
   steps = NULL,
   min_coverage = NULL,
   cleanup = NULL,
@@ -341,6 +380,11 @@ create_wholebrain_from_volume <- function(
     projection_opts,
     "projection_opts",
     WHOLEBRAIN_PROJECTION_DEFAULTS
+  )
+  context <- resolve_opts(
+    context_opts,
+    "context_opts",
+    WHOLEBRAIN_CONTEXT_DEFAULTS
   )
   cerebellar <- take_cerebellar_space(cerebellar_opts)
 
@@ -365,6 +409,7 @@ create_wholebrain_from_volume <- function(
     skip_existing = skip_existing,
     steps = steps,
     cerebellar_space = cerebellar$space,
+    context = context,
     min_coverage = min_coverage
   )
   wholebrain_run_pipeline(setup, opts, labels, start_time)
@@ -383,6 +428,17 @@ WHOLEBRAIN_PROJECTION_DEFAULTS <- list(
   registration = "header",
   min_vertices = 50L
 )
+
+#' Defaults for the grouped `context_opts` argument
+#' @noRd
+WHOLEBRAIN_CONTEXT_DEFAULTS <- list(
+  silhouette = "atlas",
+  subject = "fsaverage5"
+)
+
+#' Silhouette sources `context_opts$silhouette` accepts
+#' @noRd
+WHOLEBRAIN_SILHOUETTES <- c("atlas", "aseg")
 
 #' Entries the grouped `labels` argument accepts
 #' @noRd
@@ -463,6 +519,7 @@ wholebrain_setup <- function(
   skip_existing,
   steps,
   cerebellar_space,
+  context,
   min_coverage = NULL
 ) {
   config <- validate_wholebrain_config(
@@ -480,6 +537,7 @@ wholebrain_setup <- function(
     skip_existing = skip_existing,
     steps = steps,
     cerebellar_space = cerebellar_space,
+    context = context,
     min_coverage = min_coverage
   )
 
@@ -812,6 +870,7 @@ validate_wholebrain_config <- function(
   skip_existing,
   steps,
   cerebellar_space = "suit",
+  context = WHOLEBRAIN_CONTEXT_DEFAULTS,
   min_coverage = NULL
 ) {
   config <- resolve_common_config(
@@ -865,7 +924,25 @@ validate_wholebrain_config <- function(
     cerebellar_space,
     c("suit", "MNI152NLin6AsymC", "MNI152NLin2009cSymC")
   )
+  config$context <- validate_context_opts(context)
   config
+}
+
+
+#' Check the resolved `context_opts` entries
+#' @noRd
+validate_context_opts <- function(context) {
+  context$silhouette <- rlang::arg_match0(
+    context$silhouette,
+    WHOLEBRAIN_SILHOUETTES,
+    arg_nm = "context_opts$silhouette"
+  )
+  if (!rlang::is_string(context$subject)) {
+    cli::cli_abort(
+      "{.code context_opts$subject} must be a single FreeSurfer subject name."
+    )
+  }
+  context
 }
 
 
@@ -2093,6 +2170,8 @@ wholebrain_run_subcortical <- function(
     cortical_idx = cortical_idx,
     output_file = filtered_vol,
     target_idx = subcort_ct$idx,
+    silhouette = config$context$silhouette,
+    cortex_subject = config$context$subject,
     verbose = config$verbose
   )
   # The backdrop is written into the volume here, and the subcortical
@@ -2359,13 +2438,15 @@ reindex_reserved_subcort_idx <- function(ct, verbose = TRUE) {
 #' `detect_cortex_labels()`. All other labels are zeroed.
 #'
 #' Which voxels become context decides whether that outline reads as a brain
-#' or as a potato. A parcellation covers both banks of every sulcus, so the
-#' union of its cortical labels is a solid mantle. The shape comes from
-#' FreeSurfer's `aseg` instead, where sulcal CSF is unlabelled: it is
-#' resampled onto this volume's own grid and its cortical ribbon is written
-#' wherever no structure claims the voxel. Without a usable `aseg`, or on a
-#' grid too coarse to carry a ribbon, the atlas's own cortical mask is used,
-#' which is the old solid silhouette.
+#' or as a potato. `silhouette = "atlas"`, the default, draws the union of
+#' this parcellation's own cortical labels, split at the midline, which on a
+#' parcellation covering both banks of every sulcus is a solid mantle.
+#' `silhouette = "aseg"` substitutes FreeSurfer's cortical ribbon, where
+#' sulcal CSF is unlabelled: it is resampled onto this volume's own grid and
+#' written wherever no structure claims the voxel, along with the posterior
+#' fossa. That is another subject's anatomy, so it is asked for rather than
+#' inferred; without a usable `aseg`, or on a grid too coarse to carry a
+#' ribbon, it falls back to the atlas's own mask.
 #' @noRd
 # nolint next: object_length_linter.
 wholebrain_prepare_subcortical_volume <- function(
@@ -2374,7 +2455,8 @@ wholebrain_prepare_subcortical_volume <- function(
   cortical_idx,
   output_file,
   target_idx = subcortical_idx,
-  cortex_subject = "cvs_avg35_inMNI152",
+  silhouette = "atlas",
+  cortex_subject = "fsaverage5",
   verbose = get_verbose()
 ) {
   vol <- read_volume(input_volume, reorient = FALSE)
@@ -2382,13 +2464,15 @@ wholebrain_prepare_subcortical_volume <- function(
   # Decided before anything is written, because it decides which grid
   # everything is written on: a grid too coarse to carry a ribbon would
   # leave the backdrop a solid mantle with no sulci in it.
-  carries <- grid_carries_a_ribbon(
-    input_volume,
-    arr,
-    cortical_idx,
-    cortex_subject,
-    verbose = verbose
-  )
+  wants_aseg <- identical(silhouette, "aseg")
+  carries <- !wants_aseg ||
+    grid_carries_a_ribbon(
+      input_volume,
+      arr,
+      cortical_idx,
+      cortex_subject,
+      verbose = verbose
+    )
   if (!carries) {
     regridded <- regrid_onto_aseg(input_volume, cortex_subject, verbose)
     if (!is.null(regridded)) {
@@ -2413,6 +2497,7 @@ wholebrain_prepare_subcortical_volume <- function(
     vol = vol,
     cortical_idx = cortical_idx,
     input_volume = input_volume,
+    silhouette = silhouette,
     cortex_subject = cortex_subject,
     verbose = verbose
   )
@@ -2430,13 +2515,13 @@ wholebrain_prepare_subcortical_volume <- function(
 
 #' Write the cortex context indices into the volume
 #'
-#' An atlas whose own cortical mask is already a ribbon keeps it, split at the
-#' midline, which is what this always did. Only a solid mantle is replaced,
-#' with the resampled `aseg` ribbon written into voxels no structure claims,
-#' and only where the grid is fine enough to carry a ribbon. The same midline
-#' split is the fallback when no ribbon can be had. An atlas with no cortical
-#' labels at all gets no context either way: the whole-brain
-#' split decided this parcellation has no cortex to draw.
+#' The atlas's own cortical mask, split at the midline, unless the caller
+#' asked for the `aseg` silhouette. Having asked, only a solid mantle is
+#' replaced, with the resampled `aseg` ribbon written into voxels no
+#' structure claims, and only where the grid is fine enough to carry a
+#' ribbon; the same midline split is the fallback when no ribbon can be had.
+#' An atlas with no cortical labels at all gets no context either way: the
+#' whole-brain split decided this parcellation has no cortex to draw.
 #' @noRd
 # nolint next: object_length_linter.
 wholebrain_write_cortex_context <- function(
@@ -2445,12 +2530,16 @@ wholebrain_write_cortex_context <- function(
   vol,
   cortical_idx,
   input_volume,
+  silhouette,
   cortex_subject,
   verbose
 ) {
   cortical_mask <- arr %in% cortical_idx
   if (!any(cortical_mask)) {
     return(result)
+  }
+  if (!identical(silhouette, "aseg")) {
+    return(wholebrain_cortex_by_midline(result, cortical_mask, vol))
   }
 
   aseg <- aseg_context_volume(

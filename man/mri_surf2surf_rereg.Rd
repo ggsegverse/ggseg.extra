@@ -52,7 +52,7 @@ rendering and speed.
 freesurfer::fs_help("mri_surf2surf")
 
 mri_surf2surf_rereg(
-  subject = "bert",
+  subject = "fsaverage5",
   annot = "aparc.DKTatlas",
   target_subject = "fsaverage5"
 )
