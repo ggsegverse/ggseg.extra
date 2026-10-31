@@ -4325,3 +4325,94 @@ describe("fill_missing_rgb() and the unpainted table", {
     expect_identical(out$R[1], 120L)
   })
 })
+
+
+describe("white matter in a whole-brain volume", {
+  lut <- function(type = NULL) {
+    out <- data.frame(
+      idx = c(2L, 41L, 10L, 1001L),
+      label = c("wm_left", "wm_right", "thalamus", "bankssts"),
+      stringsAsFactors = FALSE
+    )
+    if (!is.null(type)) {
+      out$type <- type
+    }
+    out
+  }
+
+  # White matter sits directly under the ribbon and the surface projection
+  # samples through it, so it banks a lot of vertices. That is what makes the
+  # vertex-count fallback call it cortical.
+  atlas_data <- function() {
+    out <- data.frame(
+      source_label = c("wm_left", "wm_right", "thalamus", "bankssts"),
+      stringsAsFactors = FALSE
+    )
+    out$vertices <- list(1:4000, 1:4000, 1:3, 1:900)
+    out
+  }
+
+  classify <- function(...) {
+    wholebrain_classify_labels(
+      atlas_data = atlas_data(),
+      min_vertices = 50L,
+      ...
+    )
+  }
+
+  it("keeps a declared white-matter label out of all three grey classes", {
+    split <- classify(
+      colortable = lut(c(
+        "white_matter",
+        "white_matter",
+        "subcortical",
+        "cortical"
+      ))
+    )
+
+    expect_identical(split$white_matter_labels, c("wm_left", "wm_right"))
+    expect_identical(split$cortical_labels, "bankssts")
+    expect_identical(split$subcortical_labels, "thalamus")
+    expect_false(any(c("wm_left", "wm_right") %in% split$cortical_labels))
+  })
+
+  it("does not put white matter in the cortical mantle", {
+    # The reason this type exists. White matter is the interior the mantle
+    # encloses; drawing it fills the sulci that the white-matter punch is
+    # there to open up, and the ribbon stops reading as a ribbon.
+    split <- classify(
+      colortable = lut(c(
+        "white_matter",
+        "white_matter",
+        "subcortical",
+        "cortical"
+      ))
+    )
+
+    expect_false(any(split$white_matter_labels %in% split$cortical_labels))
+  })
+
+  it("still calls an undeclared white-matter label cortical", {
+    # The gap the type exists to close: with no `type` column there is
+    # nothing but the vertex count to go on, and white matter wins it.
+    expect_warning(
+      split <- classify(colortable = lut()),
+      "vertex count"
+    )
+
+    expect_identical(split$white_matter_labels, character(0))
+    expect_true(all(c("wm_left", "wm_right") %in% split$cortical_labels))
+  })
+
+  it("says which labels it is leaving undrawn", {
+    expect_message(
+      classify(
+        colortable = lut(
+          c("white_matter", "white_matter", "subcortical", "cortical")
+        ),
+        verbose = TRUE
+      ),
+      "white matter label"
+    )
+  })
+})
