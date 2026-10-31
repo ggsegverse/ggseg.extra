@@ -1,17 +1,24 @@
 #' @section What these atlases are for:
 #' These atlases are built for visualising results.
-#' They are there to give general anatomical guidance — roughly where in the brain an effect sits, and which structures neighbour it.
+#' They are there to give general anatomical guidance —
+#' roughly where in the brain an effect sits,
+#' and which structures neighbour it.
 #' They are not a source of precision geometry.
 #' Nothing here is meant to be measured from:
-#' not volumes, not surface areas, not distances, and not the exact boundary between two neighbouring parcels.
-#' An analysis that needs those numbers should take them from the annotation, surface or volume the atlas was built from, never from the atlas.
+#' not volumes, not surface areas, not distances,
+#' and not the exact boundary between two neighbouring parcels.
+#' An analysis that needs those numbers should take them from the
+#' annotation, surface or volume the atlas was built from,
+#' never from the atlas.
 #'
 #' That positioning buys the pipelines one specific kind of slack, and no more.
 #' Acceptable by design:
 #' vertices that sit a millimetre or so from where the source data puts them,
 #' shape lost to mesh smoothing and decimation,
-#' corners rounded off by polygon simplification (the `keep` argument of [atlas_simplify()] and [atlas_polish()]),
-#' and the difference between an atlas's own silhouette and the same parcellation resampled onto a shared surface.
+#' corners rounded off by polygon simplification
+#' (the `keep` argument of [atlas_simplify()] and [atlas_polish()]),
+#' and the difference between an atlas's own silhouette
+#' and the same parcellation resampled onto a shared surface.
 #' Not acceptable, and not excused by it:
 #' anything categorically wrong.
 #' A region drawn on the wrong hemisphere,
@@ -25,15 +32,23 @@
 #' @section What a 3D plot shows:
 #' Cortical and cerebellar atlases do not carry their own 3D geometry.
 #' They store vertex indices.
-#' A cortical atlas records, for each region, which vertices of the fsaverage5 surface it claims (0 to 10241 per hemisphere);
-#' a cerebellar atlas records which vertices of the SUIT surface it claims (0 to 28934).
-#' Rendering either in 3D therefore draws fsaverage5's or SUIT's anatomy with the atlas's labels painted onto it.
-#' The cortical shape of the brain the parcellation came from is never shown, and cannot be.
+#' A cortical atlas records, for each region,
+#' which vertices of the fsaverage5 surface it claims
+#' (0 to 10241 per hemisphere);
+#' a cerebellar atlas records which vertices of the SUIT surface it
+#' claims (0 to 28934).
+#' Rendering either in 3D therefore draws fsaverage5's or SUIT's anatomy
+#' with the atlas's labels painted onto it.
+#' The cortical shape of the brain the parcellation came from is never
+#' shown, and cannot be.
 #' Registration decides only which vertices each region claims.
 #'
 #' Subcortical and white-matter tract atlases are different.
-#' Those carry a real mesh per structure, tessellated from the source volume or from streamlines, so the 3D geometry is their own.
-#' A cerebellar atlas built from a volume carries meshes for its deep nuclei for the same reason:
+#' Those carry a real mesh per structure,
+#' tessellated from the source volume or from streamlines,
+#' so the 3D geometry is their own.
+#' A cerebellar atlas built from a volume carries meshes for its deep
+#' nuclei for the same reason:
 #' those sit off the flatmap surface.
 #'
 #' @section Getting started:
