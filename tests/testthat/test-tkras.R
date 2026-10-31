@@ -95,3 +95,57 @@ describe("a tessellated structure keeps its side", {
     expect_gt(side(20L), 0)
   })
 })
+
+
+describe("check_mesh_hemispheres()", {
+  meshes_with <- function(x_left, x_right, hemis = c("left", "right")) {
+    mesh <- function(x) {
+      list(
+        vertices = data.frame(x = c(x, x + 1), y = 0:1, z = 0:1),
+        faces = data.frame(i = 1L, j = 2L, k = 1L)
+      )
+    }
+    out <- data.frame(
+      label = c("a", "b"),
+      hemi = hemis,
+      stringsAsFactors = FALSE
+    )
+    out$mesh <- list(mesh(x_left), mesh(x_right))
+    out
+  }
+
+  it("passes meshes that honour the convention", {
+    expect_no_error(check_mesh_hemispheres(meshes_with(-20, 20)))
+  })
+
+  it("aborts on mirrored meshes", {
+    # The MCALT shape: left-labelled structures sitting right of the midline.
+    expect_error(
+      check_mesh_hemispheres(meshes_with(20, -20)),
+      "wrong side of the midline"
+    )
+  })
+
+  it("names both averages so the direction is readable", {
+    expect_error(check_mesh_hemispheres(meshes_with(20, -20)), "20.5")
+  })
+
+  it("ignores meshes from only one hemisphere", {
+    # Nothing to compare, so nothing to claim.
+    expect_no_error(
+      check_mesh_hemispheres(meshes_with(-20, -18, hemis = c("left", "left")))
+    )
+  })
+
+  it("ignores structures with no hemisphere", {
+    expect_no_error(
+      check_mesh_hemispheres(meshes_with(20, -20, hemis = c(NA, NA)))
+    )
+  })
+
+  it("passes a frame with no meshes in it", {
+    # A subcortical atlas can legitimately carry none.
+    expect_no_error(check_mesh_hemispheres(data.frame(label = "a")))
+    expect_no_error(check_mesh_hemispheres(NULL))
+  })
+})
