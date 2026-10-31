@@ -4,11 +4,11 @@ describe("subcort_build_components", {
   it("builds components from colortable and meshes", {
     meshes_list <- list(
       "Left-Putamen" = list(
-        vertices = list(x = 1:3, y = 1:3, z = 1:3),
+        vertices = data.frame(x = 1:3, y = 1:3, z = 1:3),
         faces = list(i = 1, j = 2, k = 3)
       ),
       "Right-Putamen" = list(
-        vertices = list(x = 4:6, y = 4:6, z = 4:6),
+        vertices = data.frame(x = 4:6, y = 4:6, z = 4:6),
         faces = list(i = 1, j = 2, k = 3)
       )
     )
@@ -29,7 +29,7 @@ describe("subcort_build_components", {
 
   it("puts the hemisphere a lookup table declares into core", {
     mesh <- list(
-      vertices = list(x = 1:3, y = 1:3, z = 1:3),
+      vertices = data.frame(x = 1:3, y = 1:3, z = 1:3),
       faces = list(i = 1, j = 2, k = 3)
     )
     colortable <- data.frame(
@@ -53,6 +53,7 @@ describe("subcort_create_meshes", {
   it("errors when no meshes are created", {
     local_mocked_bindings(
       tessellate_label = function(...) NULL,
+      get_tkras_to_world = function(...) diag(4),
       progressor = function(...) function(...) NULL,
       center_meshes = function(x) x
     )
@@ -79,6 +80,7 @@ describe("subcort_create_meshes", {
   it("warns and skips when tessellation fails with verbose", {
     local_mocked_bindings(
       tessellate_label = function(...) stop("mesh error"),
+      get_tkras_to_world = function(...) diag(4),
       progressor = function(...) function(...) NULL,
       future_map2 = mock_future_map2,
       furrr_options = function(...) list(),
@@ -100,11 +102,12 @@ describe("subcort_create_meshes", {
 
   it("returns meshes and logs success with verbose", {
     mock_mesh <- list(
-      vertices = list(x = 1:3, y = 1:3, z = 1:3),
+      vertices = data.frame(x = 1:3, y = 1:3, z = 1:3),
       faces = list(i = 1, j = 2, k = 3)
     )
     local_mocked_bindings(
       tessellate_label = function(...) mock_mesh,
+      get_tkras_to_world = function(...) diag(4),
       progressor = function(...) function(...) NULL,
       future_map2 = mock_future_map2,
       furrr_options = function(...) list(),
@@ -137,10 +140,11 @@ describe("subcort_create_meshes", {
   it("filters out NULL meshes from failed tessellations", {
     .cap$call_count <- 0L
     mock_mesh <- list(
-      vertices = list(x = 1:3, y = 1:3, z = 1:3),
+      vertices = data.frame(x = 1:3, y = 1:3, z = 1:3),
       faces = list(i = 1, j = 2, k = 3)
     )
     local_mocked_bindings(
+      get_tkras_to_world = function(...) diag(4),
       tessellate_label = function(...) {
         .cap$call_count <- .cap$call_count + 1L
         if (.cap$call_count == 1L) stop("fail") else mock_mesh
@@ -179,10 +183,11 @@ describe("subcort_create_meshes", {
   it("passes the requested verbose level through to tessellate_label", {
     .cap$tess_verbose <- NULL
     mock_mesh <- list(
-      vertices = list(x = 1:3, y = 1:3, z = 1:3),
+      vertices = data.frame(x = 1:3, y = 1:3, z = 1:3),
       faces = list(i = 1, j = 2, k = 3)
     )
     local_mocked_bindings(
+      get_tkras_to_world = function(...) diag(4),
       tessellate_label = function(..., verbose) {
         .cap$tess_verbose <- verbose
         mock_mesh
@@ -818,7 +823,7 @@ describe("subcort_resolve_meshes", {
   it("loads cached meshes when skip_existing", {
     cached_meshes <- list(
       "Left-Putamen" = list(
-        vertices = list(x = 1:3, y = 1:3, z = 1:3),
+        vertices = data.frame(x = 1:3, y = 1:3, z = 1:3),
         faces = list(i = 1, j = 2, k = 3)
       )
     )
@@ -1077,6 +1082,7 @@ describe("subcort_create_meshes", {
     )
     local_mocked_bindings(
       tessellate_label = function(...) mock_mesh,
+      get_tkras_to_world = function(...) diag(4),
       progressor = function(...) function(...) NULL,
       future_map2 = mock_future_map2,
       furrr_options = function(...) list(),

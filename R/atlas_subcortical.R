@@ -734,6 +734,7 @@ subcort_resolve_snapshots <- function(
 
 #' @noRd
 subcort_assemble_3d <- function(atlas_name, components) {
+  check_mesh_hemispheres(components$meshes_df)
   ggseg_atlas(
     atlas = atlas_name,
     type = "subcortical",
@@ -769,6 +770,7 @@ subcort_assemble_full <- function(
     context_labels
   )
   components <- drop_labels_without_geometry(components, sf_data)
+  check_mesh_hemispheres(components$meshes_df)
 
   atlas <- ggseg_atlas(
     atlas = atlas_name,

@@ -38,7 +38,14 @@ subcort_create_meshes <- function(
     cli::cli_abort("No meshes were successfully created")
   }
 
-  meshes_list <- center_meshes(meshes_list)
+  # Tessellation hands back tkRAS; the meshes are brought into the volume's
+  # own world and left there. They are not re-centred on their own centroid:
+  # that puts every atlas in a frame of its own, so two atlases cannot be
+  # drawn in one scene and none of them sits inside a brain surface. The
+  # shipped `aseg` has always been uncentred, and is the frame the surfaces
+  # in ggseg3d already agree with.
+  tkr_to_world <- get_tkras_to_world(input_volume)
+  meshes_list <- lapply(meshes_list, mesh_tkras_to_world, tkr_to_world)
 
   meshes_list <- subcort_decimate_meshes(meshes_list, decimate, verbose)
 
