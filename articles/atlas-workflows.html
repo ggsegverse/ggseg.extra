@@ -304,7 +304,11 @@ Figure 6: Atlas compatibility with ggseg plotting packages
 </div>
 </div>
 </div>
-</section><section class="level2"><h2 id="performance">Performance<a class="anchor" aria-label="anchor" href="#performance"></a>
+<section class="level3"><h3 id="what-a-3d-plot-actually-shows">What a 3D plot actually shows<a class="anchor" aria-label="anchor" href="#what-a-3d-plot-actually-shows"></a>
+</h3>
+<p>Cortical and cerebellar atlases do not carry their own 3D geometry — they carry vertex indices, into the fsaverage5 surface and the SUIT surface respectively. Rendering one in 3D draws fsaverage5’s or SUIT’s anatomy with the atlas’s labels painted onto it; the cortical shape of the brain the parcellation came from is never shown. Subcortical and tract atlases are the other way around: each structure is a real mesh tessellated from the source volume or streamlines.</p>
+<p>This is also the point at which to be clear about what these atlases are for. They are for visualising results as general anatomical guidance, not as a source of precision geometry, and the pipelines take that licence in specific places only. See <code><a href="../reference/ggseg.extra-package.html">?ggseg.extra</a></code> for the full statement — in particular, which approximations are acceptable by design and which are bugs.</p>
+</section></section><section class="level2"><h2 id="performance">Performance<a class="anchor" aria-label="anchor" href="#performance"></a>
 </h2>
 <p>Cortical atlas creation is fast — the full pipeline (read + project) completes in seconds because the mesh projection is pure geometry with no external rendering. Every pipeline returns raw, unsmoothed polygons. Shaping them is a separate step on the finished atlas: <code><a href="../reference/atlas_polish.html">atlas_polish()</a></code> does the usual pair, or <code><a href="../reference/atlas_simplify.html">atlas_simplify()</a></code> and <code><a href="../reference/atlas_smooth.html">atlas_smooth()</a></code> separately. Because it runs on the returned object rather than during the build, trying a different setting costs a second rather than another pass through the pipeline.</p>
 <p>For subcortical and tract pipelines, the <code>steps</code> argument controls how much of the pipeline runs. Use <code>steps = 1:3</code> (subcortical) or <code>steps = 1</code> (tract) for fast 3D-only iteration, then run the default when you need the 2D slices.</p>

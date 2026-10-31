@@ -106,6 +106,7 @@ the mesh-based subcortical pipeline.</p>
 <span>  cortical_opts <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  subcortical_opts <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  cerebellar_opts <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  context_opts <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  steps <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  min_coverage <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  cleanup <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -215,6 +216,22 @@ the matching <code><a href="suit_deformation_field.html">suit_deformation_field(
 records a volume's space, so <code>"suit"</code> is an assumption rather than a
 detection: set it if your volume is in an MNI space. See
 <code><a href="suit_deformation_field.html">suit_deformation_field()</a></code> for the spaces available.</p></dd>
+
+
+<dt id="arg-context-opts">context_opts<a class="anchor" aria-label="anchor" href="#arg-context-opts"></a></dt>
+<dd><p>Named list controlling the grey backdrop the
+subcortical structures are drawn against, with these entries and
+defaults:</p><ul><li><p><code>silhouette</code> (<code>"atlas"</code>): where the cerebral backdrop's shape
+comes from. <code>"atlas"</code> uses this parcellation's own cortical
+mantle, split at the midline. <code>"aseg"</code> substitutes a FreeSurfer
+cortical ribbon instead. See <strong>Cortical backdrop</strong>.</p></li>
+<li><p><code>subject</code> (<code>"fsaverage5"</code>): the FreeSurfer subject the <code>aseg</code>
+is taken from. Only read when <code>silhouette = "aseg"</code>. <code>fsaverage5</code>
+ships with FreeSurfer, so the opt-in works without downloading
+anything; a volume in MNI152 space may prefer
+<code>"cvs_avg35_inMNI152"</code>, which is in that space rather than a few
+millimetres off it.</p></li>
+</ul><p>Unknown entries error.</p></dd>
 
 
 <dt id="arg-steps">steps<a class="anchor" aria-label="anchor" href="#arg-steps"></a></dt>
@@ -417,6 +434,29 @@ which the <code>fsaverageN</code> subjects do; for any other subject, supply you
 own register.dat or LTA file.</p>
 <p>FreeSurfer's own <code>INFO</code> and <code>WARNING</code> lines about the registration are
 only visible with <code>verbose = TRUE</code>.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="cortical-backdrop">Cortical backdrop<a class="anchor" aria-label="anchor" href="#cortical-backdrop"></a></h2>
+
+
+<p>The subcortical atlas draws its structures against a grey silhouette, and
+by default that silhouette is this parcellation's own cortical labels,
+split at the midline. It is the atlas's geometry, in the atlas's space, on
+the atlas's grid: whatever it shows, the parcellation put there.</p>
+<p>A parcellation covering both banks of every sulcus has no sulci left in
+it, so that silhouette is a solid mantle rather than a recognisable brain.
+<code>context_opts = list(silhouette = "aseg")</code> replaces it with the cortical
+ribbon from FreeSurfer's <code>aseg</code>, resampled onto this volume's grid, which
+has sulci. The cost is that they are another brain's sulci: the backdrop
+then describes <code>context_opts$subject</code>'s anatomy, not the atlas's. It also
+adds the posterior fossa - cerebellum and brain stem - behind the
+structures, which the atlas's own cortical labels cannot supply.</p>
+<p>Ask for it deliberately, in the build script, where a reader can see it.
+It needs FreeSurfer, and it declines rather than substitutes a backdrop it
+cannot trust: no <code>aseg</code>, a ribbon landing off this volume's brain, a mask
+already thin enough to be a ribbon of its own, or a grid too coarse to
+carry one all fall back to the atlas's own mantle. Each of those decisions
+is reported with <code>verbose = TRUE</code>.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

@@ -217,6 +217,24 @@ flowchart LR
 
 Figure 6: Atlas compatibility with ggseg plotting packages
 
+### What a 3D plot actually shows
+
+Cortical and cerebellar atlases do not carry their own 3D geometry —
+they carry vertex indices, into the fsaverage5 surface and the SUIT
+surface respectively. Rendering one in 3D draws fsaverage5’s or SUIT’s
+anatomy with the atlas’s labels painted onto it; the cortical shape of
+the brain the parcellation came from is never shown. Subcortical and
+tract atlases are the other way around: each structure is a real mesh
+tessellated from the source volume or streamlines.
+
+This is also the point at which to be clear about what these atlases are
+for. They are for visualising results as general anatomical guidance,
+not as a source of precision geometry, and the pipelines take that
+licence in specific places only. See
+[`?ggseg.extra`](https://ggsegverse.github.io/ggseg.extra/reference/ggseg.extra-package.md)
+for the full statement — in particular, which approximations are
+acceptable by design and which are bugs.
+
 ## Performance
 
 Cortical atlas creation is fast — the full pipeline (read + project)

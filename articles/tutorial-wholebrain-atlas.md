@@ -425,8 +425,20 @@ The backdrop is written into the volume the subcortical pipeline is
 handed, and the subcortical pipeline draws only what its lookup table
 declares, so the whole-brain pipeline declares it too — you do not add a
 `context` column for it yourself. It arrives as one silhouette named
-`cortex`, whichever of the two routes above produced it, so that is the
-label to address when you polish it. A subcortical atlas you build
+`cortex`, whichever route produced it, so that is the label to address
+when you polish it.
+
+A parcellation that covers both banks of every sulcus has no sulci left
+in it, so that midline-split backdrop is a solid mantle rather than a
+recognisable brain. `context_opts = list(silhouette = "aseg")` swaps it
+for the cortical ribbon from FreeSurfer’s `aseg`, resampled onto your
+volume’s grid, which has sulci — and adds the cerebellum and brain stem
+behind the structures, which your own cortical labels cannot supply.
+Those are another brain’s sulci, though: the backdrop then describes
+`context_opts$subject` (`cvs_avg35_inMNI152` by default), not your
+atlas. That is why it is an opt-in rather than something the pipeline
+decides for you — ask for it in the build script, where the next reader
+can see that the shape is borrowed. A subcortical atlas you build
 yourself with
 [`create_subcortical_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_subcortical_from_volume.md)
 is a different matter: there the table is yours, and a backdrop it does

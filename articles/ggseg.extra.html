@@ -218,8 +218,13 @@ and the mapping between region names and annotation labels.</li>
 <strong>Colour palette</strong> — extracted from your input files or
 auto-generated.</li>
 <li>
-<strong>3D data</strong> — vertex indices for cortical atlases, or
-meshes for subcortical and tract atlases.</li>
+<strong>3D data</strong> — vertex indices for cortical and
+cerebellar atlases, or meshes for subcortical and tract atlases. Indices
+are into a shared surface (fsaverage5, or the SUIT surface), so a 3D
+plot of such an atlas shows that surface’s anatomy with the atlas’s
+labels on it. See <code><a href="../reference/ggseg.extra-package.html">?ggseg.extra</a></code> for what that means for
+interpreting a plot, and for what these atlases are and are not
+for.</li>
 <li>
 <strong>2D geometry</strong> (optional) — sf polygon outlines for
 flat brain plots.</li>

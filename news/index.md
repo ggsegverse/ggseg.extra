@@ -440,14 +440,16 @@ volumes and tractography files.
   heuristic that cannot always tell; the space in force is reported at
   `verbose >= 1`.
 
-- The brain silhouette behind a whole-brain subcortical atlas is a
-  gyrified mantle rather than a solid blob: it is taken from
-  FreeSurfer’s `aseg` ribbon, resampled onto the atlas volume’s own
-  grid, wherever the parcellation’s own cortical labels are solid, and
-  the `aseg` cerebellar cortex and brain stem fill the posterior fossa.
-  An atlas whose own labels are already a ribbon keeps them, the
-  substitution is declined on grids too coarse to carry a ribbon, and
-  the pipeline reports which silhouette it drew in every case.
+- The brain silhouette behind a whole-brain subcortical atlas is the
+  parcellation’s own cortical labels, split at the midline.
+  `create_wholebrain_from_volume(context_opts = list(silhouette = "aseg"))`
+  substitutes FreeSurfer’s gyrified `aseg` ribbon instead, resampled
+  onto the atlas volume’s own grid, with the `aseg` cerebellar cortex
+  and brain stem filling the posterior fossa. That is another subject’s
+  anatomy, so it is asked for rather than inferred; it is declined on
+  grids too coarse to carry a ribbon or on labels already thin enough to
+  be one, and the pipeline reports which silhouette it drew in every
+  case.
 
 - [`setup_atlas_repo()`](https://ggsegverse.github.io/ggseg.extra/reference/setup_atlas_repo.md)
   scaffolds an atlas package from the ggsegverse/ggseg-atlas-template
@@ -982,6 +984,14 @@ volumes and tractography files.
   files under `.git`, and reports failed copies.
 
 ### Documentation
+
+- [`?ggseg.extra`](https://ggsegverse.github.io/ggseg.extra/reference/ggseg.extra-package.md)
+  states what these atlases are for: visualising results as general
+  anatomical guidance, not precision geometry for analysis. It says
+  which approximations are acceptable by design and which are bugs, and
+  documents that a cortical or cerebellar atlas carries vertex indices
+  into fsaverage5 or SUIT, so its 3D plot shows that surface’s anatomy
+  rather than the atlas’s own.
 
 - Six vignettes – getting started, pipeline configuration,
   post-processing, system setup, legacy conversion, contributing – and,

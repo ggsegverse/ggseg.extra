@@ -57,8 +57,13 @@ Every atlas contains:
   between region names and annotation labels.
 - **Colour palette** — extracted from your input files or
   auto-generated.
-- **3D data** — vertex indices for cortical atlases, or meshes for
-  subcortical and tract atlases.
+- **3D data** — vertex indices for cortical and cerebellar atlases, or
+  meshes for subcortical and tract atlases. Indices are into a shared
+  surface (fsaverage5, or the SUIT surface), so a 3D plot of such an
+  atlas shows that surface’s anatomy with the atlas’s labels on it. See
+  [`?ggseg.extra`](https://ggsegverse.github.io/ggseg.extra/reference/ggseg.extra-package.md)
+  for what that means for interpreting a plot, and for what these
+  atlases are and are not for.
 - **2D geometry** (optional) — sf polygon outlines for flat brain plots.
 
 ### How each pipeline works

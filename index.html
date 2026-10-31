@@ -13,8 +13,8 @@
 <link href="deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="deps/headroom-0.11.0/headroom.min.js"></script><script src="deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="deps/search-1.0.0/fuse.min.js"></script><script src="deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="pkgdown.js"></script><meta property="og:title" content="Create Brain Atlases for the ggsegverse Plotting Ecosystem">
-<meta name="description" content="Create brain atlas data sets compatible with the ggsegverse plotting packages. Provides pipelines for building cortical, subcortical, white-matter tract, and cerebellar atlases from FreeSurfer annotation files, GIFTI and CIFTI surface formats, neuromaps, cerebellar flatmaps, and volumetric NIfTI images. Mowinckel &amp; Vidal-Piñeiro (2020) &lt;doi:10.1177/2515245920928009&gt;.">
-<meta property="og:description" content="Create brain atlas data sets compatible with the ggsegverse plotting packages. Provides pipelines for building cortical, subcortical, white-matter tract, and cerebellar atlases from FreeSurfer annotation files, GIFTI and CIFTI surface formats, neuromaps, cerebellar flatmaps, and volumetric NIfTI images. Mowinckel &amp; Vidal-Piñeiro (2020) &lt;doi:10.1177/2515245920928009&gt;.">
+<meta name="description" content="Create brain atlas data sets compatible with the ggsegverse plotting packages. Provides pipelines for building cortical, subcortical, white-matter tract, and cerebellar atlases from FreeSurfer annotation files, GIFTI and CIFTI surface formats, neuromaps, cerebellar flatmaps, and volumetric NIfTI images. The atlases it builds are intended for visualising results as general anatomical guidance, not as a source of precision geometry for analysis. Mowinckel &amp; Vidal-Piñeiro (2020) &lt;doi:10.1177/2515245920928009&gt;.">
+<meta property="og:description" content="Create brain atlas data sets compatible with the ggsegverse plotting packages. Provides pipelines for building cortical, subcortical, white-matter tract, and cerebellar atlases from FreeSurfer annotation files, GIFTI and CIFTI surface formats, neuromaps, cerebellar flatmaps, and volumetric NIfTI images. The atlases it builds are intended for visualising results as general anatomical guidance, not as a source of precision geometry for analysis. Mowinckel &amp; Vidal-Piñeiro (2020) &lt;doi:10.1177/2515245920928009&gt;.">
 <meta property="og:image" content="https://ggsegverse.github.io/ggseg.extra/logo.svg">
 </head>
 <body>
@@ -101,6 +101,12 @@
 <!-- badges: start -->
 
 <p>This package provides pipelines for creating brain atlas data sets compatible with the <a href="https://ggsegverse.github.io/ggseg/" class="external-link">ggseg</a> and <a href="https://ggsegverse.github.io/ggseg3d/" class="external-link">ggseg3d</a> plotting packages in R.</p>
+<div class="section level2">
+<h2 id="what-these-atlases-are-for">What these atlases are for<a class="anchor" aria-label="anchor" href="#what-these-atlases-are-for"></a>
+</h2>
+<p>The atlases built here are for visualising results. They give general anatomical guidance — roughly where in the brain an effect sits, and which structures neighbour it — and they are not a source of precision geometry. Millimetre-scale vertex shifts, smoothing and decimation loss, and simplified polygon outlines are all acceptable by design. A region on the wrong hemisphere, a label on the wrong structure, or a region missing from a view where it is anatomically present is not: that is a bug, and worth reporting.</p>
+<p>A 3D plot of a cortical or cerebellar atlas draws the fsaverage5 or SUIT surface with the atlas’s labels painted onto it, never the atlas’s own cortical shape. <a href="https://ggsegverse.github.io/ggseg.extra/reference/ggseg.extra-package.html"><code>?ggseg.extra</code></a> has the full statement, including why.</p>
+</div>
 <div class="section level2">
 <h2 id="installing">Installing<a class="anchor" aria-label="anchor" href="#installing"></a>
 </h2>

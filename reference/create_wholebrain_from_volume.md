@@ -25,6 +25,7 @@ create_wholebrain_from_volume(
   cortical_opts = list(),
   subcortical_opts = list(),
   cerebellar_opts = list(),
+  context_opts = list(),
   steps = NULL,
   min_coverage = NULL,
   cleanup = NULL,
@@ -146,6 +147,24 @@ create_wholebrain_from_volume(
   an MNI space. See
   [`suit_deformation_field()`](https://ggsegverse.github.io/ggseg.extra/reference/suit_deformation_field.md)
   for the spaces available.
+
+- context_opts:
+
+  Named list controlling the grey backdrop the subcortical structures
+  are drawn against, with these entries and defaults:
+
+  - `silhouette` (`"atlas"`): where the cerebral backdrop's shape comes
+    from. `"atlas"` uses this parcellation's own cortical mantle, split
+    at the midline. `"aseg"` substitutes a FreeSurfer cortical ribbon
+    instead. See **Cortical backdrop**.
+
+  - `subject` (`"fsaverage5"`): the FreeSurfer subject the `aseg` is
+    taken from. Only read when `silhouette = "aseg"`. `fsaverage5` ships
+    with FreeSurfer, so the opt-in works without downloading anything; a
+    volume in MNI152 space may prefer `"cvs_avg35_inMNI152"`, which is
+    in that space rather than a few millimetres off it.
+
+  Unknown entries error.
 
 - steps:
 
@@ -376,6 +395,31 @@ own register.dat or LTA file.
 
 FreeSurfer's own `INFO` and `WARNING` lines about the registration are
 only visible with `verbose = TRUE`.
+
+## Cortical backdrop
+
+The subcortical atlas draws its structures against a grey silhouette,
+and by default that silhouette is this parcellation's own cortical
+labels, split at the midline. It is the atlas's geometry, in the atlas's
+space, on the atlas's grid: whatever it shows, the parcellation put
+there.
+
+A parcellation covering both banks of every sulcus has no sulci left in
+it, so that silhouette is a solid mantle rather than a recognisable
+brain. `context_opts = list(silhouette = "aseg")` replaces it with the
+cortical ribbon from FreeSurfer's `aseg`, resampled onto this volume's
+grid, which has sulci. The cost is that they are another brain's sulci:
+the backdrop then describes `context_opts$subject`'s anatomy, not the
+atlas's. It also adds the posterior fossa - cerebellum and brain stem -
+behind the structures, which the atlas's own cortical labels cannot
+supply.
+
+Ask for it deliberately, in the build script, where a reader can see it.
+It needs FreeSurfer, and it declines rather than substitutes a backdrop
+it cannot trust: no `aseg`, a ribbon landing off this volume's brain, a
+mask already thin enough to be a ribbon of its own, or a grid too coarse
+to carry one all fall back to the atlas's own mantle. Each of those
+decisions is reported with `verbose = TRUE`.
 
 ## See also
 
