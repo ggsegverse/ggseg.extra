@@ -676,6 +676,16 @@ volumes and tractography files.
 
 ### Bug fixes
 
+- Subcortical 3D meshes are placed in the volume’s own world
+  coordinates. Tessellation emits tkRAS, a frame FreeSurfer derives from
+  a volume’s dimensions alone, and the subcortical pipeline returned it
+  untouched. For a FreeSurfer-conformed volume that frame is the
+  identity, so every atlas built from conformed data was right by
+  coincidence; for a volume in its own space the axes are permuted and,
+  where the handedness differs, left and right are swapped.
+  `get_tkras_to_world()` was already applied by the cerebellar pipeline
+  and is now shared by both.
+
 - `mri_vol2vol` is given a transform FreeSurfer 8 accepts.
   `registration = "mni152"` passed FreeSurfer’s `mni152.register.dat`
   straight through, and FreeSurfer 8 refuses a tkregister matrix whose
