@@ -142,9 +142,11 @@ create_subcortical_from_volume <- function(
   min_coverage = NULL,
   cleanup = NULL,
   skip_existing = NULL,
-  steps = NULL
+  steps = NULL,
+  type = "subcortical"
 ) {
   rlang::check_dots_empty()
+  type <- rlang::arg_match0(type, c("subcortical", "wm"))
   unpacked <- unpack_anatomical_input(input_volume, input_lut)
 
   start_time <- Sys.time()
@@ -158,7 +160,8 @@ create_subcortical_from_volume <- function(
     skip_existing = skip_existing,
     decimate = decimate,
     steps = steps,
-    min_coverage = min_coverage
+    min_coverage = min_coverage,
+    type = type
   )
 
   subcort_run_pipeline(
@@ -181,7 +184,8 @@ subcort_setup_pipeline <- function(
   skip_existing,
   decimate,
   steps,
-  min_coverage = NULL
+  min_coverage = NULL,
+  type = "subcortical"
 ) {
   config <- validate_subcort_config(
     input_volume = unpacked$input_volume,
@@ -199,11 +203,12 @@ subcort_setup_pipeline <- function(
   dirs <- setup_atlas_dirs(
     config$output_dir,
     atlas_name = config$atlas_name,
-    type = "subcortical",
+    type = type,
     cleanup = config$cleanup
   )
   subcort_log_header(config)
 
+  config$type <- type
   list(config = config, dirs = dirs)
 }
 
@@ -238,7 +243,7 @@ subcort_run_pipeline <- function(
   )
 
   if (max(config$steps) == 3L) {
-    atlas <- subcort_assemble_3d(config$atlas_name, components)
+    atlas <- subcort_assemble_3d(config$atlas_name, components, config$type)
     return(subcort_finalize(atlas, config, dirs, start_time))
   }
 
@@ -310,7 +315,8 @@ subcort_build_2d_atlas <- function(config, components, dirs, snaps) {
     dirs,
     snaps$slabs,
     snaps$cortex_slices,
-    snaps$context$label
+    snaps$context$label,
+    config$type
   )
 }
 
@@ -732,15 +738,35 @@ subcort_resolve_snapshots <- function(
 }
 
 
+#' The data constructor an atlas of this type carries
+#'
+#' A white-matter atlas stores exactly what a subcortical one stores, but
+#' `ggseg_atlas()` requires the data object to match the type, so the
+#' constructor has to follow it. `ggseg_data_wm()` inherits
+#' `ggseg_data_subcortical`, so nothing downstream has to care which it got.
 #' @noRd
-subcort_assemble_3d <- function(atlas_name, components) {
+subcort_data_for <- function(type, ...) {
+  if (identical(type, "wm")) {
+    ggseg.formats::ggseg_data_wm(...)
+  } else {
+    ggseg_data_subcortical(...)
+  }
+}
+
+
+#' @noRd
+subcort_assemble_3d <- function(
+  atlas_name,
+  components,
+  type = "subcortical"
+) {
   check_mesh_hemispheres(components$meshes_df)
   ggseg_atlas(
     atlas = atlas_name,
-    type = "subcortical",
+    type = type,
     palette = components$palette,
     core = core_with_display(components$core),
-    data = ggseg_data_subcortical(meshes = components$meshes_df)
+    data = subcort_data_for(type, meshes = components$meshes_df)
   )
 }
 
@@ -752,7 +778,8 @@ subcort_assemble_full <- function(
   dirs,
   slabs,
   cortex_slices,
-  context_labels = character()
+  context_labels = character(),
+  type = "subcortical"
 ) {
   contours_file <- as.character(fs::path(dirs$base, "contours.rda"))
   if (!file.exists(contours_file)) {
@@ -774,10 +801,14 @@ subcort_assemble_full <- function(
 
   atlas <- ggseg_atlas(
     atlas = atlas_name,
-    type = "subcortical",
+    type = type,
     palette = components$palette,
     core = core_with_display(components$core),
-    data = ggseg_data_subcortical(geom = sf_data, meshes = components$meshes_df)
+    data = subcort_data_for(
+      type,
+      geom = sf_data,
+      meshes = components$meshes_df
+    )
   )
 
   atlas <- ggseg.formats::atlas_view_gather(atlas)
@@ -785,4 +816,69 @@ subcort_assemble_full <- function(
   warn_if_large_atlas(atlas)
   preview_atlas(atlas)
   atlas
+}
+
+
+#' Create a white-matter atlas from a label volume
+#'
+#' @description
+#' `r lifecycle::badge("experimental")`
+#'
+#' Builds a white-matter atlas from a volumetric label map. This is
+#' [create_subcortical_from_volume()] under another name: a white-matter
+#' atlas stores what a subcortical one stores -- polygons for the slab views
+#' and a mesh per structure -- and is built the same way. Only the type of
+#' the finished atlas differs, which is what lets a plot label it as white
+#' matter while every method written for a subcortical atlas still applies.
+#'
+#' Use this for a parcellation of white-matter *regions*. White-matter
+#' *tracts* reconstructed as bundles are a different shape and belong in
+#' [create_tract_from_volume()], which also carries centerlines.
+#'
+#' @inheritParams create_subcortical_from_volume
+#'
+#' @return A `ggseg_atlas` of type `"wm"`.
+#' @seealso [create_subcortical_from_volume()], which this delegates to, and
+#'   [create_tract_from_volume()] for bundles.
+#' @family atlas creation
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' atlas <- create_wm_from_volume(
+#'   input_volume = "JHU-ICBM-labels-1mm.nii.gz",
+#'   input_lut = "JHU_LUT.txt"
+#' )
+#' }
+create_wm_from_volume <- function(
+  input_volume,
+  decimate = 0.5,
+  verbose = get_verbose(),
+  ...,
+  input_lut = NULL,
+  atlas_name = NULL,
+  output_dir = NULL,
+  slabs = NULL,
+  vertex_size_limits = NULL,
+  min_coverage = NULL,
+  cleanup = NULL,
+  skip_existing = NULL,
+  steps = NULL
+) {
+  create_subcortical_from_volume(
+    input_volume = input_volume,
+    decimate = decimate,
+    verbose = verbose,
+    ...,
+    input_lut = input_lut,
+    atlas_name = atlas_name,
+    output_dir = output_dir,
+    slabs = slabs,
+    vertex_size_limits = vertex_size_limits,
+    min_coverage = min_coverage,
+    cleanup = cleanup,
+    skip_existing = skip_existing,
+    steps = steps,
+    type = "wm"
+  )
 }

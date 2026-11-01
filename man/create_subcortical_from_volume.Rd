@@ -17,7 +17,8 @@ create_subcortical_from_volume(
   min_coverage = NULL,
   cleanup = NULL,
   skip_existing = NULL,
-  steps = NULL
+  steps = NULL,
+  type = "subcortical"
 )
 }
 \arguments{
@@ -209,6 +210,7 @@ Other atlas creation:
 \code{\link[=create_cortical_from_neuromaps]{create_cortical_from_neuromaps()}},
 \code{\link[=create_tract_from_tractography]{create_tract_from_tractography()}},
 \code{\link[=create_tract_from_volume]{create_tract_from_volume()}},
-\code{\link[=create_wholebrain_from_volume]{create_wholebrain_from_volume()}}
+\code{\link[=create_wholebrain_from_volume]{create_wholebrain_from_volume()}},
+\code{\link[=create_wm_from_volume]{create_wm_from_volume()}}
 }
 \concept{atlas creation}

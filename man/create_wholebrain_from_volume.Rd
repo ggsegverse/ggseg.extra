@@ -444,6 +444,7 @@ Other atlas creation:
 \code{\link[=create_cortical_from_neuromaps]{create_cortical_from_neuromaps()}},
 \code{\link[=create_subcortical_from_volume]{create_subcortical_from_volume()}},
 \code{\link[=create_tract_from_tractography]{create_tract_from_tractography()}},
-\code{\link[=create_tract_from_volume]{create_tract_from_volume()}}
+\code{\link[=create_tract_from_volume]{create_tract_from_volume()}},
+\code{\link[=create_wm_from_volume]{create_wm_from_volume()}}
 }
 \concept{atlas creation}
