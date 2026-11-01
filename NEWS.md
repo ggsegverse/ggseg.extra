@@ -1,4 +1,4 @@
-# ggseg.extra 1.9.9.9131
+# ggseg.extra 1.9.9.9136
 
 This section becomes the 2.0.0 release notes at submission. It is the first
 CRAN release of ggseg.extra, the atlas-building package of
@@ -38,6 +38,13 @@ and tractography files.
 
 - The `ggseg.extra.tolerance` and `ggseg.extra.smoothness` options and their
   `GGSEG_EXTRA_*` environment variables are removed, as nothing reads them.
+
+- `atlas_smooth()` and `atlas_polish()` default to `method = "chaikin"`
+  instead of `"close"`, so the default preserves sulci. A morphological close
+  fills holes narrower than the smoothing distance, which on a cortical
+  ribbon welds the gyri into a solid mantle. **Atlases smoothed with the
+  default look different and want rebuilding**; pass `method = "close"` for
+  the old behaviour, which still suits solid shapes such as tract tubes.
 
 - The colour-table functions are named after lookup tables: `read_lut()`,
   `write_lut()`, `is_lut()` and `get_lut()`. The `read_ctab()`, `write_ctab()`,

@@ -1212,8 +1212,16 @@ describe("atlas_smooth(method =)", {
     area < 1595
   }
 
-  it("closes narrow holes with the default method", {
+  it("keeps narrow holes open with the default method", {
+    skip_if_not_installed("smoothr")
+    # The default has to preserve sulci: a brain's shape is largely its
+    # holes, so a default that fills them is wrong on unseen geometry.
     result <- atlas_smooth(ring_atlas(), smoothness = 0.6)
+    expect_true(hole_open(result))
+  })
+
+  it("closes narrow holes when close is asked for", {
+    result <- atlas_smooth(ring_atlas(), smoothness = 0.6, method = "close")
     expect_false(hole_open(result))
   })
 
@@ -1237,13 +1245,14 @@ describe("atlas_smooth(method =)", {
     expect_true(hole_open(result))
   })
 
-  it("defaults to close for backwards compatibility", {
+  it("defaults to chaikin", {
+    skip_if_not_installed("smoothr")
     expect_identical(
       atlas_smooth(ring_atlas(), smoothness = 0.6),
       atlas_smooth(
         ring_atlas(),
         smoothness = 0.6,
-        method = "close"
+        method = "chaikin"
       )
     )
   })
@@ -1446,10 +1455,26 @@ describe("simplify_sf_topology", {
 })
 
 describe("atlas_smooth vertex budget", {
-  it("does not leave the atlas larger than it found it", {
+  it("does not leave the atlas larger than it found it, closing", {
     atlas <- grid_atlas(n = 4L)
 
-    expect_lte(n_vertices(atlas_smooth(atlas, 0.4)), n_vertices(atlas))
+    expect_lte(
+      n_vertices(atlas_smooth(atlas, 0.4, method = "close")),
+      n_vertices(atlas)
+    )
+  })
+
+  it("holds a vertex-moving default near the size it found", {
+    skip_if_not_installed("smoothr")
+    # Moving vertices cannot shrink geometry the way a close does, and on
+    # shapes already as sparse as they can be the budget has nothing to trim
+    # back to. It still has to do its job: without it the growth runs away.
+    atlas <- grid_atlas(n = 4L)
+    free <- n_vertices(atlas_smooth(atlas, 0.4, vertex_budget = "free"))
+    preserved <- n_vertices(atlas_smooth(atlas, 0.4))
+
+    expect_gt(free, 2 * n_vertices(atlas))
+    expect_lt(preserved, 1.1 * n_vertices(atlas))
   })
 
   it("never hands back more than the rounding gave it", {

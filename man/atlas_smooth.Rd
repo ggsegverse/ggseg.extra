@@ -7,7 +7,7 @@
 atlas_smooth(
   atlas,
   smoothness = 0.4,
-  method = c("close", "chaikin", "ksmooth", "spline"),
+  method = c("chaikin", "close", "ksmooth", "spline"),
   vertex_budget = c("preserve", "free"),
   close_gaps = TRUE,
   labels = NULL,
@@ -20,10 +20,10 @@ atlas_smooth(
 \item{smoothness}{Smoothing strength, 0 to 1. The default 0.4 rounds a
 millimetre voxel grid without distorting shapes.}
 
-\item{method}{How to smooth. \code{"close"} (the default) rounds solid shapes
-well but fills holes narrower than the smoothing distance. \code{"chaikin"},
-\code{"ksmooth"} and \code{"spline"} move vertices instead, so holes stay open.
-See details.}
+\item{method}{How to smooth. \code{"chaikin"} (the default), \code{"ksmooth"} and
+\code{"spline"} move vertices, so holes stay open. \code{"close"} rounds solid
+shapes more cleanly but fills holes narrower than the smoothing
+distance. See details.}
 
 \item{vertex_budget}{\code{"preserve"} (the default) simplifies the rounded
 geometry back towards the vertex count it started with; \code{"free"} lets it
@@ -49,13 +49,19 @@ stair-steps into curves. Shared boundaries between neighbouring regions are
 closed again afterwards, so the parcellation stays gap-free.
 }
 \section{Choosing a method}{
+\code{"chaikin"}, \code{"ksmooth"} and \code{"spline"} come from \code{\link[smoothr:smooth]{smoothr::smooth()}} and
+move vertices rather than dilating the shape, so enclosed holes survive.
+\code{"chaikin"} is the default because the default must preserve sulci: a
+brain's shape is largely its holes, and a method that fills them is the
+wrong thing to do to geometry you have not looked at yet.
+
 \code{"close"} is a morphological closing: a positive then negative
-\code{\link[sf:st_buffer]{sf::st_buffer()}}. It rounds outlines but \strong{fills holes narrower than the
-smoothing distance}, which erases the sulci of a thin cortical ribbon.
-The other three come from \code{\link[smoothr:smooth]{smoothr::smooth()}} and move vertices rather
-than dilating the shape, so enclosed holes survive. Reach for \code{"close"} on
-solid shapes such as tract tubes and \code{"chaikin"} when the geometry has
-holes worth keeping.
+\code{\link[sf:st_buffer]{sf::st_buffer()}}. It rounds outlines more cleanly than the vertex movers,
+but \strong{fills holes narrower than the smoothing distance}. On a thin
+cortical ribbon that erases the sulci and welds the gyri into a solid
+mantle -- at \code{smoothness = 0.4} on a millimetre grid it took one aseg
+backdrop from 463 enclosed rings to 27. Reach for it on solid shapes, such
+as tract tubes, where there are no holes to lose.
 
 \code{smoothness} means the same amount of smoothing whichever method you pick,
 so switching method does not mean re-finding the value.

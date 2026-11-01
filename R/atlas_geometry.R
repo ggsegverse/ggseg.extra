@@ -10,10 +10,10 @@
 #' @param atlas A `ggseg_atlas` object with sf data.
 #' @param smoothness Smoothing strength, 0 to 1. The default 0.4 rounds a
 #'   millimetre voxel grid without distorting shapes.
-#' @param method How to smooth. `"close"` (the default) rounds solid shapes
-#'   well but fills holes narrower than the smoothing distance. `"chaikin"`,
-#'   `"ksmooth"` and `"spline"` move vertices instead, so holes stay open.
-#'   See details.
+#' @param method How to smooth. `"chaikin"` (the default), `"ksmooth"` and
+#'   `"spline"` move vertices, so holes stay open. `"close"` rounds solid
+#'   shapes more cleanly but fills holes narrower than the smoothing
+#'   distance. See details.
 #' @param vertex_budget `"preserve"` (the default) simplifies the rounded
 #'   geometry back towards the vertex count it started with; `"free"` lets it
 #'   grow. See details.
@@ -29,13 +29,19 @@
 #' @details
 #' # Choosing a method
 #'
+#' `"chaikin"`, `"ksmooth"` and `"spline"` come from [smoothr::smooth()] and
+#' move vertices rather than dilating the shape, so enclosed holes survive.
+#' `"chaikin"` is the default because the default must preserve sulci: a
+#' brain's shape is largely its holes, and a method that fills them is the
+#' wrong thing to do to geometry you have not looked at yet.
+#'
 #' `"close"` is a morphological closing: a positive then negative
-#' [sf::st_buffer()]. It rounds outlines but **fills holes narrower than the
-#' smoothing distance**, which erases the sulci of a thin cortical ribbon.
-#' The other three come from [smoothr::smooth()] and move vertices rather
-#' than dilating the shape, so enclosed holes survive. Reach for `"close"` on
-#' solid shapes such as tract tubes and `"chaikin"` when the geometry has
-#' holes worth keeping.
+#' [sf::st_buffer()]. It rounds outlines more cleanly than the vertex movers,
+#' but **fills holes narrower than the smoothing distance**. On a thin
+#' cortical ribbon that erases the sulci and welds the gyri into a solid
+#' mantle -- at `smoothness = 0.4` on a millimetre grid it took one aseg
+#' backdrop from 463 enclosed rings to 27. Reach for it on solid shapes, such
+#' as tract tubes, where there are no holes to lose.
 #'
 #' `smoothness` means the same amount of smoothing whichever method you pick,
 #' so switching method does not mean re-finding the value.
@@ -83,7 +89,7 @@
 atlas_smooth <- function(
   atlas,
   smoothness = 0.4,
-  method = c("close", "chaikin", "ksmooth", "spline"),
+  method = c("chaikin", "close", "ksmooth", "spline"),
   vertex_budget = c("preserve", "free"),
   close_gaps = TRUE,
   labels = NULL,
@@ -183,8 +189,9 @@ atlas_smooth <- function(
 #' @param keep Proportion of the original vertices to aim for. See details.
 #' @param smoothness Smoothing strength between 0 and 1, passed to
 #'   [atlas_smooth()].
-#' @param method Smoothing method, passed to [atlas_smooth()]. `"close"`
-#'   rounds solid shapes; the others keep holes open.
+#' @param method Smoothing method, passed to [atlas_smooth()]. The default
+#'   `"chaikin"` keeps holes open; `"close"` rounds solid shapes more cleanly
+#'   but fills them.
 #' @param labels Which labels to polish: a regular expression, or a function
 #'   that takes the atlas and returns one. Pass `context_pattern`, without
 #'   calling it, to select the atlas's context.
@@ -221,7 +228,7 @@ atlas_polish <- function(
   atlas,
   keep = 0.1,
   smoothness = 0.4,
-  method = c("close", "chaikin", "ksmooth", "spline"),
+  method = c("chaikin", "close", "ksmooth", "spline"),
   close_gaps = TRUE,
   labels = NULL,
   exclude = NULL
