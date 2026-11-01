@@ -1,4 +1,4 @@
-# ggseg.extra 1.9.9.9131
+# ggseg.extra 1.9.9.9136
 
 This section becomes the 2.0.0 release notes at submission. It is the first
 CRAN release of ggseg.extra, the atlas-building package of
@@ -38,6 +38,11 @@ and tractography files.
 
 - The `ggseg.extra.tolerance` and `ggseg.extra.smoothness` options and their
   `GGSEG_EXTRA_*` environment variables are removed, as nothing reads them.
+
+- `atlas_view_remove_sparse()` drops the views a build left nearly empty,
+  counting the regions each view holds rather than naming views to remove, so
+  it cannot go stale when slabs are renamed or retiled.
+  `atlas_view_region_counts()` reports the counts it decides on.
 
 - The colour-table functions are named after lookup tables: `read_lut()`,
   `write_lut()`, `is_lut()` and `get_lut()`. The `read_ctab()`, `write_ctab()`,
