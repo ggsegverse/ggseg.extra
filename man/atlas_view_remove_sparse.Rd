@@ -23,7 +23,7 @@ each one actually holds rather than naming the views to remove.
 }
 \details{
 Count, do not name. A build script that names the views to drop goes stale
-silently: rename a slab or retile the volume and the pattern matches
+silently: rename a slab or lay the slabs out again and the pattern matches
 nothing, the panel survives, and the only sign is a thin view in the
 finished atlas. Counting degrades to dropping nothing instead.
 

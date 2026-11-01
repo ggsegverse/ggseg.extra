@@ -41,7 +41,7 @@ and tractography files.
 
 - `atlas_view_remove_sparse()` drops the views a build left nearly empty,
   counting the regions each view holds rather than naming views to remove, so
-  it cannot go stale when slabs are renamed or retiled.
+  it cannot go stale when slabs are renamed or laid out again.
   `atlas_view_region_counts()` reports the counts it decides on.
 
 - The colour-table functions are named after lookup tables: `read_lut()`,

@@ -110,6 +110,8 @@ reference:
       - atlas_simplify
       - atlas_smooth
       - atlas_dilate
+      - atlas_view_remove_sparse
+      - atlas_view_region_counts
       - context_pattern
       - count_vertices
 

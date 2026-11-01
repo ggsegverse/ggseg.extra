@@ -7,7 +7,7 @@
 #'
 #' @details
 #' Count, do not name. A build script that names the views to drop goes stale
-#' silently: rename a slab or retile the volume and the pattern matches
+#' silently: rename a slab or lay the slabs out again and the pattern matches
 #' nothing, the panel survives, and the only sign is a thin view in the
 #' finished atlas. Counting degrades to dropping nothing instead.
 #'
@@ -22,7 +22,7 @@
 #' the same policy at a threshold of zero, applied to the volume before
 #' anything is traced.
 #'
-#' @param atlas A `ggseg_atlas` object with 2D geometry.
+#' @inheritParams atlas_dilate
 #' @param min_regions Smallest number of drawn regions a view may hold and
 #'   still be kept. A view with fewer is dropped.
 #'
@@ -72,7 +72,7 @@ atlas_view_remove_sparse <- function(atlas, min_regions = 5) {
 
 #' Count the drawn regions in each view
 #'
-#' @param atlas A `ggseg_atlas` object with 2D geometry.
+#' @inheritParams atlas_dilate
 #' @return A named integer vector, one entry per view, in view order. Views
 #'   holding nothing but context count zero.
 #' @family atlas geometry
@@ -98,7 +98,7 @@ atlas_view_region_counts <- function(atlas) {
 #' it in a column, so read whichever the atlas arrived in rather than
 #' converting it: counting views should not cost an sf round trip.
 #'
-#' @param atlas A `ggseg_atlas` object with 2D geometry.
+#' @inheritParams atlas_dilate
 #' @return A data.frame with one row per label and view it appears in.
 #' @noRd
 view_label_pairs <- function(atlas) {
