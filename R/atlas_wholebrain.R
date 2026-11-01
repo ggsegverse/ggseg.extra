@@ -1458,8 +1458,11 @@ wholebrain_resolve_split <- function(
 #' @param cerebellar_labels Manual override: force these labels as cerebellar.
 #' @param verbose Print classification summary.
 #'
-#' @return Named list with `cortical_labels`, `subcortical_labels`, and
-#'   `cerebellar_labels` (character vectors of source label names).
+#' @return Named list with `cortical_labels`, `subcortical_labels`,
+#'   `cerebellar_labels` and `white_matter_labels` (character vectors of
+#'   source label names). White matter is not one of the three grey classes
+#'   and is not drawn: it is the interior the mantle encloses, and including
+#'   it would fill the sulci the ribbon exists to show.
 #' @noRd
 wholebrain_classify_labels <- function(
   atlas_data,
@@ -1494,6 +1497,7 @@ wholebrain_classify_labels <- function(
   classified_cortical <- assigned$cortical
   classified_subcortical <- assigned$subcortical
   classified_cerebellar <- assigned$cerebellar
+  classified_white <- assigned$white_matter
 
   if (length(assigned$remaining) > 0) {
     auto <- classify_labels_auto(assigned, prep, min_vertices)
@@ -1506,6 +1510,7 @@ wholebrain_classify_labels <- function(
       classified_cortical,
       classified_subcortical,
       classified_cerebellar,
+      classified_white,
       vertex_counts
     )
   }
@@ -1514,6 +1519,7 @@ wholebrain_classify_labels <- function(
     cortical_labels = classified_cortical,
     subcortical_labels = classified_subcortical,
     cerebellar_labels = classified_cerebellar,
+    white_matter_labels = classified_white,
     context_labels = declared,
     vertex_counts = vertex_counts
   )
@@ -1590,15 +1596,22 @@ classify_labels_assign <- function(
   )
 
   check_lut_type(colortable)
+  classified_white <- character(0)
   has_type <- !is.null(colortable) && "type" %in% names(colortable)
   if (has_type && length(remaining) > 0) {
     by_type <- classify_labels_by_type(colortable, remaining)
     classified_cortical <- c(classified_cortical, by_type$cortical)
     classified_subcortical <- c(classified_subcortical, by_type$subcortical)
     classified_cerebellar <- c(classified_cerebellar, by_type$cerebellar)
+    classified_white <- by_type$white_matter
     remaining <- setdiff(
       remaining,
-      c(classified_cortical, classified_subcortical, classified_cerebellar)
+      c(
+        classified_cortical,
+        classified_subcortical,
+        classified_cerebellar,
+        classified_white
+      )
     )
   }
 
@@ -1606,6 +1619,7 @@ classify_labels_assign <- function(
     cortical = classified_cortical,
     subcortical = classified_subcortical,
     cerebellar = classified_cerebellar,
+    white_matter = classified_white,
     remaining = remaining
   )
 }
@@ -1776,13 +1790,14 @@ warn_unmatched_overrides <- function(requested, all_labels) {
 #' Classify the still-unassigned labels using the LUT `type` column
 #' @noRd
 classify_labels_by_type <- function(colortable, remaining) {
-  lut_cortical <- colortable$label[colortable$type == "cortical"]
-  lut_subcortical <- colortable$label[colortable$type == "subcortical"]
-  lut_cerebellar <- colortable$label[colortable$type == "cerebellar"]
+  of_type <- function(type) {
+    intersect(remaining, colortable$label[colortable$type == type])
+  }
   list(
-    cortical = intersect(remaining, lut_cortical),
-    subcortical = intersect(remaining, lut_subcortical),
-    cerebellar = intersect(remaining, lut_cerebellar)
+    cortical = of_type("cortical"),
+    subcortical = of_type("subcortical"),
+    cerebellar = of_type("cerebellar"),
+    white_matter = of_type("white_matter")
   )
 }
 
@@ -1793,6 +1808,7 @@ classify_labels_log_summary <- function(
   classified_cortical,
   classified_subcortical,
   classified_cerebellar,
+  classified_white,
   vertex_counts
 ) {
   cli::cli_alert_info(
@@ -1801,6 +1817,13 @@ classify_labels_log_summary <- function(
     {length(classified_cerebellar)} cerebellar labels",
     wrap = TRUE
   )
+  if (length(classified_white) > 0) {
+    cli::cli_alert_info(
+      "{length(classified_white)} white matter label{?s} left undrawn:
+      {.val {classified_white}}",
+      wrap = TRUE
+    )
+  }
   if (length(classified_subcortical) > 0) {
     # nolint start: object_usage_linter.
     sub_info <- paste(

@@ -20,6 +20,9 @@
       $cerebellar_labels
       character(0)
       
+      $white_matter_labels
+      character(0)
+      
       $context_labels
       character(0)
       
@@ -50,6 +53,9 @@
       $cerebellar_labels
       character(0)
       
+      $white_matter_labels
+      character(0)
+      
       $context_labels
       character(0)
       
@@ -77,6 +83,9 @@
       character(0)
       
       $cerebellar_labels
+      character(0)
+      
+      $white_matter_labels
       character(0)
       
       $context_labels
@@ -328,6 +337,9 @@
       
       $cerebellar_labels
       [1] "lobule_I"
+      
+      $white_matter_labels
+      character(0)
       
       $context_labels
       character(0)
