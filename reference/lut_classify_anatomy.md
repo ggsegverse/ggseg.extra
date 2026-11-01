@@ -1,4 +1,4 @@
-# Classify lookup-table labels as cortical, subcortical, or cerebellar
+# Classify lookup-table labels by the tissue they sit on
 
 Fills in a lookup table's `type` column by reading where each label sits
 in FreeSurfer's `aparc+aseg`, rather than by matching label names. This
@@ -18,6 +18,7 @@ lut_classify_anatomy(
   subject = "cvs_avg35_inMNI152",
   min_cortical = 0.6,
   min_cerebellar = 0.5,
+  min_white = 0.5,
   min_fraction = 0.05,
   verbose = get_verbose()
 )
@@ -51,6 +52,13 @@ lut_classify_anatomy(
   Minimum share of a label's labelled grey matter that must be
   cerebellar cortex for the label to be called cerebellar.
 
+- min_white:
+
+  Minimum share of a label's labelled tissue, grey and white together,
+  that must be white matter for the label to be called white matter.
+  Cerebellum is settled first, so a lobule reaching into the peduncles
+  stays cerebellar.
+
 - min_fraction:
 
   Minimum share of a label's *own voxels* that must sit on the winning
@@ -66,8 +74,8 @@ lut_classify_anatomy(
 ## Value
 
 The lookup table as a data.frame, with a `type` column of `"cortical"`,
-`"subcortical"` or `"cerebellar"`. Labels the volume does not carry are
-typed `"subcortical"`, matching how
+`"subcortical"`, `"cerebellar"` or `"white_matter"`. Labels the volume
+does not carry are typed `"subcortical"`, matching how
 [`create_wholebrain_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_wholebrain_from_volume.md)
 treats a label that never reaches the surface, and warned about. The
 background label `idx = 0` is left `NA`.
@@ -90,6 +98,16 @@ reads as part cortical. A label that touches no labelled grey matter at
 all, and one whose winning tissue is under `min_fraction` of its own
 voxels, are both called subcortical: the share alone would let a single
 stray ribbon voxel decide an otherwise unlabelled label.
+
+White matter is typed `"white_matter"` rather than being forced into one
+of the grey classes. A whole-brain parcellation that carries
+`Left-/Right-Cerebral-White-Matter` has nowhere to put them otherwise:
+the vertex-count fallback calls them cortical, because white matter sits
+directly under the ribbon and the surface projection samples through it,
+and they are then drawn as cortical regions with an entry each in the
+legend. White matter is measured against the grey tissues individually,
+not against their total, so adding this class moves no label that was
+already classified by its grey.
 
 ## See also
 
