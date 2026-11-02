@@ -45,6 +45,10 @@ and tractography files.
   ribbon welds the gyri into a solid mantle. **Atlases smoothed with the
   default look different and want rebuilding**; pass `method = "close"` for
   the old behaviour, which still suits solid shapes such as tract tubes.
+- `atlas_view_remove_sparse()` drops the views a build left nearly empty,
+  counting the regions each view holds rather than naming views to remove, so
+  it cannot go stale when slabs are renamed or laid out again.
+  `atlas_view_region_counts()` reports the counts it decides on.
 
 - The colour-table functions are named after lookup tables: `read_lut()`,
   `write_lut()`, `is_lut()` and `get_lut()`. The `read_ctab()`, `write_ctab()`,
