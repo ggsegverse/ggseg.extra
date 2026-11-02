@@ -399,6 +399,14 @@ and tractography files.
 
 ## Improvements
 
+- The flatmap projection is no longer cerebellum-specific. `R/cerebellar_projection.R`
+  is now `R/flatmap_projection.R`, and the surface path, the backdrop label and
+  the small-area thresholds are supplied by the caller rather than hard-coded,
+  so a second unfolded anatomy can reuse it. The thresholds in particular have
+  no defaults now: they are in the surface's own coordinate units, and silently
+  inheriting SUIT's values would mangle a surface unfolded to a different
+  scale. Cerebellar atlas building is unchanged.
+
 - Every `create_*()` pipeline takes `min_coverage`: a newly built atlas whose
   2D geometry covers less than 80% of its `core` labels warns and names the
   labels with no shape.

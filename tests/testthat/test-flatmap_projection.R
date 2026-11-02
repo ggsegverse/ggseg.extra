@@ -21,7 +21,7 @@ square_ring <- function(side, offset = c(0, 0)) {
 }
 
 
-describe("build_vertex_label_vector_cerebellum", {
+describe("build_vertex_labels_flatmap", {
   it("maps 0-indexed vertices onto 1-indexed positions", {
     vertices_df <- data.frame(
       label = "region_a",
@@ -29,7 +29,7 @@ describe("build_vertex_label_vector_cerebellum", {
       stringsAsFactors = FALSE
     )
 
-    labels <- build_vertex_label_vector_cerebellum(vertices_df, 4L)
+    labels <- build_vertex_labels_flatmap(vertices_df, 4, context = "cerebellum")
 
     expect_length(labels, 4L)
     expect_identical(
@@ -45,7 +45,7 @@ describe("build_vertex_label_vector_cerebellum", {
       stringsAsFactors = FALSE
     )
 
-    labels <- build_vertex_label_vector_cerebellum(vertices_df, 3L)
+    labels <- build_vertex_labels_flatmap(vertices_df, 3, context = "cerebellum")
 
     expect_identical(labels, c("lh_a", "rh_b", "cerebellum"))
   })
@@ -60,7 +60,7 @@ describe("build_vertex_label_vector_cerebellum", {
       stringsAsFactors = FALSE
     )
 
-    labels <- build_vertex_label_vector_cerebellum(vertices_df, 3L)
+    labels <- build_vertex_labels_flatmap(vertices_df, 3, context = "cerebellum")
 
     expect_identical(unique(labels[-1]), "cerebellum")
     expect_true(grepl(context_pattern(), "cerebellum", ignore.case = TRUE))
@@ -154,7 +154,7 @@ describe("drop_small_rings", {
 })
 
 
-describe("read_suit_flatmap invalid surface", {
+describe("read_flatmap_surface invalid surface", {
   it("errors when the GIFTI lacks pointset or triangle arrays", {
     skip_if_not_installed("gifti") # nolint: object_usage_linter.
     local_mocked_bindings(
@@ -165,7 +165,7 @@ describe("read_suit_flatmap invalid surface", {
     )
     tmp <- withr::local_tempfile(fileext = ".surf.gii")
     writeLines("x", tmp)
-    expect_error(read_suit_flatmap(tmp), "valid GIFTI surface")
+    expect_error(read_flatmap_surface(tmp), "valid GIFTI surface")
   })
 })
 
