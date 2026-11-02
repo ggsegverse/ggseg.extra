@@ -49,6 +49,16 @@ volumes and tractography files.
   their `GGSEG_EXTRA_*` environment variables are removed, as nothing
   reads them.
 
+- [`atlas_smooth()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_smooth.md)
+  and
+  [`atlas_polish()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_polish.md)
+  default to `method = "chaikin"` instead of `"close"`, so the default
+  preserves sulci. A morphological close fills holes narrower than the
+  smoothing distance, which on a cortical ribbon welds the gyri into a
+  solid mantle. **Atlases smoothed with the default look different and
+  want rebuilding**; pass `method = "close"` for the old behaviour,
+  which still suits solid shapes such as tract tubes.
+
 - [`atlas_view_remove_sparse()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_view_remove_sparse.md)
   drops the views a build left nearly empty, counting the regions each
   view holds rather than naming views to remove, so it cannot go stale

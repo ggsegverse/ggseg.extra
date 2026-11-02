@@ -19,7 +19,7 @@ atlas_polish(
   atlas,
   keep = 0.1,
   smoothness = 0.4,
-  method = c("close", "chaikin", "ksmooth", "spline"),
+  method = c("chaikin", "close", "ksmooth", "spline"),
   close_gaps = TRUE,
   labels = NULL,
   exclude = NULL
@@ -45,7 +45,8 @@ atlas_polish(
 
   Smoothing method, passed to
   [`atlas_smooth()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_smooth.md).
-  `"close"` rounds solid shapes; the others keep holes open.
+  The default `"chaikin"` keeps holes open; `"close"` rounds solid
+  shapes more cleanly but fills them.
 
 - close_gaps:
 
@@ -120,7 +121,7 @@ sum(count_vertices(dk))
 
 polished <- atlas_polish(dk, keep = 0.2)
 sum(count_vertices(polished))
-#> [1] 3809
+#> [1] 3096
 
 if (FALSE) { # \dontrun{
 # The usual shape of a build: the context silhouette and the structures
