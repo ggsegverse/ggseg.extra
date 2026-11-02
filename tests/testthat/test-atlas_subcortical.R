@@ -1254,3 +1254,89 @@ describe("subcortical pipeline snapshot pruning", {
     expect_false(file.exists(file.path(dirs$snapshots, "ax_9_r.rda")))
   })
 })
+
+
+describe("create_wm_from_volume()", {
+  it("is the subcortical pipeline under another name", {
+    # The whole design: one pipeline, two types. Asserted by capturing what
+    # the wrapper hands over rather than by rebuilding an atlas, so the test
+    # says what it means -- that nothing differs but the type.
+    seen <- new.env()
+    local_mocked_bindings(
+      create_subcortical_from_volume = function(...) {
+        seen$args <- list(...)
+        invisible(NULL)
+      }
+    )
+
+    create_wm_from_volume(
+      input_volume = "vol.nii.gz",
+      input_lut = "lut.txt",
+      atlas_name = "jhu",
+      decimate = 0.25
+    )
+
+    expect_identical(seen$args$type, "wm")
+    expect_identical(seen$args$input_volume, "vol.nii.gz")
+    expect_identical(seen$args$input_lut, "lut.txt")
+    expect_identical(seen$args$atlas_name, "jhu")
+    expect_identical(seen$args$decimate, 0.25)
+  })
+
+  it("builds an atlas the ecosystem reads as white matter", {
+    atlas <- subcort_assemble_3d(
+      "demo",
+      list(
+        palette = c(a = "#FFFFFF"),
+        core = data.frame(
+          hemi = "left",
+          region = "a",
+          label = "a",
+          display = "a",
+          stringsAsFactors = FALSE
+        ),
+        meshes_df = local({
+          m <- data.frame(label = "a", hemi = "left", stringsAsFactors = FALSE)
+          m$mesh <- list(list(
+            vertices = data.frame(x = c(-2, -1), y = 1:2, z = 1:2),
+            faces = data.frame(i = 1L, j = 2L, k = 1L)
+          ))
+          m
+        })
+      ),
+      type = "wm"
+    )
+
+    expect_identical(ggseg.formats::atlas_type(atlas), "wm")
+    expect_true(ggseg.formats::is_wm_atlas(atlas))
+    # and still a subcortical atlas, so its methods apply
+    expect_true(ggseg.formats::is_subcortical_atlas(atlas))
+  })
+
+  it("still builds a subcortical atlas by default", {
+    atlas <- subcort_assemble_3d(
+      "demo",
+      list(
+        palette = c(a = "#FFFFFF"),
+        core = data.frame(
+          hemi = "left",
+          region = "a",
+          label = "a",
+          display = "a",
+          stringsAsFactors = FALSE
+        ),
+        meshes_df = local({
+          m <- data.frame(label = "a", hemi = "left", stringsAsFactors = FALSE)
+          m$mesh <- list(list(
+            vertices = data.frame(x = c(-2, -1), y = 1:2, z = 1:2),
+            faces = data.frame(i = 1L, j = 2L, k = 1L)
+          ))
+          m
+        })
+      )
+    )
+
+    expect_identical(ggseg.formats::atlas_type(atlas), "subcortical")
+    expect_false(ggseg.formats::is_wm_atlas(atlas))
+  })
+})
