@@ -28,7 +28,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9135</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9136</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -119,7 +119,8 @@
 <div id="fig-input-formats" class="quarto-float quarto-figure quarto-figure-center">
 <figure class="quarto-float quarto-float-fig"><div aria-describedby="fig-input-formats-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 <div>
-<pre class="mermaid mermaid-js" data-label="fig-input-formats">flowchart TB
+
+<pre class="mermaid mermaid-js" data-fig-alt="Flowchart showing eight input file types (FreeSurfer .annot, FreeSurfer .label, GIFTI .label.gii, CIFTI .dlabel.nii, Neuromaps .func.gii/.nii, Volume .mgz/.nii, Tractography .trk/.tck, and SUIT .label.gii/.annot) flowing through their respective creation functions to produce a unified ggseg_atlas output object" data-label="fig-input-formats">flowchart TB
     A[Input Files] --&gt; B[FreeSurfer .annot]
     A --&gt; C[FreeSurfer .label]
     A --&gt; D[GIFTI .label.gii]
@@ -165,7 +166,8 @@ Figure 1: All atlas creation pathways in ggseg.extra
 <div id="fig-cortical-fork" class="quarto-float quarto-figure quarto-figure-center">
 <figure class="quarto-float quarto-float-fig"><div aria-describedby="fig-cortical-fork-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 <div>
-<pre class="mermaid mermaid-js" data-label="fig-cortical-fork">flowchart LR
+
+<pre class="mermaid mermaid-js" data-fig-alt="Flowchart showing cortical atlas creation: step 1 reads annotation and extracts vertices, step 2 projects mesh triangles to 2D polygons, producing a complete atlas with both 3D and 2D data in seconds" data-label="fig-cortical-fork">flowchart LR
     A[Input File] --&gt; S1["Read annotation&lt;br/&gt;&amp; extract vertices"]
     S1 --&gt; S2["Project mesh to&lt;br/&gt;2D polygons"]
     S2 --&gt; F[Complete atlas&lt;br/&gt;3D + 2D ⚡]
@@ -193,7 +195,8 @@ Figure 2: Cortical atlas creation pipeline
 <div id="fig-subcortical" class="quarto-float quarto-figure quarto-figure-center">
 <figure class="quarto-float quarto-float-fig"><div aria-describedby="fig-subcortical-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 <div>
-<pre class="mermaid mermaid-js" data-label="fig-subcortical">flowchart TB
+
+<pre class="mermaid mermaid-js" data-fig-alt="Flowchart showing volumetric atlas creation from volume files with colour tables, branching between subcortical-only and whole-brain options, extracting voxels and generating a mesh per structure, then either stopping at steps 1 to 3 for a 3D-only atlas or continuing through steps 4 to 6 to slice the volume and trace contours for an atlas with both 3D meshes and 2D slices" data-label="fig-subcortical">flowchart TB
     A[Volume .mgz/.nii&lt;br/&gt;+ optional LUT] --&gt; B[Read segmentation&lt;br/&gt;Extract unique labels]
     B --&gt; C{Atlas type?}
     C --&gt;|Subcortical only| D[create_subcortical_from_volume]
@@ -227,7 +230,8 @@ Figure 3: Subcortical and whole-brain volumetric atlas pipeline
 <div id="fig-cerebellar" class="quarto-float quarto-figure quarto-figure-center">
 <figure class="quarto-float quarto-float-fig"><div aria-describedby="fig-cerebellar-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 <div>
-<pre class="mermaid mermaid-js" data-label="fig-cerebellar">flowchart LR
+
+<pre class="mermaid mermaid-js" data-fig-alt="Flowchart showing cerebellar atlas creation: input files (GIFTI labels, FreeSurfer annotations, or NIfTI volumes) are read and mapped onto the SUIT surface, then projected onto the SUIT 2D flatmap to produce sf polygons, with optional 3D mesh tessellation from volumes" data-label="fig-cerebellar">flowchart LR
     A[Input File] --&gt; S1["Read parcellation&lt;br/&gt;Map to SUIT surface"]
     S1 --&gt; S2["Project onto&lt;br/&gt;SUIT flatmap"]
     S2 --&gt; F[Complete atlas&lt;br/&gt;2D flatmap + optional 3D]
@@ -255,7 +259,8 @@ Figure 4: Cerebellar atlas creation pipeline
 <div id="fig-tracts" class="quarto-float quarto-figure quarto-figure-center">
 <figure class="quarto-float quarto-float-fig"><div aria-describedby="fig-tracts-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 <div>
-<pre class="mermaid mermaid-js" data-label="fig-tracts">flowchart TB
+
+<pre class="mermaid mermaid-js" data-fig-alt="Flowchart showing tract atlas creation from either a tractography file or a volumetric tract label map, the latter first reduced to one centerline per label: step 1 reads streamlines and builds tube meshes, then either stopping there for a 3D-only tract atlas or continuing through steps 2 to 4 to slice the tubes, trace contours and assemble an atlas with both 3D meshes and 2D slices" data-label="fig-tracts">flowchart TB
     A[Tractography&lt;br/&gt;.trk or .tck] --&gt; B["Step 1&lt;br/&gt;Read streamlines&lt;br/&gt;Build tube meshes"]
     V[Volume&lt;br/&gt;tract labels] --&gt; V1[Fit a centerline&lt;br/&gt;per label]
     V1 --&gt; B
@@ -283,7 +288,8 @@ Figure 5: White matter tract atlas pipeline
 <div id="fig-output-compatibility" class="quarto-float quarto-figure quarto-figure-center">
 <figure class="quarto-float quarto-float-fig"><div aria-describedby="fig-output-compatibility-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 <div>
-<pre class="mermaid mermaid-js" data-label="fig-output-compatibility">flowchart LR
+
+<pre class="mermaid mermaid-js" data-fig-alt="Flowchart showing that atlases with 2D data can use both ggseg for flat ggplot2-based plots and ggseg3d for interactive 3D plotly-based visualizations, while 3D-only atlases can only use ggseg3d" data-label="fig-output-compatibility">flowchart LR
     A[ggseg_atlas] --&gt; B{Contains 2D?}
     B --&gt;|Yes| C[ggseg&lt;br/&gt;geom_brain]
     B --&gt;|Yes| D[ggseg3d&lt;br/&gt;Interactive 3D]
@@ -325,7 +331,8 @@ Figure 6: Atlas compatibility with ggseg plotting packages
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }
       // Inspect non-navigation links and adorn them if external
-     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      window.quartoDecorateExternalLinks = function (root) {
+     var links = (root || window.document).querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
       for (var i=0; i<links.length; i++) {
         const link = links[i];
         if (!isInternal(link.href)) {
@@ -334,8 +341,69 @@ Figure 6: Atlas compatibility with ggseg plotting packages
           if (link.dataset.originalHref !== undefined) {
             link.href = link.dataset.originalHref;
           }
+          if (!link.classList.contains('no-external-icon')) {
+          }
         }
       }
+      };
+      window.quartoDecorateExternalLinks(window.document);
+    // Esc closes the popup (WCAG 1.4.13) and focus leaving both trigger and
+    // popup closes it (WCAG 2.4.11); tippy handles neither for interactive popups.
+    const hideOnEscAndFocusOut = {
+      name: 'hideOnEscAndFocusOut',
+      defaultValue: true,
+      fn(instance) {
+        const dismiss = () => {
+          // A show scheduled by the trigger delay would otherwise reopen it
+          instance.clearDelayTimeouts();
+          instance.hide();
+        };
+        const onKeyDown = (event) => {
+          if (event.key !== 'Escape') {
+            return;
+          }
+          // Keep Esc from also reaching page handlers (e.g. reveal.js overview),
+          // except an open reveal.js slide menu, which Esc should close too.
+          // The menu handles keys only when its keyboard option is on.
+          const menuHandlesEsc = window.Reveal?.getPlugin?.('menu')?.isOpen() &&
+            window.Reveal.getConfig().menu?.keyboard !== false;
+          if (!menuHandlesEsc) {
+            event.stopPropagation();
+          }
+          if (instance.popper.contains(window.document.activeElement)) {
+            // Disabled while refocusing so the focus trigger does not reopen it
+            instance.disable();
+            instance.reference.focus();
+            instance.enable();
+          }
+          dismiss();
+        };
+        const onFocusOut = (event) => {
+          const target = event.relatedTarget;
+          if (target && !instance.reference.contains(target) &&
+              !instance.popper.contains(target)) {
+            dismiss();
+          }
+        };
+        // On the trigger too: a click trigger (code-annotations: select) has no
+        // blur handling. Attached for the instance's lifetime so leaving the
+        // trigger also cancels a show still pending on the trigger delay.
+        instance.reference.addEventListener('focusout', onFocusOut);
+        return {
+          onShow() {
+            window.document.addEventListener('keydown', onKeyDown, true);
+            instance.popper.addEventListener('focusout', onFocusOut);
+          },
+          onHide() {
+            window.document.removeEventListener('keydown', onKeyDown, true);
+            instance.popper.removeEventListener('focusout', onFocusOut);
+          },
+          onDestroy() {
+            instance.reference.removeEventListener('focusout', onFocusOut);
+          },
+        };
+      },
+    };
     function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
       const config = {
         allowHTML: true,
@@ -349,6 +417,7 @@ Figure 6: Atlas compatibility with ggseg plotting packages
         interactiveBorder: 10,
         theme: 'light-border',
         placement: 'bottom-start',
+        plugins: [hideOnEscAndFocusOut],
       };
       if (contentFn) {
         config.content = contentFn;

@@ -107,6 +107,8 @@ Other atlas geometry:
 [`atlas_dilate()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_dilate.md),
 [`atlas_simplify()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_simplify.md),
 [`atlas_smooth()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_smooth.md),
+[`atlas_view_region_counts()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_view_region_counts.md),
+[`atlas_view_remove_sparse()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_view_remove_sparse.md),
 [`count_vertices()`](https://ggsegverse.github.io/ggseg.extra/reference/count_vertices.md)
 
 ## Examples
