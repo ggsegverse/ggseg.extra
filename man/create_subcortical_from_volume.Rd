@@ -154,6 +154,12 @@ steps out of \code{steps}.}
 }
 Use \code{steps = 1:3} for a 3D-only atlas. Geometry is shaped after the
 build, not during it: see \code{\link[=atlas_polish]{atlas_polish()}}.}
+
+\item{type}{Type of the finished atlas: \code{"subcortical"} (the default) or
+\code{"wm"} for white matter. The two are built identically and store the
+same things; the type is what lets a plot name the anatomy correctly,
+and a white-matter atlas is not drawn as a 2D backdrop. Reach for
+\code{\link[=create_wm_from_volume]{create_wm_from_volume()}} rather than passing \code{"wm"} here.}
 }
 \value{
 A \code{ggseg_atlas} object with region metadata (core), 3D meshes,

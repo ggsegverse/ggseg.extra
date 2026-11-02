@@ -94,6 +94,11 @@
 #'   }
 #'   Use `steps = 1:3` for a 3D-only atlas. Geometry is shaped after the
 #'   build, not during it: see [atlas_polish()].
+#' @param type Type of the finished atlas: `"subcortical"` (the default) or
+#'   `"wm"` for white matter. The two are built identically and store the
+#'   same things; the type is what lets a plot name the anatomy correctly,
+#'   and a white-matter atlas is not drawn as a 2D backdrop. Reach for
+#'   [create_wm_from_volume()] rather than passing `"wm"` here.
 #' @return A `ggseg_atlas` object with region metadata (core), 3D meshes,
 #'   a colour palette, and optionally sf geometry for 2D slice plots.
 #' @template dots_post_creation
@@ -169,6 +174,71 @@ create_subcortical_from_volume <- function(
     start_time,
     slabs,
     vertex_size_limits
+  )
+}
+
+
+#' Create a white-matter atlas from a label volume
+#'
+#' @description
+#' `r lifecycle::badge("experimental")`
+#'
+#' Builds a white-matter atlas from a volumetric label map. This is
+#' [create_subcortical_from_volume()] under another name: a white-matter
+#' atlas stores what a subcortical one stores -- polygons for the slab views
+#' and a mesh per structure -- and is built the same way. Only the type of
+#' the finished atlas differs, which is what lets a plot label it as white
+#' matter while every method written for a subcortical atlas still applies.
+#'
+#' Use this for a parcellation of white-matter *regions*. White-matter
+#' *tracts* reconstructed as bundles are a different shape and belong in
+#' [create_tract_from_volume()], which also carries centerlines.
+#'
+#' @inheritParams create_subcortical_from_volume
+#'
+#' @return A `ggseg_atlas` of type `"wm"`.
+#' @seealso [create_subcortical_from_volume()], which this delegates to, and
+#'   [create_tract_from_volume()] for bundles.
+#' @family atlas creation
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' atlas <- create_wm_from_volume(
+#'   input_volume = "JHU-ICBM-labels-1mm.nii.gz",
+#'   input_lut = "JHU_LUT.txt"
+#' )
+#' }
+create_wm_from_volume <- function(
+  input_volume,
+  decimate = 0.5,
+  verbose = get_verbose(),
+  ...,
+  input_lut = NULL,
+  atlas_name = NULL,
+  output_dir = NULL,
+  slabs = NULL,
+  vertex_size_limits = NULL,
+  min_coverage = NULL,
+  cleanup = NULL,
+  skip_existing = NULL,
+  steps = NULL
+) {
+  create_subcortical_from_volume(
+    input_volume = input_volume,
+    decimate = decimate,
+    verbose = verbose,
+    ...,
+    input_lut = input_lut,
+    atlas_name = atlas_name,
+    output_dir = output_dir,
+    slabs = slabs,
+    vertex_size_limits = vertex_size_limits,
+    min_coverage = min_coverage,
+    cleanup = cleanup,
+    skip_existing = skip_existing,
+    steps = steps,
+    type = "wm"
   )
 }
 
@@ -816,69 +886,4 @@ subcort_assemble_full <- function(
   warn_if_large_atlas(atlas)
   preview_atlas(atlas)
   atlas
-}
-
-
-#' Create a white-matter atlas from a label volume
-#'
-#' @description
-#' `r lifecycle::badge("experimental")`
-#'
-#' Builds a white-matter atlas from a volumetric label map. This is
-#' [create_subcortical_from_volume()] under another name: a white-matter
-#' atlas stores what a subcortical one stores -- polygons for the slab views
-#' and a mesh per structure -- and is built the same way. Only the type of
-#' the finished atlas differs, which is what lets a plot label it as white
-#' matter while every method written for a subcortical atlas still applies.
-#'
-#' Use this for a parcellation of white-matter *regions*. White-matter
-#' *tracts* reconstructed as bundles are a different shape and belong in
-#' [create_tract_from_volume()], which also carries centerlines.
-#'
-#' @inheritParams create_subcortical_from_volume
-#'
-#' @return A `ggseg_atlas` of type `"wm"`.
-#' @seealso [create_subcortical_from_volume()], which this delegates to, and
-#'   [create_tract_from_volume()] for bundles.
-#' @family atlas creation
-#' @export
-#'
-#' @examples
-#' \dontrun{
-#' atlas <- create_wm_from_volume(
-#'   input_volume = "JHU-ICBM-labels-1mm.nii.gz",
-#'   input_lut = "JHU_LUT.txt"
-#' )
-#' }
-create_wm_from_volume <- function(
-  input_volume,
-  decimate = 0.5,
-  verbose = get_verbose(),
-  ...,
-  input_lut = NULL,
-  atlas_name = NULL,
-  output_dir = NULL,
-  slabs = NULL,
-  vertex_size_limits = NULL,
-  min_coverage = NULL,
-  cleanup = NULL,
-  skip_existing = NULL,
-  steps = NULL
-) {
-  create_subcortical_from_volume(
-    input_volume = input_volume,
-    decimate = decimate,
-    verbose = verbose,
-    ...,
-    input_lut = input_lut,
-    atlas_name = atlas_name,
-    output_dir = output_dir,
-    slabs = slabs,
-    vertex_size_limits = vertex_size_limits,
-    min_coverage = min_coverage,
-    cleanup = cleanup,
-    skip_existing = skip_existing,
-    steps = steps,
-    type = "wm"
-  )
 }
