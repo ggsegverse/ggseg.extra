@@ -27,7 +27,8 @@ create_subcortical_from_volume(
   min_coverage = NULL,
   cleanup = NULL,
   skip_existing = NULL,
-  steps = NULL
+  steps = NULL,
+  type = "subcortical"
 )
 ```
 
@@ -213,6 +214,15 @@ create_subcortical_from_volume(
   build, not during it: see
   [`atlas_polish()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_polish.md).
 
+- type:
+
+  Type of the finished atlas: `"subcortical"` (the default) or `"wm"`
+  for white matter. The two are built identically and store the same
+  things; the type is what lets a plot name the anatomy correctly, and a
+  white-matter atlas is not drawn as a 2D backdrop. Reach for
+  [`create_wm_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_wm_from_volume.md)
+  rather than passing `"wm"` here.
+
 ## Value
 
 A `ggseg_atlas` object with region metadata (core), 3D meshes, a colour
@@ -234,7 +244,8 @@ Other atlas creation:
 [`create_cortical_from_neuromaps()`](https://ggsegverse.github.io/ggseg.extra/reference/create_cortical_from_neuromaps.md),
 [`create_tract_from_tractography()`](https://ggsegverse.github.io/ggseg.extra/reference/create_tract_from_tractography.md),
 [`create_tract_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_tract_from_volume.md),
-[`create_wholebrain_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_wholebrain_from_volume.md)
+[`create_wholebrain_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_wholebrain_from_volume.md),
+[`create_wm_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_wm_from_volume.md)
 
 ## Examples
 

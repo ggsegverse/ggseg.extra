@@ -35,6 +35,8 @@ Turn a parcellation into a `ggseg_atlas` you can plot
 - [`create_wholebrain_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_wholebrain_from_volume.md)
   **\[experimental\]** : Create atlas from whole-brain volumetric
   parcellation
+- [`create_wm_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_wm_from_volume.md)
+  **\[experimental\]** : Create a white-matter atlas from a label volume
 
 ## Shape an Atlas’s Geometry
 

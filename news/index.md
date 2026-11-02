@@ -247,6 +247,13 @@ volumes and tractography files.
 
 ### New features
 
+- [`create_wm_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_wm_from_volume.md)
+  builds a white-matter atlas from a label volume. It is
+  [`create_subcortical_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_subcortical_from_volume.md)
+  under another name: the same pipeline, typed `"wm"`, because a
+  white-matter atlas stores what a subcortical one stores. Tract atlases
+  stay separate – they carry centerlines, which a label map has none of.
+
 - [`clear_atlas_cache()`](https://ggsegverse.github.io/ggseg.extra/reference/clear_atlas_cache.md)
   removes an atlas’s build intermediates, or every atlas’s under a build
   directory. It refuses a directory holding files this package did not

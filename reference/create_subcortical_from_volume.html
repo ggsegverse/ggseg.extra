@@ -107,7 +107,8 @@ snapshots at specified coordinates and extracting contours.</p>
 <span>  min_coverage <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  cleanup <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  skip_existing <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  steps <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  steps <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  type <span class="op">=</span> <span class="st">"subcortical"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -260,6 +261,14 @@ steps out of <code>steps</code>.</p></dd>
 </ul><p>Use <code>steps = 1:3</code> for a 3D-only atlas. Geometry is shaped after the
 build, not during it: see <code><a href="atlas_polish.html">atlas_polish()</a></code>.</p></dd>
 
+
+<dt id="arg-type">type<a class="anchor" aria-label="anchor" href="#arg-type"></a></dt>
+<dd><p>Type of the finished atlas: <code>"subcortical"</code> (the default) or
+<code>"wm"</code> for white matter. The two are built identically and store the
+same things; the type is what lets a plot name the anatomy correctly,
+and a white-matter atlas is not drawn as a 2D backdrop. Reach for
+<code><a href="create_wm_from_volume.html">create_wm_from_volume()</a></code> rather than passing <code>"wm"</code> here.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
@@ -281,7 +290,8 @@ most builds want next.</p>
 <code><a href="create_cortical_from_neuromaps.html">create_cortical_from_neuromaps()</a></code>,
 <code><a href="create_tract_from_tractography.html">create_tract_from_tractography()</a></code>,
 <code><a href="create_tract_from_volume.html">create_tract_from_volume()</a></code>,
-<code><a href="create_wholebrain_from_volume.html">create_wholebrain_from_volume()</a></code></p></div>
+<code><a href="create_wholebrain_from_volume.html">create_wholebrain_from_volume()</a></code>,
+<code><a href="create_wm_from_volume.html">create_wm_from_volume()</a></code></p></div>
     </div>
 
     <div class="section level2">
