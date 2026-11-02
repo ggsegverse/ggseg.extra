@@ -359,7 +359,7 @@
       "@type": "SoftwareApplication",
       "identifier": "ggseg.formats",
       "name": "ggseg.formats",
-      "version": ">= 0.0.4.9010",
+      "version": ">= 0.0.4.9014",
       "provider": {
         "@id": "https://cran.r-project.org",
         "@type": "Organization",
@@ -463,7 +463,7 @@
     },
     "SystemRequirements": "FreeSurfer (subcortical/wholebrain pipelines), \n    Connectome Workbench (optional, for CIFTI resampling),\n    V8 (>= 6.0.0, required by the 'rmapshaper' dependency), \n    GDAL (>= 2.0.1), \n    GEOS (>= 3.4.0), \n    PROJ (>= 4.8.0), \n    sqlite3"
   },
-  "fileSize": "4526.521KB",
+  "fileSize": "4546.086KB",
   "citation": [
     {
       "@type": "CreativeWork",
