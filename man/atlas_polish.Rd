@@ -8,7 +8,7 @@ atlas_polish(
   atlas,
   keep = 0.1,
   smoothness = 0.4,
-  method = c("close", "chaikin", "ksmooth", "spline"),
+  method = c("chaikin", "close", "ksmooth", "spline"),
   close_gaps = TRUE,
   labels = NULL,
   exclude = NULL
@@ -22,8 +22,9 @@ atlas_polish(
 \item{smoothness}{Smoothing strength between 0 and 1, passed to
 \code{\link[=atlas_smooth]{atlas_smooth()}}.}
 
-\item{method}{Smoothing method, passed to \code{\link[=atlas_smooth]{atlas_smooth()}}. \code{"close"}
-rounds solid shapes; the others keep holes open.}
+\item{method}{Smoothing method, passed to \code{\link[=atlas_smooth]{atlas_smooth()}}. The default
+\code{"chaikin"} keeps holes open; \code{"close"} rounds solid shapes more cleanly
+but fills them.}
 
 \item{close_gaps}{Whether to hand back the slivers the operations open
 between neighbouring regions. See \code{\link[=atlas_smooth]{atlas_smooth()}}.}

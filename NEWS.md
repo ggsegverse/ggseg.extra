@@ -39,6 +39,12 @@ and tractography files.
 - The `ggseg.extra.tolerance` and `ggseg.extra.smoothness` options and their
   `GGSEG_EXTRA_*` environment variables are removed, as nothing reads them.
 
+- `atlas_smooth()` and `atlas_polish()` default to `method = "chaikin"`
+  instead of `"close"`, so the default preserves sulci. A morphological close
+  fills holes narrower than the smoothing distance, which on a cortical
+  ribbon welds the gyri into a solid mantle. **Atlases smoothed with the
+  default look different and want rebuilding**; pass `method = "close"` for
+  the old behaviour, which still suits solid shapes such as tract tubes.
 - `atlas_view_remove_sparse()` drops the views a build left nearly empty,
   counting the regions each view holds rather than naming views to remove, so
   it cannot go stale when slabs are renamed or laid out again.
