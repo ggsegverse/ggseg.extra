@@ -1763,7 +1763,11 @@ describe("labels and exclude leave everything else untouched", {
     g$label[g$label != label]
   }
   all_identical <- function(a, b, labels) {
-    all(vapply(labels, function(l) identical(geom_of(a, l), geom_of(b, l)), logical(1)))
+    all(vapply(
+      labels,
+      function(l) identical(geom_of(a, l), geom_of(b, l)),
+      logical(1)
+    ))
   }
 
   it("atlas_smooth() does not touch an excluded label", {
