@@ -533,6 +533,13 @@ and tractography files.
 
 ## Bug fixes
 
+- `labels` and `exclude` now mean what they say: a label an operation was not
+  asked to touch comes back byte-identical. `atlas_smooth()`,
+  `atlas_simplify()` and `atlas_polish()` repaired validity across the whole
+  frame and closed gaps atlas-wide, so an excluded label was returned with its
+  geometry rewritten -- on the bundled `aseg()` backdrop that moved 17% of its
+  rings and, with `close_gaps`, its vertex count.
+
 - Subcortical 3D meshes are placed in the volume's own world coordinates.
   Tessellation emits tkRAS, a frame FreeSurfer derives from a volume's
   dimensions alone, and the subcortical pipeline returned it untouched. For a

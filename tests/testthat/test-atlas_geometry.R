@@ -1746,3 +1746,73 @@ describe("label selection by function", {
     )
   })
 })
+
+
+describe("labels and exclude leave everything else untouched", {
+  # `exclude` has to mean untouched. Keeping a row out of the operation is not
+  # enough on its own: these verbs round-trip the atlas through sf, repair
+  # validity, close gaps and trim corners, and each of those ran over the whole
+  # frame. An excluded label came back with its geometry rewritten -- same
+  # shape, different vertices -- which no caller asked for.
+  geom_of <- function(atlas, label) {
+    g <- ggseg.formats::atlas_geom(atlas)
+    g$geometry[[which(g$label == label)]]
+  }
+  others <- function(atlas, label) {
+    g <- ggseg.formats::atlas_geom(atlas)
+    g$label[g$label != label]
+  }
+  all_identical <- function(a, b, labels) {
+    all(vapply(labels, function(l) identical(geom_of(a, l), geom_of(b, l)), logical(1)))
+  }
+
+  it("atlas_smooth() does not touch an excluded label", {
+    a <- aseg()
+    b <- atlas_smooth(a, smoothness = 1, exclude = "^cortex")
+    expect_identical(geom_of(a, "cortex"), geom_of(b, "cortex"))
+  })
+
+  it("atlas_smooth() does not touch anything labels did not select", {
+    a <- aseg()
+    target <- ggseg.formats::atlas_geom(a)$label[[2]]
+    b <- atlas_smooth(a, smoothness = 1, labels = paste0("^", target, "$"))
+    expect_true(all_identical(a, b, others(a, target)))
+  })
+
+  it("still changes what it was asked to change", {
+    # Guards the obvious failure mode of the fix: restoring everything.
+    a <- aseg()
+    target <- ggseg.formats::atlas_geom(a)$label[[2]]
+    b <- atlas_smooth(a, smoothness = 1, labels = paste0("^", target, "$"))
+    expect_false(identical(geom_of(a, target), geom_of(b, target)))
+  })
+
+  it("atlas_simplify() does not touch an excluded label", {
+    a <- aseg()
+    b <- atlas_simplify(a, keep = 0.3, exclude = "^cortex")
+    expect_identical(geom_of(a, "cortex"), geom_of(b, "cortex"))
+  })
+
+  it("atlas_polish() does not touch an excluded label", {
+    a <- aseg()
+    b <- atlas_polish(a, keep = 0.3, smoothness = 0.4, exclude = "^cortex")
+    expect_identical(geom_of(a, "cortex"), geom_of(b, "cortex"))
+  })
+
+  it("holds for an atlas whose coordinates are stored as arrays", {
+    # tracula stores x/y as arrays rather than plain numerics. Restoring the
+    # values but not the storage left the row equal and not identical.
+    a <- tracula()
+    target <- ggseg.formats::atlas_geom(a)$label[[1]]
+    b <- atlas_smooth(a, smoothness = 1, labels = paste0("^", target, "$"))
+    expect_true(all_identical(a, b, others(a, target)))
+  })
+
+  it("close_gaps does not reach an excluded label", {
+    # close_gaps ran atlas-wide, so it moved excluded geometry even when the
+    # operation itself had skipped it.
+    a <- aseg()
+    b <- atlas_smooth(a, smoothness = 1, exclude = "^cortex", close_gaps = TRUE)
+    expect_identical(geom_of(a, "cortex"), geom_of(b, "cortex"))
+  })
+})

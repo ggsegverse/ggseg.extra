@@ -144,7 +144,8 @@ atlas_smooth <- function(
     }
   }
 
-  rehydrate_smoothed_atlas(atlas, sf_data, was_polygon)
+  out <- rehydrate_smoothed_atlas(atlas, sf_data, was_polygon)
+  restore_unselected(out, atlas, labels, exclude)
 }
 
 
@@ -445,7 +446,8 @@ atlas_simplify <- function(
     sf_data <- close_gaps_by_view(sf_data, before)
   }
 
-  rehydrate_smoothed_atlas(atlas, sf_data, was_polygon)
+  out <- rehydrate_smoothed_atlas(atlas, sf_data, was_polygon)
+  restore_unselected(out, atlas, labels, exclude)
 }
 
 
@@ -754,13 +756,72 @@ geometry_op_subset <- function(sf_data, labels, exclude, op, what) {
   }
 
   sf_data$.op_order <- seq_len(nrow(sf_data))
-  target <- op(sf_data[mask, , drop = FALSE])
+  # Validity is repaired on the rows the operation touched, not on the whole
+  # frame. `st_make_valid()` normalises a polygon whether or not it needed
+  # repairing, so running it over the unselected rows rewrote geometry the
+  # caller asked to be left alone.
+  target <- sf::st_make_valid(op(sf_data[mask, , drop = FALSE]))
   rest <- sf_data[!mask, , drop = FALSE]
 
   out <- rbind(target, rest)
   out <- out[order(out$.op_order), , drop = FALSE]
   out$.op_order <- NULL
-  sf::st_make_valid(out)
+  out
+}
+
+
+#' Put back the geometry of every row the caller did not select
+#'
+#' `labels` and `exclude` choose what an operation applies to, and a row
+#' outside that choice must come back exactly as it arrived. Keeping it out of
+#' the operation itself is not enough: these verbs round-trip the atlas
+#' through sf, and steps that run afterwards -- closing gaps, trimming
+#' corners -- work on the whole frame. Restoring the unselected geometry
+#' verbatim at the end makes the guarantee hold whatever happened in between.
+#'
+#' Rows are matched on label and view, because one label contributes a row per
+#' view it appears in. A row the operation removed is not resurrected; an
+#' operation that drops unselected rows is a bug of its own.
+#' @noRd
+restore_unselected <- function(result, original, labels, exclude) {
+  if (is.null(labels) && is.null(exclude)) {
+    return(result)
+  }
+
+  before <- ggseg.formats::atlas_geom(original)
+  after <- ggseg.formats::atlas_geom(result)
+  if (is.null(before) || is.null(after)) {
+    return(result)
+  }
+
+  unselected <- !dilate_mask(before$label, labels, exclude)
+  if (!any(unselected)) {
+    return(result)
+  }
+
+  # sf keeps one row per label and view; the polygon representation keeps one
+  # row per label and carries the view inside the nested geometry.
+  key <- function(d) {
+    if ("view" %in% names(d)) paste(d$label, d$view) else as.character(d$label)
+  }
+  hit <- match(key(before)[unselected], key(after))
+  found <- !is.na(hit)
+  if (!any(found)) {
+    return(result)
+  }
+
+  if (inherits(after, "sf")) {
+    sf::st_geometry(after)[hit[found]] <-
+      sf::st_geometry(before)[unselected][found]
+  } else {
+    after$geometry[hit[found]] <- before$geometry[unselected][found]
+  }
+
+  # Written directly because ggseg.formats exports no geometry setter; this
+  # is the same assignment rehydrate_smoothed_atlas() makes, and `result` is
+  # already in its final representation, so no conversion follows.
+  result$data$geom <- after
+  result
 }
 
 
