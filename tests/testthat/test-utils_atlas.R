@@ -1343,3 +1343,71 @@ describe("carries_no_colour()", {
     expect_false(carries_no_colour(c("#000000", "#78124A", "#BEBEBE")))
   })
 })
+
+
+describe("check_vertex_space()", {
+  cortical_atlas <- function(idx) {
+    v <- data.frame(label = "lh_a", stringsAsFactors = FALSE)
+    v$vertices <- list(idx)
+    ggseg.formats::ggseg_atlas(
+      atlas = "demo",
+      type = "cortical",
+      core = data.frame(
+        hemi = "left",
+        region = "a",
+        label = "lh_a",
+        stringsAsFactors = FALSE
+      ),
+      data = ggseg.formats::ggseg_data_cortical(vertices = v)
+    )
+  }
+
+  it("says nothing when the indices fit the space the type implies", {
+    expect_no_warning(check_vertex_space(cortical_atlas(0:100)))
+  })
+
+  it("warns when the atlas was built against a denser surface", {
+    # The failure this exists to stop: three distributed atlases carry
+    # fsaverage7 indices under a cortical type, and nothing caught it when
+    # they were built.
+    expect_warning(
+      check_vertex_space(cortical_atlas(c(0:10, 163841L))),
+      "do not fit"
+    )
+  })
+
+  it("counts how many fall outside rather than only flagging that some do", {
+    expect_warning(
+      check_vertex_space(cortical_atlas(c(0L, 99999L))),
+      "1 of 2"
+    )
+  })
+
+  it("says the 2D geometry is unaffected, because it is", {
+    expect_warning(
+      check_vertex_space(cortical_atlas(c(0L, 99999L))),
+      "2D geometry is unaffected"
+    )
+  })
+
+  it("passes a real cortical atlas untouched", {
+    expect_no_warning(check_vertex_space(ggseg.formats::dk()))
+  })
+
+  it("passes a real cerebellar atlas, which has its own space", {
+    expect_no_warning(check_vertex_space(ggseg.formats::suit()))
+  })
+
+  it("has nothing to say about a type that stores no vertices", {
+    expect_null(vertex_space_size("subcortical"))
+    expect_no_warning(check_vertex_space(ggseg.formats::aseg()))
+  })
+
+  it("tolerates the stubs the pipeline tests hand the finalizers", {
+    expect_no_warning(check_vertex_space(NULL))
+    expect_no_warning(check_vertex_space(structure(
+      list(),
+      class = "ggseg_atlas"
+    )))
+  })
+})

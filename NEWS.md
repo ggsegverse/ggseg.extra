@@ -1,4 +1,4 @@
-# ggseg.extra 1.9.9.9136
+# ggseg.extra 1.9.9.9140
 
 This section becomes the 2.0.0 release notes at submission. It is the first
 CRAN release of ggseg.extra, the atlas-building package of
@@ -532,6 +532,15 @@ and tractography files.
   absolute on every platform whether or not the directory already exists.
 
 ## Bug fixes
+
+- A pipeline warns when the atlas it just built carries vertex indices that do
+  not fit the vertex space its type implies. An index means nothing without
+  the surface it counts into, so an atlas built from a denser source is not
+  slightly wrong: the indices that happen to fit point at different anatomy
+  and the renderer discards the rest. Three distributed atlases carry
+  fsaverage7 indices under a cortical type, and nothing caught it when they
+  were built. The 2D geometry is unaffected, so this warns rather than
+  failing the build.
 
 - Subcortical 3D meshes are placed in the volume's own world coordinates.
   Tessellation emits tkRAS, a frame FreeSurfer derives from a volume's

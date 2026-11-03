@@ -267,6 +267,82 @@ drop_labels_without_geometry <- function(components, sf_data) {
 #'   0 and 1. `0` turns the check off.
 #' @return `atlas`, unchanged, invisibly.
 #' @noRd
+#' The vertex space a type's indices are expected to address
+#'
+#' The ecosystem resamples every atlas into one space per type, which is why
+#' the type is allowed to imply the space at all. The count is read from the
+#' mesh rather than written down, so it cannot drift from the surface the
+#' renderer will actually use. A type that stores no vertices has no space.
+#' @noRd
+vertex_space_size <- function(type) {
+  switch(
+    type,
+    cortical = nrow(ggseg.formats::get_brain_mesh("lh")$vertices),
+    cerebellar = nrow(ggseg.formats::get_cerebellar_mesh()$vertices),
+    NULL
+  )
+}
+
+
+#' Warn when a freshly built atlas's vertices do not fit its space
+#'
+#' A vertex index means nothing without the surface it counts into, so an
+#' atlas built against a denser surface than its type implies is not slightly
+#' wrong -- the indices that happen to fit point at different anatomy, and
+#' the renderer discards the rest. Three distributed atlases carry fsaverage7
+#' indices on a fsaverage5 type for exactly this reason, and nothing caught
+#' it at build time.
+#'
+#' This warns rather than aborting because the 2D geometry is unaffected and
+#' still correct: a build whose flat maps are right should not be thrown away
+#' over its 3D indices.
+#' @noRd
+check_vertex_space <- function(atlas) {
+  if (is.null(atlas) || !ggseg.formats::is_ggseg_atlas(atlas)) {
+    return(invisible(atlas))
+  }
+
+  # The type is read first so a subcortical or tract atlas never reaches the
+  # accessor below, which signals "no vertices" by erroring rather than by
+  # returning nothing -- a cortical atlas built 2D-only reaches it and must
+  # be tolerated the same way.
+  size <- vertex_space_size(ggseg.formats::atlas_type(atlas))
+  if (is.null(size)) {
+    return(invisible(atlas))
+  }
+
+  vertices <- tryCatch(
+    ggseg.formats::atlas_vertices(atlas),
+    error = function(e) NULL
+  )
+  if (!is.data.frame(vertices) || is.null(vertices$vertices)) {
+    return(invisible(atlas))
+  }
+
+  idx <- unlist(vertices$vertices, use.names = FALSE)
+  outside <- sum(idx + 1L > size | idx < 0L)
+  if (outside == 0) {
+    return(invisible(atlas))
+  }
+
+  pct <- round(100 * outside / length(idx), 1) # nolint: object_usage_linter.
+  cli::cli_warn(
+    c(
+      "Vertex indices do not fit the {.field {ggseg.formats::atlas_type(atlas)}}
+      vertex space.",
+      "x" = "{outside} of {length(idx)} ({pct}%) fall outside its {size}
+      vertices.",
+      "i" = "The source was most likely a denser surface; resample it before
+      building, or the 3D rendering draws the wrong vertices.",
+      "i" = "The 2D geometry is unaffected."
+    ),
+    wrap = TRUE
+  )
+
+  invisible(atlas)
+}
+
+
 check_atlas_coverage <- function(atlas, min_coverage = get_min_coverage()) {
   if (is.null(atlas) || min_coverage <= 0) {
     return(invisible(atlas))
@@ -1206,6 +1282,7 @@ finalize_atlas <- function(
   }
 
   check_atlas_coverage(atlas, config$min_coverage %||% get_min_coverage())
+  check_vertex_space(atlas)
 
   if (ggseg.formats::is_atlas_sf(atlas)) {
     atlas <- ggseg.formats::as_polygon_atlas(atlas)
