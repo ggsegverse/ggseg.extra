@@ -122,6 +122,7 @@ atlas_smooth <- function(
   sf_data <- ggseg.formats::atlas_geom(ggseg.formats::as_sf_atlas(atlas))
 
   before <- sf_data
+  selected <- dilate_mask(before$label, labels, exclude)
   sf_data <- geometry_op_subset(
     sf_data,
     labels,
@@ -131,7 +132,7 @@ atlas_smooth <- function(
   )
   if (!identical(sf_data, before)) {
     if (isTRUE(close_gaps)) {
-      sf_data <- close_gaps_by_view(sf_data, before)
+      sf_data <- close_gaps_by_view(sf_data, before, selected)
     }
     if (identical(vertex_budget, "preserve")) {
       sf_data <- trim_rounded_corners(
@@ -316,8 +317,17 @@ atlas_dilate <- function(atlas, amount, labels = NULL, exclude = NULL) {
   emptied <- sf::st_is_empty(sf_data$geometry)
   sf_data <- sf_data[!emptied, , drop = FALSE]
 
+  # Buffering only writes into the masked rows, so an unselected row is never
+  # reshaped here -- but the sf round-trip still re-creates its coordinate
+  # columns, which on an atlas storing them as arrays returns a row that is
+  # equal without being identical. The original is captured before `atlas` is
+  # reassigned, or the restore would read back the rehydrated object and do
+  # nothing. Rows erosion removed are not resurrected: the restore only writes
+  # to keys that still exist.
+  original <- atlas
   atlas <- rehydrate_smoothed_atlas(atlas, sf_data, was_polygon)
-  drop_eroded_regions(atlas, unique(sf_data$label), emptied)
+  atlas <- drop_eroded_regions(atlas, unique(sf_data$label), emptied)
+  restore_unselected(atlas, original, labels, exclude)
 }
 
 
@@ -435,6 +445,7 @@ atlas_simplify <- function(
   sf_data <- ggseg.formats::atlas_geom(ggseg.formats::as_sf_atlas(atlas))
 
   before <- sf_data
+  selected <- dilate_mask(before$label, labels, exclude)
   sf_data <- geometry_op_subset(
     sf_data,
     labels,
@@ -443,7 +454,7 @@ atlas_simplify <- function(
     what = "simplify"
   )
   if (isTRUE(close_gaps) && !identical(sf_data, before)) {
-    sf_data <- close_gaps_by_view(sf_data, before)
+    sf_data <- close_gaps_by_view(sf_data, before, selected)
   }
 
   out <- rehydrate_smoothed_atlas(atlas, sf_data, was_polygon)
@@ -495,7 +506,7 @@ trim_rounded_corners <- function(
       what = "simplify"
     )
     if (isTRUE(close_gaps)) {
-      sf_data <- close_gaps_by_view(sf_data, previous)
+      sf_data <- close_gaps_by_view(sf_data, previous, rows)
     }
     # Closing the gaps the simplification opened can cost more vertices than
     # the simplification saved, so a pass is kept only if it came out ahead.
@@ -801,8 +812,27 @@ restore_unselected <- function(result, original, labels, exclude) {
 
   # sf keeps one row per label and view; the polygon representation keeps one
   # row per label and carries the view inside the nested geometry.
+  #
+  # Two things the obvious `paste(label, view)` gets wrong. A space separator
+  # is ambiguous -- label "a b" with view "c" keys the same as label "a" with
+  # view "b c" -- so the parts are joined on a character no label contains.
+  # And nothing makes label and view unique together: `validate_sf()` enforces
+  # no such constraint, unlike `validate_polygons()`. `match()` returns the
+  # first hit, so duplicate keys would all resolve to one destination and the
+  # assignment would write one row's geometry onto another's. Numbering each
+  # occurrence within its group keeps every row addressable; row order is
+  # stable because `geometry_op_subset()` restores it from `.op_order`.
   key <- function(d) {
-    if ("view" %in% names(d)) paste(d$label, d$view) else as.character(d$label)
+    base <- if ("view" %in% names(d)) {
+      paste(d$label, d$view, sep = "\x1f")
+    } else {
+      as.character(d$label)
+    }
+    paste(
+      base,
+      stats::ave(seq_along(base), base, FUN = seq_along),
+      sep = "\x1f"
+    )
   }
   hit <- match(key(before)[unselected], key(after))
   found <- !is.na(hit)
@@ -810,12 +840,10 @@ restore_unselected <- function(result, original, labels, exclude) {
     return(result)
   }
 
-  if (inherits(after, "sf")) {
-    sf::st_geometry(after)[hit[found]] <-
-      sf::st_geometry(before)[unselected][found]
-  } else {
-    after$geometry[hit[found]] <- before$geometry[unselected][found]
-  }
+  # One assignment serves both representations: `validate_sf()` requires the
+  # geometry column to be named `geometry`, and the polygon representation
+  # names its list-column the same, so there is no sf-specific case to make.
+  after$geometry[hit[found]] <- before$geometry[unselected][found]
 
   # Written directly because ggseg.formats exports no geometry setter; this
   # is the same assignment rehydrate_smoothed_atlas() makes, and `result` is
@@ -1215,7 +1243,7 @@ check_dilate_args <- function(amount, labels, exclude) {
 #' @param old_sf The same rows before it.
 #' @return `new_sf`, with the slivers merged back in.
 #' @noRd
-close_coverage_gaps <- function(new_sf, old_sf, passes = 3L) {
+close_coverage_gaps <- function(new_sf, old_sf, passes = 3L, selected = NULL) {
   if (nrow(new_sf) < 2L || nrow(new_sf) != nrow(old_sf)) {
     return(new_sf)
   }
@@ -1227,7 +1255,7 @@ close_coverage_gaps <- function(new_sf, old_sf, passes = 3L) {
     sf::st_make_valid(sf::st_geometry(old_sf)[parcels])
   )
   for (pass in seq_len(passes)) {
-    filled <- fill_reopened_area(new_sf, parcels, covered)
+    filled <- fill_reopened_area(new_sf, parcels, covered, selected)
     if (is.null(filled)) {
       break
     }
@@ -1261,13 +1289,13 @@ is_backdrop_row <- function(sf_data) {
 #' floating-point, which can leave a thinner one behind, so the repair is run
 #' again until it finds nothing.
 #' @noRd
-fill_reopened_area <- function(new_sf, parcels, covered) {
+fill_reopened_area <- function(new_sf, parcels, covered, selected = NULL) {
   parcel_geom <- sf::st_make_valid(sf::st_geometry(new_sf)[parcels])
   pieces <- reopened_area(sf::st_union(parcel_geom), covered)
   if (length(pieces) == 0L) {
     return(NULL)
   }
-  owner <- parcels[claim_pieces(pieces, parcel_geom)]
+  owner <- parcels[claim_pieces(pieces, parcel_geom, selected[parcels])]
   merge_pieces_into(new_sf, pieces, owner)
 }
 
@@ -1347,13 +1375,27 @@ polygons_within <- function(g) {
 #' claims it. One that borders nothing - a rounding artefact adrift inside a
 #' single region - goes to whichever region is nearest.
 #' @noRd
-claim_pieces <- function(pieces, geom) {
+claim_pieces <- function(pieces, geom, selected = NULL) {
   bordering <- sf::st_intersects(pieces, sf::st_boundary(geom))
-  owner <- vapply(
-    bordering,
-    function(hit) if (length(hit) > 0L) hit[[1L]] else NA_integer_,
-    integer(1)
-  )
+  # A sliver handed to a row the caller excluded is a sliver thrown away: the
+  # unselected geometry is restored verbatim afterwards, so the merge is
+  # undone and the gap stays open. Preferring a bordering row the operation
+  # did touch closes it without reaching outside the selection. The slivers
+  # lie along the boundary the operation moved, so such a row almost always
+  # borders them; where none does, the first bordering row still takes it.
+  prefer <- function(hit) {
+    if (length(hit) == 0L) {
+      return(NA_integer_)
+    }
+    if (!is.null(selected)) {
+      picked <- hit[selected[hit]]
+      if (length(picked) > 0L) {
+        return(picked[[1L]])
+      }
+    }
+    hit[[1L]]
+  }
+  owner <- vapply(bordering, prefer, integer(1))
   adrift <- is.na(owner)
   if (any(adrift)) {
     owner[adrift] <- sf::st_nearest_feature(pieces[adrift], geom)
@@ -1385,15 +1427,16 @@ merge_pieces_into <- function(sf_data, pieces, owner) {
 #' Views are laid out side by side in one set of coordinates but are separate
 #' pictures, so a sliver may only ever be handed to a region in its own view.
 #' @noRd
-close_gaps_by_view <- function(new_sf, old_sf) {
+close_gaps_by_view <- function(new_sf, old_sf, selected = NULL) {
   if (!"view" %in% names(new_sf)) {
-    return(close_coverage_gaps(new_sf, old_sf))
+    return(close_coverage_gaps(new_sf, old_sf, selected = selected))
   }
   for (v in unique(new_sf$view)) {
     rows <- which(new_sf$view == v)
     repaired <- close_coverage_gaps(
       new_sf[rows, , drop = FALSE],
-      old_sf[rows, , drop = FALSE]
+      old_sf[rows, , drop = FALSE],
+      selected = selected[rows]
     )
     sf::st_geometry(new_sf)[rows] <- sf::st_geometry(repaired)
   }

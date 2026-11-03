@@ -1810,6 +1810,67 @@ describe("labels and exclude leave everything else untouched", {
     target <- ggseg.formats::atlas_geom(a)$label[[1]]
     b <- atlas_smooth(a, smoothness = 1, labels = paste0("^", target, "$"))
     expect_true(all_identical(a, b, others(a, target)))
+    # Without this the assertion above is satisfied by doing nothing at all.
+    expect_false(identical(geom_of(a, target), geom_of(b, target)))
+  })
+
+  it("keeps each view's geometry on its own row for a multi-view sf atlas", {
+    # The match key carries `view` as well as `label`. An sf atlas keeps one
+    # row per label per view, so without the view component every row of a
+    # label collapses onto the first and each one comes back holding another
+    # view's polygon -- the wrong anatomy, not a shifted outline.
+    a <- ggseg.formats::as_sf_atlas(aseg())
+    g <- ggseg.formats::atlas_geom(a)
+    b <- atlas_smooth(a, smoothness = 1, exclude = "^cortex")
+    gb <- ggseg.formats::atlas_geom(b)
+
+    excluded <- which(g$label == "cortex")
+    expect_gt(length(excluded), 1L)
+    expect_gt(length(unique(g$view[excluded])), 1L)
+
+    moved <- excluded[
+      !vapply(
+        excluded,
+        function(i) {
+          identical(sf::st_geometry(g)[[i]], sf::st_geometry(gb)[[i]])
+        },
+        logical(1)
+      )
+    ]
+    expect_identical(moved, integer(0))
+  })
+
+  it("restores an sf atlas byte-identically, not merely to the same shape", {
+    # The sf branch of the restore was reachable but only ever asserted with
+    # st_equals(), which the unfixed code already satisfied.
+    a <- ggseg.formats::as_sf_atlas(aseg())
+    g <- ggseg.formats::atlas_geom(a)
+    b <- atlas_smooth(a, smoothness = 1, exclude = "^cortex")
+    gb <- ggseg.formats::atlas_geom(b)
+
+    keep <- which(g$label == "cortex")
+    expect_identical(sf::st_geometry(g)[keep], sf::st_geometry(gb)[keep])
+    expect_false(identical(
+      sf::st_geometry(g)[-keep],
+      sf::st_geometry(gb)[-keep]
+    ))
+  })
+
+  it("atlas_polish() honours labels, not only exclude", {
+    a <- aseg()
+    b <- atlas_polish(a, keep = 0.3, smoothness = 0.4, labels = "^cortex$")
+    expect_false(identical(geom_of(a, "cortex"), geom_of(b, "cortex")))
+    expect_true(all_identical(a, b, others(a, "cortex")))
+  })
+
+  it("atlas_dilate() does not touch an excluded label", {
+    # tracula stores coordinates as arrays, so the sf round-trip reclassed
+    # them even though dilation only writes into the selected rows.
+    a <- tracula()
+    target <- ggseg.formats::atlas_geom(a)$label[[1]]
+    b <- atlas_dilate(a, 0.2, exclude = paste0("^", target, "$"))
+    expect_identical(geom_of(a, target), geom_of(b, target))
+    expect_false(all_identical(a, b, others(a, target)))
   })
 
   it("close_gaps does not reach an excluded label", {
@@ -1818,5 +1879,34 @@ describe("labels and exclude leave everything else untouched", {
     a <- aseg()
     b <- atlas_smooth(a, smoothness = 1, exclude = "^cortex", close_gaps = TRUE)
     expect_identical(geom_of(a, "cortex"), geom_of(b, "cortex"))
+  })
+})
+
+
+describe("claim_pieces()", {
+  square <- function(x0, y0, w = 1) {
+    sf::st_polygon(list(cbind(
+      c(x0, x0 + w, x0 + w, x0, x0),
+      c(y0, y0, y0 + w, y0 + w, y0)
+    )))
+  }
+
+  it("gives a sliver to a bordering row the operation selected", {
+    # A sliver handed to an unselected row is thrown away: that row's
+    # geometry is restored verbatim afterwards, so the merge is undone and
+    # the gap stays open. Preferring a selected neighbour closes it without
+    # reaching outside the selection.
+    geom <- sf::st_sfc(square(0, 0), square(1, 0))
+    sliver <- sf::st_sfc(square(0.9, 0.2, 0.2))
+
+    expect_identical(claim_pieces(sliver, geom), 1L)
+    expect_identical(claim_pieces(sliver, geom, c(FALSE, TRUE)), 2L)
+    expect_identical(claim_pieces(sliver, geom, c(TRUE, FALSE)), 1L)
+  })
+
+  it("falls back to the first bordering row when none is selected", {
+    geom <- sf::st_sfc(square(0, 0), square(1, 0))
+    sliver <- sf::st_sfc(square(0.9, 0.2, 0.2))
+    expect_identical(claim_pieces(sliver, geom, c(FALSE, FALSE)), 1L)
   })
 })
