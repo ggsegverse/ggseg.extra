@@ -537,7 +537,7 @@ and tractography files.
   not fit the vertex space its type implies. An index means nothing without
   the surface it counts into, so an atlas built from a denser source is not
   slightly wrong: the indices that happen to fit point at different anatomy
-  and the renderer discards the rest. Three distributed atlases carry
+  and the rest are discarded when it is drawn. Three distributed atlases carry
   fsaverage7 indices under a cortical type, and nothing caught it when they
   were built. The 2D geometry is unaffected, so this warns rather than
   failing the build.
