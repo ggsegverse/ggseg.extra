@@ -29,7 +29,11 @@ describe("build_vertex_labels_flatmap", {
       stringsAsFactors = FALSE
     )
 
-    labels <- build_vertex_labels_flatmap(vertices_df, 4, context = "cerebellum")
+    labels <- build_vertex_labels_flatmap(
+      vertices_df,
+      4,
+      context = "cerebellum"
+    )
 
     expect_length(labels, 4L)
     expect_identical(
@@ -45,7 +49,11 @@ describe("build_vertex_labels_flatmap", {
       stringsAsFactors = FALSE
     )
 
-    labels <- build_vertex_labels_flatmap(vertices_df, 3, context = "cerebellum")
+    labels <- build_vertex_labels_flatmap(
+      vertices_df,
+      3,
+      context = "cerebellum"
+    )
 
     expect_identical(labels, c("lh_a", "rh_b", "cerebellum"))
   })
@@ -60,7 +68,11 @@ describe("build_vertex_labels_flatmap", {
       stringsAsFactors = FALSE
     )
 
-    labels <- build_vertex_labels_flatmap(vertices_df, 3, context = "cerebellum")
+    labels <- build_vertex_labels_flatmap(
+      vertices_df,
+      3,
+      context = "cerebellum"
+    )
 
     expect_identical(unique(labels[-1]), "cerebellum")
     expect_true(grepl(context_pattern(), "cerebellum", ignore.case = TRUE))

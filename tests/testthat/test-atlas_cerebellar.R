@@ -188,7 +188,11 @@ describe("build_vertex_labels_flatmap", {
     )
     vertices_df$vertices <- list(0:3, 4:7, 8:9)
 
-    result <- build_vertex_labels_flatmap(vertices_df, 10, context = "cerebellum")
+    result <- build_vertex_labels_flatmap(
+      vertices_df,
+      10,
+      context = "cerebellum"
+    )
 
     expect_length(result, 10)
     expect_identical(result[1:4], rep("left_I-IV", 4))
@@ -203,7 +207,11 @@ describe("build_vertex_labels_flatmap", {
     )
     vertices_df$vertices <- list(0:2)
 
-    result <- build_vertex_labels_flatmap(vertices_df, 5, context = "cerebellum")
+    result <- build_vertex_labels_flatmap(
+      vertices_df,
+      5,
+      context = "cerebellum"
+    )
 
     expect_identical(sum(is.na(result)), 0L)
     expect_identical(sum(result == "cerebellum"), 2L)

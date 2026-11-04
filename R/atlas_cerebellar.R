@@ -1803,9 +1803,7 @@ suit_gap_threshold <- 200
 #' supplies its own, which is why none of them are defaults of the projection
 #' itself.
 #'
-#' @param components Parcellation components carrying `vertices_df`.
-#' @param surface_path Path to the SUIT flatmap surface.
-#' @param verbose Whether to report progress.
+#' Arguments are `flatmap_build_sf()`'s, which documents them.
 #' @noRd
 cerebellar_build_sf_flatmap <- function(
   components,
