@@ -1,4 +1,4 @@
-# ggseg.extra 1.9.9.9140
+# ggseg.extra 1.9.9.9139
 
 This section becomes the 2.0.0 release notes at submission. It is the first
 CRAN release of ggseg.extra, the atlas-building package of
@@ -399,6 +399,14 @@ and tractography files.
 
 ## Improvements
 
+- The flatmap projection is no longer cerebellum-specific. `R/cerebellar_projection.R`
+  is now `R/flatmap_projection.R`, and the surface path, the backdrop label and
+  the small-area thresholds are supplied by the caller rather than hard-coded,
+  so a second unfolded anatomy can reuse it. The thresholds in particular have
+  no defaults now: they are in the surface's own coordinate units, and silently
+  inheriting SUIT's values would mangle a surface unfolded to a different
+  scale. Cerebellar atlas building is unchanged.
+
 - Every `create_*()` pipeline takes `min_coverage`: a newly built atlas whose
   2D geometry covers less than 80% of its `core` labels warns and names the
   labels with no shape.
@@ -541,6 +549,18 @@ and tractography files.
   fsaverage7 indices under a cortical type, and nothing caught it when they
   were built. The 2D geometry is unaffected, so this warns rather than
   failing the build.
+- `labels` and `exclude` now mean what they say: a label an operation was not
+  asked to touch comes back byte-identical. `atlas_smooth()`,
+  `atlas_simplify()`, `atlas_polish()` and `atlas_dilate()` repaired validity
+  across the whole frame, closed gaps atlas-wide and re-created coordinate
+  columns, so an excluded label was returned with its geometry rewritten --
+  on the bundled `aseg()` backdrop `close_gaps` alone took it from 7,594
+  vertices to 7,878, scaling with `smoothness`.
+- Slivers reopened by smoothing or simplifying are handed to a label the
+  operation was asked to touch, rather than to whichever one happens to
+  border them first. Handing one to an excluded label meant it was reverted
+  and the gap left open; closing them this way leaves less uncovered area
+  than before the guarantee existed.
 
 - Subcortical 3D meshes are placed in the volume's own world coordinates.
   Tessellation emits tkRAS, a frame FreeSurfer derives from a volume's

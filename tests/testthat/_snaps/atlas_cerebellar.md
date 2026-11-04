@@ -3,7 +3,7 @@
     Code
       result <- cerebellar_build_sf_flatmap(components, suit_flatmap_path(), verbose = TRUE)
     Message
-      i Reading SUIT flatmap surface
+      i Reading flatmap surface
       i Building polygons from 28935 vertices, 56588 faces
       i Filling <n> small inter-region gaps
 
@@ -74,7 +74,7 @@
         start_time = Sys.time())
     Message
       i Projecting parcellation onto SUIT flatmap
-      i Reading SUIT flatmap surface
+      i Reading flatmap surface
       i Projecting parcellation onto SUIT flatmap
       i Building polygons from 28935 vertices, 56588 faces
       i Projecting parcellation onto SUIT flatmap

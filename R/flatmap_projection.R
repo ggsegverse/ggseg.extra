@@ -1,29 +1,34 @@
-# SUIT flatmap projection for cerebellar atlas creation ----
+# Flatmap projection for atlases drawn on an unfolded surface ----
 #
-# Projects cerebellar parcellations onto the SUIT flatmap surface.
-# Unlike cortical projection, the flatmap coordinates are already 2D —
-# no camera, backface culling, or orthographic projection needed.
+# Projects a parcellation onto an already-unfolded surface. Unlike cortical
+# projection, flatmap coordinates are 2D to begin with — no camera, backface
+# culling, or orthographic projection needed.
+#
+# Nothing here is specific to one anatomy. The SUIT cerebellar flatmap is the
+# only surface this is used with today; the caller supplies the surface, the
+# backdrop label and the area thresholds, because those are properties of the
+# surface rather than of the projection.
 
-#' Read SUIT flatmap surface from GIFTI
+#' Read an unfolded surface from GIFTI
 #'
-#' Extracts 2D vertex coordinates and face connectivity from a SUIT
-#' flatmap surface file (`.surf.gii`). The flatmap is already a 2D
-#' representation, so only x and y coordinates are used.
+#' Extracts 2D vertex coordinates and face connectivity from a flatmap
+#' surface file (`.surf.gii`). The surface is already a 2D representation, so
+#' only x and y coordinates are used.
 #'
-#' @param suit_surface Path to SUIT flatmap `.surf.gii` file.
+#' @param surface_path Path to a flatmap `.surf.gii` file.
 #' @return Named list with:
 #'   - `verts_2d`: N x 2 matrix of (x, y) flatmap coordinates
 #'   - `faces`: F x 3 matrix of 0-indexed face vertex indices
 #'   - `n_vertices`: integer vertex count
 #' @noRd
-read_suit_flatmap <- function(suit_surface) {
-  rlang::check_installed("gifti", reason = "to read SUIT flatmap surfaces")
+read_flatmap_surface <- function(surface_path) {
+  rlang::check_installed("gifti", reason = "to read flatmap surfaces")
 
-  if (!file.exists(suit_surface)) {
-    cli::cli_abort("SUIT surface file not found: {.path {suit_surface}}")
+  if (!file.exists(surface_path)) {
+    cli::cli_abort("Flatmap surface file not found: {.path {surface_path}}")
   }
 
-  gii <- gifti::readgii(suit_surface)
+  gii <- gifti::readgii(surface_path)
 
   pointset <- gii$data$pointset
   triangles <- gii$data$triangle
@@ -32,7 +37,7 @@ read_suit_flatmap <- function(suit_surface) {
     cli::cli_abort(c(
       "File does not appear to be a valid GIFTI surface",
       "i" = "Expected {.field pointset} and {.field triangle} data arrays",
-      "i" = "File: {.path {suit_surface}}" # nolint
+      "i" = "File: {.path {surface_path}}" # nolint
     ))
   }
 
@@ -44,7 +49,7 @@ read_suit_flatmap <- function(suit_surface) {
 }
 
 
-#' Build per-vertex label vector for cerebellar flatmap
+#' Build per-vertex label vector for a flatmap
 #'
 #' Maps all labels in `vertices_df` to a character vector indexed by vertex.
 #' Unlike the cortical version, there is no hemisphere prefix filtering —
@@ -53,11 +58,17 @@ read_suit_flatmap <- function(suit_surface) {
 #'
 #' @inheritParams build_vertex_label_vector
 #' @param n_vertices Total number of vertices in the flatmap.
+#' @param context Label given to any vertex no region claims, which becomes
+#'   the backdrop the parcellation is drawn on. Names the structure the
+#'   surface belongs to, so it is the caller's to supply.
 #' @return Character vector of length `n_vertices`, with any vertex no label
-#'   claims named `cerebellum`.
+#'   claims named `context`.
 #' @noRd
-# nolint next: object_length_linter.
-build_vertex_label_vector_cerebellum <- function(vertices_df, n_vertices) {
+build_vertex_labels_flatmap <- function(
+  vertices_df,
+  n_vertices,
+  context
+) {
   vertex_labels <- rep(NA_character_, n_vertices)
 
   for (i in seq_len(nrow(vertices_df))) {
@@ -66,7 +77,7 @@ build_vertex_label_vector_cerebellum <- function(vertices_df, n_vertices) {
     vertex_labels[idx] <- vertices_df$label[i]
   }
 
-  fill_unlabelled_with_context(vertex_labels, context = "cerebellum")
+  fill_unlabelled_with_context(vertex_labels, context = context)
 }
 
 
@@ -80,7 +91,7 @@ build_vertex_label_vector_cerebellum <- function(vertices_df, n_vertices) {
 #' @param verts_2d N x 2 matrix of flatmap coordinates.
 #' @param faces F x 3 matrix of 0-indexed face vertex indices.
 #' @param vertex_labels Character vector from
-#'   `build_vertex_label_vector_cerebellum()`.
+#'   `build_vertex_labels_flatmap()`.
 #' @return sf data.frame with columns: label, geometry.
 #' @noRd
 #' @importFrom sf st_sf st_sfc st_polygon st_union st_make_valid
@@ -204,29 +215,44 @@ union_polys_by_region <- function(sfc_all, all_labels) {
 }
 
 
-#' Build cerebellar sf data from SUIT flatmap projection
+#' Build sf data by projecting a parcellation onto an unfolded surface
 #'
-#' Reads the SUIT flatmap surface, assigns region labels to vertices,
-#' builds sf polygons from the mesh triangles.
+#' Reads the flatmap surface, assigns region labels to vertices, and builds
+#' sf polygons from the mesh triangles.
 #'
+#' @param components Parcellation components carrying `vertices_df`.
+#' @param surface_path Path to the flatmap `.surf.gii` to project onto.
+#' @param context Backdrop label for surface the parcellation does not cover.
+#' @param view Name recorded in the `view` column of the result.
+#' @param hole_threshold,gap_threshold Areas below which an internal ring is
+#'   dropped and an inter-region gap is filled. Both are in the surface's own
+#'   coordinate units, so they are properties of the surface rather than of
+#'   the projection, and have no defaults here -- a surface unfolded to a
+#'   different scale needs different values.
+#' @param verbose Whether to report progress.
 #' @noRd
 #' @importFrom sf st_make_valid st_as_sf
-cerebellar_build_sf_flatmap <- function(
+flatmap_build_sf <- function(
   components,
-  suit_surface,
+  surface_path,
+  context,
+  view,
+  hole_threshold,
+  gap_threshold,
   verbose = FALSE
 ) {
   if (verbose) {
-    cli::cli_alert_info("Reading SUIT flatmap surface")
+    cli::cli_alert_info("Reading flatmap surface")
   }
 
-  flatmap <- read_suit_flatmap(suit_surface)
+  flatmap <- read_flatmap_surface(surface_path)
 
   warn_flatmap_vertex_range(components, flatmap)
 
-  vertex_labels <- build_vertex_label_vector_cerebellum(
+  vertex_labels <- build_vertex_labels_flatmap(
     components$vertices_df,
-    flatmap$n_vertices
+    flatmap$n_vertices,
+    context = context
   )
 
   check_flatmap_label_overlap(vertex_labels, components, flatmap)
@@ -245,9 +271,14 @@ cerebellar_build_sf_flatmap <- function(
     vertex_labels
   )
 
-  sf_data <- fill_flatmap_holes(sf_data, verbose = verbose)
+  sf_data <- fill_flatmap_holes(
+    sf_data,
+    hole_threshold = hole_threshold,
+    gap_threshold = gap_threshold,
+    verbose = verbose
+  )
 
-  sf_data$view <- "flatmap"
+  sf_data$view <- view
   arrange_contour_sf(sf_data)
 }
 
@@ -293,8 +324,8 @@ check_flatmap_label_overlap <- function(vertex_labels, components, flatmap) {
 #' @noRd
 fill_flatmap_holes <- function(
   sf_data,
-  hole_threshold = 100,
-  gap_threshold = 200,
+  hole_threshold,
+  gap_threshold,
   verbose = FALSE
 ) {
   sf_data <- remove_small_internal_holes(sf_data, hole_threshold)
