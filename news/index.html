@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9139</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9137</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -149,7 +149,8 @@
 </ul></div>
 <div class="section level3">
 <h3 id="improvements-1-9-9-9139">Improvements<a class="anchor" aria-label="anchor" href="#improvements-1-9-9-9139"></a></h3>
-<ul><li><p>Every <code>create_*()</code> pipeline takes <code>min_coverage</code>: a newly built atlas whose 2D geometry covers less than 80% of its <code>core</code> labels warns and names the labels with no shape.</p></li>
+<ul><li><p>The flatmap projection is no longer cerebellum-specific. <code>R/cerebellar_projection.R</code> is now <code>R/flatmap_projection.R</code>, and the surface path, the backdrop label and the small-area thresholds are supplied by the caller rather than hard-coded, so a second unfolded anatomy can reuse it. The thresholds in particular have no defaults now: they are in the surface’s own coordinate units, and silently inheriting SUIT’s values would mangle a surface unfolded to a different scale. Cerebellar atlas building is unchanged.</p></li>
+<li><p>Every <code>create_*()</code> pipeline takes <code>min_coverage</code>: a newly built atlas whose 2D geometry covers less than 80% of its <code>core</code> labels warns and names the labels with no shape.</p></li>
 <li><p>The large-atlas warning has a per-atlas-type vertex budget, each sitting just above its type’s 90th percentile measured across 109 installed atlases, so it flags the heaviest tenth of a family rather than seven atlases in ten, and its advice names <code><a href="../reference/atlas_polish.html">atlas_polish()</a></code>.</p></li>
 <li><p>Data loss is reported whatever the verbosity. A structure that fails to tessellate, a tract whose centerline is degenerate, a label dropped for too few voxels, deep-nuclei data with no <code>vol_idx</code>, a missing FreeSurfer installation and a dropped cerebellar nucleus are all named rather than left as a lower count; <code>verbose</code> silences progress chatter only.</p></li>
 <li><p><code><a href="../reference/create_wholebrain_from_volume.html">create_wholebrain_from_volume()</a></code> says what it inferred and what it lost: how many labels it classified by surface vertex count rather than from a declaration, which labels it assumed subcortical because they reached no cortical vertex, which cortical parcels the projection did not deliver, and which parcels landed on both surfaces, with per-hemisphere vertex counts.</p></li>
