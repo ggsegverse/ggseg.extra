@@ -1,6 +1,6 @@
 # Changelog
 
-## ggseg.extra 1.9.9.9136
+## ggseg.extra 1.9.9.9139
 
 This section becomes the 2.0.0 release notes at submission. It is the
 first CRAN release of ggseg.extra, the atlas-building package of the
@@ -701,6 +701,26 @@ volumes and tractography files.
   directory already exists.
 
 ### Bug fixes
+
+- `labels` and `exclude` now mean what they say: a label an operation
+  was not asked to touch comes back byte-identical.
+  [`atlas_smooth()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_smooth.md),
+  [`atlas_simplify()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_simplify.md),
+  [`atlas_polish()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_polish.md)
+  and
+  [`atlas_dilate()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_dilate.md)
+  repaired validity across the whole frame, closed gaps atlas-wide and
+  re-created coordinate columns, so an excluded label was returned with
+  its geometry rewritten – on the bundled
+  [`aseg()`](https://ggsegverse.github.io/ggseg.formats/reference/aseg.html)
+  backdrop `close_gaps` alone took it from 7,594 vertices to 7,878,
+  scaling with `smoothness`.
+
+- Slivers reopened by smoothing or simplifying are handed to a label the
+  operation was asked to touch, rather than to whichever one happens to
+  border them first. Handing one to an excluded label meant it was
+  reverted and the gap left open; closing them this way leaves less
+  uncovered area than before the guarantee existed.
 
 - Subcortical 3D meshes are placed in the volume’s own world
   coordinates. Tessellation emits tkRAS, a frame FreeSurfer derives from
