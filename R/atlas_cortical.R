@@ -836,6 +836,7 @@ cortical_finalize <- function(atlas, config, dirs, start_time) {
   }
 
   check_atlas_coverage(atlas, config$min_coverage %||% get_min_coverage())
+  check_vertex_space(atlas)
   warn_if_large_atlas(atlas)
   preview_atlas(atlas)
 
