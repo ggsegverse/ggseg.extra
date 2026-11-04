@@ -1787,12 +1787,47 @@ fill_unlabelled_from_mesh_neighbors <- function(labels, faces, n_verts) {
 #' Cached: the template does not change within a session.
 #' @return Integer vector of 0-based vertex indices used by at least one face.
 #' @noRd
+# Areas below which an internal ring is dropped and an inter-region gap is
+# filled, in SUIT flatmap coordinate units. Tuned to this surface's scale, so
+# they live with the cerebellar pipeline rather than with the generic
+# projection -- a surface unfolded to a different extent needs its own.
+suit_hole_threshold <- 100
+suit_gap_threshold <- 200
+
+
+#' Project a cerebellar parcellation onto the SUIT flatmap
+#'
+#' Binds the generic flatmap projection to the cerebellum: the SUIT surface,
+#' `cerebellum` as the backdrop the parcellation is drawn on, and the area
+#' thresholds tuned to SUIT's coordinate scale. A second flatmap anatomy
+#' supplies its own, which is why none of them are defaults of the projection
+#' itself.
+#'
+#' Arguments are `flatmap_build_sf()`'s, which documents them.
+#' @noRd
+cerebellar_build_sf_flatmap <- function(
+  components,
+  surface_path = suit_flatmap_path(),
+  verbose = FALSE
+) {
+  flatmap_build_sf(
+    components,
+    surface_path,
+    context = "cerebellum",
+    view = "flatmap",
+    hole_threshold = suit_hole_threshold,
+    gap_threshold = suit_gap_threshold,
+    verbose = verbose
+  )
+}
+
+
 suit_drawable_vertices <- function() {
   cached <- suit_drawable_cache$idx
   if (!is.null(cached)) {
     return(cached)
   }
-  flat <- read_suit_flatmap(suit_flatmap_path())
+  flat <- read_flatmap_surface(suit_flatmap_path())
   idx <- sort(unique(as.integer(flat$faces)))
   suit_drawable_cache$idx <- idx
   idx

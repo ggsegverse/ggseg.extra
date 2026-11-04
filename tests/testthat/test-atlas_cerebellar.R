@@ -106,12 +106,12 @@ describe("suit_3d_path", {
 })
 
 
-describe("read_suit_flatmap", {
+describe("read_flatmap_surface", {
   it("extracts 2D coordinates and faces from GIFTI surface", {
     skip_if_not_installed("gifti")
 
     surf <- create_mock_suit_surface()
-    result <- read_suit_flatmap(surf)
+    result <- read_flatmap_surface(surf)
 
     expect_type(result, "list")
     expect_true(all(c("verts_2d", "faces", "n_vertices") %in% names(result)))
@@ -123,7 +123,7 @@ describe("read_suit_flatmap", {
   it("errors on missing file", {
     skip_if_not_installed("gifti")
     expect_error(
-      read_suit_flatmap("nonexistent.surf.gii"),
+      read_flatmap_surface("nonexistent.surf.gii"),
       "not found"
     )
   })
@@ -131,7 +131,7 @@ describe("read_suit_flatmap", {
   it("reads bundled SUIT flatmap correctly", {
     skip_if_not_installed("gifti")
 
-    result <- read_suit_flatmap(suit_flatmap_path())
+    result <- read_flatmap_surface(suit_flatmap_path())
 
     expect_identical(result$n_vertices, 28935L)
     expect_identical(ncol(result$verts_2d), 2L)
@@ -148,7 +148,7 @@ describe("read_suit_flatmap", {
       tmp
     )
 
-    expect_error(read_suit_flatmap(tmp))
+    expect_error(read_flatmap_surface(tmp))
   })
 })
 
@@ -180,7 +180,7 @@ describe("cerebellar_build_sf_flatmap", {
 })
 
 
-describe("build_vertex_label_vector_cerebellum", {
+describe("build_vertex_labels_flatmap", {
   it("assigns all labels without hemisphere filtering", {
     vertices_df <- data.frame(
       label = c("left_I-IV", "right_I-IV", "vermis_VI"),
@@ -188,7 +188,11 @@ describe("build_vertex_label_vector_cerebellum", {
     )
     vertices_df$vertices <- list(0:3, 4:7, 8:9)
 
-    result <- build_vertex_label_vector_cerebellum(vertices_df, 10)
+    result <- build_vertex_labels_flatmap(
+      vertices_df,
+      10,
+      context = "cerebellum"
+    )
 
     expect_length(result, 10)
     expect_identical(result[1:4], rep("left_I-IV", 4))
@@ -203,7 +207,11 @@ describe("build_vertex_label_vector_cerebellum", {
     )
     vertices_df$vertices <- list(0:2)
 
-    result <- build_vertex_label_vector_cerebellum(vertices_df, 5)
+    result <- build_vertex_labels_flatmap(
+      vertices_df,
+      5,
+      context = "cerebellum"
+    )
 
     expect_identical(sum(is.na(result)), 0L)
     expect_identical(sum(result == "cerebellum"), 2L)
@@ -2999,7 +3007,7 @@ describe("warn_no_hemisphere_split", {
 describe("suit_drawable_vertices", {
   it("is the vertices the flatmap triangulation actually uses", {
     skip_if_not_installed("gifti")
-    flat <- read_suit_flatmap(suit_flatmap_path())
+    flat <- read_flatmap_surface(suit_flatmap_path())
     drawable <- suit_drawable_vertices()
 
     expect_identical(drawable, sort(unique(as.integer(flat$faces))))
@@ -3011,7 +3019,7 @@ describe("suit_drawable_vertices", {
   it("caches, so the template is read once a session", {
     skip_if_not_installed("gifti")
     first <- suit_drawable_vertices()
-    local_mocked_bindings(read_suit_flatmap = function(...) {
+    local_mocked_bindings(read_flatmap_surface = function(...) {
       cli::cli_abort("should not be read again")
     })
 
