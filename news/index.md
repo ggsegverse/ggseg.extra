@@ -711,6 +711,15 @@ volumes and tractography files.
 
 ### Bug fixes
 
+- A pipeline warns when the atlas it just built carries vertex indices
+  that do not fit the vertex space its type implies. An index means
+  nothing without the surface it counts into, so an atlas built from a
+  denser source is not slightly wrong: the indices that happen to fit
+  point at different anatomy and the rest are discarded when it is
+  drawn. Three distributed atlases carry fsaverage7 indices under a
+  cortical type, and nothing caught it when they were built. The 2D
+  geometry is unaffected, so this warns rather than failing the build.
+
 - `labels` and `exclude` now mean what they say: a label an operation
   was not asked to touch comes back byte-identical.
   [`atlas_smooth()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_smooth.md),
