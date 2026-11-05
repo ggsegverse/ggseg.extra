@@ -13,6 +13,14 @@ and tractography files.
 
 ## Breaking changes
 
+- `ggseg.formats` moves from `Imports` to `Depends`, so attaching ggseg.extra
+  attaches it: `library(ggseg.extra)` now gives you the whole atlas vocabulary,
+  all 85 exports, where the hand-maintained re-export list gave 27. The
+  re-exports are gone with it, which means `ggseg.extra::atlas_view_keep()` and
+  the like no longer resolve -- call them unqualified, or as
+  `ggseg.formats::atlas_view_keep()`. Nothing in the ecosystem used the
+  qualified form.
+
 - A label the lookup table does not list is not drawn. It used to come back
   as `context_<id>`, which is the pipeline guessing, and the guess only reads
   well when the volume happens to be shaped like an `aseg`: a volume carrying

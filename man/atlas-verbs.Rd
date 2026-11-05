@@ -2,60 +2,32 @@
 % Please edit documentation in R/atlas_verbs.R
 \name{atlas-verbs}
 \alias{atlas-verbs}
-\title{Atlas manipulation verbs, re-exported from ggseg.formats}
+\title{Atlas manipulation verbs, from ggseg.formats}
 \description{
 The vocabulary for reshaping a finished atlas -- dropping regions, gathering
 views, boolean geometry between labels -- lives in ggseg.formats, because it
 belongs to the atlas format rather than to any one builder. Every atlas
-build reaches for both packages, so ggseg.extra re-exports the verbs and
-\code{library(ggseg.extra)} is enough.
+build reaches for both packages, so ggseg.extra carries ggseg.formats in
+\code{Depends}: attaching this package attaches that one, and
+\code{library(ggseg.extra)} is enough to have the verbs.
+
+They are therefore documented where they are defined rather than listed
+again here, which is what kept this page going stale: it enumerated the
+verbs by name, and a verb renamed, added or promoted out of a development
+build left the list quietly wrong.
 }
-\section{Reading an atlas}{
+\section{Where to look}{
 
-\code{atlas_regions()}, \code{atlas_labels()}, \code{atlas_views()} and \code{atlas_type()}
-report what an atlas holds. \code{atlas_geom()}, \code{atlas_sf()},
-\code{atlas_polygons()}, \code{atlas_meshes()}, \code{atlas_vertices()},
-\code{atlas_palette()} and \code{atlas_geometry_type()} reach into its parts.
-}
+\link[ggseg.formats:atlas_manipulation]{ggseg.formats::atlas_manipulation} is the overview: it groups the verbs by
+what each one acts on -- the regions an atlas has, the views it has, and
+which regions are drawn inside a view -- and links to the group pages.
+Accessors such as \code{\link[ggseg.formats:atlas_regions]{ggseg.formats::atlas_regions()}} report what an atlas
+holds, and \code{ggseg.formats::ggseg_atlas()} is the constructor that validates
+a hand-edited one.
 
-\section{Changing which regions are in it}{
-
-\code{atlas_region_remove()} and \code{atlas_region_keep()} drop or select regions by
-regex. \code{atlas_region_rename()} rewrites display names without touching
-labels. \code{atlas_region_contextual()} keeps a region's geometry as a grey
-outline but takes it out of the palette, which is how the brain silhouette
-behind an atlas is made; \code{atlas_context_remove()} drops it again.
-\code{atlas_region_op()} does boolean geometry between two labels, and
-\code{atlas_core_add()} joins extra columns onto \verb{$core}.
-}
-
-\section{Changing which views are in it}{
-
-\code{atlas_view_keep()}, \code{atlas_view_remove()} and \code{atlas_view_reorder()}
-select and order the 2D views. \code{atlas_view_remove_region()} drops one
-region from some views only, \code{atlas_view_remove_small()} drops slivers
-below an area, and \code{atlas_view_gather()} closes the gaps between panels.
-}
-
-\section{Building an atlas object}{
-
-\code{ggseg_atlas()} is the constructor, and validates that core, palette and
-geometry agree; \code{is_ggseg_atlas()} tests the result. Reach for them when
-you have edited a component by hand and want it checked.
-}
-
-\section{What is not re-exported}{
-
-Only functions are. ggseg.formats also ships atlases named \code{dk}, \code{aseg},
-\code{tracula} and \code{suit}, and so does ggseg; attaching the whole namespace
-would mask one set with the other depending on load order, which is a
-silently wrong atlas rather than an error.
-
-Four more verbs - \code{atlas_centerlines()}, \code{atlas_plot_palette()},
-\code{atlas_structure_reorder()} and \code{atlas_view_select()} - exist only in
-ggseg.formats' development build, so re-exporting them here would stop this
-package building against the release its DESCRIPTION asks for. They can come
-across once ggseg.formats releases them and the floor here moves up.
+Only \code{atlas_manipulation} is linked from here on purpose. Naming each group
+page would tie this package's documentation to a particular ggseg.formats
+version, which is the coupling this page exists to be rid of.
 }
 
 \seealso{

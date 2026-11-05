@@ -2,39 +2,14 @@
 
 export(as_verbosity)
 export(aseg_subcortical_labels)
-export(atlas_context_remove)
-export(atlas_core_add)
 export(atlas_dilate)
-export(atlas_geom)
-export(atlas_geometry_type)
-export(atlas_labels)
-export(atlas_meshes)
-export(atlas_palette)
 export(atlas_polish)
-export(atlas_polygons)
-export(atlas_region_contextual)
-export(atlas_region_keep)
-export(atlas_region_op)
-export(atlas_region_remove)
-export(atlas_region_rename)
-export(atlas_regions)
-export(atlas_sf)
 export(atlas_simplify)
 export(atlas_smooth)
-export(atlas_type)
-export(atlas_vertices)
-export(atlas_view_gather)
-export(atlas_view_keep)
 export(atlas_view_region_counts)
-export(atlas_view_remove)
-export(atlas_view_remove_region)
-export(atlas_view_remove_small)
 export(atlas_view_remove_sparse)
-export(atlas_view_reorder)
-export(atlas_views)
 export(clear_atlas_cache)
 export(context_pattern)
-export(convert_legacy_brain_atlas)
 export(coregister_volume)
 export(count_vertices)
 export(create_cerebellar_from_annotation)
@@ -52,9 +27,7 @@ export(create_wholebrain_from_volume)
 export(create_wm_from_volume)
 export(get_lut)
 export(get_verbose)
-export(ggseg_atlas)
 export(ggseg_atlas_github_actions)
-export(is_ggseg_atlas)
 export(is_lut)
 export(label_to_region)
 export(lut_add)
@@ -110,37 +83,15 @@ importFrom(furrr,
   future_pmap
 )
 importFrom(ggseg.formats,
-  atlas_context_remove,
-  atlas_core_add,
-  atlas_geom,
-  atlas_geometry_type,
-  atlas_labels,
-  atlas_meshes,
-  atlas_palette,
-  atlas_polygons,
   atlas_region_contextual,
-  atlas_region_keep,
   atlas_region_op,
   atlas_region_remove,
-  atlas_region_rename,
-  atlas_regions,
-  atlas_sf,
-  atlas_type,
-  atlas_vertices,
-  atlas_view_gather,
-  atlas_view_keep,
   atlas_view_remove,
-  atlas_view_remove_region,
-  atlas_view_remove_small,
-  atlas_view_reorder,
-  atlas_views,
-  convert_legacy_brain_atlas,
   ggseg_atlas,
   ggseg_data_cerebellar,
   ggseg_data_cortical,
   ggseg_data_subcortical,
-  ggseg_data_tract,
-  is_ggseg_atlas
+  ggseg_data_tract
 )
 importFrom(ggseg3d,
   ggseg3d,
