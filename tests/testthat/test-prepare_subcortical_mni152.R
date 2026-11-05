@@ -112,6 +112,93 @@ describe("prepare_subcortical_mni152", {
 })
 
 
+describe("prepare_subcortical_mni152 registration call", {
+  # The end-to-end test above needs a real FreeSurfer, so it is skipped
+  # wherever CI runs. This covers the one thing the mri_vol2vol call has to
+  # get right: nearest-neighbour resampling of the resolved registration.
+  # Anything else turns integer parcel ids into values the volume never held.
+  it("resamples the parcels onto the aseg grid with nearest neighbour", {
+    skip_if_not_installed("freesurfer")
+    skip_if_not_installed("RNifti")
+
+    dims <- c(4L, 4L, 4L)
+    write_vol <- function(arr, path) {
+      RNifti::writeNifti(RNifti::asNifti(arr), path)
+      path
+    }
+
+    parcels <- array(0L, dim = dims)
+    parcels[1, 1, 1] <- 211L
+    parcels[2, 1, 1] <- 212L
+    in_path <- withr::local_tempfile(fileext = ".nii.gz")
+    write_vol(parcels, in_path)
+
+    # Context the parcels subdivide (10) plus context that survives (2).
+    aseg <- array(2L, dim = dims)
+    aseg[1:2, 1, 1] <- 10L
+
+    subjects_dir <- withr::local_tempdir()
+    dir.create(
+      file.path(subjects_dir, "fsaverage5", "mri"),
+      recursive = TRUE
+    )
+    aseg_mgz <- file.path(subjects_dir, "fsaverage5", "mri", "aseg.mgz")
+    file.create(aseg_mgz)
+
+    seen <- new.env(parent = emptyenv())
+    local_mocked_bindings(check_fs = function(...) TRUE)
+    local_mocked_bindings(
+      read_fs_color_lut = function() {
+        data.frame(
+          stringsAsFactors = FALSE,
+          idx = 2L,
+          label = "wm",
+          R = 1L,
+          G = 1L,
+          B = 1L,
+          A = 0L
+        )
+      }
+    )
+    local_mocked_bindings(
+      mri_convert = function(file, outfile, ...) write_vol(aseg, outfile),
+      mri_vol2vol = function(mov, targ, reg, outfile, interp, ...) {
+        # Read while it is still there: the mov volume is a tempfile the
+        # caller unlinks on exit.
+        seen$mov_ids <- sort(unique(as.integer(
+          as.array(RNifti::readNifti(mov))
+        )))
+        seen$targ <- targ
+        seen$reg <- reg
+        seen$interp <- interp
+        write_vol(parcels, outfile)
+      },
+      .package = "freesurfer"
+    )
+
+    merged <- prepare_subcortical_mni152(
+      input_volume = in_path,
+      labels = c(211L, 212L),
+      registration = "header",
+      subjects_dir = subjects_dir,
+      verbose = FALSE
+    )
+
+    expect_identical(seen$interp, "nearest")
+    expect_identical(seen$reg, "header")
+    expect_identical(seen$targ, as.character(fs::path(aseg_mgz)))
+    # Only the requested parcels are handed over to be resampled.
+    expect_identical(seen$mov_ids, c(0L, 211L, 212L))
+
+    out <- as.array(RNifti::readNifti(merged$volume))
+    # The parcels replaced the structure they subdivide; the rest stayed.
+    expect_identical(out[1, 1, 1], 211L)
+    expect_identical(out[2, 1, 1], 212L)
+    expect_identical(out[4, 4, 4], 2L)
+  })
+})
+
+
 describe("check_fs_output", {
   it("passes a file the command wrote", {
     output <- withr::local_tempfile()

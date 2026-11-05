@@ -165,6 +165,45 @@ describe("mni152_register_path", {
 })
 
 
+describe("vol2vol_registration", {
+  it("asks mri_vol2vol to trust the header", {
+    expect_identical(
+      vol2vol_registration("header", mov = "m.nii", targ = "t.mgz"),
+      "header"
+    )
+  })
+
+  it("hands an LTA over untouched", {
+    # An LTA already states its geometry, so converting it would be a
+    # round trip that can only lose something.
+    lta <- withr::local_tempfile(fileext = ".lta")
+    file.create(lta)
+
+    expect_identical(
+      vol2vol_registration(lta, mov = "m.nii", targ = "t.mgz"),
+      lta
+    )
+  })
+
+  it("converts a tkregister matrix against this call's volumes", {
+    # FreeSurfer 8 refuses a REGISTER_DAT whose source geometry it cannot
+    # establish and writes no output, so the matrix becomes an LTA first.
+    reg_file <- withr::local_tempfile(fileext = ".dat")
+    file.create(reg_file)
+    local_mocked_bindings(
+      lta_from_register_dat = function(path, mov, targ, ...) {
+        paste0(path, "|", mov, "|", targ, ".lta")
+      }
+    )
+
+    expect_identical(
+      vol2vol_registration(reg_file, mov = "m.nii", targ = "t.mgz"),
+      paste0(reg_file, "|m.nii|t.mgz.lta")
+    )
+  })
+})
+
+
 describe("vol2vol_registration_opt", {
   it("asks mri_vol2vol to trust the header", {
     expect_identical(

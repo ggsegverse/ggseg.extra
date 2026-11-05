@@ -176,26 +176,18 @@ prepare_subcortical_mni152 <- function(
   on.exit(unlink(registered), add = TRUE)
   # Built here rather than up front: a tkregister matrix becomes an LTA
   # against these two volumes, so it cannot be resolved before they exist.
-  registration_opt <- vol2vol_registration_opt(
+  reg <- vol2vol_registration(
     registration,
     mov = parcels_mni,
     targ = aseg_mgz
   )
-  freesurfer::fs_cmd(
-    func = "mri_vol2vol",
-    file = parcels_mni,
+  freesurfer::mri_vol2vol(
+    mov = parcels_mni,
+    targ = aseg_mgz,
+    reg = reg,
+    interp = "nearest",
     outfile = registered,
-    frontopts = "--mov",
-    opts = paste(
-      "--targ",
-      shQuote(aseg_mgz),
-      registration_opt,
-      "--interp nearest --o"
-    ),
-    opts_after_outfile = TRUE,
-    retimg = FALSE,
-    verbose = fs_verbose,
-    intern = TRUE
+    verbose = fs_verbose
   )
   check_fs_output(registered, "mri_vol2vol", parcels_mni)
 
@@ -272,8 +264,10 @@ validate_labels_clear_of_aseg <- function(labels, aseg, replace_labels) {
 
 #' Abort when a FreeSurfer command left no output behind
 #'
-#' The wrappers used here return without raising when the command fails, and
-#' the next line then fails to open a file that was never written.
+#' The wrappers used here raise only when the command both exits non-zero and
+#' wrote nothing. A command that exits zero without writing, or writes an
+#' empty file, only warns -- and the next line then fails to open a volume
+#' that is not there.
 #' @noRd
 check_fs_output <- function(output, command, input) {
   if (file.exists(output) && file.size(output) > 0) {

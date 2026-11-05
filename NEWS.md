@@ -1,4 +1,4 @@
-# ggseg.extra 1.9.9.9139
+# ggseg.extra 1.9.9.9140
 
 This section becomes the 2.0.0 release notes at submission. It is the first
 CRAN release of ggseg.extra, the atlas-building package of
