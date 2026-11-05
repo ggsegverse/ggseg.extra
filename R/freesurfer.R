@@ -73,11 +73,12 @@ mri_surf2surf_rereg <- function(
   invisible(run_cmd(cmd, verbose = verbose))
 }
 
-# Releases before 1.9.0 lack `fs_sitrep()`, and their
-# `fs_cmd(opts_after_outfile = TRUE)` puts the output file before the trailing
-# options rather than after, which silently breaks the `mri_vol2vol` call in
-# `prepare_subcortical_mni152()`. A bare presence check passes on them and the
-# pipeline fails later, so the floor is a version.
+# Releases before 1.9.0 lack `fs_sitrep()`, and lack `mri_vol2vol()` and
+# `fs_flag_cmd()` entirely -- both are new in 1.9.0 and both are reached by
+# `prepare_subcortical_mni152()`. A bare presence check passes on an older
+# release and the pipeline fails later, so the floor is a version. Tests that
+# mock a 1.9.0-only binding must name this floor too: mocking a binding that
+# does not exist errors rather than skips.
 #' @noRd
 freesurfer_min_version <- function() {
   "1.9.0"

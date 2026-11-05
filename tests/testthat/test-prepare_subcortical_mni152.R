@@ -114,39 +114,52 @@ describe("prepare_subcortical_mni152", {
 
 describe("prepare_subcortical_mni152 registration call", {
   # The end-to-end test above needs a real FreeSurfer, so it is skipped
-  # wherever CI runs. This covers the one thing the mri_vol2vol call has to
-  # get right: nearest-neighbour resampling of the resolved registration.
+  # wherever ordinary CI runs. These cover what the mri_vol2vol call has to
+  # get right: nearest-neighbour resampling, and the *resolved* registration.
   # Anything else turns integer parcel ids into values the volume never held.
-  it("resamples the parcels onto the aseg grid with nearest neighbour", {
-    skip_if_not_installed("freesurfer")
+
+  # `mri_vol2vol()` and `fs_flag_cmd()` are new in freesurfer 1.9.0, and
+  # mocking a binding that does not exist errors rather than skips, so the
+  # floor is named here the way helper-fs.R names it.
+  local_skip_unless_fs_pkg <- function() {
+    skip_if_not_installed(
+      "freesurfer",
+      minimum_version = freesurfer_min_version()
+    )
     skip_if_not_installed("RNifti")
+  }
 
-    dims <- c(4L, 4L, 4L)
-    write_vol <- function(arr, path) {
-      RNifti::writeNifti(RNifti::asNifti(arr), path)
-      path
-    }
+  dims <- c(4L, 4L, 4L)
+  write_vol <- function(arr, path) {
+    RNifti::writeNifti(RNifti::asNifti(arr), path)
+    path
+  }
 
+  # 999 is present in the volume but absent from `labels`, so the handover
+  # assertion below actually exercises the filter rather than echoing the
+  # fixture back.
+  make_parcels <- function() {
     parcels <- array(0L, dim = dims)
     parcels[1, 1, 1] <- 211L
     parcels[2, 1, 1] <- 212L
-    in_path <- withr::local_tempfile(fileext = ".nii.gz")
-    write_vol(parcels, in_path)
+    parcels[3, 1, 1] <- 999L
+    parcels
+  }
 
-    # Context the parcels subdivide (10) plus context that survives (2).
+  # What the resample "returns" differs from what it was given, so reading the
+  # un-resampled input instead of the command's output is detectable.
+  make_registered <- function() {
+    registered <- array(0L, dim = dims)
+    registered[1, 2, 1] <- 211L
+    registered[2, 2, 1] <- 212L
+    registered
+  }
+
+  local_mock_prepare_deps <- function(seen, env = parent.frame()) {
     aseg <- array(2L, dim = dims)
-    aseg[1:2, 1, 1] <- 10L
+    aseg[1:2, 2, 1] <- 10L
 
-    subjects_dir <- withr::local_tempdir()
-    dir.create(
-      file.path(subjects_dir, "fsaverage5", "mri"),
-      recursive = TRUE
-    )
-    aseg_mgz <- file.path(subjects_dir, "fsaverage5", "mri", "aseg.mgz")
-    file.create(aseg_mgz)
-
-    seen <- new.env(parent = emptyenv())
-    local_mocked_bindings(check_fs = function(...) TRUE)
+    local_mocked_bindings(check_fs = function(...) TRUE, .env = env)
     local_mocked_bindings(
       read_fs_color_lut = function() {
         data.frame(
@@ -158,7 +171,8 @@ describe("prepare_subcortical_mni152 registration call", {
           B = 1L,
           A = 0L
         )
-      }
+      },
+      .env = env
     )
     local_mocked_bindings(
       mri_convert = function(file, outfile, ...) write_vol(aseg, outfile),
@@ -171,10 +185,31 @@ describe("prepare_subcortical_mni152 registration call", {
         seen$targ <- targ
         seen$reg <- reg
         seen$interp <- interp
-        write_vol(parcels, outfile)
+        write_vol(make_registered(), outfile)
       },
-      .package = "freesurfer"
+      .package = "freesurfer",
+      .env = env
     )
+  }
+
+  local_subjects_dir <- function(env = parent.frame()) {
+    subjects_dir <- withr::local_tempdir(.local_envir = env)
+    dir.create(
+      file.path(subjects_dir, "fsaverage5", "mri"),
+      recursive = TRUE
+    )
+    file.create(file.path(subjects_dir, "fsaverage5", "mri", "aseg.mgz"))
+    subjects_dir
+  }
+
+  it("resamples the parcels onto the aseg grid with nearest neighbour", {
+    local_skip_unless_fs_pkg()
+
+    in_path <- withr::local_tempfile(fileext = ".nii.gz")
+    write_vol(make_parcels(), in_path)
+    subjects_dir <- local_subjects_dir()
+    seen <- new.env(parent = emptyenv())
+    local_mock_prepare_deps(seen)
 
     merged <- prepare_subcortical_mni152(
       input_volume = in_path,
@@ -186,15 +221,52 @@ describe("prepare_subcortical_mni152 registration call", {
 
     expect_identical(seen$interp, "nearest")
     expect_identical(seen$reg, "header")
-    expect_identical(seen$targ, as.character(fs::path(aseg_mgz)))
-    # Only the requested parcels are handed over to be resampled.
+    expect_identical(
+      seen$targ,
+      as.character(fs::path(subjects_dir, "fsaverage5", "mri", "aseg.mgz"))
+    )
+    # Only the requested parcels are handed over; 999 is left behind.
     expect_identical(seen$mov_ids, c(0L, 211L, 212L))
 
     out <- as.array(RNifti::readNifti(merged$volume))
-    # The parcels replaced the structure they subdivide; the rest stayed.
-    expect_identical(out[1, 1, 1], 211L)
-    expect_identical(out[2, 1, 1], 212L)
+    # The *resampled* parcels are what gets embedded, at their new positions,
+    # replacing the structure they subdivide; the rest stays context.
+    expect_identical(out[1, 2, 1], 211L)
+    expect_identical(out[2, 2, 1], 212L)
+    # The positions the parcels occupied *before* resampling hold context, so
+    # reading the un-resampled input instead of the command's output fails.
+    expect_identical(out[1, 1, 1], 2L)
+    expect_identical(out[2, 1, 1], 2L)
     expect_identical(out[4, 4, 4], 2L)
+  })
+
+  it("hands the wrapper the resolved registration, not the argument", {
+    local_skip_unless_fs_pkg()
+    # `registration = "header"` resolves to itself, so it cannot tell a
+    # resolved value from a passed-through one. A transform file can: the
+    # wrapper must receive the converted LTA, never the spelling "mni152".
+    local_mock_mni152_path()
+    lta <- withr::local_tempfile(fileext = ".lta")
+    local_mocked_bindings(
+      lta_from_register_dat = function(path, mov, targ, ...) lta
+    )
+
+    in_path <- withr::local_tempfile(fileext = ".nii.gz")
+    write_vol(make_parcels(), in_path)
+    subjects_dir <- local_subjects_dir()
+    seen <- new.env(parent = emptyenv())
+    local_mock_prepare_deps(seen)
+
+    prepare_subcortical_mni152(
+      input_volume = in_path,
+      labels = c(211L, 212L),
+      registration = "mni152",
+      subjects_dir = subjects_dir,
+      verbose = FALSE
+    )
+
+    expect_identical(seen$reg, lta)
+    expect_false(identical(seen$reg, "mni152"))
   })
 })
 

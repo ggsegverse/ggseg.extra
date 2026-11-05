@@ -265,9 +265,9 @@ validate_labels_clear_of_aseg <- function(labels, aseg, replace_labels) {
 #' Abort when a FreeSurfer command left no output behind
 #'
 #' The wrappers used here raise only when the command both exits non-zero and
-#' wrote nothing. A command that exits zero without writing, or writes an
-#' empty file, only warns -- and the next line then fails to open a volume
-#' that is not there.
+#' wrote nothing. A command that exits zero without writing merely warns, and
+#' one that writes an empty file is not reported at all -- which is why this
+#' tests the output's size rather than its existence.
 #' @noRd
 check_fs_output <- function(output, command, input) {
   if (file.exists(output) && file.size(output) > 0) {

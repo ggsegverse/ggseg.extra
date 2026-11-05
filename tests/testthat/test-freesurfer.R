@@ -243,29 +243,30 @@ describe("vol2vol_registration_opt", {
 })
 
 
-describe("lta_from_register_dat", {
-  # Stand in for lta_convert: write the file the command asks for, and
-  # report the command so its shape can be checked.
-  local_mock_lta_convert <- function(write = TRUE, env = parent.frame()) {
-    seen <- new.env()
-    local_mocked_bindings(
-      run_cmd = function(cmd, ...) {
-        seen$cmd <- cmd
-        if (write) {
-          # `--outlta` is the last argument, so everything after it is the
-          # path. Taking the tail and stripping quotes rather than matching
-          # them: shQuote() uses single quotes on Unix and double on
-          # Windows, and a pattern for one silently fails on the other.
-          out <- gsub('^["\']|["\']$', "", sub(".*--outlta ", "", cmd))
-          writeLines("lta", out)
-        }
-        invisible(0L)
-      },
-      .env = env
-    )
-    seen
-  }
+# Stand in for lta_convert: write the file the command asks for, and
+# report the command so its shape can be checked.
+local_mock_lta_convert <- function(write = TRUE, env = parent.frame()) {
+  seen <- new.env()
+  local_mocked_bindings(
+    run_cmd = function(cmd, ...) {
+      seen$cmd <- cmd
+      if (write) {
+        # `--outlta` is the last argument, so everything after it is the
+        # path. Taking the tail and stripping quotes rather than matching
+        # them: shQuote() uses single quotes on Unix and double on
+        # Windows, and a pattern for one silently fails on the other.
+        out <- gsub('^["\']|["\']$', "", sub(".*--outlta ", "", cmd))
+        writeLines("lta", out)
+      }
+      invisible(0L)
+    },
+    .env = env
+  )
+  seen
+}
 
+
+describe("lta_from_register_dat", {
   it("names the source and target volumes the geometry comes from", {
     seen <- local_mock_lta_convert()
 
@@ -302,6 +303,34 @@ describe("lta_from_register_dat", {
     })
 
     expect_false(file.exists(lta))
+  })
+})
+
+describe("vol2vol_registration_opt lifetime", {
+  # `vol2vol_registration_opt()` now reaches `lta_from_register_dat()` through
+  # `vol2vol_registration()`, so the LTA's lifetime depends on `envir` being
+  # forwarded across that hop. Dropping the forward deletes the file the
+  # moment the opt helper returns, and the command then names a path that is
+  # already gone -- on the default `registration = "mni152"` path.
+  it("keeps the LTA alive until its own caller returns, not its callee", {
+    local_mock_lta_convert()
+    reg_dat <- withr::local_tempfile(fileext = ".dat")
+    file.create(reg_dat)
+
+    alive_inside <- NULL
+    path <- local({
+      opt <- vol2vol_registration_opt(
+        reg_dat,
+        mov = "m.nii",
+        targ = "t.mgz"
+      )
+      p <- gsub('^["\']|["\']$', "", sub("^--reg ", "", opt))
+      alive_inside <<- file.exists(p)
+      p
+    })
+
+    expect_true(alive_inside)
+    expect_false(file.exists(path))
   })
 })
 
