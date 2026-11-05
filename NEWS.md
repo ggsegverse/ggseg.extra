@@ -381,9 +381,12 @@ and tractography files.
   `create_subcortical_from_volume()` goes from 337s sequential to 171s with
   four forked workers.
 
-- The `atlas_*` manipulation verbs from ggseg.formats are re-exported, along
-  with `ggseg_atlas()` and `is_ggseg_atlas()`, so `library(ggseg.extra)` is
-  enough to build, curate and validate an atlas (#186).
+- The whole non-deprecated ggseg.formats API is re-exported -- the `atlas_*`
+  verbs and accessors, the constructors and predicates, the readers and the
+  bundled atlases -- so `library(ggseg.extra)` is enough to build, curate and
+  validate an atlas (#186, ggsegverse/ggseg#183). A test fails when
+  ggseg.formats gains an export that is not yet re-exported here. Requires
+  `ggseg.formats (>= 0.0.4.9015)`.
 
 - `decimate` reduces per-region 3D mesh vertex counts with `Rvcg` in the
   subcortical and cerebellar pipelines, and `vertex_size_limits` filters

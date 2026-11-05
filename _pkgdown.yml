@@ -117,9 +117,9 @@ reference:
 
   - title: Curate an Atlas
     desc: >
-      The `atlas_region_*` and `atlas_view_*` vocabulary, re-exported from
-      ggseg.formats, plus the constructor that validates a hand-edited atlas.
-      `?atlas-verbs` groups them by what they change.
+      The ggseg.formats API, re-exported: the `atlas_region_*` and
+      `atlas_view_*` vocabulary, the accessors, constructors and readers.
+      `?atlas-verbs` groups them by what they do.
     contents:
       - atlas-verbs
       # Every re-export shares one topic, so naming any of its aliases brings

@@ -43,7 +43,7 @@ Imports:
     dplyr,
     fs,
     furrr,
-    ggseg.formats (>= 0.0.4.9014),
+    ggseg.formats (>= 0.0.4.9015),
     ggseg3d (>= 2.0.0),
     grDevices,
     lifecycle,
