@@ -73,11 +73,12 @@ mri_surf2surf_rereg <- function(
   invisible(run_cmd(cmd, verbose = verbose))
 }
 
-# Releases before 1.9.0 lack `fs_sitrep()`, and their
-# `fs_cmd(opts_after_outfile = TRUE)` puts the output file before the trailing
-# options rather than after, which silently breaks the `mri_vol2vol` call in
-# `prepare_subcortical_mni152()`. A bare presence check passes on them and the
-# pipeline fails later, so the floor is a version.
+# Releases before 1.9.0 lack `fs_sitrep()`, and lack `mri_vol2vol()` and
+# `fs_flag_cmd()` entirely -- both are new in 1.9.0 and both are reached by
+# `prepare_subcortical_mni152()`. A bare presence check passes on an older
+# release and the pipeline fails later, so the floor is a version. Tests that
+# mock a 1.9.0-only binding must name this floor too: mocking a binding that
+# does not exist errors rather than skips.
 #' @noRd
 freesurfer_min_version <- function() {
   "1.9.0"
@@ -228,11 +229,12 @@ resolve_vol2surf_registration <- function(registration, subject) {
 }
 
 
-#' Translate a registration specification into the `mri_vol2vol` option
+#' Resolve a registration specification into an `mri_vol2vol` registration
 #'
-#' `mri_vol2vol` says the same two things as `mri_vol2surf` with one option
-#' rather than a set: `--regheader` for a volume already on the target's grid,
-#' `--reg <file>` otherwise.
+#' `mri_vol2vol` says the same two things as `mri_vol2surf` with one argument
+#' rather than a set: the volume is already on the target's grid
+#' (`"header"`, which becomes `--regheader`), or a transform file says where
+#' it sits.
 #'
 #' A tkregister matrix cannot be handed to `mri_vol2vol` directly. FreeSurfer
 #' 8 refuses one whose source geometry it cannot establish -- "LTAchangeType:
@@ -252,7 +254,7 @@ resolve_vol2surf_registration <- function(registration, subject) {
 #' @param envir Frame whose exit removes the LTA, so a temporary file does
 #'   not outlive the command it was built for.
 #' @noRd
-vol2vol_registration_opt <- function(
+vol2vol_registration <- function(
   registration,
   mov,
   targ,
@@ -261,10 +263,44 @@ vol2vol_registration_opt <- function(
   spec <- resolve_registration(registration)
 
   if (identical(spec$kind, "header")) {
+    return("header")
+  }
+
+  vol2vol_transform_file(spec$path, mov, targ, envir)
+}
+
+
+#' The same registration as a flag for a hand-built `mri_vol2vol` command
+#'
+#' [freesurfer::mri_vol2vol()] takes the registration as a value, but the
+#' per-label probability resampling builds its command text itself so it can
+#' run through `run_cmd()`, which captures the stderr that says why a
+#' FreeSurfer tool failed and raises a classed condition. This states the
+#' flag spelling once for that caller.
+#'
+#' @param registration One of `"mni152"`, `"header"`, or a path to a
+#'   register.dat or LTA file.
+#' @param mov,targ The volumes this call registers between.
+#' @param envir Frame whose exit removes a converted LTA.
+#' @noRd
+vol2vol_registration_opt <- function(
+  registration,
+  mov,
+  targ,
+  envir = parent.frame()
+) {
+  reg <- vol2vol_registration(
+    registration,
+    mov = mov,
+    targ = targ,
+    envir = envir
+  )
+
+  if (identical(reg, "header")) {
     return("--regheader")
   }
 
-  paste("--reg", shQuote(vol2vol_transform_file(spec$path, mov, targ, envir)))
+  paste("--reg", shQuote(reg))
 }
 
 

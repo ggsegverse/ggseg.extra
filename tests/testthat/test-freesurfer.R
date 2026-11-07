@@ -165,6 +165,45 @@ describe("mni152_register_path", {
 })
 
 
+describe("vol2vol_registration", {
+  it("asks mri_vol2vol to trust the header", {
+    expect_identical(
+      vol2vol_registration("header", mov = "m.nii", targ = "t.mgz"),
+      "header"
+    )
+  })
+
+  it("hands an LTA over untouched", {
+    # An LTA already states its geometry, so converting it would be a
+    # round trip that can only lose something.
+    lta <- withr::local_tempfile(fileext = ".lta")
+    file.create(lta)
+
+    expect_identical(
+      vol2vol_registration(lta, mov = "m.nii", targ = "t.mgz"),
+      lta
+    )
+  })
+
+  it("converts a tkregister matrix against this call's volumes", {
+    # FreeSurfer 8 refuses a REGISTER_DAT whose source geometry it cannot
+    # establish and writes no output, so the matrix becomes an LTA first.
+    reg_file <- withr::local_tempfile(fileext = ".dat")
+    file.create(reg_file)
+    local_mocked_bindings(
+      lta_from_register_dat = function(path, mov, targ, ...) {
+        paste0(path, "|", mov, "|", targ, ".lta")
+      }
+    )
+
+    expect_identical(
+      vol2vol_registration(reg_file, mov = "m.nii", targ = "t.mgz"),
+      paste0(reg_file, "|m.nii|t.mgz.lta")
+    )
+  })
+})
+
+
 describe("vol2vol_registration_opt", {
   it("asks mri_vol2vol to trust the header", {
     expect_identical(
@@ -204,29 +243,30 @@ describe("vol2vol_registration_opt", {
 })
 
 
-describe("lta_from_register_dat", {
-  # Stand in for lta_convert: write the file the command asks for, and
-  # report the command so its shape can be checked.
-  local_mock_lta_convert <- function(write = TRUE, env = parent.frame()) {
-    seen <- new.env()
-    local_mocked_bindings(
-      run_cmd = function(cmd, ...) {
-        seen$cmd <- cmd
-        if (write) {
-          # `--outlta` is the last argument, so everything after it is the
-          # path. Taking the tail and stripping quotes rather than matching
-          # them: shQuote() uses single quotes on Unix and double on
-          # Windows, and a pattern for one silently fails on the other.
-          out <- gsub('^["\']|["\']$', "", sub(".*--outlta ", "", cmd))
-          writeLines("lta", out)
-        }
-        invisible(0L)
-      },
-      .env = env
-    )
-    seen
-  }
+# Stand in for lta_convert: write the file the command asks for, and
+# report the command so its shape can be checked.
+local_mock_lta_convert <- function(write = TRUE, env = parent.frame()) {
+  seen <- new.env()
+  local_mocked_bindings(
+    run_cmd = function(cmd, ...) {
+      seen$cmd <- cmd
+      if (write) {
+        # `--outlta` is the last argument, so everything after it is the
+        # path. Taking the tail and stripping quotes rather than matching
+        # them: shQuote() uses single quotes on Unix and double on
+        # Windows, and a pattern for one silently fails on the other.
+        out <- gsub('^["\']|["\']$', "", sub(".*--outlta ", "", cmd))
+        writeLines("lta", out)
+      }
+      invisible(0L)
+    },
+    .env = env
+  )
+  seen
+}
 
+
+describe("lta_from_register_dat", {
   it("names the source and target volumes the geometry comes from", {
     seen <- local_mock_lta_convert()
 
@@ -263,6 +303,34 @@ describe("lta_from_register_dat", {
     })
 
     expect_false(file.exists(lta))
+  })
+})
+
+describe("vol2vol_registration_opt lifetime", {
+  # `vol2vol_registration_opt()` now reaches `lta_from_register_dat()` through
+  # `vol2vol_registration()`, so the LTA's lifetime depends on `envir` being
+  # forwarded across that hop. Dropping the forward deletes the file the
+  # moment the opt helper returns, and the command then names a path that is
+  # already gone -- on the default `registration = "mni152"` path.
+  it("keeps the LTA alive until its own caller returns, not its callee", {
+    local_mock_lta_convert()
+    reg_dat <- withr::local_tempfile(fileext = ".dat")
+    file.create(reg_dat)
+
+    alive_inside <- NULL
+    path <- local({
+      opt <- vol2vol_registration_opt(
+        reg_dat,
+        mov = "m.nii",
+        targ = "t.mgz"
+      )
+      p <- gsub('^["\']|["\']$', "", sub("^--reg ", "", opt))
+      alive_inside <<- file.exists(p)
+      p
+    })
+
+    expect_true(alive_inside)
+    expect_false(file.exists(path))
   })
 })
 
