@@ -24,12 +24,30 @@ suppressMessages(pkgload::load_all(".", quiet = TRUE))
 
 # Functions from packages a vignette attaches are fair game, so the check
 # knows the difference between a call this package owns and one it does not.
+# Attaching a package attaches whatever it `Depends` on, so the resolution
+# list has to follow that too. ggseg.extra carries ggseg.formats in `Depends`
+# rather than re-exporting its verbs one at a time, so a tutorial that calls
+# `atlas_view_keep()` after `library(ggseg.extra)` resolves it through there.
+# Without this the audit reports every such call as missing, which is a
+# resolution model the reader never experiences.
+depends_of <- function(pkg) {
+  dep <- tryCatch(packageDescription(pkg)[["Depends"]], error = function(e) {
+    NULL
+  })
+  if (is.null(dep) || all(is.na(dep))) {
+    return(character())
+  }
+  named <- trimws(sub("\\(.*", "", strsplit(dep, ",")[[1]]))
+  setdiff(named, c("R", ""))
+}
+
 namespaces_for <- function(code) {
   attached <- unlist(regmatches(
     code,
     gregexpr("(?<=library\\()[A-Za-z0-9._]+", code, perl = TRUE)
   ))
   candidates <- unique(c("ggseg.extra", attached))
+  candidates <- unique(c(candidates, unlist(lapply(candidates, depends_of))))
   candidates[vapply(candidates, requireNamespace, logical(1), quietly = TRUE)]
 }
 
