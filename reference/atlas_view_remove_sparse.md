@@ -41,16 +41,16 @@ counted; see
 
 Run this after the regions have been removed, not before. A slab full of
 ventricles looks well populated to the builder and renders empty once
-[`ggseg.formats::atlas_region_remove()`](https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html)
+[`ggseg.formats::atlas_region_remove()`](https://ggsegverse.github.io/ggseg.formats/reference/region_manipulation.html)
 has taken the ventricles out. The pipeline already discards slabs that
 no labelled voxel falls into, which is the same policy at a threshold of
 zero, applied to the volume before anything is traced.
 
 ## See also
 
-[`ggseg.formats::atlas_view_remove()`](https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html)
+[`ggseg.formats::atlas_view_remove()`](https://ggsegverse.github.io/ggseg.formats/reference/view_manipulation.html)
 to drop views by name, and
-[`ggseg.formats::atlas_view_remove_small()`](https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html)
+[`ggseg.formats::atlas_view_remove_small()`](https://ggsegverse.github.io/ggseg.formats/reference/drawing_manipulation.html)
 to drop slivers within a view rather than the view itself.
 
 Other atlas geometry:
@@ -68,31 +68,31 @@ aseg <- ggseg.formats::aseg()
 
 # How many regions each view is carrying
 atlas_view_region_counts(aseg)
-#>   axial_3   axial_4   axial_5   axial_6 coronal_1 coronal_2  sagittal 
-#>        23        26        27        15        22        22        15 
+#>       axial_2     coronal_2 sagittal_left 
+#>            29            26            20 
 
 atlas_view_remove_sparse(aseg, min_regions = 5)
 #> 
 #> ── aseg ggseg atlas ────────────────────────────────────────────────────────────
 #> Type: subcortical
 #> Regions: 18
-#> Hemispheres: left, NA, right
-#> Views: axial_3, axial_4, axial_5, axial_6, coronal_1, coronal_2, sagittal
+#> Hemispheres: left, midline, right
+#> Views: axial_2, coronal_2, sagittal_left
 #> Palette: ✔
 #> Rendering: ✔ ggseg
 #> ✔ ggseg3d (meshes)
 #> ────────────────────────────────────────────────────────────────────────────────
-#>    hemi            region                  label              display
-#> 1  left cerebellum cortex Left-Cerebellum-Cortex    cerebellum cortex
-#> 2  left          thalamus          Left-Thalamus             thalamus
-#> 3  left           caudate           Left-Caudate              caudate
-#> 4  left           putamen           Left-Putamen              putamen
-#> 5  left          pallidum          Left-Pallidum             pallidum
-#> 6  <NA>        brain stem             Brain-Stem           brain stem
-#> 7  left       hippocampus       Left-Hippocampus          hippocampus
-#> 8  left          amygdala          Left-Amygdala             amygdala
-#> 9  left    accumbens area    Left-Accumbens-area            accumbens
-#> 10 left         ventraldc         Left-VentralDC ventral diencephalon
+#>       hemi            region                  label              display
+#> 1     left cerebellum cortex Left-Cerebellum-Cortex    cerebellum cortex
+#> 2     left          thalamus          Left-Thalamus             thalamus
+#> 3     left           caudate           Left-Caudate              caudate
+#> 4     left           putamen           Left-Putamen              putamen
+#> 5     left          pallidum          Left-Pallidum             pallidum
+#> 6  midline        brain stem             Brain-Stem           brain stem
+#> 7     left       hippocampus       Left-Hippocampus          hippocampus
+#> 8     left          amygdala          Left-Amygdala             amygdala
+#> 9     left    accumbens area    Left-Accumbens-area            accumbens
+#> 10    left         ventraldc         Left-VentralDC ventral diencephalon
 #>        structure
 #> 1     cerebellum
 #> 2  basal ganglia

@@ -1,6 +1,6 @@
 # Changelog
 
-## ggseg.extra 1.9.9.9139
+## ggseg.extra 1.9.9.9140
 
 This section becomes the 2.0.0 release notes at submission. It is the
 first CRAN release of ggseg.extra, the atlas-building package of the
@@ -126,7 +126,7 @@ volumes and tractography files.
   no table, every label is a region. To get the cortex as context, mark
   its rows: `lut$context <- grepl("Cortex", lut$label)`. Context that is
   not wanted is removed afterwards with
-  [`atlas_context_remove()`](https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html).
+  [`atlas_context_remove()`](https://ggsegverse.github.io/ggseg.formats/reference/region_manipulation.html).
 
 - [`create_cortical_from_neuromaps()`](https://ggsegverse.github.io/ggseg.extra/reference/create_cortical_from_neuromaps.md),
   [`read_neuromaps_annotation()`](https://ggsegverse.github.io/ggseg.extra/reference/read_neuromaps_annotation.md)

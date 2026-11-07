@@ -33,6 +33,6 @@ Other atlas geometry:
 
 ``` r
 atlas_view_region_counts(ggseg.formats::aseg())
-#>   axial_3   axial_4   axial_5   axial_6 coronal_1 coronal_2  sagittal 
-#>        23        26        27        15        22        22        15 
+#>       axial_2     coronal_2 sagittal_left 
+#>            29            26            20 
 ```

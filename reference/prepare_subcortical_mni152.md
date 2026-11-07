@@ -137,7 +137,7 @@ catches.
 
 ## See also
 
-[`atlas_region_op()`](https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html)
+[`atlas_region_op()`](https://ggsegverse.github.io/ggseg.formats/reference/region_manipulation.html)
 for the punch;
 [`prepare_subcortical_anatomical()`](https://ggsegverse.github.io/ggseg.extra/reference/prepare_subcortical_anatomical.md)
 for the computed-registration (`cvs_avg35_inMNI152`, `mri_coreg`)

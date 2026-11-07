@@ -28,34 +28,34 @@ reach into its parts.
 
 ## Changing which regions are in it
 
-[`atlas_region_remove()`](https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html)
+[`atlas_region_remove()`](https://ggsegverse.github.io/ggseg.formats/reference/region_manipulation.html)
 and
-[`atlas_region_keep()`](https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html)
+[`atlas_region_keep()`](https://ggsegverse.github.io/ggseg.formats/reference/region_manipulation.html)
 drop or select regions by regex.
-[`atlas_region_rename()`](https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html)
+[`atlas_region_rename()`](https://ggsegverse.github.io/ggseg.formats/reference/region_manipulation.html)
 rewrites display names without touching labels.
-[`atlas_region_contextual()`](https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html)
+[`atlas_region_contextual()`](https://ggsegverse.github.io/ggseg.formats/reference/region_manipulation.html)
 keeps a region's geometry as a grey outline but takes it out of the
 palette, which is how the brain silhouette behind an atlas is made;
-[`atlas_context_remove()`](https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html)
+[`atlas_context_remove()`](https://ggsegverse.github.io/ggseg.formats/reference/region_manipulation.html)
 drops it again.
-[`atlas_region_op()`](https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html)
+[`atlas_region_op()`](https://ggsegverse.github.io/ggseg.formats/reference/region_manipulation.html)
 does boolean geometry between two labels, and
-[`atlas_core_add()`](https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html)
+[`atlas_core_add()`](https://ggsegverse.github.io/ggseg.formats/reference/atlas_core_add.html)
 joins extra columns onto `$core`.
 
 ## Changing which views are in it
 
-[`atlas_view_keep()`](https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html),
-[`atlas_view_remove()`](https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html)
+[`atlas_view_keep()`](https://ggsegverse.github.io/ggseg.formats/reference/view_manipulation.html),
+[`atlas_view_remove()`](https://ggsegverse.github.io/ggseg.formats/reference/view_manipulation.html)
 and
-[`atlas_view_reorder()`](https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html)
+[`atlas_view_reorder()`](https://ggsegverse.github.io/ggseg.formats/reference/view_manipulation.html)
 select and order the 2D views.
-[`atlas_view_remove_region()`](https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html)
+[`atlas_view_remove_region()`](https://ggsegverse.github.io/ggseg.formats/reference/drawing_manipulation.html)
 drops one region from some views only,
-[`atlas_view_remove_small()`](https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html)
+[`atlas_view_remove_small()`](https://ggsegverse.github.io/ggseg.formats/reference/drawing_manipulation.html)
 drops slivers below an area, and
-[`atlas_view_gather()`](https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html)
+[`atlas_view_gather()`](https://ggsegverse.github.io/ggseg.formats/reference/view_manipulation.html)
 closes the gaps between panels.
 
 ## Building an atlas object

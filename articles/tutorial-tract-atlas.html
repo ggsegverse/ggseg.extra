@@ -27,7 +27,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9137</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9140</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -208,7 +208,7 @@ Stage 1 — every tract on every view the pipeline made.
 <p>Keep the projections that show your tracts best:</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">tracula_raw</span> <span class="op">&lt;-</span> <span class="va">tracula_raw</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_view_keep</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
+<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/view_manipulation.html" class="external-link">atlas_view_keep</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
 <span>    <span class="st">"axial_2"</span>,</span>
 <span>    <span class="st">"axial_4"</span>,</span>
 <span>    <span class="st">"coronal_3"</span>,</span>
@@ -227,17 +227,17 @@ Stage 2 — down to the seven views that show the tracts; the <code>sagittal</co
 <p>Add cortex as a background outline:</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">tracula_raw</span> <span class="op">&lt;-</span> <span class="va">tracula_raw</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_contextual</a></span><span class="op">(</span><span class="st">"cortex"</span>, match_on <span class="op">=</span> <span class="st">"label"</span><span class="op">)</span></span></code></pre></div>
+<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/region_manipulation.html" class="external-link">atlas_region_contextual</a></span><span class="op">(</span><span class="st">"cortex"</span>, match_on <span class="op">=</span> <span class="st">"label"</span><span class="op">)</span></span></code></pre></div>
 </section><section class="level3"><h3 id="removing-small-fragments">Removing small fragments<a class="anchor" aria-label="anchor" href="#removing-small-fragments"></a>
 </h3>
 <p>After view selection, some tracts may appear as tiny slivers in certain views. Remove fragments below a minimum area:</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">tracula_raw</span> <span class="op">&lt;-</span> <span class="va">tracula_raw</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_view_remove_small</a></span><span class="op">(</span></span>
+<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/drawing_manipulation.html" class="external-link">atlas_view_remove_small</a></span><span class="op">(</span></span>
 <span>    min_area <span class="op">=</span> <span class="fl">500</span>,</span>
 <span>    views <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"axial"</span>, <span class="st">"coronal"</span><span class="op">)</span></span>
 <span>  <span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_view_remove_small</a></span><span class="op">(</span>min_area <span class="op">=</span> <span class="fl">50</span><span class="op">)</span></span>
+<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/drawing_manipulation.html" class="external-link">atlas_view_remove_small</a></span><span class="op">(</span>min_area <span class="op">=</span> <span class="fl">50</span><span class="op">)</span></span>
 <span><span class="co">#&gt; ℹ Removed 98 geometries below area 500</span></span>
 <span><span class="co">#&gt; ℹ Removed 12 geometries below area 50</span></span></code></pre></div>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">

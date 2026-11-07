@@ -334,7 +334,7 @@ atlas_full <- atlas_full |>
 
 The “unknown” region (medial wall) renders as a filled region by
 default. Convert it to a background outline with
-[`atlas_region_contextual()`](https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html):
+[`atlas_region_contextual()`](https://ggsegverse.github.io/ggseg.formats/reference/region_manipulation.html):
 
 ``` r
 

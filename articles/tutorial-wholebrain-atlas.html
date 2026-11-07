@@ -27,7 +27,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9137</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9140</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -352,15 +352,15 @@
 <p>You can also remove unwanted regions from the subcortical atlas (ventricles, white matter), just like in the <a href="tutorial-subcortical-atlas.html">subcortical tutorial</a>:</p>
 <div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">ho_sub</span> <span class="op">&lt;-</span> <span class="va">ho_sub</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_remove</a></span><span class="op">(</span><span class="st">"Ventricle"</span>, match_on <span class="op">=</span> <span class="st">"label"</span><span class="op">)</span></span></code></pre></div>
+<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/region_manipulation.html" class="external-link">atlas_region_remove</a></span><span class="op">(</span><span class="st">"Ventricle"</span>, match_on <span class="op">=</span> <span class="st">"label"</span><span class="op">)</span></span></code></pre></div>
 </section></section><section class="level2"><h2 id="structuring-atlas-metadata">Structuring atlas metadata<a class="anchor" aria-label="anchor" href="#structuring-atlas-metadata"></a>
 </h2>
 <p>Before saving, clean up region names and add grouping columns. The <a href="post-processing.html">post-processing vignette</a> covers this in detail — the key idea is that <code>label</code> stays machine-readable (matching the source parcellation) while <code>region</code> becomes human-readable for plot legends.</p>
 <p>The Harvard-Oxford atlas is a good example of both:</p>
 <div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">ho_cort</span> <span class="op">&lt;-</span> <span class="va">ho_cort</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_rename</a></span><span class="op">(</span><span class="st">"Left |Right "</span>, <span class="st">""</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_rename</a></span><span class="op">(</span><span class="st">"-"</span>, <span class="st">" "</span><span class="op">)</span></span>
+<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/region_manipulation.html" class="external-link">atlas_region_rename</a></span><span class="op">(</span><span class="st">"Left |Right "</span>, <span class="st">""</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/region_manipulation.html" class="external-link">atlas_region_rename</a></span><span class="op">(</span><span class="st">"-"</span>, <span class="st">" "</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">subcort_metadata</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
 <span>  region <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"thalamus"</span>, <span class="st">"caudate"</span>, <span class="st">"putamen"</span>, <span class="st">"pallidum"</span>,</span>
@@ -372,8 +372,8 @@
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">ho_sub</span> <span class="op">&lt;-</span> <span class="va">ho_sub</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_core_add</a></span><span class="op">(</span><span class="va">subcort_metadata</span>, by <span class="op">=</span> <span class="st">"region"</span><span class="op">)</span></span></code></pre></div>
-<p><code><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_core_add()</a></code> (from ggseg.formats) does a left join into <code>$core</code> and rebuilds the atlas in one step — no need to manually reconstruct with <code><a href="https://ggsegverse.github.io/ggseg.formats/reference/ggseg_atlas.html" class="external-link">ggseg_atlas()</a></code>.</p>
+<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_core_add.html" class="external-link">atlas_core_add</a></span><span class="op">(</span><span class="va">subcort_metadata</span>, by <span class="op">=</span> <span class="st">"region"</span><span class="op">)</span></span></code></pre></div>
+<p><code><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_core_add.html" class="external-link">atlas_core_add()</a></code> (from ggseg.formats) does a left join into <code>$core</code> and rebuilds the atlas in one step — no need to manually reconstruct with <code><a href="https://ggsegverse.github.io/ggseg.formats/reference/ggseg_atlas.html" class="external-link">ggseg_atlas()</a></code>.</p>
 </section><section class="level2"><h2 id="saving">Saving<a class="anchor" aria-label="anchor" href="#saving"></a>
 </h2>
 <p>The conventional pattern for atlas packages is to save cortical and subcortical atlases as separate internal data objects:</p>

@@ -24,7 +24,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9137</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9140</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -141,7 +141,7 @@ region.</p>
 <h2 id="removing-regions">Removing regions<a class="anchor" aria-label="anchor" href="#removing-regions"></a>
 </h2>
 <p>The most common post-processing step is removing structures you don’t
-need. <code><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_remove()</a></code> matches its pattern against the
+need. <code><a href="https://ggsegverse.github.io/ggseg.formats/reference/region_manipulation.html" class="external-link">atlas_region_remove()</a></code> matches its pattern against the
 column you name in <code>match_on</code>: <code>"label"</code>, the
 atlas’s own identifier, or <code>"region"</code>, the lower-cased,
 separator-normalised name. The examples here say which, so they read the
@@ -149,11 +149,11 @@ same whichever version of ggseg.formats is installed. The hyphenated
 FreeSurfer spellings below are labels:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">atlas</span> <span class="op">&lt;-</span> <span class="va">atlas</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_remove</a></span><span class="op">(</span><span class="st">"White-Matter"</span>, match_on <span class="op">=</span> <span class="st">"label"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_remove</a></span><span class="op">(</span><span class="st">"WM-hypointensities"</span>, match_on <span class="op">=</span> <span class="st">"label"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_remove</a></span><span class="op">(</span><span class="st">"-Ventricle"</span>, match_on <span class="op">=</span> <span class="st">"label"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_remove</a></span><span class="op">(</span><span class="st">"-Vent$"</span>, match_on <span class="op">=</span> <span class="st">"label"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_remove</a></span><span class="op">(</span><span class="st">"CSF"</span>, match_on <span class="op">=</span> <span class="st">"label"</span><span class="op">)</span></span></code></pre></div>
+<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/region_manipulation.html" class="external-link">atlas_region_remove</a></span><span class="op">(</span><span class="st">"White-Matter"</span>, match_on <span class="op">=</span> <span class="st">"label"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/region_manipulation.html" class="external-link">atlas_region_remove</a></span><span class="op">(</span><span class="st">"WM-hypointensities"</span>, match_on <span class="op">=</span> <span class="st">"label"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/region_manipulation.html" class="external-link">atlas_region_remove</a></span><span class="op">(</span><span class="st">"-Ventricle"</span>, match_on <span class="op">=</span> <span class="st">"label"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/region_manipulation.html" class="external-link">atlas_region_remove</a></span><span class="op">(</span><span class="st">"-Vent$"</span>, match_on <span class="op">=</span> <span class="st">"label"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/region_manipulation.html" class="external-link">atlas_region_remove</a></span><span class="op">(</span><span class="st">"CSF"</span>, match_on <span class="op">=</span> <span class="st">"label"</span><span class="op">)</span></span></code></pre></div>
 <p>Patterns are regular expressions, so <code>-Vent$</code> matches
 “3rd-Vent” and “4th-Vent” but not “Ventral-DC”.</p>
 <p>This removes the region from <code>$core</code>,
@@ -165,7 +165,7 @@ FreeSurfer spellings below are labels:</p>
 <p>The inverse operation — keep only regions that match:</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">atlas</span> <span class="op">&lt;-</span> <span class="va">atlas</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_keep</a></span><span class="op">(</span><span class="st">"Thalamus|Caudate|Putamen|Pallidum"</span>, match_on <span class="op">=</span> <span class="st">"label"</span><span class="op">)</span></span></code></pre></div>
+<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/region_manipulation.html" class="external-link">atlas_region_keep</a></span><span class="op">(</span><span class="st">"Thalamus|Caudate|Putamen|Pallidum"</span>, match_on <span class="op">=</span> <span class="st">"label"</span><span class="op">)</span></span></code></pre></div>
 <p>Everything that doesn’t match gets dropped.</p>
 </div>
 <div class="section level2">
@@ -175,14 +175,14 @@ FreeSurfer spellings below are labels:</p>
 The cerebral cortex in a subcortical atlas is the classic example — you
 want to see where it is for spatial reference, but you don’t want it
 competing with the subcortical structures for colour.</p>
-<p><code><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_contextual()</a></code> keeps the geometry in
+<p><code><a href="https://ggsegverse.github.io/ggseg.formats/reference/region_manipulation.html" class="external-link">atlas_region_contextual()</a></code> keeps the geometry in
 <code>$data$sf</code> but removes the region from <code>$core</code>.
 The region renders as an outline, not a filled polygon:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">atlas</span> <span class="op">&lt;-</span> <span class="va">atlas</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_contextual</a></span><span class="op">(</span><span class="st">"cortex"</span>, match_on <span class="op">=</span> <span class="st">"label"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_contextual</a></span><span class="op">(</span><span class="st">"unknown"</span>, match_on <span class="op">=</span> <span class="st">"label"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_contextual</a></span><span class="op">(</span><span class="st">"corpuscallosum"</span>, match_on <span class="op">=</span> <span class="st">"label"</span><span class="op">)</span></span></code></pre></div>
+<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/region_manipulation.html" class="external-link">atlas_region_contextual</a></span><span class="op">(</span><span class="st">"cortex"</span>, match_on <span class="op">=</span> <span class="st">"label"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/region_manipulation.html" class="external-link">atlas_region_contextual</a></span><span class="op">(</span><span class="st">"unknown"</span>, match_on <span class="op">=</span> <span class="st">"label"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/region_manipulation.html" class="external-link">atlas_region_contextual</a></span><span class="op">(</span><span class="st">"corpuscallosum"</span>, match_on <span class="op">=</span> <span class="st">"label"</span><span class="op">)</span></span></code></pre></div>
 <p>The <code>match_on</code> parameter controls whether patterns match
 against <code>label</code> (annotation identifiers) or
 <code>region</code> (display names).</p>
@@ -220,12 +220,12 @@ in the <code>hemi</code> column — repeating them in <code>region</code>
 is redundant.</p>
 <p>The pipeline generates both from the source annotation, but the
 defaults are rarely publication-ready.
-<code><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_rename()</a></code> cleans up the <code>region</code>
+<code><a href="https://ggsegverse.github.io/ggseg.formats/reference/region_manipulation.html" class="external-link">atlas_region_rename()</a></code> cleans up the <code>region</code>
 column without touching <code>label</code>:</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">atlas</span> <span class="op">&lt;-</span> <span class="va">atlas</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_rename</a></span><span class="op">(</span><span class="st">"brain stem"</span>, <span class="st">"brainstem"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_rename</a></span><span class="op">(</span><span class="st">"cerebellum cortex"</span>, <span class="st">"cerebellum"</span><span class="op">)</span></span></code></pre></div>
+<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/region_manipulation.html" class="external-link">atlas_region_rename</a></span><span class="op">(</span><span class="st">"brain stem"</span>, <span class="st">"brainstem"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/region_manipulation.html" class="external-link">atlas_region_rename</a></span><span class="op">(</span><span class="st">"cerebellum cortex"</span>, <span class="st">"cerebellum"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="adding-metadata-columns">Adding metadata columns<a class="anchor" aria-label="anchor" href="#adding-metadata-columns"></a>
@@ -247,7 +247,7 @@ about:</p>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">atlas</span> <span class="op">&lt;-</span> <span class="va">atlas</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_core_add</a></span><span class="op">(</span><span class="va">metadata</span>, by <span class="op">=</span> <span class="st">"region"</span><span class="op">)</span></span></code></pre></div>
+<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_core_add.html" class="external-link">atlas_core_add</a></span><span class="op">(</span><span class="va">metadata</span>, by <span class="op">=</span> <span class="st">"region"</span><span class="op">)</span></span></code></pre></div>
 <p>This merges new columns into <code>$core</code> via a left join.</p>
 <p>You can add as many columns as you need. A Schaefer atlas might carry
 <code>network</code> and <code>parcel_order</code>. A Brainnetome atlas
@@ -270,21 +270,21 @@ views you see as necessary and provide the best general coverage.</p>
 </h3>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">atlas</span> <span class="op">&lt;-</span> <span class="va">atlas</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_view_keep</a></span><span class="op">(</span><span class="st">"axial_3|axial_5|coronal_2|sagittal"</span><span class="op">)</span></span></code></pre></div>
+<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/view_manipulation.html" class="external-link">atlas_view_keep</a></span><span class="op">(</span><span class="st">"axial_3|axial_5|coronal_2|sagittal"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="removing-views">Removing views<a class="anchor" aria-label="anchor" href="#removing-views"></a>
 </h3>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">atlas</span> <span class="op">&lt;-</span> <span class="va">atlas</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_view_remove</a></span><span class="op">(</span><span class="st">"axial_1|axial_2"</span><span class="op">)</span></span></code></pre></div>
+<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/view_manipulation.html" class="external-link">atlas_view_remove</a></span><span class="op">(</span><span class="st">"axial_1|axial_2"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="reordering-views">Reordering views<a class="anchor" aria-label="anchor" href="#reordering-views"></a>
 </h3>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">atlas</span> <span class="op">&lt;-</span> <span class="va">atlas</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_view_reorder</a></span><span class="op">(</span></span>
+<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/view_manipulation.html" class="external-link">atlas_view_reorder</a></span><span class="op">(</span></span>
 <span>    <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"sagittal_left"</span>, <span class="st">"sagittal_right"</span>, <span class="st">"coronal_3"</span>, <span class="st">"axial_4"</span><span class="op">)</span></span>
 <span>  <span class="op">)</span></span></code></pre></div>
 </div>
@@ -296,11 +296,11 @@ views you see as necessary and provide the best general coverage.</p>
 add clutter without information. Remove them by minimum area:</p>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">atlas</span> <span class="op">&lt;-</span> <span class="va">atlas</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_view_remove_small</a></span><span class="op">(</span></span>
+<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/drawing_manipulation.html" class="external-link">atlas_view_remove_small</a></span><span class="op">(</span></span>
 <span>    min_area <span class="op">=</span> <span class="fl">500</span>,</span>
 <span>    views <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"axial"</span>, <span class="st">"coronal"</span><span class="op">)</span></span>
 <span>  <span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_view_remove_small</a></span><span class="op">(</span>min_area <span class="op">=</span> <span class="fl">50</span><span class="op">)</span></span></code></pre></div>
+<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/drawing_manipulation.html" class="external-link">atlas_view_remove_small</a></span><span class="op">(</span>min_area <span class="op">=</span> <span class="fl">50</span><span class="op">)</span></span></code></pre></div>
 <p>The first call targets specific view types with a higher threshold.
 The second call applies a lower threshold across all views.</p>
 </div>
@@ -308,11 +308,11 @@ The second call applies a lower threshold across all views.</p>
 <h2 id="gathering-views">Gathering views<a class="anchor" aria-label="anchor" href="#gathering-views"></a>
 </h2>
 <p>Raw atlas views often have large gaps between panels.
-<code><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_view_gather()</a></code> repositions views into a compact
+<code><a href="https://ggsegverse.github.io/ggseg.formats/reference/view_manipulation.html" class="external-link">atlas_view_gather()</a></code> repositions views into a compact
 layout:</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">atlas</span> <span class="op">&lt;-</span> <span class="va">atlas</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_view_gather</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/view_manipulation.html" class="external-link">atlas_view_gather</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <p>This is typically the last step before saving.</p>
 </div>
 <div class="section level2">
@@ -498,13 +498,13 @@ consistent.</p>
 <p>A typical post-processing pipeline for a subcortical atlas:</p>
 <div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">atlas</span> <span class="op">&lt;-</span> <span class="va">atlas_raw</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_remove</a></span><span class="op">(</span><span class="st">"White-Matter"</span>, match_on <span class="op">=</span> <span class="st">"label"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_remove</a></span><span class="op">(</span><span class="st">"-Ventricle"</span>, match_on <span class="op">=</span> <span class="st">"label"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_remove</a></span><span class="op">(</span><span class="st">"CSF"</span>, match_on <span class="op">=</span> <span class="st">"label"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_contextual</a></span><span class="op">(</span><span class="st">"Cortex"</span>, match_on <span class="op">=</span> <span class="st">"label"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_view_keep</a></span><span class="op">(</span><span class="st">"axial_3|axial_5|coronal_3|sagittal"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_view_remove_small</a></span><span class="op">(</span>min_area <span class="op">=</span> <span class="fl">100</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_view_gather</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/region_manipulation.html" class="external-link">atlas_region_remove</a></span><span class="op">(</span><span class="st">"White-Matter"</span>, match_on <span class="op">=</span> <span class="st">"label"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/region_manipulation.html" class="external-link">atlas_region_remove</a></span><span class="op">(</span><span class="st">"-Ventricle"</span>, match_on <span class="op">=</span> <span class="st">"label"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/region_manipulation.html" class="external-link">atlas_region_remove</a></span><span class="op">(</span><span class="st">"CSF"</span>, match_on <span class="op">=</span> <span class="st">"label"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/region_manipulation.html" class="external-link">atlas_region_contextual</a></span><span class="op">(</span><span class="st">"Cortex"</span>, match_on <span class="op">=</span> <span class="st">"label"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/view_manipulation.html" class="external-link">atlas_view_keep</a></span><span class="op">(</span><span class="st">"axial_3|axial_5|coronal_3|sagittal"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/drawing_manipulation.html" class="external-link">atlas_view_remove_small</a></span><span class="op">(</span>min_area <span class="op">=</span> <span class="fl">100</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/view_manipulation.html" class="external-link">atlas_view_gather</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/atlas_dilate.html">atlas_dilate</a></span><span class="op">(</span><span class="fl">0.6</span>, exclude <span class="op">=</span> <span class="va">context_pattern</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/atlas_polish.html">atlas_polish</a></span><span class="op">(</span></span>
 <span>    keep <span class="op">=</span> <span class="fl">0.5</span>,</span>

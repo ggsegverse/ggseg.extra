@@ -50,7 +50,7 @@ returns the 3D mesh data for each region.
 
 The most common post-processing step is removing structures you don’t
 need.
-[`atlas_region_remove()`](https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html)
+[`atlas_region_remove()`](https://ggsegverse.github.io/ggseg.formats/reference/region_manipulation.html)
 matches its pattern against the column you name in `match_on`:
 `"label"`, the atlas’s own identifier, or `"region"`, the lower-cased,
 separator-normalised name. The examples here say which, so they read the
@@ -91,7 +91,7 @@ The cerebral cortex in a subcortical atlas is the classic example — you
 want to see where it is for spatial reference, but you don’t want it
 competing with the subcortical structures for colour.
 
-[`atlas_region_contextual()`](https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html)
+[`atlas_region_contextual()`](https://ggsegverse.github.io/ggseg.formats/reference/region_manipulation.html)
 keeps the geometry in `$data$sf` but removes the region from `$core`.
 The region renders as an outline, not a filled polygon:
 
@@ -144,7 +144,7 @@ redundant.
 
 The pipeline generates both from the source annotation, but the defaults
 are rarely publication-ready.
-[`atlas_region_rename()`](https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html)
+[`atlas_region_rename()`](https://ggsegverse.github.io/ggseg.formats/reference/region_manipulation.html)
 cleans up the `region` column without touching `label`:
 
 ``` r
@@ -242,7 +242,7 @@ second call applies a lower threshold across all views.
 ## Gathering views
 
 Raw atlas views often have large gaps between panels.
-[`atlas_view_gather()`](https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html)
+[`atlas_view_gather()`](https://ggsegverse.github.io/ggseg.formats/reference/view_manipulation.html)
 repositions views into a compact layout:
 
 ``` r

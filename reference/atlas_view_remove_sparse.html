@@ -15,7 +15,7 @@ each one actually holds rather than naming the views to remove."><meta property=
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9137</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9140</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -116,15 +116,15 @@ case this exists to remove, so only labels that are drawn as regions are
 counted; see <code><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_context.html" class="external-link">ggseg.formats::atlas_context()</a></code>.</p>
 <p>Run this after the regions have been removed, not before. A slab full of
 ventricles looks well populated to the builder and renders empty once
-<code><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">ggseg.formats::atlas_region_remove()</a></code> has taken the ventricles out. The
+<code><a href="https://ggsegverse.github.io/ggseg.formats/reference/region_manipulation.html" class="external-link">ggseg.formats::atlas_region_remove()</a></code> has taken the ventricles out. The
 pipeline already discards slabs that no labelled voxel falls into, which is
 the same policy at a threshold of zero, applied to the volume before
 anything is traced.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p><code><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">ggseg.formats::atlas_view_remove()</a></code> to drop views by name, and
-<code><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">ggseg.formats::atlas_view_remove_small()</a></code> to drop slivers within a view
+    <div class="dont-index"><p><code><a href="https://ggsegverse.github.io/ggseg.formats/reference/view_manipulation.html" class="external-link">ggseg.formats::atlas_view_remove()</a></code> to drop views by name, and
+<code><a href="https://ggsegverse.github.io/ggseg.formats/reference/drawing_manipulation.html" class="external-link">ggseg.formats::atlas_view_remove_small()</a></code> to drop slivers within a view
 rather than the view itself.</p>
 <p>Other atlas geometry:
 <code><a href="atlas_dilate.html">atlas_dilate()</a></code>,
@@ -141,31 +141,31 @@ rather than the view itself.</p>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># How many regions each view is carrying</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="atlas_view_region_counts.html">atlas_view_region_counts</a></span><span class="op">(</span><span class="va">aseg</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   axial_3   axial_4   axial_5   axial_6 coronal_1 coronal_2  sagittal </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>        23        26        27        15        22        22        15 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       axial_2     coronal_2 sagittal_left </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>            29            26            20 </span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="fu">atlas_view_remove_sparse</span><span class="op">(</span><span class="va">aseg</span>, min_regions <span class="op">=</span> <span class="fl">5</span><span class="op">)</span></span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">──</span> <span style="font-weight: bold;">aseg ggseg atlas</span> <span style="color: #00BBBB;">────────────────────────────────────────────────────────────</span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="font-weight: bold;">Type: subcortical</span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="font-weight: bold;">Regions:</span> 18</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="font-weight: bold;">Hemispheres:</span> left, NA, right</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="font-weight: bold;">Views:</span> axial_3, axial_4, axial_5, axial_6, coronal_1, coronal_2, sagittal</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="font-weight: bold;">Hemispheres:</span> left, midline, right</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="font-weight: bold;">Views:</span> axial_2, coronal_2, sagittal_left</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="font-weight: bold;">Palette:</span> <span style="color: #00BB00;">✔</span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="font-weight: bold;">Rendering:</span> <span style="color: #00BB00;">✔</span> ggseg</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> ggseg3d (meshes)</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> ────────────────────────────────────────────────────────────────────────────────</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    hemi            region                  label              display</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1  left cerebellum cortex Left-Cerebellum-Cortex    cerebellum cortex</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2  left          thalamus          Left-Thalamus             thalamus</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3  left           caudate           Left-Caudate              caudate</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4  left           putamen           Left-Putamen              putamen</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5  left          pallidum          Left-Pallidum             pallidum</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 6  &lt;NA&gt;        brain stem             Brain-Stem           brain stem</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 7  left       hippocampus       Left-Hippocampus          hippocampus</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 8  left          amygdala          Left-Amygdala             amygdala</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 9  left    accumbens area    Left-Accumbens-area            accumbens</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 10 left         ventraldc         Left-VentralDC ventral diencephalon</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       hemi            region                  label              display</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1     left cerebellum cortex Left-Cerebellum-Cortex    cerebellum cortex</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2     left          thalamus          Left-Thalamus             thalamus</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3     left           caudate           Left-Caudate              caudate</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4     left           putamen           Left-Putamen              putamen</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5     left          pallidum          Left-Pallidum             pallidum</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6  midline        brain stem             Brain-Stem           brain stem</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 7     left       hippocampus       Left-Hippocampus          hippocampus</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 8     left          amygdala          Left-Amygdala             amygdala</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 9     left    accumbens area    Left-Accumbens-area            accumbens</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 10    left         ventraldc         Left-VentralDC ventral diencephalon</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>        structure</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 1     cerebellum</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 2  basal ganglia</span>

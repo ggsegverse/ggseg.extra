@@ -248,7 +248,7 @@ Which is fine until a parcellation names its leftovers something else.
 FreeSurfer’s own `aparc` labels the callosal region `corpuscallosum`,
 and that matches none of the above — so it would arrive as an ordinary
 region, coloured and listed alongside the real ones.
-[`atlas_region_contextual()`](https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html)
+[`atlas_region_contextual()`](https://ggsegverse.github.io/ggseg.formats/reference/region_manipulation.html)
 is how you set one aside by hand. It keeps the geometry for spatial
 reference and drops the region from `$core`:
 

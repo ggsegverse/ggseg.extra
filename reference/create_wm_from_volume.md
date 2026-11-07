@@ -109,7 +109,7 @@ create_wm_from_volume(
 
   To leave a context shape out of the atlas altogether, remove it
   afterwards with
-  [`ggseg.formats::atlas_context_remove()`](https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html).
+  [`ggseg.formats::atlas_context_remove()`](https://ggsegverse.github.io/ggseg.formats/reference/region_manipulation.html).
   To treat the context differently when polishing, pass
   `context_pattern` as `labels` or `exclude`; see
   [`context_pattern()`](https://ggsegverse.github.io/ggseg.extra/reference/context_pattern.md).

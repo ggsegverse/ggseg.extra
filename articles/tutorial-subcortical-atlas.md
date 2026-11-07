@@ -179,9 +179,9 @@ gives the structures somewhere to sit without taking a colour.
 ## Changing your mind about context
 
 The table is the place to decide, but not the only chance.
-[`atlas_region_contextual()`](https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html)
+[`atlas_region_contextual()`](https://ggsegverse.github.io/ggseg.formats/reference/region_manipulation.html)
 turns a region of an atlas you already have into context, and
-[`atlas_context_remove()`](https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html)
+[`atlas_context_remove()`](https://ggsegverse.github.io/ggseg.formats/reference/region_manipulation.html)
 drops the context altogether:
 
 ``` r

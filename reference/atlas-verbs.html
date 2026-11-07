@@ -17,7 +17,7 @@ library(ggseg.extra) is enough."><meta property="og:image" content="https://ggse
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9137</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9140</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -100,22 +100,22 @@ report what an atlas holds. <code><a href="https://ggsegverse.github.io/ggseg.fo
     <h2 id="changing-which-regions-are-in-it">Changing which regions are in it<a class="anchor" aria-label="anchor" href="#changing-which-regions-are-in-it"></a></h2>
 
 
-<p><code><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_remove()</a></code> and <code><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_keep()</a></code> drop or select regions by
-regex. <code><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_rename()</a></code> rewrites display names without touching
-labels. <code><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_contextual()</a></code> keeps a region's geometry as a grey
+<p><code><a href="https://ggsegverse.github.io/ggseg.formats/reference/region_manipulation.html" class="external-link">atlas_region_remove()</a></code> and <code><a href="https://ggsegverse.github.io/ggseg.formats/reference/region_manipulation.html" class="external-link">atlas_region_keep()</a></code> drop or select regions by
+regex. <code><a href="https://ggsegverse.github.io/ggseg.formats/reference/region_manipulation.html" class="external-link">atlas_region_rename()</a></code> rewrites display names without touching
+labels. <code><a href="https://ggsegverse.github.io/ggseg.formats/reference/region_manipulation.html" class="external-link">atlas_region_contextual()</a></code> keeps a region's geometry as a grey
 outline but takes it out of the palette, which is how the brain silhouette
-behind an atlas is made; <code><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_context_remove()</a></code> drops it again.
-<code><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_op()</a></code> does boolean geometry between two labels, and
-<code><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_core_add()</a></code> joins extra columns onto <code>$core</code>.</p>
+behind an atlas is made; <code><a href="https://ggsegverse.github.io/ggseg.formats/reference/region_manipulation.html" class="external-link">atlas_context_remove()</a></code> drops it again.
+<code><a href="https://ggsegverse.github.io/ggseg.formats/reference/region_manipulation.html" class="external-link">atlas_region_op()</a></code> does boolean geometry between two labels, and
+<code><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_core_add.html" class="external-link">atlas_core_add()</a></code> joins extra columns onto <code>$core</code>.</p>
     </div>
     <div class="section level2">
     <h2 id="changing-which-views-are-in-it">Changing which views are in it<a class="anchor" aria-label="anchor" href="#changing-which-views-are-in-it"></a></h2>
 
 
-<p><code><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_view_keep()</a></code>, <code><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_view_remove()</a></code> and <code><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_view_reorder()</a></code>
-select and order the 2D views. <code><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_view_remove_region()</a></code> drops one
-region from some views only, <code><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_view_remove_small()</a></code> drops slivers
-below an area, and <code><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_view_gather()</a></code> closes the gaps between panels.</p>
+<p><code><a href="https://ggsegverse.github.io/ggseg.formats/reference/view_manipulation.html" class="external-link">atlas_view_keep()</a></code>, <code><a href="https://ggsegverse.github.io/ggseg.formats/reference/view_manipulation.html" class="external-link">atlas_view_remove()</a></code> and <code><a href="https://ggsegverse.github.io/ggseg.formats/reference/view_manipulation.html" class="external-link">atlas_view_reorder()</a></code>
+select and order the 2D views. <code><a href="https://ggsegverse.github.io/ggseg.formats/reference/drawing_manipulation.html" class="external-link">atlas_view_remove_region()</a></code> drops one
+region from some views only, <code><a href="https://ggsegverse.github.io/ggseg.formats/reference/drawing_manipulation.html" class="external-link">atlas_view_remove_small()</a></code> drops slivers
+below an area, and <code><a href="https://ggsegverse.github.io/ggseg.formats/reference/view_manipulation.html" class="external-link">atlas_view_gather()</a></code> closes the gaps between panels.</p>
     </div>
     <div class="section level2">
     <h2 id="building-an-atlas-object">Building an atlas object<a class="anchor" aria-label="anchor" href="#building-an-atlas-object"></a></h2>

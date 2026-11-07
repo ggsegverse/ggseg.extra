@@ -27,7 +27,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9137</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9140</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -198,11 +198,11 @@ Stage 1 — everything aseg labels, on every view the pipeline made.
 <p>The aseg segmentation contains everything — white matter, ventricles, CSF. For a subcortical atlas, most of these are noise. Remove them:</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">aseg_raw</span> <span class="op">&lt;-</span> <span class="va">aseg_raw</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_remove</a></span><span class="op">(</span><span class="st">"White-Matter"</span>, match_on <span class="op">=</span> <span class="st">"label"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_remove</a></span><span class="op">(</span><span class="st">"WM-hypointensities"</span>, match_on <span class="op">=</span> <span class="st">"label"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_remove</a></span><span class="op">(</span><span class="st">"-Ventricle"</span>, match_on <span class="op">=</span> <span class="st">"label"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_remove</a></span><span class="op">(</span><span class="st">"-Vent$"</span>, match_on <span class="op">=</span> <span class="st">"label"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_remove</a></span><span class="op">(</span><span class="st">"CSF"</span>, match_on <span class="op">=</span> <span class="st">"label"</span><span class="op">)</span></span></code></pre></div>
+<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/region_manipulation.html" class="external-link">atlas_region_remove</a></span><span class="op">(</span><span class="st">"White-Matter"</span>, match_on <span class="op">=</span> <span class="st">"label"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/region_manipulation.html" class="external-link">atlas_region_remove</a></span><span class="op">(</span><span class="st">"WM-hypointensities"</span>, match_on <span class="op">=</span> <span class="st">"label"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/region_manipulation.html" class="external-link">atlas_region_remove</a></span><span class="op">(</span><span class="st">"-Ventricle"</span>, match_on <span class="op">=</span> <span class="st">"label"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/region_manipulation.html" class="external-link">atlas_region_remove</a></span><span class="op">(</span><span class="st">"-Vent$"</span>, match_on <span class="op">=</span> <span class="st">"label"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/region_manipulation.html" class="external-link">atlas_region_remove</a></span><span class="op">(</span><span class="st">"CSF"</span>, match_on <span class="op">=</span> <span class="st">"label"</span><span class="op">)</span></span></code></pre></div>
 <p>Patterns are regular expressions, so <code>-Vent$</code> matches “3rd-Vent” and “4th-Vent” without catching “Ventral-DC.”</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">aseg_raw</span><span class="op">)</span></span></code></pre></div>
@@ -214,22 +214,22 @@ Stage 2 — the structures we actually want, once the bulk tissue is gone.
 <p>The white matter is gone, and what is left is what the atlas is for. The grey cortex stays: the table declared it context, not a region, so it gives the structures somewhere to sit without taking a colour.</p>
 </section><section class="level2"><h2 id="changing-your-mind-about-context">Changing your mind about context<a class="anchor" aria-label="anchor" href="#changing-your-mind-about-context"></a>
 </h2>
-<p>The table is the place to decide, but not the only chance. <code><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_contextual()</a></code> turns a region of an atlas you already have into context, and <code><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_context_remove()</a></code> drops the context altogether:</p>
+<p>The table is the place to decide, but not the only chance. <code><a href="https://ggsegverse.github.io/ggseg.formats/reference/region_manipulation.html" class="external-link">atlas_region_contextual()</a></code> turns a region of an atlas you already have into context, and <code><a href="https://ggsegverse.github.io/ggseg.formats/reference/region_manipulation.html" class="external-link">atlas_context_remove()</a></code> drops the context altogether:</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Grey out the brain stem as well</span></span>
 <span><span class="va">aseg_raw</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_region_contextual</a></span><span class="op">(</span><span class="st">"Brain-Stem"</span>, match_on <span class="op">=</span> <span class="st">"label"</span><span class="op">)</span></span>
+<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/region_manipulation.html" class="external-link">atlas_region_contextual</a></span><span class="op">(</span><span class="st">"Brain-Stem"</span>, match_on <span class="op">=</span> <span class="st">"label"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># No backdrop at all</span></span>
 <span><span class="va">aseg_raw</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_context_remove</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/region_manipulation.html" class="external-link">atlas_context_remove</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <p>A region made context this way keeps the shape it was built with, projected through its slab, so for anything with folds the table gives the better picture.</p>
 </section><section class="level2"><h2 id="selecting-views">Selecting views<a class="anchor" aria-label="anchor" href="#selecting-views"></a>
 </h2>
 <p>Not all projection views are equally useful. Keep the ones that show your structures best:</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">aseg_raw</span> <span class="op">&lt;-</span> <span class="va">aseg_raw</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_view_keep</a></span><span class="op">(</span><span class="st">"axial_3|coronal_2|coronal_3|sagittal_left"</span><span class="op">)</span></span></code></pre></div>
+<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/view_manipulation.html" class="external-link">atlas_view_keep</a></span><span class="op">(</span><span class="st">"axial_3|coronal_2|coronal_3|sagittal_left"</span><span class="op">)</span></span></code></pre></div>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">aseg_raw</span><span class="op">)</span></span></code></pre></div>
 <div class="figure">
@@ -243,7 +243,7 @@ Stage 3 — only the views that show the structures well.
 <p>Gather views into a compact arrangement:</p>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">aseg_raw</span> <span class="op">&lt;-</span> <span class="va">aseg_raw</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html" class="external-link">atlas_view_gather</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<span>  <span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/view_manipulation.html" class="external-link">atlas_view_gather</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">aseg_raw</span><span class="op">)</span></span></code></pre></div>
 <div class="figure">

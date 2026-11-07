@@ -537,7 +537,7 @@ ho_sub <- ho_sub |>
   atlas_core_add(subcort_metadata, by = "region")
 ```
 
-[`atlas_core_add()`](https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html)
+[`atlas_core_add()`](https://ggsegverse.github.io/ggseg.formats/reference/atlas_core_add.html)
 (from ggseg.formats) does a left join into `$core` and rebuilds the
 atlas in one step — no need to manually reconstruct with
 [`ggseg_atlas()`](https://ggsegverse.github.io/ggseg.formats/reference/ggseg_atlas.html).

@@ -465,15 +465,15 @@ label.
 
 Declaring context in the table is not the same as turning a region grey
 afterwards with
-[`atlas_region_contextual()`](https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html).
+[`atlas_region_contextual()`](https://ggsegverse.github.io/ggseg.formats/reference/region_manipulation.html).
 A region is projected through its whole slab, which turns a cortical
 ribbon into a solid shape; context is traced on a single slice, so the
 ribbon keeps its folds. Decide in the table when you can, and keep
-[`atlas_region_contextual()`](https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html)
+[`atlas_region_contextual()`](https://ggsegverse.github.io/ggseg.formats/reference/region_manipulation.html)
 for changing your mind about an atlas you already have.
 
 Context you do not want drawn at all comes out afterwards.
-[`atlas_context_remove()`](https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html)
+[`atlas_context_remove()`](https://ggsegverse.github.io/ggseg.formats/reference/region_manipulation.html)
 drops every context shape, and `context_pattern(atlas)` gives a pattern
 matching exactly the context of that atlas, for treating it differently
 when you polish:
