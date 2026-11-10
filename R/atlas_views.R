@@ -70,6 +70,72 @@ atlas_view_remove_sparse <- function(atlas, min_regions = 5) {
 }
 
 
+#' Drop the views that draw no region at all
+#'
+#' A view holding nothing but the grey anatomical backdrop takes up room in
+#' the layout and carries a title while showing none of the atlas. This drops
+#' those views.
+#'
+#' @details
+#' Empty is usually a consequence of editing rather than of the build: take
+#' the ventricles out of an `aseg`, or prune small depictions, and a view
+#' whose only content was those regions is left drawing nothing.
+#'
+#' Takes the atlas once, on purpose. [ggseg.formats::atlas_views_empty()]
+#' reports the same views without removing them, and pairing the two by hand
+#' would mean naming the atlas twice --- which reads as a pipe but is not
+#' one, and in a longer pipeline measures the atlas *before* the editing that
+#' emptied the view. Asking this verb instead means the atlas it measures is
+#' always the atlas it changes.
+#'
+#' This is the zero case of [atlas_view_remove_sparse()], which drops views a
+#' build left *thin* against a threshold. Reach for this one when the
+#' threshold is not a judgement call: a view drawing no region is empty by
+#' definition, not by a choice of `min_regions`.
+#'
+#' @inheritParams atlas_dilate
+#'
+#' @return The `ggseg_atlas`, in the representation it arrived in. An atlas
+#'   with no empty view is returned unchanged.
+#' @family atlas geometry
+#' @seealso [ggseg.formats::atlas_views_empty()] to see which views these are
+#'   without removing them, and [atlas_view_remove_sparse()] for views that
+#'   are thin rather than empty.
+#' @export
+#' @examples
+#' aseg <- ggseg.formats::aseg()
+#'
+#' # Nothing to do: every aseg view draws something
+#' ggseg.formats::atlas_views_empty(aseg)
+#' atlas_view_remove_empty(aseg)
+atlas_view_remove_empty <- function(atlas) {
+  if (is.null(ggseg.formats::atlas_geom(atlas))) {
+    cli::cli_warn("Atlas has no 2D geometry, nothing to drop.")
+    return(atlas)
+  }
+
+  empty <- ggseg.formats::atlas_views_empty(atlas)
+
+  if (length(empty) == 0) {
+    return(atlas)
+  }
+
+  if (length(empty) == length(ggseg.formats::atlas_views(atlas))) {
+    cli::cli_abort(c(
+      "Every view draws no region, so dropping the empty ones would leave
+       no view at all.",
+      "i" = "Check that the regions survived the build; see
+             {.fun ggseg.formats::atlas_undrawn}."
+    ))
+  }
+
+  cli::cli_alert_info(
+    "Dropping {length(empty)} empty view{?s}: {.val {empty}}"
+  )
+  ggseg.formats::atlas_view_remove(atlas, empty)
+}
+
+
 #' Count the drawn regions in each view
 #'
 #' @inheritParams atlas_dilate
