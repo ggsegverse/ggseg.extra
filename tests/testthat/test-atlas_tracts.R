@@ -639,13 +639,20 @@ describe("create_tract_from_tractography tube_opts", {
     )
   })
 
-  it("leaves slabs and vertex_size_limits as flat arguments", {
+  it("leaves views and vertex_size_limits as flat arguments", {
     # vertex_size_limits filters finished 2D polygons, so it belongs with
-    # slabs rather than inside tube_opts whatever its name suggests.
-    seen <- capture_tube(list(slabs = "SLABS", vertex_size_limits = c(1, 2)))
+    # views rather than inside tube_opts whatever its name suggests.
+    seen <- capture_tube(list(views = "VIEWS", vertex_size_limits = c(1, 2)))
 
-    expect_identical(seen$.slabs, "SLABS")
+    expect_identical(seen$.slabs, "VIEWS")
     expect_identical(seen$.vsl, c(1, 2))
+  })
+
+  it("still accepts the deprecated flat `slabs` spelling", {
+    expect_snapshot(
+      seen <- capture_tube(list(slabs = "SLABS", vertex_size_limits = c(1, 2)))
+    )
+    expect_identical(seen$.slabs, "SLABS")
   })
 })
 

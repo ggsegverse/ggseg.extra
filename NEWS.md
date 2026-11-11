@@ -1,4 +1,4 @@
-# ggseg.extra 1.9.9.9140
+# ggseg.extra 1.9.9.9142
 
 This section becomes the 2.0.0 release notes at submission. It is the first
 CRAN release of ggseg.extra, the atlas-building package of
@@ -65,10 +65,10 @@ and tractography files.
 - `sitrep()` replaces `setup_sitrep()`, and `ggseg_atlas_github_actions()`
   replaces `atlas_github_actions()`; the old names are removed.
 
-- `subcortical_slabs()` replaces `subcortical_views()`, and the volumetric
-  `views` argument of `create_subcortical_from_volume()` and
-  `create_tract_from_tractography()` is `slabs`. The cortical creators' `views`
-  argument, which selects standard panels, is unrelated and unchanged.
+- The volumetric creators take `views`, and `subcortical_views()` builds the
+  table: each row is one view of the built atlas, its `name` becoming the
+  `view` that `ggseg.formats::atlas_views()` reports. The `slabs` spelling
+  used during the 2.0 dev cycle is deprecated and still works.
 
 - Related arguments are grouped into lists, and the flat spellings are no
   longer accepted: `tube_opts` in `create_tract_from_tractography()`; `labels`,

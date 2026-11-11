@@ -65,18 +65,21 @@
 #'   palette.
 #' @template atlas_name
 #' @template output_dir
-#' @param slabs A data.frame specifying projection slabs with columns `name`,
-#'   `type` ("axial", "coronal", "sagittal"), `start` (first slice), `end`
-#'   (last slice). Defaults to three coronal and three axial slabs tiling the
-#'   bounding box of the atlas's own labels, plus one left-hemisphere
-#'   sagittal slab, so the band follows the anatomy of the volume rather than
-#'   a fixed set of slice indices.
-#'   Unlike slices, projections show ALL structures in their spatial
-#'   relationships - like an X-ray view. May also be a named list of
-#'   [subcortical_slabs()] arguments (e.g.
-#'   `slabs = list(labels = 801:810, coronal = 3, axial = 2)`); it is expanded
-#'   into a slab table with `volume` defaulting to `input_volume`, so the slab
+#' @param views The views to build, as a data.frame with columns `name`,
+#'   `type` ("axial", "coronal", "sagittal"), `start` (first slice) and `end`
+#'   (last slice). Each row is one view of the finished atlas: `name` becomes
+#'   its `view`, the value [ggseg.formats::atlas_views()] reports and the
+#'   name the view verbs match on. `start`/`end` are the band of slices that
+#'   view is projected through --- unlike a single slice, a projection shows
+#'   every structure in the band in its spatial relationships, like an X-ray.
+#'   Defaults to three coronal and three axial views tiling the bounding box
+#'   of the atlas's own labels, plus one left-hemisphere sagittal view, so
+#'   they follow the anatomy of the volume rather than a fixed set of slice
+#'   indices. May also be a named list of [subcortical_views()] arguments
+#'   (e.g. `views = list(labels = 801:810, coronal = 3, axial = 2)`), which
+#'   is expanded with `volume` defaulting to `input_volume` so the slice
 #'   indices are computed in the builder's own frame.
+#' @param slabs `r lifecycle::badge("deprecated")` Renamed to `views`.
 #' @template vertex_size_limits
 #' @template decimate
 #' @template min_coverage
@@ -142,16 +145,19 @@ create_subcortical_from_volume <- function(
   input_lut = NULL,
   atlas_name = NULL,
   output_dir = NULL,
-  slabs = NULL,
+  views = NULL,
   vertex_size_limits = NULL,
   min_coverage = NULL,
   cleanup = NULL,
   skip_existing = NULL,
   steps = NULL,
-  type = "subcortical"
+  type = "subcortical",
+  slabs = lifecycle::deprecated()
 ) {
   rlang::check_dots_empty()
+  views <- resolve_renamed_views(views, slabs, "create_subcortical_from_volume")
   type <- rlang::arg_match0(type, c("subcortical", "wm"))
+  slabs <- views
   unpacked <- unpack_anatomical_input(input_volume, input_lut)
 
   start_time <- Sys.time()
@@ -217,13 +223,15 @@ create_wm_from_volume <- function(
   input_lut = NULL,
   atlas_name = NULL,
   output_dir = NULL,
-  slabs = NULL,
+  views = NULL,
   vertex_size_limits = NULL,
   min_coverage = NULL,
   cleanup = NULL,
   skip_existing = NULL,
-  steps = NULL
+  steps = NULL,
+  slabs = lifecycle::deprecated()
 ) {
+  views <- resolve_renamed_views(views, slabs, "create_wm_from_volume")
   create_subcortical_from_volume(
     input_volume = input_volume,
     decimate = decimate,
@@ -232,7 +240,7 @@ create_wm_from_volume <- function(
     input_lut = input_lut,
     atlas_name = atlas_name,
     output_dir = output_dir,
-    slabs = slabs,
+    views = views,
     vertex_size_limits = vertex_size_limits,
     min_coverage = min_coverage,
     cleanup = cleanup,
@@ -416,7 +424,7 @@ unpack_anatomical_input <- function(input_volume, input_lut) {
 #' Resolve the `slabs` argument of `create_subcortical_from_volume()`
 #'
 #' Passes a data.frame through unchanged; expands a list spec into a slab
-#' table via [subcortical_slabs()], defaulting `volume` to the atlas volume.
+#' table via [subcortical_views()], defaulting `volume` to the atlas volume.
 #' @noRd
 resolve_subcort_slabs_spec <- function(slabs, input_volume) {
   if (is.null(slabs) || is.data.frame(slabs)) {
@@ -425,11 +433,11 @@ resolve_subcort_slabs_spec <- function(slabs, input_volume) {
   if (!is.list(slabs)) {
     cli::cli_abort(c(
       "{.arg slabs} must be a data.frame or a list of
-       {.fn subcortical_slabs} arguments.",
+       {.fn subcortical_views} arguments.",
       "i" = "Got {.cls {class(slabs)}}."
     ))
   }
-  do.call(subcortical_slabs, c(list(volume = input_volume), slabs))
+  do.call(subcortical_views, c(list(volume = input_volume), slabs))
 }
 
 

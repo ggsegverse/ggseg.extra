@@ -53,6 +53,15 @@
       v Tract atlas created with 1 tracts
       i Pipeline completed [<time>]
 
+# create_tract_from_tractography tube_opts / still accepts the deprecated flat `slabs` spelling
+
+    Code
+      seen <- capture_tube(list(slabs = "SLABS", vertex_size_limits = c(1, 2)))
+    Condition
+      Warning:
+      The `slabs` argument of `create_tract_from_tractography()` is deprecated as of ggseg.extra 1.9.9.9142.
+      i Please use the `views` argument instead.
+
 # coord_space_to_voxels / rejects a space it does not know
 
     Code

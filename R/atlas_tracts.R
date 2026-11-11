@@ -44,8 +44,11 @@
 #'       scale thickness by how many streamlines pass through each point.
 #'   }
 #'   Unknown entries error.
-#' @param slabs A data.frame specifying projection slabs. If NULL, a default
-#'   set of tract slabs is derived from the volume dimensions.
+#' @param views The views to build, as a data.frame with columns `name`,
+#'   `type`, `start` and `end`. Each row is one view of the finished atlas:
+#'   `name` becomes its `view`, and `start`/`end` are the band of slices it
+#'   is projected through. If `NULL`, a default set is used.
+#' @param slabs `r lifecycle::badge("deprecated")` Renamed to `views`.
 #' @template vertex_size_limits
 #' @template min_coverage
 #' @template cleanup
@@ -123,15 +126,22 @@ create_tract_from_tractography <- function(
   atlas_name = NULL,
   output_dir = NULL,
   tube_opts = list(),
-  slabs = NULL,
+  views = NULL,
   vertex_size_limits = NULL,
   steps = NULL,
   min_coverage = NULL,
   cleanup = NULL,
   skip_existing = NULL,
-  coord_space = c("infer", "voxel", "mm")
+  coord_space = c("infer", "voxel", "mm"),
+  slabs = lifecycle::deprecated()
 ) {
   rlang::check_dots_empty()
+  views <- resolve_renamed_views(
+    views,
+    slabs,
+    "create_tract_from_tractography"
+  )
+  slabs <- views
   tube <- resolve_opts(tube_opts, "tube_opts", TRACT_TUBE_DEFAULTS)
 
   start_time <- Sys.time()
