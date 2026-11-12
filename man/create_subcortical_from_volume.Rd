@@ -12,13 +12,14 @@ create_subcortical_from_volume(
   input_lut = NULL,
   atlas_name = NULL,
   output_dir = NULL,
-  slabs = NULL,
+  views = NULL,
   vertex_size_limits = NULL,
   min_coverage = NULL,
   cleanup = NULL,
   skip_existing = NULL,
   steps = NULL,
-  type = "subcortical"
+  type = "subcortical",
+  slabs = lifecycle::deprecated()
 )
 }
 \arguments{
@@ -98,18 +99,14 @@ filename. It also names the folder of intermediate files inside
 \code{\link[=tempdir]{tempdir()}}, from \code{options("ggseg.extra.output_dir")} or
 \code{GGSEG_EXTRA_OUTPUT_DIR}.}
 
-\item{slabs}{A data.frame specifying projection slabs with columns \code{name},
-\code{type} ("axial", "coronal", "sagittal"), \code{start} (first slice), \code{end}
-(last slice). Defaults to three coronal and three axial slabs tiling the
-bounding box of the atlas's own labels, plus one left-hemisphere
-sagittal slab, so the band follows the anatomy of the volume rather than
-a fixed set of slice indices.
-Unlike slices, projections show ALL structures in their spatial
-relationships - like an X-ray view. May also be a named list of
-\code{\link[=subcortical_slabs]{subcortical_slabs()}} arguments (e.g.
-\code{slabs = list(labels = 801:810, coronal = 3, axial = 2)}); it is expanded
-into a slab table with \code{volume} defaulting to \code{input_volume}, so the slab
-indices are computed in the builder's own frame.}
+\item{views}{The views to build, as a data.frame with columns \code{name},
+\code{type} ("axial", "coronal", "sagittal"), \code{start} (first slice) and \code{end}
+(last slice). Each row is one view of the finished atlas: \code{name} becomes
+its \code{view}, the value \code{\link[ggseg.formats:atlas_views]{ggseg.formats::atlas_views()}} reports and the name
+the view verbs match on. \code{start}/\code{end} are the band of slices that view
+is projected through --- unlike a single slice, a projection shows every
+structure in the band in its spatial relationships, like an X-ray.
+\code{NULL}, the default, derives a set from the volume's own labels.}
 
 \item{vertex_size_limits}{Numeric vector of length 2 setting minimum and
 maximum vertex count for polygons. Polygons outside this range are
@@ -160,6 +157,8 @@ build, not during it: see \code{\link[=atlas_polish]{atlas_polish()}}.}
 same things; the type is what lets a plot name the anatomy correctly,
 and a white-matter atlas is not drawn as a 2D backdrop. Reach for
 \code{\link[=create_wm_from_volume]{create_wm_from_volume()}} rather than passing \code{"wm"} here.}
+
+\item{slabs}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} Renamed to \code{views}.}
 }
 \value{
 A \code{ggseg_atlas} object with region metadata (core), 3D meshes,
@@ -176,6 +175,12 @@ For 2D plotting, the function can also generate slice views by taking
 snapshots at specified coordinates and extracting contours.
 
 Requires FreeSurfer for mesh generation.
+}
+\details{
+\code{views} may also be given as a named list of \code{\link[=subcortical_views]{subcortical_views()}}
+arguments (e.g. \code{views = list(labels = 801:810, coronal = 3, axial = 2)}),
+which is expanded with \code{volume} defaulting to \code{input_volume} so the slice
+indices are computed in the builder's own frame.
 }
 \examples{
 \dontrun{

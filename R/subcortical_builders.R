@@ -35,8 +35,8 @@
 #' @examples
 #' vol <- array(0L, dim = c(20, 20, 20))
 #' vol[8:12, 6:14, 9:11] <- 17L
-#' subcortical_slabs(vol, labels = 17, coronal = 3, axial = 2)
-subcortical_slabs <- function(
+#' subcortical_views(vol, labels = 17, coronal = 3, axial = 2)
+subcortical_views <- function(
   volume,
   labels,
   coronal = 0,
@@ -90,6 +90,79 @@ subcortical_slabs <- function(
   }
   rownames(out) <- NULL
   out
+}
+
+
+#' Build a slab table from a bounding box
+#'
+#' @description
+#' `r lifecycle::badge("deprecated")`
+#'
+#' Renamed to [subcortical_views()]. The table it returns names the atlas's
+#' views, and `view` is the word the rest of the ecosystem uses for them ---
+#' `name` here becomes the `view` column of the built atlas, and the value
+#' [ggseg.formats::atlas_views()] reports.
+#'
+#' @inheritParams subcortical_views
+#' @return A data.frame with columns `name`, `type`, `start`, `end`.
+#' @keywords internal
+#' @examples
+#' # Deprecated. Use subcortical_views():
+#' vol <- array(0L, dim = c(20, 20, 20))
+#' vol[8:12, 6:14, 9:11] <- 17L
+#' subcortical_views(vol, labels = 17, coronal = 3, axial = 2)
+#' @export
+subcortical_slabs <- function(
+  volume,
+  labels,
+  coronal = 0,
+  axial = 0,
+  sagittal = 0,
+  pad = 0,
+  reorient = TRUE
+) {
+  lifecycle::deprecate_warn(
+    "1.9.9.9142",
+    "subcortical_slabs()",
+    "subcortical_views()"
+  )
+  subcortical_views(
+    volume = volume,
+    labels = labels,
+    coronal = coronal,
+    axial = axial,
+    sagittal = sagittal,
+    pad = pad,
+    reorient = reorient
+  )
+}
+
+
+#' Accept the renamed `views` argument, warning on the old `slabs` spelling
+#'
+#' The volumetric creators called this argument `slabs` for one dev cycle.
+#' The table it takes defines the atlas's views --- its `name` column becomes
+#' the `view` column of the built atlas --- so it is spelled `views`, the
+#' word the rest of the ecosystem uses. The internals keep calling the table
+#' a slab table, because a row of it carries the slice bounds a view is
+#' projected through, and the on-disk cache key is unchanged.
+#' @noRd
+resolve_renamed_views <- function(views, slabs, fn) {
+  if (!lifecycle::is_present(slabs)) {
+    return(views)
+  }
+  lifecycle::deprecate_warn(
+    "1.9.9.9142",
+    paste0(fn, "(slabs)"),
+    paste0(fn, "(views)")
+  )
+  if (!is.null(views)) {
+    cli::cli_abort(c(
+      "Pass either {.arg views} or the deprecated {.arg slabs}, not both.",
+      "i" = "{.arg slabs} was renamed to {.arg views}."
+    ))
+  }
+  slabs
 }
 
 #' Evenly spaced, contiguous slabs covering `lo` to `hi` along one axis

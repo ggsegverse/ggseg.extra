@@ -2,7 +2,7 @@
 % Please edit documentation in R/subcortical_builders.R
 \name{subcortical_slabs}
 \alias{subcortical_slabs}
-\title{Build subcortical slabs from a label bounding box}
+\title{Build a slab table from a bounding box}
 \usage{
 subcortical_slabs(
   volume,
@@ -33,24 +33,17 @@ orientation (\code{0} = none).}
 A data.frame with columns \code{name}, \code{type}, \code{start}, \code{end}.
 }
 \description{
-Computes evenly spaced coronal, axial and/or sagittal slabs spanning the
-bounding box of the requested labels, ready to pass as the \code{slabs}
-argument of \code{\link[=create_subcortical_from_volume]{create_subcortical_from_volume()}}.
-}
-\details{
-The volume is read with the \strong{same} axis reorientation the builder uses
-internally, so the returned slab indices are in the projection frame. This
-avoids a subtle trap: \code{RNifti::readNifti()} and the builder's reader can
-return different axis orders, so a bounding box computed from the RNifti
-array points the slabs at the wrong slices (silently producing empty
-views). Always derive slabs with this function rather than indexing the
-volume by hand.
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}}
+
+Renamed to \code{\link[=subcortical_views]{subcortical_views()}}. The table it returns names the atlas's
+views, and \code{view} is the word the rest of the ecosystem uses for them ---
+\code{name} here becomes the \code{view} column of the built atlas, and the value
+\code{\link[ggseg.formats:atlas_views]{ggseg.formats::atlas_views()}} reports.
 }
 \examples{
+# Deprecated. Use subcortical_views():
 vol <- array(0L, dim = c(20, 20, 20))
 vol[8:12, 6:14, 9:11] <- 17L
-subcortical_slabs(vol, labels = 17, coronal = 3, axial = 2)
+subcortical_views(vol, labels = 17, coronal = 3, axial = 2)
 }
-\seealso{
-\code{\link[=create_subcortical_from_volume]{create_subcortical_from_volume()}}
-}
+\keyword{internal}

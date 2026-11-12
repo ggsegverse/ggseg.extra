@@ -680,7 +680,7 @@ subcort_snapshot_context_slice <- function(
 default_subcortical_slabs <- function(vol, labels = NULL) {
   labels <- subcort_slab_labels(vol, labels)
 
-  slabs <- subcortical_slabs(
+  slabs <- subcortical_views(
     vol,
     labels = labels,
     coronal = 3,

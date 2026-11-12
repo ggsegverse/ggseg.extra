@@ -3,7 +3,7 @@ describe("subcortical_slabs", {
   vol[8:12, 6:14, 9:11] <- 17L
 
   it("produces the requested slab counts and types", {
-    v <- subcortical_slabs(
+    v <- subcortical_views(
       vol,
       labels = 17,
       coronal = 3,
@@ -18,7 +18,7 @@ describe("subcortical_slabs", {
   })
 
   it("slabs span the label bounding box on the right axis", {
-    v <- subcortical_slabs(
+    v <- subcortical_views(
       vol,
       labels = 17,
       coronal = 3,
@@ -34,20 +34,20 @@ describe("subcortical_slabs", {
   })
 
   it("pads the bounding box", {
-    v <- subcortical_slabs(vol, labels = 17, sagittal = 1, pad = 2)
+    v <- subcortical_views(vol, labels = 17, sagittal = 1, pad = 2)
     expect_identical(v$start, 6) # min 8, padded by 2
     expect_identical(v$end, 14) # max 12, padded by 2
   })
 
   it("errors when no labels are present", {
     expect_error(
-      subcortical_slabs(vol, labels = 999, coronal = 1),
+      subcortical_views(vol, labels = 999, coronal = 1),
       "None of"
     )
   })
 
   it("errors when no orientation is requested", {
-    expect_error(subcortical_slabs(vol, labels = 17), "at least one slab")
+    expect_error(subcortical_views(vol, labels = 17), "at least one slab")
   })
 
   it("reads a path volume in the builder's reorient frame (round-trip)", {
@@ -55,7 +55,7 @@ describe("subcortical_slabs", {
     arr <- array(0L, dim = c(10, 12, 14))
     arr[2:4, 5:9, 8:12] <- 17L
     f <- withr::local_tempfile(fileext = ".nii.gz")
-    # Non-RAS on disk so read_volume() must reorient; subcortical_slabs() owns
+    # Non-RAS on disk so read_volume() must reorient; subcortical_views() owns
     # that read, so a path must agree with the same volume already in the
     # builder's frame rather than the raw on-disk array.
     img <- RNifti::asNifti(arr)
@@ -63,8 +63,8 @@ describe("subcortical_slabs", {
     RNifti::orientation(img) <- "LAS"
     RNifti::writeNifti(img, f)
 
-    from_path <- subcortical_slabs(f, labels = 17, coronal = 2, axial = 2)
-    from_frame <- subcortical_slabs(
+    from_path <- subcortical_views(f, labels = 17, coronal = 2, axial = 2)
+    from_frame <- subcortical_views(
       read_volume(f, reorient = TRUE),
       labels = 17,
       coronal = 2,
@@ -176,7 +176,7 @@ describe("create_subcortical_from_volume slab specs", {
     expect_true("slabs" %in% names(formals(create_subcortical_from_volume)))
   })
 
-  it("expands a slabs list spec via subcortical_slabs()", {
+  it("expands a slabs list spec via subcortical_views()", {
     vol <- array(0L, dim = c(20, 20, 20))
     vol[8:12, 6:14, 9:11] <- 17L
     out <- resolve_subcort_slabs_spec(
@@ -205,5 +205,44 @@ describe("create_subcortical_from_volume slab specs", {
 
   it("errors on a non-list, non-data.frame slabs value", {
     expect_error(resolve_subcort_slabs_spec(42, NULL), "data.frame or a list")
+  })
+})
+
+describe("the views/slabs rename", {
+  it("subcortical_slabs() warns and returns what subcortical_views() does", {
+    vol <- array(0L, dim = c(20, 20, 20))
+    vol[8:12, 6:14, 9:11] <- 17L
+
+    expect_snapshot(
+      old <- subcortical_slabs(vol, labels = 17, coronal = 3, axial = 2)
+    )
+    expect_identical(
+      old,
+      subcortical_views(vol, labels = 17, coronal = 3, axial = 2)
+    )
+  })
+
+  it("accepts `views` without a warning", {
+    expect_no_warning(resolve_renamed_views("V", lifecycle::deprecated(), "f"))
+    expect_identical(
+      resolve_renamed_views("V", lifecycle::deprecated(), "f"),
+      "V"
+    )
+  })
+
+  it("accepts the old `slabs` spelling, with a warning, and forwards it", {
+    expect_snapshot(got <- resolve_renamed_views(NULL, "S", "f"))
+    expect_identical(got, "S")
+  })
+
+  it("refuses both spellings at once", {
+    expect_snapshot(
+      error = TRUE,
+      resolve_renamed_views("V", "S", "f")
+    )
+  })
+
+  it("passes NULL through, so the creators still build their defaults", {
+    expect_null(resolve_renamed_views(NULL, lifecycle::deprecated(), "f"))
   })
 })

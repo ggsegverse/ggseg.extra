@@ -13,13 +13,14 @@ create_tract_from_tractography(
   atlas_name = NULL,
   output_dir = NULL,
   tube_opts = list(),
-  slabs = NULL,
+  views = NULL,
   vertex_size_limits = NULL,
   steps = NULL,
   min_coverage = NULL,
   cleanup = NULL,
   skip_existing = NULL,
-  coord_space = c("infer", "voxel", "mm")
+  coord_space = c("infer", "voxel", "mm"),
+  slabs = lifecycle::deprecated()
 )
 }
 \arguments{
@@ -71,8 +72,14 @@ scale thickness by how many streamlines pass through each point.
 }
 Unknown entries error.}
 
-\item{slabs}{A data.frame specifying projection slabs. If NULL, a default
-set of tract slabs is derived from the volume dimensions.}
+\item{views}{The views to build, as a data.frame with columns \code{name},
+\code{type} ("axial", "coronal", "sagittal"), \code{start} (first slice) and \code{end}
+(last slice). Each row is one view of the finished atlas: \code{name} becomes
+its \code{view}, the value \code{\link[ggseg.formats:atlas_views]{ggseg.formats::atlas_views()}} reports and the name
+the view verbs match on. \code{start}/\code{end} are the band of slices that view
+is projected through --- unlike a single slice, a projection shows every
+structure in the band in its spatial relationships, like an X-ray.
+\code{NULL}, the default, derives a set from the volume's own labels.}
 
 \item{vertex_size_limits}{Numeric vector of length 2 setting minimum and
 maximum vertex count for polygons. Polygons outside this range are
@@ -128,6 +135,8 @@ Whichever applies is reported at \code{verbose >= 1}.
 Tractography files need no declaration: \code{.trk} and \code{.tck} files are
 always read into RAS world millimetres, and \code{"voxel"} is an error for
 them.}
+
+\item{slabs}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} Renamed to \code{views}.}
 }
 \value{
 A \code{ggseg_atlas} object with type \code{"tract"}, containing region
