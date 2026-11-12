@@ -123,7 +123,7 @@ atlas <- create_subcortical_from_volume(input_volume = merged)
 }
 }
 \seealso{
-\code{\link[=atlas_region_op]{atlas_region_op()}} for the punch;
+\code{\link[ggseg.formats:atlas_region_op]{atlas_region_op()}} for the punch;
 \code{\link[=prepare_subcortical_anatomical]{prepare_subcortical_anatomical()}} for the computed-registration
 (\code{cvs_avg35_inMNI152}, \code{mri_coreg}) counterpart;
 \code{\link[=create_subcortical_from_volume]{create_subcortical_from_volume()}} which consumes the result.
