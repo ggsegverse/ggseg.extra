@@ -65,21 +65,7 @@
 #'   palette.
 #' @template atlas_name
 #' @template output_dir
-#' @param views The views to build, as a data.frame with columns `name`,
-#'   `type` ("axial", "coronal", "sagittal"), `start` (first slice) and `end`
-#'   (last slice). Each row is one view of the finished atlas: `name` becomes
-#'   its `view`, the value [ggseg.formats::atlas_views()] reports and the
-#'   name the view verbs match on. `start`/`end` are the band of slices that
-#'   view is projected through --- unlike a single slice, a projection shows
-#'   every structure in the band in its spatial relationships, like an X-ray.
-#'   Defaults to three coronal and three axial views tiling the bounding box
-#'   of the atlas's own labels, plus one left-hemisphere sagittal view, so
-#'   they follow the anatomy of the volume rather than a fixed set of slice
-#'   indices. May also be a named list of [subcortical_views()] arguments
-#'   (e.g. `views = list(labels = 801:810, coronal = 3, axial = 2)`), which
-#'   is expanded with `volume` defaulting to `input_volume` so the slice
-#'   indices are computed in the builder's own frame.
-#' @param slabs `r lifecycle::badge("deprecated")` Renamed to `views`.
+#' @template views_volumetric
 #' @template vertex_size_limits
 #' @template decimate
 #' @template min_coverage
@@ -102,6 +88,12 @@
 #'   same things; the type is what lets a plot name the anatomy correctly,
 #'   and a white-matter atlas is not drawn as a 2D backdrop. Reach for
 #'   [create_wm_from_volume()] rather than passing `"wm"` here.
+#' @details
+#' `views` may also be given as a named list of [subcortical_views()]
+#' arguments (e.g. `views = list(labels = 801:810, coronal = 3, axial = 2)`),
+#' which is expanded with `volume` defaulting to `input_volume` so the slice
+#' indices are computed in the builder's own frame.
+#'
 #' @return A `ggseg_atlas` object with region metadata (core), 3D meshes,
 #'   a colour palette, and optionally sf geometry for 2D slice plots.
 #' @template dots_post_creation

@@ -73,9 +73,13 @@ scale thickness by how many streamlines pass through each point.
 Unknown entries error.}
 
 \item{views}{The views to build, as a data.frame with columns \code{name},
-\code{type}, \code{start} and \code{end}. Each row is one view of the finished atlas:
-\code{name} becomes its \code{view}, and \code{start}/\code{end} are the band of slices it
-is projected through. If \code{NULL}, a default set is used.}
+\code{type} ("axial", "coronal", "sagittal"), \code{start} (first slice) and \code{end}
+(last slice). Each row is one view of the finished atlas: \code{name} becomes
+its \code{view}, the value \code{\link[ggseg.formats:atlas_views]{ggseg.formats::atlas_views()}} reports and the name
+the view verbs match on. \code{start}/\code{end} are the band of slices that view
+is projected through --- unlike a single slice, a projection shows every
+structure in the band in its spatial relationships, like an X-ray.
+\code{NULL}, the default, derives a set from the volume's own labels.}
 
 \item{vertex_size_limits}{Numeric vector of length 2 setting minimum and
 maximum vertex count for polygons. Polygons outside this range are

@@ -106,6 +106,11 @@ subcortical_views <- function(
 #' @inheritParams subcortical_views
 #' @return A data.frame with columns `name`, `type`, `start`, `end`.
 #' @keywords internal
+#' @examples
+#' # Deprecated. Use subcortical_views():
+#' vol <- array(0L, dim = c(20, 20, 20))
+#' vol[8:12, 6:14, 9:11] <- 17L
+#' subcortical_views(vol, labels = 17, coronal = 3, axial = 2)
 #' @export
 subcortical_slabs <- function(
   volume,

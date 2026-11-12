@@ -40,4 +40,10 @@ views, and \code{view} is the word the rest of the ecosystem uses for them ---
 \code{name} here becomes the \code{view} column of the built atlas, and the value
 \code{\link[ggseg.formats:atlas_views]{ggseg.formats::atlas_views()}} reports.
 }
+\examples{
+# Deprecated. Use subcortical_views():
+vol <- array(0L, dim = c(20, 20, 20))
+vol[8:12, 6:14, 9:11] <- 17L
+subcortical_views(vol, labels = 17, coronal = 3, axial = 2)
+}
 \keyword{internal}

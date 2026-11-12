@@ -44,11 +44,7 @@
 #'       scale thickness by how many streamlines pass through each point.
 #'   }
 #'   Unknown entries error.
-#' @param views The views to build, as a data.frame with columns `name`,
-#'   `type`, `start` and `end`. Each row is one view of the finished atlas:
-#'   `name` becomes its `view`, and `start`/`end` are the band of slices it
-#'   is projected through. If `NULL`, a default set is used.
-#' @param slabs `r lifecycle::badge("deprecated")` Renamed to `views`.
+#' @template views_volumetric
 #' @template vertex_size_limits
 #' @template min_coverage
 #' @template cleanup

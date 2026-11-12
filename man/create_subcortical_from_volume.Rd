@@ -102,17 +102,11 @@ filename. It also names the folder of intermediate files inside
 \item{views}{The views to build, as a data.frame with columns \code{name},
 \code{type} ("axial", "coronal", "sagittal"), \code{start} (first slice) and \code{end}
 (last slice). Each row is one view of the finished atlas: \code{name} becomes
-its \code{view}, the value \code{\link[ggseg.formats:atlas_views]{ggseg.formats::atlas_views()}} reports and the
-name the view verbs match on. \code{start}/\code{end} are the band of slices that
-view is projected through --- unlike a single slice, a projection shows
-every structure in the band in its spatial relationships, like an X-ray.
-Defaults to three coronal and three axial views tiling the bounding box
-of the atlas's own labels, plus one left-hemisphere sagittal view, so
-they follow the anatomy of the volume rather than a fixed set of slice
-indices. May also be a named list of \code{\link[=subcortical_views]{subcortical_views()}} arguments
-(e.g. \code{views = list(labels = 801:810, coronal = 3, axial = 2)}), which
-is expanded with \code{volume} defaulting to \code{input_volume} so the slice
-indices are computed in the builder's own frame.}
+its \code{view}, the value \code{\link[ggseg.formats:atlas_views]{ggseg.formats::atlas_views()}} reports and the name
+the view verbs match on. \code{start}/\code{end} are the band of slices that view
+is projected through --- unlike a single slice, a projection shows every
+structure in the band in its spatial relationships, like an X-ray.
+\code{NULL}, the default, derives a set from the volume's own labels.}
 
 \item{vertex_size_limits}{Numeric vector of length 2 setting minimum and
 maximum vertex count for polygons. Polygons outside this range are
@@ -181,6 +175,12 @@ For 2D plotting, the function can also generate slice views by taking
 snapshots at specified coordinates and extracting contours.
 
 Requires FreeSurfer for mesh generation.
+}
+\details{
+\code{views} may also be given as a named list of \code{\link[=subcortical_views]{subcortical_views()}}
+arguments (e.g. \code{views = list(labels = 801:810, coronal = 3, axial = 2)}),
+which is expanded with \code{volume} defaulting to \code{input_volume} so the slice
+indices are computed in the builder's own frame.
 }
 \examples{
 \dontrun{
