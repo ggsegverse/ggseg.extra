@@ -1,6 +1,6 @@
 # Changelog
 
-## ggseg.extra 1.9.9.9142
+## ggseg.extra 1.9.9.9143
 
 This section becomes the 2.0.0 release notes at submission. It is the
 first CRAN release of ggseg.extra, the atlas-building package of the
@@ -257,6 +257,14 @@ volumes and tractography files.
   is the join key.
 
 ### New features
+
+- [`atlas_view_remove_empty()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_view_remove_empty.md)
+  drops the views that draw no region at all, the zero case of
+  [`atlas_view_remove_sparse()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_view_remove_sparse.md).
+  It takes the atlas once, so the atlas it measures is always the atlas
+  it changes;
+  [`ggseg.formats::atlas_views_empty()`](https://ggsegverse.github.io/ggseg.formats/reference/atlas_views_empty.html)
+  reports the same views without removing them.
 
 - [`create_wm_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_wm_from_volume.md)
   builds a white-matter atlas from a label volume. It is

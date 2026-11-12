@@ -173,6 +173,8 @@ the returned atlas, not during the build, so retuning one is cheap.
   : Grow or shrink an atlas's regions
 - [`atlas_view_remove_sparse()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_view_remove_sparse.md)
   : Drop the views a build left nearly empty
+- [`atlas_view_remove_empty()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_view_remove_empty.md)
+  : Drop the views that draw no region at all
 - [`atlas_view_region_counts()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_view_region_counts.md)
   : Count the drawn regions in each view
 - [`context_pattern()`](https://ggsegverse.github.io/ggseg.extra/reference/context_pattern.md)

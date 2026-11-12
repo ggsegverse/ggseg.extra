@@ -26,6 +26,7 @@ Other atlas geometry:
 [`atlas_polish()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_polish.md),
 [`atlas_simplify()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_simplify.md),
 [`atlas_smooth()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_smooth.md),
+[`atlas_view_remove_empty()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_view_remove_empty.md),
 [`atlas_view_remove_sparse()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_view_remove_sparse.md),
 [`count_vertices()`](https://ggsegverse.github.io/ggseg.extra/reference/count_vertices.md)
 
