@@ -142,6 +142,9 @@ and tractography files.
 
 ## New features
 
+- `atlas_view_remove_empty()` drops views that draw no region at all;
+  `ggseg.formats::atlas_views_empty()` reports them without removing them.
+
 - Cerebellar atlases are a first-class type, with SUIT flatmap polygons for
   2D and per-region meshes for 3D. `create_cerebellar_from_gifti()`,
   `create_cerebellar_from_annotation()` and `create_cerebellar_from_volume()`

@@ -38,7 +38,7 @@ URL: https://ggsegverse.github.io/ggseg.extra/,
 BugReports: https://github.com/ggsegverse/ggseg.extra/issues
 Depends:
     R (>= 4.2.0),
-    ggseg.formats (>= 0.0.4.9014)
+    ggseg.formats (>= 0.0.4.9021)
 Imports:
     cli,
     dplyr,
