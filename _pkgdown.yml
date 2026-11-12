@@ -147,7 +147,7 @@ reference:
   - title: Subcortical Helpers
     desc: Compose slice views and anatomical context for subcortical atlases
     contents:
-      - subcortical_slabs
+      - subcortical_views
 
   - title: Anatomical Coregistration
     desc: Align an atlas volume to a FreeSurfer subject for anatomical context
