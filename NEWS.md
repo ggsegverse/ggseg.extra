@@ -1,4 +1,4 @@
-# ggseg.extra 1.9.9.9142
+# ggseg.extra 1.9.9.9143
 
 This section becomes the 2.0.0 release notes at submission. It is the first
 CRAN release of ggseg.extra, the atlas-building package of
@@ -194,6 +194,12 @@ and tractography files.
   kept in the label, which is the join key.
 
 ## New features
+
+- `atlas_view_remove_empty()` drops the views that draw no region at all,
+  the zero case of `atlas_view_remove_sparse()`. It takes the atlas once, so
+  the atlas it measures is always the atlas it changes;
+  `ggseg.formats::atlas_views_empty()` reports the same views without
+  removing them.
 
 - `create_wm_from_volume()` builds a white-matter atlas from a label volume.
   It is `create_subcortical_from_volume()` under another name: the same

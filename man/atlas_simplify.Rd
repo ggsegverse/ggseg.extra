@@ -72,6 +72,7 @@ Other atlas geometry:
 \code{\link[=atlas_polish]{atlas_polish()}},
 \code{\link[=atlas_smooth]{atlas_smooth()}},
 \code{\link[=atlas_view_region_counts]{atlas_view_region_counts()}},
+\code{\link[=atlas_view_remove_empty]{atlas_view_remove_empty()}},
 \code{\link[=atlas_view_remove_sparse]{atlas_view_remove_sparse()}},
 \code{\link[=count_vertices]{count_vertices()}}
 }
