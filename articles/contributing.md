@@ -49,7 +49,7 @@ the result, which most atlases need.
 has to be unique and it has to stay put. Rename it and the geometry
 decouples from the metadata, which draws a region in the wrong colour,
 or not at all. If you do need to re-key,
-[`ggseg.formats::relabel_atlas()`](https://ggsegverse.github.io/ggseg.formats/reference/relabel_atlas.html)
+[`ggseg.formats::relabel_atlas()`](https://ggsegverse.github.io/ggseg.formats/reference/atlas_relabel.html)
 rewrites all of them together.
 
 Keep the source parcellation’s spelling here, even when it is ugly. A

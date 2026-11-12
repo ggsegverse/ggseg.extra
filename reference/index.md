@@ -64,41 +64,12 @@ the returned atlas, not during the build, so retuning one is cheap.
 
 ## Curate an Atlas
 
-The `atlas_region_*` and `atlas_view_*` vocabulary, re-exported from
-ggseg.formats, plus the constructor that validates a hand-edited atlas.
-`?atlas-verbs` groups them by what they change.
+The `atlas_region_*` and `atlas_view_*` vocabulary lives in
+ggseg.formats, which this package attaches. `?atlas-verbs` says where
+each group is documented.
 
 - [`atlas-verbs`](https://ggsegverse.github.io/ggseg.extra/reference/atlas-verbs.md)
-  : Atlas manipulation verbs, re-exported from ggseg.formats
-- [`reexports`](https://ggsegverse.github.io/ggseg.extra/reference/reexports.md)
-  [`convert_legacy_brain_atlas`](https://ggsegverse.github.io/ggseg.extra/reference/reexports.md)
-  [`atlas_context_remove`](https://ggsegverse.github.io/ggseg.extra/reference/reexports.md)
-  [`atlas_core_add`](https://ggsegverse.github.io/ggseg.extra/reference/reexports.md)
-  [`atlas_geom`](https://ggsegverse.github.io/ggseg.extra/reference/reexports.md)
-  [`atlas_geometry_type`](https://ggsegverse.github.io/ggseg.extra/reference/reexports.md)
-  [`atlas_labels`](https://ggsegverse.github.io/ggseg.extra/reference/reexports.md)
-  [`atlas_meshes`](https://ggsegverse.github.io/ggseg.extra/reference/reexports.md)
-  [`atlas_palette`](https://ggsegverse.github.io/ggseg.extra/reference/reexports.md)
-  [`atlas_polygons`](https://ggsegverse.github.io/ggseg.extra/reference/reexports.md)
-  [`atlas_region_contextual`](https://ggsegverse.github.io/ggseg.extra/reference/reexports.md)
-  [`atlas_region_keep`](https://ggsegverse.github.io/ggseg.extra/reference/reexports.md)
-  [`atlas_region_op`](https://ggsegverse.github.io/ggseg.extra/reference/reexports.md)
-  [`atlas_region_remove`](https://ggsegverse.github.io/ggseg.extra/reference/reexports.md)
-  [`atlas_region_rename`](https://ggsegverse.github.io/ggseg.extra/reference/reexports.md)
-  [`atlas_regions`](https://ggsegverse.github.io/ggseg.extra/reference/reexports.md)
-  [`atlas_sf`](https://ggsegverse.github.io/ggseg.extra/reference/reexports.md)
-  [`atlas_type`](https://ggsegverse.github.io/ggseg.extra/reference/reexports.md)
-  [`atlas_vertices`](https://ggsegverse.github.io/ggseg.extra/reference/reexports.md)
-  [`atlas_view_gather`](https://ggsegverse.github.io/ggseg.extra/reference/reexports.md)
-  [`atlas_view_keep`](https://ggsegverse.github.io/ggseg.extra/reference/reexports.md)
-  [`atlas_view_remove`](https://ggsegverse.github.io/ggseg.extra/reference/reexports.md)
-  [`atlas_view_remove_region`](https://ggsegverse.github.io/ggseg.extra/reference/reexports.md)
-  [`atlas_view_remove_small`](https://ggsegverse.github.io/ggseg.extra/reference/reexports.md)
-  [`atlas_view_reorder`](https://ggsegverse.github.io/ggseg.extra/reference/reexports.md)
-  [`atlas_views`](https://ggsegverse.github.io/ggseg.extra/reference/reexports.md)
-  [`ggseg_atlas`](https://ggsegverse.github.io/ggseg.extra/reference/reexports.md)
-  [`is_ggseg_atlas`](https://ggsegverse.github.io/ggseg.extra/reference/reexports.md)
-  : Objects exported from other packages
+  : Atlas manipulation verbs, from ggseg.formats
 
 ## Atlas Repository
 

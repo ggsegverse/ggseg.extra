@@ -1,84 +1,34 @@
-# Atlas manipulation verbs, re-exported from ggseg.formats
+# Atlas manipulation verbs, from ggseg.formats
 
 The vocabulary for reshaping a finished atlas – dropping regions,
 gathering views, boolean geometry between labels – lives in
 ggseg.formats, because it belongs to the atlas format rather than to any
 one builder. Every atlas build reaches for both packages, so ggseg.extra
-re-exports the verbs and
+carries ggseg.formats in `Depends`: attaching this package attaches that
+one, and
 [`library(ggseg.extra)`](https://ggsegverse.github.io/ggseg.extra/) is
-enough.
+enough to have the verbs.
 
-## Reading an atlas
+They are therefore documented where they are defined rather than listed
+again here, which is what kept this page going stale: it enumerated the
+verbs by name, and a verb renamed, added or promoted out of a
+development build left the list quietly wrong.
 
-[`atlas_regions()`](https://ggsegverse.github.io/ggseg.formats/reference/atlas_regions.html),
-[`atlas_labels()`](https://ggsegverse.github.io/ggseg.formats/reference/atlas_labels.html),
-[`atlas_views()`](https://ggsegverse.github.io/ggseg.formats/reference/atlas_views.html)
-and
-[`atlas_type()`](https://ggsegverse.github.io/ggseg.formats/reference/atlas_type.html)
-report what an atlas holds.
-[`atlas_geom()`](https://ggsegverse.github.io/ggseg.formats/reference/atlas_geom.html),
-[`atlas_sf()`](https://ggsegverse.github.io/ggseg.formats/reference/atlas_sf.html),
-[`atlas_polygons()`](https://ggsegverse.github.io/ggseg.formats/reference/atlas_polygons.html),
-[`atlas_meshes()`](https://ggsegverse.github.io/ggseg.formats/reference/atlas_meshes.html),
-[`atlas_vertices()`](https://ggsegverse.github.io/ggseg.formats/reference/atlas_vertices.html),
-[`atlas_palette()`](https://ggsegverse.github.io/ggseg.formats/reference/atlas_palette.html)
-and
-[`atlas_geometry_type()`](https://ggsegverse.github.io/ggseg.formats/reference/atlas_geometry_type.html)
-reach into its parts.
+## Where to look
 
-## Changing which regions are in it
+[ggseg.formats::atlas_manipulation](https://ggsegverse.github.io/ggseg.formats/reference/atlas_manipulation.html)
+is the overview: it groups the verbs by what each one acts on – the
+regions an atlas has, the views it has, and which regions are drawn
+inside a view – and links to the group pages. Accessors such as
+[`ggseg.formats::atlas_regions()`](https://ggsegverse.github.io/ggseg.formats/reference/atlas_regions.html)
+report what an atlas holds, and
+[`ggseg.formats::ggseg_atlas()`](https://ggsegverse.github.io/ggseg.formats/reference/ggseg_atlas.html)
+is the constructor that validates a hand-edited one.
 
-[`atlas_region_remove()`](https://ggsegverse.github.io/ggseg.formats/reference/region_manipulation.html)
-and
-[`atlas_region_keep()`](https://ggsegverse.github.io/ggseg.formats/reference/region_manipulation.html)
-drop or select regions by regex.
-[`atlas_region_rename()`](https://ggsegverse.github.io/ggseg.formats/reference/region_manipulation.html)
-rewrites display names without touching labels.
-[`atlas_region_contextual()`](https://ggsegverse.github.io/ggseg.formats/reference/region_manipulation.html)
-keeps a region's geometry as a grey outline but takes it out of the
-palette, which is how the brain silhouette behind an atlas is made;
-[`atlas_context_remove()`](https://ggsegverse.github.io/ggseg.formats/reference/region_manipulation.html)
-drops it again.
-[`atlas_region_op()`](https://ggsegverse.github.io/ggseg.formats/reference/region_manipulation.html)
-does boolean geometry between two labels, and
-[`atlas_core_add()`](https://ggsegverse.github.io/ggseg.formats/reference/atlas_core_add.html)
-joins extra columns onto `$core`.
-
-## Changing which views are in it
-
-[`atlas_view_keep()`](https://ggsegverse.github.io/ggseg.formats/reference/view_manipulation.html),
-[`atlas_view_remove()`](https://ggsegverse.github.io/ggseg.formats/reference/view_manipulation.html)
-and
-[`atlas_view_reorder()`](https://ggsegverse.github.io/ggseg.formats/reference/view_manipulation.html)
-select and order the 2D views.
-[`atlas_view_remove_region()`](https://ggsegverse.github.io/ggseg.formats/reference/drawing_manipulation.html)
-drops one region from some views only,
-[`atlas_view_remove_small()`](https://ggsegverse.github.io/ggseg.formats/reference/drawing_manipulation.html)
-drops slivers below an area, and
-[`atlas_view_gather()`](https://ggsegverse.github.io/ggseg.formats/reference/view_manipulation.html)
-closes the gaps between panels.
-
-## Building an atlas object
-
-[`ggseg_atlas()`](https://ggsegverse.github.io/ggseg.formats/reference/ggseg_atlas.html)
-is the constructor, and validates that core, palette and geometry agree;
-[`is_ggseg_atlas()`](https://ggsegverse.github.io/ggseg.formats/reference/is_ggseg_atlas.html)
-tests the result. Reach for them when you have edited a component by
-hand and want it checked.
-
-## What is not re-exported
-
-Only functions are. ggseg.formats also ships atlases named `dk`, `aseg`,
-`tracula` and `suit`, and so does ggseg; attaching the whole namespace
-would mask one set with the other depending on load order, which is a
-silently wrong atlas rather than an error.
-
-Four more verbs - `atlas_centerlines()`, `atlas_plot_palette()`,
-`atlas_structure_reorder()` and `atlas_view_select()` - exist only in
-ggseg.formats' development build, so re-exporting them here would stop
-this package building against the release its DESCRIPTION asks for. They
-can come across once ggseg.formats releases them and the floor here
-moves up.
+Only `atlas_manipulation` is linked from here on purpose. Naming each
+group page would tie this package's documentation to a particular
+ggseg.formats version, which is the coupling this page exists to be rid
+of.
 
 ## See also
 

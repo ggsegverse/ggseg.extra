@@ -14,6 +14,7 @@ both cases: reading a LUT, building one from nothing, and colouring it.
 ``` r
 
 library(ggseg.extra)
+#> Loading required package: ggseg.formats
 ```
 
 ## What counts as a lookup table

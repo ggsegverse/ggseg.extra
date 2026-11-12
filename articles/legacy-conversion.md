@@ -130,7 +130,9 @@ Each converted atlas package needs these updates:
   [`is_ggseg_atlas()`](https://ggsegverse.github.io/ggseg.formats/reference/is_ggseg_atlas.html)
   and
   [`geom_brain()`](https://ggsegverse.github.io/ggseg/reference/ggbrain.html)
-  instead of legacy `is_brain_atlas()` and
+  instead of legacy
+  [`is_brain_atlas()`](https://ggsegverse.github.io/ggseg.formats/reference/is_ggseg_atlas.html)
+  and
   [`ggseg()`](https://ggsegverse.github.io/ggseg/reference/ggseg.html)
 - **R/sysdata.rda**: Delete. Palettes are embedded in the atlas object
   (`atlas$palette`), not stored separately in `brain_pals`

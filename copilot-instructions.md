@@ -35,8 +35,7 @@
   The palette is a named character vector keyed by `label`, and `core`
   carries `hemi`/`region`/`label`; `build_atlas_components()` derives
   both. The old paired `dk`/`dk_3d` scheme is legacy —
-  [`convert_legacy_brain_atlas()`](https://ggsegverse.github.io/ggseg.formats/reference/convert_legacy_brain_atlas.html)
-  migrates it, see
+  `convert_legacy_brain_atlas()` migrates it, see
   [`vignette("legacy-conversion")`](https://ggsegverse.github.io/ggseg.extra/articles/legacy-conversion.md).
 - External binaries: subcortical/tract functions shell out to
   FreeSurfer. Cortical functions only need FreeSurfer to read
