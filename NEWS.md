@@ -1,4 +1,4 @@
-# ggseg.extra 1.9.9.9143
+# ggseg.extra 1.9.9.9144
 
 This section becomes the 2.0.0 release notes at submission. It is the first
 CRAN release of ggseg.extra, the atlas-building package of
@@ -13,870 +13,590 @@ and tractography files.
 
 ## Breaking changes
 
-- `ggseg.formats` moves from `Imports` to `Depends`, so attaching ggseg.extra
-  attaches it: `library(ggseg.extra)` now gives you the whole atlas vocabulary,
-  all 85 exports, where the hand-maintained re-export list gave 27. The
-  re-exports are gone with it, which means `ggseg.extra::atlas_view_keep()` and
-  the like no longer resolve -- call them unqualified, or as
-  `ggseg.formats::atlas_view_keep()`. Nothing in the ecosystem used the
-  qualified form.
+- The package is `ggseg.extra`; the old `ggsegExtra` name is gone.
 
-- A label the lookup table does not list is not drawn. It used to come back
-  as `context_<id>`, which is the pipeline guessing, and the guess only reads
-  well when the volume happens to be shaped like an `aseg`: a volume carrying
-  a whole parcellation drew a hundred grey shapes, cerebral white matter
-  among them, filling the sulci a backdrop exists to show. Declare a label to
+- `ggseg.formats` moves from `Imports` to `Depends`, so
+  `library(ggseg.extra)` attaches the whole atlas vocabulary. The
+  re-exports are gone with it, so `ggseg.extra::atlas_view_keep()` and the
+  like no longer resolve -- call them unqualified, or as
+  `ggseg.formats::atlas_view_keep()`.
+
+- A label the lookup table does not list is not drawn. Declare a label to
   draw it.
 
 - A `context` value other than yes or no names a group, and every row
-  carrying that name is traced as one silhouette called after it. A
-  parcellation's cortical labels marked `context = "cortex"` are one ribbon
-  rather than a hundred patches, without anything having to recognise a
-  parcel by its id.
+  carrying that name is traced as one silhouette called after it.
 
-- The package is `ggseg.extra`; the old `ggsegExtra` name is gone from the
-  code and the documentation.
+- In `create_subcortical_from_volume()` the lookup table decides what is a
+  region and what is context; nothing is recognised by id or name. A row
+  whose `context` column is `TRUE` is context. Mark the cortex with
+  `lut$context <- grepl("Cortex", lut$label)`, and drop context you do not
+  want with `atlas_context_remove()`.
 
 - Geometry shaping is no longer part of atlas creation. `dilate`,
-  `smoothness`, `tolerance` and `smooth_refinements` are not accepted by any
-  `create_*()` function; use `atlas_polish()`, or `atlas_simplify()`,
-  `atlas_smooth()` and `atlas_dilate()` individually on the finished atlas.
-  Atlas build scripts that still pass one of these spellings abort with
-  "unused argument", naming the creator.
+  `smoothness`, `tolerance` and `smooth_refinements` are rejected by every
+  `create_*()`; use `atlas_polish()`, or `atlas_simplify()`,
+  `atlas_smooth()` and `atlas_dilate()` on the finished atlas.
 
 - The `ggseg.extra.tolerance` and `ggseg.extra.smoothness` options and their
-  `GGSEG_EXTRA_*` environment variables are removed, as nothing reads them.
+  `GGSEG_EXTRA_*` environment variables are removed.
 
-- `atlas_smooth()` and `atlas_polish()` default to `method = "chaikin"`
-  instead of `"close"`, so the default preserves sulci. A morphological close
-  fills holes narrower than the smoothing distance, which on a cortical
-  ribbon welds the gyri into a solid mantle. **Atlases smoothed with the
-  default look different and want rebuilding**; pass `method = "close"` for
-  the old behaviour, which still suits solid shapes such as tract tubes.
+- `atlas_smooth()` and `atlas_polish()` default to `method = "chaikin"`,
+  which preserves sulci. **Atlases smoothed with the default want
+  rebuilding**; pass `method = "close"` for the old behaviour.
+
+- `atlas_smooth()` and `atlas_simplify()` do one thing each; `keep` belongs
+  to `atlas_simplify()`.
+
 - `atlas_view_remove_sparse()` drops the views a build left nearly empty,
-  counting the regions each view holds rather than naming views to remove, so
-  it cannot go stale when slabs are renamed or laid out again.
-  `atlas_view_region_counts()` reports the counts it decides on.
+  counting what each view holds rather than naming views to remove.
+  `atlas_view_region_counts()` reports the counts.
 
 - The colour-table functions are named after lookup tables: `read_lut()`,
-  `write_lut()`, `is_lut()` and `get_lut()`. The `read_ctab()`, `write_ctab()`,
-  `is_ctab()` and `get_ctab()` spellings are removed.
+  `write_lut()`, `is_lut()` and `get_lut()`. The `*_ctab()` spellings are
+  removed.
 
 - `sitrep()` replaces `setup_sitrep()`, and `ggseg_atlas_github_actions()`
-  replaces `atlas_github_actions()`; the old names are removed.
+  replaces `atlas_github_actions()`.
 
 - The volumetric creators take `views`, and `subcortical_views()` builds the
   table: each row is one view of the built atlas, its `name` becoming the
   `view` that `ggseg.formats::atlas_views()` reports. The `slabs` spelling
   used during the 2.0 dev cycle is deprecated and still works.
 
-- Related arguments are grouped into lists, and the flat spellings are no
-  longer accepted: `tube_opts` in `create_tract_from_tractography()`; `labels`,
-  `projection_opts`, `cortical_opts`, `subcortical_opts` and `cerebellar_opts`
-  in `create_wholebrain_from_volume()`. `cortical_opts` accepts only `views`.
+- Related arguments are grouped into lists: `tube_opts` in
+  `create_tract_from_tractography()`; `labels`, `projection_opts`,
+  `cortical_opts`, `subcortical_opts` and `cerebellar_opts` in
+  `create_wholebrain_from_volume()`.
 
-- `create_cerebellar_from_volume()` takes `input_volume` as its first argument,
-  as every sibling creator does, and `read_neuromaps_volume()` takes `breaks`
-  second and `output_dir` last.
+- `create_cerebellar_from_volume()` takes `input_volume` first, and
+  `read_neuromaps_volume()` takes `breaks` second and `output_dir` last.
 
 - `mri_surf2surf_rereg()` takes `hemisphere` rather than `hemi`.
 
-- `registration` means one thing across the package: `"mni152"`, `"header"`, or
-  a path to a register.dat or LTA file, in `prepare_subcortical_mni152()`,
-  `project_volume_anatomical()` and `create_wholebrain_from_volume()`. The
-  ambiguous `registration = NULL` and the `regheader` argument are gone; pass
-  `projection_opts = list(registration = )`.
+- `registration` means one thing across the package: `"mni152"`, `"header"`,
+  or a path to a register.dat or LTA file. `registration = NULL` and
+  `regheader` are gone; pass `projection_opts = list(registration = )`.
 
-- In `create_subcortical_from_volume()` the lookup table decides what is a
-  region and what is context, the grey anatomy the regions are drawn against.
-  Nothing is recognised by its id or its name. A row of the table is a region;
-  a row whose optional `context` column is `TRUE` is context, keeps its name,
-  is traced on a single slice in each view so that a cortical ribbon keeps its
-  folds, and gets no 3D mesh; a label in the volume that the table does not
-  list is context too, named for its id (`context_0002`). With no table, every
-  label is a region. To get the cortex as context, mark its rows:
-  `lut$context <- grepl("Cortex", lut$label)`. Context that is not wanted is
-  removed afterwards with `atlas_context_remove()`.
+- `breaks` replaces `n_bins` in `create_cortical_from_neuromaps()`,
+  `read_neuromaps_annotation()` and `read_neuromaps_volume()`: a bin count,
+  the edges, or a function returning them. Both hemispheres share one set of
+  edges.
 
-- `create_cortical_from_neuromaps()`, `read_neuromaps_annotation()` and
-  `read_neuromaps_volume()` bin a continuous map through `breaks`, which
-  replaces `n_bins`: a single number for that many quantile bins, increasing
-  numbers as the bin edges, or a function that takes the map's values and
-  returns the edges. Left out, it gives quantile bins counted by Sturges' rule.
-  Both hemispheres are binned on one set of edges, so a bin means the same
-  range of values on either side.
+- `read_tractography()` returns `.trk` streamlines in RAS world millimetres
+  and reads big-endian files. `create_tract_from_tractography()` no longer
+  accepts `coord_space = "voxel"` for tractography files.
 
-- `read_tractography()` returns `.trk` streamlines in RAS world millimetres,
-  applying the header's voxel size, voxel order and voxel-to-world transform,
-  and agrees with 'nibabel' on its reference files. It used to return the
-  numbers as stored, which misplaced `.trk` tracts. Big-endian files are read
-  too. `create_tract_from_tractography()` therefore no longer accepts
-  `coord_space = "voxel"` for tractography files; it still applies to
-  streamlines passed as coordinate matrices.
+- `create_wholebrain_from_volume()` registers MNI152 volumes with
+  FreeSurfer's `average/mni152.register.dat`. **Cortical atlases built from
+  MNI152 volumes must be rebuilt.**
 
-- `create_wholebrain_from_volume()` registers MNI152 volumes to the surface
-  subject with FreeSurfer's `average/mni152.register.dat` rather than assuming
-  the two spaces coincide. Each `fsaverage5` vertex samples a point about
-  2 mm away, so cortical atlases built from MNI152 volumes with earlier
-  versions must be rebuilt.
+- Subcortical and tract contours are traced from the projection matrix
+  rather than from a PNG of it (#139). **Atlases built with earlier versions
+  need rebuilding**, and `atlas_dilate(amount = )` and
+  `atlas_smooth(smoothness = )` now mean voxels rather than canvas pixels.
 
-- Subcortical and tract contours are traced from the projection matrix itself
-  rather than from a PNG of it (#139), so geometry is exact in voxel
-  coordinates instead of in pixels of a 400x400 canvas. **Atlases built with
-  earlier versions produce different geometry and need rebuilding**, and
-  distance-valued arguments -- `atlas_dilate(amount = )` and
-  `atlas_smooth(smoothness = )` -- now mean voxels everywhere rather than
-  canvas pixels, so values tuned against the canvas want retuning.
+- The subcortical pipeline has six steps and the tract pipeline four, and
+  `steps` is bounds-checked.
 
-- The subcortical pipeline has six steps and the tract pipeline four; the
-  contour-smoothing and vertex-reduction steps that stopped doing anything are
-  gone. `steps` is bounds-checked and errors on a value above the last step.
+- `skip_existing` defaults to `FALSE`, and every reuse is reported naming
+  the step.
 
-- `skip_existing` defaults to `FALSE`. A step cache records which ggseg.extra
-  wrote it and nothing about what it was built from, so reuse is now asked for
-  rather than assumed, and every reuse is reported naming the step.
-
-- Cerebellar region names come from the shared `label_to_region()`, which now
-  strips `vermis` and `midline` alongside `left` and `right`, so the three
-  pipelines agree. Cerebellar region names change on the next rebuild:
-  `midline_M1L` becomes `m1l` and `Vermis_VIIAt` becomes `viiat`. The `label`
-  column is unchanged.
+- Cerebellar region names come from `label_to_region()`, which strips
+  `vermis` and `midline` alongside `left` and `right`. Names change on the
+  next rebuild; `label` is unchanged.
 
 - The cerebellar flatmap gets a `cerebellum` backdrop, and perimeter regions
-  are no longer inflated to reach the flatmap edge, so they stop where the
-  parcellation says they stop. Rebuilding a published cerebellar atlas
-  produces slightly different geometry.
+  are no longer inflated to the flatmap edge. Rebuilding changes geometry
+  slightly.
 
-- Every cortical atlas keeps its `unknown` medial wall as grey context rather
-  than as a region: its outline draws behind the parcels, but it carries no
-  `core` row, no palette entry and no 3D vertices.
+- Every cortical atlas keeps its `unknown` medial wall as grey context: no
+  `core` row, no palette entry, no 3D vertices.
 
-- 2D atlas geometry keeps its holes. `coords2sf()` had been assembling every
-  polygon ring as a solid polygon of its own, filling enclosed holes, so a
-  cortical ribbon came out as a blob; rings are now assembled as exterior plus
-  holes. Every atlas built through `get_contours()` differs from one built
-  before this fix.
+- 2D geometry keeps its holes; `coords2sf()` assembles rings as exterior
+  plus holes. Every atlas built through `get_contours()` differs from one
+  built before.
 
-- `atlas_smooth()` and `atlas_simplify()` do one thing each: smoothing decides
-  how round an outline is, simplification how many vertices it costs. `keep`
-  belongs to `atlas_simplify()` only.
-
-- The cortical creators have no `method`, `snapshot_dim` or `steps` arguments;
-  the mesh-projection pipeline reads and projects in one pass.
+- The cortical creators have no `method`, `snapshot_dim` or `steps`
+  arguments.
 
 - `ggseg_atlas_repos()`, `install_ggseg_atlas()` and
-  `install_ggseg_atlas_all()` are removed; installing atlases is 'ggsegverse's
-  job. `convert_legacy_brain_atlas()` lives in 'ggseg.formats' and is
-  re-exported here.
+  `install_ggseg_atlas_all()` are removed; installing atlases is
+  'ggsegverse's job. `convert_legacy_brain_atlas()` lives in 'ggseg.formats'
+  and is re-exported here.
 
-- The dependency footprint is much lighter. ImageMagick and a headless browser
-  are not needed at all, so `chromote`, `magick` and `htmlwidgets` are gone
-  along with `rgdal`, `purrr`, `reticulate` and `tidyr`. `freesurfer`,
-  `freesurferformats`, `ciftiTools`, `gifti`, `RNifti`, `Rvcg`, `terra`,
-  `smoothr`, `princurve`, `rgl`, `neuromapr`, `ggseg` and `future` are all
-  Suggests, checked at run time with `rlang::check_installed()` and requested
-  only by the pipeline that needs them. `freesurfer` is required at
-  `>= 1.9.0` (#72, #98) and `ciftiTools` at `>= 0.17.4`.
+- The dependency footprint is much lighter. `chromote`, `magick`,
+  `htmlwidgets`, `rgdal`, `purrr`, `reticulate` and `tidyr` are gone;
+  `freesurfer` (>= 1.9.0), `freesurferformats`, `ciftiTools` (>= 0.17.4),
+  `gifti`, `RNifti`, `Rvcg`, `terra`, `smoothr`, `princurve`, `rgl`,
+  `neuromapr`, `ggseg` and `future` are Suggests, checked at run time.
 
 - `region` is derived from the region's identifier rather than copied from
-  it, so the hemisphere no longer ends up in both. A lookup table that
-  declares a `region` column has had it curated by the atlas author and is
-  used as given; only the fallback is derived. `label` is unchanged, so no
-  atlas's palette keys move.
+  it. A lookup table that declares a `region` column is used as given.
+  `label` is unchanged.
 
-- The core display column is `display`, following `ggseg.formats`. A lookup
-  table declares it under that name.
+- The core display column is `display`, following `ggseg.formats`.
 
-- `hemi` is recorded as `"left"`, `"right"` or `"midline"` only, matching the
-  closed vocabulary `ggseg.formats` enforces. The cerebellar vermis is
-  recorded as `"midline"`; `"vermis"` and `"middle"` are still read from a
-  label or a lookup table's `hemi` column, and the `vermis_` spelling is still
-  kept in the label, which is the join key.
+- `hemi` is `"left"`, `"right"` or `"midline"` only. The vermis is
+  `"midline"`; `"vermis"` and `"middle"` are still read as input.
 
 ## New features
 
-- `atlas_view_remove_empty()` drops the views that draw no region at all,
-  the zero case of `atlas_view_remove_sparse()`. It takes the atlas once, so
-  the atlas it measures is always the atlas it changes;
-  `ggseg.formats::atlas_views_empty()` reports the same views without
-  removing them.
+- `atlas_view_remove_empty()` drops views that draw no region at all;
+  `ggseg.formats::atlas_views_empty()` reports them without removing them.
 
-- `create_wm_from_volume()` builds a white-matter atlas from a label volume.
-  It is `create_subcortical_from_volume()` under another name: the same
-  pipeline, typed `"wm"`, because a white-matter atlas stores what a
-  subcortical one stores. Tract atlases stay separate -- they carry
-  centerlines, which a label map has none of.
+- Cerebellar atlases are a first-class type, with SUIT flatmap polygons for
+  2D and per-region meshes for 3D. `create_cerebellar_from_gifti()`,
+  `create_cerebellar_from_annotation()` and `create_cerebellar_from_volume()`
+  build them, and `read_suit_parcellation()` reads SUIT-format GIFTI labels.
 
-- `clear_atlas_cache()` removes an atlas's build intermediates, or every
-  atlas's under a build directory. It refuses a directory holding files this
-  package did not write, so pointing it at the wrong folder does not delete
-  source data.
-
-- Cerebellar atlases are a first-class atlas type across the ecosystem, with
-  SUIT flatmap polygons for 2D and per-region meshes for 3D.
-  `create_cerebellar_from_gifti()`, `create_cerebellar_from_annotation()` and
-  `create_cerebellar_from_volume()` build them from GIFTI label files,
-  FreeSurfer `.annot` files on the SUIT surface, or a NIfTI cerebellar
-  segmentation, and `read_suit_parcellation()` reads SUIT-format GIFTI labels
-  with Left/Right/Vermis hemisphere detection.
-
-- Deep cerebellar nuclei (Dentate, Interposed, Fastigial) that have volume
-  voxels but no SUIT surface vertices are tessellated as individual 3D meshes
-  with a tkRAS-to-MNI transform and drawn as a separate coronal `nuclei` view.
-  Surface parcels too small for any SUIT vertex to land on are rescued onto the
+- Deep cerebellar nuclei with volume voxels but no SUIT surface vertices are
+  tessellated as individual meshes and drawn as a separate coronal `nuclei`
+  view. Surface parcels too small for any SUIT vertex are rescued onto the
   flatmap.
 
-- `create_wholebrain_from_volume()` builds cortical, subcortical and cerebellar
-  sub-atlases from a single volumetric parcellation, classifying each label
-  from the lookup table's declaration and reporting what it had to infer.
+- `create_wholebrain_from_volume()` builds cortical, subcortical and
+  cerebellar sub-atlases from a single volumetric parcellation, classifying
+  each label from the lookup table and reporting what it had to infer.
 
-- `create_tract_from_tractography()` builds a white-matter tract atlas from
-  `.trk`/`.tck` files or in-memory coordinate matrices, and
-  `create_tract_from_volume()` builds one from a volumetric tract label map by
-  reducing each tract's voxel cloud to a principal-curve centerline. Both
-  produce 3D tubes and 2D slice projections.
+- `create_tract_from_tractography()` builds a tract atlas from `.trk`/`.tck`
+  files or coordinate matrices, and `create_tract_from_volume()` from a
+  volumetric tract label map via principal-curve centerlines. Both produce 3D
+  tubes and 2D slice projections.
 
-- `create_cortical_from_cifti()` and `read_cifti_annotation()` read CIFTI dense
-  label files, `read_cifti_subcortical()` extracts a CIFTI file's subcortical
-  voxels into a NIfTI label volume plus colour table ready for the subcortical
-  pipelines (#85), and GIFTI `.label.gii` annotations are supported throughout.
+- `create_wm_from_volume()` builds a white-matter atlas from a label volume:
+  the subcortical pipeline typed `"wm"`.
+
+- `create_cortical_from_cifti()` and `read_cifti_annotation()` read CIFTI
+  dense label files, and `read_cifti_subcortical()` extracts a CIFTI file's
+  subcortical voxels into a NIfTI volume plus colour table (#85). GIFTI
+  `.label.gii` annotations are supported throughout.
 
 - `create_cortical_from_neuromaps()`, `read_neuromaps_annotation()` and
   `read_neuromaps_volume()` build atlases from neuromaps surface and volume
   annotations, binning continuous maps into regions.
 
 - The cortical pipeline projects inflated mesh triangles straight to 2D
-  polygons by orthographic projection. Atlas creation takes about five seconds
-  rather than minutes, the geometry carries no rasterisation staircase, and
-  reading `.annot` files needs only the `freesurferformats` package.
+  polygons. Atlas creation takes about five seconds rather than minutes, and
+  the geometry carries no rasterisation staircase.
 
-- Boundary triangles whose vertices belong to different regions are split along
-  edge midpoints -- a quadrilateral and a triangle for a two-region boundary,
-  three quadrilaterals meeting at the centroid for three -- so region borders
-  are clean rather than sawtoothed, and boundary faces go to the smallest
-  neighbouring region so tiny parcels survive.
+- Boundary triangles spanning regions are split along edge midpoints, so
+  borders are clean rather than sawtoothed, and boundary faces go to the
+  smallest neighbouring region so tiny parcels survive.
+
+- A cortical parcellation covering only part of the mantle gets the rest as a
+  silhouette to sit on (#285): one `lh_cortex`/`rh_cortex` region per
+  hemisphere, drawn behind the parcellation with no colour or legend entry. A
+  sparse cerebellar parcellation gets a single `cerebellum` backdrop.
 
 - `atlas_polish()` simplifies and smooths in one call against a stated vertex
-  budget, owning the order the two have to run in so a build does not have to
-  rediscover it (#186).
+  budget (#186).
 
-- `atlas_smooth()` gains `method` -- the default morphological `"close"` plus
-  `"chaikin"`, `"ksmooth"` and `"spline"`, which move vertices rather than
-  dilating the shape and so keep enclosed holes open -- a `smoothness` strength
-  on one 0--1 scale shared by every method, and `vertex_budget` to choose
-  between preserving the starting vertex count and rounding freely.
+- `atlas_smooth()` gains `method` -- `"close"`, `"chaikin"`, `"ksmooth"` and
+  `"spline"`, the last three keeping enclosed holes open -- a `smoothness`
+  strength on one 0--1 scale, and `vertex_budget`.
 
-- `atlas_dilate()` grows or shrinks region geometry on a finished atlas, the
-  post-creation counterpart of the old build-time dilation.
+- `atlas_dilate()` grows or shrinks region geometry on a finished atlas.
 
-- `count_vertices()` reports how many polygon vertices each region carries,
-  which is the figure the large-atlas warning quotes and `atlas_simplify()`
-  brings down.
+- `count_vertices()` reports how many polygon vertices each region carries.
 
-- `context_pattern()` gives the label pattern matching an atlas's context, in
-  one place rather than retyped into every build. Given an atlas it matches
-  exactly the context that atlas draws, whatever its shapes are called;
-  without one it matches the names the pipelines generate. `atlas_polish()`,
-  `atlas_simplify()`, `atlas_smooth()` and `atlas_dilate()` accept a function
-  as `labels` or `exclude` and ask it about the atlas they are given, so
-  `exclude = context_pattern` means "this atlas's context" and works in the
-  middle of a pipe.
+- `context_pattern()` gives the label pattern matching an atlas's context.
+  `atlas_polish()`, `atlas_simplify()`, `atlas_smooth()` and `atlas_dilate()`
+  accept a function as `labels` or `exclude`, so `exclude = context_pattern`
+  works mid-pipe.
 
-- A cortical parcellation that covers only part of the mantle gets the rest of
-  it as a silhouette to sit on (#285). Every vertex no label claims becomes one
-  `lh_cortex`/`rh_cortex` region per hemisphere, drawn behind the parcellation
-  and carrying no colour or legend entry. A sparse cerebellar parcellation
-  likewise gets a single `cerebellum` backdrop.
+- `label_to_region()` is exported: the rule the pipelines use to fill an
+  atlas's `region` column from its labels.
 
-- `label_to_region()` is exported: it is the rule the pipelines use to fill an
-  atlas's `region` column from its labels, so a build script adding metadata
-  keyed on `region` can key on what the pipeline actually derives.
-
-- A lookup table can declare `type` (`"cortical"`, `"subcortical"`,
-  `"cerebellar"`) and `hemi` columns, which `create_wholebrain_from_volume()`,
-  `create_subcortical_from_volume()` and `create_cerebellar_from_volume()`
-  honour rather than guessing. `write_lut()` writes both and `read_lut()` reads
-  them back, so a declaration survives a round trip through a file and stays a
-  FreeSurfer-readable colour table. A declared hemisphere is what stops a
-  midline-crossing parcel becoming two regions the parcellation never had.
-
-- `lut_classify_anatomy()` fills a lookup table's `type` column by resampling
-  FreeSurfer's `aparc+aseg` onto the volume's own grid and judging each label
-  on the share of labelled grey matter it touches, rather than by matching
-  names -- an authoring tool whose output you commit and review in a diff.
-
-- `lut_generate_colors()` builds a palette for a lookup table that ships names
-  only. Colours are assigned per structure, so a structure's two hemispheres
-  share one, with hues spread around the circle and stepped through three
-  luminances; `by` colours each group of a column from the whole circle, which
-  is the whole-brain case. Out-of-gamut clipping that would hand two structures
-  the same colour is an error naming `chroma` and `luminance`.
-
-- `lut_add()` and `lut_combine()` append and merge FreeSurfer-style colour
-  tables, validating with `is_lut()` and warning on index clashes.
-
-- `subcortical_slabs()` builds a slab table from the bounding box of a set of
-  labels, reading the volume in the same frame the builder uses, and
-  `create_subcortical_from_volume(slabs = )` accepts that spec directly.
-
-- A lookup table says more than names and colours. Alongside `type` and
-  `hemi`, `read_lut()` and `write_lut()` carry a `context` column, kept
-  separate from `type` so a whole-brain table can say both which atlas a label
-  belongs to and what role it plays there. A table passed as a data.frame may
-  also carry a `names` column, the display name of each region; every atlas
-  the pipelines build has `names` in its `core`, falling back to the region.
+- A lookup table can declare `type`, `hemi` and `context` columns, which the
+  creators honour rather than guessing; `write_lut()` and `read_lut()` carry
+  them through a round trip as a FreeSurfer-readable colour table. A declared
+  hemisphere stops a midline-crossing parcel becoming two regions.
   `aseg_subcortical_labels()` returns the lumped structure ids a finer
   parcellation subdivides.
 
-- `coregister_volume()` wraps `mri_coreg` to align an atlas volume to a
-  FreeSurfer subject's T1 grid, returning a reusable LTA file.
-  `project_volume_anatomical()` resamples each label onto the target
-  `aparc+aseg` grid, takes the per-voxel argmax and returns a merged volume
-  plus an aligned colour table, and `prepare_subcortical_anatomical()` chains
-  both. `id_offset` keeps input ids from colliding with FreeSurfer's, and
-  `protect_cortex` keeps the cortical ribbon and cortical white matter intact
-  for the brain-outline context. The lookup table it returns, like the one
-  from `prepare_subcortical_mni152()`, has `context` filled in: the
-  FreeSurfer anatomy is context and the labels are regions.
+- `lut_classify_anatomy()` fills a lookup table's `type` column by resampling
+  FreeSurfer's `aparc+aseg` onto the volume's grid and judging each label on
+  the grey matter it touches, rather than by matching names.
 
-- `prepare_subcortical_mni152()` embeds a parcellation supplied in fixed
-  FSL-MNI152 space into a subject's `aseg` via the known
-  `mni152.register.dat` transform, replacing the lumped structures the parcels
-  subdivide. `create_subcortical_from_volume()` accepts the returned
-  `list(volume, lut, id_offset)` directly as `input_volume`.
+- `lut_generate_colors()` builds a palette for a names-only lookup table,
+  assigning one colour per structure so its two hemispheres share it. `by`
+  colours each group of a column from the whole circle.
 
-- `create_wholebrain_from_volume()` gains
-  `cerebellar_opts = list(cerebellar_space = )`, so an MNI cerebellar volume is
-  transformed with
-  the matching SUIT deformation field before it is sampled onto the flatmap
-  rather than being drawn onto a flatmap it does not correspond to.
+- `lut_add()` and `lut_combine()` append and merge colour tables, warning on
+  index clashes.
 
-- `create_tract_from_tractography()` and `create_tract_from_volume()` gain
-  `coord_space`, to declare whether streamline coordinates are `"voxel"`
-  indices or RAS world `"mm"` instead of relying on a heuristic that cannot
-  always tell; the space in force is reported at `verbose >= 1`.
+- `subcortical_slabs()` builds a slab table from the bounding box of a set of
+  labels, and `create_subcortical_from_volume(slabs = )` accepts that spec
+  directly.
 
-- The brain silhouette behind a whole-brain subcortical atlas is the
-  parcellation's own cortical labels, split at the midline.
-  `create_wholebrain_from_volume(context_opts = list(silhouette = "aseg"))`
-  substitutes FreeSurfer's gyrified `aseg` ribbon instead, resampled onto the
-  atlas volume's own grid, with the `aseg` cerebellar cortex and brain stem
-  filling the posterior fossa. That is another subject's anatomy, so it is
-  asked for rather than inferred; it is declined on grids too coarse to carry
-  a ribbon or on labels already thin enough to be one, and the pipeline
-  reports which silhouette it drew in every case.
+- `coregister_volume()` aligns an atlas volume to a FreeSurfer subject's T1
+  grid, `project_volume_anatomical()` resamples labels onto the target
+  `aparc+aseg` grid, and `prepare_subcortical_anatomical()` chains both.
+  `id_offset` avoids id collisions and `protect_cortex` keeps the ribbon
+  intact for the brain outline.
+
+- `prepare_subcortical_mni152()` embeds an FSL-MNI152 parcellation into a
+  subject's `aseg` via `mni152.register.dat`.
+  `create_subcortical_from_volume()` accepts its `list(volume, lut,
+  id_offset)` directly as `input_volume`.
+
+- `create_wholebrain_from_volume()` gains `cerebellar_opts =
+  list(cerebellar_space = )`, so an MNI cerebellar volume is transformed with
+  the matching SUIT deformation field before being sampled onto the flatmap.
+
+- The tract creators gain `coord_space`, to declare whether streamline
+  coordinates are `"voxel"` indices or RAS world `"mm"`.
+
+- `create_wholebrain_from_volume(context_opts = list(silhouette = "aseg"))`
+  substitutes FreeSurfer's gyrified `aseg` ribbon for the parcellation's own
+  cortical labels. It is another subject's anatomy, so it is asked for rather
+  than inferred, and the pipeline reports which silhouette it drew.
 
 - `setup_atlas_repo()` scaffolds an atlas package from the
-  ggsegverse/ggseg-atlas-template repository, with a Quarto README, pkgdown
-  config, shared CI workflows and a `data-raw/create-atlas.R` covering all five
-  pipelines, falling back to a bundled minimal template when offline. It fills
-  DESCRIPTION from the `usethis.description` option when one is set.
+  ggseg-atlas-template repository, falling back to a bundled template when
+  offline. `use_atlas_github_actions()` adds the shared workflows as caller
+  stubs, and `ggseg_atlas_github_actions()` lists what is available.
 
-- `use_atlas_github_actions()` adds the shared ggsegverse GitHub Actions
-  workflows to a package as short caller stubs, and
-  `ggseg_atlas_github_actions()` lists what is available.
+- `sitrep()` reports whether each of the 13 pipelines is ready to run.
 
-- `sitrep()` reports whether each of the 13 pipelines is ready to run, naming
-  the FreeSurfer binaries, subjects and optional R packages each one needs.
+- `clear_atlas_cache()` removes build intermediates, refusing a directory
+  holding files this package did not write.
 
-- Verbosity has three levels -- silent, standard, debug -- resolved from an
-  explicit argument, the `ggseg.extra.verbose` option or `GGSEG_EXTRA_VERBOSE`,
-  with `get_verbose()` and `as_verbosity()` as the accessors. `cleanup` and
-  `output_dir` resolve the same way.
+- Verbosity has three levels, resolved from an argument, the
+  `ggseg.extra.verbose` option or `GGSEG_EXTRA_VERBOSE`, with `get_verbose()`
+  and `as_verbosity()` as accessors. `cleanup` and `output_dir` resolve the
+  same way.
 
-- Pipeline intermediates are cached per step with a `cache_manifest.rds`
-  recording the cache format version that wrote them, so a cache written by an
-  older ggseg.extra is recomputed rather than silently reused. Subcortical
-  projection snapshots additionally carry a signature of the voxels, slab and
-  volume dimensions they were drawn from, and only what moved is redrawn.
+- Pipeline intermediates are cached per step, recording the cache format
+  version that wrote them, so an older cache is recomputed rather than
+  silently reused. Subcortical snapshots carry a signature of the voxels,
+  slab and dimensions they were drawn from, and only what moved is redrawn.
 
-- Volumetric and tract builds parallelise through `furrr`, and
-  `plan(multicore)` is used as given: on an eight-core machine
-  `create_subcortical_from_volume()` goes from 337s sequential to 171s with
-  four forked workers.
+- Volumetric and tract builds parallelise through `furrr`: on eight cores
+  `create_subcortical_from_volume()` goes from 337s to 171s with four
+  workers.
 
-- The `atlas_*` manipulation verbs from ggseg.formats are re-exported, along
-  with `ggseg_atlas()` and `is_ggseg_atlas()`, so `library(ggseg.extra)` is
-  enough to build, curate and validate an atlas (#186).
+- The `atlas_*` verbs from ggseg.formats are re-exported, along with
+  `ggseg_atlas()` and `is_ggseg_atlas()` (#186).
 
-- `decimate` reduces per-region 3D mesh vertex counts with `Rvcg` in the
-  subcortical and cerebellar pipelines, and `vertex_size_limits` filters
-  finished 2D polygons by vertex count.
+- `decimate` reduces per-region 3D mesh vertex counts, and
+  `vertex_size_limits` filters finished 2D polygons by vertex count.
 
-- `read_lut()` and `read_tractography()` are exported, so the formats the
-  pipelines consume can be read and inspected on their own, alongside
+- The readers are exported: `read_lut()`, `read_tractography()`,
   `read_annotation_data()`, `read_cifti_annotation()`,
   `read_cifti_subcortical()`, `read_gifti_annotation()`,
   `read_neuromaps_annotation()`, `read_neuromaps_volume()` and
-  `read_suit_parcellation()`. Volume reading reorients FreeSurfer `.mgz`
-  volumes to RAS+ as it has always done for NIfTI.
+  `read_suit_parcellation()`. Volume reading reorients `.mgz` to RAS+ as it
+  has for NIfTI.
 
 ## Improvements
 
-- The flatmap projection is no longer cerebellum-specific. `R/cerebellar_projection.R`
-  is now `R/flatmap_projection.R`, and the surface path, the backdrop label and
-  the small-area thresholds are supplied by the caller rather than hard-coded,
-  so a second unfolded anatomy can reuse it. The thresholds in particular have
-  no defaults now: they are in the surface's own coordinate units, and silently
-  inheriting SUIT's values would mangle a surface unfolded to a different
-  scale. Cerebellar atlas building is unchanged.
+- The flatmap projection is no longer cerebellum-specific: the surface path,
+  backdrop label and small-area thresholds are supplied by the caller, so a
+  second unfolded anatomy can reuse it. The thresholds have no defaults, being
+  in the surface's own units. Cerebellar atlas building is unchanged.
 
-- Every `create_*()` pipeline takes `min_coverage`: a newly built atlas whose
-  2D geometry covers less than 80% of its `core` labels warns and names the
-  labels with no shape.
+- Every `create_*()` takes `min_coverage`: an atlas whose 2D geometry covers
+  less than 80% of its `core` labels warns and names the labels with no shape.
 
-- The large-atlas warning has a per-atlas-type vertex budget, each sitting just
-  above its type's 90th percentile measured across 109 installed atlases, so it
-  flags the heaviest tenth of a family rather than seven atlases in ten, and
-  its advice names `atlas_polish()`.
+- The large-atlas warning has a per-atlas-type vertex budget, each just above
+  its type's 90th percentile across 109 installed atlases, and its advice
+  names `atlas_polish()`.
 
-- Data loss is reported whatever the verbosity. A structure that fails to
-  tessellate, a tract whose centerline is degenerate, a label dropped for too
-  few voxels, deep-nuclei data with no `vol_idx`, a missing FreeSurfer
-  installation and a dropped cerebellar nucleus are all named rather than left
-  as a lower count; `verbose` silences progress chatter only.
+- Data loss is reported whatever the verbosity: a structure that fails to
+  tessellate, a degenerate centerline, a label dropped for too few voxels, a
+  missing FreeSurfer installation and a dropped cerebellar nucleus are all
+  named. `verbose` silences progress chatter only.
 
-- `create_wholebrain_from_volume()` says what it inferred and what it lost: how
-  many labels it classified by surface vertex count rather than from a
-  declaration, which labels it assumed subcortical because they reached no
-  cortical vertex, which cortical parcels the projection did not deliver, and
-  which parcels landed on both surfaces, with per-hemisphere vertex counts.
+- `create_wholebrain_from_volume()` says what it inferred and what it lost:
+  labels classified by vertex count rather than declaration, labels assumed
+  subcortical, parcels the projection did not deliver, and parcels landing on
+  both surfaces.
 
-- A mistyped label in any of `labels$cortical`, `labels$subcortical` and
-  `labels$cerebellar` is reported rather than dropped, and a `type` or `hemi`
-  column holding a value that is not one of the accepted ones is an error
-  raised before any projection work.
+- A mistyped label in `labels$cortical`, `labels$subcortical` or
+  `labels$cerebellar` is reported rather than dropped, and an unaccepted
+  `type` or `hemi` value errors before any projection work.
 
-- `lh` and `rh` are read as a hemisphere only as a prefix, a suffix, or a token
-  between separators, so `Entorhinal` is no longer right-hemisphere and a label
-  merely containing `lh` is no longer left.
+- `lh` and `rh` are read as a hemisphere only as a prefix, a suffix, or a
+  token between separators, so `Entorhinal` is no longer right-hemisphere.
 
-- A region named in `core` but absent from the geometry is dropped from all of
-  `core`, `palette`, `meshes_df`, `vertices_df` and `vol_idx` in every
-  pipeline, with the dropped labels named, rather than shipping an atlas that
-  claims a region it cannot draw; a build left with nothing to draw aborts.
+- A region named in `core` but absent from the geometry is dropped from
+  `core`, `palette`, `meshes_df`, `vertices_df` and `vol_idx`, with the
+  dropped labels named; a build left with nothing to draw aborts.
 
-- `atlas_smooth()` no longer multiplies an atlas's vertex count: rounded corners
-  are taken down to the two or three segments that read the same at plotting
-  size. `atlas_smooth()` and `atlas_simplify()` close the hairline gaps they
-  would otherwise open along shared boundaries, leaving genuine anatomical gaps
-  open, controlled by `close_gaps`. `atlas_simplify()` preserves row order,
-  which is draw order.
+- `atlas_smooth()` no longer multiplies an atlas's vertex count. It and
+  `atlas_simplify()` close the hairline gaps they would otherwise open along
+  shared boundaries while leaving genuine anatomical gaps open, controlled by
+  `close_gaps`. `atlas_simplify()` preserves row order, which is draw order.
 
 - The grey outline behind a subcortical atlas sorts to the bottom layer in
-  every view, including the per-hemisphere `cortex_left`/`cortex_right` names
-  the sagittal panels use, so it no longer paints over its own structures.
-  `is_cortex_outline()` matches case-insensitively and remains anchored.
+  every view, including the per-hemisphere `cortex_left`/`cortex_right` names,
+  so it no longer paints over its own structures.
 
-- The default subcortical projection slabs tile the bounding box of the atlas's
-  own labels -- three coronal, three axial, one sagittal -- rather than slice
-  indices calibrated on a 256-cube, so no panel is empty and no structure is
-  missing from every view whatever the voxel size. The default sagittal slab is
-  clipped to the left of the midline and named `sagittal_left`, so left
-  structures are not drawn beneath their right twins.
+- The default subcortical slabs tile the bounding box of the atlas's own
+  labels -- three coronal, three axial, one sagittal -- rather than indices
+  calibrated on a 256-cube, so no panel is empty whatever the voxel size. The
+  sagittal slab is clipped to the left of the midline and named
+  `sagittal_left`.
 
-- The anatomical context silhouette is taken from a single representative slice
-  per view rather than projected through the slab, from the slice holding the
-  most cortex for axial and coronal and the thinnest section for sagittal, and
-  it is never dilated -- all three of which used to flatten the mantle into a
-  blob.
+- The context silhouette is taken from a single representative slice per view
+  rather than projected through the slab, and is never dilated -- all of which
+  used to flatten the mantle into a blob.
 
-- Label ids that collide with the FreeSurfer cortex, cerebellum and brainstem
-  indices the silhouette uses are moved onto free values before the volume and
-  lookup table are written, so a real structure no longer absorbs the
-  silhouette. `project_volume_anatomical()` and `prepare_subcortical_mni152()`
-  share one exact guard against a parcel id merging into a surviving context
-  structure, checked early for whatever `protect_cortex` shields.
+- Label ids colliding with the FreeSurfer indices the silhouette uses are
+  moved onto free values before the volume and lookup table are written, so a
+  real structure no longer absorbs the silhouette.
 
-- `registration = "mni152"` refuses a volume stored in right-handed (RAS) voxel
-  order rather than silently mirroring left and right, and registered surface
-  projections pass `--srcsubject`, so labels come back as integers rather than
-  being resampled into fractional values.
+- `registration = "mni152"` refuses a volume in right-handed (RAS) voxel order
+  rather than silently mirroring left and right, and registered surface
+  projections pass `--srcsubject` so labels come back as integers.
 
 - Volume handling is honest about what it can place: `read_volume()` says when
   it cannot orient an MGZ, `coord_to_voxel()`'s fallback reads the voxel size
-  from the header rather than assuming a 1 mm isotropic grid, and
-  `create_tract_from_volume()` declares `coord_space = "mm"` rather than
-  leaving a space it built itself to be inferred.
+  from the header, and `create_tract_from_volume()` declares
+  `coord_space = "mm"`.
 
-- FreeSurfer's own output travels with a failure. stderr is captured whatever
-  the verbosity, echoed at `verbose >= 2`, quoted in the error with braces
-  escaped, and chained as `Caused by error:` by `read_fs_surface()`,
-  `tessellate_smooth_mesh()`, `subcort_mesh_one()` and
-  `resample_volume_to_grid()`. A failing command carries the condition class
-  `ggseg_extra_fs_command_error`. A missing `mris_convert` aborts naming the
-  binary rather than returning a mesh with faces pointing at vertices that do
-  not exist.
+- FreeSurfer's own output travels with a failure: stderr is captured whatever
+  the verbosity, quoted in the error and chained as `Caused by error:`. A
+  failing command carries the condition class
+  `ggseg_extra_fs_command_error`.
 
-- A build with `cleanup = TRUE` cannot delete files it did not write. Every
-  `create_*()` function stops before doing any work when its working folder,
-  `output_dir/atlas_name`, already holds files and was not made by an earlier
-  build. `atlas_name` must be a single name: an empty name, `".."` or one
-  containing a path separator is an error.
+- A build with `cleanup = TRUE` cannot delete files it did not write: every
+  `create_*()` stops when `output_dir/atlas_name` already holds files an
+  earlier build did not make. `atlas_name` must be a single name.
 
-- Mistakes are reported before the expensive work. The cortical creators
-  reject a view or hemisphere they do not know, the tract creators check for
-  `input_aseg` before reading a streamline, an unusable `breaks` is rejected
-  before anything is downloaded, and `read_neuromaps_volume()` reports a
-  missing volume before projecting.
+- Mistakes are reported before the expensive work: an unknown view or
+  hemisphere, a missing `input_aseg`, an unusable `breaks`, a missing volume.
 
-- `cleanup` no longer deletes a cache the next run needs: a run that stops
-  short of the last step keeps its working directory and says which steps can
-  reuse it, which is what the documented two-phase inspect-then-continue
-  workflow needs.
+- `cleanup` no longer deletes a cache the next run needs: a run stopping short
+  of the last step keeps its working directory and says which steps can reuse
+  it.
 
-- Arguments are validated before work starts rather than failing deep inside a
-  pipeline: `steps` (whole numbers, in range), `smoothness` (type and length),
-  `decimate`, `registration`, `tube_segments`, and the grouped lists, with an
-  invalid grouped list reported against the argument the caller actually
-  passed and a sub-pipeline option passed at the top level told where it
-  belongs.
+- Arguments are validated before work starts -- `steps`, `smoothness`,
+  `decimate`, `registration`, `tube_segments` and the grouped lists -- with an
+  invalid grouped list reported against the argument the caller passed.
 
-- Every function orders its arguments the same way -- the ones without
-  defaults, then the ones with real defaults, then `...`, then everything
-  defaulting to `NULL` or an empty list -- and mistyped or misplaced arguments
-  are caught by `rlang::check_dots_empty()`, which reports the offending value
-  rather than just its name.
+- Every function orders its arguments the same way, and mistyped or misplaced
+  arguments are caught by `rlang::check_dots_empty()`.
 
-- Pipelines are faster where it counts. The three label-stamping loops make one
-  pass over the volume instead of one per label, about 44x on a 400-parcel
-  atlas with byte-identical output; `create_tract_from_volume()` gathers all
-  tracts' voxels in a single sweep and applies the affine after thinning; the
-  per-voxel argmax in `project_volume_anatomical()` streams the running winner
-  instead of materialising an `n_voxels x n_labels` matrix;
-  `read_tractography()` reads `.tck` files without a quadratic slow-down; and
-  `set_sphere_voxels()` fills with one matrix-indexed assignment.
+- Pipelines are faster where it counts: the label-stamping loops make one pass
+  over the volume instead of one per label (about 44x on a 400-parcel atlas,
+  byte-identical output), the per-voxel argmax streams the running winner, and
+  `read_tractography()` reads `.tck` files without a quadratic slow-down.
 
-- Pipelines report their total run time the way cli reports each step
-  (`Pipeline completed [1m 15s]`), progress labels interpolate the real step
-  total, extracting contours no longer attaches terra to the search path where
-  it masked `describe()` and `extract()`, and a relative `output_dir` is made
-  absolute on every platform whether or not the directory already exists.
+- Pipelines report their total run time, extracting contours no longer
+  attaches terra to the search path, and a relative `output_dir` is made
+  absolute on every platform.
 
 ## Bug fixes
 
-- A pipeline warns when the atlas it just built carries vertex indices that do
-  not fit the vertex space its type implies. An index means nothing without
-  the surface it counts into, so an atlas built from a denser source is not
-  slightly wrong: the indices that happen to fit point at different anatomy
-  and the rest are discarded when it is drawn. Three distributed atlases carry
-  fsaverage7 indices under a cortical type, and nothing caught it when they
-  were built. The 2D geometry is unaffected, so this warns rather than
-  failing the build.
-- `labels` and `exclude` now mean what they say: a label an operation was not
+- Building an atlas warns when its vertex indices do not fit the vertex space
+  its type implies. The 2D geometry is unaffected, so it warns rather than
+  failing.
+
+- `labels` and `exclude` are honoured exactly: geometry an operation was not
   asked to touch comes back byte-identical. `atlas_smooth()`,
-  `atlas_simplify()`, `atlas_polish()` and `atlas_dilate()` repaired validity
-  across the whole frame, closed gaps atlas-wide and re-created coordinate
-  columns, so an excluded label was returned with its geometry rewritten --
-  on the bundled `aseg()` backdrop `close_gaps` alone took it from 7,594
-  vertices to 7,878, scaling with `smoothness`.
-- Slivers reopened by smoothing or simplifying are handed to a label the
-  operation was asked to touch, rather than to whichever one happens to
-  border them first. Handing one to an excluded label meant it was reverted
-  and the gap left open; closing them this way leaves less uncovered area
-  than before the guarantee existed.
+  `atlas_simplify()`, `atlas_polish()` and `atlas_dilate()` previously
+  rewrote excluded labels.
+
+- Slivers reopened by smoothing or simplifying go to a label the operation
+  was asked to touch, so they are closed rather than reverted.
 
 - Subcortical 3D meshes are placed in the volume's own world coordinates.
-  Tessellation emits tkRAS, a frame FreeSurfer derives from a volume's
-  dimensions alone, and the subcortical pipeline returned it untouched. For a
-  FreeSurfer-conformed volume that frame is the identity, so every atlas built
-  from conformed data was right by coincidence; for a volume in its own space
-  the axes are permuted and, where the handedness differs, left and right are
-  swapped. `get_tkras_to_world()` was already applied by the cerebellar
-  pipeline and is now shared by both.
+  Tessellation emits tkRAS, which is the identity only for a conformed
+  volume; for a volume in its own space the axes are permuted and, where the
+  handedness differs, left and right are swapped.
 
-- `mri_vol2vol` is given a transform FreeSurfer 8 accepts.
-  `registration = "mni152"` passed FreeSurfer's `mni152.register.dat`
-  straight through, and FreeSurfer 8 refuses a tkregister matrix whose
-  source geometry it cannot establish, writing no output. The matrix is now
-  converted to an LTA against the volumes being registered, which states the
-  geometry instead of assuming it. Affected `prepare_subcortical_mni152()`
-  and `coregister_volume()`; `mri_vol2surf` was never affected.
+- `mri_vol2vol` is given a transform FreeSurfer 8 accepts: the
+  `mni152.register.dat` matrix is converted to an LTA against the volumes
+  being registered. Affected `prepare_subcortical_mni152()` and
+  `coregister_volume()`.
 
-- A parcellation published on a grid too coarse to carry a cortical ribbon
-  is resampled onto the `aseg`'s grid rather than the `aseg` being resampled
-  down to it. A ribbon is about 2.5 mm thick, so on the 4 mm grid the
-  ADHD-200 and Craddock parcellations ship on, one voxel spans it: the
-  silhouette fell back to the atlas's own solid mantle, a blob with no sulci
-  in it. Nearest-neighbour resampling the other way invents no detail and
-  loses none, and the backdrop arrives intact --
-  `craddock200_subcortical`'s went from 12 rings to 47.
+- A parcellation on a grid too coarse to carry a cortical ribbon is resampled
+  onto the `aseg`'s grid rather than the `aseg` down to it, so the backdrop
+  keeps its sulci instead of falling back to a solid mantle.
 
 - `create_wholebrain_from_volume()` declares the backdrop it writes, so the
-  subcortical atlas keeps its grey brain silhouette. The pipeline writes the
-  `aseg` context indices into the volume it hands the subcortical pipeline,
-  which since the lookup table became the authority draws only what the table
-  declares -- and the table it was handed listed the structures alone, so
-  every whole-brain subcortical atlas came back with no backdrop at all.
+  subcortical atlas keeps its grey brain silhouette.
 
 - An atlas whose lookup table carries no colours ships no palette, and says
-  so, instead of one the pipeline invented. Several published parcellations
-  ship no colours, and a build script that pads the colour fields with zeros
-  to make a file FreeSurfer will read means the same thing an empty column
-  does. Colour is a drawing decision: `ggseg` resolves it when it plots,
-  knowing which labels are regions and which are backdrop, which a lookup
-  table does not. An atlas published with a palette still uses that palette.
-  The backdrop's own grey does not count as colour when asking -- counting it
-  made a wholly black parcellation look like a table with two colours in it.
+  so, instead of one the pipeline invented. An atlas published with a palette
+  still uses it.
 
 - A step's cache records what it was built from -- the package version, the
-  cache format and the step's own inputs -- and the step recomputes when any
-  of it moves. It recorded the format alone, so a release that computed
-  something different was reused as though it had not.
+  cache format and the step's own inputs -- and recomputes when any of it
+  moves.
 
 - `read_lut()` keeps a `context` group name instead of flattening it to
-  `TRUE`.
+  `TRUE`, reads a label containing a space as a single token, and no longer
+  truncates label names to 29 characters. `write_lut()` holds every column to
+  a standard that keeps the round trip lossless.
 
-- The atlas workflow templates `use_atlas_github_actions()` writes resolve
-  dependencies against the ggsegverse r-universe, so an atlas package's CI
-  can see the ggseg.formats its dependencies name.
+- The workflow templates `use_atlas_github_actions()` writes resolve
+  dependencies against the ggsegverse r-universe.
 
-- `display` holds the source's own name for a region again. It fell back to
-  `region`, which is now derived, so every atlas built since came out with
-  `display` a copy of `region` (`"v1 roi"`), losing the human-readable name
-  the column exists to keep.
+- `display` holds the source's own name for a region again, rather than a
+  copy of the derived `region`.
 
 - The cerebellar pipeline builds `label` from the source name rather than the
-  derived region, so `midline_17Networks_1` stays itself instead of becoming
-  `midline_17networks_1`. `label` is the join and palette key, so rewriting it
-  silently broke every dataset keyed on a published cerebellar atlas.
+  derived region, so a published cerebellar atlas's join and palette key is
+  not rewritten.
 
 - The tract pipeline prunes snapshots its slabs cannot name, as the
-  subcortical one already did. Contour extraction reads the snapshot
-  directory whole, so a projection left by an earlier slab configuration --
-  or by the older `cortex_` spelling -- was read back, and aborted the build
-  on a cache-format mismatch that no rerun could clear.
+  subcortical one did, so a projection left by an earlier slab configuration
+  no longer aborts the build on a cache-format mismatch.
 
 - The cerebellar orphan rescue only considers vertices the flatmap
-  triangulation actually uses. The template keeps about a hundred vertices
-  that belong to no face, and the nearest vertex to a deep structure is
-  often one of them, so the rescue reported success and the region was
-  dropped for having no geometry two steps later. That is how
-  `17Networks_14` left buckner17 and `Right_Region_133`, 2362 voxels, left
-  the Shen cerebellar atlas. A structure that reaches no drawable vertex
-  now says so.
+  triangulation uses, so a region is no longer rescued onto a vertex that
+  belongs to no face and then dropped for having no geometry. A structure
+  that reaches no drawable vertex says so.
 
 - `default_tract_slabs()` takes three axial and three coronal slabs, as
-  `default_subcortical_slabs()` does rather than four and five, and drops
-  the ones no label reaches. A tract atlas came out with twelve panels
-  where the subcortical default makes seven, each one thinner for it. The
-  three sagittal slabs stay: the commissural tracts are only properly seen
-  at the midline.
+  `default_subcortical_slabs()` does, and drops the ones no label reaches.
+  The three sagittal slabs stay for the commissural tracts.
 
 - `create_subcortical_from_volume()`, `create_tract_from_tractography()` and
-  `create_tract_from_volume()` return the atlas they built, instead of running
-  every step, reporting success and returning `NULL`.
+  `create_tract_from_volume()` return the atlas they built rather than
+  `NULL`.
 
 - `read_tractography()` reads a `.tck` file from where its header says the
-  track data starts, instead of straight after the `END` line, which shifted
-  every coordinate by one column in files that pad the header. Coordinates are
-  loaded in one pass, which is considerably faster on large files.
+  track data starts, aborts rather than fabricating coordinates for a
+  truncated `.trk`, reports a header declaring more streamlines than the file
+  holds, and reads to the end when the declared count is `0`.
 
 - `create_tract_from_tractography()` turns streamlines to run the same way
-  before computing a centerline. A bundle stored in both directions, as most
-  are, used to be shortened or collapsed to a point.
+  before computing a centerline, so a bundle stored in both directions is no
+  longer shortened or collapsed. It also names an atlas after its tract
+  rather than after the temporary directory.
 
-- The default sagittal views of a tract atlas show the hemisphere they are
-  named for; `sagittal_left` and `sagittal_right` were on each other's side.
-  They are placed from where the brain sits in `input_aseg`, so a volume that
-  is not a 256-voxel, 1 mm cube gets views that cover it.
+- A tract atlas's `sagittal_left` and `sagittal_right` show the hemisphere
+  they are named for, placed from where the brain sits in `input_aseg`.
 
-- `create_tract_from_tractography()` names an atlas after its tract, or
-  `"tracts"` when there are several, instead of after the temporary directory.
+- Tract 2D projections line up with the anatomical reference and reuse the
+  same centerline as the 3D tube; `n_points` reaches the tube in
+  `create_tract_from_volume()`.
 
-- `read_neuromaps_volume()`, and `create_cortical_from_neuromaps()` for a
-  volume, keep a parcellation a parcellation: a volume of whole-number labels,
-  or one given a `label_table`, is sampled with nearest-neighbour
-  interpolation instead of being blended into fractions and cut into bins.
+- `tube_radius = "density"` uses the middle of `density_radius_range` rather
+  than silently producing the widest possible tube.
 
-- An atlas built from a `.nii.gz` volume without an `atlas_name` is named
-  after the file, not `<name>_nii`.
+- `read_neuromaps_volume()` keeps a parcellation a parcellation: a volume of
+  whole-number labels, or one given a `label_table`, is sampled with
+  nearest-neighbour interpolation instead of being blended and binned.
+
+- An atlas built from a `.nii.gz` without an `atlas_name` is named after the
+  file, not `<name>_nii`.
 
 - `prepare_subcortical_mni152()` reports a FreeSurfer step that produced
-  nothing, and `project_volume_anatomical()` and `create_tract_from_volume()`
-  read a lookup table file the way the rest of the package does, so a file
-  written by `write_lut()` works.
+  nothing, and the lookup-table readers accept a file `write_lut()` wrote.
 
 - `sitrep()` no longer reports `create_cortical_from_annotation()` as needing
   FreeSurfer, and suggests installing neuromapr from CRAN.
 
-- `read_lut()` reads a label containing a space as a single token rather than
-  backtracking into a valid-looking parse that shifted every colour channel one
-  field along, and `write_lut()` holds `label` and all five numeric columns to
-  the standard that keeps a row readable, so the round trip is lossless. Label
-  names are no longer truncated to 29 characters, which used to lose a
-  hemisphere suffix and silently merge long labels.
+- `tessellate_remap_label()` writes its isolated label back carrying the
+  original affine, so a `.mgz` no longer loses every structure with a label
+  id above 255 -- the normal case for thalamic nuclei, hippocampal subfields
+  and brainstem substructures.
 
-- `tessellate_remap_label()` writes its isolated label back as `.mgz` carrying
-  the original affine, so a `.mgz` volume no longer loses every structure whose
-  label id is above 255 -- the normal case for FreeSurfer thalamic nuclei,
-  hippocampal subfields and brainstem substructures.
-
-- A subcortical rebuild no longer reuses projection snapshots drawn from a
-  different volume and then fails to trace them; each snapshot is checked
-  against its signature and only what moved is redrawn, and a changed `slabs`
-  argument is honoured on a cached rebuild.
-
-- Running `steps = 1:4` on a subcortical atlas with an existing cache no longer
-  deletes every snapshot in it.
+- A subcortical rebuild no longer reuses snapshots drawn from a different
+  volume; each is checked against its signature, a changed `slabs` is
+  honoured, and `steps = 1:4` no longer deletes every snapshot in the cache.
 
 - Contours are no longer traced from files belonging to a different slab
-  configuration: images the current configuration cannot name are cleared once
-  the slabs are known, and a contour file matching none of the atlas's views
-  aborts naming the unmatched files.
+  configuration, and a contour file matching none of the atlas's views aborts
+  naming it.
 
 - Subcortical and tract 2D views are no longer upside down, mirrored or drawn
   in the wrong plane, and contours record that their y-axis points up.
 
-- Tract 2D projections line up with the anatomical reference: the translation
-  `center_meshes()` applies for 3D display is undone before rasterising, and
-  the volume is reoriented explicitly rather than relying on an assignment that
-  is a no-op for `.mgz`.
-
-- Tract 2D projections reuse the same centerline as the 3D tube rather than
-  recomputing a different 50-point one, `n_points` reaches the tube in
-  `create_tract_from_volume()`, and `atlas_name` names the atlas object and not
-  only the output directory.
-
-- `tube_radius = "density"` reports uniform density and uses the middle of
-  `density_radius_range` rather than silently producing the widest possible
-  tube, including for a tract given as a single `N x 3` matrix.
-
-- `read_tractography()` aborts rather than fabricating coordinates for a `.trk`
-  file truncated mid-streamline, reports a header that declares more
-  streamlines than the file holds, and reads to the end of the file when the
-  declared count is `0`, as the TrackVis specification intends. A
-  `tract_names` length that does not match the number of tracts is reported
-  where it happens.
-
 - `create_wholebrain_from_volume()` no longer leaves white holes in the
-  cortical atlas: the volume is filtered to the lookup table before projection,
-  and cortex vertices left unlabelled take the most common label of their
-  neighbours. Lookup table entries the volume never carries are dropped before
-  classification, and cortex is split at the correct 1-based midline voxel.
-
-- `create_wholebrain_from_volume()` builds an atlas whose lookup table carries
-  labels with spaces in them, sanitising them for the intermediate table it
-  hands itself, so Neuromorphometrics-style tables round-trip without shifting
-  colours.
+  cortical atlas: the volume is filtered to the lookup table before
+  projection, unlabelled cortex vertices take their neighbours' most common
+  label, and cortex is split at the correct 1-based midline voxel. It also
+  handles lookup tables carrying labels with spaces.
 
 - The brain silhouette behind a subcortical atlas is no longer built from the
-  atlas's own parcels when their ids land between 1000 and 2999; the plain
-  `aseg` cortex labels win whenever the volume carries both.
+  atlas's own parcels when their ids land between 1000 and 2999.
 
-- `create_cerebellar_from_volume()` builds from float-typed parcellation
-  volumes, `volume` is forwarded by `create_cerebellar_from_gifti()` and
-  `create_cerebellar_from_annotation()` so their atlases carry 3D meshes, and
-  `decimate` is honoured by all three cerebellar creators. Trilinear resampling
-  skips non-finite deformation coordinates rather than failing.
+- `create_cerebellar_from_volume()` builds from float-typed volumes, `volume`
+  is forwarded by the GIFTI and annotation creators so their atlases carry 3D
+  meshes, and `decimate` is honoured by all three.
 
-- `create_cortical_from_neuromaps()` honours `label_table` on the volume path,
-  and neither it nor `read_neuromaps_volume()` aborts with
-  `'breaks' are not unique` on a map with tied values; duplicate quantile
-  breaks are collapsed with a warning and an all-medial-wall hemisphere
-  errors clearly.
+- `create_cortical_from_neuromaps()` honours `label_table` on the volume
+  path, and tied values no longer abort with `'breaks' are not unique`.
 
 - `create_cortical_from_labels()` and `create_tract_from_tractography()` keep
-  region names when `input_lut` is a FreeSurfer-style file path, falling back
-  to `label` where there is no `region` column.
+  region names when `input_lut` is a file path.
 
 - `read_cifti_annotation()` and `create_cortical_from_cifti()` work on real
-  CIFTI files, reading label names from the label table's row names, warn when
-  a file carries labelled subcortical voxels the cortical pipeline ignores
-  (#85), and warn when a file holds more than one label map.
+  CIFTI files, warn when a file carries subcortical voxels the cortical
+  pipeline ignores (#85), and warn on more than one label map.
 
-- `atlas_dilate()` with a negative `amount` large enough to erode a region away
-  warns naming the regions lost and removes them from `core`, the palette and
-  the geometry, so the result still validates as a `ggseg_atlas`.
+- `atlas_dilate()` with a negative `amount` large enough to erode a region
+  away warns naming the regions lost and removes them, so the result still
+  validates.
 
 - `project_volume_anatomical()` warns when `protect_cortex` removes a label
-  entirely, naming the lost labels -- the defect that shipped ggsegJHU's
-  ICBM-DTI-81 atlas with its right superior longitudinal fasciculus missing.
+  entirely, naming the lost labels.
 
-- Annotation files whose colour table already defines an `unknown` region no
-  longer produce a duplicate label, and parcellations that name their medial
-  wall (`FreeSurfer_Defined_Medial_Wall`, `medialwall`, `???`) are treated as
-  context while parcels such as `medialorbitofrontal` stay regions.
+- Annotation files whose colour table already defines `unknown` no longer
+  produce a duplicate label, and parcellations naming their medial wall are
+  treated as context while parcels such as `medialorbitofrontal` stay
+  regions.
 
-- Contour extraction no longer crashes on empty or all-`NA` region rasters,
-  keeps the valid contours when only some are empty, and reports a clear error
-  when no region yields a contour.
+- Contour extraction no longer crashes on empty or all-`NA` rasters, keeps
+  the valid contours when only some are empty, and errors clearly when none
+  yields a contour.
 
-- `freesurferformats` is checked before use in every path that needs it,
-  `decimate_mesh()` guards `rgl` as well as `Rvcg`, and
-  `ensure_fs_compatible_nifti()` falls through gracefully when a NIfTI header
-  cannot be read.
+- Suggested packages are checked before use in every path that needs them,
+  and `ensure_fs_compatible_nifti()` falls through gracefully when a NIfTI
+  header cannot be read.
 
 - `prepare_subcortical_mni152()` converts the aseg through
-  `freesurfer::mri_convert()` rather than working around it (#118), and
-  `mri_info` is called with a shell-quoted path so volume paths containing
-  spaces work; region names containing `()` or `/` are handled throughout.
+  `freesurfer::mri_convert()` (#118), paths containing spaces work, and
+  region names containing `()` or `/` are handled throughout.
 
 - Boolean and verbosity options parse spelled-out strings consistently across
-  the explicit, option and environment-variable channels, so
-  `GGSEG_EXTRA_VERBOSE=false` silences output and `"yes"`/`"1"` are honoured.
-  `as_verbosity()` falls back as documented for a value that is not length 1,
-  and reads a factor by its label.
+  the argument, option and environment-variable channels.
 
-- The bundled atlas template generates a package that passes `R CMD check`:
-  placeholders are bare identifiers that parse as R, the scaffolded build
-  script calls the current API, the licence declaration matches the shipped
-  `LICENSE`, `.lintr` excludes `data-raw/`, and the generated workflows run on
-  pull requests. `setup_atlas_repo()` no longer copies the template's own
-  `.github/` directory or rewrites files under `.git`, and reports failed
-  copies.
+- The bundled atlas template generates a package that passes `R CMD check`,
+  and `setup_atlas_repo()` no longer copies the template's own `.github/`
+  directory or rewrites files under `.git`.
 
 ## Documentation
 
-- `?ggseg.extra` states what these atlases are for:
-  visualising results as general anatomical guidance, not precision geometry for analysis.
-  It says which approximations are acceptable by design and which are bugs,
-  and documents that a cortical or cerebellar atlas carries vertex indices into fsaverage5 or SUIT,
-  so its 3D plot shows that surface's anatomy rather than the atlas's own.
+- `?ggseg.extra` states what these atlases are for: visualising results as
+  general anatomical guidance, not precision geometry for analysis. It says
+  which approximations are acceptable by design and which are bugs.
 
 - Six vignettes -- getting started, pipeline configuration, post-processing,
-  system setup, legacy conversion, contributing -- and, on the package website,
-  an atlas creation workflows article with six verified diagrams plus nine
-  step-by-step tutorials covering the cortical, label, subcortical, cerebellar,
-  whole-brain, tract, neuromaps, lookup-table and atlas-publishing workflows.
-  Each fact has one home.
+  system setup, legacy conversion, contributing -- and, on the website, an
+  atlas creation workflows article plus nine step-by-step tutorials covering
+  every pipeline.
 
-- The tutorials are built from reproducible `.qmd.orig` sources, plot the atlas
-  at each stage of a build with vertex counts beside it, and teach the current
-  API: `atlas_polish()`, `context_pattern()`, `plot()` for an overview and
-  `ggplot() + geom_brain()` for a figure, rather than the defunct `ggseg()`.
-  Five of them are knitted on every pull request.
+- The tutorials are built from reproducible `.qmd.orig` sources, plot the
+  atlas at each stage of a build, and teach the current API. Five are knitted
+  on every pull request.
 
-- `vignette("post-processing")` leads with `atlas_polish()` and covers
-  polishing a context silhouette and a structure core as the separate problems
-  they are: the thin ribbon gently with `method = "chaikin"`, the solid nuclei
-  more firmly with the default `close`.
+- `vignette("post-processing")` leads with `atlas_polish()` and treats
+  polishing a context silhouette and a structure core as separate problems.
 
-- Examples for `atlas_simplify()`, `atlas_smooth()`, `atlas_polish()`,
-  `atlas_dilate()`, `count_vertices()` and `context_pattern()` run under
-  `R CMD check`, so the figures the documentation quotes are produced rather
-  than asserted, and a test parses every documented example and asserts that
-  each argument it names is one the function accepts.
+- Examples for the geometry verbs run under `R CMD check`, and a test parses
+  every documented example and asserts each argument it names is one the
+  function accepts.
 
-- Help pages are scannable: each `@param` says what to pass in a sentence or
-  two with the reasoning moved to `@details`, the twelve `create_*()` functions
-  share `@family atlas creation` and point at `atlas_polish()`, every creator
-  describes what its returned object holds, and the four anatomical
-  coregistration functions say which to reach for and why.
+- Help pages are scannable: `@param` says what to pass, with reasoning in
+  `@details`; the twelve `create_*()` functions share `@family atlas
+  creation`; every creator describes what its returned object holds.
 
-- The reference index groups geometry shaping, curation and file reading under
-  their own headings, the re-exported `atlas_*` verbs have a visible
-  `?atlas-verbs` page naming each verb and what it changes, and the website
-  separates conceptual **Articles** from step-by-step **Tutorials**.
+- The reference index groups geometry shaping, curation and file reading
+  under their own headings, the re-exported `atlas_*` verbs have a visible
+  `?atlas-verbs` page, and the website separates **Articles** from
+  **Tutorials**.
 
-- The package-level help topic maps the five pipeline families to their
-  creators and points at `sitrep()`, `atlas_polish()` and
-  `setup_atlas_repo()`, and the README shows a four-line first atlas and states
-  the `freesurfer >= 1.9.0` floor.
-
-- Reading annotation files needs the `freesurferformats` R package, not a
-  FreeSurfer installation, and `SystemRequirements` no longer claims FreeSurfer
-  for the tract pipelines, which never call it.
+- Reading annotation files needs the `freesurferformats` package, not a
+  FreeSurfer installation, and `SystemRequirements` no longer claims
+  FreeSurfer for the tract pipelines.
 
 # ggseg.extra 1.6
 
