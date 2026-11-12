@@ -1,6 +1,6 @@
 # Changelog
 
-## ggseg.extra 1.9.9.9140
+## ggseg.extra 1.9.9.9142
 
 This section becomes the 2.0.0 release notes at submission. It is the
 first CRAN release of ggseg.extra, the atlas-building package of the
@@ -91,13 +91,13 @@ volumes and tractography files.
   [`ggseg_atlas_github_actions()`](https://ggsegverse.github.io/ggseg.extra/reference/ggseg_atlas_github_actions.md)
   replaces `atlas_github_actions()`; the old names are removed.
 
-- [`subcortical_slabs()`](https://ggsegverse.github.io/ggseg.extra/reference/subcortical_slabs.md)
-  replaces `subcortical_views()`, and the volumetric `views` argument of
-  [`create_subcortical_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_subcortical_from_volume.md)
-  and
-  [`create_tract_from_tractography()`](https://ggsegverse.github.io/ggseg.extra/reference/create_tract_from_tractography.md)
-  is `slabs`. The cortical creators’ `views` argument, which selects
-  standard panels, is unrelated and unchanged.
+- The volumetric creators take `views`, and
+  [`subcortical_views()`](https://ggsegverse.github.io/ggseg.extra/reference/subcortical_views.md)
+  builds the table: each row is one view of the built atlas, its `name`
+  becoming the `view` that
+  [`ggseg.formats::atlas_views()`](https://ggsegverse.github.io/ggseg.formats/reference/atlas_views.html)
+  reports. The `slabs` spelling used during the 2.0 dev cycle is
+  deprecated and still works.
 
 - Related arguments are grouped into lists, and the flat spellings are
   no longer accepted: `tube_opts` in

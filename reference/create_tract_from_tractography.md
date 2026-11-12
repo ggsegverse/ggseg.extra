@@ -27,13 +27,14 @@ create_tract_from_tractography(
   atlas_name = NULL,
   output_dir = NULL,
   tube_opts = list(),
-  slabs = NULL,
+  views = NULL,
   vertex_size_limits = NULL,
   steps = NULL,
   min_coverage = NULL,
   cleanup = NULL,
   skip_existing = NULL,
-  coord_space = c("infer", "voxel", "mm")
+  coord_space = c("infer", "voxel", "mm"),
+  slabs = lifecycle::deprecated()
 )
 ```
 
@@ -108,10 +109,18 @@ create_tract_from_tractography(
 
   Unknown entries error.
 
-- slabs:
+- views:
 
-  A data.frame specifying projection slabs. If NULL, a default set of
-  tract slabs is derived from the volume dimensions.
+  The views to build, as a data.frame with columns `name`, `type`
+  ("axial", "coronal", "sagittal"), `start` (first slice) and `end`
+  (last slice). Each row is one view of the finished atlas: `name`
+  becomes its `view`, the value
+  [`ggseg.formats::atlas_views()`](https://ggsegverse.github.io/ggseg.formats/reference/atlas_views.html)
+  reports and the name the view verbs match on. `start`/`end` are the
+  band of slices that view is projected through — unlike a single slice,
+  a projection shows every structure in the band in its spatial
+  relationships, like an X-ray. `NULL`, the default, derives a set from
+  the volume's own labels.
 
 - vertex_size_limits:
 
@@ -182,6 +191,10 @@ create_tract_from_tractography(
   Tractography files need no declaration: `.trk` and `.tck` files are
   always read into RAS world millimetres, and `"voxel"` is an error for
   them.
+
+- slabs:
+
+  **\[deprecated\]** Renamed to `views`.
 
 ## Value
 

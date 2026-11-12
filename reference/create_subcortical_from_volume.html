@@ -21,7 +21,7 @@ Requires FreeSurfer for mesh generation."><meta property="og:image" content="htt
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9141</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9142</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -102,13 +102,14 @@ snapshots at specified coordinates and extracting contours.</p>
 <span>  input_lut <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  atlas_name <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  output_dir <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  slabs <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  views <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  vertex_size_limits <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  min_coverage <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  cleanup <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  skip_existing <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  steps <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  type <span class="op">=</span> <span class="st">"subcortical"</span></span>
+<span>  type <span class="op">=</span> <span class="st">"subcortical"</span>,</span>
+<span>  slabs <span class="op">=</span> <span class="fu">lifecycle</span><span class="fu">::</span><span class="fu"><a href="https://lifecycle.r-lib.org/reference/deprecated.html" class="external-link">deprecated</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -198,19 +199,15 @@ filename. It also names the folder of intermediate files inside
 <code>GGSEG_EXTRA_OUTPUT_DIR</code>.</p></dd>
 
 
-<dt id="arg-slabs">slabs<a class="anchor" aria-label="anchor" href="#arg-slabs"></a></dt>
-<dd><p>A data.frame specifying projection slabs with columns <code>name</code>,
-<code>type</code> ("axial", "coronal", "sagittal"), <code>start</code> (first slice), <code>end</code>
-(last slice). Defaults to three coronal and three axial slabs tiling the
-bounding box of the atlas's own labels, plus one left-hemisphere
-sagittal slab, so the band follows the anatomy of the volume rather than
-a fixed set of slice indices.
-Unlike slices, projections show ALL structures in their spatial
-relationships - like an X-ray view. May also be a named list of
-<code><a href="subcortical_slabs.html">subcortical_slabs()</a></code> arguments (e.g.
-<code>slabs = list(labels = 801:810, coronal = 3, axial = 2)</code>); it is expanded
-into a slab table with <code>volume</code> defaulting to <code>input_volume</code>, so the slab
-indices are computed in the builder's own frame.</p></dd>
+<dt id="arg-views">views<a class="anchor" aria-label="anchor" href="#arg-views"></a></dt>
+<dd><p>The views to build, as a data.frame with columns <code>name</code>,
+<code>type</code> ("axial", "coronal", "sagittal"), <code>start</code> (first slice) and <code>end</code>
+(last slice). Each row is one view of the finished atlas: <code>name</code> becomes
+its <code>view</code>, the value <code><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_views.html" class="external-link">ggseg.formats::atlas_views()</a></code> reports and the name
+the view verbs match on. <code>start</code>/<code>end</code> are the band of slices that view
+is projected through — unlike a single slice, a projection shows every
+structure in the band in its spatial relationships, like an X-ray.
+<code>NULL</code>, the default, derives a set from the volume's own labels.</p></dd>
 
 
 <dt id="arg-vertex-size-limits">vertex_size_limits<a class="anchor" aria-label="anchor" href="#arg-vertex-size-limits"></a></dt>
@@ -269,11 +266,22 @@ same things; the type is what lets a plot name the anatomy correctly,
 and a white-matter atlas is not drawn as a 2D backdrop. Reach for
 <code><a href="create_wm_from_volume.html">create_wm_from_volume()</a></code> rather than passing <code>"wm"</code> here.</p></dd>
 
+
+<dt id="arg-slabs">slabs<a class="anchor" aria-label="anchor" href="#arg-slabs"></a></dt>
+<dd><p><a href="https://lifecycle.r-lib.org/articles/stages.html#deprecated" class="external-link"><img src="figures/lifecycle-deprecated.svg" alt="[Deprecated]"></a> Renamed to <code>views</code>.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A <code>ggseg_atlas</code> object with region metadata (core), 3D meshes,
 a colour palette, and optionally sf geometry for 2D slice plots.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
+    <p><code>views</code> may also be given as a named list of <code><a href="subcortical_views.html">subcortical_views()</a></code>
+arguments (e.g. <code>views = list(labels = 801:810, coronal = 3, axial = 2)</code>),
+which is expanded with <code>volume</code> defaulting to <code>input_volume</code> so the slice
+indices are computed in the builder's own frame.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

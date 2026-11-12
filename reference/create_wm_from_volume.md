@@ -26,12 +26,13 @@ create_wm_from_volume(
   input_lut = NULL,
   atlas_name = NULL,
   output_dir = NULL,
-  slabs = NULL,
+  views = NULL,
   vertex_size_limits = NULL,
   min_coverage = NULL,
   cleanup = NULL,
   skip_existing = NULL,
-  steps = NULL
+  steps = NULL,
+  slabs = lifecycle::deprecated()
 )
 ```
 
@@ -141,21 +142,18 @@ create_wm_from_volume(
   [`tempdir()`](https://rdrr.io/r/base/tempfile.html), from
   `options("ggseg.extra.output_dir")` or `GGSEG_EXTRA_OUTPUT_DIR`.
 
-- slabs:
+- views:
 
-  A data.frame specifying projection slabs with columns `name`, `type`
-  ("axial", "coronal", "sagittal"), `start` (first slice), `end` (last
-  slice). Defaults to three coronal and three axial slabs tiling the
-  bounding box of the atlas's own labels, plus one left-hemisphere
-  sagittal slab, so the band follows the anatomy of the volume rather
-  than a fixed set of slice indices. Unlike slices, projections show ALL
-  structures in their spatial relationships - like an X-ray view. May
-  also be a named list of
-  [`subcortical_slabs()`](https://ggsegverse.github.io/ggseg.extra/reference/subcortical_slabs.md)
-  arguments (e.g.
-  `slabs = list(labels = 801:810, coronal = 3, axial = 2)`); it is
-  expanded into a slab table with `volume` defaulting to `input_volume`,
-  so the slab indices are computed in the builder's own frame.
+  The views to build, as a data.frame with columns `name`, `type`
+  ("axial", "coronal", "sagittal"), `start` (first slice) and `end`
+  (last slice). Each row is one view of the finished atlas: `name`
+  becomes its `view`, the value
+  [`ggseg.formats::atlas_views()`](https://ggsegverse.github.io/ggseg.formats/reference/atlas_views.html)
+  reports and the name the view verbs match on. `start`/`end` are the
+  band of slices that view is projected through — unlike a single slice,
+  a projection shows every structure in the band in its spatial
+  relationships, like an X-ray. `NULL`, the default, derives a set from
+  the volume's own labels.
 
 - vertex_size_limits:
 
@@ -216,6 +214,10 @@ create_wm_from_volume(
   Use `steps = 1:3` for a 3D-only atlas. Geometry is shaped after the
   build, not during it: see
   [`atlas_polish()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_polish.md).
+
+- slabs:
+
+  **\[deprecated\]** Renamed to `views`.
 
 ## Value
 

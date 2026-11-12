@@ -238,7 +238,7 @@ Read, write and build FreeSurfer-style colour lookup tables
 
 Compose slice views and anatomical context for subcortical atlases
 
-- [`subcortical_slabs()`](https://ggsegverse.github.io/ggseg.extra/reference/subcortical_slabs.md)
+- [`subcortical_views()`](https://ggsegverse.github.io/ggseg.extra/reference/subcortical_views.md)
   : Build subcortical slabs from a label bounding box
 
 ## Anatomical Coregistration
