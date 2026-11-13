@@ -106,15 +106,9 @@ reference:
       Simplify, smooth and grow a finished atlas's 2D outlines. These run on
       the returned atlas, not during the build, so retuning one is cheap.
     contents:
-      - atlas_polish
-      - atlas_simplify
-      - atlas_smooth
-      - atlas_dilate
-      - atlas_view_remove_sparse
-      - atlas_view_remove_empty
-      - atlas_view_region_counts
+      # tracks @family atlas geometry, so a new verb lands here on its own
+      - has_concept("atlas geometry")
       - context_pattern
-      - count_vertices
 
   - title: Curate an Atlas
     desc: >
@@ -136,14 +130,7 @@ reference:
   - title: Lookup Tables
     desc: Read, write and build FreeSurfer-style colour lookup tables
     contents:
-      - read_lut
-      - write_lut
-      - get_lut
-      - is_lut
-      - lut_add
-      - lut_combine
-      - lut_classify_anatomy
-      - lut_generate_colors
+      - matches("lut")
 
   - title: Subcortical Helpers
     desc: Compose slice views and anatomical context for subcortical atlases
@@ -162,9 +149,7 @@ reference:
   - title: Cerebellar Helpers
     desc: SUIT surfaces and MNI-to-SUIT transforms for cerebellar atlases
     contents:
-      - suit_flatmap_path
-      - suit_3d_path
-      - suit_deformation_field
+      - starts_with("suit_")
       - transform_mni_to_suit
       - read_suit_parcellation
 
