@@ -2,6 +2,22 @@
 
 ## ggseg.extra 1.9.9.9144
 
+### Bug fixes
+
+- Whole-brain atlases built from an MGZ volume are no longer mirrored or
+  displaced. `read_volume()` returns a bare array for MGZ, so the
+  derived volumes the pipeline writes were given a default affine
+  instead of the source’s, and every mesh tessellated from them
+  followed. NIfTI sources were unaffected and keep their own orientation
+  and header codes.
+
+- The hemisphere contract is checked where atlases are built, not just
+  where meshes happen to carry a `hemi` column.
+  `check_mesh_hemispheres()` was handed a frame that carries only
+  `label` and `mesh`, so it read an absent column and passed every
+  atlas, mirrored or not. Tract and cerebellar pipelines are covered
+  too; a mirrored atlas now aborts at creation.
+
 This section becomes the 2.0.0 release notes at submission. It is the
 first CRAN release of ggseg.extra, the atlas-building package of the
 ggsegverse, renamed and restructured from ‘ggsegExtra’ for the
