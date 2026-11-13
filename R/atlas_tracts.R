@@ -726,6 +726,10 @@ tract_cached_snapshots <- function(cached, config) {
 
 #' @noRd
 tract_assemble_3d <- function(step1) {
+  check_centerline_hemispheres(
+    step1$centerlines_df,
+    hemi = hemi_for_labels(step1$core, step1$centerlines_df$label)
+  )
   ggseg_atlas(
     atlas = step1$atlas_name,
     type = "tract",
@@ -756,6 +760,11 @@ tract_assemble_full <- function(step1, dirs, slabs, cortex_slices) {
     contours_file,
     slabs,
     cortex_slices
+  )
+
+  check_centerline_hemispheres(
+    step1$centerlines_df,
+    hemi = hemi_for_labels(step1$core, step1$centerlines_df$label)
   )
 
   atlas <- ggseg_atlas(

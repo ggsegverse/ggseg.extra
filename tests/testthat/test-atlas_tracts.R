@@ -3,7 +3,7 @@
 describe("create_tract_from_tractography", {
   it("creates atlas from coordinate matrices", {
     tracts <- list(
-      cst_left = matrix(c(1:20, rep(0, 40)), ncol = 3),
+      cst_left = matrix(c(-(1:20), rep(0, 40)), ncol = 3),
       cst_right = matrix(c(1:20, rep(1, 40)), ncol = 3)
     )
 
@@ -20,7 +20,7 @@ describe("create_tract_from_tractography", {
   })
 
   it("errors when tube_segments is less than 3", {
-    tracts <- list(cst_left = matrix(c(1:20, rep(0, 40)), ncol = 3))
+    tracts <- list(cst_left = matrix(c(-(1:20), rep(0, 40)), ncol = 3))
 
     expect_error(
       create_tract_from_tractography(
@@ -35,7 +35,7 @@ describe("create_tract_from_tractography", {
 
   it("assigns correct labels", {
     tracts <- list(
-      cst_left = matrix(c(1:20, rep(0, 40)), ncol = 3),
+      cst_left = matrix(c(-(1:20), rep(0, 40)), ncol = 3),
       cst_right = matrix(c(1:20, rep(1, 40)), ncol = 3)
     )
 
@@ -109,7 +109,7 @@ describe("create_tract_from_tractography", {
   it("can render with ggseg3d", {
     skip_render_on_windows()
     tracts <- list(
-      cst_left = matrix(c(1:20, rep(0, 40)), ncol = 3),
+      cst_left = matrix(c(-(1:20), rep(0, 40)), ncol = 3),
       cst_right = matrix(c(1:20, rep(1, 40)), ncol = 3)
     )
 

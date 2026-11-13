@@ -143,9 +143,159 @@ describe("check_mesh_hemispheres()", {
     )
   })
 
+  it("ignores a row whose mesh is missing", {
+    m <- meshes_with(-20, 20)
+    m$mesh[1] <- list(NULL)
+    expect_no_error(check_mesh_hemispheres(m))
+  })
+
   it("passes a frame with no meshes in it", {
     # A subcortical atlas can legitimately carry none.
     expect_no_error(check_mesh_hemispheres(data.frame(label = "a")))
     expect_no_error(check_mesh_hemispheres(NULL))
+  })
+})
+
+
+describe("the hemisphere contract is checked where atlases are built", {
+  # These drive the real assembly functions rather than a hand-made frame.
+  # The check was vacuous in production for exactly that reason: it was
+  # handed `components$meshes_df`, which build_atlas_components() keeps to
+  # `label` and `mesh`, so it read an absent `hemi` and passed everything.
+  # A unit test on a frame that happens to carry `hemi` cannot see that.
+  mesh_at <- function(x) {
+    list(
+      vertices = data.frame(x = x + c(0, 1, 0), y = c(0, 0, 1), z = c(0, 0, 0)),
+      faces = data.frame(i = 1, j = 2, k = 3)
+    )
+  }
+  subcortical_components <- function(x_left, x_right) {
+    d <- data.frame(
+      label = c("Left-Caudate", "Right-Caudate"),
+      hemi = c("left", "right"),
+      region = c("caudate", "caudate"),
+      colour = c("#FF0000", "#00FF00"),
+      stringsAsFactors = FALSE
+    )
+    d$mesh <- list(mesh_at(x_left), mesh_at(x_right))
+    build_atlas_components(d)
+  }
+
+  it("stops a mirrored subcortical atlas being assembled", {
+    expect_error(
+      subcort_assemble_3d("test", subcortical_components(20, -20)),
+      "wrong side of the midline"
+    )
+  })
+
+  it("lets a subcortical atlas that honours the convention through", {
+    expect_no_error(subcort_assemble_3d(
+      "test",
+      subcortical_components(-20, 20)
+    ))
+  })
+
+  it("still checks after labels without geometry are dropped", {
+    # subcort_assemble_full() checks again on its own components, so the
+    # second call site has to carry the hemisphere too.
+    comps <- subcortical_components(20, -20)
+    expect_error(
+      check_mesh_hemispheres(
+        comps$meshes_df,
+        hemi = hemi_for_labels(comps$core, comps$meshes_df$label)
+      ),
+      "wrong side of the midline"
+    )
+  })
+
+  points_at <- function(x) {
+    cbind(x = x + c(0, 1, 2), y = c(0, 1, 2), z = c(0, 1, 2))
+  }
+  tract_step1 <- function(x_left, x_right) {
+    cl <- data.frame(label = c("lh.cst", "rh.cst"), stringsAsFactors = FALSE)
+    cl$points <- list(points_at(x_left), points_at(x_right))
+    cl$tangents <- list(points_at(0), points_at(0))
+    list(
+      atlas_name = "t",
+      palette = NULL,
+      core = data.frame(
+        hemi = c("left", "right"),
+        region = c("cst", "cst"),
+        label = c("lh.cst", "rh.cst"),
+        stringsAsFactors = FALSE
+      ),
+      centerlines_df = cl
+    )
+  }
+
+  it("stops a mirrored tract atlas being assembled", {
+    # tracula shipped mirrored because this pipeline had no check at all.
+    expect_error(
+      tract_assemble_3d(tract_step1(20, -20)),
+      "wrong side of the midline"
+    )
+  })
+
+  it("lets a tract atlas that honours the convention through", {
+    expect_no_error(tract_assemble_3d(tract_step1(-20, 20)))
+  })
+})
+
+describe("check_centerline_hemispheres()", {
+  centerlines_with <- function(x_left, x_right, hemis = c("left", "right")) {
+    out <- data.frame(
+      label = c("lh", "rh"),
+      hemi = hemis,
+      stringsAsFactors = FALSE
+    )
+    out$points <- list(
+      cbind(x = x_left + c(0, 1), y = c(0, 1), z = c(0, 1)),
+      cbind(x = x_right + c(0, 1), y = c(0, 1), z = c(0, 1))
+    )
+    out
+  }
+
+  it("passes centerlines that honour the convention", {
+    expect_no_error(check_centerline_hemispheres(centerlines_with(-20, 20)))
+  })
+
+  it("aborts on mirrored centerlines, naming them as tracts", {
+    expect_error(
+      check_centerline_hemispheres(centerlines_with(20, -20)),
+      "tracts"
+    )
+  })
+
+  it("ignores a tract with no points", {
+    cl <- centerlines_with(20, -20)
+    # `[[1]] <- NULL` would drop the element and slide the right-hemisphere
+    # tract onto the left row; `[1] <- list(NULL)` empties it in place.
+    cl$points[1] <- list(NULL)
+    expect_no_error(check_centerline_hemispheres(cl))
+  })
+
+  it("passes a frame carrying no centerlines", {
+    expect_no_error(check_centerline_hemispheres(data.frame(label = "a")))
+  })
+})
+
+describe("hemi_for_labels()", {
+  core <- data.frame(
+    label = c("b", "a"),
+    hemi = c("right", "left"),
+    stringsAsFactors = FALSE
+  )
+
+  it("matches on label rather than row order", {
+    expect_identical(hemi_for_labels(core, c("a", "b")), c("left", "right"))
+  })
+
+  it("gives NA for a label the core does not carry", {
+    expect_identical(hemi_for_labels(core, "c"), NA_character_)
+  })
+
+  it("returns NULL when the core cannot answer, so the check stays inert", {
+    expect_null(hemi_for_labels(NULL, "a"))
+    expect_null(hemi_for_labels(data.frame(label = "a"), "a"))
   })
 })

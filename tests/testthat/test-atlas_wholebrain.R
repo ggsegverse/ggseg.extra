@@ -4416,3 +4416,127 @@ describe("white matter in a whole-brain volume", {
     )
   })
 })
+
+describe("volumes derived from a source keep the source's geometry", {
+  # read_volume() always hands back a bare array -- it drops the affine even
+  # for NIfTI input -- so `asNifti(result, reference = vol)` silently wrote
+  # every derived volume on a default affine. Structures then sat in the
+  # wrong place in world space, and the meshes tessellated from them
+  # followed: this is why whole-brain atlases shipped mirrored.
+  source_volume <- test_path("testdata", "volumetric", "aseg.mgz")
+
+  world_x <- function(array, xform, label) {
+    idx <- which(array == label, arr.ind = TRUE)
+    world <- cbind(idx[, 1] - 1, idx[, 2] - 1, idx[, 3] - 1, 1) %*% t(xform)
+    mean(world[, 1])
+  }
+  source_world_x <- function(label) {
+    mgh <- freesurferformats::read.fs.mgh(source_volume, with_header = TRUE)
+    world_x(
+      mgh$data,
+      freesurferformats::mghheader.vox2ras(mgh$header),
+      label
+    )
+  }
+
+  it("puts each structure where the source volume has it", {
+    arr <- read_volume(source_volume, reorient = FALSE)
+    out <- nifti_with_source_geometry(arr, source_volume, arr)
+    expect_equal(
+      world_x(as.array(out), RNifti::xform(out), 10),
+      source_world_x(10),
+      tolerance = 1e-6
+    )
+  })
+
+  it("keeps left negative and right positive, as the contract wants", {
+    arr <- read_volume(source_volume, reorient = FALSE)
+    out <- nifti_with_source_geometry(arr, source_volume, arr)
+    left <- world_x(as.array(out), RNifti::xform(out), 10)
+    right <- world_x(as.array(out), RNifti::xform(out), 49)
+    expect_lt(left, 0)
+    expect_gt(right, 0)
+  })
+
+  it("leaves a reference that already carries geometry alone", {
+    # A NIfTI source keeps its own orientation, codes and voxel sizes: only
+    # an MGZ read arrives without them.
+    tmp <- withr::local_tempfile(fileext = ".nii.gz")
+    xform <- structure(
+      matrix(
+        c(-1.5, 0, 0, 0, 0, 1.5, 0, 0, 0, 0, 1.5, 0, 90, -126, -72, 1),
+        nrow = 4
+      ),
+      code = 4L
+    )
+    img <- RNifti::asNifti(array(1L, c(4, 4, 4)))
+    RNifti::qform(img) <- xform
+    RNifti::sform(img) <- xform
+    RNifti::writeNifti(img, tmp)
+    ref <- read_volume(tmp, reorient = FALSE)
+    out <- nifti_with_source_geometry(array(1L, c(4, 4, 4)), tmp, ref)
+    for (field in c("qform_code", "sform_code", "srow_x", "srow_y", "srow_z")) {
+      expect_identical(
+        RNifti::niftiHeader(out)[[field]],
+        RNifti::niftiHeader(ref)[[field]],
+        label = field
+      )
+    }
+  })
+
+  it("takes the voxel sizes from the source affine", {
+    arr <- read_volume(source_volume, reorient = FALSE)
+    out <- nifti_with_source_geometry(arr, source_volume, arr)
+    v2r <- volume_vox2ras(source_volume)
+    expect_equal(
+      RNifti::pixdim(out)[1:3],
+      sqrt(colSums(v2r[1:3, 1:3]^2)),
+      tolerance = 1e-6
+    )
+  })
+
+  it("gives the affine an xform code", {
+    # RNifti treats an affine set without a code as unknown and silently
+    # keeps the identity, which is how the first attempt at this fix failed.
+    arr <- read_volume(source_volume, reorient = FALSE)
+    out <- nifti_with_source_geometry(arr, source_volume, arr)
+    expect_gt(attr(RNifti::xform(out), "code"), 0L)
+    expect_false(isTRUE(all.equal(
+      unname(RNifti::xform(out)[1:3, 1:4]),
+      cbind(diag(3), 0)
+    )))
+  })
+
+  it("refuses to write a volume whose affine it cannot read", {
+    local_mocked_bindings(volume_vox2ras = function(...) NULL)
+    expect_error(
+      nifti_with_source_geometry(
+        array(0L, c(2, 2, 2)),
+        source_volume,
+        array(0L, c(2, 2, 2))
+      ),
+      "voxel-to-world affine"
+    )
+  })
+
+  it("carries the geometry through the subcortical volume it prepares", {
+    out_file <- withr::local_tempfile(fileext = ".nii.gz")
+    wholebrain_prepare_subcortical_volume(
+      input_volume = source_volume,
+      subcortical_idx = c(10, 18, 49, 54),
+      cortical_idx = integer(),
+      output_file = out_file,
+      target_idx = c(10, 18, 49, 54),
+      silhouette = "atlas",
+      verbose = FALSE
+    )
+    written <- RNifti::readNifti(out_file)
+    expect_equal(
+      world_x(as.array(written), RNifti::xform(written), 10),
+      source_world_x(10),
+      tolerance = 1e-6
+    )
+    expect_lt(world_x(as.array(written), RNifti::xform(written), 10), 0)
+    expect_gt(world_x(as.array(written), RNifti::xform(written), 49), 0)
+  })
+})
