@@ -162,6 +162,8 @@ Turn a parcellation into a `ggseg_atlas` you can plot
 Simplify, smooth and grow a finished atlas’s 2D outlines. These run on
 the returned atlas, not during the build, so retuning one is cheap.
 
+- [`atlas_dilate()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_dilate.md)
+  : Grow or shrink an atlas's regions
 - [`atlas_polish()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_polish.md)
   **\[experimental\]** : Simplify and smooth an atlas against a vertex
   budget
@@ -169,19 +171,17 @@ the returned atlas, not during the build, so retuning one is cheap.
   : Reduce an atlas's vertex count
 - [`atlas_smooth()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_smooth.md)
   : Round off an atlas's voxel staircase
-- [`atlas_dilate()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_dilate.md)
-  : Grow or shrink an atlas's regions
-- [`atlas_view_remove_sparse()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_view_remove_sparse.md)
-  : Drop the views a build left nearly empty
-- [`atlas_view_remove_empty()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_view_remove_empty.md)
-  : Drop the views that draw no region at all
 - [`atlas_view_region_counts()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_view_region_counts.md)
   : Count the drawn regions in each view
+- [`atlas_view_remove_empty()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_view_remove_empty.md)
+  : Drop the views that draw no region at all
+- [`atlas_view_remove_sparse()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_view_remove_sparse.md)
+  : Drop the views a build left nearly empty
+- [`count_vertices()`](https://ggsegverse.github.io/ggseg.extra/reference/count_vertices.md)
+  : Count the vertices an atlas carries
 - [`context_pattern()`](https://ggsegverse.github.io/ggseg.extra/reference/context_pattern.md)
   **\[experimental\]** : The label pattern that matches an atlas's
   backdrop
-- [`count_vertices()`](https://ggsegverse.github.io/ggseg.extra/reference/count_vertices.md)
-  : Count the vertices an atlas carries
 
 ## Curate an Atlas
 
@@ -219,22 +219,22 @@ Create and maintain a ggseg atlas package
 
 Read, write and build FreeSurfer-style colour lookup tables
 
-- [`read_lut()`](https://ggsegverse.github.io/ggseg.extra/reference/read_lut.md)
-  : Read FreeSurfer LUT
-- [`write_lut()`](https://ggsegverse.github.io/ggseg.extra/reference/write_lut.md)
-  : Write FreeSurfer LUT
 - [`get_lut()`](https://ggsegverse.github.io/ggseg.extra/reference/get_lut.md)
   : Read LUT and add hex colours
 - [`is_lut()`](https://ggsegverse.github.io/ggseg.extra/reference/is_lut.md)
   : Check if object is a LUT
 - [`lut_add()`](https://ggsegverse.github.io/ggseg.extra/reference/lut_add.md)
   : Add rows to a FreeSurfer LUT
-- [`lut_combine()`](https://ggsegverse.github.io/ggseg.extra/reference/lut_combine.md)
-  : Combine FreeSurfer LUTs
 - [`lut_classify_anatomy()`](https://ggsegverse.github.io/ggseg.extra/reference/lut_classify_anatomy.md)
   : Classify lookup-table labels by the tissue they sit on
+- [`lut_combine()`](https://ggsegverse.github.io/ggseg.extra/reference/lut_combine.md)
+  : Combine FreeSurfer LUTs
 - [`lut_generate_colors()`](https://ggsegverse.github.io/ggseg.extra/reference/lut_generate_colors.md)
   : Generate a palette for a colourless lookup table
+- [`read_lut()`](https://ggsegverse.github.io/ggseg.extra/reference/read_lut.md)
+  : Read FreeSurfer LUT
+- [`write_lut()`](https://ggsegverse.github.io/ggseg.extra/reference/write_lut.md)
+  : Write FreeSurfer LUT
 
 ## Subcortical Helpers
 
@@ -265,13 +265,13 @@ Align an atlas volume to a FreeSurfer subject for anatomical context
 
 SUIT surfaces and MNI-to-SUIT transforms for cerebellar atlases
 
-- [`suit_flatmap_path()`](https://ggsegverse.github.io/ggseg.extra/reference/suit_flatmap_path.md)
-  : Path to bundled SUIT flatmap surface
 - [`suit_3d_path()`](https://ggsegverse.github.io/ggseg.extra/reference/suit_3d_path.md)
   : Path to bundled SUIT 3D cerebellar surface
 - [`suit_deformation_field()`](https://ggsegverse.github.io/ggseg.extra/reference/suit_deformation_field.md)
   **\[experimental\]** : Download SUIT deformation field for MNI-to-SUIT
   transforms
+- [`suit_flatmap_path()`](https://ggsegverse.github.io/ggseg.extra/reference/suit_flatmap_path.md)
+  : Path to bundled SUIT flatmap surface
 - [`transform_mni_to_suit()`](https://ggsegverse.github.io/ggseg.extra/reference/transform_mni_to_suit.md)
   **\[experimental\]** : Transform a volume from MNI space to SUIT
   cerebellar space

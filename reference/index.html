@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9144</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9145</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -180,6 +180,13 @@
 
       <dl><dt>
 
+          <code><a href="atlas_dilate.html">atlas_dilate()</a></code>
+
+        </dt>
+        <dd>Grow or shrink an atlas's regions</dd>
+
+        <dt>
+
           <code><a href="atlas_polish.html">atlas_polish()</a></code>
           <span class="badge lifecycle lifecycle-experimental">experimental</span>
         </dt>
@@ -201,17 +208,10 @@
 
         <dt>
 
-          <code><a href="atlas_dilate.html">atlas_dilate()</a></code>
+          <code><a href="atlas_view_region_counts.html">atlas_view_region_counts()</a></code>
 
         </dt>
-        <dd>Grow or shrink an atlas's regions</dd>
-
-        <dt>
-
-          <code><a href="atlas_view_remove_sparse.html">atlas_view_remove_sparse()</a></code>
-
-        </dt>
-        <dd>Drop the views a build left nearly empty</dd>
+        <dd>Count the drawn regions in each view</dd>
 
         <dt>
 
@@ -222,17 +222,10 @@
 
         <dt>
 
-          <code><a href="atlas_view_region_counts.html">atlas_view_region_counts()</a></code>
+          <code><a href="atlas_view_remove_sparse.html">atlas_view_remove_sparse()</a></code>
 
         </dt>
-        <dd>Count the drawn regions in each view</dd>
-
-        <dt>
-
-          <code><a href="context_pattern.html">context_pattern()</a></code>
-          <span class="badge lifecycle lifecycle-experimental">experimental</span>
-        </dt>
-        <dd>The label pattern that matches an atlas's backdrop</dd>
+        <dd>Drop the views a build left nearly empty</dd>
 
         <dt>
 
@@ -240,6 +233,13 @@
 
         </dt>
         <dd>Count the vertices an atlas carries</dd>
+
+        <dt>
+
+          <code><a href="context_pattern.html">context_pattern()</a></code>
+          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+        </dt>
+        <dd>The label pattern that matches an atlas's backdrop</dd>
       </dl></div><div class="section level2">
       <h2 id="curate-an-atlas">Curate an Atlas<a class="anchor" aria-label="anchor" href="#curate-an-atlas"></a></h2>
 
@@ -312,20 +312,6 @@
 
       <dl><dt>
 
-          <code><a href="read_lut.html">read_lut()</a></code>
-
-        </dt>
-        <dd>Read FreeSurfer LUT</dd>
-
-        <dt>
-
-          <code><a href="write_lut.html">write_lut()</a></code>
-
-        </dt>
-        <dd>Write FreeSurfer LUT</dd>
-
-        <dt>
-
           <code><a href="get_lut.html">get_lut()</a></code>
 
         </dt>
@@ -347,13 +333,6 @@
 
         <dt>
 
-          <code><a href="lut_combine.html">lut_combine()</a></code>
-
-        </dt>
-        <dd>Combine FreeSurfer LUTs</dd>
-
-        <dt>
-
           <code><a href="lut_classify_anatomy.html">lut_classify_anatomy()</a></code>
 
         </dt>
@@ -361,10 +340,31 @@
 
         <dt>
 
+          <code><a href="lut_combine.html">lut_combine()</a></code>
+
+        </dt>
+        <dd>Combine FreeSurfer LUTs</dd>
+
+        <dt>
+
           <code><a href="lut_generate_colors.html">lut_generate_colors()</a></code>
 
         </dt>
         <dd>Generate a palette for a colourless lookup table</dd>
+
+        <dt>
+
+          <code><a href="read_lut.html">read_lut()</a></code>
+
+        </dt>
+        <dd>Read FreeSurfer LUT</dd>
+
+        <dt>
+
+          <code><a href="write_lut.html">write_lut()</a></code>
+
+        </dt>
+        <dd>Write FreeSurfer LUT</dd>
       </dl></div><div class="section level2">
       <h2 id="subcortical-helpers">Subcortical Helpers<a class="anchor" aria-label="anchor" href="#subcortical-helpers"></a></h2>
 
@@ -437,13 +437,6 @@
 
       <dl><dt>
 
-          <code><a href="suit_flatmap_path.html">suit_flatmap_path()</a></code>
-
-        </dt>
-        <dd>Path to bundled SUIT flatmap surface</dd>
-
-        <dt>
-
           <code><a href="suit_3d_path.html">suit_3d_path()</a></code>
 
         </dt>
@@ -455,6 +448,13 @@
           <span class="badge lifecycle lifecycle-experimental">experimental</span>
         </dt>
         <dd>Download SUIT deformation field for MNI-to-SUIT transforms</dd>
+
+        <dt>
+
+          <code><a href="suit_flatmap_path.html">suit_flatmap_path()</a></code>
+
+        </dt>
+        <dd>Path to bundled SUIT flatmap surface</dd>
 
         <dt>
 
