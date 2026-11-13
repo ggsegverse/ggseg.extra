@@ -1312,7 +1312,10 @@ write_projection_volume <- function(input_volume, keep_idx, output_dir) {
   }
   output_file <- file.path(output_dir, "projection_volume.nii")
   label_array <- zero_unlisted_labels(label_array, keep_idx)
-  RNifti::writeNifti(RNifti::asNifti(label_array, reference = vol), output_file)
+  RNifti::writeNifti(
+    nifti_with_source_geometry(label_array, input_volume, vol),
+    output_file
+  )
   output_file
 }
 
@@ -2381,6 +2384,61 @@ fill_missing_rgb <- function(ct, label = "structures") {
 }
 
 
+#' Build a derived volume that carries the source's geometry
+#'
+#' `read_volume()` returns a `niftiImage` for NIfTI input, which carries the
+#' affine, but a bare array for MGZ -- `freesurferformats` hands back the data
+#' and the affine separately, and only the data survives. Passing that array
+#' to `RNifti::asNifti()` as `reference` left the derived volume on a default
+#' affine, so every structure sat in the wrong place in world space and the
+#' meshes tessellated from it followed. That is how whole-brain atlases built
+#' from an MGZ came out mirrored.
+#'
+#' A reference that already carries geometry is used as-is, so a NIfTI source
+#' keeps its own orientation, xform codes and voxel sizes exactly as before.
+#'
+#' @param result Array to wrap.
+#' @param input_volume Path to the volume `result` was derived from.
+#' @param reference What `read_volume()` returned for that volume.
+#' @return A `niftiImage` on the source's grid.
+#' @noRd
+nifti_with_source_geometry <- function(
+  result,
+  input_volume,
+  reference,
+  call = rlang::caller_env()
+) {
+  if (inherits(reference, "niftiImage")) {
+    return(RNifti::asNifti(result, reference = reference))
+  }
+
+  out <- RNifti::asNifti(result)
+  vox2ras <- volume_vox2ras(input_volume)
+  if (is.null(vox2ras)) {
+    cli::cli_abort(
+      c(
+        "Could not read a voxel-to-world affine from {.path {input_volume}}.",
+        "x" = "Writing the volume without one would place every structure by
+               a default affine rather than the source's, which plots as a
+               mirrored or displaced atlas.",
+        "i" = "Convert the volume with {.code mri_convert}, or pass one whose
+               header carries a valid affine."
+      ),
+      call = call
+    )
+  }
+
+  # The code matters: RNifti treats an affine set without an xform code as
+  # unknown and silently keeps the identity, so the matrix has to carry one.
+  RNifti::qform(out) <- structure(vox2ras, code = 1L)
+  RNifti::sform(out) <- structure(vox2ras, code = 1L)
+  # asNifti() defaults every voxel to 1 mm; the source's sizes are the column
+  # norms of its affine.
+  RNifti::pixdim(out) <- sqrt(colSums(vox2ras[1:3, 1:3]^2))
+  out
+}
+
+
 #' Prepare volume for cerebellar pipeline
 #'
 #' Keeps only cerebellar labels in the volume and zeros everything else.
@@ -2396,7 +2454,7 @@ wholebrain_prepare_cerebellar_volume <- function(
   result <- array(0L, dim = dim(arr))
   keep <- arr %in% cerebellar_idx
   result[keep] <- arr[keep]
-  out <- RNifti::asNifti(result, reference = vol)
+  out <- nifti_with_source_geometry(result, input_volume, vol)
   if (RNifti::orientation(out) != "RAS") {
     RNifti::orientation(out) <- "RAS"
   }
@@ -2524,7 +2582,7 @@ wholebrain_prepare_subcortical_volume <- function(
     cortex_subject = cortex_subject,
     verbose = verbose
   )
-  out <- RNifti::asNifti(result, reference = vol)
+  out <- nifti_with_source_geometry(result, input_volume, vol)
   if (RNifti::orientation(out) != "RAS") {
     RNifti::orientation(out) <- "RAS"
   }

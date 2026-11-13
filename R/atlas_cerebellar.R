@@ -897,6 +897,10 @@ cerebellar_project_and_build <- function(
   # so checking before this would drop every one of them.
   components <- drop_labels_without_geometry(components, sf_data)
   warn_no_hemisphere_split(components$core$hemi, components$core$label)
+  check_mesh_hemispheres(
+    deep_meshes_df,
+    hemi = hemi_for_labels(components$core, deep_meshes_df$label)
+  )
 
   atlas <- ggseg_atlas(
     atlas = atlas_name,

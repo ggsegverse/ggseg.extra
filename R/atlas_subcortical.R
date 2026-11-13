@@ -830,7 +830,10 @@ subcort_assemble_3d <- function(
   components,
   type = "subcortical"
 ) {
-  check_mesh_hemispheres(components$meshes_df)
+  check_mesh_hemispheres(
+    components$meshes_df,
+    hemi = hemi_for_labels(components$core, components$meshes_df$label)
+  )
   ggseg_atlas(
     atlas = atlas_name,
     type = type,
@@ -867,7 +870,10 @@ subcort_assemble_full <- function(
     context_labels
   )
   components <- drop_labels_without_geometry(components, sf_data)
-  check_mesh_hemispheres(components$meshes_df)
+  check_mesh_hemispheres(
+    components$meshes_df,
+    hemi = hemi_for_labels(components$core, components$meshes_df$label)
+  )
 
   atlas <- ggseg_atlas(
     atlas = atlas_name,

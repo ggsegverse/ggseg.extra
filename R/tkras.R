@@ -105,44 +105,140 @@ mesh_tkras_to_world <- function(mesh, tkr_to_world) {
 #' hemisphere -- brain stem, vermis -- are ignored, and an atlas with only
 #' one hemisphere has nothing to compare.
 #' @noRd
-check_mesh_hemispheres <- function(meshes, call = rlang::caller_env()) {
+check_mesh_hemispheres <- function(
+  meshes,
+  hemi = meshes$hemi,
+  call = rlang::caller_env()
+) {
   # Takes the meshes frame rather than the atlas: a subcortical atlas can
   # legitimately carry none, and asking an accessor that aborts in that case
   # would mean catching the abort, which turns the check into one that
   # silently passes.
-  if (is.null(meshes) || !nrow(meshes)) {
-    return(invisible(meshes))
-  }
-  if (!all(c("hemi", "mesh") %in% names(meshes))) {
+  if (is.null(meshes) || !nrow(meshes) || !"mesh" %in% names(meshes)) {
     return(invisible(meshes))
   }
 
-  hemi <- as.character(meshes$hemi)
-  centre <- vapply(
-    meshes$mesh,
-    function(m) mean(as.matrix(m$vertices)[, 1]),
-    numeric(1)
+  check_hemisphere_sides(
+    hemi = hemi,
+    centres = vapply(
+      meshes$mesh,
+      function(m) {
+        # A row can carry no mesh -- a label whose geometry was dropped, or
+        # one the volume never produced. It has no side to be on.
+        if (is.null(m) || is.null(m$vertices)) {
+          return(NA_real_)
+        }
+        mean(as.matrix(m$vertices)[, 1])
+      },
+      numeric(1)
+    ),
+    what = "meshes",
+    call = call
   )
-  left <- mean(centre[hemi %in% "left"], na.rm = TRUE)
-  right <- mean(centre[hemi %in% "right"], na.rm = TRUE)
+
+  invisible(meshes)
+}
+
+
+#' Check the hemisphere contract on tract centerlines
+#'
+#' The tube a tract is drawn as is generated from its centerline, so the
+#' centerline is where the contract has to hold. Same check as
+#' `check_mesh_hemispheres()`, different geometry.
+#' @noRd
+check_centerline_hemispheres <- function(
+  centerlines,
+  hemi = centerlines$hemi,
+  call = rlang::caller_env()
+) {
+  if (
+    is.null(centerlines) ||
+      !nrow(centerlines) ||
+      !"points" %in% names(centerlines)
+  ) {
+    return(invisible(centerlines))
+  }
+
+  check_hemisphere_sides(
+    hemi = hemi,
+    centres = vapply(
+      centerlines$points,
+      function(p) if (is.null(p)) NA_real_ else mean(as.matrix(p)[, 1]),
+      numeric(1)
+    ),
+    what = "tracts",
+    call = call
+  )
+
+  invisible(centerlines)
+}
+
+
+#' Abort when structures sit across the midline from their own hemisphere
+#'
+#' The shared axis convention puts left at `x <= 0` and right at `x >= 0`.
+#' Nothing downstream can detect a breach: hemispheres are selected by the
+#' `hemi` label, so a mirrored atlas draws one hemisphere's structures under
+#' the other's name and the picture looks entirely plausible.
+#'
+#' Checked at creation because that is the last point at which it can be
+#' stopped rather than published. Structures with no hemisphere -- brain
+#' stem, vermis -- are ignored, and an atlas with only one hemisphere has
+#' nothing to compare.
+#'
+#' @param hemi Character vector of hemispheres, one per structure.
+#' @param centres Numeric vector of mean x per structure.
+#' @param what What the structures are, for the message.
+#' @noRd
+check_hemisphere_sides <- function(
+  hemi,
+  centres,
+  what = "meshes",
+  call = rlang::caller_env()
+) {
+  # Without a hemisphere there is nothing for the geometry to disagree with,
+  # and this check has been vacuous once already for exactly that reason: it
+  # was handed a frame carrying no `hemi` column and passed everything.
+  if (is.null(hemi) || length(hemi) != length(centres)) {
+    return(invisible(NULL))
+  }
+
+  hemi <- as.character(hemi)
+  left <- mean(centres[hemi %in% "left"], na.rm = TRUE)
+  right <- mean(centres[hemi %in% "right"], na.rm = TRUE)
   if (is.na(left) || is.na(right)) {
-    return(invisible(meshes))
+    return(invisible(NULL))
   }
   if (left <= 0 && right >= 0) {
-    return(invisible(meshes))
+    return(invisible(NULL))
   }
 
   cli::cli_abort(
     c(
-      "The meshes are on the wrong side of the midline.",
+      "The {what} are on the wrong side of the midline.",
       "x" = "Left-hemisphere structures average x = {round(left, 1)} and
       right-hemisphere x = {round(right, 1)}; the convention is left at
       {.code x <= 0} and right at {.code x >= 0}.",
       "i" = "A mirrored atlas still plots, so this is caught here rather
       than left to whoever reads the figure.",
-      "i" = "This usually means the tessellated meshes never reached the
-      volume's own world coordinates. Check the volume's orientation."
+      "i" = "This usually means the geometry never reached the volume's own
+      world coordinates. Check the volume's orientation."
     ),
     call = call
   )
+}
+
+
+#' Line up each geometry row's hemisphere from the core
+#'
+#' `build_atlas_components()` keeps the meshes frame to `label` and `mesh`,
+#' so the hemisphere a structure declares lives only in the core. Joining it
+#' back is what gives the contract check something to check -- without it the
+#' check reads an absent column and passes everything.
+#' @noRd
+hemi_for_labels <- function(core, labels) {
+  if (is.null(core) || !all(c("hemi", "label") %in% names(core))) {
+    return(NULL)
+  }
+  as.character(core$hemi)[match(labels, core$label)]
 }
