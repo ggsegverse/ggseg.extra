@@ -4507,6 +4507,31 @@ describe("volumes derived from a source keep the source's geometry", {
     )))
   })
 
+  it("keeps world coordinates on a volume that is not 1 mm", {
+    # The shipped fixture is 1 mm, which makes `pixdim<-` a no-op and hides
+    # the ordering: setting it after the xforms rescales an affine that
+    # already carries the voxel size, so a 2 mm source came out displaced by
+    # (dim - 1) * voxel_size -- 78 mm here, ~180 mm on a real volume.
+    skip_if_not_installed("freesurferformats")
+    vox2ras <- matrix(
+      c(-2, 0, 0, 40, 0, 0, 2, -40, 0, -2, 0, 30, 0, 0, 0, 1),
+      nrow = 4,
+      byrow = TRUE
+    )
+    arr <- array(0L, c(40, 30, 25))
+    arr[10:12, 10:12, 10:12] <- 10L
+    f <- withr::local_tempfile(fileext = ".mgz")
+    freesurferformats::write.fs.mgh(f, arr, vox2ras_matrix = vox2ras)
+
+    out <- nifti_with_source_geometry(arr, f, arr)
+    expect_equal(
+      world_x(as.array(out), RNifti::xform(out), 10),
+      world_x(arr, vox2ras, 10),
+      tolerance = 1e-6
+    )
+    expect_equal(RNifti::pixdim(out)[1:3], c(2, 2, 2), tolerance = 1e-6)
+  })
+
   it("refuses to write a volume whose affine it cannot read", {
     local_mocked_bindings(volume_vox2ras = function(...) NULL)
     expect_error(

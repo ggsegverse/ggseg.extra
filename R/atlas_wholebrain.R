@@ -2428,13 +2428,16 @@ nifti_with_source_geometry <- function(
     )
   }
 
-  # The code matters: RNifti treats an affine set without an xform code as
-  # unknown and silently keeps the identity, so the matrix has to carry one.
+  # Order matters, and not in the obvious direction. `pixdim<-` rescales the
+  # xforms already on the image rather than filling in missing sizes, so
+  # setting it last multiplies a non-1 mm affine by its own voxel size a
+  # second time. Sizes first, then the matrices that already carry them.
+  RNifti::pixdim(out) <- sqrt(colSums(vox2ras[1:3, 1:3]^2))
+  # The code matters too: RNifti treats an affine set without an xform code
+  # as unknown and silently keeps the identity, so the matrix has to carry
+  # one.
   RNifti::qform(out) <- structure(vox2ras, code = 1L)
   RNifti::sform(out) <- structure(vox2ras, code = 1L)
-  # asNifti() defaults every voxel to 1 mm; the source's sizes are the column
-  # norms of its affine.
-  RNifti::pixdim(out) <- sqrt(colSums(vox2ras[1:3, 1:3]^2))
   out
 }
 
