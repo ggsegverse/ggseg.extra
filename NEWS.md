@@ -2,6 +2,12 @@
 
 ## Bug fixes
 
+- Volumes derived from a source that is not 1 mm keep their world
+  coordinates. `pixdim<-` rescales the xforms already on an image rather than
+  filling in missing voxel sizes, so setting it after the matrices multiplied
+  a 2 mm affine by its voxel size twice and displaced every structure by
+  `(dim - 1) * voxel_size`. The 1 mm test fixture made it invisible.
+
 - Whole-brain atlases built from an MGZ volume are no longer mirrored or
   displaced. `read_volume()` returns a bare array for MGZ, so the derived
   volumes the pipeline writes were given a default affine instead of the
