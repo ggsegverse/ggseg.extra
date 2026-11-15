@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9146</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9147</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -73,7 +73,8 @@
 <h2 class="pkg-version" data-toc-text="1.9.9.9144" id="ggsegextra-1999144">ggseg.extra 1.9.9.9144<a class="anchor" aria-label="anchor" href="#ggsegextra-1999144"></a></h2>
 <div class="section level3">
 <h3 id="bug-fixes-1-9-9-9144">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-1-9-9-9144"></a></h3>
-<ul><li><p>Whole-brain atlases built from an MGZ volume are no longer mirrored or displaced. <code>read_volume()</code> returns a bare array for MGZ, so the derived volumes the pipeline writes were given a default affine instead of the source’s, and every mesh tessellated from them followed. NIfTI sources were unaffected and keep their own orientation and header codes.</p></li>
+<ul><li><p>Volumes derived from a source that is not 1 mm keep their world coordinates. <code>pixdim&lt;-</code> rescales the xforms already on an image rather than filling in missing voxel sizes, so setting it after the matrices multiplied a 2 mm affine by its voxel size twice and displaced every structure by <code>(dim - 1) * voxel_size</code>. The 1 mm test fixture made it invisible.</p></li>
+<li><p>Whole-brain atlases built from an MGZ volume are no longer mirrored or displaced. <code>read_volume()</code> returns a bare array for MGZ, so the derived volumes the pipeline writes were given a default affine instead of the source’s, and every mesh tessellated from them followed. NIfTI sources were unaffected and keep their own orientation and header codes.</p></li>
 <li><p>The hemisphere contract is checked where atlases are built, not just where meshes happen to carry a <code>hemi</code> column. <code>check_mesh_hemispheres()</code> was handed a frame that carries only <code>label</code> and <code>mesh</code>, so it read an absent column and passed every atlas, mirrored or not. Tract and cerebellar pipelines are covered too; a mirrored atlas now aborts at creation.</p></li>
 </ul><p>This section becomes the 2.0.0 release notes at submission. It is the first CRAN release of ggseg.extra, the atlas-building package of the ggsegverse, renamed and restructured from ‘ggsegExtra’ for the ggsegverse 2.0 architecture. Every pipeline now returns a single <code>ggseg_atlas</code> object holding 2D polygons and 3D meshes together, and geometry shaping has moved out of atlas creation into cheap post-creation verbs you can retune without rebuilding. Twelve <code>create_*()</code> entry points cover cortical, subcortical, cerebellar, whole-brain and white-matter tract atlases, built from FreeSurfer annotations and labels, GIFTI, CIFTI, neuromaps, NIfTI/MGZ parcellation volumes and tractography files.</p>
 </div>
