@@ -101,6 +101,16 @@ reference:
     contents:
       - starts_with("create_")
 
+  - title: Read Surface Meshes
+    desc: >
+      Read a surface file into a mesh that records its own vertex space,
+      hemisphere and relationship to a standard space. Meshes are independent
+      of atlases: an atlas defines regions, a mesh is a surface to draw them
+      on, and the two meet only at the vertex space. Nothing here feeds the
+      atlas pipelines above.
+    contents:
+      - has_concept("surface meshes")
+
   - title: Shape an Atlas's Geometry
     desc: >
       Simplify, smooth and grow a finished atlas's 2D outlines. These run on
