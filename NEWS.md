@@ -1,4 +1,4 @@
-# ggseg.extra 1.9.9.9144
+# ggseg.extra 1.9.9.9148
 
 ## Bug fixes
 
@@ -161,6 +161,13 @@ and tractography files.
   `"midline"`; `"vermis"` and `"middle"` are still read as input.
 
 ## New features
+
+- `read_surface_mesh()` reads a FreeSurfer binary surface or a surface GIFTI
+  into a mesh carrying a `ggseg.formats::mesh_space()`. Meshes are independent
+  of atlases, so it returns a mesh and feeds no `create_*_from_*()` pipeline.
+  The face index base is converted to rather than assumed, which is what let
+  four build scripts disagree about it. Requires
+  `ggseg.formats (>= 0.0.4.9028)`.
 
 - `atlas_view_remove_empty()` drops views that draw no region at all;
   `ggseg.formats::atlas_views_empty()` reports them without removing them.
