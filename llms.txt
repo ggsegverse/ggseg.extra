@@ -157,6 +157,17 @@ Turn a parcellation into a `ggseg_atlas` you can plot
 - [`create_wm_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_wm_from_volume.md)
   **\[experimental\]** : Create a white-matter atlas from a label volume
 
+## Read Surface Meshes
+
+Read a surface file into a mesh that records its own vertex space,
+hemisphere and relationship to a standard space. Meshes are independent
+of atlases: an atlas defines regions, a mesh is a surface to draw them
+on, and the two meet only at the vertex space. Nothing here feeds the
+atlas pipelines above.
+
+- [`read_surface_mesh()`](https://ggsegverse.github.io/ggseg.extra/reference/read_surface_mesh.md)
+  : Read a brain surface mesh
+
 ## Shape an Atlas’s Geometry
 
 Simplify, smooth and grow a finished atlas’s 2D outlines. These run on
