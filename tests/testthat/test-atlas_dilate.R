@@ -37,8 +37,8 @@ describe("atlas_dilate", {
 
     geom <- ggseg.formats::atlas_geom(out)
     expect_false("Left-Thalamus" %in% geom$label)
-    expect_false("Left-Thalamus" %in% out$core$label)
-    expect_false("Left-Thalamus" %in% names(out$palette))
+    expect_false("Left-Thalamus" %in% atlas_labels(out))
+    expect_false("Left-Thalamus" %in% names(atlas_palette(out)))
   })
 
   it("returns an atlas that can still be rebuilt after erosion", {
@@ -50,9 +50,9 @@ describe("atlas_dilate", {
       ggseg.formats::ggseg_atlas(
         atlas = "demo",
         type = "subcortical",
-        core = out$core,
-        data = out$data,
-        palette = out$palette
+        core = atlas_core(out),
+        data = atlas_data(out),
+        palette = atlas_palette(out)
       )
     )
   })

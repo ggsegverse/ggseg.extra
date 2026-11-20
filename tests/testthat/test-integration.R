@@ -21,7 +21,7 @@ describe("integration tests", {
 
     expect_named(result, c("cortical", "subcortical", "cerebellar"))
     expect_s3_class(result$subcortical, "ggseg_atlas")
-    expect_gt(nrow(result$subcortical$core), 0L)
+    expect_gt(length(atlas_labels(result$subcortical)), 0L)
 
     # The fixture carries only subcortical labels, so the other two routes
     # stay empty rather than returning an atlas with nothing in it.
@@ -47,7 +47,7 @@ describe("integration tests", {
 
     expect_s3_class(atlas, "ggseg_atlas")
     expect_true(ggseg.formats::is_ggseg_atlas(atlas))
-    expect_gt(nrow(atlas$core), 0L)
+    expect_gt(length(atlas_labels(atlas)), 0L)
   })
 
   it("creates atlas from labels and renders with ggseg3d", {
@@ -62,7 +62,7 @@ describe("integration tests", {
     )
 
     expect_s3_class(atlas, "ggseg_atlas")
-    expect_identical(nrow(atlas$core), 3L)
+    expect_identical(length(atlas_labels(atlas)), 3L)
 
     expect_no_error({
       p <- ggseg3d::ggseg3d(atlas = atlas, hemisphere = "left")
@@ -91,8 +91,8 @@ describe("integration tests", {
     )
 
     # Context, not a region: it carries no colour and no legend entry.
-    expect_false(any(grepl(context_pattern(), atlas$core$label)))
-    expect_false(any(grepl(context_pattern(), names(atlas$palette))))
+    expect_false(any(grepl(context_pattern(), atlas_labels(atlas))))
+    expect_false(any(grepl(context_pattern(), names(atlas_palette(atlas)))))
   })
 
   it("creates atlas from annotation and renders with ggseg3d", {
@@ -111,7 +111,7 @@ describe("integration tests", {
     )
 
     expect_s3_class(atlas, "ggseg_atlas")
-    expect_gt(nrow(atlas$core), 0)
+    expect_gt(length(atlas_labels(atlas)), 0)
 
     expect_no_error({
       p <- ggseg3d::ggseg3d(atlas = atlas, hemisphere = "left")

@@ -965,8 +965,8 @@ describe("atlas_smooth", {
       data = ggseg.formats::ggseg_data_subcortical(geom = sf_obj)
     )
     # simulate a released atlas whose geometry lives in the legacy $sf slot
-    atlas$data$sf <- atlas$data$geom
-    atlas$data$geom <- NULL
+    atlas@data$sf <- atlas_geom(atlas)
+    atlas@data$geom <- NULL
 
     result <- atlas_simplify(atlas, keep = 0.5)
 

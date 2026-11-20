@@ -18,10 +18,10 @@ describe("create_cortical_from_annotation on fsaverage5", {
     )
 
     expect_s3_class(atlas, "ggseg_atlas")
-    expect_identical(atlas$type, "cortical")
-    expect_setequal(unique(atlas$core$hemi), c("left", "right"))
+    expect_identical(atlas_type(atlas), "cortical")
+    expect_setequal(unique(atlas_hemi(atlas)), c("left", "right"))
     expect_true(all(
-      c("superiorfrontal", "precentral", "insula") %in% atlas$core$region
+      c("superiorfrontal", "precentral", "insula") %in% atlas_regions(atlas)
     ))
 
     vertices <- ggseg.formats::atlas_vertices(atlas)
@@ -60,9 +60,9 @@ describe("create_subcortical_from_volume on fsaverage5", {
     )
 
     expect_s3_class(atlas, "ggseg_atlas")
-    expect_identical(atlas$type, "subcortical")
-    expect_setequal(atlas$core$label, structures)
-    meshes <- atlas$data$meshes
+    expect_identical(atlas_type(atlas), "subcortical")
+    expect_setequal(atlas_labels(atlas), structures)
+    meshes <- atlas_meshes(atlas)
     expect_identical(nrow(meshes), 4L)
     for (mesh in meshes$mesh) {
       expect_gt(nrow(mesh$vertices), 0)

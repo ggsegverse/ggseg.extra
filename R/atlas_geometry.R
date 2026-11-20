@@ -845,11 +845,7 @@ restore_unselected <- function(result, original, labels, exclude) {
   # names its list-column the same, so there is no sf-specific case to make.
   after$geometry[hit[found]] <- before$geometry[unselected][found]
 
-  # Written directly because ggseg.formats exports no geometry setter; this
-  # is the same assignment rehydrate_smoothed_atlas() makes, and `result` is
-  # already in its final representation, so no conversion follows.
-  result$data$geom <- after
-  result
+  ggseg.formats::set_atlas_geom(result, after)
 }
 
 
@@ -865,7 +861,7 @@ drop_eroded_regions <- function(atlas, surviving_labels, emptied) {
     return(atlas)
   }
 
-  lost <- setdiff(atlas$core$label, surviving_labels)
+  lost <- setdiff(ggseg.formats::atlas_labels(atlas), surviving_labels)
   if (length(lost) == 0L) {
     return(atlas)
   }
@@ -876,18 +872,21 @@ drop_eroded_regions <- function(atlas, surviving_labels, emptied) {
     "i" = "Use a smaller {.arg amount}, or {.arg exclude} these labels."
   ))
 
-  atlas$core <- atlas$core[!atlas$core$label %in% lost, , drop = FALSE]
-  if (!is.null(atlas$palette)) {
-    atlas$palette <- atlas$palette[!names(atlas$palette) %in% lost]
-  }
-  atlas
+  core <- ggseg.formats::atlas_core(atlas)
+  # core and palette are keyed on the same labels, so they move together or
+  # the intermediate atlas is invalid; the setter lands both in one step and
+  # carries the palette across for the labels that survive.
+  ggseg.formats::set_atlas_core(
+    atlas,
+    core[!core$label %in% lost, , drop = FALSE]
+  )
 }
 
 
 #' Write smoothed geometry back and restore the atlas representation
 #' @noRd
 rehydrate_smoothed_atlas <- function(atlas, sf_data, was_polygon) {
-  atlas$data$geom <- sf_data
+  atlas <- ggseg.formats::set_atlas_geom(atlas, sf_data)
   if (was_polygon) {
     ggseg.formats::as_polygon_atlas(atlas)
   } else {

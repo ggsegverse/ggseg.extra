@@ -45,8 +45,8 @@ describe("create_cortical_from_annotation", {
     )
 
     expect_s3_class(atlas, "ggseg_atlas")
-    expect_identical(atlas$type, "cortical")
-    expect_gt(nrow(atlas$core), 0)
+    expect_identical(atlas_type(atlas), "cortical")
+    expect_gt(length(atlas_labels(atlas)), 0)
   })
 
   it("includes vertices for 3D rendering", {
@@ -252,9 +252,9 @@ describe("create_cortical_from_labels", {
     )
 
     expect_s3_class(atlas, "ggseg_atlas")
-    expect_identical(atlas$atlas, "test_atlas")
-    expect_identical(atlas$type, "cortical")
-    expect_identical(nrow(atlas$core), 3L)
+    expect_identical(atlas_name(atlas), "test_atlas")
+    expect_identical(atlas_type(atlas), "cortical")
+    expect_identical(length(atlas_labels(atlas)), 3L)
   })
 
   it("correctly parses hemisphere from filename", {
@@ -266,10 +266,10 @@ describe("create_cortical_from_labels", {
       verbose = FALSE
     )
 
-    expect_true("left" %in% atlas$core$hemi)
-    expect_true("right" %in% atlas$core$hemi)
-    expect_identical(sum(atlas$core$hemi == "left"), 2L)
-    expect_identical(sum(atlas$core$hemi == "right"), 1L)
+    expect_true("left" %in% atlas_hemi(atlas))
+    expect_true("right" %in% atlas_hemi(atlas))
+    expect_identical(sum(atlas_hemi(atlas) == "left"), 2L)
+    expect_identical(sum(atlas_hemi(atlas) == "right"), 1L)
   })
 
   it("stores vertices correctly", {
@@ -302,8 +302,8 @@ describe("create_cortical_from_labels", {
       verbose = FALSE
     )
 
-    expect_identical(atlas$core$region, custom_lut$region)
-    expect_true(all(custom_lut$hex %in% atlas$palette))
+    expect_identical(atlas_regions(atlas), custom_lut$region)
+    expect_true(all(custom_lut$hex %in% atlas_palette(atlas)))
   })
 
   it("errors when label files not found", {
@@ -790,8 +790,8 @@ describe("create_cortical_from_labels verbose and LUT paths", {
       verbose = FALSE
     )
 
-    expect_false(is.null(atlas$palette))
-    expect_true(any(grepl("^#", atlas$palette)))
+    expect_false(is.null(atlas_palette(atlas)))
+    expect_true(any(grepl("^#", atlas_palette(atlas))))
   })
 
   it("sets NULL colour when LUT lacks hex and RGB columns", {
@@ -828,7 +828,7 @@ describe("create_cortical_from_labels verbose and LUT paths", {
       verbose = FALSE
     )
 
-    expect_null(atlas$palette)
+    expect_null(atlas_palette(atlas))
   })
 
   it("passes correct atlas_name and components to cortical_project_and_build", {
@@ -1206,8 +1206,8 @@ describe("create_cortical_from_annotation unknown context", {
     )
 
     expect_unknown_is_context(atlas, c("lh_unknown", "rh_unknown"))
-    expect_setequal(atlas$core$label, c("lh_frontal", "rh_frontal"))
-    expect_setequal(names(atlas$palette), c("lh_frontal", "rh_frontal"))
+    expect_setequal(atlas_labels(atlas), c("lh_frontal", "rh_frontal"))
+    expect_setequal(names(atlas_palette(atlas)), c("lh_frontal", "rh_frontal"))
   })
 
   it("treats a named medial wall as context but keeps medial parcels", {
@@ -1228,7 +1228,7 @@ describe("create_cortical_from_annotation unknown context", {
       )
     )
     expect_setequal(
-      atlas$core$label,
+      atlas_labels(atlas),
       c("lh_medialorbitofrontal", "rh_medialorbitofrontal")
     )
   })

@@ -749,18 +749,7 @@ describe("create_wholebrain_from_volume pipeline flow", {
       },
       create_subcortical_from_volume = function(...) {
         .cap$captured_subcort_args <- list(...)
-        structure(
-          list(
-            core = data.frame(
-              stringsAsFactors = FALSE,
-              hemi = NA,
-              region = "b",
-              label = "b"
-            ),
-            type = "subcortical"
-          ),
-          class = "ggseg_atlas"
-        )
+        stub_atlas(regions = "b")
       }
     )
 
@@ -830,19 +819,7 @@ describe("create_wholebrain_from_volume pipeline flow", {
       wholebrain_prepare_subcortical_volume = function(...) {
         invisible(list(file = "filtered.nii.gz", context_idx = integer(0)))
       },
-      create_subcortical_from_volume = function(...) {
-        structure(
-          list(
-            core = data.frame(
-              stringsAsFactors = FALSE,
-              hemi = NA,
-              region = "b",
-              label = "b"
-            )
-          ),
-          class = "ggseg_atlas"
-        )
-      }
+      create_subcortical_from_volume = function(...) stub_atlas(regions = "b")
     )
 
     vol_file <- withr::local_tempfile(fileext = ".nii.gz")
@@ -949,16 +926,7 @@ describe("create_wholebrain_from_volume verbose and cleanup", {
         )
       },
       wholebrain_run_cortical = function(...) {
-        structure(
-          list(
-            core = data.frame(
-              stringsAsFactors = FALSE,
-              hemi = "left",
-              region = "a"
-            )
-          ),
-          class = "ggseg_atlas"
-        )
+        stub_atlas(regions = "a", hemi = "left", type = "cortical")
       },
       wholebrain_run_subcortical = function(...) NULL,
       log_elapsed = function(...) NULL
@@ -1224,9 +1192,7 @@ describe("wholebrain_run_subcortical backdrop options", {
         seen$args <- list(...)
         invisible(list(file = "filtered.nii.gz", context_idx = integer(0)))
       },
-      create_subcortical_from_volume = function(...) {
-        structure(list(core = data.frame(region = "b")), class = "ggseg_atlas")
-      }
+      create_subcortical_from_volume = function(...) stub_atlas(regions = "b")
     )
 
     config <- list(
@@ -1285,14 +1251,7 @@ describe("wholebrain_run_subcortical verbose logging", {
       wholebrain_prepare_subcortical_volume = function(...) {
         invisible(list(file = "filtered.nii.gz", context_idx = integer(0)))
       },
-      create_subcortical_from_volume = function(...) {
-        structure(
-          list(
-            core = data.frame(stringsAsFactors = FALSE, hemi = NA, region = "b")
-          ),
-          class = "ggseg_atlas"
-        )
-      }
+      create_subcortical_from_volume = function(...) stub_atlas(regions = "b")
     )
 
     config <- list(
@@ -1345,16 +1304,7 @@ describe("wholebrain_run_subcortical verbose logging", {
       },
       create_subcortical_from_volume = function(input_lut, ...) {
         .cap$captured_lut <- input_lut
-        structure(
-          list(
-            core = data.frame(
-              stringsAsFactors = FALSE,
-              hemi = NA,
-              region = "subcort_b"
-            )
-          ),
-          class = "ggseg_atlas"
-        )
+        stub_atlas(regions = "subcort_b")
       }
     )
 
@@ -1413,12 +1363,7 @@ describe("wholebrain_run_subcortical verbose logging", {
       },
       create_subcortical_from_volume = function(input_lut, ...) {
         .cap$captured_lut <- input_lut
-        structure(
-          list(
-            core = data.frame(stringsAsFactors = FALSE, region = "amygdala")
-          ),
-          class = "ggseg_atlas"
-        )
+        stub_atlas(regions = "amygdala")
       }
     )
 
@@ -2742,19 +2687,8 @@ describe("create_wholebrain_from_volume step 5 cerebellar", {
 describe("wholebrain_log_summary", {
   it("counts present atlases and reports absent ones as zero", {
     withr::local_options(width = 200)
-    subcortical <- structure(
-      list(
-        core = data.frame(
-          region = c("thalamus", "putamen"),
-          stringsAsFactors = FALSE
-        )
-      ),
-      class = "ggseg_atlas"
-    )
-    cerebellar <- structure(
-      list(core = data.frame(region = "lobule_I", stringsAsFactors = FALSE)),
-      class = "ggseg_atlas"
-    )
+    subcortical <- stub_atlas(regions = c("thalamus", "putamen"))
+    cerebellar <- stub_atlas(regions = "lobule_I", type = "cerebellar")
 
     expect_snapshot(
       result <- wholebrain_log_summary(
@@ -3377,7 +3311,7 @@ describe("unknown context through the wholebrain split", {
     )
 
     expect_unknown_is_context(atlas, "lh_unknown")
-    expect_identical(atlas$core$label, "lh_a")
+    expect_identical(atlas_labels(atlas), "lh_a")
   })
 })
 

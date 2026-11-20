@@ -130,7 +130,7 @@ describe("create_subcortical_from_volume", {
       verbose = FALSE
     )
 
-    core <- atlas$core
+    core <- atlas_core(atlas)
     expect_identical(
       core$display[core$label == "Left-Thalamus"],
       "Thalamus (left)"
@@ -155,9 +155,9 @@ describe("create_subcortical_from_volume", {
     )
 
     drawn <- unique(atlas_sf(atlas)$label)
-    expect_setequal(atlas$core$label, c("Left-Thalamus", "Right-Thalamus"))
-    expect_identical(setdiff(drawn, atlas$core$label), character())
-    expect_setequal(atlas_meshes(atlas)$label, atlas$core$label)
+    expect_setequal(atlas_labels(atlas), c("Left-Thalamus", "Right-Thalamus"))
+    expect_identical(setdiff(drawn, atlas_labels(atlas)), character())
+    expect_setequal(atlas_meshes(atlas)$label, atlas_labels(atlas))
   })
 
   it("draws a label the lookup table declares context under its own name", {
@@ -175,12 +175,12 @@ describe("create_subcortical_from_volume", {
     )
 
     drawn <- unique(atlas_sf(atlas)$label)
-    expect_setequal(atlas$core$label, c("Left-Thalamus", "Right-Thalamus"))
+    expect_setequal(atlas_labels(atlas), c("Left-Thalamus", "Right-Thalamus"))
     expect_setequal(
-      setdiff(drawn, atlas$core$label),
+      setdiff(drawn, atlas_labels(atlas)),
       c("Left-Amygdala", "Right-Amygdala")
     )
-    expect_setequal(atlas_meshes(atlas)$label, atlas$core$label)
+    expect_setequal(atlas_meshes(atlas)$label, atlas_labels(atlas))
     expect_match(context_pattern(atlas), "Left-Amygdala", fixed = TRUE)
   })
 
@@ -195,7 +195,7 @@ describe("create_subcortical_from_volume", {
       verbose = FALSE
     )
 
-    expect_setequal(unique(atlas_sf(atlas)$label), atlas$core$label)
+    expect_setequal(unique(atlas_sf(atlas)$label), atlas_labels(atlas))
   })
 
   it("errors when volume file not found", {
@@ -243,9 +243,9 @@ describe("create_subcortical_from_volume", {
     )
 
     expect_s3_class(atlas, "ggseg_atlas")
-    expect_gt(nrow(atlas$core), 0)
-    expect_true(all(grepl("^region_", atlas$core$label)))
-    expect_null(atlas$palette)
+    expect_gt(length(atlas_labels(atlas)), 0)
+    expect_true(all(grepl("^region_", atlas_labels(atlas))))
+    expect_null(atlas_palette(atlas))
   })
 })
 
@@ -265,17 +265,17 @@ describe("create_subcortical_from_volume with meshes", {
     steps = 1:3,
     verbose = FALSE
   )
+  meshes <- atlas_meshes(atlas)
 
   it("creates atlas with meshes component", {
     expect_s3_class(atlas, "ggseg_atlas")
-    expect_identical(atlas$type, "subcortical")
-    expect_false(is.null(atlas$data$meshes))
-    expect_true("mesh" %in% names(atlas$data$meshes))
+    expect_identical(atlas_type(atlas), "subcortical")
+    expect_true("mesh" %in% names(meshes))
   })
 
   it("creates valid mesh structure", {
-    for (i in seq_len(nrow(atlas$data$meshes))) {
-      mesh <- atlas$data$meshes$mesh[[i]]
+    for (i in seq_len(nrow(meshes))) {
+      mesh <- meshes$mesh[[i]]
       if (!is.null(mesh)) {
         expect_true(all(c("vertices", "faces") %in% names(mesh)))
         expect_true(all(c("x", "y", "z") %in% names(mesh$vertices)))
@@ -285,11 +285,12 @@ describe("create_subcortical_from_volume with meshes", {
   })
 
   it("assigns correct hemisphere", {
-    left_labels <- atlas$core$label[grepl("Left|left|lh", atlas$core$label)]
-    right_labels <- atlas$core$label[grepl("Right|right|rh", atlas$core$label)]
+    labels <- atlas_labels(atlas)
+    left_labels <- labels[grepl("Left|left|lh", labels)]
+    right_labels <- labels[grepl("Right|right|rh", labels)]
 
-    left_hemis <- atlas$core$hemi[atlas$core$label %in% left_labels]
-    right_hemis <- atlas$core$hemi[atlas$core$label %in% right_labels]
+    left_hemis <- atlas_hemi(atlas)[labels %in% left_labels]
+    right_hemis <- atlas_hemi(atlas)[labels %in% right_labels]
 
     if (length(left_hemis) > 0) {
       expect_true(all(left_hemis == "left" | is.na(left_hemis)))
@@ -376,7 +377,7 @@ describe("create_subcortical_from_volume pipeline flow", {
     )
 
     expect_identical(.cap$captured_gen_args$vol, vol_file)
-    expect_false(is.null(atlas$palette))
+    expect_false(is.null(atlas_palette(atlas)))
   })
 
   it("returns 3D-only atlas with correct structure count", {
@@ -449,7 +450,7 @@ describe("create_subcortical_from_volume pipeline flow", {
     )
 
     expect_s3_class(atlas, "ggseg_atlas")
-    expect_identical(nrow(atlas$core), 2L)
+    expect_identical(length(atlas_labels(atlas)), 2L)
   })
 
   it("errors when no matching labels found", {

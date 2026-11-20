@@ -824,13 +824,13 @@ describe("context_pattern for one atlas", {
     pattern <- context_pattern(atlas)
 
     expect_true(all(grepl(pattern, c("Left-Thalamus", "Right-Thalamus"))))
-    expect_false(any(grepl(pattern, atlas$core$label)))
+    expect_false(any(grepl(pattern, atlas_labels(atlas))))
   })
 
   it("matches nothing when the atlas draws no context", {
     atlas <- ggseg.formats::atlas_context_remove(ggseg.formats::dk())
 
-    expect_false(any(grepl(context_pattern(atlas), atlas$core$label)))
+    expect_false(any(grepl(context_pattern(atlas), atlas_labels(atlas))))
   })
 
   it("rejects what is not an atlas", {
@@ -1147,11 +1147,14 @@ describe("check_atlas_coverage", {
     expect_no_warning(check_atlas_coverage(coverage_atlas(10, 9), 1))
   })
 
-  it("counts the label vocabulary, not the rows of core", {
-    # The accessors return the raw column, so a bilateral atlas repeats each
-    # label. Counting rows would read this atlas as half covered.
+  it("cannot be handed a core that repeats a label", {
+    # The check counts the label vocabulary rather than the rows of `core`,
+    # so that a repeated label would not read as half coverage. The atlas
+    # class now rejects the state outright, which is why there is no
+    # half-covered atlas to hand it.
     atlas <- coverage_atlas(10, 10)
-    atlas$core <- rbind(atlas$core, atlas$core)
+    core <- ggseg.formats::atlas_core(atlas)
+    expect_error(atlas@core <- rbind(core, core), "must be unique")
     expect_no_warning(check_atlas_coverage(atlas, 1))
   })
 

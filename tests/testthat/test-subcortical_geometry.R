@@ -83,7 +83,7 @@ describe("decimate_mesh", {
     skip_if_not_installed("Rvcg")
     skip_if_not_installed("rgl")
 
-    mesh <- ggseg.formats::aseg()$data$meshes$mesh[[1]]
+    mesh <- atlas_meshes(ggseg.formats::aseg())$mesh[[1]]
 
     result <- decimate_mesh(mesh, percent = 0.5)
 

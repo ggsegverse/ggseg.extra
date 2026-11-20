@@ -1,3 +1,18 @@
+# Atlas inspection ----
+
+#' How many regions an atlas declares, counting `NULL` as none
+#'
+#' Pipelines that assemble several atlases report a count per part, and a
+#' part that was skipped is `NULL` rather than an empty atlas.
+#' @noRd
+n_atlas_regions <- function(atlas) {
+  if (is.null(atlas)) {
+    return(0L)
+  }
+  length(ggseg.formats::atlas_labels(atlas))
+}
+
+
 # Region name utilities ----
 
 #' Derive an atlas `region` from a label
@@ -506,7 +521,10 @@ atlas_context_pattern <- function(atlas) {
     cli::cli_abort("{.arg atlas} must be a {.cls ggseg_atlas}.")
   }
   geometry <- ggseg.formats::atlas_geom(atlas)
-  context <- setdiff(unique(geometry$label), atlas$core$label)
+  context <- setdiff(
+    unique(geometry$label),
+    ggseg.formats::atlas_labels(atlas)
+  )
   if (length(context) == 0) {
     return("^$")
   }
@@ -1266,9 +1284,8 @@ finalize_atlas <- function(
       } else {
         type_label
       }
-      cli::cli_alert_success(
-        "{type} atlas created with {nrow(atlas$core)} {unit}"
-      )
+      n_units <- n_atlas_regions(atlas) # nolint: object_usage_linter.
+      cli::cli_alert_success("{type} atlas created with {n_units} {unit}")
     } else {
       cli::cli_alert_success(
         "Completed {cli::qty(length(steps))}step{?s} {.val {steps}}"

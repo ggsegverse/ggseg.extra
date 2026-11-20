@@ -806,7 +806,7 @@ cortical_project_and_build <- function(
 #' Keep unknown and medial-wall regions as grey context geometry
 #' @noRd
 mark_unknown_as_context <- function(atlas) {
-  is_unknown <- is_context_region(atlas$core$region)
+  is_unknown <- is_context_region(ggseg.formats::atlas_regions(atlas))
   if (!any(is_unknown)) {
     return(atlas)
   }
@@ -829,9 +829,8 @@ cortical_finalize <- function(atlas, config, dirs, start_time) {
   cleanup_working_dir(config, dirs)
 
   if (config$verbose) {
-    cli::cli_alert_success(
-      "Brain atlas created with {nrow(atlas$core)} regions"
-    )
+    n_regions <- n_atlas_regions(atlas) # nolint: object_usage_linter.
+    cli::cli_alert_success("Brain atlas created with {n_regions} regions")
     log_elapsed(start_time) # nolint: object_usage_linter.
   }
 

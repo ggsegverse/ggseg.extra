@@ -427,6 +427,42 @@ describe("warn_if_large_atlas", {
 
 
 describe("preview_atlas", {
+  square_sf <- function(label = "lh_r") {
+    sf::st_sf(
+      label = label,
+      view = "v1",
+      geometry = sf::st_sfc(sf::st_polygon(list(matrix(
+        c(0, 0, 1, 0, 1, 1, 0, 0),
+        ncol = 2,
+        byrow = TRUE
+      ))))
+    )
+  }
+
+  one_mesh <- function(label = "lh_r") {
+    df <- data.frame(stringsAsFactors = FALSE, label = label)
+    df$mesh <- list(list(
+      vertices = data.frame(x = 0:2, y = 0:2, z = 0:2),
+      faces = data.frame(i = 0L, j = 1L, k = 2L)
+    ))
+    df
+  }
+
+  preview_atlas_of <- function(type, data) {
+    ggseg.formats::ggseg_atlas(
+      atlas = "t",
+      type = type,
+      core = data.frame(
+        hemi = "left",
+        region = "r",
+        label = "lh_r",
+        stringsAsFactors = FALSE
+      ),
+      palette = c(lh_r = "#FF0000"),
+      data = data
+    )
+  }
+
   it("returns invisible atlas in non-interactive sessions", {
     atlas <- list(data = list(sf = TRUE))
     local_mocked_bindings(is_interactive = function() FALSE)
@@ -436,7 +472,12 @@ describe("preview_atlas", {
   })
 
   it("alerts when atlas has no compatible data", {
-    atlas <- list(data = list(sf = NULL, vertices = NULL, meshes = NULL))
+    # The data constructors require a geometry, so the atlas with nothing to
+    # preview in 3D is the 2D-only one rather than the empty one.
+    atlas <- preview_atlas_of(
+      "subcortical",
+      ggseg.formats::ggseg_data_subcortical(geom = square_sf())
+    )
     local_mocked_bindings(is_interactive = function() TRUE)
 
     expect_message(preview_atlas(atlas), "malformed")
@@ -485,9 +526,9 @@ describe("preview_atlas", {
   })
 
   it("shows 3D subcortical preview", {
-    atlas <- list(
-      type = "subcortical",
-      data = list(sf = NULL, vertices = TRUE, meshes = NULL)
+    atlas <- preview_atlas_of(
+      "subcortical",
+      ggseg.formats::ggseg_data_subcortical(meshes = one_mesh())
     )
 
     .cap$prompts <- character()
@@ -511,9 +552,15 @@ describe("preview_atlas", {
   })
 
   it("warns on 3D errors instead of failing silently", {
-    atlas <- list(
-      type = "cortical",
-      data = list(sf = NULL, vertices = TRUE, meshes = NULL)
+    atlas <- preview_atlas_of(
+      "cortical",
+      ggseg.formats::ggseg_data_cortical(
+        vertices = data.frame(
+          stringsAsFactors = FALSE,
+          label = "lh_r",
+          vertices = I(list(0:3))
+        )
+      )
     )
 
     local_mocked_bindings(
@@ -533,17 +580,9 @@ describe("preview_atlas", {
   })
 
   it("reports malformed atlas when only sf data present", {
-    sf_data <- sf::st_sf(
-      label = "test",
-      geometry = sf::st_sfc(sf::st_polygon(list(matrix(
-        c(0, 0, 1, 0, 1, 1, 0, 0),
-        ncol = 2,
-        byrow = TRUE
-      ))))
-    )
-    atlas <- list(
-      data = list(sf = sf_data, vertices = NULL, meshes = NULL),
-      palette = NULL
+    atlas <- preview_atlas_of(
+      "cortical",
+      ggseg.formats::ggseg_data_cortical(geom = square_sf())
     )
 
     local_mocked_bindings(is_interactive = function() TRUE)
