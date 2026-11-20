@@ -4,13 +4,19 @@
 \alias{upgrade_atlas_package}
 \title{Upgrade the atlases an atlas package ships}
 \usage{
-upgrade_atlas_package(path = ".", dry_run = TRUE)
+upgrade_atlas_package(path = ".", dry_run = TRUE, repair = FALSE)
 }
 \arguments{
 \item{path}{Path to the atlas package. Defaults to the working directory.}
 
 \item{dry_run}{If \code{TRUE} (the default), report what would change and write
 nothing.}
+
+\item{repair}{If \code{TRUE}, run the migration verbs on an atlas the current
+constructor refuses, and upgrade the result. Off by default: a repair
+changes stored data, where an upgrade does not. Some published atlases
+need it -- \code{ggsegAal}'s \code{.aal3_cerebellum} carries the pre-vocabulary
+\code{hemi} value \code{"middle"} and no verb that validates will touch it.}
 }
 \value{
 Invisibly, a data frame with one row per atlas object: its name,

@@ -23,6 +23,8 @@
 #' @param labels Which labels to smooth: a regular expression, or a function
 #'   that takes the atlas and returns one. Pass `context_pattern`, without
 #'   calling it, to select the atlas's context.
+#' @param span Smoothing window in the atlas's own units, for
+#'   `method = "arc"`. Required for that method, ignored by the others.
 #' @param exclude Optional regex. Matching labels are left alone. Only one of
 #'   `labels` or `exclude` may be given.
 #'
@@ -43,8 +45,26 @@
 #' backdrop from 463 enclosed rings to 27. Reach for it on solid shapes, such
 #' as tract tubes, where there are no holes to lose.
 #'
-#' `smoothness` means the same amount of smoothing whichever method you pick,
-#' so switching method does not mean re-finding the value.
+#' `"arc"` is the odd one out, and takes `span` rather than `smoothness`. The
+#' others all work between neighbouring vertices, which is the right scale for
+#' a voxel staircase, where a step *is* a vertex or two. It is the wrong scale
+#' for a small structure traced at high fidelity: there the outline follows a
+#' coarse mask with many vertices per bump, the kernel sits far below the bump,
+#' and the result comes back looking untouched. On the `suit` atlas's deep
+#' nuclei every other method was visually identical to no smoothing at all,
+#' at every strength, and `vertex_budget = "free"` added sixteen times the
+#' vertices without changing the shape.
+#'
+#' `"arc"` windows by distance along the outline instead, so `span` means the
+#' same thing however finely that outline happens to be traced. Give it the
+#' width of the bumps you want gone, in the atlas's own units. It moves
+#' vertices without adding any, so `vertex_budget` does not apply, and it
+#' keeps a boundary two structures share: rings are reconciled after
+#' smoothing, or neighbours pull apart exactly where they touch.
+#'
+#' `smoothness` means the same amount of smoothing whichever of the other
+#' methods you pick, so switching between them does not mean re-finding the
+#' value.
 #'
 #' # What rounding costs
 #'
@@ -89,15 +109,20 @@
 atlas_smooth <- function(
   atlas,
   smoothness = 0.4,
-  method = c("chaikin", "close", "ksmooth", "spline"),
+  method = c("chaikin", "close", "ksmooth", "spline", "arc"),
   vertex_budget = c("preserve", "free"),
   close_gaps = TRUE,
   labels = NULL,
-  exclude = NULL
+  exclude = NULL,
+  span = NULL
 ) {
   method <- match.arg(method)
   vertex_budget <- match.arg(vertex_budget)
-  check_smoothness(smoothness)
+  if (identical(method, "arc")) {
+    span <- check_span(span)
+  } else {
+    check_smoothness(smoothness)
+  }
   labels <- resolve_label_selector(labels, atlas)
   exclude <- resolve_label_selector(exclude, atlas)
   geom <- ggseg.formats::atlas_geom(atlas)
@@ -112,7 +137,11 @@ atlas_smooth <- function(
     )
   }
 
-  if (!isTRUE(smoothness > 0)) {
+  if (identical(method, "arc")) {
+    if (!isTRUE(span > 0)) {
+      return(atlas)
+    }
+  } else if (!isTRUE(smoothness > 0)) {
     return(atlas)
   }
 
@@ -127,14 +156,19 @@ atlas_smooth <- function(
     sf_data,
     labels,
     exclude,
-    function(d) smooth_sf_light(d, smoothness = smoothness, method = method),
+    function(d) {
+      smooth_sf_light(d, smoothness = smoothness, method = method, span = span)
+    },
     what = "smooth"
   )
   if (!identical(sf_data, before)) {
     if (isTRUE(close_gaps)) {
       sf_data <- close_gaps_by_view(sf_data, before, selected)
     }
-    if (identical(vertex_budget, "preserve")) {
+    # Arc-length smoothing moves vertices without adding any, so there is no
+    # rounding growth for the budget to take back -- and running the
+    # simplification pass anyway would move shapes for nothing.
+    if (identical(vertex_budget, "preserve") && !identical(method, "arc")) {
       sf_data <- trim_rounded_corners(
         sf_data,
         before,
@@ -957,7 +991,15 @@ simplify_sf_topology <- function(sf_data, keep = 0.05) {
 #' @return Smoothed sf data.frame.
 #' @noRd
 #' @importFrom sf st_buffer st_make_valid
-smooth_sf_light <- function(sf_data, smoothness = 0, method = "close") {
+smooth_sf_light <- function(
+  sf_data,
+  smoothness = 0,
+  method = "close",
+  span = NULL
+) {
+  if (identical(method, "arc")) {
+    return(smooth_sf_arc(sf_data, span = span))
+  }
   if (smoothness <= 0) {
     return(sf_data)
   }

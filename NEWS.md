@@ -1,7 +1,16 @@
-# ggseg.extra 1.9.9.9149
+# ggseg.extra 1.9.9.9150
 
 ## New features
 
+- `atlas_smooth()` gains `method = "arc"`, which windows by distance along
+  the outline rather than between neighbouring vertices, and takes `span` in
+  the atlas's own units. The existing methods work at the scale of a voxel
+  staircase and cannot touch a small structure traced at high fidelity: on
+  `suit`'s deep nuclei, chaikin, ksmooth and spline were each visually
+  identical to no smoothing at all, at every strength, and
+  `vertex_budget = "free"` added sixteen times the vertices without changing
+  the shape. `"arc"` moves vertices without adding any, and keeps a boundary
+  two structures share.
 - `upgrade_atlas_package()` rewrites the atlases a package ships through the
   current `ggseg.formats` object and schema. Nothing is recomputed: no source
   volume is read and no geometry is touched, so it is not a rebuild. It
