@@ -58,6 +58,7 @@ export(suit_3d_path)
 export(suit_deformation_field)
 export(suit_flatmap_path)
 export(transform_mni_to_suit)
+export(upgrade_atlas_package)
 export(use_atlas_github_actions)
 export(write_lut)
 importFrom(dplyr,

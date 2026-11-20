@@ -1,5 +1,14 @@
 # ggseg.extra 1.9.9.9148
 
+## New features
+
+- `upgrade_atlas_package()` rewrites the atlases a package ships through the
+  current `ggseg.formats` object and schema. Nothing is recomputed: no source
+  volume is read and no geometry is touched, so it is not a rebuild. It
+  verifies that, and aborts rather than writing if an upgrade alters a core
+  table. `repair = TRUE` additionally runs the migration verbs on an atlas the
+  constructor refuses, which does change stored data and says so.
+
 ## Bug fixes
 
 - Volumes derived from a source that is not 1 mm keep their world
