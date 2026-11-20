@@ -69,6 +69,7 @@ Suggests:
     RNifti,
     rstudioapi,
     Rvcg,
+    sfheaders,
     smoothr,
     spelling,
     terra,
