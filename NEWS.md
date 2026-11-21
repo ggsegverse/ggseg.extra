@@ -16,7 +16,12 @@
   volume is read and no geometry is touched, so it is not a rebuild. It
   verifies that, and aborts rather than writing if an upgrade alters a core
   table. `repair = TRUE` additionally runs the migration verbs on an atlas the
-  constructor refuses, which does change stored data and says so.
+  constructor refuses, which does change stored data and says so. Whether an
+  atlas counts as repaired is decided by whether its contents changed, not by
+  whether the constructor refused it, because `ggseg.formats` now repairs a
+  legacy `hemi` spelling at the boundary. Without `repair = TRUE`, an atlas
+  whose stored data would be rewritten is reported as failed, nothing is
+  written, and the note names what would change.
 
 ## Bug fixes
 
