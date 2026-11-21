@@ -21,7 +21,7 @@
 ## Bug fixes
 
 - Every verb that takes an atlas from the user now upgrades it at the
-  boundary through `ggseg.formats::atlas_input()`. An atlas from a package
+  boundary through `ggseg.formats::as_ggseg_atlas()`. An atlas from a package
   built before ggseg.formats 3.0.0, or stamped with an older schema, was
   carried through the verbs as-is and handed back in the same stale
   representation.

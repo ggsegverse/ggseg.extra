@@ -123,7 +123,7 @@ atlas_smooth <- function(
   } else {
     check_smoothness(smoothness)
   }
-  atlas <- ggseg.formats::atlas_input(atlas)
+  atlas <- ggseg.formats::as_ggseg_atlas(atlas)
   labels <- resolve_label_selector(labels, atlas)
   exclude <- resolve_label_selector(exclude, atlas)
   geom <- ggseg.formats::atlas_geom(atlas)
@@ -271,7 +271,7 @@ atlas_polish <- function(
   exclude = NULL
 ) {
   method <- match.arg(method)
-  atlas <- ggseg.formats::atlas_input(atlas)
+  atlas <- ggseg.formats::as_ggseg_atlas(atlas)
 
   atlas <- atlas_simplify(
     atlas,
@@ -328,7 +328,7 @@ atlas_polish <- function(
 #' # Grow the structures and leave the grey brain alone
 #' atlas_dilate(dk, 0.5, exclude = context_pattern)
 atlas_dilate <- function(atlas, amount, labels = NULL, exclude = NULL) {
-  atlas <- ggseg.formats::atlas_input(atlas)
+  atlas <- ggseg.formats::as_ggseg_atlas(atlas)
   labels <- resolve_label_selector(labels, atlas)
   exclude <- resolve_label_selector(exclude, atlas)
   check_dilate_args(amount, labels, exclude)
@@ -397,7 +397,7 @@ atlas_dilate <- function(atlas, amount, labels = NULL, exclude = NULL) {
 #' # Which regions are the expensive ones?
 #' head(sort(count_vertices(dk), decreasing = TRUE))
 count_vertices <- function(atlas) {
-  atlas <- ggseg.formats::atlas_input(atlas)
+  atlas <- ggseg.formats::as_ggseg_atlas(atlas)
   sf_data <- ggseg.formats::atlas_sf(atlas)
   counts <- vertices_per_row(sf_data)
 
@@ -470,7 +470,7 @@ atlas_simplify <- function(
   labels = NULL,
   exclude = NULL
 ) {
-  atlas <- ggseg.formats::atlas_input(atlas)
+  atlas <- ggseg.formats::as_ggseg_atlas(atlas)
   labels <- resolve_label_selector(labels, atlas)
   exclude <- resolve_label_selector(exclude, atlas)
   check_simplify_args(keep, labels, exclude)

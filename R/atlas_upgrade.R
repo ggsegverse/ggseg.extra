@@ -142,6 +142,26 @@ upgrade_one_atlas <- function(name, env, repair = FALSE) {
     ) &&
     identical(ggseg.formats::atlas_type(old), ggseg.formats::atlas_type(new))
 
+  # ggseg.formats repairs a legacy `hemi` spelling at the boundary, so an
+  # upgrade can change stored data without the constructor ever refusing it.
+  # What separates an upgrade from a repair is whether contents changed, not
+  # which path produced the atlas -- and a repair stays opt-in, so without
+  # `repair` nothing that rewrites stored data is written.
+  if (!identical_contents) {
+    if (!repair) {
+      return(failed_upgrade_row(
+        name,
+        before,
+        paste0(
+          "Upgrading would change stored data (",
+          upgrade_changed_parts(old, new),
+          "). Re-run with `repair = TRUE`."
+        )
+      ))
+    }
+    status <- "repaired"
+  }
+
   assign(name, new, envir = env)
 
   data.frame(
@@ -256,4 +276,47 @@ report_atlas_upgrade <- function(results, sysdata, dry_run) {
   } else {
     cli::cli_alert_success("Rewrote {.file {sysdata}}.")
   }
+}
+
+#' Name the parts of an atlas an upgrade would rewrite
+#'
+#' The note has to say what would change, not only that something would:
+#' `core$hemi` is the usual answer, and it is what tells the reader this is
+#' the legacy vocabulary rather than lost geometry.
+#' @noRd
+upgrade_changed_parts <- function(old, new) {
+  old_core <- as.data.frame(ggseg.formats::atlas_core(old))
+  new_core <- as.data.frame(ggseg.formats::atlas_core(new))
+
+  shared <- intersect(names(old_core), names(new_core))
+  changed <- shared[
+    !vapply(
+      shared,
+      function(col) identical(old_core[[col]], new_core[[col]]),
+      logical(1)
+    )
+  ]
+  parts <- paste0("core$", changed)
+
+  if (!setequal(names(old_core), names(new_core))) {
+    parts <- c(parts, "core columns")
+  }
+  if (
+    !identical(
+      ggseg.formats::atlas_palette(old),
+      ggseg.formats::atlas_palette(new)
+    )
+  ) {
+    parts <- c(parts, "palette")
+  }
+  if (
+    !identical(ggseg.formats::atlas_type(old), ggseg.formats::atlas_type(new))
+  ) {
+    parts <- c(parts, "type")
+  }
+
+  if (length(parts) == 0) {
+    return("row count")
+  }
+  paste(parts, collapse = ", ")
 }
