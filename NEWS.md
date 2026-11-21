@@ -20,6 +20,11 @@
 
 ## Bug fixes
 
+- Every verb that takes an atlas from the user now upgrades it at the
+  boundary through `ggseg.formats::atlas_input()`. An atlas from a package
+  built before ggseg.formats 3.0.0, or stamped with an older schema, was
+  carried through the verbs as-is and handed back in the same stale
+  representation.
 - Volumes derived from a source that is not 1 mm keep their world
   coordinates. `pixdim<-` rescales the xforms already on an image rather than
   filling in missing voxel sizes, so setting it after the matrices multiplied
@@ -284,10 +289,10 @@ and tractography files.
 - `prepare_subcortical_mni152()` embeds an FSL-MNI152 parcellation into a
   subject's `aseg` via `mni152.register.dat`.
   `create_subcortical_from_volume()` accepts its `list(volume, lut,
-  id_offset)` directly as `input_volume`.
+id_offset)` directly as `input_volume`.
 
 - `create_wholebrain_from_volume()` gains `cerebellar_opts =
-  list(cerebellar_space = )`, so an MNI cerebellar volume is transformed with
+list(cerebellar_space = )`, so an MNI cerebellar volume is transformed with
   the matching SUIT deformation field before being sampled onto the flatmap.
 
 - The tract creators gain `coord_space`, to declare whether streamline
@@ -632,7 +637,7 @@ and tractography files.
 
 - Help pages are scannable: `@param` says what to pass, with reasoning in
   `@details`; the twelve `create_*()` functions share `@family atlas
-  creation`; every creator describes what its returned object holds.
+creation`; every creator describes what its returned object holds.
 
 - The reference index groups geometry shaping, curation and file reading
   under their own headings, the re-exported `atlas_*` verbs have a visible

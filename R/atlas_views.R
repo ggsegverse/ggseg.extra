@@ -41,6 +41,7 @@
 #' atlas_view_remove_sparse(aseg, min_regions = 5)
 atlas_view_remove_sparse <- function(atlas, min_regions = 5) {
   check_min_regions(min_regions)
+  atlas <- ggseg.formats::atlas_input(atlas)
 
   if (is.null(ggseg.formats::atlas_geom(atlas))) {
     cli::cli_warn("Atlas has no 2D geometry, nothing to drop.")
@@ -109,6 +110,8 @@ atlas_view_remove_sparse <- function(atlas, min_regions = 5) {
 #' ggseg.formats::atlas_views_empty(aseg)
 #' atlas_view_remove_empty(aseg)
 atlas_view_remove_empty <- function(atlas) {
+  atlas <- ggseg.formats::atlas_input(atlas)
+
   if (is.null(ggseg.formats::atlas_geom(atlas))) {
     cli::cli_warn("Atlas has no 2D geometry, nothing to drop.")
     return(atlas)
@@ -146,6 +149,7 @@ atlas_view_remove_empty <- function(atlas) {
 #' @examples
 #' atlas_view_region_counts(ggseg.formats::aseg())
 atlas_view_region_counts <- function(atlas) {
+  atlas <- ggseg.formats::atlas_input(atlas)
   pairs <- view_label_pairs(atlas)
   context <- ggseg.formats::atlas_context(atlas)
   drawn <- pairs[!pairs$label %in% context, , drop = FALSE]
