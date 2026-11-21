@@ -134,6 +134,7 @@ reference:
       - setup_atlas_repo
       - use_atlas_github_actions
       - ggseg_atlas_github_actions
+      - upgrade_atlas_package
       - sitrep
       - clear_atlas_cache
 
