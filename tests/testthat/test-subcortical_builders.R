@@ -223,7 +223,13 @@ describe("the views/slabs rename", {
   })
 
   it("accepts `views` without a warning", {
-    expect_no_warning(resolve_renamed_views("V", lifecycle::deprecated(), "f"))
+    # `class =` is load-bearing: a bare expect_no_warning() does not see a
+    # lifecycle deprecation at all, so without it this passes even when the
+    # non-deprecated path warns.
+    expect_no_warning(
+      resolve_renamed_views("V", lifecycle::deprecated(), "f"),
+      class = "lifecycle_warning_deprecated"
+    )
     expect_identical(
       resolve_renamed_views("V", lifecycle::deprecated(), "f"),
       "V"

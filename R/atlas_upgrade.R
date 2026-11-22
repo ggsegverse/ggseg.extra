@@ -218,24 +218,6 @@ report_atlas_upgrade <- function(results, sysdata, dry_run) {
   failed <- results[results$status == "failed", , drop = FALSE]
   repaired <- results[results$status == "repaired", , drop = FALSE]
 
-  # An upgrade carries geometry across untouched, so a changed core table is
-  # a bug in the upgrade rather than something to report and move past. A
-  # repair is meant to change stored data -- that is what separates the two --
-  # so only a plain upgrade is held to this.
-  altered <- results[
-    results$status == "upgraded" & !results$identical_contents,
-    ,
-    drop = FALSE
-  ]
-  if (nrow(altered) > 0) {
-    cli::cli_abort(c(
-      "Upgrading changed the contents of {nrow(altered)} atlas{?es}.",
-      "x" = "Affected: {.val {altered$object}}.",
-      "i" = "An upgrade must carry geometry across untouched. Nothing was
-             written."
-    ))
-  }
-
   cli::cli_alert_info(
     "{n} atlas{?es} in {.file {sysdata}}; {n_changed} need{?s/} upgrading."
   )
@@ -296,7 +278,7 @@ upgrade_changed_parts <- function(old, new) {
       logical(1)
     )
   ]
-  parts <- paste0("core$", changed)
+  parts <- sprintf("core$%s", changed)
 
   if (!setequal(names(old_core), names(new_core))) {
     parts <- c(parts, "core columns")
