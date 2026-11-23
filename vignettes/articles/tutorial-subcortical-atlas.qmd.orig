@@ -314,7 +314,7 @@ aseg_metadata <- data.frame(
   )
 )
 
-core_with_meta <- aseg_raw$core |>
+core_with_meta <- atlas_core(aseg_raw) |>
   mutate(region_key = normalize_region(region)) |>
   left_join(
     aseg_metadata |>
@@ -334,11 +334,11 @@ Construct the final atlas from modified components:
 #| label: rebuild
 #| eval: !expr can_run
 aseg <- ggseg_atlas(
-  atlas = aseg_raw$atlas,
-  type = aseg_raw$type,
-  palette = aseg_raw$palette,
+  atlas = atlas_name(aseg_raw),
+  type = atlas_type(aseg_raw),
+  palette = atlas_palette(aseg_raw),
   core = core_with_meta,
-  data = aseg_raw$data
+  data = atlas_data(aseg_raw)
 )
 
 aseg
@@ -349,7 +349,7 @@ aseg
 #| eval: !expr can_run
 sort(atlas_labels(aseg))
 
-table(aseg$core$structure)
+table(atlas_core(aseg)$structure)
 ```
 
 ```{r}

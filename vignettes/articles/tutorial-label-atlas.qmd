@@ -176,18 +176,18 @@ Clean up region names:
 
 
 ``` r
-core_clean <- ba_atlas$core |>
+core_clean <- atlas_core(ba_atlas) |>
   mutate(
     region = gsub("\\.", " ", region),
     region = gsub("_exvivo", "", region)
   )
 
 ba_atlas <- ggseg_atlas(
-  atlas = ba_atlas$atlas,
-  type = ba_atlas$type,
-  palette = ba_atlas$palette,
+  atlas = atlas_name(ba_atlas),
+  type = atlas_type(ba_atlas),
+  palette = atlas_palette(ba_atlas),
   core = core_clean,
-  data = ba_atlas$data
+  data = atlas_data(ba_atlas)
 )
 ```
 

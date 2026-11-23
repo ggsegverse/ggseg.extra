@@ -385,17 +385,17 @@ context, firmly and `"close"` for the core.
 
 ## Rebuilding the atlas
 
-After modifying components directly (e.g., editing `$core` by hand), reconstruct the atlas with `ggseg_atlas()` to ensure consistency:
+After modifying components directly (e.g., editing `atlas_core()` by hand), reconstruct the atlas with `ggseg_atlas()` to ensure consistency:
 
 ```{r}
 #| label: rebuild
 #| eval: false
 atlas <- ggseg_atlas(
-  atlas = atlas$atlas,
-  type = atlas$type,
-  palette = atlas$palette,
+  atlas = atlas_name(atlas),
+  type = atlas_type(atlas),
+  palette = atlas_palette(atlas),
   core = modified_core,
-  data = atlas$data
+  data = atlas_data(atlas)
 )
 ```
 

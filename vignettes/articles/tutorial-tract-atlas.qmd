@@ -299,7 +299,7 @@ tracula_metadata <- data.frame(
   )
 )
 
-core_with_meta <- tracula_raw$core |>
+core_with_meta <- atlas_core(tracula_raw) |>
   left_join(tracula_metadata, by = "label") |>
   mutate(region = coalesce(region_pretty, region)) |>
   select(hemi, region, label, group)
@@ -312,9 +312,9 @@ core_with_meta <- tracula_raw$core |>
 tracula <- ggseg_atlas(
   atlas = "tracula",
   type = "tract",
-  palette = tracula_raw$palette,
+  palette = atlas_palette(tracula_raw),
   core = core_with_meta,
-  data = tracula_raw$data
+  data = atlas_data(tracula_raw)
 )
 
 tracula
@@ -361,7 +361,7 @@ sort(atlas_labels(tracula))
 #> [37] "rh.mlf.bbr.prep"      "rh.or.bbr.prep"       "rh.slf1.bbr.prep"    
 #> [40] "rh.slf2.bbr.prep"     "rh.slf3.bbr.prep"     "rh.uf.bbr.prep"
 
-table(tracula$core$group, useNA = "ifany")
+table(atlas_core(tracula)$group, useNA = "ifany")
 #> 
 #> association commissural  projection        <NA> 
 #>           4           9           4          25
