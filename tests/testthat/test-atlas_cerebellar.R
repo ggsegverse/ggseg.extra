@@ -3086,3 +3086,29 @@ describe("suit_drawable_vertices", {
     expect_identical(suit_drawable_vertices(), first)
   })
 })
+
+
+describe("read_cerebellar_volume orientation", {
+  # This read must stay in the file's own voxel order: the vertex labels come
+  # from `sample_volume_at_surface()`, which maps surface vertices through the
+  # file's affine. Reorienting the array without reorienting that mapping
+  # samples every vertex from the mirrored voxel, which swaps the whole
+  # cerebellar cortex left for right.
+  it("keeps the array in the file's native order, not RAS", {
+    skip_if_not_installed("RNifti")
+    las <- withr::local_tempfile(fileext = ".nii.gz")
+    arr <- array(0L, dim = c(4, 4, 4))
+    arr[1, 1, 1] <- 7L
+    img <- RNifti::asNifti(arr)
+    RNifti::pixdim(img) <- c(1, 1, 1)
+    RNifti::sform(img) <- structure(diag(c(-1, 1, 1, 1)), code = 2L)
+    RNifti::writeNifti(img, las)
+
+    native <- read_volume(las, reorient = FALSE)
+    reoriented <- read_volume(las)
+
+    # The fixture is only meaningful if the two differ at all.
+    expect_false(identical(which(native == 7L), which(reoriented == 7L)))
+    expect_identical(which(as.array(native) == 7L), 1L)
+  })
+})

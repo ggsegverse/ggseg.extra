@@ -9,6 +9,45 @@ describe("prepare_subcortical_mni152 registration", {
     tmp
   }
 
+  # NIfTI-1 "method 1" (both xform codes 0) declares no affine at all, so the
+  # handedness mni152.register.dat depends on is simply unknown.
+  affineless_volume <- function(envir = parent.frame()) {
+    tmp <- withr::local_tempfile(fileext = ".nii.gz", .local_envir = envir)
+    img <- RNifti::asNifti(array(0L, dim = c(4, 4, 4)))
+    RNifti::pixdim(img) <- c(1, 1, 1)
+    RNifti::writeNifti(img, tmp)
+    tmp
+  }
+
+  it("refuses mni152 when the header declares no affine at all", {
+    skip_if_not_installed("RNifti")
+    local_mocked_bindings(check_fs = function(...) TRUE)
+    vol_file <- affineless_volume()
+    skip_if_not(attr(RNifti::xform(RNifti::readNifti(vol_file)), "code") == 0L)
+
+    expect_error(
+      prepare_subcortical_mni152(vol_file, verbose = FALSE),
+      "handedness is unknown"
+    )
+  })
+
+  it("refuses mni152 when the affine is declared but singular", {
+    skip_if_not_installed("RNifti")
+    local_mocked_bindings(check_fs = function(...) TRUE)
+    tmp <- withr::local_tempfile(fileext = ".nii.gz")
+    img <- RNifti::asNifti(array(0L, dim = c(4, 4, 4)))
+    RNifti::pixdim(img) <- c(1, 1, 1)
+    singular <- diag(4)
+    singular[1, 1] <- 0
+    RNifti::sform(img) <- structure(singular, code = 2L)
+    RNifti::writeNifti(img, tmp)
+
+    expect_error(
+      prepare_subcortical_mni152(tmp, verbose = FALSE),
+      "handedness is unknown"
+    )
+  })
+
   it("refuses its default mni152 registration on a right-handed volume", {
     skip_if_not_installed("RNifti")
     local_mocked_bindings(check_fs = function(...) TRUE)
@@ -157,8 +196,13 @@ describe("prepare_subcortical_mni152 registration call", {
   }
 
   dims <- c(4L, 4L, 4L)
+  # A declared LAS 1 mm affine, which is what `registration = "mni152"`
+  # requires: a bare array declares no handedness and is refused.
   write_vol <- function(arr, path) {
-    RNifti::writeNifti(RNifti::asNifti(arr), path)
+    img <- RNifti::asNifti(arr)
+    RNifti::pixdim(img) <- c(1, 1, 1)
+    RNifti::sform(img) <- structure(diag(c(-1, 1, 1, 1)), code = 2L)
+    RNifti::writeNifti(img, path)
     path
   }
 

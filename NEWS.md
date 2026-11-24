@@ -9,9 +9,22 @@
 - A whole-brain atlas built from an `.mgz` now splits its cortical
   silhouette at the volume's own midline. The midline landed at voxel 1, so
   the atlas had no left-hemisphere backdrop.
+- `check_mni152_grid()` refuses a volume whose header declares no affine at
+  all, instead of passing it silently. Handedness is exactly what it needs and
+  exactly what such a header does not state.
 - `prepare_subcortical_mni152()` and `project_volume_anatomical()` now refuse
   `registration = "mni152"` on a right-handed volume, which that transform
   mirrors. Only the whole-brain pipeline checked.
+- The same refusal means `ggsegAicha/data-raw/make_subcortical.R`,
+  `ggsegCIT168/data-raw/make_cit168.R` and
+  `ggsegThalamus/data-raw/make_thalamus.R` now abort: their source volumes are
+  right-handed, which is why `aicha_sub`, `cit168`, `thalamus_hcp` and
+  `thalamus_thomas` shipped mirrored. They need a reorient onto the 1 mm LAS
+  grid, not `registration = "header"`.
+- `default_subcortical_slabs()` named a left slab `sagittal_right` on a volume
+  whose field of view is off centre, because it mixed the label bounding box's
+  midline with the voxel grid's. The slab name drives the left-only horizontal
+  flip, so the panel was mislabelled and never flipped.
 - The cerebellar `nuclei` view is projected from the reoriented volume; on an
   LAS or LPI volume the left and right nuclei were drawn on the wrong sides.
 - The default subcortical sagittal slab is named for the hemisphere its

@@ -729,7 +729,11 @@ sagittal_hemi_slab <- function(vol, labels) {
   )
   x <- range(idx[, 1])
   end <- max(round(mean(x)), x[1])
-  hemi <- if (mean(c(x[1], end)) > dim(vol)[1] / 2) "right" else "left"
+  # The slab is right-hemisphere only when the whole label bbox starts right
+  # of the grid centre, as a right-only LUT does. Comparing the slab's own
+  # centre instead mixed two midline estimates -- the bbox's and the grid's --
+  # and mis-named a left slab on any volume whose FOV is off centre.
+  hemi <- if (x[1] > dim(vol)[1] / 2) "right" else "left"
 
   data.frame(
     name = paste0("sagittal_", hemi),

@@ -793,9 +793,12 @@ describe("check_mni152_grid", {
     expect_error(check_mni152_grid("volume.nii"), "built for a 1 mm grid")
   })
 
-  it("stays quiet when the header cannot be read", {
+  it("refuses when no affine can be read, rather than passing silently", {
+    # Handedness is exactly what this transform depends on and exactly what an
+    # unreadable header does not state, so silence here was strictly weaker
+    # than the abort it replaced.
     local_mocked_bindings(volume_vox2ras = function(...) NULL)
-    expect_identical(check_mni152_grid("volume.nii"), NA)
+    expect_error(check_mni152_grid("volume.nii"), "handedness is unknown")
   })
 
   it("is reached by validate_registration for mni152 only", {
@@ -814,6 +817,7 @@ describe("validate_registration", {
     checked <- new.env()
     local_mocked_bindings(have_fs = function(...) TRUE, .package = "freesurfer")
     local_mocked_bindings(
+      volume_vox2ras = function(...) diag(c(-1, 1, 1, 1)),
       check_mni152_subject = function(subject) {
         checked$subject <- subject
         invisible(TRUE)
@@ -831,6 +835,7 @@ describe("validate_registration", {
 
   it("skips the space checks for other registrations", {
     local_mocked_bindings(
+      volume_vox2ras = function(...) diag(c(-1, 1, 1, 1)),
       check_mni152_subject = function(...) cli::cli_abort("should not run"),
       warn_if_subject_space_volume = function(...) {
         cli::cli_abort("should not run")
@@ -846,6 +851,7 @@ describe("validate_registration", {
       .package = "freesurfer"
     )
     local_mocked_bindings(
+      volume_vox2ras = function(...) diag(c(-1, 1, 1, 1)),
       check_mni152_subject = function(...) cli::cli_abort("should not run"),
       warn_if_subject_space_volume = function(...) {
         cli::cli_abort("should not run")
@@ -894,6 +900,7 @@ describe("validate_registration without FreeSurfer", {
       .package = "freesurfer"
     )
     local_mocked_bindings(
+      volume_vox2ras = function(...) diag(c(-1, 1, 1, 1)),
       check_mni152_subject = function(...) cli::cli_abort("should not run"),
       warn_if_subject_space_volume = function(...) {
         cli::cli_abort("should not run")

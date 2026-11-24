@@ -375,7 +375,13 @@ volume_vox2ras <- function(input_volume) {
 
   # A reader handed an unreadable file can return a default header whose
   # matrix is all zeros, which would otherwise read as a valid orientation.
-  if (is.null(vox2ras) || det(vox2ras[1:3, 1:3]) == 0) {
+  # A NaN in the affine makes `det() == 0` return NA, which would error here
+  # rather than reporting the affine as unreadable.
+  if (is.null(vox2ras)) {
+    return(NULL)
+  }
+  determinant <- det(vox2ras[1:3, 1:3])
+  if (!is.finite(determinant) || determinant == 0) {
     return(NULL)
   }
 
@@ -438,7 +444,14 @@ check_mni152_grid <- function(input_volume) {
   vox2ras <- volume_vox2ras(input_volume)
 
   if (is.null(vox2ras)) {
-    return(invisible(NA))
+    cli::cli_abort(c(
+      "{.val mni152} registration does not apply to {.path {input_volume}}.",
+      "x" = "No voxel-to-world affine could be read, so this volume's
+        handedness is unknown, and {.file mni152.register.dat} assumes a
+        left-handed (LAS) order: applying it may swap left and right.",
+      "i" = "Use {.code registration = \"header\"}, or convert the volume
+        with {.code mri_convert} so its header carries an affine."
+    ))
   }
 
   voxel_sizes <- sqrt(colSums(vox2ras[1:3, 1:3]^2))

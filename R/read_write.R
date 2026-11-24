@@ -839,7 +839,14 @@ warn_native_voxel_order <- function(file) {
 #' @noRd
 nifti_affine_is_set <- function(xform) {
   code <- attr(xform, "code")
-  length(code) == 1L && !is.na(code) && code > 0L
+  if (!(length(code) == 1L && !is.na(code) && code > 0L)) {
+    return(FALSE)
+  }
+  # A declared code is not enough: a singular or non-finite matrix cannot be
+  # solved for the midline, and callers that trust the code alone would hit a
+  # Lapack error instead of the unreadable-affine path.
+  determinant <- suppressWarnings(det(xform[1:3, 1:3]))
+  is.finite(determinant) && determinant != 0
 }
 
 
