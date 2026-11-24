@@ -220,6 +220,9 @@ Create and maintain a ggseg atlas package
   [`use_atlas_github_actions()`](https://ggsegverse.github.io/ggseg.extra/reference/use_atlas_github_actions.md)
   can write
 
+- [`upgrade_atlas_package()`](https://ggsegverse.github.io/ggseg.extra/reference/upgrade_atlas_package.md)
+  : Upgrade the atlases an atlas package ships
+
 - [`sitrep()`](https://ggsegverse.github.io/ggseg.extra/reference/sitrep.md)
   : Report on the ggseg.extra setup
 

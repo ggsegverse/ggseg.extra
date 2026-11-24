@@ -115,9 +115,9 @@ this gives about 16 bins.
 
 ``` r
 
-nrow(atlas_auto$core)
+nrow(atlas_core(atlas_auto))
 #> [1] 32
-atlas_auto$core |> filter(region != "unknown") |> distinct(region)
+atlas_core(atlas_auto) |> filter(region != "unknown") |> distinct(region)
 #> # A tibble: 16 × 1
 #>    region
 #>    <chr> 
@@ -154,7 +154,7 @@ atlas_5 <- create_cortical_from_neuromaps(
 #> ℹ A large atlas is slow to plot and makes the package that ships it bigger.
 #> ℹ `atlas_polish(atlas)` simplifies and smooths it in one step.
 
-atlas_5$core |> filter(region != "unknown") |> distinct(region)
+atlas_core(atlas_5) |> filter(region != "unknown") |> distinct(region)
 #> # A tibble: 5 × 1
 #>   region
 #>   <chr> 
@@ -177,7 +177,7 @@ atlas_20 <- create_cortical_from_neuromaps(
 #> ℹ A large atlas is slow to plot and makes the package that ships it bigger.
 #> ℹ `atlas_polish(atlas)` simplifies and smooths it in one step.
 
-atlas_20$core |> filter(region != "unknown") |> distinct(region)
+atlas_core(atlas_20) |> filter(region != "unknown") |> distinct(region)
 #> # A tibble: 20 × 1
 #>    region
 #>    <chr> 
@@ -224,7 +224,7 @@ labeled “unknown.”
 
 ``` r
 
-atlas_auto$palette
+atlas_palette(atlas_auto)
 #>  lh_bin_1  lh_bin_2  lh_bin_3  lh_bin_4  lh_bin_5  lh_bin_6  lh_bin_7  lh_bin_8 
 #> "#A71B4B" "#C53E41" "#E15D1C" "#ED820A" "#F5A433" "#F9C25C" "#FCDE85" "#FEF5AD" 
 #>  lh_bin_9 lh_bin_10 lh_bin_11 lh_bin_12 lh_bin_13 lh_bin_14 lh_bin_15 lh_bin_16 

@@ -7,9 +7,9 @@
 <title>Tutorial: Creating an atlas from neuromaps • ggseg.extra</title>
 <script src="../lightswitch.js"></script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
-<script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/Inter-0.4.10/font.css" rel="stylesheet">
-<link href="../deps/Fira_Code-0.4.10/font.css" rel="stylesheet">
-<link href="../deps/Montserrat-0.4.10/font.css" rel="stylesheet">
+<script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/Inter-0.5.0/font.css" rel="stylesheet">
+<link href="../deps/Fira_Code-0.5.0/font.css" rel="stylesheet">
+<link href="../deps/Montserrat-0.5.0/font.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><script src="tutorial-neuromaps-atlas_files/libs/quarto-html/popper.min.js"></script><script src="tutorial-neuromaps-atlas_files/libs/quarto-html/tippy.umd.min.js"></script><link href="tutorial-neuromaps-atlas_files/libs/quarto-html/tippy.css" rel="stylesheet">
@@ -27,7 +27,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9148</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9150</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -178,9 +178,9 @@
 <p><code>breaks</code> controls how continuous data is cut into bins. Both hemispheres are cut on the same bin edges, so a bin covers the same range of values on the left and on the right.</p>
 <p><strong>NULL (the default)</strong> makes quantile bins and uses Sturges’ rule to choose how many. The formula is <code>1 + log2(n)</code>, rounded up, where <em>n</em> is the number of valid (non-NaN) vertices across both hemispheres, clamped to the range 5–20. For fsaverage5 with 10,242 vertices per hemisphere, this gives about 16 bins.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">atlas_auto</span><span class="op">$</span><span class="va">core</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_core.html" class="external-link">atlas_core</a></span><span class="op">(</span><span class="va">atlas_auto</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] 32</span></span>
-<span><span class="va">atlas_auto</span><span class="op">$</span><span class="va">core</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">region</span> <span class="op">!=</span> <span class="st">"unknown"</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/distinct.html" class="external-link">distinct</a></span><span class="op">(</span><span class="va">region</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_core.html" class="external-link">atlas_core</a></span><span class="op">(</span><span class="va">atlas_auto</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">region</span> <span class="op">!=</span> <span class="st">"unknown"</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/distinct.html" class="external-link">distinct</a></span><span class="op">(</span><span class="va">region</span><span class="op">)</span></span>
 <span><span class="co">#&gt; # A tibble: 16 × 1</span></span>
 <span><span class="co">#&gt;    region</span></span>
 <span><span class="co">#&gt;    &lt;chr&gt; </span></span>
@@ -212,7 +212,7 @@
 <span><span class="co">#&gt; ℹ A large atlas is slow to plot and makes the package that ships it bigger.</span></span>
 <span><span class="co">#&gt; ℹ `atlas_polish(atlas)` simplifies and smooths it in one step.</span></span>
 <span></span>
-<span><span class="va">atlas_5</span><span class="op">$</span><span class="va">core</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">region</span> <span class="op">!=</span> <span class="st">"unknown"</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/distinct.html" class="external-link">distinct</a></span><span class="op">(</span><span class="va">region</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_core.html" class="external-link">atlas_core</a></span><span class="op">(</span><span class="va">atlas_5</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">region</span> <span class="op">!=</span> <span class="st">"unknown"</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/distinct.html" class="external-link">distinct</a></span><span class="op">(</span><span class="va">region</span><span class="op">)</span></span>
 <span><span class="co">#&gt; # A tibble: 5 × 1</span></span>
 <span><span class="co">#&gt;   region</span></span>
 <span><span class="co">#&gt;   &lt;chr&gt; </span></span>
@@ -232,7 +232,7 @@
 <span><span class="co">#&gt; ℹ A large atlas is slow to plot and makes the package that ships it bigger.</span></span>
 <span><span class="co">#&gt; ℹ `atlas_polish(atlas)` simplifies and smooths it in one step.</span></span>
 <span></span>
-<span><span class="va">atlas_20</span><span class="op">$</span><span class="va">core</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">region</span> <span class="op">!=</span> <span class="st">"unknown"</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/distinct.html" class="external-link">distinct</a></span><span class="op">(</span><span class="va">region</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_core.html" class="external-link">atlas_core</a></span><span class="op">(</span><span class="va">atlas_20</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">region</span> <span class="op">!=</span> <span class="st">"unknown"</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/distinct.html" class="external-link">distinct</a></span><span class="op">(</span><span class="va">region</span><span class="op">)</span></span>
 <span><span class="co">#&gt; # A tibble: 20 × 1</span></span>
 <span><span class="co">#&gt;    region</span></span>
 <span><span class="co">#&gt;    &lt;chr&gt; </span></span>
@@ -264,7 +264,7 @@
 </h3>
 <p>Bins are colored using the HCL Spectral palette. Bin 1 (lowest values) gets the cool end of the spectrum, and the last bin (highest values) gets the warm end. The medial wall is always grey (<code>#BEBEBE</code>) and labeled “unknown.”</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">atlas_auto</span><span class="op">$</span><span class="va">palette</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="https://ggsegverse.github.io/ggseg.formats/reference/atlas_palette.html" class="external-link">atlas_palette</a></span><span class="op">(</span><span class="va">atlas_auto</span><span class="op">)</span></span>
 <span><span class="co">#&gt;  lh_bin_1  lh_bin_2  lh_bin_3  lh_bin_4  lh_bin_5  lh_bin_6  lh_bin_7  lh_bin_8 </span></span>
 <span><span class="co">#&gt; "#A71B4B" "#C53E41" "#E15D1C" "#ED820A" "#F5A433" "#F9C25C" "#FCDE85" "#FEF5AD" </span></span>
 <span><span class="co">#&gt;  lh_bin_9 lh_bin_10 lh_bin_11 lh_bin_12 lh_bin_13 lh_bin_14 lh_bin_15 lh_bin_16 </span></span>

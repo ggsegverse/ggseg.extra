@@ -1,8 +1,40 @@
 # Changelog
 
-## ggseg.extra 1.9.9.9148
+## ggseg.extra 1.9.9.9150
+
+### New features
+
+- [`atlas_smooth()`](https://ggsegverse.github.io/ggseg.extra/reference/atlas_smooth.md)
+  gains `method = "arc"`, which windows by distance along the outline
+  rather than between neighbouring vertices, and takes `span` in the
+  atlas’s own units. The existing methods work at the scale of a voxel
+  staircase and cannot touch a small structure traced at high fidelity:
+  on `suit`’s deep nuclei, chaikin, ksmooth and spline were each
+  visually identical to no smoothing at all, at every strength, and
+  `vertex_budget = "free"` added sixteen times the vertices without
+  changing the shape. `"arc"` moves vertices without adding any, and
+  keeps a boundary two structures share.
+- [`upgrade_atlas_package()`](https://ggsegverse.github.io/ggseg.extra/reference/upgrade_atlas_package.md)
+  rewrites the atlases a package ships through the current
+  `ggseg.formats` object and schema. Nothing is recomputed: no source
+  volume is read and no geometry is touched, so it is not a rebuild.
+  `repair = TRUE` additionally runs the migration verbs on an atlas the
+  constructor refuses, which does change stored data and says so.
+  Whether an atlas counts as repaired is decided by whether its contents
+  changed, not by whether the constructor refused it, because
+  `ggseg.formats` now repairs a legacy `hemi` spelling at the boundary.
+  Without `repair = TRUE`, an atlas whose stored data would be rewritten
+  is reported as failed, nothing is written, and the note names what
+  would change.
 
 ### Bug fixes
+
+- Every verb that takes an atlas from the user now upgrades it at the
+  boundary through
+  [`ggseg.formats::as_ggseg_atlas()`](https://ggsegverse.github.io/ggseg.formats/reference/as_ggseg_atlas.html).
+  An atlas from a package built before ggseg.formats 3.0.0, or stamped
+  with an older schema, was carried through the verbs as-is and handed
+  back in the same stale representation.
 
 - Volumes derived from a source that is not 1 mm keep their world
   coordinates. `pixdim<-` rescales the xforms already on an image rather

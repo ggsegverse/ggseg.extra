@@ -408,19 +408,20 @@ for the context, firmly and `"close"` for the core.
 
 ## Rebuilding the atlas
 
-After modifying components directly (e.g., editing `$core` by hand),
-reconstruct the atlas with
+After modifying components directly (e.g., editing
+[`atlas_core()`](https://ggsegverse.github.io/ggseg.formats/reference/atlas_core.html)
+by hand), reconstruct the atlas with
 [`ggseg_atlas()`](https://ggsegverse.github.io/ggseg.formats/reference/ggseg_atlas.html)
 to ensure consistency:
 
 ``` r
 
 atlas <- ggseg_atlas(
-  atlas = atlas$atlas,
-  type = atlas$type,
-  palette = atlas$palette,
+  atlas = atlas_name(atlas),
+  type = atlas_type(atlas),
+  palette = atlas_palette(atlas),
   core = modified_core,
-  data = atlas$data
+  data = atlas_data(atlas)
 )
 ```
 
