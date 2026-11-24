@@ -814,25 +814,43 @@ reorient_volume_to_ras <- function(vol, vox2ras) {
 }
 
 
+#' Say that a volume comes back in its own voxel order
+#'
+#' An unreoriented volume renders as a plausible brain rather than failing, so
+#' the condition is announced. `load_tract_grid()` reports it the same way.
+#' @noRd
+warn_native_voxel_order <- function(file) {
+  cli::cli_warn(c(
+    "Could not read a voxel-to-world affine from {.path {file}}.",
+    "!" = "Returning the volume in its native voxel order; downstream steps \\
+           assume RAS+, so regions may be placed along the wrong axes.",
+    "i" = "Convert the volume with {.code mri_convert}, or pass one whose \\
+           header carries a valid affine."
+  ))
+}
+
+
+#' Is an affine RNifti reports one the header actually carries?
+#'
+#' Both NIfTI xform codes zero means the header declares no spatial transform.
+#' RNifti then reports the image as RAS whatever its voxel order is, and an
+#' `orientation<-` assignment on it is a silent no-op, so an LAS volume stored
+#' that way comes back mirrored.
+#' @noRd
+nifti_affine_is_set <- function(xform) {
+  code <- attr(xform, "code")
+  length(code) == 1L && !is.na(code) && code > 0L
+}
+
+
 #' Reorient an MGZ array to RAS+, saying so when the affine cannot be read
 #'
-#' The NIfTI path gets its orientation from `RNifti::orientation<-`, which has
-#' the header to work from. An MGZ arrives as a bare array, so the affine is
-#' the only thing that can place it -- and a conformed volume is typically LIA,
-#' not RAS. Returning it unreoriented and unannounced would hand the projection
-#' code a volume whose axes are transposed, which renders as a plausible brain
-#' rather than failing. `load_tract_grid()` reports the same condition the
-#' same way.
+#' An MGZ arrives as a bare array, so the affine is the only thing that can
+#' place it -- and a conformed volume is typically LIA, not RAS.
 #' @noRd
 reorient_mgz_to_ras <- function(data, vox2ras, file) {
   if (is.null(vox2ras)) {
-    cli::cli_warn(c(
-      "Could not read a voxel-to-world affine from {.path {file}}.",
-      "!" = "Returning the volume in its native voxel order; downstream steps \\
-             assume RAS+, so regions may be placed along the wrong axes.",
-      "i" = "Convert the volume with {.code mri_convert}, or pass one whose \\
-             header carries a valid affine."
-    ))
+    warn_native_voxel_order(file)
     return(data)
   }
   reorient_volume_to_ras(data, vox2ras)
@@ -904,7 +922,9 @@ read_volume <- function(file, reorient = TRUE) {
   )
 
   if (reorient && inherits(vol, "niftiImage")) {
-    if (RNifti::orientation(vol) != "RAS") {
+    if (!nifti_affine_is_set(RNifti::xform(vol))) {
+      warn_native_voxel_order(file)
+    } else if (RNifti::orientation(vol) != "RAS") {
       RNifti::orientation(vol) <- "RAS"
     }
   }

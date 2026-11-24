@@ -1,3 +1,23 @@
+# ggseg.extra 1.9.9.9151
+
+## Bug fixes
+
+- `read_volume()` and `read_vox2ras()` now treat a NIfTI header whose xform
+  codes are both zero as carrying no affine: it warns and returns the native
+  order rather than taking `RNifti`'s default "RAS" at face value, which
+  mirrored an LAS volume stored that way.
+- A whole-brain atlas built from an `.mgz` now splits its cortical
+  silhouette at the volume's own midline. The midline landed at voxel 1, so
+  the atlas had no left-hemisphere backdrop.
+- `prepare_subcortical_mni152()` and `project_volume_anatomical()` now refuse
+  `registration = "mni152"` on a right-handed volume, which that transform
+  mirrors. Only the whole-brain pipeline checked.
+- The cerebellar `nuclei` view is projected from the reoriented volume; on an
+  LAS or LPI volume the left and right nuclei were drawn on the wrong sides.
+- The default subcortical sagittal slab is named for the hemisphere its
+  structures are in. A right-hemisphere-only atlas got a `sagittal_left`
+  panel.
+
 # ggseg.extra 1.9.9.9150
 
 ## New features

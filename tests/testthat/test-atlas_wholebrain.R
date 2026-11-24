@@ -2344,7 +2344,7 @@ describe("wholebrain_prepare_cerebellar_volume", {
     vol[2, 2, 2] <- 2L
     vol[3, 3, 3] <- 3L
     vol_file <- withr::local_tempfile(fileext = ".nii.gz")
-    RNifti::writeNifti(RNifti::asNifti(vol), vol_file)
+    RNifti::writeNifti(as_oriented_nifti(vol), vol_file)
     out_file <- withr::local_tempfile(fileext = ".nii.gz")
 
     wholebrain_prepare_cerebellar_volume(
@@ -2386,7 +2386,7 @@ describe("wholebrain_prepare_subcortical_volume", {
     vol[3, 1, 1] <- 20L
     vol[5, 1, 1] <- 99L
     vol_file <- withr::local_tempfile(fileext = ".nii.gz")
-    RNifti::writeNifti(RNifti::asNifti(vol), vol_file)
+    RNifti::writeNifti(as_oriented_nifti(vol), vol_file)
     out_file <- withr::local_tempfile(fileext = ".nii.gz")
 
     wholebrain_prepare_subcortical_volume(
@@ -2409,7 +2409,7 @@ describe("wholebrain_prepare_subcortical_volume", {
     vol[1, 1, 1] <- 3L
     vol[3, 1, 1] <- 20L
     vol_file <- withr::local_tempfile(fileext = ".nii.gz")
-    RNifti::writeNifti(RNifti::asNifti(vol), vol_file)
+    RNifti::writeNifti(as_oriented_nifti(vol), vol_file)
     out_file <- withr::local_tempfile(fileext = ".nii.gz")
 
     wholebrain_prepare_subcortical_volume(
@@ -3490,7 +3490,7 @@ describe("wholebrain cortex context on a coarse grid", {
     skip_if_not_installed("RNifti")
     arr <- array(1000L, dim = c(12, 5, 5))
     vol_file <- withr::local_tempfile(fileext = ".nii.gz")
-    RNifti::writeNifti(RNifti::asNifti(arr), vol_file)
+    RNifti::writeNifti(as_oriented_nifti(arr), vol_file)
     out_file <- withr::local_tempfile(fileext = ".nii.gz")
 
     # A solid mantle six times the ribbon, but a ribbon one voxel thick:
@@ -3521,13 +3521,13 @@ describe("wholebrain cortex context on a coarse grid", {
     skip_if_not_installed("RNifti")
     arr <- array(1000L, dim = c(12, 5, 5))
     vol_file <- withr::local_tempfile(fileext = ".nii.gz")
-    RNifti::writeNifti(RNifti::asNifti(arr), vol_file)
+    RNifti::writeNifti(as_oriented_nifti(arr), vol_file)
 
     # The grid the regrid moves to: twice as fine, so the ribbon has an
     # interior and the silhouette keeps its sulci.
     fine <- array(1000L, dim = c(24, 10, 10))
     fine_file <- withr::local_tempfile(fileext = ".nii.gz")
-    RNifti::writeNifti(RNifti::asNifti(fine), fine_file)
+    RNifti::writeNifti(as_oriented_nifti(fine), fine_file)
     out_file <- withr::local_tempfile(fileext = ".nii.gz")
 
     ribbon_for <- function(dims) {
@@ -3598,7 +3598,7 @@ describe("posterior fossa context", {
 
   write_context <- function(arr, aseg, env = parent.frame()) {
     vol_file <- withr::local_tempfile(fileext = ".nii.gz", .local_envir = env)
-    RNifti::writeNifti(RNifti::asNifti(arr), vol_file)
+    RNifti::writeNifti(as_oriented_nifti(arr), vol_file)
     out_file <- withr::local_tempfile(fileext = ".nii.gz", .local_envir = env)
     local_mocked_bindings(
       aseg_context_volume = function(...) aseg,
@@ -3655,7 +3655,7 @@ describe("posterior fossa context", {
     skip_if_not_installed("RNifti")
     arr <- fossa_volume()
     vol_file <- withr::local_tempfile(fileext = ".nii.gz")
-    RNifti::writeNifti(RNifti::asNifti(arr), vol_file)
+    RNifti::writeNifti(as_oriented_nifti(arr), vol_file)
     out_file <- withr::local_tempfile(fileext = ".nii.gz")
     local_no_aseg_ribbon()
 

@@ -541,8 +541,9 @@ usable_voxel_size <- function(size) {
 
 #' Read a volume's voxel-to-world affine, or `NULL` if it can't be read
 #'
-#' Returns `NULL` for an unsupported extension, a missing reader package, or a
-#' header read error; the caller decides how to report the fallback.
+#' Returns `NULL` for an unsupported extension, a missing reader package, a
+#' header read error, or a NIfTI header that declares no affine at all; the
+#' caller decides how to report the fallback.
 #' @noRd
 read_vox2ras <- function(template_file) {
   ext <- volume_ext(template_file)
@@ -562,10 +563,14 @@ read_vox2ras <- function(template_file) {
     if (!requireNamespace("RNifti", quietly = TRUE)) {
       return(NULL)
     }
-    return(tryCatch(
+    xform <- tryCatch(
       RNifti::xform(RNifti::niftiHeader(template_file)),
       error = function(e) NULL
-    ))
+    )
+    if (is.null(xform) || !nifti_affine_is_set(xform)) {
+      return(NULL)
+    }
+    return(xform)
   }
   NULL
 }

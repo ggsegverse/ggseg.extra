@@ -1,3 +1,30 @@
+describe("prepare_subcortical_mni152 registration", {
+  right_handed_volume <- function(envir = parent.frame()) {
+    tmp <- withr::local_tempfile(fileext = ".nii.gz", .local_envir = envir)
+    img <- RNifti::asNifti(array(0L, dim = c(4, 4, 4)))
+    RNifti::pixdim(img) <- c(1, 1, 1)
+    RNifti::qform(img) <- structure(diag(4), code = 1L)
+    RNifti::sform(img) <- structure(diag(4), code = 1L)
+    RNifti::writeNifti(img, tmp)
+    tmp
+  }
+
+  it("refuses its default mni152 registration on a right-handed volume", {
+    skip_if_not_installed("RNifti")
+    local_mocked_bindings(check_fs = function(...) TRUE)
+    # The default is registration = "mni152", which assumes an LAS grid: on a
+    # right-handed volume -- including any this package wrote itself -- the
+    # parcels go in mirrored.
+    vol_file <- right_handed_volume()
+
+    expect_error(
+      prepare_subcortical_mni152(vol_file, verbose = FALSE),
+      "swaps left and right"
+    )
+  })
+})
+
+
 describe("aseg_subcortical_labels", {
   it("returns the 14 lumped subcortical aseg ids as integers", {
     ids <- aseg_subcortical_labels()

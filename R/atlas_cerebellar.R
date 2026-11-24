@@ -964,7 +964,7 @@ cerebellar_process_deep_nuclei <- function(
     return(list(sf = NULL, meshes = NULL))
   }
 
-  vol <- read_volume(volume, reorient = FALSE)
+  vol <- read_volume(volume)
 
   deep_sf_list <- list()
   for (i in seq_len(nrow(deep_data))) {

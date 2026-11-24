@@ -132,6 +132,9 @@ prepare_subcortical_mni152 <- function(
   rlang::check_installed("RNifti", reason = "to read NIfTI volumes")
 
   in_path <- resolve_volume_path(input_volume)
+  if (identical(registration, "mni152")) {
+    check_mni152_grid(in_path)
+  }
   # Validated here even though the option is built later: a bad registration
   # costs nothing to reject and should not be reported only after the volume
   # has been read and resampled.

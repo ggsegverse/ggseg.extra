@@ -631,6 +631,22 @@ describe("load_tract_grid", {
     )
     expect_null(result$vox2ras)
   })
+
+  it("treats a NIfTI header with no affine as unreadable", {
+    skip_if_not_installed("RNifti")
+    # Both xform codes zero: RNifti::xform() hands back the identity, which
+    # reads as a valid affine, so coordinates would be mapped through it and
+    # this documented fallback would never fire.
+    tmp <- withr::local_tempfile(fileext = ".nii.gz")
+    RNifti::writeNifti(RNifti::asNifti(array(0L, dim = c(4, 4, 4))), tmp)
+
+    expect_null(read_vox2ras(tmp))
+    expect_warning(
+      result <- load_tract_grid(tmp, FALSE),
+      "Could not read a voxel-to-world affine"
+    )
+    expect_null(result$vox2ras)
+  })
 })
 
 
@@ -778,7 +794,7 @@ describe("load_tract_grid", {
   it("handles .nii.gz extension by parsing gz correctly", {
     tmp <- tempfile(fileext = ".nii.gz")
     vol <- array(0L, dim = c(5, 5, 5))
-    nii <- RNifti::asNifti(vol)
+    nii <- as_oriented_nifti(vol)
     RNifti::writeNifti(nii, tmp)
     on.exit(unlink(tmp))
 
@@ -790,7 +806,7 @@ describe("load_tract_grid", {
   it("loads vox2ras from nii file", {
     tmp <- tempfile(fileext = ".nii")
     vol <- array(0L, dim = c(5, 5, 5))
-    nii <- RNifti::asNifti(vol)
+    nii <- as_oriented_nifti(vol)
     RNifti::writeNifti(nii, tmp)
     on.exit(unlink(tmp))
 
@@ -855,7 +871,7 @@ describe("streamlines_to_volume", {
     on.exit(unlink(tmp_vol))
 
     vol_data <- array(0L, dim = c(10, 10, 10))
-    nii <- RNifti::asNifti(vol_data)
+    nii <- as_oriented_nifti(vol_data)
     RNifti::writeNifti(nii, tmp_vol)
 
     centerline <- matrix(c(5, 5, 5, 6, 6, 6), ncol = 3, byrow = TRUE)
@@ -878,7 +894,7 @@ describe("streamlines_to_volume", {
     on.exit(unlink(tmp_vol))
 
     vol_data <- array(0L, dim = c(10, 10, 10))
-    nii <- RNifti::asNifti(vol_data)
+    nii <- as_oriented_nifti(vol_data)
     RNifti::writeNifti(nii, tmp_vol)
 
     centerline <- matrix(c(0, 0, 0, 1, 1, 1), ncol = 3, byrow = TRUE)

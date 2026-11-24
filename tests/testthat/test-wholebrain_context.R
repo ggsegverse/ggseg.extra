@@ -5,7 +5,7 @@ describe("wholebrain cortex context from the aseg ribbon", {
     skip_if_not_installed("RNifti")
     arr <- array(1000L, dim = c(12, 5, 5))
     vol_file <- withr::local_tempfile(fileext = ".nii.gz")
-    RNifti::writeNifti(RNifti::asNifti(arr), vol_file)
+    RNifti::writeNifti(as_oriented_nifti(arr), vol_file)
     out_file <- withr::local_tempfile(fileext = ".nii.gz")
 
     # 300 cortical voxels against a 150-voxel ribbon: a solid mantle. The
@@ -40,7 +40,7 @@ describe("wholebrain cortex context from the aseg ribbon", {
     arr <- array(1000L, dim = c(8, 5, 5))
     arr[2, 2, 2] <- 10L
     vol_file <- withr::local_tempfile(fileext = ".nii.gz")
-    RNifti::writeNifti(RNifti::asNifti(arr), vol_file)
+    RNifti::writeNifti(as_oriented_nifti(arr), vol_file)
     out_file <- withr::local_tempfile(fileext = ".nii.gz")
 
     ribbon <- array(0L, dim = dim(arr))
@@ -66,7 +66,7 @@ describe("wholebrain cortex context from the aseg ribbon", {
     arr <- array(0L, dim = c(6, 3, 3))
     arr[1:2, , ] <- 1000L
     vol_file <- withr::local_tempfile(fileext = ".nii.gz")
-    RNifti::writeNifti(RNifti::asNifti(arr), vol_file)
+    RNifti::writeNifti(as_oriented_nifti(arr), vol_file)
     out_file <- withr::local_tempfile(fileext = ".nii.gz")
 
     ribbon <- array(3L, dim = dim(arr))
@@ -91,7 +91,7 @@ describe("wholebrain cortex context from the aseg ribbon", {
     arr <- array(0L, dim = c(4, 3, 3))
     arr[1, 1, 1] <- 10L
     vol_file <- withr::local_tempfile(fileext = ".nii.gz")
-    RNifti::writeNifti(RNifti::asNifti(arr), vol_file)
+    RNifti::writeNifti(as_oriented_nifti(arr), vol_file)
     out_file <- withr::local_tempfile(fileext = ".nii.gz")
 
     seen <- new.env()
@@ -123,7 +123,7 @@ describe("the default cortical backdrop", {
     skip_if_not_installed("RNifti")
     arr <- array(1000L, dim = c(12, 5, 5))
     vol_file <- withr::local_tempfile(fileext = ".nii.gz")
-    RNifti::writeNifti(RNifti::asNifti(arr), vol_file)
+    RNifti::writeNifti(as_oriented_nifti(arr), vol_file)
     out_file <- withr::local_tempfile(fileext = ".nii.gz")
 
     seen <- new.env()
@@ -156,7 +156,7 @@ describe("the default cortical backdrop", {
     skip_if_not_installed("RNifti")
     arr <- array(1000L, dim = c(12, 5, 5))
     vol_file <- withr::local_tempfile(fileext = ".nii.gz")
-    RNifti::writeNifti(RNifti::asNifti(arr), vol_file)
+    RNifti::writeNifti(as_oriented_nifti(arr), vol_file)
 
     x <- slice.index(arr, 1)
     local_mocked_bindings(
@@ -188,7 +188,7 @@ describe("the default cortical backdrop", {
     skip_if_not_installed("RNifti")
     arr <- array(1000L, dim = c(12, 5, 5))
     vol_file <- withr::local_tempfile(fileext = ".nii.gz")
-    RNifti::writeNifti(RNifti::asNifti(arr), vol_file)
+    RNifti::writeNifti(as_oriented_nifti(arr), vol_file)
     out_file <- withr::local_tempfile(fileext = ".nii.gz")
 
     x <- slice.index(arr, 1)
@@ -652,13 +652,14 @@ describe("the writers report the context they wrote", {
 
   it("reports both sides of a midline split", {
     skip_if_not_installed("RNifti")
-    vol <- RNifti::asNifti(array(0L, dim = c(4, 1, 1)))
+    vol <- as_oriented_nifti(array(0L, dim = c(4, 1, 1)))
     mask <- array(TRUE, dim = c(4, 1, 1))
 
     written <- wholebrain_cortex_by_midline(
       array(0L, dim = c(4, 1, 1)),
       mask,
-      vol
+      vol,
+      input_volume = NULL
     )
 
     expect_identical(written_context_idx(written), c(3L, 42L))
@@ -666,16 +667,73 @@ describe("the writers report the context they wrote", {
 
   it("reports one side when the mask is on one side only", {
     skip_if_not_installed("RNifti")
-    vol <- RNifti::asNifti(array(0L, dim = c(4, 1, 1)))
+    vol <- as_oriented_nifti(array(0L, dim = c(4, 1, 1)))
     mask <- array(c(TRUE, FALSE, FALSE, FALSE), dim = c(4, 1, 1))
 
     written <- wholebrain_cortex_by_midline(
       array(0L, dim = c(4, 1, 1)),
       mask,
-      vol
+      vol,
+      input_volume = NULL
     )
 
     expect_length(written_context_idx(written), 1L)
+  })
+
+  it("splits an MGZ at the volume's own midline, not at voxel 1", {
+    skip_if_not_installed("RNifti")
+    skip_if_not_installed("freesurferformats")
+    # read_volume() hands back a bare array for an MGZ, and RNifti::xform() of
+    # a bare array is the identity with code 0: the midline lands at voxel 1
+    # and every other column comes out right cortex.
+    vox2ras <- rbind(
+      c(1, 0, 0, -1.5),
+      c(0, 1, 0, -1.5),
+      c(0, 0, 1, -1.5),
+      c(0, 0, 0, 1)
+    )
+    arr <- array(0L, dim = c(4, 4, 4))
+    mgz <- withr::local_tempfile(fileext = ".mgz")
+    freesurferformats::write.fs.mgh(mgz, arr, vox2ras_matrix = vox2ras)
+    nii <- withr::local_tempfile(fileext = ".nii.gz")
+    img <- RNifti::asNifti(arr)
+    RNifti::pixdim(img) <- c(1, 1, 1)
+    RNifti::qform(img) <- structure(vox2ras, code = 1L)
+    RNifti::sform(img) <- structure(vox2ras, code = 1L)
+    RNifti::writeNifti(img, nii)
+    mask <- array(TRUE, dim = dim(arr))
+    blank <- array(0L, dim = dim(arr))
+
+    from_mgz <- wholebrain_cortex_by_midline(
+      blank,
+      mask,
+      read_volume(mgz, reorient = FALSE),
+      mgz
+    )
+    from_nii <- wholebrain_cortex_by_midline(
+      blank,
+      mask,
+      read_volume(nii, reorient = FALSE),
+      nii
+    )
+
+    expect_identical(as.vector(from_mgz), as.vector(from_nii))
+    # one column of left cortex would be the bug; the midline is three in
+    expect_gt(sum(from_mgz == 3L), 16L)
+  })
+
+  it("refuses an MGZ whose affine it cannot read", {
+    local_mocked_bindings(volume_vox2ras = function(...) NULL)
+
+    expect_error(
+      wholebrain_cortex_by_midline(
+        array(0L, dim = c(4, 1, 1)),
+        array(TRUE, dim = c(4, 1, 1)),
+        array(0L, dim = c(4, 1, 1)),
+        "volume.mgz"
+      ),
+      "voxel-to-world affine"
+    )
   })
 
   it("reports nothing for a volume no writer touched", {
@@ -689,7 +747,7 @@ describe("the writers report the context they wrote", {
     skip_if_not_installed("RNifti")
     arr <- array(10L, dim = c(4, 2, 2))
     vol_file <- withr::local_tempfile(fileext = ".nii.gz")
-    RNifti::writeNifti(RNifti::asNifti(arr), vol_file)
+    RNifti::writeNifti(as_oriented_nifti(arr), vol_file)
     out_file <- withr::local_tempfile(fileext = ".nii.gz")
 
     prepared <- wholebrain_prepare_subcortical_volume(
