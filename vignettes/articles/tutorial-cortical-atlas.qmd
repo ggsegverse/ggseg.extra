@@ -245,7 +245,7 @@ yeo7_metadata <- data.frame(
   )
 )
 
-core_with_meta <- yeo7_smooth$core |>
+core_with_meta <- atlas_core(yeo7_smooth) |>
   left_join(yeo7_metadata, by = "region") |>
   mutate(region = coalesce(region_pretty, region)) |>
   select(hemi, region, label)
@@ -258,11 +258,11 @@ Construct the final atlas from the modified core:
 
 ``` r
 yeo7 <- ggseg_atlas(
-  atlas = yeo7_smooth$atlas,
-  type = yeo7_smooth$type,
-  palette = yeo7_smooth$palette,
+  atlas = atlas_name(yeo7_smooth),
+  type = atlas_type(yeo7_smooth),
+  palette = atlas_palette(yeo7_smooth),
   core = core_with_meta,
-  data = yeo7_smooth$data
+  data = atlas_data(yeo7_smooth)
 )
 
 yeo7

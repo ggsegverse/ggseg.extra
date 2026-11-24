@@ -315,7 +315,7 @@ describe("create_cortical_from_gifti", {
     )
 
     expect_s3_class(result, "ggseg_atlas")
-    expect_gt(nrow(result$core), 0)
+    expect_gt(length(atlas_labels(result)), 0)
   })
 })
 
@@ -526,9 +526,9 @@ describe("create_cortical_from_cifti", {
     )
 
     expect_s3_class(result, "ggseg_atlas")
-    expect_gt(nrow(result$core), 0)
-    expect_true("left" %in% result$core$hemi)
-    expect_true("right" %in% result$core$hemi)
+    expect_gt(length(atlas_labels(result)), 0)
+    expect_true("left" %in% atlas_hemi(result))
+    expect_true("right" %in% atlas_hemi(result))
   })
 
   it("auto-derives atlas_name from filename", {
@@ -575,7 +575,7 @@ describe("create_cortical_from_cifti", {
       ),
       "vertices"
     )
-    expect_true(grepl("my_atlas", result$atlas, fixed = TRUE))
+    expect_true(grepl("my_atlas", atlas_name(result), fixed = TRUE))
   })
 
   it("calls cortical_project_and_build", {
@@ -665,7 +665,7 @@ describe("create_cortical_from_gifti", {
       verbose = FALSE,
       cleanup = FALSE
     )
-    expect_true(grepl("myatlas", result$atlas, fixed = TRUE))
+    expect_true(grepl("myatlas", atlas_name(result), fixed = TRUE))
   })
 
   it("calls cortical_project_and_build", {

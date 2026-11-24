@@ -1,6 +1,6 @@
 Package: ggseg.extra
 Title: Create Brain Atlases for the 'ggsegverse' Plotting Ecosystem
-Version: 1.9.9.9148
+Version: 1.9.9.9150
 Authors@R: c(
     person(
         given = "Athanasia Mo",
@@ -38,13 +38,13 @@ URL: https://ggsegverse.github.io/ggseg.extra/,
 BugReports: https://github.com/ggsegverse/ggseg.extra/issues
 Depends:
     R (>= 4.2.0),
-    ggseg.formats (>= 0.0.4.9028)
+    ggseg.formats (>= 0.0.4.9032)
 Imports:
     cli,
     dplyr,
     fs,
     furrr,
-    ggseg3d (>= 2.0.0),
+    ggseg3d (>= 2.1.2.9016),
     grDevices,
     lifecycle,
     progressr,
@@ -60,7 +60,7 @@ Suggests:
     freesurfer (>= 1.9.0),
     freesurferformats,
     future,
-    ggseg,
+    ggseg (>= 2.2.1.9020),
     gifti,
     knitr,
     neuromapr,
@@ -69,6 +69,7 @@ Suggests:
     RNifti,
     rstudioapi,
     Rvcg,
+    sfheaders,
     smoothr,
     spelling,
     terra,

@@ -87,8 +87,8 @@ For fsaverage5 with 10,242 vertices per hemisphere, this gives about 16 bins.
 ```{r}
 #| label: the-nbins-parameter
 #| eval: !expr can_run
-nrow(atlas_auto$core)
-atlas_auto$core |> filter(region != "unknown") |> distinct(region)
+nrow(atlas_core(atlas_auto))
+atlas_core(atlas_auto) |> filter(region != "unknown") |> distinct(region)
 ```
 
 **A single number** asks for that many quantile bins.
@@ -104,7 +104,7 @@ atlas_5 <- create_cortical_from_neuromaps(
   atlas_name = "abagen_5bin"
 )
 
-atlas_5$core |> filter(region != "unknown") |> distinct(region)
+atlas_core(atlas_5) |> filter(region != "unknown") |> distinct(region)
 ```
 
 ```{r}
@@ -117,7 +117,7 @@ atlas_20 <- create_cortical_from_neuromaps(
   atlas_name = "abagen_20bin"
 )
 
-atlas_20$core |> filter(region != "unknown") |> distinct(region)
+atlas_core(atlas_20) |> filter(region != "unknown") |> distinct(region)
 ```
 
 ### Quantile-based breaks
@@ -137,7 +137,7 @@ The medial wall is always grey (`#BEBEBE`) and labeled "unknown."
 ```{r}
 #| label: color-palette
 #| eval: !expr can_run
-atlas_auto$palette
+atlas_palette(atlas_auto)
 ```
 
 ## Visualizing the effect of bin count

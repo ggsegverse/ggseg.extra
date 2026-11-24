@@ -755,21 +755,9 @@ wholebrain_log_summary <- function(
   start_time
 ) {
   # nolint start: object_usage_linter.
-  n_cort <- if (!is.null(cortical_atlas)) {
-    nrow(cortical_atlas$core)
-  } else {
-    0L
-  }
-  n_sub <- if (!is.null(subcortical_atlas)) {
-    nrow(subcortical_atlas$core)
-  } else {
-    0L
-  }
-  n_cer <- if (!is.null(cerebellar_atlas)) {
-    nrow(cerebellar_atlas$core)
-  } else {
-    0L
-  }
+  n_cort <- n_atlas_regions(cortical_atlas)
+  n_sub <- n_atlas_regions(subcortical_atlas)
+  n_cer <- n_atlas_regions(cerebellar_atlas)
   # nolint end
   cli::cli_alert_success(
     "Whole-brain atlas created: {n_cort} cortical, {n_sub} subcortical,
@@ -2224,7 +2212,9 @@ wholebrain_run_subcortical <- function(
     c(managed, opts)
   )
 
-  atlas$atlas <- subcort_name
+  # ggseg.formats exports no `set_atlas_name()`, so the name is assigned to
+  # the property directly; the assignment still validates.
+  atlas <- ggseg.formats::set_atlas_name(atlas, subcort_name)
   atlas
 }
 

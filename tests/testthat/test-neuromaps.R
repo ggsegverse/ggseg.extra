@@ -267,9 +267,9 @@ describe("create_cortical_from_neuromaps", {
     )
 
     expect_s3_class(result, "ggseg_atlas")
-    expect_gt(nrow(result$core), 0)
-    expect_true("left" %in% result$core$hemi)
-    expect_true("right" %in% result$core$hemi)
+    expect_gt(length(atlas_labels(result)), 0)
+    expect_true("left" %in% atlas_hemi(result))
+    expect_true("right" %in% atlas_hemi(result))
   })
 
   it("derives atlas_name from source and desc", {
@@ -316,7 +316,7 @@ describe("create_cortical_from_neuromaps", {
       "vertices"
     )
 
-    expect_identical(result$atlas, "abagen_genepc1")
+    expect_identical(atlas_name(result), "abagen_genepc1")
   })
 
   it("routes volume annotations through read_neuromaps_volume", {

@@ -23,6 +23,8 @@
 #' @param labels Which labels to smooth: a regular expression, or a function
 #'   that takes the atlas and returns one. Pass `context_pattern`, without
 #'   calling it, to select the atlas's context.
+#' @param span Smoothing window in the atlas's own units, for
+#'   `method = "arc"`. Required for that method, ignored by the others.
 #' @param exclude Optional regex. Matching labels are left alone. Only one of
 #'   `labels` or `exclude` may be given.
 #'
@@ -43,8 +45,26 @@
 #' backdrop from 463 enclosed rings to 27. Reach for it on solid shapes, such
 #' as tract tubes, where there are no holes to lose.
 #'
-#' `smoothness` means the same amount of smoothing whichever method you pick,
-#' so switching method does not mean re-finding the value.
+#' `"arc"` is the odd one out, and takes `span` rather than `smoothness`. The
+#' others all work between neighbouring vertices, which is the right scale for
+#' a voxel staircase, where a step *is* a vertex or two. It is the wrong scale
+#' for a small structure traced at high fidelity: there the outline follows a
+#' coarse mask with many vertices per bump, the kernel sits far below the bump,
+#' and the result comes back looking untouched. On the `suit` atlas's deep
+#' nuclei every other method was visually identical to no smoothing at all,
+#' at every strength, and `vertex_budget = "free"` added sixteen times the
+#' vertices without changing the shape.
+#'
+#' `"arc"` windows by distance along the outline instead, so `span` means the
+#' same thing however finely that outline happens to be traced. Give it the
+#' width of the bumps you want gone, in the atlas's own units. It moves
+#' vertices without adding any, so `vertex_budget` does not apply, and it
+#' keeps a boundary two structures share: rings are reconciled after
+#' smoothing, or neighbours pull apart exactly where they touch.
+#'
+#' `smoothness` means the same amount of smoothing whichever of the other
+#' methods you pick, so switching between them does not mean re-finding the
+#' value.
 #'
 #' # What rounding costs
 #'
@@ -89,15 +109,17 @@
 atlas_smooth <- function(
   atlas,
   smoothness = 0.4,
-  method = c("chaikin", "close", "ksmooth", "spline"),
+  method = c("chaikin", "close", "ksmooth", "spline", "arc"),
   vertex_budget = c("preserve", "free"),
   close_gaps = TRUE,
   labels = NULL,
-  exclude = NULL
+  exclude = NULL,
+  span = NULL
 ) {
   method <- match.arg(method)
   vertex_budget <- match.arg(vertex_budget)
-  check_smoothness(smoothness)
+  span <- check_smoothing_strength(method, smoothness, span)
+  atlas <- ggseg.formats::as_ggseg_atlas(atlas)
   labels <- resolve_label_selector(labels, atlas)
   exclude <- resolve_label_selector(exclude, atlas)
   geom <- ggseg.formats::atlas_geom(atlas)
@@ -112,7 +134,7 @@ atlas_smooth <- function(
     )
   }
 
-  if (!isTRUE(smoothness > 0)) {
+  if (smoothing_does_nothing(method, smoothness, span)) {
     return(atlas)
   }
 
@@ -127,22 +149,22 @@ atlas_smooth <- function(
     sf_data,
     labels,
     exclude,
-    function(d) smooth_sf_light(d, smoothness = smoothness, method = method),
+    function(d) {
+      smooth_sf_light(d, smoothness = smoothness, method = method, span = span)
+    },
     what = "smooth"
   )
   if (!identical(sf_data, before)) {
-    if (isTRUE(close_gaps)) {
-      sf_data <- close_gaps_by_view(sf_data, before, selected)
-    }
-    if (identical(vertex_budget, "preserve")) {
-      sf_data <- trim_rounded_corners(
-        sf_data,
-        before,
-        labels,
-        exclude,
-        close_gaps
-      )
-    }
+    sf_data <- settle_smoothed_geometry(
+      sf_data,
+      before,
+      selected,
+      close_gaps = close_gaps,
+      vertex_budget = vertex_budget,
+      method = method,
+      labels = labels,
+      exclude = exclude
+    )
   }
 
   out <- rehydrate_smoothed_atlas(atlas, sf_data, was_polygon)
@@ -236,6 +258,7 @@ atlas_polish <- function(
   exclude = NULL
 ) {
   method <- match.arg(method)
+  atlas <- ggseg.formats::as_ggseg_atlas(atlas)
 
   atlas <- atlas_simplify(
     atlas,
@@ -292,6 +315,7 @@ atlas_polish <- function(
 #' # Grow the structures and leave the grey brain alone
 #' atlas_dilate(dk, 0.5, exclude = context_pattern)
 atlas_dilate <- function(atlas, amount, labels = NULL, exclude = NULL) {
+  atlas <- ggseg.formats::as_ggseg_atlas(atlas)
   labels <- resolve_label_selector(labels, atlas)
   exclude <- resolve_label_selector(exclude, atlas)
   check_dilate_args(amount, labels, exclude)
@@ -360,6 +384,7 @@ atlas_dilate <- function(atlas, amount, labels = NULL, exclude = NULL) {
 #' # Which regions are the expensive ones?
 #' head(sort(count_vertices(dk), decreasing = TRUE))
 count_vertices <- function(atlas) {
+  atlas <- ggseg.formats::as_ggseg_atlas(atlas)
   sf_data <- ggseg.formats::atlas_sf(atlas)
   counts <- vertices_per_row(sf_data)
 
@@ -432,6 +457,7 @@ atlas_simplify <- function(
   labels = NULL,
   exclude = NULL
 ) {
+  atlas <- ggseg.formats::as_ggseg_atlas(atlas)
   labels <- resolve_label_selector(labels, atlas)
   exclude <- resolve_label_selector(exclude, atlas)
   check_simplify_args(keep, labels, exclude)
@@ -845,11 +871,7 @@ restore_unselected <- function(result, original, labels, exclude) {
   # names its list-column the same, so there is no sf-specific case to make.
   after$geometry[hit[found]] <- before$geometry[unselected][found]
 
-  # Written directly because ggseg.formats exports no geometry setter; this
-  # is the same assignment rehydrate_smoothed_atlas() makes, and `result` is
-  # already in its final representation, so no conversion follows.
-  result$data$geom <- after
-  result
+  ggseg.formats::set_atlas_geom(result, after)
 }
 
 
@@ -865,7 +887,7 @@ drop_eroded_regions <- function(atlas, surviving_labels, emptied) {
     return(atlas)
   }
 
-  lost <- setdiff(atlas$core$label, surviving_labels)
+  lost <- setdiff(ggseg.formats::atlas_labels(atlas), surviving_labels)
   if (length(lost) == 0L) {
     return(atlas)
   }
@@ -876,18 +898,21 @@ drop_eroded_regions <- function(atlas, surviving_labels, emptied) {
     "i" = "Use a smaller {.arg amount}, or {.arg exclude} these labels."
   ))
 
-  atlas$core <- atlas$core[!atlas$core$label %in% lost, , drop = FALSE]
-  if (!is.null(atlas$palette)) {
-    atlas$palette <- atlas$palette[!names(atlas$palette) %in% lost]
-  }
-  atlas
+  core <- ggseg.formats::atlas_core(atlas)
+  # core and palette are keyed on the same labels, so they move together or
+  # the intermediate atlas is invalid; the setter lands both in one step and
+  # carries the palette across for the labels that survive.
+  ggseg.formats::set_atlas_core(
+    atlas,
+    core[!core$label %in% lost, , drop = FALSE]
+  )
 }
 
 
 #' Write smoothed geometry back and restore the atlas representation
 #' @noRd
 rehydrate_smoothed_atlas <- function(atlas, sf_data, was_polygon) {
-  atlas$data$geom <- sf_data
+  atlas <- ggseg.formats::set_atlas_geom(atlas, sf_data)
   if (was_polygon) {
     ggseg.formats::as_polygon_atlas(atlas)
   } else {
@@ -958,7 +983,15 @@ simplify_sf_topology <- function(sf_data, keep = 0.05) {
 #' @return Smoothed sf data.frame.
 #' @noRd
 #' @importFrom sf st_buffer st_make_valid
-smooth_sf_light <- function(sf_data, smoothness = 0, method = "close") {
+smooth_sf_light <- function(
+  sf_data,
+  smoothness = 0,
+  method = "close",
+  span = NULL
+) {
+  if (identical(method, "arc")) {
+    return(smooth_sf_arc(sf_data, span = span))
+  }
   if (smoothness <= 0) {
     return(sf_data)
   }
@@ -1441,4 +1474,60 @@ close_gaps_by_view <- function(new_sf, old_sf, selected = NULL) {
     sf::st_geometry(new_sf)[rows] <- sf::st_geometry(repaired)
   }
   sf::st_make_valid(new_sf)
+}
+
+
+#' Validate whichever strength argument the chosen method actually uses
+#'
+#' `arc` is measured as a span in atlas units and every other method as a
+#' fraction, so only one of the two is meaningful for a given call. Returns
+#' `span`, which `check_span()` may normalise.
+#' @noRd
+check_smoothing_strength <- function(method, smoothness, span) {
+  if (identical(method, "arc")) {
+    return(check_span(span))
+  }
+  check_smoothness(smoothness)
+  span
+}
+
+#' Whether the requested smoothing would leave the geometry untouched
+#'
+#' A zero or missing strength is a no-op rather than an error, so the atlas
+#' comes back as it went in. Which argument carries the strength depends on
+#' the method.
+#' @noRd
+smoothing_does_nothing <- function(method, smoothness, span) {
+  strength <- if (identical(method, "arc")) span else smoothness
+  !isTRUE(strength > 0)
+}
+
+#' Close the gaps smoothing opened, and give back the vertices it added
+#' @noRd
+settle_smoothed_geometry <- function(
+  sf_data,
+  before,
+  selected,
+  close_gaps,
+  vertex_budget,
+  method,
+  labels,
+  exclude
+) {
+  if (isTRUE(close_gaps)) {
+    sf_data <- close_gaps_by_view(sf_data, before, selected)
+  }
+  # Arc-length smoothing moves vertices without adding any, so there is no
+  # rounding growth for the budget to take back -- and running the
+  # simplification pass anyway would move shapes for nothing.
+  if (identical(vertex_budget, "preserve") && !identical(method, "arc")) {
+    sf_data <- trim_rounded_corners(
+      sf_data,
+      before,
+      labels,
+      exclude,
+      close_gaps
+    )
+  }
+  sf_data
 }

@@ -1159,7 +1159,7 @@ describe("tract_assemble_3d", {
     result <- tract_assemble_3d(step1)
 
     expect_s3_class(result, "ggseg_atlas")
-    expect_identical(result$type, "tract")
+    expect_identical(atlas_type(result), "tract")
   })
 })
 

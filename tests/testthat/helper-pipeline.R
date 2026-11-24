@@ -64,10 +64,10 @@ mock_context_sf <- function(labels, view = "lateral") {
 }
 
 expect_unknown_is_context <- function(atlas, unknown_labels) {
-  expect_true(all(unknown_labels %in% atlas$data$geom$label))
-  expect_false(any(unknown_labels %in% atlas$core$label))
-  expect_false(any(unknown_labels %in% names(atlas$palette)))
-  expect_false(any(unknown_labels %in% atlas$data$vertices$label))
+  expect_true(all(unknown_labels %in% atlas_geom(atlas)$label))
+  expect_false(any(unknown_labels %in% atlas_labels(atlas)))
+  expect_false(any(unknown_labels %in% names(atlas_palette(atlas))))
+  expect_false(any(unknown_labels %in% atlas_vertices(atlas)$label))
 }
 
 local_cache_file <- function(

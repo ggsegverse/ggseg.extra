@@ -280,7 +280,7 @@ tracula_metadata <- data.frame(
   )
 )
 
-core_with_meta <- tracula_raw$core |>
+core_with_meta <- atlas_core(tracula_raw) |>
   left_join(tracula_metadata, by = "label") |>
   mutate(region = coalesce(region_pretty, region)) |>
   select(hemi, region, label, group)
@@ -294,9 +294,9 @@ core_with_meta <- tracula_raw$core |>
 tracula <- ggseg_atlas(
   atlas = "tracula",
   type = "tract",
-  palette = tracula_raw$palette,
+  palette = atlas_palette(tracula_raw),
   core = core_with_meta,
-  data = tracula_raw$data
+  data = atlas_data(tracula_raw)
 )
 
 tracula
@@ -307,7 +307,7 @@ tracula
 #| eval: !expr can_run
 sort(atlas_labels(tracula))
 
-table(tracula$core$group, useNA = "ifany")
+table(atlas_core(tracula)$group, useNA = "ifany")
 ```
 
 The table above covers the tracts this training set names unambiguously; the rest keep their raw labels and an `NA` group. Note the join key is the label exactly as the pipeline wrote it, `.bbr.prep` and all --- strip the extension first and nothing matches, silently.

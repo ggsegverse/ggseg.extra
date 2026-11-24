@@ -188,8 +188,8 @@ preview_atlas <- function(atlas) {
     return(invisible(atlas))
   }
 
-  has_3d <- !is.null(atlas$data$vertices) ||
-    !is.null(atlas$data$meshes)
+  payload <- ggseg.formats::atlas_data(atlas)
+  has_3d <- !is.null(payload$vertices) || !is.null(payload$meshes)
 
   if (!has_3d) {
     cli::cli_alert_danger(
@@ -667,8 +667,9 @@ warn_if_large_atlas <- function(
   }
 
   n_vertices <- sum(vertices_per_row(ggseg.formats::atlas_sf(atlas)))
-  n_regions <- if (is.null(atlas$core)) 0L else nrow(atlas$core)
-  per_region <- per_region %||% atlas_vertex_budget(atlas$type)
+  n_regions <- n_atlas_regions(atlas)
+  type <- ggseg.formats::atlas_type(atlas)
+  per_region <- per_region %||% atlas_vertex_budget(type)
   threshold <- max(max_vertices, per_region * n_regions)
 
   if (n_vertices > threshold) {
@@ -676,7 +677,7 @@ warn_if_large_atlas <- function(
       c(
         "Atlas has {.val {n_vertices}} vertices, against a budget of
         {.val {threshold}} for {cli::qty(n_regions)}{n_regions}
-        {atlas$type} region{?s}.",
+        {type} region{?s}.",
         "i" = "A large atlas is slow to plot and makes the package that
         ships it bigger.",
         "i" = "{.code atlas_polish(atlas)} simplifies and smooths it in one

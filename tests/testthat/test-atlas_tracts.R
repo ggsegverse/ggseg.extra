@@ -14,9 +14,9 @@ describe("create_tract_from_tractography", {
     )
 
     expect_s3_class(atlas, "ggseg_atlas")
-    expect_identical(atlas$type, "tract")
-    expect_false(is.null(atlas$data$centerlines))
-    expect_identical(nrow(atlas$data$centerlines), 2L)
+    expect_identical(atlas_type(atlas), "tract")
+    expect_s3_class(atlas_centerlines(atlas), "ggseg_centerlines")
+    expect_identical(nrow(atlas_centerlines(atlas)), 2L)
   })
 
   it("errors when tube_segments is less than 3", {
@@ -45,8 +45,8 @@ describe("create_tract_from_tractography", {
       verbose = FALSE
     )
 
-    expect_true("cst_left" %in% atlas$core$label)
-    expect_true("cst_right" %in% atlas$core$label)
+    expect_true("cst_left" %in% atlas_labels(atlas))
+    expect_true("cst_right" %in% atlas_labels(atlas))
   })
 
   it("accepts custom names and colours via input_lut", {
@@ -68,10 +68,10 @@ describe("create_tract_from_tractography", {
       verbose = FALSE
     )
 
-    expect_true("Tract_A" %in% atlas$core$label)
-    expect_true("Tract_B" %in% atlas$core$label)
-    expect_true("#FF0000" %in% atlas$palette)
-    expect_true("#00FF00" %in% atlas$palette)
+    expect_true("Tract_A" %in% atlas_labels(atlas))
+    expect_true("Tract_B" %in% atlas_labels(atlas))
+    expect_true("#FF0000" %in% atlas_palette(atlas))
+    expect_true("#00FF00" %in% atlas_palette(atlas))
   })
 
   it("creates valid centerline structure for each tract", {
@@ -85,8 +85,8 @@ describe("create_tract_from_tractography", {
       verbose = FALSE
     )
 
-    expect_true(all(c("label", "points") %in% names(atlas$data$centerlines)))
-    points <- atlas$data$centerlines$points[[1]]
+    expect_true(all(c("label", "points") %in% names(atlas_centerlines(atlas))))
+    points <- atlas_centerlines(atlas)$points[[1]]
     expect_true(all(c("x", "y", "z") %in% colnames(points)))
   })
 
@@ -102,8 +102,8 @@ describe("create_tract_from_tractography", {
       verbose = FALSE
     )
 
-    expect_null(atlas$data$tube_radius)
-    expect_null(atlas$data$tube_segments)
+    expect_null(atlas_data(atlas)$tube_radius)
+    expect_null(atlas_data(atlas)$tube_segments)
   })
 
   it("can render with ggseg3d", {
@@ -254,7 +254,7 @@ describe("create_tract_from_tractography pipeline flow", {
       verbose = FALSE
     )
 
-    expect_false(is.na(atlas$palette[1]))
+    expect_false(is.na(atlas_palette(atlas)[1]))
   })
 
   it("handles LUT without colour columns", {
@@ -272,7 +272,7 @@ describe("create_tract_from_tractography pipeline flow", {
     )
 
     expect_s3_class(atlas, "ggseg_atlas")
-    expect_true("Tract_A" %in% atlas$core$label)
+    expect_true("Tract_A" %in% atlas_labels(atlas))
   })
 
   it("loads cached data for skipped steps and proceeds", {

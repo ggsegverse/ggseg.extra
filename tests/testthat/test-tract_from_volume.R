@@ -156,7 +156,7 @@ describe("create_tract_from_volume", {
 
     expect_s3_class(atlas, "ggseg_atlas")
     expect_identical(ggseg.formats::atlas_type(atlas), "tract")
-    expect_identical(nrow(atlas$core), 2L)
+    expect_identical(length(atlas_labels(atlas)), 2L)
   })
 })
 

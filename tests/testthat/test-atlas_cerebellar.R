@@ -435,7 +435,7 @@ describe("build_suit_region_row missing label names", {
       data = ggseg.formats::ggseg_data_cerebellar(geom = geom)
     )
 
-    expect_identical(unique(atlas$core$region), "region 28")
+    expect_identical(unique(atlas_regions(atlas)), "region 28")
     expect_identical(unique(ggseg.formats::atlas_sf(atlas)$region), "region 28")
   })
 })
@@ -528,9 +528,9 @@ describe("create_cerebellar_from_gifti", {
 
     expect_s3_class(atlas, "ggseg_atlas")
     expect_s3_class(atlas, "cerebellar_atlas")
-    expect_identical(atlas$type, "cerebellar")
-    expect_s3_class(atlas$data, "ggseg_data_cerebellar")
-    expect_gt(nrow(atlas$core), 0)
+    expect_identical(atlas_type(atlas), "cerebellar")
+    expect_s3_class(atlas_data(atlas), "ggseg_data_cerebellar")
+    expect_gt(length(atlas_labels(atlas)), 0)
 
     sf_data <- ggseg.formats::atlas_sf(atlas)
     expect_s3_class(sf_data, "sf")
@@ -1019,7 +1019,7 @@ describe("cerebellar pipeline orchestration", {
       verbose = FALSE
     )
 
-    expect_gt(nchar(atlas$atlas), 0)
+    expect_gt(nchar(atlas_name(atlas)), 0)
   })
 
   it("create_cerebellar_from_annotation derives atlas_name", {
@@ -1075,7 +1075,7 @@ describe("cerebellar pipeline orchestration", {
     )
 
     expect_s3_class(atlas, "cerebellar_atlas")
-    expect_identical(atlas$type, "cerebellar")
+    expect_identical(atlas_type(atlas), "cerebellar")
   })
 })
 
@@ -2056,8 +2056,8 @@ describe("cerebellar_project_and_build", {
 
     expect_s3_class(atlas, "ggseg_atlas")
     expect_s3_class(atlas, "cerebellar_atlas")
-    expect_identical(atlas$type, "cerebellar")
-    expect_gt(nrow(atlas$core), 0)
+    expect_identical(atlas_type(atlas), "cerebellar")
+    expect_gt(length(atlas_labels(atlas)), 0)
   })
 })
 
@@ -2490,7 +2490,7 @@ describe("create_cerebellar_from_volume integration", {
 
     expect_s3_class(atlas, "ggseg_atlas")
     expect_s3_class(atlas, "cerebellar_atlas")
-    expect_gte(nrow(atlas$core), 2)
+    expect_gte(length(atlas_labels(atlas)), 2)
 
     sf_data <- ggseg.formats::atlas_sf(atlas)
     expect_s3_class(sf_data, "sf")

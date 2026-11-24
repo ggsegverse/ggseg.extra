@@ -129,8 +129,8 @@ After converting, verify the result:
 #| eval: false
 stopifnot(is_ggseg_atlas(result))
 
-nrow(result$core)
-length(result$palette)
+nrow(atlas_core(result))
+length(atlas_palette(result))
 ```
 
 Each converted atlas package needs these updates:
@@ -142,7 +142,7 @@ Each converted atlas package needs these updates:
 - **tests**: Use `is_ggseg_atlas()` and `geom_brain()` instead of legacy
   `is_brain_atlas()` and `ggseg()`
 - **R/sysdata.rda**: Delete. Palettes are embedded in the atlas object
-  (`atlas$palette`), not stored separately in `brain_pals`
+  (`atlas_palette()`), not stored separately in `brain_pals`
 
 ## Lessons learned from batch conversion
 
@@ -185,7 +185,7 @@ omit the 3D test entirely or guard it:
 #| eval: false
 it("renders with ggseg3d", {
   skip_if_not_installed("ggseg3d")
-  skip_if(is.null(my_atlas$data$vertices), "No 3D data")
+  skip_if(is.null(atlas_data(my_atlas)$vertices), "No 3D data")
   p <- ggseg3d::ggseg3d(atlas = my_atlas)
   expect_s3_class(p, "htmlwidget")
 })

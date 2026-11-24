@@ -95,7 +95,7 @@ describe("atlas_view_remove_sparse()", {
 
   it("warns and returns the atlas when there is no 2D geometry", {
     atlas <- ggseg.formats::aseg()
-    atlas$data$geom <- NULL
+    atlas@data$geom <- NULL
 
     expect_warning(
       unchanged <- atlas_view_remove_sparse(atlas),
@@ -236,7 +236,7 @@ describe("atlas_view_remove_empty()", {
 
   it("warns and returns the atlas when there is no 2D geometry", {
     atlas <- ggseg.formats::aseg()
-    atlas$data$geom <- NULL
+    atlas@data$geom <- NULL
 
     expect_warning(
       unchanged <- atlas_view_remove_empty(atlas),

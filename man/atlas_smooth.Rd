@@ -7,11 +7,12 @@
 atlas_smooth(
   atlas,
   smoothness = 0.4,
-  method = c("chaikin", "close", "ksmooth", "spline"),
+  method = c("chaikin", "close", "ksmooth", "spline", "arc"),
   vertex_budget = c("preserve", "free"),
   close_gaps = TRUE,
   labels = NULL,
-  exclude = NULL
+  exclude = NULL,
+  span = NULL
 )
 }
 \arguments{
@@ -39,6 +40,9 @@ calling it, to select the atlas's context.}
 
 \item{exclude}{Optional regex. Matching labels are left alone. Only one of
 \code{labels} or \code{exclude} may be given.}
+
+\item{span}{Smoothing window in the atlas's own units, for
+\code{method = "arc"}. Required for that method, ignored by the others.}
 }
 \value{
 The \code{ggseg_atlas}, with its geometry rounded off.
@@ -63,8 +67,26 @@ mantle -- at \code{smoothness = 0.4} on a millimetre grid it took one aseg
 backdrop from 463 enclosed rings to 27. Reach for it on solid shapes, such
 as tract tubes, where there are no holes to lose.
 
-\code{smoothness} means the same amount of smoothing whichever method you pick,
-so switching method does not mean re-finding the value.
+\code{"arc"} is the odd one out, and takes \code{span} rather than \code{smoothness}. The
+others all work between neighbouring vertices, which is the right scale for
+a voxel staircase, where a step \emph{is} a vertex or two. It is the wrong scale
+for a small structure traced at high fidelity: there the outline follows a
+coarse mask with many vertices per bump, the kernel sits far below the bump,
+and the result comes back looking untouched. On the \code{suit} atlas's deep
+nuclei every other method was visually identical to no smoothing at all,
+at every strength, and \code{vertex_budget = "free"} added sixteen times the
+vertices without changing the shape.
+
+\code{"arc"} windows by distance along the outline instead, so \code{span} means the
+same thing however finely that outline happens to be traced. Give it the
+width of the bumps you want gone, in the atlas's own units. It moves
+vertices without adding any, so \code{vertex_budget} does not apply, and it
+keeps a boundary two structures share: rings are reconciled after
+smoothing, or neighbours pull apart exactly where they touch.
+
+\code{smoothness} means the same amount of smoothing whichever of the other
+methods you pick, so switching between them does not mean re-finding the
+value.
 }
 
 \section{What rounding costs}{
