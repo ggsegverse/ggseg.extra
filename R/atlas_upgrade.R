@@ -88,65 +88,19 @@ upgrade_one_atlas <- function(name, env, repair = FALSE) {
   }
 
   before <- ggseg.formats::atlas_schema(old)
-  status <- "upgraded"
-
-  new <- try_upgrade(old)
-  if (inherits(new, "try-error")) {
-    if (!repair) {
-      return(failed_upgrade_row(
-        name,
-        before,
-        conditionMessage(attr(
-          new,
-          "condition"
-        ))
-      ))
-    }
-    # The migration verbs take an atlas the constructor refuses and return one
-    # it accepts. They change stored data, which is why this is opt-in.
-    repaired <- try(
-      ggseg.formats::migrate_atlas_hemi(old),
-      silent = TRUE
-    )
-    if (inherits(repaired, "try-error")) {
-      return(failed_upgrade_row(
-        name,
-        before,
-        conditionMessage(attr(
-          repaired,
-          "condition"
-        ))
-      ))
-    }
-    new <- try_upgrade(repaired)
-    if (inherits(new, "try-error")) {
-      return(failed_upgrade_row(
-        name,
-        before,
-        conditionMessage(attr(
-          new,
-          "condition"
-        ))
-      ))
-    }
-    status <- "repaired"
+  attempt <- upgrade_or_repair(old, repair)
+  if (is.null(attempt$atlas)) {
+    return(failed_upgrade_row(name, before, attempt$note))
   }
-
-  identical_contents <- identical(
-    as.data.frame(ggseg.formats::atlas_core(old)),
-    as.data.frame(ggseg.formats::atlas_core(new))
-  ) &&
-    identical(
-      ggseg.formats::atlas_palette(old),
-      ggseg.formats::atlas_palette(new)
-    ) &&
-    identical(ggseg.formats::atlas_type(old), ggseg.formats::atlas_type(new))
+  new <- attempt$atlas
+  status <- attempt$status
 
   # ggseg.formats repairs a legacy `hemi` spelling at the boundary, so an
   # upgrade can change stored data without the constructor ever refusing it.
   # What separates an upgrade from a repair is whether contents changed, not
   # which path produced the atlas -- and a repair stays opt-in, so without
   # `repair` nothing that rewrites stored data is written.
+  identical_contents <- contents_identical(old, new)
   if (!identical_contents) {
     if (!repair) {
       return(failed_upgrade_row(
@@ -179,6 +133,58 @@ upgrade_one_atlas <- function(name, env, repair = FALSE) {
   )
 }
 
+#' Upgrade an atlas, repairing it first where that is allowed
+#'
+#' Returns the upgraded atlas and the status that produced it, or a `NULL`
+#' atlas and the message explaining why it could not be upgraded. Pulled out
+#' of `upgrade_one_atlas()` because the three ways a repair can fail are most
+#' of that function's branching and none of its job.
+#' @noRd
+upgrade_or_repair <- function(old, repair) {
+  refused <- function(x) {
+    list(atlas = NULL, status = NA_character_, note = try_error_message(x))
+  }
+
+  new <- try_upgrade(old)
+  if (!inherits(new, "try-error")) {
+    return(list(atlas = new, status = "upgraded", note = NA_character_))
+  }
+  if (!repair) {
+    return(refused(new))
+  }
+
+  # The migration verbs take an atlas the constructor refuses and return one
+  # it accepts. They change stored data, which is why this is opt-in.
+  repaired <- try(ggseg.formats::migrate_atlas_hemi(old), silent = TRUE)
+  if (inherits(repaired, "try-error")) {
+    return(refused(repaired))
+  }
+
+  new <- try_upgrade(repaired)
+  if (inherits(new, "try-error")) {
+    return(refused(new))
+  }
+  list(atlas = new, status = "repaired", note = NA_character_)
+}
+
+#' @noRd
+try_error_message <- function(x) {
+  conditionMessage(attr(x, "condition"))
+}
+
+#' Whether an upgrade left the parts a user would notice untouched
+#' @noRd
+contents_identical <- function(old, new) {
+  identical(
+    as.data.frame(ggseg.formats::atlas_core(old)),
+    as.data.frame(ggseg.formats::atlas_core(new))
+  ) &&
+    identical(
+      ggseg.formats::atlas_palette(old),
+      ggseg.formats::atlas_palette(new)
+    ) &&
+    identical(ggseg.formats::atlas_type(old), ggseg.formats::atlas_type(new))
+}
 
 #' @noRd
 try_upgrade <- function(atlas) {

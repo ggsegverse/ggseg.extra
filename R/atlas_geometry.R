@@ -118,11 +118,7 @@ atlas_smooth <- function(
 ) {
   method <- match.arg(method)
   vertex_budget <- match.arg(vertex_budget)
-  if (identical(method, "arc")) {
-    span <- check_span(span)
-  } else {
-    check_smoothness(smoothness)
-  }
+  span <- check_smoothing_strength(method, smoothness, span)
   atlas <- ggseg.formats::as_ggseg_atlas(atlas)
   labels <- resolve_label_selector(labels, atlas)
   exclude <- resolve_label_selector(exclude, atlas)
@@ -138,11 +134,7 @@ atlas_smooth <- function(
     )
   }
 
-  if (identical(method, "arc")) {
-    if (!isTRUE(span > 0)) {
-      return(atlas)
-    }
-  } else if (!isTRUE(smoothness > 0)) {
+  if (smoothing_does_nothing(method, smoothness, span)) {
     return(atlas)
   }
 
@@ -163,21 +155,16 @@ atlas_smooth <- function(
     what = "smooth"
   )
   if (!identical(sf_data, before)) {
-    if (isTRUE(close_gaps)) {
-      sf_data <- close_gaps_by_view(sf_data, before, selected)
-    }
-    # Arc-length smoothing moves vertices without adding any, so there is no
-    # rounding growth for the budget to take back -- and running the
-    # simplification pass anyway would move shapes for nothing.
-    if (identical(vertex_budget, "preserve") && !identical(method, "arc")) {
-      sf_data <- trim_rounded_corners(
-        sf_data,
-        before,
-        labels,
-        exclude,
-        close_gaps
-      )
-    }
+    sf_data <- settle_smoothed_geometry(
+      sf_data,
+      before,
+      selected,
+      close_gaps = close_gaps,
+      vertex_budget = vertex_budget,
+      method = method,
+      labels = labels,
+      exclude = exclude
+    )
   }
 
   out <- rehydrate_smoothed_atlas(atlas, sf_data, was_polygon)
@@ -1487,4 +1474,60 @@ close_gaps_by_view <- function(new_sf, old_sf, selected = NULL) {
     sf::st_geometry(new_sf)[rows] <- sf::st_geometry(repaired)
   }
   sf::st_make_valid(new_sf)
+}
+
+
+#' Validate whichever strength argument the chosen method actually uses
+#'
+#' `arc` is measured as a span in atlas units and every other method as a
+#' fraction, so only one of the two is meaningful for a given call. Returns
+#' `span`, which `check_span()` may normalise.
+#' @noRd
+check_smoothing_strength <- function(method, smoothness, span) {
+  if (identical(method, "arc")) {
+    return(check_span(span))
+  }
+  check_smoothness(smoothness)
+  span
+}
+
+#' Whether the requested smoothing would leave the geometry untouched
+#'
+#' A zero or missing strength is a no-op rather than an error, so the atlas
+#' comes back as it went in. Which argument carries the strength depends on
+#' the method.
+#' @noRd
+smoothing_does_nothing <- function(method, smoothness, span) {
+  strength <- if (identical(method, "arc")) span else smoothness
+  !isTRUE(strength > 0)
+}
+
+#' Close the gaps smoothing opened, and give back the vertices it added
+#' @noRd
+settle_smoothed_geometry <- function(
+  sf_data,
+  before,
+  selected,
+  close_gaps,
+  vertex_budget,
+  method,
+  labels,
+  exclude
+) {
+  if (isTRUE(close_gaps)) {
+    sf_data <- close_gaps_by_view(sf_data, before, selected)
+  }
+  # Arc-length smoothing moves vertices without adding any, so there is no
+  # rounding growth for the budget to take back -- and running the
+  # simplification pass anyway would move shapes for nothing.
+  if (identical(vertex_budget, "preserve") && !identical(method, "arc")) {
+    sf_data <- trim_rounded_corners(
+      sf_data,
+      before,
+      labels,
+      exclude,
+      close_gaps
+    )
+  }
+  sf_data
 }
