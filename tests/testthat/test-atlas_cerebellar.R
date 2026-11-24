@@ -3089,26 +3089,38 @@ describe("suit_drawable_vertices", {
 
 
 describe("read_cerebellar_volume orientation", {
-  # This read must stay in the file's own voxel order: the vertex labels come
-  # from `sample_volume_at_surface()`, which maps surface vertices through the
-  # file's affine. Reorienting the array without reorienting that mapping
-  # samples every vertex from the mirrored voxel, which swaps the whole
-  # cerebellar cortex left for right.
-  it("keeps the array in the file's native order, not RAS", {
+  # The read at R/atlas_cerebellar.R must stay `reorient = FALSE`: the vertex
+  # labels come from `sample_volume_at_surface()`, which maps surface vertices
+  # through the FILE's affine. Reorienting the array without reorienting that
+  # mapping samples every vertex from the mirrored voxel, swapping the whole
+  # cerebellar cortex. Asserting on `read_volume()` directly would only prove
+  # that RNifti reorients arrays, so this pins the argument at the call site.
+  it("reads the volume in the file's native order", {
     skip_if_not_installed("RNifti")
-    las <- withr::local_tempfile(fileext = ".nii.gz")
-    arr <- array(0L, dim = c(4, 4, 4))
-    arr[1, 1, 1] <- 7L
-    img <- RNifti::asNifti(arr)
-    RNifti::pixdim(img) <- c(1, 1, 1)
-    RNifti::sform(img) <- structure(diag(c(-1, 1, 1, 1)), code = 2L)
-    RNifti::writeNifti(img, las)
+    seen <- new.env(parent = emptyenv())
+    local_mocked_bindings(
+      read_volume = function(volume, reorient = TRUE, ...) {
+        seen$reorient <- reorient
+        array(0L, dim = c(2, 2, 2))
+      },
+      sample_volume_at_surface = function(...) integer(0),
+      resolve_cerebellar_lut = function(...) {
+        data.frame(
+          idx = integer(0),
+          label = character(0),
+          colour = character(0),
+          stringsAsFactors = FALSE
+        )
+      }
+    )
 
-    native <- read_volume(las, reorient = FALSE)
-    reoriented <- read_volume(las)
+    # The stub colortable means the function aborts further down; the
+    # argument has already been captured by then, which is what is under test.
+    expect_error(
+      read_cerebellar_volume("volume.nii", suit_3d_surface = NULL),
+      "No regions found"
+    )
 
-    # The fixture is only meaningful if the two differ at all.
-    expect_false(identical(which(native == 7L), which(reoriented == 7L)))
-    expect_identical(which(as.array(native) == 7L), 1L)
+    expect_false(seen$reorient)
   })
 })

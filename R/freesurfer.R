@@ -440,18 +440,22 @@ check_mni152_subject <- function(subject) {
 #' resampled to 1 mm first). Both produce an atlas that still looks
 #' plausible, so this refuses rather than warns.
 #' @noRd
-check_mni152_grid <- function(input_volume) {
+check_mni152_grid <- function(input_volume, call = rlang::caller_env()) {
   vox2ras <- volume_vox2ras(input_volume)
 
   if (is.null(vox2ras)) {
-    cli::cli_abort(c(
-      "{.val mni152} registration does not apply to {.path {input_volume}}.",
-      "x" = "No voxel-to-world affine could be read, so this volume's
+    cli::cli_abort(
+      c(
+        "{.val mni152} registration does not apply to {.path {input_volume}}.",
+        "x" = "No voxel-to-world affine could be read, so this volume's
         handedness is unknown, and {.file mni152.register.dat} assumes a
         left-handed (LAS) order: applying it may swap left and right.",
-      "i" = "Use {.code registration = \"header\"}, or convert the volume
-        with {.code mri_convert} so its header carries an affine."
-    ))
+        "i" = "Use {.code registration = \"header\"} where the caller offers it,
+        or convert the volume with {.code mri_convert} so its header carries
+        an affine."
+      ),
+      call = call
+    )
   }
 
   voxel_sizes <- sqrt(colSums(vox2ras[1:3, 1:3]^2))

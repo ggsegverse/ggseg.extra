@@ -835,7 +835,6 @@ describe("validate_registration", {
 
   it("skips the space checks for other registrations", {
     local_mocked_bindings(
-      volume_vox2ras = function(...) diag(c(-1, 1, 1, 1)),
       check_mni152_subject = function(...) cli::cli_abort("should not run"),
       warn_if_subject_space_volume = function(...) {
         cli::cli_abort("should not run")

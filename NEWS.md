@@ -21,10 +21,6 @@
   right-handed, which is why `aicha_sub`, `cit168`, `thalamus_hcp` and
   `thalamus_thomas` shipped mirrored. They need a reorient onto the 1 mm LAS
   grid, not `registration = "header"`.
-- `default_subcortical_slabs()` named a left slab `sagittal_right` on a volume
-  whose field of view is off centre, because it mixed the label bounding box's
-  midline with the voxel grid's. The slab name drives the left-only horizontal
-  flip, so the panel was mislabelled and never flipped.
 - The cerebellar `nuclei` view is projected from the reoriented volume; on an
   LAS or LPI volume the left and right nuclei were drawn on the wrong sides.
 - The default subcortical sagittal slab is named for the hemisphere its
