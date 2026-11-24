@@ -1,18 +1,3 @@
-# Atlas inspection ----
-
-#' How many regions an atlas declares, counting `NULL` as none
-#'
-#' Pipelines that assemble several atlases report a count per part, and a
-#' part that was skipped is `NULL` rather than an empty atlas.
-#' @noRd
-n_atlas_regions <- function(atlas) {
-  if (is.null(atlas)) {
-    return(0L)
-  }
-  length(ggseg.formats::atlas_labels(atlas))
-}
-
-
 # Region name utilities ----
 
 #' Derive an atlas `region` from a label
@@ -183,6 +168,21 @@ context_pattern <- function(atlas = NULL) {
     "medial[ _.-]?wall$",
     sep = "|"
   )
+}
+
+
+# Atlas inspection ----
+
+#' How many regions an atlas declares, counting `NULL` as none
+#'
+#' Pipelines that assemble several atlases report a count per part, and a
+#' part that was skipped is `NULL` rather than an empty atlas.
+#' @noRd
+n_atlas_regions <- function(atlas) {
+  if (is.null(atlas)) {
+    return(0L)
+  }
+  length(ggseg.formats::atlas_labels(atlas))
 }
 
 

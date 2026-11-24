@@ -300,5 +300,5 @@ upgrade_changed_parts <- function(old, new) {
   if (length(parts) == 0) {
     return("row count")
   }
-  paste(parts, collapse = ", ")
+  toString(parts)
 }
