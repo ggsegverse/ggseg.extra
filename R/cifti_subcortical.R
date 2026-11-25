@@ -11,9 +11,10 @@
 #'
 #' The volume keeps the CIFTI's voxel grid and transform. Grayordinate files
 #' are in MNI152NLin6Asym (FSL's MNI152), at 2 mm for 91k and 1.6 mm for 170k.
-#' [prepare_subcortical_mni152()] refuses a non-1 mm grid, so pass
-#' `registration = "header"` or resample onto the 1 mm grid first; otherwise
-#' go straight to [create_subcortical_from_volume()]. Label ids that
+#' [prepare_subcortical_mni152()] warns on a non-1 mm grid and carries on,
+#' placing regions a few per cent off; pass `registration = "header"` or
+#' resample onto the 1 mm grid first if you need the placement exact.
+#' Label ids that
 #' reuse FreeSurfer `aseg` ids (as HCP-style files often do) must be shifted
 #' before [prepare_subcortical_mni152()], which refuses colliding ids.
 #'

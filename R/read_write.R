@@ -845,7 +845,21 @@ nifti_affine_is_set <- function(xform) {
   # A declared code is not enough: a singular or non-finite matrix cannot be
   # solved for the midline, and callers that trust the code alone would hit a
   # Lapack error instead of the unreadable-affine path.
-  determinant <- suppressWarnings(det(xform[1:3, 1:3]))
+  affine_is_invertible(xform)
+}
+
+
+#' Can this voxel-to-world affine place anything?
+#'
+#' The one rule both affine readers share, so it is written once. A reader
+#' handed an unreadable file can return a default header whose matrix is all
+#' zeros, which would otherwise read as a valid orientation, and a `NaN` in
+#' the matrix makes `det() == 0` return `NA` rather than `FALSE`. Both must
+#' report the affine as unusable here instead of reaching a Lapack error
+#' further down.
+#' @noRd
+affine_is_invertible <- function(affine) {
+  determinant <- suppressWarnings(det(affine[1:3, 1:3]))
   is.finite(determinant) && determinant != 0
 }
 

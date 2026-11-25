@@ -1,3 +1,21 @@
+# ggseg.extra 1.9.9.9152
+
+## Bug fixes
+
+- `check_mni152_grid()` now warns instead of aborting when an LAS volume is
+  not on a 1 mm grid, and refuses only right-handed order. A mirror puts a
+  label on the wrong hemisphere; another resolution shifts it within the
+  right one, which a schematic brain tolerates. Refusing it locked out CIFTI
+  grayordinate volumes, which are 2 mm and 1.6 mm by definition. The warning
+  has class `ggseg_extra_mni152_resolution`.
+
+## Internal
+
+- The "can this affine place anything" test is written once
+  (`affine_is_invertible()`) rather than copied into both affine readers and
+  kept in agreement by a comment.
+
+
 # ggseg.extra 1.9.9.9151
 
 ## Bug fixes

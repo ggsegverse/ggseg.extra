@@ -773,6 +773,28 @@ describe("warn_if_subject_space_volume", {
 })
 
 
+describe("volume_vox2ras", {
+  it("reports a degenerate affine as unreadable", {
+    # read_vox2ras() applies this itself for a .nii, but an .mgz comes back as
+    # the raw mghheader matrix, so this is that path's only guard: an
+    # unreadable header yields an all-zero matrix that otherwise reads as a
+    # valid orientation.
+    volume <- withr::local_tempfile(fileext = ".mgz")
+    file.create(volume)
+    local_mocked_bindings(read_vox2ras = function(...) matrix(0, 4, 4))
+    expect_null(volume_vox2ras(volume))
+  })
+
+  it("returns a usable affine unchanged", {
+    volume <- withr::local_tempfile(fileext = ".mgz")
+    file.create(volume)
+    affine <- diag(c(-1, 1, 1, 1))
+    local_mocked_bindings(read_vox2ras = function(...) affine)
+    expect_identical(volume_vox2ras(volume), affine)
+  })
+})
+
+
 describe("check_mni152_grid", {
   las_1mm <- diag(c(-1, 1, 1, 1))
   ras_1mm <- diag(c(1, 1, 1, 1))
@@ -788,9 +810,32 @@ describe("check_mni152_grid", {
     expect_error(check_mni152_grid("volume.nii"), "swaps left and right")
   })
 
-  it("refuses another resolution, which would come out mislocated", {
+  it("warns about another resolution but carries on", {
+    # A shift within the right hemisphere is tolerable for a schematic brain;
+    # refusing it locked out CIFTI grayordinate grids (2 mm and 1.6 mm).
     local_mocked_bindings(volume_vox2ras = function(...) las_coarse)
-    expect_error(check_mni152_grid("volume.nii"), "built for a 1 mm grid")
+    expect_warning(
+      result <- check_mni152_grid("volume.nii"),
+      class = "ggseg_extra_mni152_resolution"
+    )
+    expect_true(result)
+  })
+
+  it("reports handedness, not resolution, when a volume is wrong in both", {
+    # Order matters: the mirror is categorical and the shift is not, so a
+    # 1.5 mm RAS volume must abort rather than warn and proceed.
+    local_mocked_bindings(volume_vox2ras = function(...) {
+      diag(c(1.5, 1.5, 1.5, 1))
+    })
+    expect_error(check_mni152_grid("volume.nii"), "swaps left and right")
+  })
+
+  it("does not warn on the 1 mm grid it was built for", {
+    local_mocked_bindings(volume_vox2ras = function(...) las_1mm)
+    expect_no_condition(
+      check_mni152_grid("volume.nii"),
+      class = "ggseg_extra_mni152_resolution"
+    )
   })
 
   it("refuses when no affine can be read, rather than passing silently", {
