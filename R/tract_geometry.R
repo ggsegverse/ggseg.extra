@@ -539,13 +539,18 @@ usable_voxel_size <- function(size) {
 }
 
 
-#' Read a volume's voxel-to-world affine, or `NULL` if it can't be read
+#' Read a volume's voxel-to-world affine AND its dimensions
 #'
-#' Returns `NULL` for an unsupported extension, a missing reader package, a
-#' header read error, or a NIfTI header that declares no affine at all; the
-#' caller decides how to report the fallback.
+#' Returns `list(vox2ras =, dim =)`, or `NULL` for an unsupported extension, a
+#' missing reader package, a header read error, or a NIfTI header that declares
+#' no affine at all; the caller decides how to report the fallback.
+#'
+#' Dimensions travel with the affine because a tkregister transform depends on
+#' the field of view (`dim * voxel size`), not on the affine alone, and an mgz
+#' costs a whole-volume read -- there is no header-only reader in
+#' freesurferformats -- so reading twice to get them separately would double it.
 #' @noRd
-read_vox2ras <- function(template_file) {
+read_volume_grid <- function(template_file) {
   ext <- volume_ext(template_file)
   if (ext == "mgz") {
     if (!requireNamespace("freesurferformats", quietly = TRUE)) {
@@ -558,7 +563,11 @@ read_vox2ras <- function(template_file) {
         # The .nii branch below screens the affine via nifti_affine_is_set();
         # without the same screen here an unreadable mgz header yields a
         # singular matrix that reaches solve() as a Lapack error.
-        if (affine_is_invertible(vox2ras)) vox2ras else NULL
+        if (!affine_is_invertible(vox2ras)) {
+          NULL
+        } else {
+          list(vox2ras = vox2ras, dim = dim(mgh$data)[1:3])
+        }
       },
       error = function(e) NULL
     ))
@@ -567,16 +576,29 @@ read_vox2ras <- function(template_file) {
     if (!requireNamespace("RNifti", quietly = TRUE)) {
       return(NULL)
     }
-    xform <- tryCatch(
-      RNifti::xform(RNifti::niftiHeader(template_file)),
-      error = function(e) NULL
-    )
+    header <- tryCatch(RNifti::niftiHeader(template_file), error = function(e) {
+      NULL
+    })
+    if (is.null(header)) {
+      return(NULL)
+    }
+    xform <- tryCatch(RNifti::xform(header), error = function(e) NULL)
     if (is.null(xform) || !nifti_affine_is_set(xform)) {
       return(NULL)
     }
-    return(xform)
+    return(list(vox2ras = xform, dim = as.integer(header$dim[2:4])))
   }
   NULL
+}
+
+
+#' Read a volume's voxel-to-world affine, or `NULL` if it can't be read
+#'
+#' Thin accessor over [read_volume_grid()], kept because most callers place
+#' coordinates and do not care about the field of view.
+#' @noRd
+read_vox2ras <- function(template_file) {
+  read_volume_grid(template_file)$vox2ras
 }
 
 

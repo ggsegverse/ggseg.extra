@@ -773,88 +773,202 @@ describe("warn_if_subject_space_volume", {
 })
 
 
-describe("volume_vox2ras", {
+describe("volume_grid", {
   it("reports a degenerate affine as unreadable", {
-    # read_vox2ras() applies this itself for a .nii, but an .mgz comes back as
-    # the raw mghheader matrix, so this is that path's only guard: an
-    # unreadable header yields an all-zero matrix that otherwise reads as a
-    # valid orientation.
     volume <- withr::local_tempfile(fileext = ".mgz")
     file.create(volume)
-    local_mocked_bindings(read_vox2ras = function(...) matrix(0, 4, 4))
-    expect_null(volume_vox2ras(volume))
+    local_mocked_bindings(
+      read_volume_grid = function(...) {
+        list(vox2ras = matrix(0, 4, 4), dim = c(4L, 4L, 4L))
+      }
+    )
+    expect_null(volume_grid(volume))
   })
 
-  it("returns a usable affine unchanged", {
+  it("rejects a grid whose dimensions are unusable", {
+    # tkreg depends on dim * voxel size, so a missing or nonsense extent
+    # leaves the field of view unknown just as surely as a missing affine.
     volume <- withr::local_tempfile(fileext = ".mgz")
     file.create(volume)
-    affine <- diag(c(-1, 1, 1, 1))
-    local_mocked_bindings(read_vox2ras = function(...) affine)
-    expect_identical(volume_vox2ras(volume), affine)
+    local_mocked_bindings(
+      read_volume_grid = function(...) {
+        list(vox2ras = diag(c(-1, 1, 1, 1)), dim = c(4L, 0L, 4L))
+      }
+    )
+    expect_null(volume_grid(volume))
+  })
+
+  it("returns a usable grid unchanged", {
+    volume <- withr::local_tempfile(fileext = ".mgz")
+    file.create(volume)
+    grid <- list(vox2ras = diag(c(-1, 1, 1, 1)), dim = c(4L, 4L, 4L))
+    local_mocked_bindings(read_volume_grid = function(...) grid)
+    expect_identical(volume_grid(volume), grid)
+    expect_identical(volume_vox2ras(volume), grid$vox2ras)
+  })
+})
+
+
+describe("scanner_to_tkreg", {
+  it("is independent of voxel size for a fixed field of view", {
+    # The voxel sizes cancel out of vox2tkr %*% solve(vox2ras), which is why
+    # keying the grid check on voxel size was wrong: 1 mm and 2 mm volumes of
+    # the same extent have the SAME tkreg frame.
+    las <- function(d, n, origin) {
+      a <- cbind(c(-d, 0, 0), c(0, d, 0), c(0, 0, d))
+      list(vox2ras = rbind(cbind(a, origin), c(0, 0, 0, 1)), dim = n)
+    }
+    fine <- las(1, c(182, 218, 182), c(90, -126, -72))
+    coarse <- las(2, c(91, 109, 91), c(90, -126, -72))
+
+    expect_equal(scanner_to_tkreg(coarse), scanner_to_tkreg(fine))
+  })
+})
+
+
+describe("tkreg_mismatch", {
+  # A mirror is pure axis difference with ZERO offset, and a shifted field of
+  # view is pure offset with ZERO axis difference. Measuring only one of the
+  # two would let the other through silently.
+  las <- function(d, n, origin, mdc) {
+    a <- mdc %*% diag(rep(d, 3))
+    list(vox2ras = rbind(cbind(a, origin), c(0, 0, 0, 1)), dim = n)
+  }
+  las_mdc <- cbind(c(-1, 0, 0), c(0, 1, 0), c(0, 0, 1))
+  ras_mdc <- diag(3)
+  lia_mdc <- cbind(c(-1, 0, 0), c(0, 0, -1), c(0, 1, 0))
+
+  it("sees a mirror in the axes and not in the offset", {
+    m <- tkreg_mismatch(
+      las(1, c(182, 218, 182), c(-90, -126, -72), ras_mdc)
+    )
+    expect_gt(m$axes, 1)
+    expect_equal(m$offset_mm, 0)
+  })
+
+  it("sees a conformed LIA volume, which the determinant sign cannot", {
+    conformed <- las(1, c(256, 256, 256), c(128, -128, -128), lia_mdc)
+    expect_lt(det(conformed$vox2ras[1:3, 1:3]), 0)
+    expect_gt(tkreg_mismatch(conformed)$axes, 0.5)
+  })
+
+  it("sees a shifted field of view in the offset and not in the axes", {
+    m <- tkreg_mismatch(las(1, c(4, 4, 4), c(0, 0, 0), las_mdc))
+    expect_equal(m$axes, 0)
+    expect_gt(m$offset_mm, 20)
+  })
+
+  it("reports no mismatch for the grid the transform was built for", {
+    m <- tkreg_mismatch(mni152_1mm_grid())
+    expect_equal(m$axes, 0)
+    expect_equal(m$offset_mm, 0)
   })
 })
 
 
 describe("check_mni152_grid", {
-  las_1mm <- diag(c(-1, 1, 1, 1))
-  ras_1mm <- diag(c(1, 1, 1, 1))
-  las_coarse <- diag(c(-1.5, 1.5, 1.5, 1))
+  # Built from the real FSL MNI152 1 mm grid, so "the grid the transform was
+  # built for" is the fixture rather than a stand-in.
+  grid_of <- function(d, n, origin, mdc) {
+    a <- mdc %*% diag(rep(d, 3))
+    list(vox2ras = rbind(cbind(a, origin), c(0, 0, 0, 1)), dim = n)
+  }
+  las_mdc <- cbind(c(-1, 0, 0), c(0, 1, 0), c(0, 0, 1))
+  ras_mdc <- diag(3)
+  lia_mdc <- cbind(c(-1, 0, 0), c(0, 0, -1), c(0, 1, 0))
+  mni_origin <- c(90, -126, -72)
 
-  it("accepts the 1 mm left-handed grid the transform was built for", {
-    local_mocked_bindings(volume_vox2ras = function(...) las_1mm)
+  reference <- mni152_1mm_grid()
+  grayordinate_2mm <- grid_of(2, c(91, 109, 91), mni_origin, las_mdc)
+  mirrored <- grid_of(1, c(182, 218, 182), c(-90, -126, -72), ras_mdc)
+  conformed <- grid_of(1, c(256, 256, 256), c(128, -128, -128), lia_mdc)
+  shifted <- grid_of(1, c(4, 4, 4), c(0, 0, 0), las_mdc)
+
+  it("accepts the grid the transform was built for", {
+    local_mocked_bindings(volume_grid = function(...) reference)
     expect_true(check_mni152_grid("volume.nii"))
   })
 
+  it("accepts the 2 mm grayordinate grid in silence", {
+    # The motivating case, and the one the old voxel-size test got backwards:
+    # this grid shares the reference's 182x218x182 mm extent, so the
+    # transform is exact and there is nothing to warn about.
+    local_mocked_bindings(volume_grid = function(...) grayordinate_2mm)
+    expect_no_condition(
+      expect_true(check_mni152_grid("volume.nii")),
+      class = "ggseg_extra_mni152_displacement_warning"
+    )
+  })
+
   it("refuses a right-handed volume, which would come out mirrored", {
-    local_mocked_bindings(volume_vox2ras = function(...) ras_1mm)
+    local_mocked_bindings(volume_grid = function(...) mirrored)
     expect_error(check_mni152_grid("volume.nii"), "swaps left and right")
   })
 
-  it("warns about another resolution but carries on", {
-    # A shift within the right hemisphere is tolerable for a schematic brain;
-    # refusing it locked out CIFTI grayordinate grids (2 mm and 1.6 mm).
-    local_mocked_bindings(volume_vox2ras = function(...) las_coarse)
+  it("refuses a conformed volume, which a determinant test lets through", {
+    # mri_convert --conform yields LIA at 1 mm: left-handed and 1 mm, so the
+    # old handedness-plus-voxel-size test passed it in total silence while
+    # the parcels were displaced by over 100 mm.
+    local_mocked_bindings(volume_grid = function(...) conformed)
+    expect_error(check_mni152_grid("volume.nii"), "wrong axes")
+  })
+
+  it("warns about a shifted field of view but carries on", {
+    local_mocked_bindings(volume_grid = function(...) shifted)
     expect_warning(
       result <- check_mni152_grid("volume.nii"),
-      class = "ggseg_extra_mni152_resolution_warning"
+      class = "ggseg_extra_mni152_displacement_warning"
     )
     expect_true(result)
   })
 
-  it("reports handedness, not resolution, when a volume is wrong in both", {
-    # Order matters: the mirror is categorical and the shift is not, so a
-    # 1.5 mm RAS volume must abort rather than warn and proceed.
-    local_mocked_bindings(volume_vox2ras = function(...) {
-      diag(c(1.5, 1.5, 1.5, 1))
-    })
+  it("names the measured shift in the warning", {
+    # The old message guessed from voxel size; this one can measure, so a
+    # vague message would be a regression.
+    local_mocked_bindings(volume_grid = function(...) shifted)
+    expect_warning(check_mni152_grid("volume.nii"), "25.5 mm")
+  })
+
+  it("stays silent when the shift is below one voxel", {
+    # Hammersmith is 181x217x181: half a millimetre out on a 1 mm grid, which
+    # is indistinguishable from resampling and must not warn.
+    local_mocked_bindings(
+      volume_grid = function(...) {
+        grid_of(1, c(181, 217, 181), mni_origin, las_mdc)
+      }
+    )
+    expect_no_condition(
+      check_mni152_grid("volume.nii"),
+      class = "ggseg_extra_mni152_displacement_warning"
+    )
+  })
+
+  it("reports the mirror, not the shift, when a volume is wrong in both", {
+    # Order matters: the mirror is categorical and the shift is not. A
+    # right-handed volume on a shifted grid must abort on the mirror.
+    local_mocked_bindings(
+      volume_grid = function(...) grid_of(1, c(4, 4, 4), c(0, 0, 0), ras_mdc)
+    )
     # expect_error() alone is indifferent to a warning raised BEFORE the abort,
     # so it has to be nested this way round. The inversion
     # expect_error(expect_no_warning(...)) does not work: the outer
     # expect_error swallows the inner expectation's failure.
     expect_no_warning(
       expect_error(check_mni152_grid("volume.nii"), "swaps left and right"),
-      class = "ggseg_extra_mni152_resolution_warning"
+      class = "ggseg_extra_mni152_displacement_warning"
     )
   })
 
-  it("does not warn on the 1 mm grid it was built for", {
-    local_mocked_bindings(volume_vox2ras = function(...) las_1mm)
-    expect_no_condition(
-      check_mni152_grid("volume.nii"),
-      class = "ggseg_extra_mni152_resolution_warning"
-    )
-  })
-
-  it("refuses when no affine can be read, rather than passing silently", {
-    # Handedness is exactly what this transform depends on and exactly what an
-    # unreadable header does not state, so silence here was strictly weaker
-    # than the abort it replaced.
-    local_mocked_bindings(volume_vox2ras = function(...) NULL)
-    expect_error(check_mni152_grid("volume.nii"), "handedness is unknown")
+  it("refuses when no grid can be read, rather than passing silently", {
+    # Orientation is exactly what this transform depends on and exactly what
+    # an unreadable header does not state, so silence here was strictly
+    # weaker than the abort it replaced.
+    local_mocked_bindings(volume_grid = function(...) NULL)
+    expect_error(check_mni152_grid("volume.nii"), "orientation is unknown")
   })
 
   it("is reached by validate_registration for mni152 only", {
-    local_mocked_bindings(volume_vox2ras = function(...) ras_1mm)
+    local_mocked_bindings(volume_grid = function(...) mirrored)
     expect_error(
       validate_registration("mni152", "fsaverage5", "volume.nii"),
       "does not apply"
@@ -869,7 +983,7 @@ describe("validate_registration", {
     checked <- new.env()
     local_mocked_bindings(have_fs = function(...) TRUE, .package = "freesurfer")
     local_mocked_bindings(
-      volume_vox2ras = function(...) diag(c(-1, 1, 1, 1)),
+      volume_grid = function(...) mni152_1mm_grid(),
       check_mni152_subject = function(subject) {
         checked$subject <- subject
         invisible(TRUE)
@@ -902,7 +1016,7 @@ describe("validate_registration", {
       .package = "freesurfer"
     )
     local_mocked_bindings(
-      volume_vox2ras = function(...) diag(c(-1, 1, 1, 1)),
+      volume_grid = function(...) mni152_1mm_grid(),
       check_mni152_subject = function(...) cli::cli_abort("should not run"),
       warn_if_subject_space_volume = function(...) {
         cli::cli_abort("should not run")
@@ -951,7 +1065,7 @@ describe("validate_registration without FreeSurfer", {
       .package = "freesurfer"
     )
     local_mocked_bindings(
-      volume_vox2ras = function(...) diag(c(-1, 1, 1, 1)),
+      volume_grid = function(...) mni152_1mm_grid(),
       check_mni152_subject = function(...) cli::cli_abort("should not run"),
       warn_if_subject_space_volume = function(...) {
         cli::cli_abort("should not run")

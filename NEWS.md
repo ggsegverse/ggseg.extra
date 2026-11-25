@@ -1,13 +1,16 @@
-# ggseg.extra 1.9.9.9152
+# ggseg.extra 1.9.9.9153
 
 ## Bug fixes
 
-- `check_mni152_grid()` now warns instead of aborting when an LAS volume is
-  not on a 1 mm grid, and refuses only right-handed order. The refusal was
-  wrong for the grids that triggered it most: the FSL 2 mm and 1.6 mm CIFTI
-  grayordinate grids share the 1 mm grid's 182x218x182 mm extent, so
-  `mni152.register.dat` applies to them exactly. The warning has class
-  `ggseg_extra_mni152_resolution_warning` and carries the caller.
+- `check_mni152_grid()` now tests the grid `mni152.register.dat` was actually
+  built for, instead of voxel size. It compares the composed scanner-to-tkreg
+  transform, splitting the difference into axis order (categorical: refused,
+  and this now catches the `LIA` order `mri_convert --conform` produces, which
+  was displaced by over 100 mm in silence) and field of view (a shift along
+  the correct axes: warned about in millimetres, class
+  `ggseg_extra_mni152_displacement_warning`, silent below one voxel).
+  Voxel size cancels out of the transform, so the FSL 2 mm and 1.6 mm CIFTI
+  grayordinate grids are exact and no longer warn at all.
 - `read_vox2ras()` now screens a singular affine on the `.mgz` branch, as it
   already did for `.nii`. `load_tract_grid()` reads it directly, so an
   unreadable mgz header skipped the documented voxel-size fallback and

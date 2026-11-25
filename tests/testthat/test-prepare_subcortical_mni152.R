@@ -27,7 +27,7 @@ describe("prepare_subcortical_mni152 registration", {
 
     expect_error(
       prepare_subcortical_mni152(vol_file, verbose = FALSE),
-      "handedness is unknown"
+      "orientation is unknown"
     )
   })
 
@@ -44,7 +44,7 @@ describe("prepare_subcortical_mni152 registration", {
 
     expect_error(
       prepare_subcortical_mni152(tmp, verbose = FALSE),
-      "handedness is unknown"
+      "orientation is unknown"
     )
   })
 
@@ -370,7 +370,7 @@ describe("prepare_subcortical_mni152 registration call", {
         subjects_dir = subjects_dir,
         verbose = FALSE
       ),
-      class = "ggseg_extra_mni152_resolution_warning"
+      class = "ggseg_extra_mni152_displacement_warning"
     )
 
     expect_identical(seen$reg, lta)

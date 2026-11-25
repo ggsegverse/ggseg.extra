@@ -246,18 +246,20 @@
 #' categorical error -- a label drawn on the wrong hemisphere -- and it is
 #' **refused**.
 #'
-#' A volume of another resolution **warns and continues**, with a condition
-#' of class `ggseg_extra_mni152_resolution_warning`. It is a warning because
-#' the displacement is not categorical and because the refusal was wrong for
-#' the grids that triggered it most: the FSL 2 mm and 1.6 mm grayordinate
-#' grids share the 182x218x182 mm extent, so the transform is exact there.
+#' A volume whose voxel axes run in a different order is refused for the same
+#' reason. That includes the `LIA` order `mri_convert --conform` produces,
+#' which is left-handed and so cannot be told from `LAS` by a determinant
+#' test.
 #'
-#' That warning is keyed on voxel size, which is only a proxy. What the
-#' transform actually depends on is the field of view (`dim * voxel size`)
-#' and the axis order, so a 1 mm volume on a cropped or reordered grid passes
-#' with no warning at all and can still be displaced by centimetres. If the
-#' placement must be right, pass `registration = "header"` or resample onto
-#' the 1 mm LAS MNI152 grid rather than relying on the absence of a warning.
+#' A volume on a different **field of view** only shifts regions along the
+#' correct axes, so it **warns and continues**, naming the measured shift in
+#' millimetres, with a condition of class
+#' `ggseg_extra_mni152_displacement_warning`. A shift below one voxel is
+#' indistinguishable from resampling and passes silently.
+#'
+#' Voxel size is deliberately not checked: it cancels out of the transform,
+#' so the FSL 2 mm and 1.6 mm CIFTI grayordinate grids -- which share the
+#' reference 182x218x182 mm extent -- are exact and pass in silence.
 #'
 #' No header identifies the space an arbitrary volume is in, so the
 #' registration you name is applied to whatever you pass. A volume sitting
