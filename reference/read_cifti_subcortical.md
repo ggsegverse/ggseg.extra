@@ -13,9 +13,10 @@ label table.
 
 The volume keeps the CIFTI's voxel grid and transform. Grayordinate
 files are in MNI152NLin6Asym (FSL's MNI152), at 2 mm for 91k and 1.6 mm
-for 170k, so the result can go to
+for 170k.
 [`prepare_subcortical_mni152()`](https://ggsegverse.github.io/ggseg.extra/reference/prepare_subcortical_mni152.md)
-for grey-brain context, or straight to
+refuses a non-1 mm grid, so pass `registration = "header"` or resample
+onto the 1 mm grid first; otherwise go straight to
 [`create_subcortical_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_subcortical_from_volume.md).
 Label ids that reuse FreeSurfer `aseg` ids (as HCP-style files often do)
 must be shifted before

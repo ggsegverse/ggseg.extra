@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9150</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9151</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -69,6 +69,22 @@
       <small>Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.9.9.9151" id="ggsegextra-1999151">ggseg.extra 1.9.9.9151<a class="anchor" aria-label="anchor" href="#ggsegextra-1999151"></a></h2>
+<div class="section level3">
+<h3 id="bug-fixes-1-9-9-9151">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-1-9-9-9151"></a></h3>
+<ul><li>
+<code>read_volume()</code> and <code>read_vox2ras()</code> now treat a NIfTI header whose xform codes are both zero as carrying no affine: it warns and returns the native order rather than taking <code>RNifti</code>’s default “RAS” at face value, which mirrored an LAS volume stored that way.</li>
+<li>A whole-brain atlas built from an <code>.mgz</code> now splits its cortical silhouette at the volume’s own midline. The midline landed at voxel 1, so the atlas had no left-hemisphere backdrop.</li>
+<li>
+<code>check_mni152_grid()</code> refuses a volume whose header declares no affine at all, instead of passing it silently. Handedness is exactly what it needs and exactly what such a header does not state.</li>
+<li>
+<code><a href="../reference/prepare_subcortical_mni152.html">prepare_subcortical_mni152()</a></code> and <code><a href="../reference/project_volume_anatomical.html">project_volume_anatomical()</a></code> now refuse <code>registration = "mni152"</code> on a right-handed volume, which that transform mirrors. Only the whole-brain pipeline checked.</li>
+<li>The same refusal means <code>ggsegAicha/data-raw/make_subcortical.R</code>, <code>ggsegCIT168/data-raw/make_cit168.R</code> and <code>ggsegThalamus/data-raw/make_thalamus.R</code> now abort: their source volumes are right-handed, which is why <code>aicha_sub</code>, <code>cit168</code>, <code>thalamus_hcp</code> and <code>thalamus_thomas</code> shipped mirrored. They need a reorient onto the 1 mm LAS grid, not <code>registration = "header"</code>.</li>
+<li>The cerebellar <code>nuclei</code> view is projected from the reoriented volume; on an LAS or LPI volume the left and right nuclei were drawn on the wrong sides.</li>
+<li>The default subcortical sagittal slab is named for the hemisphere its structures are in. A right-hemisphere-only atlas got a <code>sagittal_left</code> panel.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9150" id="ggsegextra-1999150">ggseg.extra 1.9.9.9150<a class="anchor" aria-label="anchor" href="#ggsegextra-1999150"></a></h2>
 <div class="section level3">

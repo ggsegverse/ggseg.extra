@@ -1,5 +1,37 @@
 # Changelog
 
+## ggseg.extra 1.9.9.9151
+
+### Bug fixes
+
+- `read_volume()` and `read_vox2ras()` now treat a NIfTI header whose
+  xform codes are both zero as carrying no affine: it warns and returns
+  the native order rather than taking `RNifti`’s default “RAS” at face
+  value, which mirrored an LAS volume stored that way.
+- A whole-brain atlas built from an `.mgz` now splits its cortical
+  silhouette at the volume’s own midline. The midline landed at voxel 1,
+  so the atlas had no left-hemisphere backdrop.
+- `check_mni152_grid()` refuses a volume whose header declares no affine
+  at all, instead of passing it silently. Handedness is exactly what it
+  needs and exactly what such a header does not state.
+- [`prepare_subcortical_mni152()`](https://ggsegverse.github.io/ggseg.extra/reference/prepare_subcortical_mni152.md)
+  and
+  [`project_volume_anatomical()`](https://ggsegverse.github.io/ggseg.extra/reference/project_volume_anatomical.md)
+  now refuse `registration = "mni152"` on a right-handed volume, which
+  that transform mirrors. Only the whole-brain pipeline checked.
+- The same refusal means `ggsegAicha/data-raw/make_subcortical.R`,
+  `ggsegCIT168/data-raw/make_cit168.R` and
+  `ggsegThalamus/data-raw/make_thalamus.R` now abort: their source
+  volumes are right-handed, which is why `aicha_sub`, `cit168`,
+  `thalamus_hcp` and `thalamus_thomas` shipped mirrored. They need a
+  reorient onto the 1 mm LAS grid, not `registration = "header"`.
+- The cerebellar `nuclei` view is projected from the reoriented volume;
+  on an LAS or LPI volume the left and right nuclei were drawn on the
+  wrong sides.
+- The default subcortical sagittal slab is named for the hemisphere its
+  structures are in. A right-hemisphere-only atlas got a `sagittal_left`
+  panel.
+
 ## ggseg.extra 1.9.9.9150
 
 ### New features
