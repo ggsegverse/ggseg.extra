@@ -524,6 +524,15 @@ read_neuromaps_annotation <- function(
 #' Any other volume is treated as a continuous map and sampled with
 #' trilinear interpolation.
 #'
+#' This function always registers as `"mni152"` and takes no `registration`
+#' argument, so the volume must be on the tkregister frame FreeSurfer's
+#' `mni152.register.dat` was built for. A volume centred elsewhere warns with
+#' a condition of class `ggseg_extra_mni152_displacement_warning`, or is
+#' refused if the shift is large; see the Registration section of
+#' [create_wholebrain_from_volume()]. The remedy here is a 1 mm annotation,
+#' or resampling onto the 1 mm LAS MNI152 grid, since there is no
+#' `registration` argument to switch.
+#'
 #' @param nifti_file Path to a `.nii` or `.nii.gz` file in MNI152 space.
 #' @inheritParams read_neuromaps_annotation
 #' @param label_table Optional data.frame mapping parcel ids to region names
@@ -851,12 +860,9 @@ nifti_affine_is_set <- function(xform) {
 
 #' Can this voxel-to-world affine place anything?
 #'
-#' The one rule both affine readers share, so it is written once. A reader
-#' handed an unreadable file can return a default header whose matrix is all
-#' zeros, which would otherwise read as a valid orientation, and a `NaN` in
-#' the matrix makes `det() == 0` return `NA` rather than `FALSE`. Both must
-#' report the affine as unusable here instead of reaching a Lapack error
-#' further down.
+#' The one rule both affine readers share, so it is written once. Note the
+#' `is.finite()`: a `NaN` in the matrix makes `det() == 0` return `NA`, not
+#' `FALSE`, which would reach `solve()` as a Lapack error.
 #' @noRd
 affine_is_invertible <- function(affine) {
   determinant <- suppressWarnings(det(affine[1:3, 1:3]))

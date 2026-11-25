@@ -1,16 +1,18 @@
-# ggseg.extra 1.9.9.9154
+# ggseg.extra 1.9.9.9155
 
 ## Bug fixes
 
-- `check_mni152_grid()` now tests the grid `mni152.register.dat` was actually
-  built for, instead of voxel size. It compares the composed scanner-to-tkreg
-  transform, splitting the difference into axis order (categorical: refused,
-  and this now catches the `LIA` order `mri_convert --conform` produces, which
-  was displaced by over 100 mm in silence) and field of view (a shift along
-  the correct axes: warned about in millimetres, class
-  `ggseg_extra_mni152_displacement_warning`, silent below one voxel).
-  Voxel size cancels out of the transform, so the FSL 2 mm and 1.6 mm CIFTI
-  grayordinate grids are exact and no longer warn at all.
+- `check_mni152_grid()` now tests the tkregister frame
+  `mni152.register.dat` was actually built for, instead of voxel size. It
+  compares the composed scanner-to-tkreg transform and splits the difference
+  into axis order (categorical, so refused -- this now catches the `LIA`
+  order `mri_convert --conform` produces, which was displaced by hundreds of
+  millimetres in silence) and displacement in millimetres (silent below one
+  voxel, warned about with the measured figure via
+  `ggseg_extra_mni152_displacement_warning`, refused past about the width of
+  a gyrus). Neither voxel size nor extent enters the transform, so the FSL
+  2 mm CIFTI grayordinate grid is exact and no longer warns at all, and the
+  1.6 mm grid is within one voxel.
 - `read_vox2ras()` now screens a singular affine on the `.mgz` branch, as it
   already did for `.nii`. `load_tract_grid()` reads it directly, so an
   unreadable mgz header skipped the documented voxel-size fallback and

@@ -50,6 +50,15 @@ is treated as a parcellation and sampled with nearest-neighbour
 interpolation, so every vertex takes the id of a parcel in the volume.
 Any other volume is treated as a continuous map and sampled with
 trilinear interpolation.
+
+This function always registers as \code{"mni152"} and takes no \code{registration}
+argument, so the volume must be on the tkregister frame FreeSurfer's
+\code{mni152.register.dat} was built for. A volume centred elsewhere warns with
+a condition of class \code{ggseg_extra_mni152_displacement_warning}, or is
+refused if the shift is large; see the Registration section of
+\code{\link[=create_wholebrain_from_volume]{create_wholebrain_from_volume()}}. The remedy here is a 1 mm annotation,
+or resampling onto the 1 mm LAS MNI152 grid, since there is no
+\code{registration} argument to switch.
 }
 \examples{
 \dontrun{

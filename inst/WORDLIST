@@ -1,3 +1,8 @@
+judgement
+ksmooth
+normalises
+’
+’s
 abagen
 accumbens
 ADHD
@@ -33,8 +38,8 @@ callout
 capitalisation
 capitalised
 cAsym
-Caudate
 caudate
+Caudate
 centerline
 Centerline
 centerlines
@@ -53,13 +58,13 @@ CLI
 cli
 CMD
 codemeta
-Colour
 colour
+Colour
 coloured
 colouring
 colourless
-Colours
 colours
+Colours
 commissural
 Connectome
 contextualise
@@ -85,8 +90,8 @@ Diedrichsen
 discretizing
 DK
 DKT
-doi
 drawable
+doi
 dropdown
 DTI
 entorhinal
@@ -164,11 +169,9 @@ initialise
 inlined
 interhemispheric
 json
-judgement
 Julich
 kaleido
 knitr
-ksmooth
 labelled
 Lapack
 LCBC
@@ -177,8 +180,8 @@ lh
 LIA
 licence
 Lifebrain
-lifecycle
 Lifecycle
+lifecycle
 lintr
 lobular
 lobule
@@ -217,8 +220,8 @@ neighbours
 neuroimaging
 Neuroimaging
 neuromapr
-neuromaps
 Neuromaps
+neuromaps
 Neuromorphometrics
 Neuroscientists
 NeuroVault
@@ -229,7 +232,6 @@ nii
 NLin
 normalisation
 normalised
-normalises
 Nx
 occipital
 octant
@@ -252,8 +254,8 @@ precuneus
 progressbar
 progressr
 purrr
-Putamen
 putamen
+Putamen
 qform
 quadric
 quantised
@@ -264,8 +266,8 @@ rasterisation
 rasterised
 rasterising
 rda
-README
 readme
+README
 README's
 recognisable
 recognise
@@ -292,8 +294,8 @@ RStudio
 RStudio's
 runnable
 Rvcg
-sagittal
 Sagittal
+sagittal
 sanitised
 sanitises
 sanitising
@@ -340,8 +342,8 @@ TrackVis
 tractography
 Tractography
 TRACULA
-Trilinear
 trilinear
+Trilinear
 TRK
 TSV
 uncomment
@@ -353,8 +355,8 @@ unsmoothed
 unsuffixed
 usethis
 usethis's
-vermis
 Vermis
+vermis
 visualisation
 visualising
 vox
@@ -366,5 +368,3 @@ Xcode
 xform
 XQuartz
 Yeo
-’
-’s

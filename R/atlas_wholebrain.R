@@ -251,15 +251,18 @@
 #' which is left-handed and so cannot be told from `LAS` by a determinant
 #' test.
 #'
-#' A volume on a different **field of view** only shifts regions along the
-#' correct axes, so it **warns and continues**, naming the measured shift in
-#' millimetres, with a condition of class
-#' `ggseg_extra_mni152_displacement_warning`. A shift below one voxel is
+#' A volume whose field-of-view centre falls elsewhere only shifts regions
+#' along the correct axes. That **warns and continues**, naming the measured
+#' shift in millimetres, with a condition of class
+#' `ggseg_extra_mni152_displacement_warning` -- unless the shift exceeds
+#' about the width of a gyrus, at which point the region lands on a
+#' different structure and is refused too. A shift below one voxel is
 #' indistinguishable from resampling and passes silently.
 #'
-#' Voxel size is deliberately not checked: it cancels out of the transform,
-#' so the FSL 2 mm and 1.6 mm CIFTI grayordinate grids -- which share the
-#' reference 182x218x182 mm extent -- are exact and pass in silence.
+#' Neither the voxel size nor the extent is checked, because neither enters
+#' the transform: what matters is the axis order and where the field-of-view
+#' centre falls. The FSL 2 mm CIFTI grayordinate grid is therefore exact,
+#' and the 1.6 mm grid is within one voxel; both pass in silence.
 #'
 #' No header identifies the space an arbitrary volume is in, so the
 #' registration you name is applied to whatever you pass. A volume sitting

@@ -30,9 +30,10 @@ and builds the matching colour table from the CIFTI label table.
 
 The volume keeps the CIFTI's voxel grid and transform. Grayordinate files
 are in MNI152NLin6Asym (FSL's MNI152), at 2 mm for 91k and 1.6 mm for 170k.
-Both grids share the reference 182x218x182 mm extent,
-so \code{mni152.register.dat} applies to them exactly
-and \code{\link[=prepare_subcortical_mni152]{prepare_subcortical_mni152()}} accepts them in silence.
+Both grids are centred where the reference grid is centred,
+so \code{\link[=prepare_subcortical_mni152]{prepare_subcortical_mni152()}} accepts them in silence:
+\code{mni152.register.dat} applies exactly at 2 mm,
+and to within one voxel at 1.6 mm.
 Label ids that
 reuse FreeSurfer \code{aseg} ids (as HCP-style files often do) must be shifted
 before \code{\link[=prepare_subcortical_mni152]{prepare_subcortical_mni152()}}, which refuses colliding ids.

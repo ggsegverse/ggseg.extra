@@ -137,14 +137,32 @@ as_oriented_nifti <- function(values) {
   image
 }
 
+#' The sform origin at which a volume of this extent shares the reference
+#' tkreg frame
+#'
+#' A tkregister frame is centred on each volume's OWN field of view, so a
+#' small fixture sits on the grid `mni152.register.dat` was built for only at
+#' a particular origin: `o_ref + LAS %*% ((reference FOV - this FOV) / 2)`.
+#' Left at `(0, 0, 0)` a 2x2x2 fixture is displaced about 25 mm, which
+#' `check_mni152_grid()` refuses.
+mni152_frame_origin <- function(dim, voxel = 1) {
+  reference_dim <- c(182, 218, 182)
+  as.vector(
+    c(90, -126, -72) +
+      diag(c(-1, 1, 1)) %*% ((reference_dim - dim * voxel) / 2)
+  )
+}
+
 #' A small NIfTI volume holding `values`, removed with the calling test
 #'
-#' On a 1 mm left-handed (LAS) grid, which is what the MNI152 registration
-#' check accepts.
+#' On a 1 mm left-handed (LAS) grid sharing the reference tkreg frame, which
+#' is what the MNI152 registration check accepts.
 local_nifti_volume <- function(values = c(0, 1, 2), env = parent.frame()) {
   path <- withr::local_tempfile(fileext = ".nii.gz", .local_envir = env)
   image <- RNifti::asNifti(array(rep_len(values, 8L), dim = c(2L, 2L, 2L)))
-  las_grid <- structure(diag(c(-1, 1, 1, 1)), code = 2L)
+  las_grid <- diag(c(-1, 1, 1, 1))
+  las_grid[1:3, 4] <- mni152_frame_origin(c(2, 2, 2))
+  las_grid <- structure(las_grid, code = 2L)
   RNifti::sform(image) <- las_grid
   RNifti::qform(image) <- las_grid
   RNifti::writeNifti(image, path)
