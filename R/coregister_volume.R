@@ -213,6 +213,9 @@ project_volume_anatomical <- function(
   id_offset <- as.integer(id_offset)
 
   in_path <- resolve_volume_path(input_volume)
+  if (identical(registration, "mni152")) {
+    check_mni152_grid(in_path)
+  }
   target_dir <- as.character(fs::path(subjects_dir, target_subject, "mri"))
   aparc_mgz <- as.character(fs::path(target_dir, "aparc+aseg.mgz"))
   if (!file.exists(aparc_mgz)) {

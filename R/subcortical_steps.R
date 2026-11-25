@@ -714,8 +714,13 @@ subcort_slab_labels <- function(vol, labels = NULL) {
 #' A sagittal slab spanning the whole head flattens both hemispheres onto one
 #' panel, drawing every left structure underneath its right twin. The slab is
 #' therefore clipped at the midline -- estimated as the centre of the label
-#' bounding box, which is symmetric about it -- and kept on the low-x side,
-#' which is the left hemisphere in the builder's RAS frame.
+#' bounding box, which is symmetric about it -- and kept on the low-x side.
+#'
+#' Which hemisphere that side is comes from where the slab sits in the volume,
+#' not from the assumption that an atlas is bilateral: a right-hemisphere-only
+#' lookup table has its bounding box wholly to the right of the volume
+#' midline, and naming that slab `sagittal_left` draws right structures in a
+#' panel the rest of the ecosystem reads as left.
 #' @noRd
 sagittal_hemi_slab <- function(vol, labels) {
   idx <- which(
@@ -723,13 +728,20 @@ sagittal_hemi_slab <- function(vol, labels) {
     arr.ind = TRUE
   )
   x <- range(idx[, 1])
-  mid <- round(mean(x))
+  end <- max(round(mean(x)), x[1])
+  # shortcut: the hemisphere is inferred from voxel positions, so a volume
+  # whose field of view is off centre can be named for the wrong side. Both
+  # this and the bbox-start form get a different case wrong -- a right-only
+  # set hugging the midline for the latter -- so the real fix is to read the
+  # hemisphere the LUT already declares (`lut_hemi()`). Upgrade when
+  # `default_subcortical_slabs()` can take the colortable.
+  hemi <- if (mean(c(x[1], end)) > dim(vol)[1] / 2) "right" else "left"
 
   data.frame(
-    name = "sagittal_left",
+    name = paste0("sagittal_", hemi),
     type = "sagittal",
     start = x[1],
-    end = max(mid, x[1]),
+    end = end,
     stringsAsFactors = FALSE
   )
 }

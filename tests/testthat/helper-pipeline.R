@@ -125,6 +125,18 @@ scrub_snapshot <- function(lines) {
   scrub_cli_spacing(scrub_workdir(lines))
 }
 
+#' `RNifti::asNifti()` with the 1 mm RAS+ affine a real volume would carry
+#'
+#' A bare array leaves both xform codes zero, which means "this header
+#' declares no orientation"; readers must not take it for RAS.
+as_oriented_nifti <- function(values) {
+  image <- RNifti::asNifti(values)
+  ras_grid <- structure(diag(4), code = 2L)
+  RNifti::sform(image) <- ras_grid
+  RNifti::qform(image) <- ras_grid
+  image
+}
+
 #' A small NIfTI volume holding `values`, removed with the calling test
 #'
 #' On a 1 mm left-handed (LAS) grid, which is what the MNI152 registration

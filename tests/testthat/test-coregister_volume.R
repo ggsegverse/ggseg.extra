@@ -51,6 +51,52 @@ describe("coregister_volume validation", {
 })
 
 describe("project_volume_anatomical validation", {
+  right_handed_volume <- function(envir = parent.frame()) {
+    tmp <- withr::local_tempfile(fileext = ".nii.gz", .local_envir = envir)
+    img <- RNifti::asNifti(array(0L, dim = c(4, 4, 4)))
+    RNifti::pixdim(img) <- c(1, 1, 1)
+    RNifti::qform(img) <- structure(diag(4), code = 1L)
+    RNifti::sform(img) <- structure(diag(4), code = 1L)
+    RNifti::writeNifti(img, tmp)
+    tmp
+  }
+
+  it("refuses mni152 registration on a right-handed volume", {
+    skip_if_not_installed("RNifti")
+    local_mocked_bindings(check_fs = function(...) TRUE)
+    # mni152.register.dat assumes an LAS grid, so on a right-handed volume it
+    # mirrors the parcels; with the default lut their labels carry no
+    # hemisphere, so no later check sees it.
+    vol_file <- right_handed_volume()
+
+    expect_error(
+      project_volume_anatomical(
+        vol_file,
+        registration = "mni152",
+        verbose = FALSE
+      ),
+      "swaps left and right"
+    )
+  })
+
+  it("leaves the header branch alone on the same volume", {
+    skip_if_not_installed("RNifti")
+    local_mocked_bindings(check_fs = function(...) TRUE)
+    vol_file <- right_handed_volume()
+    fake_dir <- withr::local_tempdir()
+
+    expect_error(
+      project_volume_anatomical(
+        vol_file,
+        registration = "header",
+        target_subject = "no_such_subject",
+        subjects_dir = fake_dir,
+        verbose = FALSE
+      ),
+      "aparc\\+aseg not found"
+    )
+  })
+
   it("errors for threshold outside [0, 1]", {
     skip_if_not_installed("RNifti")
     local_mocked_bindings(check_fs = function(...) TRUE)

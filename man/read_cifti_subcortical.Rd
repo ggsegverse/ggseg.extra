@@ -29,9 +29,10 @@ them. \code{read_cifti_subcortical()} writes those voxels to a NIfTI label volum
 and builds the matching colour table from the CIFTI label table.
 
 The volume keeps the CIFTI's voxel grid and transform. Grayordinate files
-are in MNI152NLin6Asym (FSL's MNI152), at 2 mm for 91k and 1.6 mm for 170k,
-so the result can go to \code{\link[=prepare_subcortical_mni152]{prepare_subcortical_mni152()}} for grey-brain
-context, or straight to \code{\link[=create_subcortical_from_volume]{create_subcortical_from_volume()}}. Label ids that
+are in MNI152NLin6Asym (FSL's MNI152), at 2 mm for 91k and 1.6 mm for 170k.
+\code{\link[=prepare_subcortical_mni152]{prepare_subcortical_mni152()}} refuses a non-1 mm grid, so pass
+\code{registration = "header"} or resample onto the 1 mm grid first; otherwise
+go straight to \code{\link[=create_subcortical_from_volume]{create_subcortical_from_volume()}}. Label ids that
 reuse FreeSurfer \code{aseg} ids (as HCP-style files often do) must be shifted
 before \code{\link[=prepare_subcortical_mni152]{prepare_subcortical_mni152()}}, which refuses colliding ids.
 }

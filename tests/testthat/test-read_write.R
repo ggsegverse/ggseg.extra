@@ -32,7 +32,7 @@ describe("read_volume", {
 
     tmp <- withr::local_tempfile(fileext = ".nii.gz")
     vol <- array(1:27, dim = c(3, 3, 3))
-    RNifti::writeNifti(vol, tmp)
+    RNifti::writeNifti(as_oriented_nifti(vol), tmp)
 
     result <- read_volume(tmp)
     expect_true(is.array(result))
@@ -159,6 +159,66 @@ describe("read_volume MGZ reorientation", {
       c(1L, 1L, 1L),
       ignore_attr = TRUE
     )
+  })
+})
+
+
+describe("read_volume NIfTI reorientation", {
+  # LAS vox2ras: axis1 -> Left (-R), axis2 -> Anterior, axis3 -> Superior
+  las <- rbind(
+    c(-1, 0, 0, 1.5),
+    c(0, 1, 0, -1.5),
+    c(0, 0, 1, -1.5),
+    c(0, 0, 0, 1)
+  )
+
+  make_las_nii <- function(with_affine, envir = parent.frame()) {
+    tmp <- withr::local_tempfile(fileext = ".nii.gz", .local_envir = envir)
+    vol <- array(0L, dim = c(4, 4, 4))
+    vol[1, 1, 1] <- 7L
+    img <- RNifti::asNifti(vol)
+    RNifti::pixdim(img) <- c(1, 1, 1)
+    if (with_affine) {
+      RNifti::qform(img) <- structure(las, code = 1L)
+      RNifti::sform(img) <- structure(las, code = 1L)
+    }
+    RNifti::writeNifti(img, tmp)
+    tmp
+  }
+
+  it("reorients a native-LAS NIfTI to RAS+", {
+    skip_if_not_installed("RNifti")
+
+    out <- read_volume(make_las_nii(TRUE))
+
+    # [1,1,1] in LAS is the most-Right voxel, so in RAS+ it sits at dim1 = 4
+    expect_equal(
+      which(out == 7L, arr.ind = TRUE)[1, ],
+      c(4L, 1L, 1L),
+      ignore_attr = TRUE
+    )
+  })
+
+  it("warns rather than trusting a header that declares no affine", {
+    skip_if_not_installed("RNifti")
+    # Both xform codes zero: RNifti reports "RAS" whatever the voxel order is
+    # and an orientation<- assignment is a no-op, so the same LAS data would
+    # otherwise come back mirrored and unannounced.
+    nii <- make_las_nii(FALSE)
+
+    expect_warning(out <- read_volume(nii), "native voxel order")
+    expect_equal(
+      which(out == 7L, arr.ind = TRUE)[1, ],
+      c(1L, 1L, 1L),
+      ignore_attr = TRUE
+    )
+  })
+
+  it("stays quiet when reorient is FALSE and there is no affine", {
+    skip_if_not_installed("RNifti")
+    nii <- make_las_nii(FALSE)
+
+    expect_no_warning(read_volume(nii, reorient = FALSE))
   })
 })
 
@@ -1524,7 +1584,7 @@ describe("read_volume dimensionality and reorientation", {
 
     tmp <- withr::local_tempfile(fileext = ".nii.gz")
     vol <- array(1L, dim = c(3, 3, 3, 2))
-    RNifti::writeNifti(vol, tmp)
+    RNifti::writeNifti(as_oriented_nifti(vol), tmp)
 
     expect_error(read_volume(tmp), "Expected a 3D volume")
   })

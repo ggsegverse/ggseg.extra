@@ -561,6 +561,18 @@ describe("default_subcortical_slabs", {
     expect_lt(sagittal$end, 30)
   })
 
+  it("names the slab for the hemisphere its structures are in", {
+    # A right-hemisphere-only lookup table sits wholly right of the volume
+    # midline, and a slab named sagittal_left draws it in a panel the rest of
+    # the ecosystem reads as left.
+    vol <- array(0L, dim = c(40, 40, 40))
+    vol[22:34, 12:28, 12:28] <- 53L
+
+    sagittal <- sagittal_hemi_slab(vol, 53L)
+
+    expect_identical(sagittal$name, "sagittal_right")
+  })
+
   it("leaves no panel without a labelled voxel", {
     vol <- array(0L, dim = c(40, 40, 40))
     vol[10:30, 12:28, 8:10] <- 17L

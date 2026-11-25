@@ -2063,6 +2063,66 @@ describe("cerebellar_project_and_build", {
 
 
 describe("cerebellar_process_deep_nuclei", {
+  write_nuclei_volume <- function(orientation, envir = parent.frame()) {
+    arr <- array(0L, dim = c(20, 20, 20))
+    arr[4:7, 9:12, 9:12] <- 17L # left dentate: low x in RAS+
+    arr[14:17, 9:12, 9:12] <- 53L # right dentate: high x in RAS+
+    ras <- rbind(
+      c(1, 0, 0, -10),
+      c(0, 1, 0, -10),
+      c(0, 0, 1, -10),
+      c(0, 0, 0, 1)
+    )
+    if (identical(orientation, "LAS")) {
+      # the same anatomy stored the FSL/SPM way mri_convert writes it: axis 1
+      # reversed, and the affine's x column reversed with it
+      arr <- arr[dim(arr)[1]:1, , , drop = FALSE]
+      ras[, 1] <- -ras[, 1]
+      ras[1, 4] <- 9
+    }
+    img <- RNifti::asNifti(arr)
+    RNifti::pixdim(img) <- c(1, 1, 1)
+    RNifti::qform(img) <- structure(ras, code = 1L)
+    RNifti::sform(img) <- structure(ras, code = 1L)
+    tmp <- withr::local_tempfile(fileext = ".nii.gz", .local_envir = envir)
+    RNifti::writeNifti(img, tmp)
+    tmp
+  }
+
+  it("draws the left nucleus left of the right one in either orientation", {
+    skip_if_not_installed("terra")
+    skip_if_not_installed("RNifti")
+    deep_data <- tibble(
+      hemi = c("left", "right"),
+      region = "Dentate",
+      label = c("left_Dentate", "right_Dentate"),
+      colour = "#0000FF",
+      vol_idx = c(17L, 53L),
+      deep = TRUE
+    )
+    deep_data$vertices <- list(integer(0), integer(0))
+    local_mocked_bindings(build_deep_nuclei_meshes = function(...) NULL)
+
+    centre_x <- function(result, label) {
+      geom <- result$sf$geometry[match(label, result$sf$label)]
+      mean(sf::st_bbox(geom)[c("xmin", "xmax")])
+    }
+
+    for (orientation in c("RAS", "LAS")) {
+      result <- cerebellar_process_deep_nuclei(
+        volume = write_nuclei_volume(orientation),
+        deep_data = deep_data,
+        dirs = local_atlas_dirs(),
+        verbose = FALSE
+      )
+
+      expect_lt(
+        centre_x(result, "left_Dentate"),
+        centre_x(result, "right_Dentate")
+      )
+    }
+  })
+
   it("returns NULL sf/meshes when vol_idx column missing", {
     skip_if_not_installed("terra")
 
@@ -2101,7 +2161,7 @@ describe("cerebellar_process_deep_nuclei", {
     vol[8:12, 8:12, 8:12] <- 1L
 
     vol_file <- withr::local_tempfile(fileext = ".nii.gz")
-    RNifti::writeNifti(RNifti::asNifti(vol), vol_file)
+    RNifti::writeNifti(as_oriented_nifti(vol), vol_file)
 
     deep_data <- tibble(
       hemi = "midline",
@@ -2142,7 +2202,7 @@ describe("cerebellar_process_deep_nuclei", {
     vol[3:5, 3:5, 3:5] <- 1L
 
     vol_file <- withr::local_tempfile(fileext = ".nii.gz")
-    RNifti::writeNifti(RNifti::asNifti(vol), vol_file)
+    RNifti::writeNifti(as_oriented_nifti(vol), vol_file)
 
     deep_data <- tibble(
       hemi = c("midline", "midline"),
@@ -2180,7 +2240,7 @@ describe("cerebellar_process_deep_nuclei", {
     vol[5:15, 5:15, 5:15] <- 1L
 
     vol_file <- withr::local_tempfile(fileext = ".nii.gz")
-    RNifti::writeNifti(RNifti::asNifti(vol), vol_file)
+    RNifti::writeNifti(as_oriented_nifti(vol), vol_file)
 
     deep_data <- tibble(
       hemi = "midline",
@@ -3024,5 +3084,43 @@ describe("suit_drawable_vertices", {
     })
 
     expect_identical(suit_drawable_vertices(), first)
+  })
+})
+
+
+describe("read_cerebellar_volume orientation", {
+  # The read at R/atlas_cerebellar.R must stay `reorient = FALSE`: the vertex
+  # labels come from `sample_volume_at_surface()`, which maps surface vertices
+  # through the FILE's affine. Reorienting the array without reorienting that
+  # mapping samples every vertex from the mirrored voxel, swapping the whole
+  # cerebellar cortex. Asserting on `read_volume()` directly would only prove
+  # that RNifti reorients arrays, so this pins the argument at the call site.
+  it("reads the volume in the file's native order", {
+    skip_if_not_installed("RNifti")
+    seen <- new.env(parent = emptyenv())
+    local_mocked_bindings(
+      read_volume = function(volume, reorient = TRUE, ...) {
+        seen$reorient <- reorient
+        array(0L, dim = c(2, 2, 2))
+      },
+      sample_volume_at_surface = function(...) integer(0),
+      resolve_cerebellar_lut = function(...) {
+        data.frame(
+          idx = integer(0),
+          label = character(0),
+          colour = character(0),
+          stringsAsFactors = FALSE
+        )
+      }
+    )
+
+    # The stub colortable means the function aborts further down; the
+    # argument has already been captured by then, which is what is under test.
+    expect_error(
+      read_cerebellar_volume("volume.nii", suit_3d_surface = NULL),
+      "No regions found"
+    )
+
+    expect_false(seen$reorient)
   })
 })

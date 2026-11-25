@@ -2374,6 +2374,29 @@ fill_missing_rgb <- function(ct, label = "structures") {
 }
 
 
+#' The source volume's own affine, or an abort saying what it costs
+#'
+#' Every use of this is a placement: without the source's affine a structure
+#' is placed by a default one, which plots as a mirrored or displaced atlas.
+#' @noRd
+source_vox2ras <- function(input_volume, call = rlang::caller_env()) {
+  vox2ras <- volume_vox2ras(input_volume)
+  if (is.null(vox2ras)) {
+    cli::cli_abort(
+      c(
+        "Could not read a voxel-to-world affine from {.path {input_volume}}.",
+        "x" = "Placing structures by a default affine rather than the
+               source's plots as a mirrored or displaced atlas.",
+        "i" = "Convert the volume with {.code mri_convert}, or pass one whose
+               header carries a valid affine."
+      ),
+      call = call
+    )
+  }
+  vox2ras
+}
+
+
 #' Build a derived volume that carries the source's geometry
 #'
 #' `read_volume()` returns a `niftiImage` for NIfTI input, which carries the
@@ -2403,20 +2426,7 @@ nifti_with_source_geometry <- function(
   }
 
   out <- RNifti::asNifti(result)
-  vox2ras <- volume_vox2ras(input_volume)
-  if (is.null(vox2ras)) {
-    cli::cli_abort(
-      c(
-        "Could not read a voxel-to-world affine from {.path {input_volume}}.",
-        "x" = "Writing the volume without one would place every structure by
-               a default affine rather than the source's, which plots as a
-               mirrored or displaced atlas.",
-        "i" = "Convert the volume with {.code mri_convert}, or pass one whose
-               header carries a valid affine."
-      ),
-      call = call
-    )
-  }
+  vox2ras <- source_vox2ras(input_volume, call)
 
   # Order matters, and not in the obvious direction. `pixdim<-` rescales the
   # xforms already on the image rather than filling in missing sizes, so
@@ -2613,7 +2623,9 @@ wholebrain_write_cortex_context <- function(
     return(result)
   }
   if (!identical(silhouette, "aseg")) {
-    return(wholebrain_cortex_by_midline(result, cortical_mask, vol))
+    return(
+      wholebrain_cortex_by_midline(result, cortical_mask, vol, input_volume)
+    )
   }
 
   aseg <- aseg_context_volume(
@@ -2624,10 +2636,19 @@ wholebrain_write_cortex_context <- function(
     verbose = verbose
   )
   if (is.null(aseg)) {
-    return(wholebrain_cortex_by_midline(result, cortical_mask, vol))
+    return(
+      wholebrain_cortex_by_midline(result, cortical_mask, vol, input_volume)
+    )
   }
 
-  result <- wholebrain_write_cerebrum(result, cortical_mask, vol, aseg, verbose)
+  result <- wholebrain_write_cerebrum(
+    result,
+    cortical_mask,
+    vol,
+    aseg,
+    input_volume,
+    verbose
+  )
   write_aseg_context(result, aseg, aseg_fossa_idx())
 }
 
@@ -2643,11 +2664,14 @@ wholebrain_write_cerebrum <- function(
   cortical_mask,
   vol,
   aseg,
+  input_volume,
   verbose
 ) {
   solid <- cortex_mask_is_solid(cortical_mask, aseg, verbose)
   if (!solid || !ribbon_is_resolved(aseg, verbose)) {
-    return(wholebrain_cortex_by_midline(result, cortical_mask, vol))
+    return(
+      wholebrain_cortex_by_midline(result, cortical_mask, vol, input_volume)
+    )
   }
   write_aseg_context(result, aseg, aseg_cortex_idx())
 }
@@ -2674,9 +2698,26 @@ write_aseg_context <- function(result, aseg, idx) {
 #'
 #' The fallback when no `aseg` ribbon is available. Left-hemisphere voxels
 #' map to label 3 (FS left cortex), right-hemisphere to label 42.
+#'
+#' `read_volume()` hands back a bare array for an MGZ, and `RNifti::xform()`
+#' of one -- or of an image whose header declares no affine -- is the
+#' identity: the midline would land at voxel 1 and all but the first column
+#' would come out right cortex. The source's own affine is read from the file
+#' in that case.
 #' @noRd
-wholebrain_cortex_by_midline <- function(result, cortical_mask, vol) {
-  xform <- RNifti::xform(vol)
+wholebrain_cortex_by_midline <- function(
+  result,
+  cortical_mask,
+  vol,
+  input_volume
+) {
+  carries_affine <- inherits(vol, "niftiImage") &&
+    nifti_affine_is_set(RNifti::xform(vol))
+  xform <- if (carries_affine) {
+    RNifti::xform(vol)
+  } else {
+    source_vox2ras(input_volume)
+  }
   # xform maps 0-based voxel indices to world; slice.index() is 1-based, so
   # shift the midline voxel to 1-based before comparing.
   x0_voxel <- round(solve(xform, c(0, 0, 0, 1))[1]) + 1L
