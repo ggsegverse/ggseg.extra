@@ -551,44 +551,62 @@ usable_voxel_size <- function(size) {
 #' freesurferformats -- so reading twice to get them separately would double it.
 #' @noRd
 read_volume_grid <- function(template_file) {
-  ext <- volume_ext(template_file)
-  if (ext == "mgz") {
-    if (!requireNamespace("freesurferformats", quietly = TRUE)) {
-      return(NULL)
-    }
-    return(tryCatch(
-      {
-        mgh <- freesurferformats::read.fs.mgh(template_file, with_header = TRUE)
-        vox2ras <- freesurferformats::mghheader.vox2ras(mgh$header)
-        # The .nii branch below screens the affine via nifti_affine_is_set();
-        # without the same screen here an unreadable mgz header yields a
-        # singular matrix that reaches solve() as a Lapack error.
-        if (!affine_is_invertible(vox2ras)) {
-          NULL
-        } else {
-          list(vox2ras = vox2ras, dim = dim(mgh$data)[1:3])
-        }
-      },
-      error = function(e) NULL
-    ))
+  switch(
+    volume_ext(template_file),
+    mgz = read_mgz_grid(template_file),
+    nii = read_nifti_grid(template_file),
+    NULL
+  )
+}
+
+
+#' Voxel grid of an `.mgz`, or `NULL` when its header cannot be read
+#'
+#' A plainly written mgz carries `ras_good_flag = -1`, and
+#' `mghheader.vox2ras()` errors rather than returning something unusable, so
+#' the whole read sits inside one `tryCatch()`.
+#' @noRd
+read_mgz_grid <- function(template_file) {
+  if (!requireNamespace("freesurferformats", quietly = TRUE)) {
+    return(NULL)
   }
-  if (ext == "nii") {
-    if (!requireNamespace("RNifti", quietly = TRUE)) {
-      return(NULL)
-    }
-    header <- tryCatch(RNifti::niftiHeader(template_file), error = function(e) {
-      NULL
-    })
-    if (is.null(header)) {
-      return(NULL)
-    }
-    xform <- tryCatch(RNifti::xform(header), error = function(e) NULL)
-    if (is.null(xform) || !nifti_affine_is_set(xform)) {
-      return(NULL)
-    }
-    return(list(vox2ras = xform, dim = as.integer(header$dim[2:4])))
+  tryCatch(
+    {
+      mgh <- freesurferformats::read.fs.mgh(template_file, with_header = TRUE)
+      vox2ras <- freesurferformats::mghheader.vox2ras(mgh$header)
+      # read_nifti_grid() screens the affine via nifti_affine_is_set(); without
+      # the same screen here an unreadable header yields a singular matrix that
+      # reaches solve() as a Lapack error. The data array can be 4-D, so only
+      # the first three dimensions are the field of view.
+      if (affine_is_invertible(vox2ras)) {
+        list(vox2ras = vox2ras, dim = dim(mgh$data)[1:3])
+      } else {
+        NULL
+      }
+    },
+    error = function(e) NULL
+  )
+}
+
+
+#' Voxel grid of a `.nii`, or `NULL` when its header declares no affine
+#' @noRd
+read_nifti_grid <- function(template_file) {
+  if (!requireNamespace("RNifti", quietly = TRUE)) {
+    return(NULL)
   }
-  NULL
+  header <- tryCatch(
+    RNifti::niftiHeader(template_file),
+    error = function(e) NULL
+  )
+  if (is.null(header)) {
+    return(NULL)
+  }
+  xform <- tryCatch(RNifti::xform(header), error = function(e) NULL)
+  if (is.null(xform) || !nifti_affine_is_set(xform)) {
+    return(NULL)
+  }
+  list(vox2ras = xform, dim = as.integer(header$dim[2:4]))
 }
 
 
