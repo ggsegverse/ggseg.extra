@@ -554,7 +554,11 @@ read_vox2ras <- function(template_file) {
     return(tryCatch(
       {
         mgh <- freesurferformats::read.fs.mgh(template_file, with_header = TRUE)
-        freesurferformats::mghheader.vox2ras(mgh$header)
+        vox2ras <- freesurferformats::mghheader.vox2ras(mgh$header)
+        # The .nii branch below screens the affine via nifti_affine_is_set();
+        # without the same screen here an unreadable mgz header yields a
+        # singular matrix that reaches solve() as a Lapack error.
+        if (affine_is_invertible(vox2ras)) vox2ras else NULL
       },
       error = function(e) NULL
     ))

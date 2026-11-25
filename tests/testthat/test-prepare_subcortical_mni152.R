@@ -339,6 +339,43 @@ describe("prepare_subcortical_mni152 registration call", {
     expect_identical(seen$reg, lta)
     expect_false(identical(seen$reg, "mni152"))
   })
+
+  it("carries a 2 mm grayordinate volume through to the registration", {
+    local_skip_unless_fs_pkg()
+    # The motivating case. Every other fixture here is 1 mm, so nothing else
+    # proves a non-1 mm volume reaches mri_vol2vol with a resolved
+    # registration rather than dying at the grid check. Restoring the abort
+    # in check_mni152_grid() makes this error instead of warn.
+    local_mock_mni152_path()
+    lta <- withr::local_tempfile(fileext = ".lta")
+    local_mocked_bindings(
+      lta_from_register_dat = function(path, mov, targ, ...) lta
+    )
+
+    in_path <- withr::local_tempfile(fileext = ".nii.gz")
+    img <- RNifti::asNifti(make_parcels())
+    RNifti::pixdim(img) <- c(2, 2, 2)
+    RNifti::sform(img) <- structure(diag(c(-2, 2, 2, 1)), code = 2L)
+    RNifti::writeNifti(img, in_path)
+
+    subjects_dir <- local_subjects_dir()
+    seen <- new.env(parent = emptyenv())
+    local_mock_prepare_deps(seen)
+
+    expect_warning(
+      merged <- prepare_subcortical_mni152(
+        input_volume = in_path,
+        labels = c(211L, 212L),
+        registration = "mni152",
+        subjects_dir = subjects_dir,
+        verbose = FALSE
+      ),
+      class = "ggseg_extra_mni152_resolution_warning"
+    )
+
+    expect_identical(seen$reg, lta)
+    expect_true(file.exists(merged$volume))
+  })
 })
 
 

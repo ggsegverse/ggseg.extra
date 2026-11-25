@@ -767,6 +767,26 @@ describe("load_tract_grid", {
     expect_null(result$vox2ras)
   })
 
+  it("screens a singular mgz affine at the reader, not at solve()", {
+    skip_if_not_installed("freesurferformats")
+    # The .nii branch screens the affine via nifti_affine_is_set(); the mgz
+    # branch did not, and load_tract_grid() is a second consumer that calls
+    # read_vox2ras() directly. A singular matrix therefore skipped the
+    # documented voxel_size fallback and reached solve() as a Lapack
+    # "system is exactly singular" error instead.
+    mgz <- test_path("testdata/volumetric/aseg.mgz")
+    local_mocked_bindings(
+      mghheader.vox2ras = function(...) matrix(0, 4, 4),
+      .package = "freesurferformats"
+    )
+    expect_null(read_vox2ras(mgz))
+    expect_warning(
+      result <- load_tract_grid(mgz, coords_are_voxels = FALSE),
+      "voxel size|affine"
+    )
+    expect_null(result$vox2ras)
+  })
+
   it("recovers the voxel size when the affine is unreadable", {
     skip_if_not_installed("RNifti")
     tmp <- withr::local_tempfile(fileext = ".nii")

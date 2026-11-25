@@ -816,7 +816,7 @@ describe("check_mni152_grid", {
     local_mocked_bindings(volume_vox2ras = function(...) las_coarse)
     expect_warning(
       result <- check_mni152_grid("volume.nii"),
-      class = "ggseg_extra_mni152_resolution"
+      class = "ggseg_extra_mni152_resolution_warning"
     )
     expect_true(result)
   })
@@ -827,14 +827,21 @@ describe("check_mni152_grid", {
     local_mocked_bindings(volume_vox2ras = function(...) {
       diag(c(1.5, 1.5, 1.5, 1))
     })
-    expect_error(check_mni152_grid("volume.nii"), "swaps left and right")
+    # expect_error() alone is indifferent to a warning raised BEFORE the abort,
+    # so it has to be nested this way round. The inversion
+    # expect_error(expect_no_warning(...)) does not work: the outer
+    # expect_error swallows the inner expectation's failure.
+    expect_no_warning(
+      expect_error(check_mni152_grid("volume.nii"), "swaps left and right"),
+      class = "ggseg_extra_mni152_resolution_warning"
+    )
   })
 
   it("does not warn on the 1 mm grid it was built for", {
     local_mocked_bindings(volume_vox2ras = function(...) las_1mm)
     expect_no_condition(
       check_mni152_grid("volume.nii"),
-      class = "ggseg_extra_mni152_resolution"
+      class = "ggseg_extra_mni152_resolution_warning"
     )
   })
 

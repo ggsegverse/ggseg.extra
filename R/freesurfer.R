@@ -373,8 +373,8 @@ volume_vox2ras <- function(input_volume) {
     error = function(e) NULL
   )
 
-  # read_vox2ras() already applies this to a .nii, but an .mgz comes back as
-  # the raw mghheader matrix, so this is that path's only guard.
+  # read_vox2ras() screens both extensions, so this is belt-and-braces for a
+  # reader that grows a third branch without one.
   if (is.null(vox2ras) || !affine_is_invertible(vox2ras)) {
     return(NULL)
   }
@@ -435,12 +435,21 @@ check_mni152_subject <- function(subject) {
 #' - Right-handed (RAS) order mirrors left and right outright. That is a
 #'   categorical error -- the label is on the wrong hemisphere -- so it is
 #'   refused.
-#' - Another resolution displaces vertices by a few per cent (7.7% measured
-#'   at 1.5 mm, ~28% at 4 mm, against the same volume resampled to 1 mm
-#'   first). That is a shift within a hemisphere, which a reader of a
-#'   schematic brain can live with, so it warns and continues. Refusing it
-#'   locked out CIFTI grayordinate volumes, which are 2 mm and 1.6 mm by
-#'   definition.
+#' - Another resolution MAY displace regions, so it warns and continues
+#'   rather than refusing. Refusing it locked out CIFTI grayordinate volumes,
+#'   which are 2 mm and 1.6 mm by definition, and the refusal was wrong for
+#'   them: the FSL 2 mm and 1.6 mm grids share the 182x218x182 mm extent, so
+#'   the transform is exact there.
+#'
+#' Be aware that voxel size is a PROXY, and a poor one. tkreg depends on the
+#' field of view (`dim * voxel size`) and the axis order, so this check both
+#' warns when it should not (the 2 mm grayordinate grid, exact) and stays
+#' silent when it should not (a 1 mm volume on a cropped or reordered grid,
+#' which can be off by centimetres). Only the handedness abort above is a
+#' real guarantee, and it sees the determinant sign, not the axis order.
+#' Keying the check on the composed `vox2ras_tkr %*% solve(vox2ras)` matrix
+#' instead is tracked separately -- do not read this block as promising that
+#' a volume reaching the end of it is on the right grid.
 #' @noRd
 check_mni152_grid <- function(input_volume, call = rlang::caller_env()) {
   vox2ras <- volume_vox2ras(input_volume)
@@ -480,14 +489,22 @@ check_mni152_grid <- function(input_volume, call = rlang::caller_env()) {
   if (!all(abs(voxel_sizes - 1) < 0.01)) {
     cli::cli_warn(
       c(
-        "{.file mni152.register.dat} is built for a 1 mm grid, and
+        "{.file mni152.register.dat} was built for the 1 mm
+          {.val {c(182, 218, 182)}} LAS MNI152 grid, and
           {.path {input_volume}} has {.val {round(voxel_sizes, 3)}} mm voxels.",
-        "!" = "Regions keep their hemisphere but sit a few per cent of
-          vertices off their anatomy.",
-        "i" = "Use {.code registration = \"header\"}, or resample onto the 1 mm
-          LAS MNI152 grid, if you need the placement exact."
+        "!" = "Regions may be displaced, and this check cannot say by how
+          much: what the transform depends on is the field of view
+          ({.code dim * voxel size}) and the axis order, not the voxel size
+          alone.",
+        # Not every caller exposes `registration`: read_neuromaps_volume()
+        # hardcodes "mni152" and takes no such argument, so the remedy must
+        # not name one unconditionally.
+        "i" = "If the placement must be exact, use a 1 mm LAS source volume
+          or resample onto that grid first. Callers that expose
+          {.arg registration} also accept {.code registration = \"header\"}."
       ),
-      class = "ggseg_extra_mni152_resolution"
+      class = "ggseg_extra_mni152_resolution_warning",
+      call = call
     )
   }
 

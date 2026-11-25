@@ -3,11 +3,15 @@
 ## Bug fixes
 
 - `check_mni152_grid()` now warns instead of aborting when an LAS volume is
-  not on a 1 mm grid, and refuses only right-handed order. A mirror puts a
-  label on the wrong hemisphere; another resolution shifts it within the
-  right one, which a schematic brain tolerates. Refusing it locked out CIFTI
-  grayordinate volumes, which are 2 mm and 1.6 mm by definition. The warning
-  has class `ggseg_extra_mni152_resolution`.
+  not on a 1 mm grid, and refuses only right-handed order. The refusal was
+  wrong for the grids that triggered it most: the FSL 2 mm and 1.6 mm CIFTI
+  grayordinate grids share the 1 mm grid's 182x218x182 mm extent, so
+  `mni152.register.dat` applies to them exactly. The warning has class
+  `ggseg_extra_mni152_resolution_warning` and carries the caller.
+- `read_vox2ras()` now screens a singular affine on the `.mgz` branch, as it
+  already did for `.nii`. `load_tract_grid()` reads it directly, so an
+  unreadable mgz header skipped the documented voxel-size fallback and
+  reached `solve()` as a Lapack "system is exactly singular" error.
 
 ## Internal
 

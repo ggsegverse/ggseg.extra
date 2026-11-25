@@ -239,15 +239,25 @@
 #' which is why it remains the default.
 #'
 #' `"mni152"` removes it, but only for volumes on the grid
-#' `mni152.register.dat` was built for: 1 mm, left-handed (LAS). tkregister
-#' coordinates are derived from the volume's own voxel order, size and field
-#' of view, so the same matrix applied to a right-handed volume mirrors left
-#' and right, and applied to an LAS volume of another resolution mislocates
-#' regions (7.7% of vertices at 1.5 mm, about 28% at 4 mm, measured against
-#' the same volume resampled to 1 mm first). Both mistakes produce an atlas
-#' that still looks anatomically plausible, so an unsuitable grid is refused
-#' rather than warned about. To use `"mni152"` with such a volume, resample
-#' it onto the 1 mm LAS MNI152 grid first.
+#' `mni152.register.dat` was built for: the 1 mm, left-handed (LAS),
+#' 182x218x182 MNI152 grid. tkregister coordinates are derived from the
+#' volume's own voxel order, size and field of view, so the same matrix
+#' applied to a right-handed volume mirrors left and right. That is a
+#' categorical error -- a label drawn on the wrong hemisphere -- and it is
+#' **refused**.
+#'
+#' A volume of another resolution **warns and continues**, with a condition
+#' of class `ggseg_extra_mni152_resolution_warning`. It is a warning because
+#' the displacement is not categorical and because the refusal was wrong for
+#' the grids that triggered it most: the FSL 2 mm and 1.6 mm grayordinate
+#' grids share the 182x218x182 mm extent, so the transform is exact there.
+#'
+#' That warning is keyed on voxel size, which is only a proxy. What the
+#' transform actually depends on is the field of view (`dim * voxel size`)
+#' and the axis order, so a 1 mm volume on a cropped or reordered grid passes
+#' with no warning at all and can still be displaced by centimetres. If the
+#' placement must be right, pass `registration = "header"` or resample onto
+#' the 1 mm LAS MNI152 grid rather than relying on the absence of a warning.
 #'
 #' No header identifies the space an arbitrary volume is in, so the
 #' registration you name is applied to whatever you pass. A volume sitting
