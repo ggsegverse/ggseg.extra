@@ -10,7 +10,7 @@ mock_cortical_pipeline_bindings <- function() {
     cortical_build_sf_projected = function(components, ...) {
       do.call(rbind, lapply(components$core$label, mock_sf_polygon))
     },
-    ggseg_atlas = function(...) structure(list(...), class = "ggseg_atlas"),
+    ggseg_atlas = mock_ggseg_atlas(),
     ggseg_data_cortical = function(...) list(...),
     warn_if_large_atlas = function(...) NULL,
     preview_atlas = function(...) NULL,
@@ -152,9 +152,7 @@ describe("create_cortical_from_annotation pipeline flow", {
           )
         )
       },
-      ggseg_atlas = function(...) {
-        structure(list(...), class = "ggseg_atlas")
-      },
+      ggseg_atlas = mock_ggseg_atlas(),
       ggseg_data_cortical = function(...) list(...)
     )
 
@@ -568,7 +566,7 @@ describe("create_cortical_from_annotation verbose output", {
           )
         )
       },
-      ggseg_atlas = function(...) structure(list(...), class = "ggseg_atlas"),
+      ggseg_atlas = mock_ggseg_atlas(),
       ggseg_data_cortical = function(...) list(...),
       log_elapsed = function(...) NULL
     )
@@ -615,7 +613,7 @@ describe("create_cortical_from_annotation full pipeline path", {
           )
         )
       },
-      ggseg_atlas = function(...) structure(list(...), class = "ggseg_atlas"),
+      ggseg_atlas = mock_ggseg_atlas(),
       ggseg_data_cortical = function(...) list(...),
       cortical_project_and_build = function(...) {
         .cap$captured_pipeline_args <- list(...)
@@ -643,7 +641,7 @@ describe("create_cortical_from_annotation full pipeline path", {
 describe("cortical_read_data verbose paths", {
   it("prints progress step when verbose is TRUE and step runs", {
     local_mocked_bindings(
-      ggseg_atlas = function(...) structure(list(...), class = "ggseg_atlas"),
+      ggseg_atlas = mock_ggseg_atlas(),
       ggseg_data_cortical = function(...) list(...)
     )
 
@@ -738,7 +736,7 @@ describe("create_cortical_from_labels verbose and LUT paths", {
   it("prints verbose output when verbose is TRUE", {
     skip_if_not_installed("freesurferformats")
     local_mocked_bindings(
-      ggseg_atlas = function(...) structure(list(...), class = "ggseg_atlas"),
+      ggseg_atlas = mock_ggseg_atlas(),
       ggseg_data_cortical = function(...) list(...),
       log_elapsed = function(...) NULL
     )
@@ -766,19 +764,7 @@ describe("create_cortical_from_labels verbose and LUT paths", {
     )
 
     local_mocked_bindings(
-      ggseg_atlas = function(...) {
-        args <- list(...)
-        structure(
-          list(
-            atlas = args$atlas,
-            type = args$type,
-            palette = args$palette,
-            core = args$core,
-            data = args$data
-          ),
-          class = "ggseg_atlas"
-        )
-      },
+      ggseg_atlas = mock_ggseg_atlas(),
       ggseg_data_cortical = function(...) list(...),
       log_elapsed = function(...) NULL
     )
@@ -804,19 +790,7 @@ describe("create_cortical_from_labels verbose and LUT paths", {
     )
 
     local_mocked_bindings(
-      ggseg_atlas = function(...) {
-        args <- list(...)
-        structure(
-          list(
-            atlas = args$atlas,
-            type = args$type,
-            palette = args$palette,
-            core = args$core,
-            data = args$data
-          ),
-          class = "ggseg_atlas"
-        )
-      },
+      ggseg_atlas = mock_ggseg_atlas(),
       ggseg_data_cortical = function(...) list(...),
       log_elapsed = function(...) NULL
     )
@@ -836,7 +810,7 @@ describe("create_cortical_from_labels verbose and LUT paths", {
     .cap$captured_args <- NULL
     local_mocked_bindings(
       check_fs = function(abort = FALSE) invisible(TRUE),
-      ggseg_atlas = function(...) structure(list(...), class = "ggseg_atlas"),
+      ggseg_atlas = mock_ggseg_atlas(),
       ggseg_data_cortical = function(...) list(...),
       cortical_project_and_build = function(...) {
         .cap$captured_args <- list(...)
@@ -866,7 +840,7 @@ describe("create_cortical_from_labels hemi fallback", {
     .cap$captured_hemisphere <- NULL
     local_mocked_bindings(
       check_fs = function(abort = FALSE) invisible(TRUE),
-      ggseg_atlas = function(...) structure(list(...), class = "ggseg_atlas"),
+      ggseg_atlas = mock_ggseg_atlas(),
       ggseg_data_cortical = function(...) list(...),
       cortical_project_and_build = function(...) {
         args <- list(...)

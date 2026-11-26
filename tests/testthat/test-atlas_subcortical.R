@@ -356,7 +356,7 @@ describe("create_subcortical_from_volume pipeline flow", {
           )
         )
       },
-      ggseg_atlas = function(...) structure(list(...), class = "ggseg_atlas"),
+      ggseg_atlas = mock_ggseg_atlas(),
       ggseg_data_subcortical = function(...) list(...)
     )
 
@@ -430,7 +430,7 @@ describe("create_subcortical_from_volume pipeline flow", {
           )
         )
       },
-      ggseg_atlas = function(...) structure(list(...), class = "ggseg_atlas"),
+      ggseg_atlas = mock_ggseg_atlas(),
       ggseg_data_subcortical = function(...) list(...)
     )
 
@@ -769,18 +769,7 @@ describe("create_subcortical_from_volume pipeline flow", {
       build_contour_sf = function(...) {
         data.frame(label = "region", stringsAsFactors = FALSE)
       },
-      ggseg_atlas = function(...) {
-        args <- list(...)
-        structure(
-          list(
-            core = args$core,
-            palette = args$palette,
-            type = args$type,
-            data = args$data
-          ),
-          class = "ggseg_atlas"
-        )
-      },
+      ggseg_atlas = mock_ggseg_atlas(),
       ggseg_data_subcortical = function(...) list(...),
       warn_if_large_atlas = function(...) invisible(NULL),
       preview_atlas = function(...) invisible(NULL)
@@ -918,18 +907,7 @@ describe("subcort_assemble_full sf_data as data.frame", {
 
     local_mocked_bindings(
       build_contour_sf = function(...) sf_df,
-      ggseg_atlas = function(...) {
-        args <- list(...)
-        structure(
-          list(
-            core = args$core,
-            palette = args$palette,
-            type = args$type,
-            data = args$data
-          ),
-          class = "ggseg_atlas"
-        )
-      },
+      ggseg_atlas = mock_ggseg_atlas(),
       ggseg_data_subcortical = function(...) list(...),
       warn_if_large_atlas = function(...) invisible(NULL),
       preview_atlas = function(...) invisible(NULL)

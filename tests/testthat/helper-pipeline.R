@@ -168,3 +168,53 @@ local_nifti_volume <- function(values = c(0, 1, 2), env = parent.frame()) {
   RNifti::writeNifti(image, path)
   path
 }
+
+
+#' A stand-in for ggseg.formats::ggseg_atlas() that enforces its contract
+#'
+#' The pipelines are tested with the constructor mocked, and the mock used to
+#' be `function(...) structure(list(...), class = "ggseg_atlas")`: a stub whose
+#' class the test then asserted. That assertion could only ever pass -- it was
+#' the mock being checked against itself, so a pipeline that stopped passing a
+#' `core`, or keyed its palette on something other than `label`, still went
+#' green.
+#'
+#' Taking the real constructor's named arguments and validating them makes the
+#' mock itself the assertion, at every site that installs it.
+#'
+#' @param returns Optional object to return instead of the stub, for tests that
+#'   need a specific atlas downstream.
+#' @return A function with `ggseg_atlas()`'s signature.
+mock_ggseg_atlas <- function(returns = NULL) {
+  function(atlas, type, core, data, palette = NULL, provenance = NULL) {
+    testthat::expect_type(atlas, "character")
+    testthat::expect_length(atlas, 1L)
+    testthat::expect_true(
+      type %in% c("cortical", "subcortical", "cerebellar", "tract")
+    )
+    testthat::expect_s3_class(core, "data.frame")
+    testthat::expect_true(all(c("label", "region", "hemi") %in% names(core)))
+    testthat::expect_gt(nrow(core), 0L)
+    testthat::expect_false(anyNA(core$label))
+    if (!is.null(palette)) {
+      # `label` is the key a palette is built on ecosystem-wide, so a palette
+      # naming anything else cannot colour the atlas it ships with.
+      testthat::expect_true(all(names(palette) %in% core$label))
+    }
+
+    if (!is.null(returns)) {
+      return(returns)
+    }
+    structure(
+      list(
+        atlas = atlas,
+        type = type,
+        core = core,
+        data = data,
+        palette = palette,
+        provenance = provenance
+      ),
+      class = "ggseg_atlas"
+    )
+  }
+}
