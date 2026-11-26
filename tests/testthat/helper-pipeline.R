@@ -179,8 +179,11 @@ local_nifti_volume <- function(values = c(0, 1, 2), env = parent.frame()) {
 #' `core`, or keyed its palette on something other than `label`, still went
 #' green.
 #'
-#' Taking the real constructor's named arguments and validating them makes the
-#' mock itself the assertion, at every site that installs it.
+#' Taking the real constructor's named arguments makes the mock itself the
+#' assertion, at every site that installs it. The schema rules are not
+#' restated here: `assert_atlas_core()` is the gate the real constructor
+#' applies, and `atlas_types()` is the real vocabulary, so this mock cannot
+#' drift from what ggseg.formats actually requires.
 #'
 #' @param returns Optional object to return instead of the stub, for tests that
 #'   need a specific atlas downstream.
@@ -189,16 +192,13 @@ mock_ggseg_atlas <- function(returns = NULL) {
   function(atlas, type, core, data, palette = NULL, provenance = NULL) {
     testthat::expect_type(atlas, "character")
     testthat::expect_length(atlas, 1L)
-    testthat::expect_true(
-      type %in% c("cortical", "subcortical", "cerebellar", "tract")
-    )
-    testthat::expect_s3_class(core, "data.frame")
-    testthat::expect_true(all(c("label", "region", "hemi") %in% names(core)))
+    testthat::expect_true(type %in% ggseg.formats::atlas_types())
+    ggseg.formats::assert_atlas_core(core, atlas)
     testthat::expect_gt(nrow(core), 0L)
-    testthat::expect_false(anyNA(core$label))
     if (!is.null(palette)) {
       # `label` is the key a palette is built on ecosystem-wide, so a palette
-      # naming anything else cannot colour the atlas it ships with.
+      # naming anything else cannot colour the atlas it ships with. Not part of
+      # assert_atlas_core(), which judges `core` alone.
       testthat::expect_true(all(names(palette) %in% core$label))
     }
 
