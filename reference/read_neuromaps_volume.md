@@ -66,6 +66,15 @@ nearest-neighbour interpolation, so every vertex takes the id of a
 parcel in the volume. Any other volume is treated as a continuous map
 and sampled with trilinear interpolation.
 
+This function always registers as `"mni152"` and takes no `registration`
+argument, so the volume must be on the tkregister frame FreeSurfer's
+`mni152.register.dat` was built for. A volume centred elsewhere warns
+with a condition of class `ggseg_extra_mni152_displacement_warning`, or
+is refused if the shift is large; see the Registration section of
+[`create_wholebrain_from_volume()`](https://ggsegverse.github.io/ggseg.extra/reference/create_wholebrain_from_volume.md).
+The remedy here is a 1 mm annotation, or resampling onto the 1 mm LAS
+MNI152 grid, since there is no `registration` argument to switch.
+
 ## Examples
 
 ``` r

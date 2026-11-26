@@ -13,7 +13,7 @@ values using the same binning logic as read_neuromaps_annotation()."><meta prope
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9151</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9155</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -133,6 +133,14 @@ is treated as a parcellation and sampled with nearest-neighbour
 interpolation, so every vertex takes the id of a parcel in the volume.
 Any other volume is treated as a continuous map and sampled with
 trilinear interpolation.</p>
+<p>This function always registers as <code>"mni152"</code> and takes no <code>registration</code>
+argument, so the volume must be on the tkregister frame FreeSurfer's
+<code>mni152.register.dat</code> was built for. A volume centred elsewhere warns with
+a condition of class <code>ggseg_extra_mni152_displacement_warning</code>, or is
+refused if the shift is large; see the Registration section of
+<code><a href="create_wholebrain_from_volume.html">create_wholebrain_from_volume()</a></code>. The remedy here is a 1 mm annotation,
+or resampling onto the 1 mm LAS MNI152 grid, since there is no
+<code>registration</code> argument to switch.</p>
     </div>
 
     <div class="section level2">

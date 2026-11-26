@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9151</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9155</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -69,6 +69,20 @@
       <small>Source: <a href="https://github.com/ggsegverse/ggseg.extra/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.9.9.9155" id="ggsegextra-1999155">ggseg.extra 1.9.9.9155<a class="anchor" aria-label="anchor" href="#ggsegextra-1999155"></a></h2>
+<div class="section level3">
+<h3 id="bug-fixes-1-9-9-9155">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-1-9-9-9155"></a></h3>
+<ul><li>
+<code>check_mni152_grid()</code> now tests the tkregister frame <code>mni152.register.dat</code> was actually built for, instead of voxel size. It compares the composed scanner-to-tkreg transform and splits the difference into axis order (categorical, so refused – this now catches the <code>LIA</code> order <code>mri_convert --conform</code> produces, which was displaced by hundreds of millimetres in silence) and displacement in millimetres (silent below one voxel, warned about with the measured figure via <code>ggseg_extra_mni152_displacement_warning</code>, refused past about the width of a gyrus). Neither voxel size nor extent enters the transform, so the FSL 2 mm CIFTI grayordinate grid is exact and no longer warns at all, and the 1.6 mm grid is within one voxel.</li>
+<li>
+<code>read_vox2ras()</code> now screens a singular affine on the <code>.mgz</code> branch, as it already did for <code>.nii</code>. <code>load_tract_grid()</code> reads it directly, so an unreadable mgz header skipped the documented voxel-size fallback and reached <code><a href="https://rdrr.io/r/base/solve.html" class="external-link">solve()</a></code> as a Lapack “system is exactly singular” error.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="internal-1-9-9-9155">Internal<a class="anchor" aria-label="anchor" href="#internal-1-9-9-9155"></a></h3>
+<ul><li>The “can this affine place anything” test is written once (<code>affine_is_invertible()</code>) rather than copied into both affine readers and kept in agreement by a comment.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.9.9.9151" id="ggsegextra-1999151">ggseg.extra 1.9.9.9151<a class="anchor" aria-label="anchor" href="#ggsegextra-1999151"></a></h2>
 <div class="section level3">

@@ -7,9 +7,11 @@ them. read_cifti_subcortical() writes those voxels to a NIfTI label volume
 and builds the matching colour table from the CIFTI label table.
 The volume keeps the CIFTI's voxel grid and transform. Grayordinate files
 are in MNI152NLin6Asym (FSL's MNI152), at 2 mm for 91k and 1.6 mm for 170k.
-prepare_subcortical_mni152() refuses a non-1 mm grid, so pass
-registration = &quot;header&quot; or resample onto the 1 mm grid first; otherwise
-go straight to create_subcortical_from_volume(). Label ids that
+Both grids are centred where the reference grid is centred,
+so prepare_subcortical_mni152() accepts them in silence:
+mni152.register.dat applies exactly at 2 mm,
+and to within one voxel at 1.6 mm.
+Label ids that
 reuse FreeSurfer aseg ids (as HCP-style files often do) must be shifted
 before prepare_subcortical_mni152(), which refuses colliding ids."><meta property="og:description" content="
 CIFTI dense label files in grayordinate space (such as fsLR 91k) store
@@ -19,9 +21,11 @@ them. read_cifti_subcortical() writes those voxels to a NIfTI label volume
 and builds the matching colour table from the CIFTI label table.
 The volume keeps the CIFTI's voxel grid and transform. Grayordinate files
 are in MNI152NLin6Asym (FSL's MNI152), at 2 mm for 91k and 1.6 mm for 170k.
-prepare_subcortical_mni152() refuses a non-1 mm grid, so pass
-registration = &quot;header&quot; or resample onto the 1 mm grid first; otherwise
-go straight to create_subcortical_from_volume(). Label ids that
+Both grids are centred where the reference grid is centred,
+so prepare_subcortical_mni152() accepts them in silence:
+mni152.register.dat applies exactly at 2 mm,
+and to within one voxel at 1.6 mm.
+Label ids that
 reuse FreeSurfer aseg ids (as HCP-style files often do) must be shifted
 before prepare_subcortical_mni152(), which refuses colliding ids."><meta property="og:image" content="https://ggsegverse.github.io/ggseg.extra/logo.svg"></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -33,7 +37,7 @@ before prepare_subcortical_mni152(), which refuses colliding ids."><meta propert
 
     <a class="navbar-brand me-2" href="../index.html">ggseg.extra</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9151</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9.9155</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -103,9 +107,11 @@ them. <code>read_cifti_subcortical()</code> writes those voxels to a NIfTI label
 and builds the matching colour table from the CIFTI label table.</p>
 <p>The volume keeps the CIFTI's voxel grid and transform. Grayordinate files
 are in MNI152NLin6Asym (FSL's MNI152), at 2 mm for 91k and 1.6 mm for 170k.
-<code><a href="prepare_subcortical_mni152.html">prepare_subcortical_mni152()</a></code> refuses a non-1 mm grid, so pass
-<code>registration = "header"</code> or resample onto the 1 mm grid first; otherwise
-go straight to <code><a href="create_subcortical_from_volume.html">create_subcortical_from_volume()</a></code>. Label ids that
+Both grids are centred where the reference grid is centred,
+so <code><a href="prepare_subcortical_mni152.html">prepare_subcortical_mni152()</a></code> accepts them in silence:
+<code>mni152.register.dat</code> applies exactly at 2 mm,
+and to within one voxel at 1.6 mm.
+Label ids that
 reuse FreeSurfer <code>aseg</code> ids (as HCP-style files often do) must be shifted
 before <code><a href="prepare_subcortical_mni152.html">prepare_subcortical_mni152()</a></code>, which refuses colliding ids.</p>
     </div>
