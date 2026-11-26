@@ -358,34 +358,142 @@ subject_vox2ras <- function(subject, subjects_dir = freesurfer::fs_subj_dir()) {
 }
 
 
-#' Voxel-to-RAS matrix of a volume, or NULL when its header cannot be read
+#' Voxel grid of a volume, or NULL when its header cannot be read
 #'
 #' Advisory probe: a header the reader cannot parse leaves the space unknown
 #' rather than surfacing that reader's own warnings.
 #' @noRd
-volume_vox2ras <- function(input_volume) {
+volume_grid <- function(input_volume) {
   if (!file.exists(input_volume)) {
     return(NULL)
   }
 
-  vox2ras <- tryCatch(
-    suppressWarnings(read_vox2ras(input_volume)),
+  grid <- tryCatch(
+    suppressWarnings(read_volume_grid(input_volume)),
     error = function(e) NULL
   )
 
-  # A reader handed an unreadable file can return a default header whose
-  # matrix is all zeros, which would otherwise read as a valid orientation.
-  # A NaN in the affine makes `det() == 0` return NA, which would error here
-  # rather than reporting the affine as unreadable.
-  if (is.null(vox2ras)) {
+  # Both readers screen the affine themselves. The dimensions they do not:
+  # a 2-D mgz yields NA for the third, and tkreg needs all three.
+  if (is.null(grid)) {
     return(NULL)
   }
-  determinant <- det(vox2ras[1:3, 1:3])
-  if (!is.finite(determinant) || determinant == 0) {
+  if (length(grid$dim) != 3L || anyNA(grid$dim) || any(grid$dim < 1L)) {
     return(NULL)
   }
 
-  vox2ras
+  grid
+}
+
+
+#' Voxel-to-RAS matrix of a volume, or NULL when its header cannot be read
+#' @noRd
+volume_vox2ras <- function(input_volume) {
+  volume_grid(input_volume)$vox2ras
+}
+
+
+#' The grid `mni152.register.dat` was built for
+#'
+#' FreeSurfer ships `$FREESURFER_HOME/average/mni152.register.dat`, whose
+#' header declares an in-plane resolution and slice thickness of
+#' `1.000000`/`1.000000` -- it is a 1 mm transform. The volume it was built
+#' against is the FSL `MNI152_T1_1mm` template: 182x218x182, left-handed
+#' (LAS), with the affine below. register.dat records the resolution but not
+#' the dimensions, so the field of view has to be named here.
+#' @noRd
+mni152_1mm_grid <- function() {
+  list(
+    vox2ras = rbind(
+      c(-1, 0, 0, 90),
+      c(0, 1, 0, -126),
+      c(0, 0, 1, -72),
+      c(0, 0, 0, 1)
+    ),
+    dim = c(182L, 218L, 182L)
+  )
+}
+
+
+#' Shift beyond which a displacement stops being cosmetic, in millimetres
+#'
+#' About the width of a gyrus. Below it a region is drawn slightly off its
+#' anatomy, which is what this package tolerates; above it the label lands on
+#' a different structure, which it does not.
+#' @noRd
+mni152_max_shift_mm <- function() 10
+
+
+#' Scanner-RAS to tkregister transform for a voxel grid
+#'
+#' tkregister coordinates are not a property of the anatomy: FreeSurfer forces
+#' the axis order to LIA and the origin to the volume's own field-of-view
+#' centre, discarding `c_ras`. So the same anatomical point gets different
+#' tkreg coordinates in two volumes of different extent or axis order, which is
+#' why a tkregister matrix only applies to the grid it was built for.
+#'
+#' Hand-rolled rather than calling
+#' `freesurferformats::mghheader.scanner2tkreg()`, which computes the same
+#' product: that needs a whole mgh header object, which a `.nii` caller has no
+#' way to build, and freesurferformats is in `Suggests`, so the NIfTI path must
+#' not depend on it. A test pins the two against each other on an mgz.
+#' @noRd
+scanner_to_tkreg <- function(grid) {
+  voxel_sizes <- sqrt(colSums(grid$vox2ras[1:3, 1:3]^2))
+  mdc <- cbind(c(-1, 0, 0), c(0, 0, -1), c(0, 1, 0))
+  linear <- mdc %*% diag(voxel_sizes)
+  vox2tkr <- rbind(
+    cbind(linear, -linear %*% (grid$dim / 2)),
+    c(0, 0, 0, 1)
+  )
+  vox2tkr %*% solve(grid$vox2ras)
+}
+
+
+#' How far a grid's tkreg frame departs from the reference's
+#'
+#' Splits the difference between the two scanner-to-tkreg maps into the two
+#' kinds of error, which are not equally bad:
+#'
+#' - `axes_differ`: whether the linear parts differ by a reflection or a
+#'   permutation. The voxel sizes cancel out of that product, so it is purely
+#'   the axis order and handedness -- a label drawn on the wrong side or along
+#'   the wrong axis. Categorical. Compared ROUNDED, because a permutation
+#'   moves an entry by a whole 1 while a volume merely rotated a fraction of a
+#'   degree in the scanner moves it by ~1e-3, and the latter is not an
+#'   axis-order error at all.
+#' - `displacement_mm`: the worst distance between where the two maps send the
+#'   same anatomy, over the corners of the reference field of view. Taken over
+#'   the corners rather than from the translation alone, because a residual
+#'   rotation leaves the translations identical and would otherwise measure
+#'   zero while displacing the edge of the brain by millimetres.
+#'
+#' A mirrored volume differs in the axes with the translations equal, and a
+#' cropped one differs only in position, so both measures are needed.
+#'
+#' Note what this does NOT require: the same extent. Two volumes share a
+#' tkreg frame when their axis order matches and their field-of-view centres
+#' land on the same anatomy, whatever their dimensions. A 193x229x193 1 mm
+#' volume centred where the reference is centred is accepted, correctly --
+#' the two maps are then identical, which is exactly what register.dat needs.
+#' @noRd
+tkreg_mismatch <- function(grid) {
+  reference <- mni152_1mm_grid()
+  a <- scanner_to_tkreg(grid)
+  b <- scanner_to_tkreg(reference)
+
+  corners <- as.matrix(expand.grid(
+    c(0, reference$dim[1]),
+    c(0, reference$dim[2]),
+    c(0, reference$dim[3])
+  ))
+  points <- rbind(t(corners) - reference$dim / 2, 1)
+  shifts <- ((a - b) %*% points)[1:3, , drop = FALSE]
+
+  list(
+    axes_differ = !identical(round(a[1:3, 1:3]), round(b[1:3, 1:3])),
+    displacement_mm = max(sqrt(colSums(shifts^2)))
+  )
 }
 
 
@@ -429,26 +537,26 @@ check_mni152_subject <- function(subject) {
 }
 
 
-#' Stop when mni152.register.dat does not apply to this volume's grid
+#' Check that mni152.register.dat applies to this volume's grid
 #'
-#' `mni152.register.dat` is a tkregister matrix, and tkreg coordinates are
-#' derived from the volume's own voxel order, size and field of view. It is
-#' therefore exact only for the 1 mm left-handed (LAS) MNI152 grid it was
-#' built for. On a right-handed volume it mirrors left and right outright; on
-#' an LAS volume of another resolution it mislocates by a few per cent of
-#' vertices (7.7% measured at 1.5 mm, ~28% at 4 mm, against the same volume
-#' resampled to 1 mm first). Both produce an atlas that still looks
-#' plausible, so this refuses rather than warns.
+#' `mni152.register.dat` is a tkregister matrix, so it is exact only for the
+#' tkregister frame it was built for. [tkreg_mismatch()] defines what sharing
+#' that frame means -- the axis order and the field-of-view centre, not the
+#' voxel size and not the extent. The three outcomes here follow
+#' from that split: a wrong axis order is categorical and refused, a shift is
+#' measured in millimetres and refused only once it exceeds
+#' [mni152_max_shift_mm()], and a shift under one voxel is indistinguishable
+#' from resampling and passes silently.
 #' @noRd
 check_mni152_grid <- function(input_volume, call = rlang::caller_env()) {
-  vox2ras <- volume_vox2ras(input_volume)
+  grid <- volume_grid(input_volume)
 
-  if (is.null(vox2ras)) {
+  if (is.null(grid)) {
     cli::cli_abort(
       c(
         "{.val mni152} registration does not apply to {.path {input_volume}}.",
         "x" = "No voxel-to-world affine could be read, so this volume's
-        handedness is unknown, and {.file mni152.register.dat} assumes a
+        orientation is unknown, and {.file mni152.register.dat} assumes a
         left-handed (LAS) order: applying it may swap left and right.",
         "i" = "Use {.code registration = \"header\"} where the caller offers it,
         or convert the volume with {.code mri_convert} so its header carries
@@ -458,30 +566,85 @@ check_mni152_grid <- function(input_volume, call = rlang::caller_env()) {
     )
   }
 
-  voxel_sizes <- sqrt(colSums(vox2ras[1:3, 1:3]^2))
-  handed <- det(vox2ras[1:3, 1:3]) < 0
-  millimetre <- all(abs(voxel_sizes - 1) < 0.01)
-
-  if (handed && millimetre) {
-    return(invisible(TRUE))
+  # Reported before the general axis-order message, and before computing the
+  # mismatch, because it is the common case and names the consequence.
+  if (det(grid$vox2ras[1:3, 1:3]) > 0) {
+    cli::cli_abort(
+      c(
+        "{.val mni152} registration does not apply to {.path {input_volume}}.",
+        "x" = "{.file mni152.register.dat} assumes a left-handed (LAS) voxel
+          order, and this volume's order is right-handed, which reflects one
+          anatomical axis: for an {.val RAS} volume that is left against
+          right.",
+        "i" = "A reflected atlas still looks plausible, so this is refused
+          rather than warned about.",
+        "i" = "Use {.code registration = \"header\"}, or convert the volume to
+          LAS order first."
+      ),
+      call = call
+    )
   }
 
-  cli::cli_abort(c(
-    "{.val mni152} registration does not apply to {.path {input_volume}}.",
-    "x" = if (handed) {
-      "{.file mni152.register.dat} is built for a 1 mm grid, and this volume
-        has {.val {round(voxel_sizes, 3)}} mm voxels: applying it shifts
-        regions off their anatomy."
-    } else {
-      "{.file mni152.register.dat} assumes a left-handed (LAS) voxel order,
-        and this volume is right-handed (RAS): applying it swaps left and
-        right."
-    },
-    "i" = "Either way the atlas still looks plausible, so this is refused
-      rather than warned about.",
-    "i" = "Use {.code registration = \"header\"}, or resample the volume onto
-      the 1 mm LAS MNI152 grid first."
-  ))
+  mismatch <- tkreg_mismatch(grid)
+
+  if (mismatch$axes_differ) {
+    cli::cli_abort(
+      c(
+        "{.val mni152} registration does not apply to {.path {input_volume}}.",
+        "x" = "{.file mni152.register.dat} was built for a left-handed (LAS)
+          volume, and this volume's voxel axes run in a different order, so
+          the parcels would be drawn along the wrong axes.",
+        "i" = "A conformed volume is {.val LIA}, not {.val LAS}, so a volume
+          that has been through {.code mri_convert --conform} lands here.",
+        "i" = "Use {.code registration = \"header\"}, or resample onto the 1 mm
+          LAS MNI152 grid first."
+      ),
+      call = call
+    )
+  }
+
+  if (mismatch$displacement_mm > mni152_max_shift_mm()) {
+    cli::cli_abort(
+      c(
+        "{.val mni152} registration does not apply to {.path {input_volume}}.",
+        "x" = "This volume's field-of-view centre is
+          {.val {round(mismatch$displacement_mm, 1)}} mm from the one
+          {.file mni152.register.dat} was built for, so regions would land on
+          neighbouring structures.",
+        "i" = "Use {.code registration = \"header\"}, or resample onto the 1 mm
+          LAS MNI152 grid first."
+      ),
+      call = call
+    )
+  }
+
+  # Anisotropic volumes take the SMALLEST voxel: a thick-slice volume must not
+  # be allowed millimetres of silent in-plane error on the strength of its
+  # slice thickness.
+  voxel_sizes <- sqrt(colSums(grid$vox2ras[1:3, 1:3]^2))
+  if (mismatch$displacement_mm > min(voxel_sizes)) {
+    cli::cli_warn(
+      c(
+        "{.path {input_volume}} is not on the tkregister frame
+          {.file mni152.register.dat} was built for: its field-of-view centre
+          does not fall on the same anatomy as the reference grid's.",
+        "!" = "Regions will be shifted by about
+          {.val {round(mismatch$displacement_mm, 1)}} mm. They keep their axis
+          order, and the shift is under {.val {mni152_max_shift_mm()}} mm, so
+          this is a warning rather than a refusal.",
+        # Not every caller exposes `registration`: read_neuromaps_volume()
+        # hardcodes "mni152" and takes no such argument, so the remedy must
+        # not name one unconditionally.
+        "i" = "If the placement must be exact, resample onto the 1 mm LAS
+          MNI152 grid first. Callers that expose {.arg registration} also
+          accept {.code registration = \"header\"}."
+      ),
+      class = "ggseg_extra_mni152_displacement_warning",
+      call = call
+    )
+  }
+
+  invisible(TRUE)
 }
 
 

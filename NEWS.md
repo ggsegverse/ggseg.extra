@@ -1,3 +1,30 @@
+# ggseg.extra 1.9.9.9155
+
+## Bug fixes
+
+- `check_mni152_grid()` now tests the tkregister frame
+  `mni152.register.dat` was actually built for, instead of voxel size. It
+  compares the composed scanner-to-tkreg transform and splits the difference
+  into axis order (categorical, so refused -- this now catches the `LIA`
+  order `mri_convert --conform` produces, which was displaced by hundreds of
+  millimetres in silence) and displacement in millimetres (silent below one
+  voxel, warned about with the measured figure via
+  `ggseg_extra_mni152_displacement_warning`, refused past about the width of
+  a gyrus). Neither voxel size nor extent enters the transform, so the FSL
+  2 mm CIFTI grayordinate grid is exact and no longer warns at all, and the
+  1.6 mm grid is within one voxel.
+- `read_vox2ras()` now screens a singular affine on the `.mgz` branch, as it
+  already did for `.nii`. `load_tract_grid()` reads it directly, so an
+  unreadable mgz header skipped the documented voxel-size fallback and
+  reached `solve()` as a Lapack "system is exactly singular" error.
+
+## Internal
+
+- The "can this affine place anything" test is written once
+  (`affine_is_invertible()`) rather than copied into both affine readers and
+  kept in agreement by a comment.
+
+
 # ggseg.extra 1.9.9.9151
 
 ## Bug fixes

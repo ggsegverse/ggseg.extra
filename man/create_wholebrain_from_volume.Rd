@@ -323,15 +323,30 @@ reference maps meant for visualisation that error is usually acceptable,
 which is why it remains the default.
 
 \code{"mni152"} removes it, but only for volumes on the grid
-\code{mni152.register.dat} was built for: 1 mm, left-handed (LAS). tkregister
-coordinates are derived from the volume's own voxel order, size and field
-of view, so the same matrix applied to a right-handed volume mirrors left
-and right, and applied to an LAS volume of another resolution mislocates
-regions (7.7\% of vertices at 1.5 mm, about 28\% at 4 mm, measured against
-the same volume resampled to 1 mm first). Both mistakes produce an atlas
-that still looks anatomically plausible, so an unsuitable grid is refused
-rather than warned about. To use \code{"mni152"} with such a volume, resample
-it onto the 1 mm LAS MNI152 grid first.
+\code{mni152.register.dat} was built for: the 1 mm, left-handed (LAS),
+182x218x182 MNI152 grid. tkregister coordinates are derived from the
+volume's own voxel order, size and field of view, so the same matrix
+applied to a right-handed volume mirrors left and right. That is a
+categorical error -- a label drawn on the wrong hemisphere -- and it is
+\strong{refused}.
+
+A volume whose voxel axes run in a different order is refused for the same
+reason. That includes the \code{LIA} order \code{mri_convert --conform} produces,
+which is left-handed and so cannot be told from \code{LAS} by a determinant
+test.
+
+A volume whose field-of-view centre falls elsewhere only shifts regions
+along the correct axes. That \strong{warns and continues}, naming the measured
+shift in millimetres, with a condition of class
+\code{ggseg_extra_mni152_displacement_warning} -- unless the shift exceeds
+about the width of a gyrus, at which point the region lands on a
+different structure and is refused too. A shift below one voxel is
+indistinguishable from resampling and passes silently.
+
+Neither the voxel size nor the extent is checked, because neither enters
+the transform: what matters is the axis order and where the field-of-view
+centre falls. The FSL 2 mm CIFTI grayordinate grid is therefore exact,
+and the 1.6 mm grid is within one voxel; both pass in silence.
 
 No header identifies the space an arbitrary volume is in, so the
 registration you name is applied to whatever you pass. A volume sitting

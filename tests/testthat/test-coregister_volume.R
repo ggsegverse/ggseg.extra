@@ -75,7 +75,7 @@ describe("project_volume_anatomical validation", {
         registration = "mni152",
         verbose = FALSE
       ),
-      "swaps left and right"
+      "right-handed"
     )
   })
 

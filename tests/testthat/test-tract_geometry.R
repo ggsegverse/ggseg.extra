@@ -767,6 +767,55 @@ describe("load_tract_grid", {
     expect_null(result$vox2ras)
   })
 
+  it("reads the real dimensions, not just the affine, for a nii", {
+    # The dims are what make the field-of-view test possible, and they are
+    # NOT recoverable from the affine, so a reader that returned the affine
+    # alone would leave the grid check measuring nothing. Deliberately
+    # non-cubic and non-square so a transposed or recycled read shows up.
+    skip_if_not_installed("RNifti")
+    tmp <- withr::local_tempfile(fileext = ".nii")
+    img <- RNifti::asNifti(array(0L, dim = c(7, 9, 11)))
+    RNifti::pixdim(img) <- c(2, 2, 2)
+    RNifti::sform(img) <- structure(diag(c(-2, 2, 2, 1)), code = 2L)
+    RNifti::writeNifti(img, tmp)
+
+    grid <- read_volume_grid(tmp)
+
+    expect_identical(grid$dim, c(7L, 9L, 11L))
+    expect_equal(sqrt(colSums(grid$vox2ras[1:3, 1:3]^2)), c(2, 2, 2))
+  })
+
+  it("reads the real dimensions for an mgz too", {
+    # A plainly written mgz has ras_good_flag = -1 and no derivable affine, so
+    # this needs the shared fixture, which carries a valid header. Its data
+    # array is 4-D (74x56x43x1), so the frame dimension must not leak into the
+    # field of view.
+    skip_if_not_installed("freesurferformats")
+    mgz <- test_path("testdata/volumetric/aseg.mgz")
+
+    expect_identical(read_volume_grid(mgz)$dim, c(74L, 56L, 43L))
+  })
+
+  it("screens a singular mgz affine at the reader, not at solve()", {
+    skip_if_not_installed("freesurferformats")
+    # The .nii branch screens the affine via nifti_affine_is_set(); the mgz
+    # branch did not, and load_tract_grid() is a second consumer that calls
+    # read_vox2ras() directly. A singular matrix therefore skipped the
+    # documented voxel_size fallback and reached solve() as a Lapack
+    # "system is exactly singular" error instead.
+    mgz <- test_path("testdata/volumetric/aseg.mgz")
+    local_mocked_bindings(
+      mghheader.vox2ras = function(...) matrix(0, 4, 4),
+      .package = "freesurferformats"
+    )
+    expect_null(read_vox2ras(mgz))
+    expect_warning(
+      result <- load_tract_grid(mgz, coords_are_voxels = FALSE),
+      "voxel size|affine"
+    )
+    expect_null(result$vox2ras)
+  })
+
   it("recovers the voxel size when the affine is unreadable", {
     skip_if_not_installed("RNifti")
     tmp <- withr::local_tempfile(fileext = ".nii")

@@ -27,7 +27,7 @@ describe("prepare_subcortical_mni152 registration", {
 
     expect_error(
       prepare_subcortical_mni152(vol_file, verbose = FALSE),
-      "handedness is unknown"
+      "orientation is unknown"
     )
   })
 
@@ -44,7 +44,7 @@ describe("prepare_subcortical_mni152 registration", {
 
     expect_error(
       prepare_subcortical_mni152(tmp, verbose = FALSE),
-      "handedness is unknown"
+      "orientation is unknown"
     )
   })
 
@@ -58,7 +58,7 @@ describe("prepare_subcortical_mni152 registration", {
 
     expect_error(
       prepare_subcortical_mni152(vol_file, verbose = FALSE),
-      "swaps left and right"
+      "right-handed"
     )
   })
 })
@@ -196,12 +196,16 @@ describe("prepare_subcortical_mni152 registration call", {
   }
 
   dims <- c(4L, 4L, 4L)
-  # A declared LAS 1 mm affine, which is what `registration = "mni152"`
-  # requires: a bare array declares no handedness and is refused.
-  write_vol <- function(arr, path) {
+  # A declared LAS affine on the reference tkreg frame -- see
+  # mni152_frame_origin() for why the origin is not (0, 0, 0) -- which is what
+  # `registration = "mni152"` requires: a bare array declares no handedness
+  # and is refused.
+  write_vol <- function(arr, path, voxel = 1) {
     img <- RNifti::asNifti(arr)
-    RNifti::pixdim(img) <- c(1, 1, 1)
-    RNifti::sform(img) <- structure(diag(c(-1, 1, 1, 1)), code = 2L)
+    RNifti::pixdim(img) <- rep(voxel, 3)
+    sform <- diag(c(-voxel, voxel, voxel, 1))
+    sform[1:3, 4] <- mni152_frame_origin(dim(arr)[1:3], voxel)
+    RNifti::sform(img) <- structure(sform, code = 2L)
     RNifti::writeNifti(img, path)
     path
   }
@@ -338,6 +342,41 @@ describe("prepare_subcortical_mni152 registration call", {
 
     expect_identical(seen$reg, lta)
     expect_false(identical(seen$reg, "mni152"))
+  })
+
+  it("carries a 2 mm grayordinate volume through to the registration", {
+    local_skip_unless_fs_pkg()
+    # The motivating case: a 2 mm volume sharing the reference field of view,
+    # which is the CIFTI grayordinate situation. Every other fixture here is
+    # 1 mm, so nothing else proves a non-1 mm volume reaches mri_vol2vol with
+    # a resolved registration. It must arrive in SILENCE -- the transform is
+    # exact for this grid -- so restoring a voxel-size check makes this fail.
+    local_mock_mni152_path()
+    lta <- withr::local_tempfile(fileext = ".lta")
+    local_mocked_bindings(
+      lta_from_register_dat = function(path, mov, targ, ...) lta
+    )
+
+    in_path <- withr::local_tempfile(fileext = ".nii.gz")
+    write_vol(make_parcels(), in_path, voxel = 2)
+
+    subjects_dir <- local_subjects_dir()
+    seen <- new.env(parent = emptyenv())
+    local_mock_prepare_deps(seen)
+
+    expect_no_condition(
+      merged <- prepare_subcortical_mni152(
+        input_volume = in_path,
+        labels = c(211L, 212L),
+        registration = "mni152",
+        subjects_dir = subjects_dir,
+        verbose = FALSE
+      ),
+      class = "ggseg_extra_mni152_displacement_warning"
+    )
+
+    expect_identical(seen$reg, lta)
+    expect_true(file.exists(merged$volume))
   })
 })
 

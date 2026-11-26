@@ -1671,3 +1671,21 @@ describe("a context group through write_lut and read_lut", {
     expect_identical(lut_is_context(back), c(FALSE, TRUE, TRUE))
   })
 })
+
+
+describe("affine_is_invertible", {
+  it("accepts an affine that can place a voxel", {
+    expect_true(affine_is_invertible(diag(c(-1, 1, 1, 1))))
+  })
+
+  it("rejects the all-zero matrix an unreadable header returns", {
+    # A default header reads as a valid orientation without this.
+    expect_false(affine_is_invertible(matrix(0, 4, 4)))
+  })
+
+  it("rejects a non-finite affine, where det() == 0 is NA not FALSE", {
+    affine <- diag(c(-1, 1, 1, 1))
+    affine[1, 1] <- NaN
+    expect_false(affine_is_invertible(affine))
+  })
+})
