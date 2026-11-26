@@ -366,49 +366,6 @@ describe("get_contours", {
 
     expect_null(get_contours("fake_raster"))
   })
-
-  it("traces a projection that has something in it", {
-    .cap$as_polygons_called <- FALSE
-
-    local_mocked_bindings(
-      global = function(x, ...) data.frame(max = 255),
-      as.polygons = function(...) {
-        .cap$as_polygons_called <- TRUE
-        "mock_poly"
-      },
-      .package = "terra"
-    )
-
-    local_mocked_bindings(
-      st_as_sf = function(...) data.frame(id = 1, stringsAsFactors = FALSE),
-      st_is_empty = function(...) FALSE,
-      .package = "sf"
-    )
-
-    local_mocked_bindings(
-      to_coords = function(coords, n) coords,
-      coords2sf = function(coords, limits) coords
-    )
-
-    rast_obj <- structure(
-      list(vals = c(0L, 255L)),
-      class = "mock_rast"
-    )
-    `[<-.mock_rast` <- function(x, i, value) x
-    `[.mock_rast` <- function(x, i) {
-      structure(list(vals = c(TRUE, FALSE)), class = "mock_rast")
-    }
-
-    environment(`[<-.mock_rast`) <- globalenv()
-    environment(`[.mock_rast`) <- globalenv()
-
-    result <- tryCatch(
-      get_contours(rast_obj),
-      error = function(e) "processing_attempted"
-    )
-
-    expect_true(.cap$as_polygons_called || result == "processing_attempted")
-  })
 })
 
 describe("get_contours full processing path", {

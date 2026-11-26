@@ -924,7 +924,7 @@ describe("subcort_assemble_3d", {
       class = "ggseg_atlas"
     )
     local_mocked_bindings(
-      ggseg_atlas = function(...) mock_atlas,
+      ggseg_atlas = mock_ggseg_atlas(returns = mock_atlas),
       ggseg_data_subcortical = function(...) list(...)
     )
 

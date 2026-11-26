@@ -1127,18 +1127,7 @@ describe("tract_extract_contours", {
 describe("tract_assemble_3d", {
   it("returns ggseg_atlas", {
     local_mocked_bindings(
-      ggseg_atlas = function(...) {
-        args <- list(...)
-        structure(
-          list(
-            type = args$type,
-            core = args$core,
-            palette = args$palette,
-            data = args$data
-          ),
-          class = "ggseg_atlas"
-        )
-      },
+      ggseg_atlas = mock_ggseg_atlas(),
       ggseg_data_tract = function(...) list(...)
     )
 

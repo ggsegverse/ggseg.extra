@@ -171,7 +171,7 @@ describe("create_tract_from_tractography pipeline flow", {
           atlas_name = "t1"
         )
       },
-      ggseg_atlas = function(...) structure(list(...), class = "ggseg_atlas"),
+      ggseg_atlas = mock_ggseg_atlas(),
       ggseg_data_tract = function(...) list(...),
       preview_atlas = function(...) invisible(NULL),
       setup_atlas_dirs = function(...) dirs,
@@ -377,7 +377,7 @@ describe("create_tract_from_tractography pipeline flow", {
           atlas_name = "t1"
         )
       },
-      ggseg_atlas = function(...) structure(list(...), class = "ggseg_atlas"),
+      ggseg_atlas = mock_ggseg_atlas(),
       ggseg_data_tract = function(...) list(...),
       preview_atlas = function(...) invisible(NULL),
       setup_atlas_dirs = function(...) dirs,
@@ -446,18 +446,7 @@ describe("create_tract_from_tractography pipeline flow", {
         }
       },
       build_contour_sf = function(...) "mock_sf_data",
-      ggseg_atlas = function(...) {
-        args <- list(...)
-        structure(
-          list(
-            core = args$core,
-            palette = args$palette,
-            type = args$type,
-            data = args$data
-          ),
-          class = "ggseg_atlas"
-        )
-      },
+      ggseg_atlas = mock_ggseg_atlas(),
       ggseg_data_tract = function(...) list(...),
       warn_if_large_atlas = function(...) invisible(NULL),
       preview_atlas = function(...) invisible(NULL)
