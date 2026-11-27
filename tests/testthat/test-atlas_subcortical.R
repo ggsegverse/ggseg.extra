@@ -1277,7 +1277,7 @@ describe("create_wm_from_volume()", {
       decimate = 0.25
     )
 
-    expect_identical(seen$args$type, "wm")
+    expect_identical(seen$args$type, "white_matter")
     expect_identical(seen$args$input_volume, "vol.nii.gz")
     expect_identical(seen$args$input_lut, "lut.txt")
     expect_identical(seen$args$atlas_name, "jhu")
@@ -1305,11 +1305,11 @@ describe("create_wm_from_volume()", {
           m
         })
       ),
-      type = "wm"
+      type = "white_matter"
     )
 
-    expect_identical(ggseg.formats::atlas_type(atlas), "wm")
-    expect_true(ggseg.formats::is_wm_atlas(atlas))
+    expect_identical(ggseg.formats::atlas_type(atlas), "white_matter")
+    expect_true(ggseg.formats::is_white_matter_atlas(atlas))
     # and still a subcortical atlas, so its methods apply
     expect_true(ggseg.formats::is_subcortical_atlas(atlas))
   })
@@ -1338,6 +1338,41 @@ describe("create_wm_from_volume()", {
     )
 
     expect_identical(ggseg.formats::atlas_type(atlas), "subcortical")
-    expect_false(ggseg.formats::is_wm_atlas(atlas))
+    expect_false(ggseg.formats::is_white_matter_atlas(atlas))
+  })
+})
+
+describe("the pre-0.1.0 `wm` spelling", {
+  it("is accepted as the type, deprecated", {
+    # arg_match0() would otherwise abort on a build script written against
+    # the old spelling. expect_no_warning() cannot see a lifecycle warning
+    # without the class, so name it.
+    expect_warning(
+      out <- migrate_atlas_type_arg("wm"),
+      class = "lifecycle_warning_deprecated"
+    )
+    expect_identical(out, "white_matter")
+    expect_identical(migrate_atlas_type_arg("subcortical"), "subcortical")
+  })
+
+  it("keeps the old creator name working, deprecated", {
+    expect_warning(
+      try(create_wm_from_volume(input_volume = NULL), silent = TRUE),
+      class = "lifecycle_warning_deprecated"
+    )
+  })
+
+  it("builds the white-matter data payload for the new spelling", {
+    meshes <- data.frame(label = "cst_left", stringsAsFactors = FALSE)
+    meshes$mesh <- list(list(
+      vertices = data.frame(x = 1:10, y = 1:10, z = 1:10),
+      faces = data.frame(i = 1:3, j = 2:4, k = 3:5)
+    ))
+
+    data <- subcort_data_for("white_matter", meshes = meshes)
+    expect_s3_class(data, "ggseg_data_white_matter")
+
+    plain <- subcort_data_for("subcortical", meshes = meshes)
+    expect_false(inherits(plain, "ggseg_data_white_matter"))
   })
 })

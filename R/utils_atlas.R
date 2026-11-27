@@ -874,7 +874,7 @@ setup_atlas_dirs <- function(
     snapshots = as.character(fs::path(base, "snapshots"))
   )
 
-  if (type %in% c("subcortical", "cerebellar", "wm")) {
+  if (type %in% c("subcortical", "cerebellar", "white_matter")) {
     dirs$meshes <- as.character(fs::path(base, "meshes"))
   }
 

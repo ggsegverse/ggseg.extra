@@ -1,5 +1,10 @@
 # ggseg.extra 1.9.9.9155
 
+- Follows ggseg.formats in renaming the atlas type `wm` to `white_matter`.
+  `create_white_matter_atlas()` replaces `create_wm_from_volume()`,
+  which is deprecated, and `type = "wm"` is still accepted with a
+  deprecation warning rather than aborting a build script.
+
 ## Bug fixes
 
 - `check_mni152_grid()` now tests the tkregister frame
