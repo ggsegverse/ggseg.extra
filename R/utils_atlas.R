@@ -713,6 +713,11 @@ lut_hemi <- function(lut_row, label_name, from_name = detect_hemi) {
 #' `NA` for anything unrecognised. Whether that is an error is not decided
 #' here: `check_lut_hemi()` aborts on a value that declares something this
 #' cannot read, and lets `NA` and an empty string through as undeclared.
+#'
+#' Parsing source spellings is this package's job -- ggseg.formats has no LUT
+#' to read -- but every spelling it repairs must be read here too. `NA` is a
+#' legal `hemi` value, so a spelling this turns into `NA` is accepted by the
+#' constructor in silence rather than repaired: `mid` was lost that way.
 #' @noRd
 normalise_hemi <- function(x) {
   if (length(x) != 1L || is.na(x) || !nzchar(trimws(x))) {
@@ -728,6 +733,7 @@ normalise_hemi <- function(x) {
     "r" = "right",
     "midline" = ,
     "middle" = ,
+    "mid" = ,
     "vermis" = "midline",
     NA_character_
   )

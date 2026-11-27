@@ -1,5 +1,9 @@
 # ggseg.extra 1.9.9.9155
 
+- A LUT declaring `hemi` as `mid` is read as midline rather than as
+  undeclared. `NA` is a legal `hemi`, so the value was dropped in silence
+  where `ggseg.formats` would have repaired it.
+
 ## Bug fixes
 
 - `check_mni152_grid()` now tests the tkregister frame

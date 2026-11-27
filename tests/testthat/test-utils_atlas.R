@@ -249,7 +249,54 @@ describe("normalise_hemi", {
   it("reads every legacy midline spelling", {
     expect_identical(normalise_hemi("midline"), "midline")
     expect_identical(normalise_hemi("middle"), "midline")
+    expect_identical(normalise_hemi("mid"), "midline")
     expect_identical(normalise_hemi("vermis"), "midline")
+  })
+
+  it("agrees with ggseg.formats on every spelling it repairs", {
+    # Parsing source spellings is this package's job, but the spellings
+    # ggseg.formats already repairs must be read the same way. `mid` was read
+    # as NA here while ggseg.formats made it "midline", and NA is a legal
+    # hemi value, so the constructor accepted the loss in silence.
+    #
+    # ggseg.formats keeps its vocabulary internal, so this asks it through the
+    # exported legacy conversion rather than reaching into it: whatever that
+    # path makes of a spelling is what normalise_hemi() must make of it. A
+    # hand-written expectation is what let the two drift.
+    geom <- ggseg.formats::atlas_geom(ggseg.formats::dk())[1, ]
+    lab <- geom$label[[1]]
+    legacy <- function(hemi) {
+      structure(
+        list(
+          atlas = "t",
+          type = "cortical",
+          palette = stats::setNames("#FFFFFF", lab),
+          core = data.frame(hemi = hemi, region = "a", label = lab),
+          sf = geom
+        ),
+        class = c("ggseg_atlas", "list")
+      )
+    }
+
+    spellings <- c(
+      "l",
+      "lh",
+      "left",
+      "r",
+      "rh",
+      "right",
+      "mid",
+      "middle",
+      "midline",
+      "vermis"
+    )
+    for (spelling in spellings) {
+      converted <- suppressMessages(
+        ggseg.formats::convert_legacy_brain_atlas(legacy(spelling))
+      )
+      repaired <- as.character(ggseg.formats::atlas_core(converted)$hemi)
+      expect_identical(normalise_hemi(spelling), repaired)
+    }
   })
 
   it("is case- and whitespace-insensitive", {
