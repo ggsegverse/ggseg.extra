@@ -1210,6 +1210,17 @@ describe("min_coverage reaches the pipelines", {
       getNamespaceExports("ggseg.extra"),
       value = TRUE
     )
+    # A deprecated shim forwards through `...` by design, so the contract is
+    # about the creators that are still the way in.
+    deprecated <- vapply(
+      creators,
+      function(nm) {
+        body <- deparse(body(get(nm, envir = asNamespace("ggseg.extra"))))
+        any(grepl("deprecate_warn", body, fixed = TRUE))
+      },
+      logical(1)
+    )
+    creators <- creators[!deprecated]
     takes_it <- vapply(
       creators,
       function(nm) {

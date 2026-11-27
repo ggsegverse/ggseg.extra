@@ -84,10 +84,11 @@
 #'   Use `steps = 1:3` for a 3D-only atlas. Geometry is shaped after the
 #'   build, not during it: see [atlas_polish()].
 #' @param type Type of the finished atlas: `"subcortical"` (the default) or
-#'   `"wm"` for white matter. The two are built identically and store the
-#'   same things; the type is what lets a plot name the anatomy correctly,
-#'   and a white-matter atlas is not drawn as a 2D backdrop. Reach for
-#'   [create_wm_from_volume()] rather than passing `"wm"` here.
+#'   `"white_matter"`. The two are built identically and store the same
+#'   things; the type is what lets a plot name the anatomy correctly, and a
+#'   white-matter atlas is not drawn as a 2D backdrop. Reach for
+#'   [create_white_matter_atlas()] rather than passing the type here.
+#'   `"wm"` is accepted, deprecated, as the pre-0.1.0 spelling.
 #' @details
 #' `views` may also be given as a named list of [subcortical_views()]
 #' arguments (e.g. `views = list(labels = 801:810, coronal = 3, axial = 2)`),
@@ -148,7 +149,8 @@ create_subcortical_from_volume <- function(
 ) {
   rlang::check_dots_empty()
   views <- resolve_renamed_views(views, slabs, "create_subcortical_from_volume")
-  type <- rlang::arg_match0(type, c("subcortical", "wm"))
+  type <- migrate_atlas_type_arg(type)
+  type <- rlang::arg_match0(type, c("subcortical", "white_matter"))
   slabs <- views
   unpacked <- unpack_anatomical_input(input_volume, input_lut)
 
@@ -194,7 +196,7 @@ create_subcortical_from_volume <- function(
 #'
 #' @inheritParams create_subcortical_from_volume
 #'
-#' @return A `ggseg_atlas` of type `"wm"`.
+#' @return A `ggseg_atlas` of type `"white_matter"`.
 #' @seealso [create_subcortical_from_volume()], which this delegates to, and
 #'   [create_tract_from_volume()] for bundles.
 #' @family atlas creation
@@ -202,12 +204,12 @@ create_subcortical_from_volume <- function(
 #'
 #' @examples
 #' \dontrun{
-#' atlas <- create_wm_from_volume(
+#' atlas <- create_white_matter_atlas(
 #'   input_volume = "JHU-ICBM-labels-1mm.nii.gz",
 #'   input_lut = "JHU_LUT.txt"
 #' )
 #' }
-create_wm_from_volume <- function(
+create_white_matter_atlas <- function(
   input_volume,
   decimate = 0.5,
   verbose = get_verbose(),
@@ -223,7 +225,11 @@ create_wm_from_volume <- function(
   steps = NULL,
   slabs = lifecycle::deprecated()
 ) {
-  views <- resolve_renamed_views(views, slabs, "create_wm_from_volume")
+  views <- resolve_renamed_views(
+    views,
+    slabs,
+    "create_white_matter_atlas"
+  )
   create_subcortical_from_volume(
     input_volume = input_volume,
     decimate = decimate,
@@ -238,8 +244,39 @@ create_wm_from_volume <- function(
     cleanup = cleanup,
     skip_existing = skip_existing,
     steps = steps,
-    type = "wm"
+    type = "white_matter"
   )
+}
+
+
+#' @rdname create_white_matter_atlas
+#' @export
+create_wm_from_volume <- function(...) {
+  lifecycle::deprecate_warn(
+    "0.1.0",
+    "create_wm_from_volume()",
+    "create_white_matter_atlas()"
+  )
+  create_white_matter_atlas(...)
+}
+
+
+#' Repair the pre-0.1.0 spelling of the white-matter type
+#'
+#' `wm` became `white_matter` in ggseg.formats 0.1.0. A build script written
+#' against the old spelling keeps working, loudly, rather than hitting
+#' `arg_match0()`.
+#' @noRd
+migrate_atlas_type_arg <- function(type) {
+  if (!identical(type, "wm")) {
+    return(type)
+  }
+  lifecycle::deprecate_warn(
+    "0.1.0",
+    I('`type = "wm"`'),
+    I('`type = "white_matter"`')
+  )
+  "white_matter"
 }
 
 
@@ -812,12 +849,12 @@ subcort_resolve_snapshots <- function(
 #'
 #' A white-matter atlas stores exactly what a subcortical one stores, but
 #' `ggseg_atlas()` requires the data object to match the type, so the
-#' constructor has to follow it. `ggseg_data_wm()` inherits
+#' constructor has to follow it. `ggseg_data_white_matter()` inherits
 #' `ggseg_data_subcortical`, so nothing downstream has to care which it got.
 #' @noRd
 subcort_data_for <- function(type, ...) {
-  if (identical(type, "wm")) {
-    ggseg.formats::ggseg_data_wm(...)
+  if (identical(type, "white_matter")) {
+    ggseg.formats::ggseg_data_white_matter(...)
   } else {
     ggseg_data_subcortical(...)
   }
